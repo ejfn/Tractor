@@ -1,10 +1,8 @@
-import { 
-  Card, 
-  GameState, 
-  Player, 
-  Combo, 
-  ComboType,
-  Trick,
+import {
+  Card,
+  GameState,
+  Player,
+  Combo,
   AIDifficulty,
   TrumpInfo
 } from '../types/game';

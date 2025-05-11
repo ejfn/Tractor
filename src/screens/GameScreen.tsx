@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
   Modal,
-  Alert,
-  ScrollView
+  Alert
 } from 'react-native';
 import GameBoard from '../components/GameBoard';
-import { 
-  GameState, 
-  Card, 
-  Rank, 
-  Suit, 
-  AIDifficulty, 
-  ComboType,
-  Player
+import {
+  GameState,
+  Card,
+  Rank,
+  Suit,
+  AIDifficulty
 } from '../types/game';
 import { 
   initializeGame, 
@@ -31,7 +28,7 @@ const GameScreen: React.FC = () => {
   // Game state
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
-  const [gameConfig, setGameConfig] = useState({
+  const [gameConfig] = useState({
     playerName: 'You',
     teamNames: ['Team A', 'Team B'] as [string, string],
     startingRank: Rank.Two,
@@ -47,7 +44,82 @@ const GameScreen: React.FC = () => {
   
   // Timer for AI moves
   const [aiTimer, setAiTimer] = useState<NodeJS.Timeout | null>(null);
-  
+
+  // Handle AI move
+  const handleAIMove = () => {
+    if (!gameState) return;
+
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Get AI move based on difficulty
+    const aiMove = getAIMove(
+      gameState,
+      currentPlayer.id,
+      gameConfig.aiDifficulty
+    );
+
+    // Process the AI's play
+    processPlay(aiMove);
+    setWaitingForAI(false);
+  };
+
+  // Check if AI should declare trump
+  const checkAITrumpDeclaration = (state: GameState) => {
+    // Find the first AI player with a trump rank card
+    const aiWithTrump = state.players.find(p =>
+      !p.isHuman && p.hand.some(card => card.rank === state.trumpInfo.trumpRank)
+    );
+
+    if (aiWithTrump) {
+      // Check if AI should declare based on strategy
+      const shouldDeclare = shouldAIDeclare(
+        state,
+        aiWithTrump.id,
+        gameConfig.aiDifficulty
+      );
+
+      if (shouldDeclare) {
+        // Determine most common suit in AI's hand
+        const suitCounts = aiWithTrump.hand.reduce((counts, card) => {
+          if (card.suit) {
+            counts[card.suit] = (counts[card.suit] || 0) + 1;
+          }
+          return counts;
+        }, {} as Record<string, number>);
+
+        let mostCommonSuit = '';
+        let maxCount = 0;
+
+        Object.entries(suitCounts).forEach(([suit, count]) => {
+          if (count > maxCount) {
+            mostCommonSuit = suit;
+            maxCount = count;
+          }
+        });
+
+        // Show AI declaration message
+        Alert.alert(
+          'AI Trump Declaration',
+          `${aiWithTrump.name} declares ${mostCommonSuit} as trump suit!`,
+          [{ text: 'OK' }]
+        );
+
+        // Declare trump suit
+        declareTrumpSuit(mostCommonSuit as Suit);
+      } else {
+        // No one declared, start playing
+        const newState = { ...state };
+        newState.gamePhase = 'playing';
+        setGameState(newState);
+      }
+    } else {
+      // No one can declare, start playing
+      const newState = { ...state };
+      newState.gamePhase = 'playing';
+      setGameState(newState);
+    }
+  };
+
   // Initialize game
   useEffect(() => {
     if (!showSetup && !gameState) {
@@ -73,7 +145,7 @@ const GameScreen: React.FC = () => {
         }
       }
     }
-  }, [showSetup, gameState]);
+  }, [showSetup, gameState, gameConfig.playerName, gameConfig.teamNames, gameConfig.startingRank, checkAITrumpDeclaration]);
   
   // Handle AI turns
   useEffect(() => {
@@ -87,8 +159,8 @@ const GameScreen: React.FC = () => {
       const timer = setTimeout(() => {
         handleAIMove();
       }, 1500);
-      
-      setAiTimer(timer);
+
+      setAiTimer(timer as unknown as NodeJS.Timeout);
     }
     
     return () => {
@@ -96,7 +168,7 @@ const GameScreen: React.FC = () => {
         clearTimeout(aiTimer);
       }
     };
-  }, [gameState, waitingForAI]);
+  }, [gameState, waitingForAI, aiTimer, handleAIMove]);
   
   // Handle card selection
   const handleCardSelect = (card: Card) => {
@@ -230,73 +302,7 @@ const GameScreen: React.FC = () => {
     setGameState(newState);
   };
   
-  // Handle AI move
-  const handleAIMove = () => {
-    if (!gameState) return;
-    
-    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-    
-    // Get AI move based on difficulty
-    const aiMove = getAIMove(
-      gameState,
-      currentPlayer.id,
-      gameConfig.aiDifficulty
-    );
-    
-    // Process the AI's play
-    processPlay(aiMove);
-    setWaitingForAI(false);
-  };
-  
-  // Check if AI should declare trump
-  const checkAITrumpDeclaration = (state: GameState) => {
-    // Find the first AI player with a trump rank card
-    const aiWithTrump = state.players.find(p => 
-      !p.isHuman && p.hand.some(card => card.rank === state.trumpInfo.trumpRank)
-    );
-    
-    if (aiWithTrump) {
-      // Check if AI should declare based on strategy
-      const shouldDeclare = shouldAIDeclare(
-        state,
-        aiWithTrump.id,
-        gameConfig.aiDifficulty
-      );
-      
-      if (shouldDeclare) {
-        // Determine most common suit in AI's hand
-        const suitCounts = aiWithTrump.hand.reduce((counts, card) => {
-          if (card.suit) {
-            counts[card.suit] = (counts[card.suit] || 0) + 1;
-          }
-          return counts;
-        }, {} as Record<string, number>);
-        
-        let mostCommonSuit = '';
-        let maxCount = 0;
-        
-        Object.entries(suitCounts).forEach(([suit, count]) => {
-          if (count > maxCount) {
-            mostCommonSuit = suit;
-            maxCount = count;
-          }
-        });
-        
-        // Declare trump suit
-        declareTrumpSuit(mostCommonSuit as Suit);
-      } else {
-        // No one declared, start playing
-        const newState = { ...state };
-        newState.gamePhase = 'playing';
-        setGameState(newState);
-      }
-    } else {
-      // No one can declare, start playing
-      const newState = { ...state };
-      newState.gamePhase = 'playing';
-      setGameState(newState);
-    }
-  };
+  // Duplicate functions removed
   
   // Handle trump suit declaration
   const declareTrumpSuit = (suit: Suit | null) => {
@@ -508,7 +514,7 @@ const GameScreen: React.FC = () => {
               style={styles.skipButton}
               onPress={() => declareTrumpSuit(null)}
             >
-              <Text style={styles.skipText}>Don't Declare</Text>
+              <Text style={styles.skipText}>Don&apos;t Declare</Text>
             </TouchableOpacity>
           </View>
         </View>

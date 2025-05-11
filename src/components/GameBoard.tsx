@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, ScrollView } from 'react-native';
 import Card from './Card';
 import PlayerHand from './PlayerHand';
-import { GameState, Card as CardType, Player, Trick } from '../types/game';
+import { GameState, Card as CardType } from '../types/game';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -17,8 +17,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
 }) => {
   const { players, currentTrick, currentPlayerIndex, trumpInfo, teams } = gameState;
   
-  // Get current player
-  const currentPlayer = players[currentPlayerIndex];
+  // Get players array from gameState
+  // (removed unused currentPlayer variable)
   
   // Find human player index
   const humanPlayerIndex = players.findIndex(p => p.isHuman);

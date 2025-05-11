@@ -54,10 +54,10 @@ export type Team = {
 export type Trick = {
   leadingPlayerId: string;
   leadingCombo: Card[]; // Cards that started the trick
-  plays: Array<{
+  plays: {
     playerId: string;
     cards: Card[];
-  }>;
+  }[];
   winningPlayerId?: string;
   points: number; // Total points in this trick
 };

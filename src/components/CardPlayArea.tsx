@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import AnimatedCard from './AnimatedCard';
-import { Card as CardType, Player, Trick, TrumpInfo } from '../types/game';
+import { Card as CardType, Player, Trick, TrumpInfo } from '../types/game'; // Using Card as CardType to avoid naming conflict
 import { isTrump } from '../utils/gameLogic';
 
 interface CardPlayAreaProps {

@@ -99,7 +99,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
       translateY.value = withSpring(0);
       scale.value = withSpring(1);
     }
-  }, [selected]);
+  }, [selected, translateY, scale]);
   
   // Play animation
   useEffect(() => {
@@ -107,14 +107,14 @@ export const AnimatedCard: React.FC<CardProps> = ({
       // Delay animations for sequential effect
       setTimeout(() => {
         rotate.value = withTiming(
-          `${Math.random() * 10 - 5}deg`, 
+          `${Math.random() * 10 - 5}deg`,
           { duration: 300, easing: Easing.out(Easing.ease) }
         );
         scale.value = withTiming(1, { duration: 300 });
         opacity.value = withTiming(1, { duration: 300 });
       }, delay);
     }
-  }, [isPlayed, delay]);
+  }, [isPlayed, delay, rotate, opacity, scale]);
   
   // Card appearance animations
   const animatedStyle = useAnimatedStyle(() => {

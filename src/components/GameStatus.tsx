@@ -34,7 +34,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
         delay: 1000,
       })
     ]).start();
-  }, [teams[0].points, teams[1].points]);
+  }, [teams, scoreAnimation]);
   
   useEffect(() => {
     Animated.sequence([
@@ -50,7 +50,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
         delay: 1500,
       })
     ]).start();
-  }, [gamePhase]);
+  }, [gamePhase, phaseAnimation]);
   
   // Animations for pulse effect
   const pulseScale = scoreAnimation.interpolate({

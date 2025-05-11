@@ -3,13 +3,8 @@ import {
   StyleSheet,
   View,
   Text,
-  Button,
   TouchableOpacity,
-  TouchableHighlight,
-  TouchableWithoutFeedback,
-  Pressable,
   ScrollView,
-  Alert,
   Modal,
   Dimensions,
   Animated,
@@ -19,7 +14,6 @@ import {
   GameState,
   Rank,
   Suit,
-  AIDifficulty,
   Card
 } from '../types/game';
 import { initializeGame, isTrump } from '../utils/gameLogic';
@@ -85,7 +79,8 @@ const SimpleGameScreen: React.FC = () => {
         newGameState.currentTrick = {
           leadingPlayerId: newGameState.players[0].id,
           leadingCombo: [], // Will be filled when player plays a card
-          plays: [] // Will contain each player's cards as they play them
+          plays: [], // Will contain each player's cards as they play them
+          points: 0 // Initialize points for this trick
         };
       }
 
@@ -409,11 +404,7 @@ const SimpleGameScreen: React.FC = () => {
     );
   };
 
-  // Render mini card back for side player positions - rotation is applied in the container
-  const renderMiniCardBackVertical = () => {
-    // Use the same implementation as renderMiniCardBack for consistency
-    return renderMiniCardBack();
-  };
+  // Removed unused renderMiniCardBackVertical function
 
   // Render card component
   const renderCard = (card: Card, isSelected: boolean = false, faceDown: boolean = false) => {
@@ -434,7 +425,7 @@ const SimpleGameScreen: React.FC = () => {
 
     const cardColor = card.suit === Suit.Hearts || card.suit === Suit.Diamonds ? '#D32F2F' : '#000000';
     const isTrumpCard = gameState ? isTrump(card, gameState.trumpInfo) : false;
-    const isTopTrumpCard = card.rank === gameState.trumpInfo.trumpRank && card.suit === gameState.trumpInfo.trumpSuit;
+    const isTopTrumpCard = gameState ? (card.rank === gameState.trumpInfo.trumpRank && card.suit === gameState.trumpInfo.trumpSuit) : false;
 
     // Determine background color based on card type
     let bgColor = 'white';
@@ -662,7 +653,7 @@ const SimpleGameScreen: React.FC = () => {
               style={styles.skipButton}
               onPress={() => declareTrumpSuit(null)}
             >
-              <Text style={styles.skipText}>Don't Declare</Text>
+              <Text style={styles.skipText}>Don&apos;t Declare</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -709,7 +700,7 @@ const SimpleGameScreen: React.FC = () => {
     }
 
     // TRUMP RANK CARDS - second highest
-    if (card.rank === gameState.trumpInfo.trumpRank) {
+    if (gameState && card.rank === gameState.trumpInfo.trumpRank) {
       // Trump rank and trump suit is highest in this category
       if (card.suit === gameState.trumpInfo.trumpSuit) {
         return 3500 + rankValues[card.rank];
@@ -719,7 +710,7 @@ const SimpleGameScreen: React.FC = () => {
     }
 
     // TRUMP SUIT CARDS - third highest
-    if (card.suit === gameState.trumpInfo.trumpSuit) {
+    if (gameState && card.suit === gameState.trumpInfo.trumpSuit) {
       return 2000 + rankValues[card.rank!];
     }
 
@@ -758,7 +749,7 @@ const SimpleGameScreen: React.FC = () => {
     handByValue.forEach(card => {
       if (card.joker) {
         jokers.push(card);
-      } else if (card.rank === gameState.trumpInfo.trumpRank || card.suit === gameState.trumpInfo.trumpSuit) {
+      } else if (gameState && (card.rank === gameState.trumpInfo.trumpRank || card.suit === gameState.trumpInfo.trumpSuit)) {
         trumps.push(card);
       } else if (card.suit === Suit.Spades) {
         spades.push(card);
@@ -792,14 +783,14 @@ const SimpleGameScreen: React.FC = () => {
     const standardSuitOrder = ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
 
     // Create a map of suits that are present
-    const suitMap = {};
+    const suitMap: Record<string, Card[]> = {};
     suitArrays.forEach(suitArray => {
       suitMap[suitArray.name] = suitArray.cards;
     });
 
     // Find the index of the trump suit in our standard order
     let trumpIndex = -1;
-    if (gameState.trumpInfo.trumpSuit) {
+    if (gameState && gameState.trumpInfo.trumpSuit) {
       trumpIndex = standardSuitOrder.indexOf(gameState.trumpInfo.trumpSuit);
     }
 
@@ -826,11 +817,11 @@ const SimpleGameScreen: React.FC = () => {
         return 'joker';
       }
 
-      if (card.rank === gameState.trumpInfo.trumpRank) {
+      if (gameState && card.rank === gameState.trumpInfo.trumpRank) {
         return 'trump-rank';
       }
 
-      if (card.suit === gameState.trumpInfo.trumpSuit) {
+      if (gameState && card.suit === gameState.trumpInfo.trumpSuit) {
         return 'trump-suit';
       }
 
@@ -966,6 +957,8 @@ const SimpleGameScreen: React.FC = () => {
                       {Array.from({ length: Math.min(10, player.hand.length) }).reverse().map((_, i) => (
                         <View
                           key={`card-top-${i}`}
+                          shouldRasterizeIOS={true}
+                          renderToHardwareTextureAndroid={true}
                           style={{
                             position: 'relative',
                             transform: [{ rotate: '180deg' }], // Rotate cards 180 degrees
@@ -977,9 +970,6 @@ const SimpleGameScreen: React.FC = () => {
                             // Improve rendering quality
                             backfaceVisibility: 'hidden',
                             shadowOpacity: 0,
-                            // React Native performance optimizations
-                            shouldRasterizeIOS: true,
-                            renderToHardwareTextureAndroid: true,
                           }}
                         >
                           {renderMiniCardBack()}
@@ -1060,6 +1050,8 @@ const SimpleGameScreen: React.FC = () => {
                         {Array.from({ length: Math.min(10, player.hand.length) }).reverse().map((_, i) => (
                           <View
                             key={`card-left-${i}`}
+                            shouldRasterizeIOS={true}
+                            renderToHardwareTextureAndroid={true}
                             style={{
                               position: 'relative',
                               zIndex: i, // Now newest cards (index 0) have highest z-index
@@ -1071,9 +1063,6 @@ const SimpleGameScreen: React.FC = () => {
                               // Improve rendering quality
                               backfaceVisibility: 'hidden',
                               shadowOpacity: 0,
-                              // React Native performance optimizations
-                              shouldRasterizeIOS: true,
-                              renderToHardwareTextureAndroid: true,
                             }}
                           >
                             {renderMiniCardBack()} {/* Use same renderer as top player */}
@@ -1223,6 +1212,8 @@ const SimpleGameScreen: React.FC = () => {
                         {Array.from({ length: Math.min(10, player.hand.length) }).map((_, i) => (
                           <View
                             key={`card-right-${i}`}
+                            shouldRasterizeIOS={true}
+                            renderToHardwareTextureAndroid={true}
                             style={{
                               position: 'relative',
                               zIndex: 10 - i, // Reverse z-index for proper stacking
@@ -1234,9 +1225,6 @@ const SimpleGameScreen: React.FC = () => {
                               // Improve rendering quality
                               backfaceVisibility: 'hidden',
                               shadowOpacity: 0,
-                              // React Native performance optimizations
-                              shouldRasterizeIOS: true,
-                              renderToHardwareTextureAndroid: true,
                             }}
                           >
                             {renderMiniCardBack()} {/* Use same renderer as top player */}
@@ -1361,17 +1349,20 @@ const SimpleGameScreen: React.FC = () => {
                         // Update game state to track played cards
                         if (gameState && gameState.currentTrick) {
                           const updatedGameState = { ...gameState };
+                          const currentTrick = updatedGameState.currentTrick;
 
-                          // If this is the first card played in the trick, it becomes the leading card
-                          if (updatedGameState.currentTrick.plays.length === 0) {
-                            updatedGameState.currentTrick.leadingCombo = [selectedCards[0]];
+                          if (currentTrick) {
+                            // If this is the first card played in the trick, it becomes the leading card
+                            if (currentTrick.plays.length === 0) {
+                              currentTrick.leadingCombo = [selectedCards[0]];
+                            }
+
+                            // Add this card to the trick's plays
+                            currentTrick.plays.push({
+                              playerId: 'player', // Human player ID
+                              cards: [selectedCards[0]]
+                            });
                           }
-
-                          // Add this card to the trick's plays
-                          updatedGameState.currentTrick.plays.push({
-                            playerId: 'player', // Human player ID
-                            cards: [selectedCards[0]]
-                          });
 
                           // Update game state - in a real game, you'd move to the next player's turn
                           setGameState(updatedGameState);
@@ -1407,6 +1398,8 @@ const SimpleGameScreen: React.FC = () => {
       {/* Animated card during transitions */}
       {animatingCard && animatingCard.card && (
         <Animated.View
+          shouldRasterizeIOS={true}
+          renderToHardwareTextureAndroid={true}
           style={[
             styles.cardTransition,
             {
@@ -1424,9 +1417,7 @@ const SimpleGameScreen: React.FC = () => {
               opacity: cardOpacity,
               // Apply rendering optimizations to animated cards for smoother motion
               backfaceVisibility: 'hidden',
-              shadowOpacity: 0,
-              shouldRasterizeIOS: true,
-              renderToHardwareTextureAndroid: true
+              shadowOpacity: 0
             }
           ]}
         >

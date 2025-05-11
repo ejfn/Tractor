@@ -1,16 +1,17 @@
-import { 
-  Card, 
-  Suit, 
-  Rank, 
-  JokerType, 
-  GameState, 
-  Player, 
-  Combo, 
+import {
+  Card,
+  Suit,
+  Rank,
+  JokerType,
+  GameState,
+  Player,
+  Combo,
   ComboType,
   Trick,
-  TrumpInfo
+  TrumpInfo,
+  Team
 } from '../types/game';
-import { v4 as uuidv4 } from 'uuid';
+// UUID import was removed (unused)
 
 // Create a new deck of cards (2 decks for Shengji)
 export const createDeck = (): Card[] => {
