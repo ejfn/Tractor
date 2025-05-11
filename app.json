@@ -40,7 +40,8 @@
     },
     "jsEngine": "hermes",
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/3256dcee-103a-467b-96c4-97a9f634df51"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -51,6 +52,9 @@
         "projectId": "3256dcee-103a-467b-96c4-97a9f634df51"
       }
     },
-    "owner": "ericvan76"
+    "owner": "ericvan76",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }
