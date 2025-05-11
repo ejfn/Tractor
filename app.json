@@ -44,6 +44,13 @@
     },
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3256dcee-103a-467b-96c4-97a9f634df51"
+      }
+    },
+    "owner": "ericvan76"
   }
 }
