@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "TracktorSingle",
-    "slug": "TracktorSingle",
+    "name": "Tractor",
+    "slug": "Tractor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "tracktorsingle",
+    "scheme": "tractor",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -37,6 +37,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "jsEngine": "hermes",
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ]
   }
 }

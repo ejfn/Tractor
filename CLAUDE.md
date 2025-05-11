@@ -1,0 +1,133 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Tractor is a React Native Expo app that implements a single-player version of the Chinese card game Shengji (升级), also known as Tractor. It's a trick-taking card game where players work in teams to advance through card ranks from 2 to Ace. The game uses concepts like trumps, combinations of cards, and strategic play.
+
+## Commands
+
+### Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
+npx expo start
+
+# Run on specific platforms
+npm run android  # Start on Android
+npm run ios      # Start on iOS
+npm run web      # Start on web
+
+# Linting
+npm run lint
+```
+
+### Project Structure
+
+- `/src/types/game.ts` - Core game type definitions
+- `/src/utils/gameLogic.ts` - Game mechanics and rule implementation
+- `/src/utils/aiLogic.ts` - AI player decision making
+- `/src/components/` - React components for game UI elements
+- `/src/screens/` - Screen components (GameScreen, EnhancedGameScreen)
+- `/app/` - Expo Router app routing
+
+## Core Game Architecture
+
+The game implements the following key concepts:
+
+1. **Game State Management**
+   - The game state is managed through React state in `EnhancedGameScreen.tsx`
+   - The `GameState` type defines the complete state of the game
+
+2. **Card Mechanics**
+   - Cards have suits, ranks, and jokers
+   - Cards have point values (5s = 5 points, 10s and Ks = 10 points)
+   - Trump cards are determined by a trump rank and optionally a trump suit
+
+3. **Game Flow**
+   - Phases: dealing, declaring, playing, scoring, gameOver
+   - Players take turns playing cards following specific combination rules
+   - Teams (A and B) alternate between defending and attacking
+
+4. **AI Logic**
+   - AI players make decisions based on difficulty level (Easy, Medium, Hard)
+   - AI logic controls play selection and trump declaration
+
+## Development Notes
+
+- The project uses TypeScript with strict type checking
+- UI is built with React Native components
+- Animations use React Native's Animated API
+- The project follows Expo's recommended structure and configuration
+
+## UI Implementation Details
+
+### Card Rendering
+
+- Human player cards: 65x95px size, displayed at the bottom of the screen
+- AI player cards: 40x60px size (reduced from 50x75px), displayed around the table (top, left, right)
+- Cards use a simplified 3x3 grid pattern for card backs with a centered "T" emblem
+- Each AI player shows up to 10 stacked cards
+- Jokers have no border and use smaller "JOKER" text
+- Popup card in the play area has standard size with white border
+
+### Player Layout
+
+- **Top Player (Bot 2)**:
+  - Cards displayed horizontally, stacked left to right with -30px overlap
+  - Cards rotated 180° to face downward toward the center
+  - Shown with a small label "Bot 2" and card count
+
+- **Left Player (Bot 1)**:
+  - Cards displayed vertically, stacked top to bottom with -48px overlap
+  - Cards rotated 90° to face right/center
+  - Shown with a small label "Bot 1" and card count
+
+- **Right Player (Bot 3)**:
+  - Cards displayed vertically, stacked bottom to top with -48px overlap
+  - Cards rotated 270° to face left/center
+  - Shown with a small label "Bot 3" and card count
+
+- **Human Player**:
+  - No label (obvious from position at the bottom)
+  - Cards with -40px overlap for compact display
+  - Selected cards rise by 10px with no z-index change
+
+### Team Status Display
+
+- Displayed in the top corners of the play area
+- **Defending Team (Team A)**: Left corner with shield icon (🛡️)
+- **Attacking Team (Team B)**: Right corner with sword icon (⚔️)
+- Both have consistent height with point display for attacking team
+
+### Play Area Layout
+
+- Cards are positioned in four regions, one for each player:
+  - Top: Cards played by the top player
+  - Left: Cards played by the left player
+  - Right: Cards played by the right player
+  - Bottom: Cards played by the human player
+- Trump/kitty card in center with reduced opacity
+
+### Animation Implementation
+
+- Card movement animations use React Native's Animated API with spring physics
+- Animations include position, rotation, scale bounce, and fade
+- Played cards animate from player's hand to their respective area on the table
+- Animation uses enhanced parameters for natural motion:
+  - friction: 8.5
+  - tension: 50
+  - velocity: 3
+
+### Performance Optimizations
+
+- Rendering optimizations with React Native flags:
+  - backfaceVisibility: 'hidden'
+  - shouldRasterizeIOS: true
+  - renderToHardwareTextureAndroid: true
+- Minimal shadow effects for better performance
+- Careful management of z-index for proper stacking

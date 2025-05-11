@@ -1,8 +1,25 @@
-# Welcome to your Expo app 👋
+# Tractor Card Game
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native implementation of the Chinese card game Shengji (升级), also known as Tractor. This is a trick-taking card game where players work in teams to advance through card ranks.
 
-## Get started
+## Game Features
+
+- Single-player game against 3 AI opponents
+- 2 teams: Team A (you + Bot 2) and Team B (Bot 1 + Bot 3)
+- Trick-taking gameplay with trump cards
+- Visual card animations and modern UI
+- Special handling for jokers and trump cards
+
+## Game Rules
+
+In Tractor (Shengji):
+- Players are divided into two teams (A and B)
+- One team defends while the other attacks
+- Trump cards are determined by rank and suit
+- Points are scored by capturing certain cards (5s, 10s, Kings)
+- The objective is to capture cards and advance through ranks from 2 to Ace
+
+## Development
 
 1. Install dependencies
 
@@ -16,35 +33,26 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. Run on specific platforms
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   npm run android  # Start on Android
+   npm run ios      # Start on iOS
+   npm run web      # Start on web
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
+- `/src/types/game.ts` - Core game type definitions
+- `/src/utils/gameLogic.ts` - Game mechanics and rule implementation
+- `/src/utils/aiLogic.ts` - AI player decision making
+- `/src/components/` - React components for game UI elements
+- `/src/screens/` - Screen components (GameScreen, SimpleGameScreen)
+- `/app/` - Expo Router app routing
 
-When you're ready, run:
+## Technology
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- React Native with Expo
+- TypeScript
+- React Native Animated API for animations
+- Expo Router for navigation
