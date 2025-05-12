@@ -914,7 +914,7 @@ const styles = StyleSheet.create({
   },
   gameContainer: {
     flex: 1,
-    padding: 10,
+    padding: 0,
   },
   loadingContainer: {
     flex: 1,
@@ -1012,11 +1012,14 @@ const styles = StyleSheet.create({
   gameTable: {
     flex: 1,
     backgroundColor: '#0B4619', // Rich green card table
-    borderRadius: 16,
+    borderRadius: 16, // Consistent with GameStatus border radius
     borderWidth: 4,
     borderColor: '#1B651E',
     overflow: 'hidden',
-    margin: 10,
+    marginLeft: 10,
+    marginRight: 10,
+    marginTop: 0,
+    marginBottom: 10, // Same as GameStatus marginBottom
     flexDirection: 'column',
     justifyContent: 'space-between',
     padding: 10,

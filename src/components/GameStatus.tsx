@@ -148,8 +148,11 @@ const GameStatus: React.FC<GameStatusProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ECEFF1',
-    borderRadius: 10,
+    borderRadius: 16, // Matched with gameTable border radius
     padding: 12,
+    marginLeft: 10,
+    marginRight: 10,
+    marginTop: 10,
     marginBottom: 10,
   },
   headerRow: {
@@ -166,17 +169,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginRight: 10,
+    color: '#303F9F',
   },
   phaseIndicator: {
-    backgroundColor: '#90A4AE',
+    backgroundColor: '#303F9F',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
   phaseText: {
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   trumpInfo: {
     flexDirection: 'row',
@@ -185,15 +199,25 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 14,
     marginRight: 5,
+    fontWeight: 'bold',
+    color: '#424242',
   },
   trumpDisplay: {
-    backgroundColor: '#FFF176',
+    backgroundColor: '#FFC107',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.5)',
   },
   trumpText: {
     fontWeight: 'bold',
+    color: '#212121',
   },
   teamsContainer: {
     flexDirection: 'row',
@@ -201,19 +225,24 @@ const styles = StyleSheet.create({
   },
   teamCard: {
     flex: 1,
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: 10,
+    padding: 12,
     marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   defendingTeam: {
     backgroundColor: '#E8F5E9',
-    borderColor: '#81C784',
-    borderWidth: 1,
+    borderColor: '#2E7D32',
+    borderWidth: 1.5,
   },
   attackingTeam: {
     backgroundColor: '#FFEBEE',
-    borderColor: '#EF9A9A',
-    borderWidth: 1,
+    borderColor: '#C62828',
+    borderWidth: 1.5,
   },
   teamHeader: {
     flexDirection: 'row',
@@ -224,22 +253,35 @@ const styles = StyleSheet.create({
   teamName: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#212121',
   },
   statusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   defendingBadge: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#2E7D32',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   attackingBadge: {
-    backgroundColor: '#F44336',
+    backgroundColor: '#C62828',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   statusText: {
     color: 'white',
     fontSize: 10,
     fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   teamStats: {
     flexDirection: 'row',
@@ -253,22 +295,27 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     marginRight: 4,
+    color: '#424242',
   },
   statValue: {
     fontSize: 14,
     fontWeight: 'bold',
+    color: '#212121',
   },
   pointsValue: {
     fontSize: 16,
   },
   winningPoints: {
-    color: '#4CAF50',
+    color: '#2E7D32',
+    fontWeight: 'bold',
   },
   progressContainer: {
-    height: 8,
+    height: 10,
     backgroundColor: '#E0E0E0',
-    borderRadius: 4,
+    borderRadius: 5,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   progressBar: {
     height: '100%',
@@ -278,7 +325,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   attackingProgress: {
-    backgroundColor: '#F44336',
+    backgroundColor: '#E53935',
   },
 });
 
