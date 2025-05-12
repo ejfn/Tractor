@@ -58,6 +58,11 @@ const EnhancedGameScreen: React.FC = () => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  // Thinking dots animation values
+  const thinkingDot1 = useRef(new Animated.Value(1)).current;
+  const thinkingDot2 = useRef(new Animated.Value(1)).current;
+  const thinkingDot3 = useRef(new Animated.Value(1)).current;
   
   // Timer for AI moves
   const [aiTimer, setAiTimer] = useState<NodeJS.Timeout | null>(null);
@@ -179,11 +184,11 @@ const EnhancedGameScreen: React.FC = () => {
   
   // Handle AI turns
   useEffect(() => {
-    if (gameState && 
-        gameState.gamePhase === 'playing' && 
-        !waitingForAI && 
+    if (gameState &&
+        gameState.gamePhase === 'playing' &&
+        !waitingForAI &&
         !gameState.players[gameState.currentPlayerIndex].isHuman) {
-      
+
       // Set a delay for AI move to make the game feel more natural
       setWaitingForAI(true);
       const timer = setTimeout(() => {
@@ -192,13 +197,76 @@ const EnhancedGameScreen: React.FC = () => {
 
       setAiTimer(timer as unknown as NodeJS.Timeout);
     }
-    
+
     return () => {
       if (aiTimer) {
         clearTimeout(aiTimer);
       }
     };
   }, [gameState, waitingForAI, handleAIMove, aiTimer]);
+
+  // Animate thinking dots (continuous animation regardless of whose turn it is)
+  useEffect(() => {
+    // Create animations for the thinking dots
+    const animateThinkingDots = () => {
+      // Sequence for first dot
+      Animated.sequence([
+        Animated.timing(thinkingDot1, {
+          toValue: 0.4,
+          duration: 300,
+          useNativeDriver: true
+        }),
+        Animated.timing(thinkingDot1, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true
+        })
+      ]).start();
+
+      // Sequence for second dot with delay
+      setTimeout(() => {
+        Animated.sequence([
+          Animated.timing(thinkingDot2, {
+            toValue: 0.4,
+            duration: 300,
+            useNativeDriver: true
+          }),
+          Animated.timing(thinkingDot2, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true
+          })
+        ]).start();
+      }, 150);
+
+      // Sequence for third dot with more delay
+      setTimeout(() => {
+        Animated.sequence([
+          Animated.timing(thinkingDot3, {
+            toValue: 0.4,
+            duration: 300,
+            useNativeDriver: true
+          }),
+          Animated.timing(thinkingDot3, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true
+          })
+        ]).start(() => {
+          // After all animations complete, wait briefly and restart
+          setTimeout(animateThinkingDots, 300);
+        });
+      }, 300);
+    };
+
+    // Start the animation loop
+    animateThinkingDots();
+
+    // Clean up on unmount
+    return () => {
+      // No explicit cleanup needed as animations will stop when component unmounts
+    };
+  }, [thinkingDot1, thinkingDot2, thinkingDot3]);
   
   // Handle card selection
   const handleCardSelect = (card: Card) => {
@@ -712,6 +780,14 @@ const EnhancedGameScreen: React.FC = () => {
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 2</Text>
+                {/* Show thinking dots when it's this player's turn and they're thinking */}
+                {waitingForAI && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai2') && (
+                  <View style={styles.thinkingIndicator}>
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot1}]} />
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot2}]} />
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot3}]} />
+                  </View>
+                )}
               </View>
               <View style={styles.cardStackContainer}>
                 {/* Cards for top player (Bot 2) - showing actual card count */}
@@ -760,6 +836,14 @@ const EnhancedGameScreen: React.FC = () => {
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 1</Text>
+                {/* Show thinking dots when it's this player's turn and they're thinking */}
+                {waitingForAI && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai1') && (
+                  <View style={styles.thinkingIndicator}>
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot1}]} />
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot2}]} />
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot3}]} />
+                  </View>
+                )}
               </View>
                 <View style={[styles.cardStackContainer, { flexDirection: 'column', marginTop: 10 }]}>
                   {/* Cards for left player (Bot 1) - showing actual card count */}
@@ -816,6 +900,14 @@ const EnhancedGameScreen: React.FC = () => {
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 3</Text>
+                {/* Show thinking dots when it's this player's turn and they're thinking */}
+                {waitingForAI && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai3') && (
+                  <View style={styles.thinkingIndicator}>
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot1}]} />
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot2}]} />
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot3}]} />
+                  </View>
+                )}
               </View>
                 <View style={[styles.cardStackContainer, { flexDirection: 'column', marginTop: 10 }]}>
                   {/* Cards for right player (Bot 3) - showing actual card count */}
@@ -863,6 +955,14 @@ const EnhancedGameScreen: React.FC = () => {
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>You</Text>
+                {/* Show thinking dots when it's human player's turn */}
+                {gameState.currentPlayerIndex === humanPlayerIndex && (
+                  <View style={styles.thinkingIndicator}>
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot1}]} />
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot2}]} />
+                    <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot3}]} />
+                  </View>
+                )}
               </View>
               {humanPlayerIndex !== -1 && (
                 <PlayerHandAnimated
@@ -881,16 +981,7 @@ const EnhancedGameScreen: React.FC = () => {
             {/* Play button moved to PlayerHandAnimated component */}
           </View>
           
-          {/* Overlay for AI thinking */}
-          {waitingForAI && (
-            <View style={styles.waitingContainer}>
-              <View style={styles.waitingContent}>
-                <Text style={styles.waitingText}>
-                  {gameState.players[gameState.currentPlayerIndex].name} is thinking...
-                </Text>
-              </View>
-            </View>
-          )}
+          {/* We now use thinking dot indicators instead of a full-screen overlay */}
           
           {/* Trick result overlay */}
           {renderTrickResultOverlay()}
@@ -1101,19 +1192,20 @@ const styles = StyleSheet.create({
   },
   // Label container for consistent sizing
   labelContainer: {
-    height: 22, // Reduced from 26 to 22
-    minWidth: 65, // Reduced from 75 to 65
-    borderRadius: 11, // Half of height for pill shape
+    height: 26, // Increased to match larger font size
+    minWidth: 75, // Increased for better visibility
+    borderRadius: 13, // Half of height for pill shape
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 3, // Original margin
-    paddingHorizontal: 12, // Reduced from 16 to 12
-    borderWidth: 0.5, // Thinner border
+    paddingHorizontal: 14, // Increased for better spacing
+    borderWidth: 0.5, // Thin border
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1, // Reduced shadow
+    shadowOpacity: 0.1, // Subtle shadow
     shadowRadius: 2,
-    elevation: 1, // Reduced elevation
+    elevation: 1, // Subtle elevation
+    position: 'relative', // For absolute positioning of thinking indicator
   },
   // Team A label (defending team - green)
   teamALabel: {
@@ -1131,13 +1223,39 @@ const styles = StyleSheet.create({
   },
   // Player label
   playerLabel: {
-    fontSize: 12, // Reduced from 14 to 12
-    fontWeight: '500', // Reduced from 600 to 500
+    fontSize: 14, // Increased font size for better visibility
+    fontWeight: '600', // Increased from 500 to 600 for better readability
     color: 'white',
     textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.2)', // Subtle text shadow
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
+  },
+  // Thinking indicator styles
+  thinkingIndicator: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#FFC107',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFD54F',
+    flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+    zIndex: 5,
+  },
+  thinkingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'white',
+    marginHorizontal: 1,
   },
   // Center box
   centerBox: {
