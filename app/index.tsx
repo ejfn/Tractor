@@ -3,14 +3,14 @@ import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
-// Import the simplified game screen
-import SimpleGameScreen from '../src/screens/SimpleGameScreen';
+// Import the enhanced game screen with all features
+import EnhancedGameScreen from '../src/screens/EnhancedGameScreen';
 
 export default function Index() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
-      <SimpleGameScreen />
+      <EnhancedGameScreen />
     </SafeAreaView>
   );
 }

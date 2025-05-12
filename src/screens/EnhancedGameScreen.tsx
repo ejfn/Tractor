@@ -32,6 +32,8 @@ import { getAIMove, shouldAIDeclare } from '../utils/aiLogic';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const EnhancedGameScreen: React.FC = () => {
+  console.log("EnhancedGameScreen rendering");
+
   // Game state
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
@@ -39,11 +41,11 @@ const EnhancedGameScreen: React.FC = () => {
     playerName: 'You',
     teamNames: ['Team A', 'Team B'] as [string, string],
     startingRank: Rank.Two,
-    aiDifficulty: AIDifficulty.Medium
+    aiDifficulty: AIDifficulty.Hard // Set AI to Hard difficulty
   });
-  
+
   // UI state
-  const [showSetup, setShowSetup] = useState(true);
+  const [showSetup, setShowSetup] = useState(false); // Skip setup screen
   const [showTrumpDeclaration, setShowTrumpDeclaration] = useState(false);
   const [waitingForAI, setWaitingForAI] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -51,11 +53,13 @@ const EnhancedGameScreen: React.FC = () => {
   const [showTrickResult, setShowTrickResult] = useState(false);
   const [lastTrickWinner, setLastTrickWinner] = useState('');
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
+
+  console.log("EnhancedGameScreen state initialized, showSetup:", showSetup);
   
-  // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
-  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+  // Animations - initialize with visible values for first render
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
   
   // Timer for AI moves
   const [aiTimer, setAiTimer] = useState<NodeJS.Timeout | null>(null);
@@ -122,25 +126,32 @@ const EnhancedGameScreen: React.FC = () => {
 
   // Initialize animations
   useEffect(() => {
+    console.log("Animation useEffect running, showSetup:", showSetup);
+
+    // Only animate when changing from setup to game screen
     if (!showSetup) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        })
-      ]).start();
+      console.log("Starting game animations");
+      // Game screen animations with a slight delay to ensure component is mounted
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          })
+        ]).start();
+      }, 100);
     }
   }, [showSetup, fadeAnim, scaleAnim, slideAnim]);
   
@@ -494,6 +505,15 @@ const EnhancedGameScreen: React.FC = () => {
   
   // Setup screen with animations
   if (showSetup) {
+    console.log("EnhancedGameScreen rendering setup screen");
+
+    // Force animation values to be visible during initial render
+    if (fadeAnim._value === 0) {
+      console.log("Setup screen: Setting initial animation values");
+      fadeAnim.setValue(1);
+      scaleAnim.setValue(1);
+    }
+
     return (
       <View style={styles.setupContainer}>
         <Animated.View
@@ -507,7 +527,7 @@ const EnhancedGameScreen: React.FC = () => {
         >
           <Text style={styles.gameTitle}>Tractor Single Player</Text>
           <Text style={styles.subtitle}>Shengji (升级) Card Game</Text>
-          
+
           {/* Difficulty selection */}
           <View style={styles.difficultyContainer}>
             <Text style={styles.difficultyLabel}>AI Difficulty:</Text>
@@ -531,14 +551,14 @@ const EnhancedGameScreen: React.FC = () => {
               ))}
             </View>
           </View>
-          
+
           <TouchableOpacity
             style={styles.startButton}
             onPress={startNewGame}
           >
             <Text style={styles.buttonText}>Start Game</Text>
           </TouchableOpacity>
-          
+
           <Text style={styles.creditsText}>
             You vs 3 AI Players
           </Text>
@@ -681,68 +701,192 @@ const EnhancedGameScreen: React.FC = () => {
             transform: [{ translateX: slideAnim }]
           }
         ]}>
-          {/* Game status bar */}
+          {/* Game status bar above table */}
           <GameStatus
             teams={gameState.teams}
             trumpInfo={gameState.trumpInfo}
             roundNumber={gameState.roundNumber}
             gamePhase={gameState.gamePhase}
           />
-          
-          {/* AI players */}
-          <ScrollView style={styles.opponentsContainer}>
-            {gameState.players.map((player, index) => 
-              index !== humanPlayerIndex && (
-                <PlayerHandAnimated
-                  key={player.id}
-                  player={player}
-                  isCurrentPlayer={index === gameState.currentPlayerIndex}
-                  selectedCards={[]}
-                  showCards={false}
+
+          {/* Simple square table layout */}
+          <View style={styles.gameTable}>
+            {/* Top player (Bot 2) */}
+            <View style={styles.topArea}>
+              <View style={[
+                styles.labelContainer,
+                gameState?.players.find(p => p.id === 'ai2')?.team === 'A' ?
+                  styles.teamALabel : styles.teamBLabel
+              ]}>
+                <Text style={styles.playerLabel}>Bot 2</Text>
+              </View>
+              <View style={styles.cardStackContainer}>
+                {/* Cards for top player (Bot 2) - showing actual card count */}
+                <View style={[styles.botCardsRow, { flexDirection: 'row-reverse' }]}>
+                  {[...Array(Math.min(10, gameState.players.find(p => p.id === 'ai2')?.hand.length || 0))].map((_, i) => (
+                    <View
+                      key={`top-card-${i}`}
+                      style={[
+                        styles.botCardSmall,
+                        { marginLeft: i < 9 ? -44 : 0, transform: [{ rotate: '0deg' }] }
+                      ]}
+                    >
+                      <View style={styles.cardBackPattern}>
+                        <View style={styles.cardBackGrid}>
+                          <View style={styles.dotRow}>
+                            <View style={styles.cardBackDot} />
+                            <View style={styles.cardBackDot} />
+                            <View style={styles.cardBackDot} />
+                          </View>
+                          <View style={styles.dotRow}>
+                            <View style={styles.cardBackDot} />
+                            <View style={styles.cardBackDot} />
+                            <View style={styles.cardBackDot} />
+                          </View>
+                          <View style={styles.dotRow}>
+                            <View style={styles.cardBackDot} />
+                            <View style={styles.cardBackDot} />
+                            <View style={styles.cardBackDot} />
+                          </View>
+                        </View>
+                        <Text style={styles.cardBackLetter}>T</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            {/* Middle row */}
+            <View style={styles.middleRow}>
+              {/* Left player (Bot 1) */}
+              <View style={styles.leftArea}>
+                <View style={[
+                styles.labelContainer,
+                gameState?.players.find(p => p.id === 'ai1')?.team === 'A' ?
+                  styles.teamALabel : styles.teamBLabel
+              ]}>
+                <Text style={styles.playerLabel}>Bot 1</Text>
+              </View>
+                <View style={[styles.cardStackContainer, { flexDirection: 'column', marginTop: 10 }]}>
+                  {/* Cards for left player (Bot 1) - showing actual card count */}
+                  <View style={[styles.botCardsColumn, { flexDirection: 'column-reverse' }]}>
+                    {[...Array(Math.min(10, gameState.players.find(p => p.id === 'ai1')?.hand.length || 0))].map((_, i) => (
+                      <View
+                        key={`left-card-${i}`}
+                        style={[
+                          styles.botCardSmall,
+                          { marginTop: i < 9 ? -40 : 0, transform: [{ rotate: '270deg' }] }
+                        ]}
+                      >
+                        <View style={styles.cardBackPattern}>
+                          <View style={styles.cardBackGrid}>
+                            <View style={styles.dotRow}>
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                            </View>
+                            <View style={styles.dotRow}>
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                            </View>
+                            <View style={styles.dotRow}>
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                            </View>
+                          </View>
+                          <Text style={styles.cardBackLetter}>T</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              {/* Center play area */}
+              <View style={styles.centerArea}>
+                <CardPlayArea
+                  currentTrick={gameState.currentTrick}
+                  players={gameState.players}
                   trumpInfo={gameState.trumpInfo}
+                  winningPlayerId={gameState.currentTrick?.winningPlayerId}
                 />
-              )
-            )}
-          </ScrollView>
-          
-          {/* Play area */}
-          <View style={styles.playAreaContainer}>
-            <Text style={styles.sectionTitle}>Current Trick</Text>
-            <CardPlayArea
-              currentTrick={gameState.currentTrick}
-              players={gameState.players}
-              trumpInfo={gameState.trumpInfo}
-              winningPlayerId={gameState.currentTrick?.winningPlayerId}
-            />
-          </View>
-          
-          {/* Human player's hand */}
-          {humanPlayerIndex !== -1 && (
-            <View style={styles.playerHandContainer}>
-              <PlayerHandAnimated
-                player={gameState.players[humanPlayerIndex]}
-                isCurrentPlayer={humanPlayerIndex === gameState.currentPlayerIndex}
-                selectedCards={selectedCards}
-                onCardSelect={handleCardSelect}
-                showCards={true}
-                trumpInfo={gameState.trumpInfo}
-              />
-              
-              {gameState.gamePhase === 'playing' && 
-               gameState.players[gameState.currentPlayerIndex].isHuman && (
-                <TouchableOpacity
-                  style={[
-                    styles.playButton,
-                    selectedCards.length === 0 ? styles.disabledButton : null
-                  ]}
-                  disabled={selectedCards.length === 0}
-                  onPress={handlePlay}
-                >
-                  <Text style={styles.buttonText}>Play Selected Cards</Text>
-                </TouchableOpacity>
+              </View>
+
+              {/* Right player (Bot 3) */}
+              <View style={styles.rightArea}>
+                <View style={[
+                styles.labelContainer,
+                gameState?.players.find(p => p.id === 'ai3')?.team === 'A' ?
+                  styles.teamALabel : styles.teamBLabel
+              ]}>
+                <Text style={styles.playerLabel}>Bot 3</Text>
+              </View>
+                <View style={[styles.cardStackContainer, { flexDirection: 'column', marginTop: 10 }]}>
+                  {/* Cards for right player (Bot 3) - showing actual card count */}
+                  <View style={styles.botCardsColumn}>
+                    {[...Array(Math.min(10, gameState.players.find(p => p.id === 'ai3')?.hand.length || 0))].map((_, i) => (
+                      <View
+                        key={`right-card-${i}`}
+                        style={[
+                          styles.botCardSmall,
+                          { marginBottom: i < 9 ? -40 : 0, transform: [{ rotate: '90deg' }] }
+                        ]}
+                      >
+                        <View style={styles.cardBackPattern}>
+                          <View style={styles.cardBackGrid}>
+                            <View style={styles.dotRow}>
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                            </View>
+                            <View style={styles.dotRow}>
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                            </View>
+                            <View style={styles.dotRow}>
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                              <View style={styles.cardBackDot} />
+                            </View>
+                          </View>
+                          <Text style={styles.cardBackLetter}>T</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Bottom area - human player's hand */}
+            <View style={styles.bottomArea}>
+              <View style={[
+                styles.labelContainer,
+                gameState?.players.find(p => p.isHuman)?.team === 'A' ?
+                  styles.teamALabel : styles.teamBLabel
+              ]}>
+                <Text style={styles.playerLabel}>You</Text>
+              </View>
+              {humanPlayerIndex !== -1 && (
+                <PlayerHandAnimated
+                  player={gameState.players[humanPlayerIndex]}
+                  isCurrentPlayer={humanPlayerIndex === gameState.currentPlayerIndex}
+                  selectedCards={selectedCards}
+                  onCardSelect={handleCardSelect}
+                  onPlayCards={handlePlay}
+                  showCards={true}
+                  trumpInfo={gameState.trumpInfo}
+                  canPlay={gameState.gamePhase === 'playing' && gameState.players[gameState.currentPlayerIndex].isHuman}
+                />
               )}
             </View>
-          )}
+
+            {/* Play button moved to PlayerHandAnimated component */}
+          </View>
           
           {/* Overlay for AI thinking */}
           {waitingForAI && (
@@ -783,13 +927,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#3F51B5',
   },
   setupContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#3F51B5',
+    backgroundColor: '#3F51B5', // Deep blue
     padding: 20,
+    position: 'relative',
+    overflow: 'hidden',
   },
   setupCard: {
     backgroundColor: '#FFFFFF',
@@ -860,38 +1007,384 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 14, // Reduced font size
+    fontWeight: '600', // Slightly reduced weight
+    textAlign: 'center', // Ensure text is centered
+    flexShrink: 1, // Allow text to shrink if needed
   },
   creditsText: {
     fontSize: 14,
     color: '#9E9E9E',
   },
-  opponentsContainer: {
-    maxHeight: '40%',
-  },
-  playAreaContainer: {
+  gameTable: {
     flex: 1,
-    marginVertical: 10,
+    backgroundColor: '#0B4619', // Rich green card table
+    borderRadius: 16,
+    borderWidth: 4,
+    borderColor: '#1B651E',
+    overflow: 'hidden',
+    margin: 10,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    padding: 10,
   },
-  sectionTitle: {
+  // Top player - centered at the top of the table
+  topArea: {
+    width: '100%',
+    height: 110, // Increased from 80 to 110
+    marginTop: 30, // Reduced from 40 to 30
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Left player - along the left edge of the table at middle height
+  leftArea: {
+    width: 100, // Increased from 80 to 100
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Middle row container
+  middleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 200,
+    width: '100%',
+  },
+  // Center play area - in the middle of the table
+  centerArea: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  // Right player - along the right edge of the table at middle height
+  rightArea: {
+    width: 100, // Increased from 80 to 100
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Bottom player - centered at the bottom of the table
+  bottomArea: {
+    width: '100%',
+    height: 230, // Kept same height
+    alignItems: 'center',
+    justifyContent: 'center', // Center content vertically
+    paddingTop: 0, // No padding at top
+    paddingBottom: 0, // No padding at bottom
+    marginBottom: 0, // No margin at bottom
+  },
+  // Play button - at the very bottom of the table
+  buttonArea: {
+    width: '100%',
+    height: 45, // Height for button area
+    alignItems: 'center',
+    justifyContent: 'flex-start', // Align to top
+    paddingTop: 0, // No padding
+    marginTop: -20, // Even more negative margin to pull it up
+    position: 'relative', // Establish positioning context
+    zIndex: 10, // Ensure it stays above other elements
+  },
+  // Simple card representation
+  simpleCard: {
+    width: 50,  // Increased from 40 to 50
+    height: 70, // Increased from 55 to 70
+    backgroundColor: '#4169E1',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+  // Card stack container
+  cardStackContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  // Label container for consistent sizing
+  labelContainer: {
+    height: 26, // Further reduced height
+    minWidth: 75,
+    borderRadius: 13, // Half of height for pill shape
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 3, // Significantly reduced margin
+    paddingHorizontal: 16,
+    borderWidth: 0.5, // Thinner border
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1, // Reduced shadow
+    shadowRadius: 2,
+    elevation: 1, // Reduced elevation
+  },
+  // Team A label (defending team - green)
+  teamALabel: {
+    backgroundColor: 'rgba(46, 125, 50, 0.75)', // Slightly more transparent
+    borderColor: '#E8F5E9', // Light green border
+  },
+  // Team B label (attacking team - red)
+  teamBLabel: {
+    backgroundColor: 'rgba(198, 40, 40, 0.75)', // Slightly more transparent
+    borderColor: '#FFEBEE', // Light red border
+  },
+  // Player label
+  playerLabel: {
+    fontSize: 14, // Smaller text
+    fontWeight: '600', // Semi-bold instead of bold
+    color: 'white',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.2)', // Subtle text shadow
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
+  // Center box
+  centerBox: {
+    width: 150,
+    height: 150,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Center text
+  centerText: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#424242',
+    color: 'white',
   },
-  playerHandContainer: {
-    marginTop: 'auto',
+  // Human card with face
+  humanCard: {
+    width: 40,
+    height: 55,
+    backgroundColor: 'white',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Container for stacked cards
+  stackedCardContainer: {
+    width: 70,
+    height: 70,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Background stacked cards
+  stackedCard: {
+    position: 'absolute',
+    width: 10,
+    height: 65,
+    backgroundColor: '#3A5FCD', // Slightly lighter blue
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+  // Background stacked cards (horizontal)
+  horizontalStackedCard: {
+    position: 'absolute',
+    width: 65,
+    height: 10,
+    backgroundColor: '#3A5FCD', // Slightly lighter blue
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+  // Container for stacked cards
+  stackedCardContainer: {
+    width: 70,
+    height: 70,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Background cards for left position (Bot 1)
+  leftStackedCard1: {
+    position: 'absolute',
+    width: 50,
+    height: 70,
+    backgroundColor: '#3A5FCD',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'white',
+    top: -5,
+    left: -5,
+    zIndex: -1,
+  },
+  leftStackedCard2: {
+    position: 'absolute',
+    width: 50,
+    height: 70,
+    backgroundColor: '#2B4FC0',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'white',
+    top: -10,
+    left: -10,
+    zIndex: -2,
+  },
+  // Background cards for right position (Bot 3)
+  rightStackedCard1: {
+    position: 'absolute',
+    width: 50,
+    height: 70,
+    backgroundColor: '#3A5FCD',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'white',
+    top: -5,
+    left: -5,
+    zIndex: -1,
+  },
+  rightStackedCard2: {
+    position: 'absolute',
+    width: 50,
+    height: 70,
+    backgroundColor: '#2B4FC0',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'white',
+    top: -10,
+    left: -10,
+    zIndex: -2,
+  },
+  // Background cards for top position (Bot 2)
+  topStackedCard1: {
+    position: 'absolute',
+    width: 50,
+    height: 70,
+    backgroundColor: '#3A5FCD',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'white',
+    top: -5,
+    left: -5,
+    zIndex: -1,
+  },
+  topStackedCard2: {
+    position: 'absolute',
+    width: 50,
+    height: 70,
+    backgroundColor: '#2B4FC0',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'white',
+    top: -10,
+    left: -10,
+    zIndex: -2,
+  },
+  // New card container for Bot 3
+  cardContainer: {
+    position: 'relative',
+    width: 50,
+    height: 70,
+  },
+  // Rows and columns for bot cards
+  botCardsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botCardsColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Small card for bots
+  botCardSmall: {
+    width: 35,
+    height: 49,
+    backgroundColor: '#4169E1',
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: 'white',
+    zIndex: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  // Card back pattern
+  cardBackPattern: {
+    width: '85%',
+    height: '85%',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  cardBackLetter: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+    zIndex: 10,
+  },
+  cardBackGrid: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    right: 2,
+    bottom: 2,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardBackDot: {
+    width: 4,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 2,
+  },
+  // Card back dot pattern
+  dotRow: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+  },
+  // Card rank
+  cardRank: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'black',
+  },
+  // Card suit
+  cardSuit: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black',
   },
   playButton: {
-    backgroundColor: '#3F51B5',
-    paddingVertical: 15,
-    borderRadius: 10,
-    margin: 10,
+    backgroundColor: '#B71C1C', // Deeper red for better contrast
+    paddingVertical: 8, // Increased vertical padding
+    paddingHorizontal: 15, // Horizontal padding
+    borderRadius: 20, // Increased border radius to match the taller button
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: '42%',
+    minWidth: 130,
+    height: 36, // Increased height
   },
   disabledButton: {
     backgroundColor: '#9E9E9E',
+    shadowOpacity: 0.2,
+    elevation: 2,
   },
   waitingContainer: {
     position: 'absolute',
@@ -906,18 +1399,23 @@ const styles = StyleSheet.create({
   },
   waitingContent: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 10,
+    padding: 25,
+    borderRadius: 16,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   waitingText: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#303F9F',
+    textAlign: 'center',
+    lineHeight: 24,
   },
   trickResultContainer: {
     position: 'absolute',
