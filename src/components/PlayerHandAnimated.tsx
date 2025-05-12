@@ -29,32 +29,71 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
 }) => {
   // Sort cards by suit and rank for better display
   const sortedHand = [...player.hand].sort((a, b) => {
-    // Jokers first
+    // Jokers first, big joker before small joker
+    if (a.joker && b.joker) {
+      return a.joker === 'Big' ? -1 : 1; // Big joker comes first
+    }
     if (a.joker && !b.joker) return -1;
     if (!a.joker && b.joker) return 1;
-    
-    // Trump cards next
+
+    // Trump cards next (we need to be more specific about trump ordering)
     const aIsTrump = isTrump(a, trumpInfo);
     const bIsTrump = isTrump(b, trumpInfo);
-    
+
+    if (aIsTrump && bIsTrump) {
+      // Both are trumps, need more detailed sorting
+
+      // Trump rank cards first (before trump suit cards)
+      const aIsTrumpRank = a.rank === trumpInfo.trumpRank;
+      const bIsTrumpRank = b.rank === trumpInfo.trumpRank;
+
+      if (aIsTrumpRank && !bIsTrumpRank) return -1;
+      if (!aIsTrumpRank && bIsTrumpRank) return 1;
+
+      // If both are trump rank, sort by suit
+      if (aIsTrumpRank && bIsTrumpRank) {
+        if (a.suit && b.suit) {
+          // If one is trump suit, it comes first
+          if (trumpInfo.declared) {
+            if (a.suit === trumpInfo.trumpSuit && b.suit !== trumpInfo.trumpSuit) return -1;
+            if (a.suit !== trumpInfo.trumpSuit && b.suit === trumpInfo.trumpSuit) return 1;
+          }
+
+          // Otherwise sort by regular suit order (alternating black and red)
+          const suitOrder = { 'Spades': 0, 'Hearts': 1, 'Clubs': 2, 'Diamonds': 3 };
+          return suitOrder[a.suit] - suitOrder[b.suit];
+        }
+      }
+
+      // If both are just trump suit cards, sort by rank (descending)
+      if (a.rank && b.rank) {
+        const rankOrder = {
+          '2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7,
+          '10': 8, 'J': 9, 'Q': 10, 'K': 11, 'A': 12
+        };
+        return rankOrder[b.rank] - rankOrder[a.rank]; // Descending order (highest rank first)
+      }
+    }
+
+    // One is trump, one is not
     if (aIsTrump && !bIsTrump) return -1;
     if (!aIsTrump && bIsTrump) return 1;
-    
-    // Compare suits
+
+    // Neither is trump - sort by suit (alternating black and red)
     if (a.suit && b.suit && a.suit !== b.suit) {
       const suitOrder = { 'Spades': 0, 'Hearts': 1, 'Clubs': 2, 'Diamonds': 3 };
       return suitOrder[a.suit] - suitOrder[b.suit];
     }
-    
-    // Compare ranks
+
+    // Same suit - sort by rank (descending)
     if (a.rank && b.rank) {
       const rankOrder = {
         '2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7,
         '10': 8, 'J': 9, 'Q': 10, 'K': 11, 'A': 12
       };
-      return rankOrder[a.rank] - rankOrder[b.rank];
+      return rankOrder[b.rank] - rankOrder[a.rank]; // Descending order (highest rank first)
     }
-    
+
     return 0;
   });
 

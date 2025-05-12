@@ -83,25 +83,32 @@ export const AnimatedCard: React.FC<CardProps> = ({
   // Handle card selection
   const handlePress = () => {
     if (onSelect) {
-      // Animate card when selected
+      // Ensure opacity is maintained during tap animation
+      opacity.value = 1;
+
+      // Animate card when selected (faster animation)
       scale.value = withSequence(
-        withTiming(1.1, { duration: 100 }),
-        withTiming(1, { duration: 100 })
+        withTiming(1.1, { duration: 50 }), // Reduced from 100ms to 50ms
+        withTiming(1, { duration: 50 })    // Reduced from 100ms to 50ms
       );
       onSelect(card);
     }
   };
   
-  // Selection animation
+  // Selection animation - faster using withTiming instead of withSpring
   useEffect(() => {
     if (selected) {
-      translateY.value = withSpring(-10 * cardScale); // Reduced from -15 to -10
-      scale.value = withSpring(cardScale * 1.03); // Reduced scale effect from 1.05 to 1.03
+      // Use withTiming with shorter duration for faster animation
+      translateY.value = withTiming(-10 * cardScale, { duration: 80 }); // Fast upward animation
+      scale.value = withTiming(cardScale * 1.03, { duration: 80 }); // Fast scale animation
+      opacity.value = 1; // Ensure the card stays fully opaque when selected
     } else {
-      translateY.value = withSpring(0);
-      scale.value = withSpring(cardScale);
+      // Fast animation when deselecting
+      translateY.value = withTiming(0, { duration: 80 });
+      scale.value = withTiming(cardScale, { duration: 80 });
+      opacity.value = 1; // Ensure the card stays fully opaque when deselected
     }
-  }, [selected, translateY, scale, cardScale]);
+  }, [selected, translateY, scale, opacity, cardScale]);
   
   // Play animation
   useEffect(() => {
@@ -113,7 +120,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
           { duration: 300, easing: Easing.out(Easing.ease) }
         );
         scale.value = withTiming(1, { duration: 300 });
-        opacity.value = withTiming(1, { duration: 300 });
+        // Always set opacity to 1 immediately to prevent any transparency
+        opacity.value = 1;
       }, delay);
     }
   }, [isPlayed, delay, rotate, opacity, scale]);
@@ -126,7 +134,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
         { translateY: translateY.value },
         { rotate: rotate.value }
       ],
-      opacity: opacity.value,
+      // Always force opacity to be 1 to prevent any transparency effects
+      opacity: 1,
     };
   });
 
@@ -251,12 +260,13 @@ export const AnimatedCard: React.FC<CardProps> = ({
               padding: 0,
               justifyContent: 'center',
               alignItems: 'center',
-            },
-            selected && styles.selectedCard
+              opacity: 1, // Ensure opacity is always 1
+            }
+            // Removed selectedCard styling
           ]}
           onPress={handlePress}
           disabled={!onSelect}
-          activeOpacity={0.7}
+          activeOpacity={1.0} // Changed from 0.7 to 1.0 to prevent any transparency on press
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           {/* Card content with vertical JOKER text */}
@@ -316,7 +326,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
             <Text style={{
               fontSize: 45,
               color: jokerColor,
-              opacity: 0.8,
+              opacity: 1, // Changed from 0.8 to 1 to prevent transparency
               fontWeight: 'bold',
             }}>
               ★
@@ -349,12 +359,17 @@ export const AnimatedCard: React.FC<CardProps> = ({
       <TouchableOpacity
         style={[
           styles.card,
-          { backgroundColor: bgColor, borderColor, borderWidth },
-          selected && styles.selectedCard,
+          {
+            backgroundColor: bgColor,
+            borderColor,
+            borderWidth,
+            opacity: 1, // Ensure opacity is always 1
+          }
+          // Removed selectedCard styling
         ]}
         onPress={handlePress}
         disabled={!onSelect}
-        activeOpacity={0.7}
+        activeOpacity={1.0} // Changed from 0.7 to 1.0 to prevent any transparency on press
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         {/* Card header with rank and suit */}
@@ -417,15 +432,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
   },
+  // Removed highlight styling, just keeping the opacity setting
   selectedCard: {
-    borderWidth: 2.5,
-    borderColor: '#3F51B5',
-    backgroundColor: '#E8EAF6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 5,
-    elevation: 8,
+    opacity: 1, // Keep this to ensure no transparency when selected
   },
   // Card layout sections
   cardHeader: {
