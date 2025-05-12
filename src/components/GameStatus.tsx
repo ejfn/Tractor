@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Animated } from 'react-native';
+import { StyleSheet, View, Text, Animated, Platform } from 'react-native';
 import { Team, TrumpInfo } from '../types/game';
 
 interface GameStatusProps {
@@ -147,19 +147,23 @@ const GameStatus: React.FC<GameStatusProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ECEFF1',
+    backgroundColor: 'transparent', // Reverted from green color to transparent
     borderRadius: 16, // Matched with gameTable border radius
-    padding: 12,
+    padding: Platform.OS === 'android' ? 8 : 12, // Reduced padding on Android
+    paddingTop: Platform.OS === 'android' ? 0 : 5, // No top padding on Android
     marginLeft: 10,
     marginRight: 10,
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 0, // No top margin to stick to the top
+    marginBottom: Platform.OS === 'android' ? 2 : 5, // Even smaller bottom margin on Android
+    borderWidth: 0, // Removed border
+    borderColor: 'transparent',
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: Platform.OS === 'android' ? 5 : 10, // Reduced margin on Android
+    marginTop: Platform.OS === 'android' ? 2 : 0, // Slight top margin on Android
   },
   roundInfo: {
     flexDirection: 'row',

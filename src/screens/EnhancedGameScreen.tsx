@@ -8,7 +8,8 @@ import {
   Alert,
   ScrollView,
   Animated,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
 import PlayerHandAnimated from '../components/PlayerHandAnimated';
 import CardPlayArea from '../components/CardPlayArea';
@@ -52,6 +53,7 @@ const EnhancedGameScreen: React.FC = () => {
   const [showTrickResult, setShowTrickResult] = useState(false);
   const [lastTrickWinner, setLastTrickWinner] = useState('');
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
+  const [lastCompletedTrick, setLastCompletedTrick] = useState<Trick | null>(null);
 
   
   // Animations - initialize with visible values for first render
@@ -378,23 +380,30 @@ const EnhancedGameScreen: React.FC = () => {
       // Store the completed trick
       newState.currentTrick.winningPlayerId = winningPlayerId;
       newState.currentTrick.points = trickPoints;
-      newState.tricks.push({ ...newState.currentTrick });
-      
+      const completedTrick = { ...newState.currentTrick };
+      newState.tricks.push(completedTrick);
+
+      // Save the completed trick to display it during the result notification
+      setLastCompletedTrick(completedTrick);
+
       // Show trick result feedback
       setLastTrickWinner(winningPlayer?.name || '');
       setLastTrickPoints(trickPoints);
       setShowTrickResult(true);
-      
-      // Start a new trick with winner as the leader
+
+      // Start a new trick with winner as the leader for game logic
+      // but we'll still show the previous trick until notification disappears
       newState.currentTrick = null;
-      
+
       // Set the next player to the winner of the trick
       newState.currentPlayerIndex = newState.players.findIndex(p => p.id === winningPlayerId);
-      
+
       // Hide trick result after delay
       setTimeout(() => {
         setShowTrickResult(false);
-        
+        // Clear the last completed trick only after notification disappears
+        setLastCompletedTrick(null);
+
         // Check if round is over
         if (newState.players.every(p => p.hand.length === 0)) {
           // End the round and calculate results
@@ -729,20 +738,26 @@ const EnhancedGameScreen: React.FC = () => {
     );
   };
   
-  // Trick result overlay
+  // Trick result overlay - now positioned in top right
   const renderTrickResultOverlay = () => {
+    // No standalone overlay anymore - we'll place it inside the game table
+    return null;
+  };
+
+  // New component that will be placed inside the game table
+  const renderTrickWinnerInTable = () => {
     if (!showTrickResult) return null;
-    
+
     return (
-      <View style={styles.trickResultContainer}>
-        <View style={styles.trickResultContent}>
-          <Text style={styles.trickWinnerText}>{lastTrickWinner} wins the trick!</Text>
-          {lastTrickPoints > 0 && (
-            <Text style={styles.trickPointsText}>
-              + {lastTrickPoints} Points
-            </Text>
-          )}
-        </View>
+      <View style={styles.trickResultContent}>
+        <Text style={styles.trickWinnerText}>
+          {lastTrickWinner} wins!
+        </Text>
+        {lastTrickPoints > 0 && (
+          <Text style={styles.trickPointsText}>
+            +{lastTrickPoints} pts
+          </Text>
+        )}
       </View>
     );
   };
@@ -771,6 +786,9 @@ const EnhancedGameScreen: React.FC = () => {
 
           {/* Simple square table layout */}
           <View style={styles.gameTable}>
+            {/* Trick winner notification positioned within the table */}
+            {showTrickResult && renderTrickWinnerInTable()}
+
             {/* Top player (Bot 2) */}
             <View style={styles.topArea}>
               <View style={[
@@ -885,10 +903,10 @@ const EnhancedGameScreen: React.FC = () => {
               {/* Center play area */}
               <View style={styles.centerArea}>
                 <CardPlayArea
-                  currentTrick={gameState.currentTrick}
+                  currentTrick={showTrickResult && lastCompletedTrick ? lastCompletedTrick : gameState.currentTrick}
                   players={gameState.players}
                   trumpInfo={gameState.trumpInfo}
-                  winningPlayerId={gameState.currentTrick?.winningPlayerId}
+                  winningPlayerId={showTrickResult && lastCompletedTrick ? lastCompletedTrick.winningPlayerId : gameState.currentTrick?.winningPlayerId}
                 />
               </View>
 
@@ -982,10 +1000,9 @@ const EnhancedGameScreen: React.FC = () => {
           </View>
           
           {/* We now use thinking dot indicators instead of a full-screen overlay */}
-          
-          {/* Trick result overlay */}
-          {renderTrickResultOverlay()}
-          
+
+          {/* Trick winner is now displayed directly in the game table */}
+
           {/* Trump declaration modal */}
           {renderTrumpDeclarationModal()}
         </Animated.View>
@@ -1001,11 +1018,12 @@ const EnhancedGameScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'transparent', // Reverted from filled color to transparent
   },
   gameContainer: {
     flex: 1,
     padding: 0,
+    paddingTop: Platform.OS === 'android' ? 0 : 0, // Ensure no padding on Android
   },
   loadingContainer: {
     flex: 1,
@@ -1109,8 +1127,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginLeft: 10,
     marginRight: 10,
-    marginTop: 0,
-    marginBottom: 10, // Same as GameStatus marginBottom
+    marginTop: Platform.OS === 'android' ? 0 : 0, // No top margin to stick to GameStatus
+    marginBottom: 10,
     flexDirection: 'column',
     justifyContent: 'space-between',
     padding: 10,
@@ -1535,38 +1553,50 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-  trickResultContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    zIndex: 20,
-  },
   trickResultContent: {
-    backgroundColor: '#4CAF50',
-    padding: 25,
-    borderRadius: 15,
+    // More appealing gold/trophy color scheme
+    backgroundColor: '#FFC107', // Gold/trophy color background
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 10,
     alignItems: 'center',
+    // Enhanced shadow for better visibility
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowRadius: 5,
+    elevation: 10, // Higher elevation for Android
+    // Golden border
+    borderWidth: 2,
+    borderColor: '#FFECB3', // Light gold border
+    // More compact notification
+    maxWidth: 130,
+    // Position absolute within the parent (game table)
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 100, // Higher than played cards (50) to ensure it appears on top
   },
   trickWinnerText: {
-    fontSize: 22,
+    fontSize: 15, // Slightly larger for better readability
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 10,
+    color: '#5D4037', // Deep brown text for good contrast on gold
+    marginBottom: 3, // More spacing
+    textAlign: 'center',
+    // Enhanced text shadow for better visibility
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   trickPointsText: {
-    fontSize: 18,
+    fontSize: 13, // Slightly larger for better readability
     fontWeight: 'bold',
-    color: '#FFEB3B',
+    color: '#B71C1C', // Deep red color for points
+    // Enhanced text shadow for better visibility
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+    textAlign: 'center',
   },
   modalContainer: {
     flex: 1,

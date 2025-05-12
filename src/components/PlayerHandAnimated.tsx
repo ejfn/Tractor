@@ -59,8 +59,31 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
             if (a.suit !== trumpInfo.trumpSuit && b.suit === trumpInfo.trumpSuit) return 1;
           }
 
-          // Otherwise sort by regular suit order (alternating black and red)
-          const suitOrder = { 'Spades': 0, 'Hearts': 1, 'Clubs': 2, 'Diamonds': 3 };
+          // Otherwise sort by rotated suit order (maintaining alternating black and red)
+          // Define the standard suit order: black-red-black-red (S, H, C, D)
+          const standardSuitOrder = ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
+
+          // Find trump suit's position in the standard order
+          let trumpIndex = -1;
+          if (trumpInfo.declared && trumpInfo.trumpSuit) {
+            trumpIndex = standardSuitOrder.indexOf(trumpInfo.trumpSuit);
+          }
+
+          // Rotate the order so trump suit is first, maintaining the alternating colors
+          let rotatedOrder = [...standardSuitOrder];
+          if (trumpIndex > 0) {
+            rotatedOrder = [
+              ...standardSuitOrder.slice(trumpIndex),
+              ...standardSuitOrder.slice(0, trumpIndex)
+            ];
+          }
+
+          // Create an object mapping each suit to its position in the rotated order
+          const suitOrder = {};
+          rotatedOrder.forEach((suit, index) => {
+            suitOrder[suit] = index;
+          });
+
           return suitOrder[a.suit] - suitOrder[b.suit];
         }
       }
@@ -79,9 +102,32 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
     if (aIsTrump && !bIsTrump) return -1;
     if (!aIsTrump && bIsTrump) return 1;
 
-    // Neither is trump - sort by suit (alternating black and red)
+    // Neither is trump - maintain alternating black/red pattern with rotation based on trump suit
     if (a.suit && b.suit && a.suit !== b.suit) {
-      const suitOrder = { 'Spades': 0, 'Hearts': 1, 'Clubs': 2, 'Diamonds': 3 };
+      // Define the standard suit order: black-red-black-red (S, H, C, D)
+      const standardSuitOrder = ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
+
+      // Find trump suit's position in the standard order
+      let trumpIndex = -1;
+      if (trumpInfo.declared && trumpInfo.trumpSuit) {
+        trumpIndex = standardSuitOrder.indexOf(trumpInfo.trumpSuit);
+      }
+
+      // Rotate the order so trump suit is first, maintaining the alternating colors
+      let rotatedOrder = [...standardSuitOrder];
+      if (trumpIndex > 0) {
+        rotatedOrder = [
+          ...standardSuitOrder.slice(trumpIndex),
+          ...standardSuitOrder.slice(0, trumpIndex)
+        ];
+      }
+
+      // Create an object mapping each suit to its position in the rotated order
+      const suitOrder = {};
+      rotatedOrder.forEach((suit, index) => {
+        suitOrder[suit] = index;
+      });
+
       return suitOrder[a.suit] - suitOrder[b.suit];
     }
 

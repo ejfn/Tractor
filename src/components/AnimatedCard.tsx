@@ -19,6 +19,7 @@ interface CardProps {
   isTrump?: boolean;
   delay?: number;
   scale?: number; // Add scale prop for bot cards
+  style?: any; // Add style prop for additional styling
 }
 
 export const AnimatedCard: React.FC<CardProps> = ({
@@ -29,7 +30,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
   isPlayed = false,
   isTrump = false,
   delay = 0,
-  scale: cardScale = 1 // Default scale factor of 1, renamed to avoid conflict
+  scale: cardScale = 1, // Default scale factor of 1, renamed to avoid conflict
+  style = {} // Default empty style object
 }) => {
   // Animated values
   const scale = useSharedValue(cardScale);
@@ -110,15 +112,16 @@ export const AnimatedCard: React.FC<CardProps> = ({
     }
   }, [selected, translateY, scale, opacity, cardScale]);
   
-  // Play animation
+  // Play animation - removed random rotation for stacked appearance
   useEffect(() => {
     if (isPlayed) {
       // Delay animations for sequential effect
       setTimeout(() => {
-        rotate.value = withTiming(
-          `${Math.random() * 10 - 5}deg`,
-          { duration: 300, easing: Easing.out(Easing.ease) }
-        );
+        // Set rotation to 0 for a neat stack
+        rotate.value = withTiming('0deg', {
+          duration: 300,
+          easing: Easing.out(Easing.ease)
+        });
         scale.value = withTiming(1, { duration: 300 });
         // Always set opacity to 1 immediately to prevent any transparency
         opacity.value = 1;
@@ -136,6 +139,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
       ],
       // Always force opacity to be 1 to prevent any transparency effects
       opacity: 1,
+      // Include any additional styles passed as props
+      ...style,
     };
   });
 
@@ -337,19 +342,20 @@ export const AnimatedCard: React.FC<CardProps> = ({
     );
   }
 
-  // Normal card enhancements
+  // More subtle trump card styling
   if (isTrump) {
-    // Special styling for trump cards
+    // Very subtle styling for trump cards
     const isTopTrump = card.rank === 'A';  // Simplified check for top trump
 
     if (isTopTrump) {
-      bgColor = '#FFF9C4'; // Light yellow for top trump
-      borderColor = '#FBC02D'; // Gold border
-      borderWidth = 2;
+      // Slight gold tint for Ace trumps
+      bgColor = '#FFFEF7'; // Very light gold tint
+      borderColor = '#E6D9A3'; // Subtle gold border
+      borderWidth = 1.5; // Slightly thicker border
     } else {
-      bgColor = '#E8F5E9'; // Light green for trumps
-      borderColor = '#4CAF50'; // Green border
-      borderWidth = 1.5;
+      // No special styling for regular trumps - removed visual indicator
+      // bgColor remains 'white'
+      // borderColor remains '#CCCCCC'
     }
   }
 
@@ -379,12 +385,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
             <Text style={[styles.suitSymbolSmall, { color: getColor() }]}>{getSuitSymbol()}</Text>
           </View>
 
-          {/* Indicators */}
-          {isTrump && (
-            <View style={styles.trumpIndicator}>
-              <Text style={styles.trumpIndicatorText}>♦</Text>
-            </View>
-          )}
+          {/* Trump indicator removed */}
         </View>
 
         {/* Card center with large suit symbol */}
@@ -474,23 +475,7 @@ const styles = StyleSheet.create({
   suit: {
     fontSize: 35,
   },
-  // Indicators
-  trumpIndicator: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: '#FFC107',
-    borderRadius: 10,
-    width: 15,
-    height: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  trumpIndicatorText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#212121',
-  },
+  // Trump indicator styles removed
 });
 
 export default AnimatedCard;

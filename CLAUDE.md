@@ -131,3 +131,30 @@ The game implements the following key concepts:
   - renderToHardwareTextureAndroid: true
 - Minimal shadow effects for better performance
 - Careful management of z-index for proper stacking
+
+### Card Suit Ordering Logic
+
+The game uses a rotated suit ordering system that maintains an alternating black-red pattern while prioritizing the trump suit:
+
+1. The base suit order is: Spades ♠ (black), Hearts ♥ (red), Clubs ♣ (black), Diamonds ♦ (red)
+
+2. When a suit is declared as trump, the ordering rotates to put the trump suit first while maintaining the alternating color pattern:
+   - No trump declared: Spades, Hearts, Clubs, Diamonds
+   - Clubs is trump: Clubs, Diamonds, Spades, Hearts
+   - Diamonds is trump: Diamonds, Spades, Hearts, Clubs
+   - Hearts is trump: Hearts, Clubs, Diamonds, Spades
+   - Spades is trump: Spades, Hearts, Clubs, Diamonds
+
+3. The implementation in `PlayerHandAnimated.tsx` rotates the standard suit order by:
+   - Finding the index of the trump suit in the standard order
+   - Slicing the array to place the trump suit and all suits after it at the beginning
+   - Followed by all suits that came before the trump suit in the standard ordering
+
+4. This rotation applies to both:
+   - Main suit group ordering (lines 82-109)
+   - Ordering within the trump rank cards (lines 62-88)
+
+This approach ensures the player's hand is organized with:
+1. Jokers first (Big, then Small)
+2. Trump cards next (trump rank cards, then trump suit cards)
+3. Remaining suits in rotated order to maintain alternating black-red pattern
