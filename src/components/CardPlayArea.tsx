@@ -95,7 +95,14 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       {/* Top player's cards */}
       <View style={styles.topPlayArea}>
         {topCards.length > 0 && (
-          <View style={styles.playedCardsContainer}>
+          <View style={[
+            styles.playedCardsContainer,
+            // Ensure proper stacking order - adjust base z-index by play order
+            {
+              zIndex: 90, // High base z-index for the top player
+              ...(Platform.OS === 'web' && { position: 'absolute', width: '100%' })
+            }
+          ]}>
             {topCards.map((card, index) => (
               <AnimatedCard
                 key={card.id}
@@ -109,8 +116,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   position: 'relative',
                   // Horizontal overlapping like human's hand
                   marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                  // Higher play sequence = higher z-index, starting from 51
-                  zIndex: 51 + card.playSequence,
+                  // Set z-index based on play sequence for stacking within a player's cards
+                  zIndex: 10 + card.playSequence, // This creates proper stacking within each player's cards
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === 'android' && index === 0 && topCards.length > 1 && {
                     marginLeft: 15, // Smaller shift for tighter centering
@@ -133,7 +140,14 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         {/* Left player's cards */}
         <View style={styles.leftPlayArea}>
           {leftCards.length > 0 && (
-            <View style={styles.playedCardsContainer}>
+            <View style={[
+              styles.playedCardsContainer,
+              // Ensure proper stacking order - adjust base z-index by play order
+              {
+                zIndex: 80, // High base z-index for the left player
+                ...(Platform.OS === 'web' && { position: 'absolute', width: '100%' })
+              }
+            ]}>
               {leftCards.map((card, index) => (
                 <AnimatedCard
                   key={card.id}
@@ -147,8 +161,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     position: 'relative',
                     // Horizontal overlapping like human's hand
                     marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                    // Higher play sequence = higher z-index, starting from 51
-                    zIndex: 51 + card.playSequence,
+                    // Set z-index based on play sequence for stacking within a player's cards
+                    zIndex: 10 + card.playSequence, // This creates proper stacking within each player's cards
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === 'android' && index === 0 && leftCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
@@ -174,7 +188,14 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         {/* Right player's cards */}
         <View style={styles.rightPlayArea}>
           {rightCards.length > 0 && (
-            <View style={styles.playedCardsContainer}>
+            <View style={[
+              styles.playedCardsContainer,
+              // Ensure proper stacking order - adjust base z-index by play order
+              {
+                zIndex: 70, // High base z-index for the right player
+                ...(Platform.OS === 'web' && { position: 'absolute', width: '100%' })
+              }
+            ]}>
               {rightCards.map((card, index) => (
                 <AnimatedCard
                   key={card.id}
@@ -188,8 +209,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     position: 'relative',
                     // Horizontal overlapping like human's hand
                     marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                    // Higher play sequence = higher z-index, starting from 51
-                    zIndex: 51 + card.playSequence,
+                    // Set z-index based on play sequence for stacking within a player's cards
+                    zIndex: 10 + card.playSequence, // This creates proper stacking within each player's cards
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === 'android' && index === 0 && rightCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
@@ -211,7 +232,14 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       {/* Bottom player's cards */}
       <View style={styles.bottomPlayArea}>
         {bottomCards.length > 0 && (
-          <View style={styles.playedCardsContainer}>
+          <View style={[
+            styles.playedCardsContainer,
+            // Ensure proper stacking order - adjust base z-index by play order
+            {
+              zIndex: 60, // High base z-index for the bottom player
+              ...(Platform.OS === 'web' && { position: 'absolute', width: '100%' })
+            }
+          ]}>
             {bottomCards.map((card, index) => (
               <AnimatedCard
                 key={card.id}
@@ -225,8 +253,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   position: 'relative',
                   // Horizontal overlapping like human's hand
                   marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                  // Higher play sequence = higher z-index, starting from 51
-                  zIndex: 51 + card.playSequence,
+                  // Set z-index based on play sequence for stacking within a player's cards
+                  zIndex: 10 + card.playSequence, // This creates proper stacking within each player's cards
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === 'android' && index === 0 && bottomCards.length > 1 && {
                     marginLeft: 15, // Smaller shift for tighter centering
@@ -347,10 +375,13 @@ const styles = StyleSheet.create({
     position: 'relative',
     // Center horizontally in parent
     alignSelf: 'center',
-    // Very high z-index to ensure cards appear on top
-    zIndex: 50,
-    // Special Android centering fixes
-    ...(Platform.OS === 'android' && {
+    // Platform-specific centering fixes - for both Android and web
+    ...(Platform.OS === 'web' ? {
+      // For web: use 3D transform to create a new stacking context
+      transform: 'translateZ(0)',
+      position: 'relative',
+    } : {
+      // For Android: ensure position and width are correct
       left: 0,
       right: 0,
       width: '100%',
