@@ -104,28 +104,44 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFDE7',
-    borderRadius: 10,
-    padding: 10,
+    backgroundColor: 'transparent', // No background
+    borderRadius: 16,
+    padding: 15,
     marginBottom: 10,
-    minHeight: 150,
+    minHeight: 200,
+    borderWidth: 0, // No border
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0, // No shadow
+    shadowRadius: 0,
+    elevation: 0, // No elevation
+    position: 'relative',
+    overflow: 'hidden',
   },
   emptyText: {
     fontStyle: 'italic',
-    color: '#9E9E9E',
+    color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'center',
     marginTop: 50,
+    fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   playRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    paddingVertical: 6,
+    borderBottomWidth: 0, // No bottom border
+    backgroundColor: 'rgba(0, 0, 0, 0.05)', // Less opaque background
+    borderRadius: 6,
+    marginBottom: 3,
   },
   winningPlay: {
-    backgroundColor: 'rgba(129, 199, 132, 0.2)',
+    backgroundColor: 'rgba(129, 199, 132, 0.3)',
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(129, 199, 132, 0.6)',
   },
   playerInfo: {
     width: 80,
@@ -134,11 +150,18 @@ const styles = StyleSheet.create({
   playerName: {
     fontSize: 14,
     fontWeight: 'bold',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   playType: {
     fontSize: 12,
-    color: '#757575',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontStyle: 'italic',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   cardsContainer: {
     flex: 1,
@@ -148,14 +171,19 @@ const styles = StyleSheet.create({
   pointsDisplay: {
     marginTop: 10,
     padding: 8,
-    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   pointsText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1976D2',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

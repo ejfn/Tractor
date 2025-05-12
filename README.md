@@ -47,7 +47,7 @@ In Tractor (Shengji):
 - `/src/utils/gameLogic.ts` - Game mechanics and rule implementation
 - `/src/utils/aiLogic.ts` - AI player decision making
 - `/src/components/` - React components for game UI elements
-- `/src/screens/` - Screen components (GameScreen, SimpleGameScreen)
+- `/src/screens/` - Screen component (EnhancedGameScreen)
 - `/app/` - Expo Router app routing
 
 ## Technology

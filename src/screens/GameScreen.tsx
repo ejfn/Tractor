@@ -1,28 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   View,
   Text,
   TouchableOpacity,
   Modal,
-  Alert
+  Alert,
+  Dimensions,
+  SafeAreaView
 } from 'react-native';
-import GameBoard from '../components/GameBoard';
+import { StatusBar } from 'expo-status-bar';
+import PlayerHand from '../components/PlayerHand';
+import CardPlayArea from '../components/CardPlayArea';
+import GameStatus from '../components/GameStatus';
 import {
   GameState,
   Card,
   Rank,
   Suit,
-  AIDifficulty
+  AIDifficulty,
+  Player
 } from '../types/game';
 import { 
   initializeGame, 
   identifyCombos, 
   isValidPlay, 
   determineTrickWinner,
-  calculateTrickPoints
+  calculateTrickPoints,
+  isTrump
 } from '../utils/gameLogic';
 import { getAIMove, shouldAIDeclare } from '../utils/aiLogic';
+
+const { width, height } = Dimensions.get('window');
 
 const GameScreen: React.FC = () => {
   // Game state
@@ -32,37 +41,71 @@ const GameScreen: React.FC = () => {
     playerName: 'You',
     teamNames: ['Team A', 'Team B'] as [string, string],
     startingRank: Rank.Two,
-    aiDifficulty: AIDifficulty.Medium
+    aiDifficulty: AIDifficulty.Hard // Set AI to Hard difficulty
   });
-  
+
   // UI state
-  const [showSetup, setShowSetup] = useState(true);
   const [showTrumpDeclaration, setShowTrumpDeclaration] = useState(false);
   const [waitingForAI, setWaitingForAI] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState<'A' | 'B' | null>(null);
+  const [showTrickResult, setShowTrickResult] = useState(false);
+  const [lastTrickWinner, setLastTrickWinner] = useState('');
+  const [lastTrickPoints, setLastTrickPoints] = useState(0);
   
   // Timer for AI moves
   const [aiTimer, setAiTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Handle AI move
-  const handleAIMove = () => {
-    if (!gameState) return;
+  // Initialize game
+  useEffect(() => {
+    if (!gameState) {
+      const newGameState = initializeGame(
+        gameConfig.playerName,
+        gameConfig.teamNames,
+        gameConfig.startingRank
+      );
+      setGameState(newGameState);
 
-    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+      // Check if player has trump rank to declare
+      const humanPlayer = newGameState.players.find(p => p.isHuman);
+      if (humanPlayer) {
+        const hasTrumpRank = humanPlayer.hand.some(
+          card => card.rank === newGameState.trumpInfo.trumpRank
+        );
 
-    // Get AI move based on difficulty
-    const aiMove = getAIMove(
-      gameState,
-      currentPlayer.id,
-      gameConfig.aiDifficulty
-    );
+        if (hasTrumpRank) {
+          setShowTrumpDeclaration(true);
+        } else {
+          // Check if AI should declare trump
+          checkAITrumpDeclaration(newGameState);
+        }
+      }
+    }
+  }, [gameState, gameConfig.playerName, gameConfig.teamNames, gameConfig.startingRank]);
+  
+  // Handle AI turns
+  useEffect(() => {
+    if (gameState && 
+        gameState.gamePhase === 'playing' && 
+        !waitingForAI && 
+        !gameState.players[gameState.currentPlayerIndex].isHuman) {
+      
+      // Set a delay for AI move to make the game feel more natural
+      setWaitingForAI(true);
+      const timer = setTimeout(() => {
+        handleAIMove();
+      }, 1500);
 
-    // Process the AI's play
-    processPlay(aiMove);
-    setWaitingForAI(false);
-  };
-
+      setAiTimer(timer as unknown as NodeJS.Timeout);
+    }
+    
+    return () => {
+      if (aiTimer) {
+        clearTimeout(aiTimer);
+      }
+    };
+  }, [gameState, waitingForAI, aiTimer]);
+  
   // Check if AI should declare trump
   const checkAITrumpDeclaration = (state: GameState) => {
     // Find the first AI player with a trump rank card
@@ -87,88 +130,40 @@ const GameScreen: React.FC = () => {
           return counts;
         }, {} as Record<string, number>);
 
-        let mostCommonSuit = '';
+        // Find the most common suit
+        let maxSuit = Suit.Spades;
         let maxCount = 0;
 
         Object.entries(suitCounts).forEach(([suit, count]) => {
           if (count > maxCount) {
-            mostCommonSuit = suit;
             maxCount = count;
+            maxSuit = suit as Suit;
           }
         });
 
-        // Show AI declaration message
-        Alert.alert(
-          'AI Trump Declaration',
-          `${aiWithTrump.name} declares ${mostCommonSuit} as trump suit!`,
-          [{ text: 'OK' }]
-        );
-
         // Declare trump suit
-        declareTrumpSuit(mostCommonSuit as Suit);
-      } else {
-        // No one declared, start playing
-        const newState = { ...state };
-        newState.gamePhase = 'playing';
-        setGameState(newState);
+        declareTrumpSuit(maxSuit);
       }
-    } else {
-      // No one can declare, start playing
-      const newState = { ...state };
-      newState.gamePhase = 'playing';
-      setGameState(newState);
     }
   };
 
-  // Initialize game
-  useEffect(() => {
-    if (!showSetup && !gameState) {
-      const newGameState = initializeGame(
-        gameConfig.playerName,
-        gameConfig.teamNames,
-        gameConfig.startingRank
-      );
-      setGameState(newGameState);
-      
-      // Check if player has trump rank to declare
-      const humanPlayer = newGameState.players.find(p => p.isHuman);
-      if (humanPlayer) {
-        const hasTrumpRank = humanPlayer.hand.some(
-          card => card.rank === newGameState.trumpInfo.trumpRank
-        );
-        
-        if (hasTrumpRank) {
-          setShowTrumpDeclaration(true);
-        } else {
-          // Check if AI should declare trump
-          checkAITrumpDeclaration(newGameState);
-        }
-      }
-    }
-  }, [showSetup, gameState, gameConfig.playerName, gameConfig.teamNames, gameConfig.startingRank, checkAITrumpDeclaration]);
-  
-  // Handle AI turns
-  useEffect(() => {
-    if (gameState && 
-        gameState.gamePhase === 'playing' && 
-        !waitingForAI && 
-        !gameState.players[gameState.currentPlayerIndex].isHuman) {
-      
-      // Set a delay for AI move to make the game feel more natural
-      setWaitingForAI(true);
-      const timer = setTimeout(() => {
-        handleAIMove();
-      }, 1500);
+  // Handle AI move
+  const handleAIMove = () => {
+    if (!gameState) return;
 
-      setAiTimer(timer as unknown as NodeJS.Timeout);
-    }
-    
-    return () => {
-      if (aiTimer) {
-        clearTimeout(aiTimer);
-      }
-    };
-  }, [gameState, waitingForAI, aiTimer, handleAIMove]);
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Get AI move based on difficulty
+    const aiMove = getAIMove(
+      gameState,
+      currentPlayer.id,
+      gameConfig.aiDifficulty
+    );
+
+    // Process the AI's play
+    processPlay(aiMove);
+    setWaitingForAI(false);
+  };
   
   // Handle card selection
   const handleCardSelect = (card: Card) => {
@@ -185,6 +180,22 @@ const GameScreen: React.FC = () => {
     } else {
       setSelectedCards([...selectedCards, card]);
     }
+  };
+  
+  // Handle trump suit declaration
+  const declareTrumpSuit = (suit: Suit | null) => {
+    if (!gameState) return;
+    
+    const newState = { ...gameState };
+    
+    if (suit) {
+      newState.trumpInfo.trumpSuit = suit;
+      newState.trumpInfo.declared = true;
+    }
+    
+    newState.gamePhase = 'playing';
+    setGameState(newState);
+    setShowTrumpDeclaration(false);
   };
   
   // Handle play button click
@@ -282,42 +293,33 @@ const GameScreen: React.FC = () => {
       newState.currentTrick.points = trickPoints;
       newState.tricks.push({ ...newState.currentTrick });
       
+      // Show trick result feedback
+      setLastTrickWinner(winningPlayer?.name || '');
+      setLastTrickPoints(trickPoints);
+      setShowTrickResult(true);
+      
       // Start a new trick with winner as the leader
       newState.currentTrick = null;
       
       // Set the next player to the winner of the trick
       newState.currentPlayerIndex = newState.players.findIndex(p => p.id === winningPlayerId);
       
-      // Check if round is over
-      if (newState.players.every(p => p.hand.length === 0)) {
-        // End the round and calculate results
-        endRound(newState);
-        return;
-      }
+      // Hide trick result after delay
+      setTimeout(() => {
+        setShowTrickResult(false);
+        
+        // Check if round is over
+        if (newState.players.every(p => p.hand.length === 0)) {
+          // End the round and calculate results
+          endRound(newState);
+        }
+      }, 2000);
     } else {
       // Move to next player
       newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
     }
     
     setGameState(newState);
-  };
-  
-  // Duplicate functions removed
-  
-  // Handle trump suit declaration
-  const declareTrumpSuit = (suit: Suit | null) => {
-    if (!gameState) return;
-    
-    const newState = { ...gameState };
-    
-    if (suit) {
-      newState.trumpInfo.trumpSuit = suit;
-      newState.trumpInfo.declared = true;
-    }
-    
-    newState.gamePhase = 'playing';
-    setGameState(newState);
-    setShowTrumpDeclaration(false);
   };
   
   // End the current round
@@ -341,6 +343,13 @@ const GameScreen: React.FC = () => {
           // Switch defending/attacking roles
           defendingTeam.isDefending = false;
           attackingTeam.isDefending = true;
+          
+          // Show round result
+          Alert.alert(
+            'Round Complete',
+            `Team ${attackingTeam.id} reached ${attackingTeam.points} points and advances to rank ${attackingTeam.currentRank}!`,
+            [{ text: 'Next Round' }]
+          );
         } else {
           // Game over - attacking team reached Ace and won
           setGameOver(true);
@@ -353,6 +362,13 @@ const GameScreen: React.FC = () => {
         
         if (currentRankIndex < rankOrder.length - 1) {
           defendingTeam.currentRank = rankOrder[currentRankIndex + 1];
+          
+          // Show round result
+          Alert.alert(
+            'Round Complete',
+            `Team ${defendingTeam.id} successfully defended with ${attackingTeam.points}/80 points for attackers! They advance to rank ${defendingTeam.currentRank}.`,
+            [{ text: 'Next Round' }]
+          );
         } else {
           // Game over - defending team reached Ace and won
           setGameOver(true);
@@ -430,57 +446,21 @@ const GameScreen: React.FC = () => {
       }
     }
   };
-  
-  // Handle starting a new game
-  const startNewGame = () => {
-    setGameState(null);
-    setSelectedCards([]);
-    setShowSetup(false);
-    setGameOver(false);
-    setWinner(null);
+
+  // Find player positions
+  const getPlayerPositions = (players: Player[]) => {
+    const humanIndex = players.findIndex(p => p.isHuman);
+    if (humanIndex === -1) return null;
+    
+    return {
+      bottom: humanIndex,
+      left: (humanIndex + 1) % players.length,
+      top: (humanIndex + 2) % players.length,
+      right: (humanIndex + 3) % players.length
+    };
   };
   
-  // Setup screen
-  if (showSetup) {
-    return (
-      <View style={styles.setupContainer}>
-        <Text style={styles.gameTitle}>Tractor Single Player</Text>
-        <Text style={styles.subtitle}>Shengji (升级) Card Game</Text>
-        
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={startNewGame}
-        >
-          <Text style={styles.buttonText}>Start Game</Text>
-        </TouchableOpacity>
-        
-        <Text style={styles.creditsText}>
-          You vs 3 AI Players
-        </Text>
-      </View>
-    );
-  }
-  
-  // Game over screen
-  if (gameOver) {
-    return (
-      <View style={styles.setupContainer}>
-        <Text style={styles.gameTitle}>Game Over!</Text>
-        <Text style={styles.subtitle}>
-          {winner === 'A' ? gameConfig.teamNames[0] : gameConfig.teamNames[1]} wins!
-        </Text>
-        
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={() => setShowSetup(true)}
-        >
-          <Text style={styles.buttonText}>New Game</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-  
-  // Trump declaration modal
+  // Trump declaration modal with suit-colored buttons
   const renderTrumpDeclarationModal = () => {
     if (!gameState || !showTrumpDeclaration) return null;
     
@@ -499,15 +479,38 @@ const GameScreen: React.FC = () => {
             </Text>
             
             <View style={styles.suitButtons}>
-              {Object.values(Suit).map(suit => (
-                <TouchableOpacity
-                  key={suit}
-                  style={styles.suitButton}
-                  onPress={() => declareTrumpSuit(suit)}
-                >
-                  <Text style={styles.suitText}>{suit}</Text>
-                </TouchableOpacity>
-              ))}
+              {Object.values(Suit).map(suit => {
+                let suitColor = '#000';
+                let bgColor = '#F5F5F5';
+                
+                switch(suit) {
+                  case Suit.Hearts:
+                  case Suit.Diamonds:
+                    suitColor = '#D32F2F';
+                    bgColor = '#FFEBEE';
+                    break;
+                  case Suit.Clubs:
+                  case Suit.Spades:
+                    suitColor = '#212121';
+                    bgColor = '#ECEFF1';
+                    break;
+                }
+                
+                return (
+                  <TouchableOpacity
+                    key={suit}
+                    style={[styles.suitButton, { backgroundColor: bgColor }]}
+                    onPress={() => declareTrumpSuit(suit)}
+                  >
+                    <Text style={[styles.suitSymbol, { color: suitColor }]}>
+                      {suit === Suit.Hearts ? '♥' : 
+                       suit === Suit.Diamonds ? '♦' : 
+                       suit === Suit.Clubs ? '♣' : '♠'}
+                    </Text>
+                    <Text style={[styles.suitText, { color: suitColor }]}>{suit}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             
             <TouchableOpacity
@@ -522,20 +525,148 @@ const GameScreen: React.FC = () => {
     );
   };
   
+  // Trick result overlay
+  const renderTrickResultOverlay = () => {
+    if (!showTrickResult) return null;
+    
+    return (
+      <View style={styles.trickResultContainer}>
+        <View style={styles.trickResultContent}>
+          <Text style={styles.trickWinnerText}>{lastTrickWinner} wins the trick!</Text>
+          {lastTrickPoints > 0 && (
+            <Text style={styles.trickPointsText}>
+              + {lastTrickPoints} Points
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  // Game over screen
+  if (gameOver) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.gameOverContainer}>
+          <Text style={styles.gameOverTitle}>Game Over!</Text>
+          <Text style={styles.winnerText}>
+            {winner === 'A' ? gameConfig.teamNames[0] : gameConfig.teamNames[1]} wins!
+          </Text>
+          
+          <TouchableOpacity 
+            style={styles.startButton}
+            onPress={() => {
+              setGameState(null);
+              setGameOver(false);
+              setWinner(null);
+            }}
+          >
+            <Text style={styles.buttonText}>New Game</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Loading state
+  if (!gameState) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading game...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
+  // Get player positions
+  const positions = getPlayerPositions(gameState.players);
+  if (!positions) return null;
+
   // Main game screen
   return (
-    <View style={styles.container}>
-      {gameState ? (
-        <>
-          <GameBoard
-            gameState={gameState}
-            selectedCards={selectedCards}
-            onCardSelect={handleCardSelect}
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="auto" />
+      
+      {/* Game status bar */}
+      <View style={styles.statusBarContainer}>
+        <GameStatus
+          teams={gameState.teams}
+          trumpInfo={gameState.trumpInfo}
+          roundNumber={gameState.roundNumber}
+          gamePhase={gameState.gamePhase}
+        />
+      </View>
+      
+      {/* Main game table */}
+      <View style={styles.tableContainer}>
+        {/* Top player */}
+        <View style={styles.topPlayerContainer}>
+          <PlayerHand
+            player={gameState.players[positions.top]}
+            isCurrentPlayer={positions.top === gameState.currentPlayerIndex}
+            selectedCards={[]}
+            showCards={false}
+            trumpInfo={gameState.trumpInfo}
+            position="top"
           />
+        </View>
+        
+        {/* Middle section with left player, play area, and right player */}
+        <View style={styles.middleSection}>
+          {/* Left player */}
+          <View style={styles.leftPlayerContainer}>
+            <PlayerHand
+              player={gameState.players[positions.left]}
+              isCurrentPlayer={positions.left === gameState.currentPlayerIndex}
+              selectedCards={[]}
+              showCards={false}
+              trumpInfo={gameState.trumpInfo}
+              position="left"
+            />
+          </View>
           
+          {/* Play area */}
+          <View style={styles.playAreaContainer}>
+            <CardPlayArea
+              currentTrick={gameState.currentTrick}
+              players={gameState.players}
+              trumpInfo={gameState.trumpInfo}
+              winningPlayerId={gameState.currentTrick?.winningPlayerId}
+            />
+          </View>
+          
+          {/* Right player */}
+          <View style={styles.rightPlayerContainer}>
+            <PlayerHand
+              player={gameState.players[positions.right]}
+              isCurrentPlayer={positions.right === gameState.currentPlayerIndex}
+              selectedCards={[]}
+              showCards={false}
+              trumpInfo={gameState.trumpInfo}
+              position="right"
+            />
+          </View>
+        </View>
+        
+        {/* Bottom player (human) */}
+        <View style={styles.bottomSection}>
+          <View style={styles.humanHandContainer}>
+            <PlayerHand
+              player={gameState.players[positions.bottom]}
+              isCurrentPlayer={positions.bottom === gameState.currentPlayerIndex}
+              selectedCards={selectedCards}
+              onCardSelect={handleCardSelect}
+              showCards={true}
+              trumpInfo={gameState.trumpInfo}
+              position="bottom"
+            />
+          </View>
+          
+          {/* Play button */}
           {gameState.gamePhase === 'playing' && 
-           gameState.players[gameState.currentPlayerIndex].isHuman && (
-            <View style={styles.controlsContainer}>
+            gameState.players[gameState.currentPlayerIndex].isHuman && (
+            <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[
                   styles.playButton,
@@ -548,84 +679,137 @@ const GameScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           )}
-          
-          {waitingForAI && (
-            <View style={styles.waitingContainer}>
-              <Text style={styles.waitingText}>
-                AI is thinking...
-              </Text>
-            </View>
-          )}
-          
-          {renderTrumpDeclarationModal()}
-        </>
-      ) : (
-        <View style={styles.loadingContainer}>
-          <Text>Loading game...</Text>
+        </View>
+      </View>
+      
+      {/* Overlay for AI thinking */}
+      {waitingForAI && (
+        <View style={styles.waitingContainer}>
+          <View style={styles.waitingContent}>
+            <Text style={styles.waitingText}>
+              {gameState.players[gameState.currentPlayerIndex].name} is thinking...
+            </Text>
+          </View>
         </View>
       )}
-    </View>
+      
+      {/* Trick result overlay */}
+      {renderTrickResultOverlay()}
+      
+      {/* Trump declaration modal */}
+      {renderTrumpDeclarationModal()}
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F8F9FA',
+  },
+  statusBarContainer: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    zIndex: 10,
+  },
+  tableContainer: {
+    flex: 1,
+    backgroundColor: '#0B4619', // Rich green card table
+    borderRadius: 16,
+    borderWidth: 4,
+    borderColor: '#1B651E',
+    margin: 10,
+    padding: 10,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  topPlayerContainer: {
+    height: '15%',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 10,
+  },
+  middleSection: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leftPlayerContainer: {
+    width: '20%',
+    height: '100%',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  playAreaContainer: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rightPlayerContainer: {
+    width: '20%',
+    height: '100%',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  bottomSection: {
+    height: '25%',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
+  },
+  humanHandContainer: {
+    width: '100%',
+    height: '70%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContainer: {
+    width: '100%',
+    height: '30%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+  },
+  playButton: {
+    backgroundColor: '#B71C1C',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    minWidth: 180,
+  },
+  disabledButton: {
+    backgroundColor: '#9E9E9E',
+    shadowOpacity: 0.2,
+    elevation: 2,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  setupContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E8EAF6',
-    padding: 20,
-  },
-  gameTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#303F9F',
-  },
-  subtitle: {
-    fontSize: 18,
-    marginBottom: 30,
-    color: '#5C6BC0',
-  },
-  startButton: {
     backgroundColor: '#3F51B5',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginBottom: 20,
   },
-  buttonText: {
-    color: '#FFFFFF',
+  loadingText: {
+    color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  creditsText: {
-    fontSize: 14,
-    color: '#9FA8DA',
-  },
-  controlsContainer: {
-    padding: 10,
-    backgroundColor: '#E8EAF6',
-    borderTopWidth: 1,
-    borderTopColor: '#C5CAE9',
-  },
-  playButton: {
-    backgroundColor: '#3F51B5',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    backgroundColor: '#9E9E9E',
   },
   waitingContainer: {
     position: 'absolute',
@@ -635,38 +819,90 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 10,
+  },
+  waitingContent: {
+    backgroundColor: '#FFFFFF',
+    padding: 25,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 15,
   },
   waitingText: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 10,
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#303F9F',
+    textAlign: 'center',
+  },
+  trickResultContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    zIndex: 20,
+  },
+  trickResultContent: {
+    backgroundColor: '#4CAF50',
+    padding: 25,
+    borderRadius: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  trickWinnerText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 10,
+  },
+  trickPointsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFEB3B',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 20,
-    width: '80%',
+    borderRadius: 20,
+    padding: 25,
+    width: '85%',
     maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
+    color: '#303F9F',
   },
   modalText: {
     fontSize: 16,
     marginBottom: 20,
     textAlign: 'center',
+    lineHeight: 24,
   },
   suitButtons: {
     flexDirection: 'row',
@@ -675,12 +911,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   suitButton: {
-    backgroundColor: '#E8EAF6',
     padding: 15,
-    margin: 5,
-    borderRadius: 8,
-    minWidth: 80,
+    margin: 8,
+    borderRadius: 12,
+    minWidth: 90,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  suitSymbol: {
+    fontSize: 30,
+    marginBottom: 5,
   },
   suitText: {
     fontSize: 16,
@@ -689,12 +933,46 @@ const styles = StyleSheet.create({
   skipButton: {
     backgroundColor: '#EEEEEE',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 10,
+    width: '100%',
     alignItems: 'center',
   },
   skipText: {
     fontSize: 16,
     color: '#616161',
+    fontWeight: 'bold',
+  },
+  gameOverContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#3F51B5',
+    padding: 20,
+  },
+  gameOverTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: 'white',
+  },
+  winnerText: {
+    fontSize: 24,
+    marginBottom: 30,
+    color: '#4CAF50',
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  startButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 10,
+    marginTop: 20,
+    width: '80%',
+    alignItems: 'center',
   },
 });
 
