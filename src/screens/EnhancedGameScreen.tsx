@@ -32,7 +32,6 @@ import { getAIMove, shouldAIDeclare } from '../utils/aiLogic';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const EnhancedGameScreen: React.FC = () => {
-  console.log("EnhancedGameScreen rendering");
 
   // Game state
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -54,7 +53,6 @@ const EnhancedGameScreen: React.FC = () => {
   const [lastTrickWinner, setLastTrickWinner] = useState('');
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
 
-  console.log("EnhancedGameScreen state initialized, showSetup:", showSetup);
   
   // Animations - initialize with visible values for first render
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -126,11 +124,8 @@ const EnhancedGameScreen: React.FC = () => {
 
   // Initialize animations
   useEffect(() => {
-    console.log("Animation useEffect running, showSetup:", showSetup);
-
     // Only animate when changing from setup to game screen
     if (!showSetup) {
-      console.log("Starting game animations");
       // Game screen animations with a slight delay to ensure component is mounted
       setTimeout(() => {
         Animated.parallel([
@@ -505,11 +500,8 @@ const EnhancedGameScreen: React.FC = () => {
   
   // Setup screen with animations
   if (showSetup) {
-    console.log("EnhancedGameScreen rendering setup screen");
-
     // Force animation values to be visible during initial render
     if (fadeAnim._value === 0) {
-      console.log("Setup screen: Setting initial animation values");
       fadeAnim.setValue(1);
       scaleAnim.setValue(1);
     }
@@ -715,6 +707,7 @@ const EnhancedGameScreen: React.FC = () => {
             <View style={styles.topArea}>
               <View style={[
                 styles.labelContainer,
+                styles.topPlayerLabel, // Added extra spacing just for Bot 2
                 gameState?.players.find(p => p.id === 'ai2')?.team === 'A' ?
                   styles.teamALabel : styles.teamBLabel
               ]}>
@@ -1032,7 +1025,7 @@ const styles = StyleSheet.create({
   topArea: {
     width: '100%',
     height: 110, // Increased from 80 to 110
-    marginTop: 30, // Reduced from 40 to 30
+    marginTop: 15, // Reduced from 30 to 15
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1105,13 +1098,13 @@ const styles = StyleSheet.create({
   },
   // Label container for consistent sizing
   labelContainer: {
-    height: 26, // Further reduced height
-    minWidth: 75,
-    borderRadius: 13, // Half of height for pill shape
+    height: 22, // Reduced from 26 to 22
+    minWidth: 65, // Reduced from 75 to 65
+    borderRadius: 11, // Half of height for pill shape
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 3, // Significantly reduced margin
-    paddingHorizontal: 16,
+    marginBottom: 3, // Original margin
+    paddingHorizontal: 12, // Reduced from 16 to 12
     borderWidth: 0.5, // Thinner border
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -1129,10 +1122,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(198, 40, 40, 0.75)', // Slightly more transparent
     borderColor: '#FFEBEE', // Light red border
   },
+  // Top player label with extra spacing
+  topPlayerLabel: {
+    marginBottom: 15, // Extra space for Bot 2 label only
+  },
   // Player label
   playerLabel: {
-    fontSize: 14, // Smaller text
-    fontWeight: '600', // Semi-bold instead of bold
+    fontSize: 12, // Reduced from 14 to 12
+    fontWeight: '500', // Reduced from 600 to 500
     color: 'white',
     textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.2)', // Subtle text shadow

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import AnimatedCard from './AnimatedCard';
 import { Card as CardType, Player, TrumpInfo } from '../types/game';
 import { isTrump } from '../utils/gameLogic';
@@ -14,6 +14,8 @@ interface PlayerHandProps {
   trumpInfo: TrumpInfo;
   canPlay?: boolean; // Whether the play button should be shown
 }
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
   player,
@@ -62,38 +64,48 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
 
   // Different layout based on player position (human vs AI)
   if (player.isHuman) {
+    // Constants for card layout
+    const cardWidth = 65; // Width of each card
+    const cardOverlap = 40; // How much each card overlaps the previous one
+    const visibleCardWidth = cardWidth - cardOverlap; // Visible width of each card (except first)
+
+    // Calculate total width of all cards with overlap
+    const totalCardsWidth = cardWidth + (sortedHand.length - 1) * visibleCardWidth;
+
+    // Check if scrolling is needed
+    const availableWidth = SCREEN_WIDTH - 40; // Available width minus padding
+    const needsScrolling = totalCardsWidth > availableWidth;
+
     // Human player layout (bottom)
     return (
-      <View style={[
-        styles.container
-      ]}>
+      <View style={styles.container}>
         <View style={styles.cardsScrollContainer}>
+          {/* Scroll indicator removed */}
+
+          {/* ScrollView for horizontal scrolling */}
           <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={true}
-            indicatorStyle="white"
-            style={styles.handContainer}
-            contentContainerStyle={[styles.handContent, { paddingBottom: 8 }]}
-            directionalLockEnabled={true}
-            snapToEnd={false}
-            scrollsToTop={false}
-            bouncesHorizontal={true}
-            pagingEnabled={false}
-            scrollEventThrottle={16}
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            style={styles.scrollViewStyle}
+            contentContainerStyle={[
+              styles.scrollViewContent,
+              {
+                // When not scrolling, center the content
+                alignItems: 'center',
+                justifyContent: needsScrolling ? 'flex-start' : 'center'
+              }
+            ]}
+            scrollEnabled={true}
           >
-            <View style={[styles.humanCardRow,
-              // Force a wider width based on card count to enable scrolling
-              { width: Math.max(300, sortedHand.length * 20 + 100) }
-            ]}>
+            <View style={styles.cardRow}>
               {sortedHand.map((card, index) => (
                 <View
                   key={card.id}
                   style={[
-                    styles.cardContainer,
+                    styles.cardWrapper,
                     {
-                      marginLeft: index === 0 ? 0 : -40, // Tighter stacking
-                      zIndex: 10 + index, // Consistent z-index based on card order
-                      backfaceVisibility: 'hidden',
+                      marginLeft: index === 0 ? 0 : -cardOverlap,
+                      zIndex: index
                     }
                   ]}
                 >
@@ -175,7 +187,7 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
               Object.assign(viewStyle, {
                 transform: [{ rotate: '180deg' }],
                 position: 'absolute',
-                top: 30, // Start below the name
+                top: 40, // Further increased for more spacing between name and cards
                 left: 50 + (index * 12), // Reduced overlap
               });
             } else if (isLeftPlayer) {
@@ -221,18 +233,12 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    margin: 3,
-    marginTop: 15, // Added margin at the top to push content down
+    flex: 1,
+    width: '100%',
+    padding: 8,
     paddingBottom: 45, // Extra space at bottom for the play button
-    borderRadius: 10,
-    backgroundColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
     position: 'relative', // Establish positioning context
+    backgroundColor: 'transparent',
   },
   currentPlayer: {
     backgroundColor: 'transparent',
@@ -249,7 +255,7 @@ const styles = StyleSheet.create({
   topAiContainer: {
     width: '70%',
     alignSelf: 'center',
-    paddingTop: 30, // Additional padding at the top for the player name
+    paddingTop: 15, // Reduced from 30 to 15 to move name up
   },
   leftAiContainer: {
     width: 60,
@@ -272,6 +278,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+    marginBottom: 10, // Add extra spacing for Bot 2 specifically
   },
   leftPlayerName: {
     top: 0,
@@ -300,44 +307,46 @@ const styles = StyleSheet.create({
   },
   cardsScrollContainer: {
     width: '100%',
-    alignItems: 'center',
-    marginTop: 0, // Removed margin
+    height: 130,
     backgroundColor: 'transparent',
-    paddingVertical: 2, // Reduced padding
-    overflow: 'visible',
+    position: 'relative',
   },
-  handContainer: {
-    flexDirection: 'row',
-    maxHeight: 130, // Increased height to account for raised cards
+  scrollIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingVertical: 2,
+    alignItems: 'center',
+    zIndex: 50,
+  },
+  scrollIndicatorText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  scrollViewStyle: {
     width: '100%',
+    height: 130,
     backgroundColor: 'transparent',
+  },
+  scrollViewContent: {
+    minWidth: '100%',
+    paddingTop: 25, // Space for raised cards
+    paddingBottom: 10,
     paddingHorizontal: 10,
-    paddingTop: 5,
-    paddingBottom: 5,
-    overflow: 'visible', // Allow content to overflow for raised cards
+    flexDirection: 'row', // Ensure horizontal layout
   },
-  handContent: {
+  cardRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 2, // Reduced padding
-    paddingRight: 200, // Add significant padding to ensure scrolling
-    minWidth: '100%', // Ensure it takes at least full width
-  },
-  humanCardRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    height: 105, // Slightly reduced height
     alignItems: 'flex-end',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    overflow: 'visible',
-    marginBottom: 5, // Small margin at the bottom for play button
-    paddingTop: 20, // Kept padding at the top for raised cards
   },
-  cardContainer: {
-    height: 95, // Increased height to accommodate the animation
-    width: 60,
-    overflow: 'visible', // Allow overflow for raised cards
+  cardWrapper: {
+    height: 95,
+    width: 65,
   },
   aiHandContainer: {
     position: 'relative',
@@ -370,7 +379,7 @@ const styles = StyleSheet.create({
     zIndex: 100, // Ensure it's above other elements
   },
   playButton: {
-    backgroundColor: '#B71C1C',
+    backgroundColor: '#C62828', // Slightly brighter red
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
@@ -386,8 +395,6 @@ const styles = StyleSheet.create({
     width: '42%',
     minWidth: 130,
     height: 36,
-    // Add subtle glow effect
-    backgroundColor: '#C62828', // Slightly brighter red
   },
   playButtonText: {
     color: '#FFFFFF',
