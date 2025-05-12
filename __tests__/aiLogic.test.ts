@@ -1,0 +1,418 @@
+import {
+  getAIMove,
+  shouldAIDeclare,
+  createAIStrategy
+} from '../src/utils/aiLogic';
+import {
+  Card, 
+  GameState, 
+  Rank, 
+  Suit, 
+  AIDifficulty,
+  JokerType,
+  Trick
+} from '../src/types/game';
+
+// Create a mock game state for testing
+const createMockGameState = (): GameState => {
+  return {
+    players: [
+      {
+        id: 'player',
+        name: 'Human',
+        isHuman: true,
+        hand: [],
+        currentRank: Rank.Two,
+        team: 'A'
+      },
+      {
+        id: 'ai1',
+        name: 'Bot 1',
+        isHuman: false,
+        hand: [],
+        currentRank: Rank.Two,
+        team: 'B'
+      },
+      {
+        id: 'ai2',
+        name: 'Bot 2',
+        isHuman: false,
+        hand: [],
+        currentRank: Rank.Two,
+        team: 'A'
+      },
+      {
+        id: 'ai3',
+        name: 'Bot 3',
+        isHuman: false,
+        hand: [],
+        currentRank: Rank.Two,
+        team: 'B'
+      }
+    ],
+    teams: [
+      {
+        id: 'A',
+        players: ['player', 'ai2'],
+        currentRank: Rank.Two,
+        points: 0,
+        isDefending: true
+      },
+      {
+        id: 'B',
+        players: ['ai1', 'ai3'],
+        currentRank: Rank.Two,
+        points: 0,
+        isDefending: false
+      }
+    ],
+    deck: [],
+    kittyCards: [],
+    currentTrick: null,
+    trumpInfo: {
+      trumpRank: Rank.Two,
+      declared: false
+    },
+    tricks: [],
+    roundNumber: 1,
+    currentPlayerIndex: 0,
+    gamePhase: 'playing'
+  };
+};
+
+// Helper function to create cards
+const createCard = (suit: Suit, rank: Rank, id: string): Card => {
+  let points = 0;
+  if (rank === Rank.Five) points = 5;
+  if (rank === Rank.Ten || rank === Rank.King) points = 10;
+  return { suit, rank, id, points };
+};
+
+const createJoker = (type: JokerType, id: string): Card => {
+  return { joker: type, id, points: 0 };
+};
+
+describe('AI Logic Tests', () => {
+  describe('getAIMove function', () => {
+    test('AI should return valid move when leading a trick', () => {
+      const gameState = createMockGameState();
+      
+      // Give AI1 some cards
+      gameState.players[1].hand = [
+        createCard(Suit.Hearts, Rank.Six, 'hearts_6_1'),
+        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
+        createCard(Suit.Spades, Rank.Three, 'spades_3_1')
+      ];
+      
+      gameState.currentPlayerIndex = 1; // AI1's turn
+      
+      // AI is leading, so any valid combo is acceptable
+      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      
+      // AI should return a valid move
+      expect(move).toBeDefined();
+      expect(move.length).toBeGreaterThan(0);
+      
+      // All cards should be from AI's hand
+      move.forEach(card => {
+        const inHand = gameState.players[1].hand.some(c => c.id === card.id);
+        expect(inHand).toBe(true);
+      });
+    });
+    
+    test('AI should follow suit correctly', () => {
+      const gameState = createMockGameState();
+      
+      // Create a trick with Hearts as the leading suit
+      gameState.currentTrick = {
+        leadingPlayerId: 'player',
+        leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
+        plays: [
+          {
+            playerId: 'player',
+            cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+          }
+        ],
+        points: 0
+      };
+      
+      // Give AI1 cards including a heart
+      gameState.players[1].hand = [
+        createCard(Suit.Hearts, Rank.Six, 'hearts_6_1'),
+        createCard(Suit.Spades, Rank.Seven, 'spades_7_1'),
+        createCard(Suit.Clubs, Rank.Three, 'clubs_3_1')
+      ];
+      
+      gameState.currentPlayerIndex = 1; // AI1's turn
+      
+      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      
+      // AI should play the heart card since it must follow suit
+      expect(move.length).toBe(1);
+      expect(move[0].suit).toBe(Suit.Hearts);
+    });
+    
+    test('AI should handle forced play when no valid combos exist', () => {
+      const gameState = createMockGameState();
+      
+      // Create a trick with Hearts as the leading suit
+      gameState.currentTrick = {
+        leadingPlayerId: 'player',
+        leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
+        plays: [
+          {
+            playerId: 'player',
+            cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+          }
+        ],
+        points: 0
+      };
+      
+      // Give AI1 cards with NO hearts (forced to play off-suit)
+      gameState.players[1].hand = [
+        createCard(Suit.Spades, Rank.Seven, 'spades_7_1'),
+        createCard(Suit.Clubs, Rank.Three, 'clubs_3_1'),
+        createCard(Suit.Diamonds, Rank.Two, 'diamonds_2_1')
+      ];
+      
+      gameState.currentPlayerIndex = 1; // AI1's turn
+      
+      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      
+      // AI should play one card as required
+      expect(move.length).toBe(1);
+      // Card should be from AI's hand
+      const inHand = gameState.players[1].hand.some(c => c.id === move[0].id);
+      expect(inHand).toBe(true);
+    });
+
+    test('AI should handle case with multiple card combos', () => {
+      const gameState = createMockGameState();
+      
+      // Create a trick with a pair as the leading combo
+      gameState.currentTrick = {
+        leadingPlayerId: 'player',
+        leadingCombo: [
+          createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
+          createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
+        ],
+        plays: [
+          {
+            playerId: 'player',
+            cards: [
+              createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
+              createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
+            ]
+          }
+        ],
+        points: 0
+      };
+      
+      // Give AI1 a pair of hearts
+      gameState.players[1].hand = [
+        createCard(Suit.Hearts, Rank.Six, 'hearts_6_1'),
+        createCard(Suit.Hearts, Rank.Six, 'hearts_6_2'),
+        createCard(Suit.Spades, Rank.Seven, 'spades_7_1'),
+        createCard(Suit.Clubs, Rank.Three, 'clubs_3_1')
+      ];
+      
+      gameState.currentPlayerIndex = 1; // AI1's turn
+      
+      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      
+      // AI should play a pair of hearts
+      expect(move.length).toBe(2);
+      expect(move[0].suit).toBe(Suit.Hearts);
+      expect(move[1].suit).toBe(Suit.Hearts);
+      expect(move[0].rank).toBe(move[1].rank);
+    });
+
+    test('AI should handle case with few cards remaining', () => {
+      const gameState = createMockGameState();
+      
+      // Create a trick with a pair as leading combo
+      gameState.currentTrick = {
+        leadingPlayerId: 'player',
+        leadingCombo: [
+          createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
+          createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
+        ],
+        plays: [
+          {
+            playerId: 'player',
+            cards: [
+              createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
+              createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
+            ]
+          }
+        ],
+        points: 0
+      };
+      
+      // Give AI1 only one card (not enough to follow the pair)
+      gameState.players[1].hand = [
+        createCard(Suit.Hearts, Rank.Six, 'hearts_6_1')
+      ];
+      
+      gameState.currentPlayerIndex = 1; // AI1's turn
+      
+      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      
+      // AI should return whatever card it has, even if not enough cards
+      expect(move.length).toBe(1);
+      expect(move[0].suit).toBe(Suit.Hearts);
+    });
+
+    test('AI should handle case with no cards', () => {
+      const gameState = createMockGameState();
+
+      // Create a trick
+      gameState.currentTrick = {
+        leadingPlayerId: 'player',
+        leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
+        plays: [
+          {
+            playerId: 'player',
+            cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+          }
+        ],
+        points: 0
+      };
+
+      // Give AI1 no cards (edge case)
+      gameState.players[1].hand = [];
+
+      gameState.currentPlayerIndex = 1; // AI1's turn
+
+      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+
+      // AI should return empty array
+      expect(move).toBeDefined();
+      expect(move.length).toBe(0);
+    });
+
+    test('AI should play all cards of leading suit when cannot form matching combo', () => {
+      const gameState = createMockGameState();
+
+      // Create a trick with a pair as the leading combo
+      gameState.currentTrick = {
+        leadingPlayerId: 'player',
+        leadingCombo: [
+          createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
+          createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
+        ],
+        plays: [
+          {
+            playerId: 'player',
+            cards: [
+              createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
+              createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
+            ]
+          }
+        ],
+        points: 0
+      };
+
+      // Give AI1 one diamond and several spades
+      gameState.players[1].hand = [
+        createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_1'),
+        createCard(Suit.Spades, Rank.Two, 'spades_2_1'),
+        createCard(Suit.Spades, Rank.Three, 'spades_3_1'),
+        createCard(Suit.Spades, Rank.Four, 'spades_4_1')
+      ];
+
+      gameState.currentPlayerIndex = 1; // AI1's turn
+
+      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+
+      // AI must play the one diamond it has plus one other card
+      expect(move.length).toBe(2);
+
+      // First card must be the diamond
+      expect(move.some(card => card.suit === Suit.Diamonds)).toBe(true);
+
+      // Count the diamonds played
+      const diamondsPlayed = move.filter(card => card.suit === Suit.Diamonds).length;
+      expect(diamondsPlayed).toBe(1); // Must play exactly 1 diamond
+    });
+
+    test('AI should play matching combo in leading suit when available', () => {
+      const gameState = createMockGameState();
+
+      // Create a trick with a pair as the leading combo
+      gameState.currentTrick = {
+        leadingPlayerId: 'player',
+        leadingCombo: [
+          createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
+          createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
+        ],
+        plays: [
+          {
+            playerId: 'player',
+            cards: [
+              createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
+              createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
+            ]
+          }
+        ],
+        points: 0
+      };
+
+      // Give AI1 a pair of diamonds and some other cards
+      gameState.players[1].hand = [
+        createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_1'),
+        createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_2'),
+        createCard(Suit.Spades, Rank.Two, 'spades_2_1'),
+        createCard(Suit.Spades, Rank.Three, 'spades_3_1')
+      ];
+
+      gameState.currentPlayerIndex = 1; // AI1's turn
+
+      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+
+      // AI must play the pair of diamonds
+      expect(move.length).toBe(2);
+
+      // All cards must be diamonds
+      expect(move.every(card => card.suit === Suit.Diamonds)).toBe(true);
+
+      // They should be a pair (same rank)
+      expect(move[0].rank).toBe(move[1].rank);
+    });
+  });
+
+  describe('AI Strategy Tests', () => {
+    test('Easy strategy should always return a move', () => {
+      const gameState = createMockGameState();
+      const strategy = createAIStrategy(AIDifficulty.Easy);
+      
+      // Give AI1 some cards
+      gameState.players[1].hand = [
+        createCard(Suit.Hearts, Rank.Six, 'hearts_6_1'),
+        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
+        createCard(Suit.Spades, Rank.Three, 'spades_3_1')
+      ];
+      
+      // Create a simple valid combo for testing
+      const validCombos = [
+        {
+          type: 'Single',
+          cards: [createCard(Suit.Hearts, Rank.Six, 'hearts_6_1')],
+          value: 6
+        },
+        {
+          type: 'Single',
+          cards: [createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1')],
+          value: 7
+        }
+      ];
+      
+      const move = strategy.makePlay(gameState, gameState.players[1], validCombos);
+      
+      // Move should exist and be valid
+      expect(move).toBeDefined();
+      expect(move.length).toBe(1);
+      expect(validCombos.some(combo => combo.cards[0].id === move[0].id)).toBe(true);
+    });
+  });
+});

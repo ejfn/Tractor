@@ -6,11 +6,14 @@ import {
   AIDifficulty,
   TrumpInfo
 } from '../types/game';
-import { 
-  identifyCombos, 
+import {
+  identifyCombos,
   isValidPlay,
   isTrump,
-  compareCards
+  compareCards,
+  getTrumpLevel,
+  getLeadingSuit,
+  getComboType
 } from './gameLogic';
 
 // Base AI strategy interface
@@ -338,37 +341,139 @@ export const getAIMove = (
   
   // Filter to valid plays based on current trick
   let validCombos: Combo[] = [];
-  
+
   if (!gameState.currentTrick || !gameState.currentTrick.leadingCombo) {
     // Player is leading, any valid combo is fine
     validCombos = allCombos;
   } else {
-    // Filter to combos that match the leading combo's length
-    const leadingLength = gameState.currentTrick.leadingCombo.length;
-    validCombos = allCombos.filter(combo => 
-      combo.cards.length === leadingLength &&
-      isValidPlay(
-        combo.cards, 
-        gameState.currentTrick!.leadingCombo, 
-        player.hand, 
-        gameState.trumpInfo
-      )
-    );
+    // Get the leading combo's type and suit
+    const leadingCombo = gameState.currentTrick.leadingCombo;
+    const leadingLength = leadingCombo.length;
+    const leadingSuit = getLeadingSuit(leadingCombo);
+    const isLeadingTrump = leadingCombo.some(card => isTrump(card, gameState.trumpInfo));
+
+    // If leading with trump, prioritize trump combos
+    if (isLeadingTrump) {
+      // Find trump combos
+      const trumpCombos = allCombos.filter(combo =>
+        combo.cards.length === leadingLength &&
+        combo.cards.some(card => isTrump(card, gameState.trumpInfo))
+      );
+
+      if (trumpCombos.length > 0) {
+        // Must play trump if you have them
+        validCombos = trumpCombos.filter(combo =>
+          isValidPlay(
+            combo.cards,
+            leadingCombo,
+            player.hand,
+            gameState.trumpInfo
+          )
+        );
+      } else {
+        // If no trump combos, can play anything of the right length
+        validCombos = allCombos.filter(combo =>
+          combo.cards.length === leadingLength &&
+          isValidPlay(
+            combo.cards,
+            leadingCombo,
+            player.hand,
+            gameState.trumpInfo
+          )
+        );
+      }
+    } else if (leadingSuit) {
+      // If leading with a specific suit, prioritize that suit
+      const suitCombos = allCombos.filter(combo =>
+        combo.cards.length === leadingLength &&
+        combo.cards.every(card => card.suit === leadingSuit)
+      );
+
+      if (suitCombos.length > 0) {
+        // Must play the same suit if you have enough cards
+        validCombos = suitCombos.filter(combo =>
+          isValidPlay(
+            combo.cards,
+            leadingCombo,
+            player.hand,
+            gameState.trumpInfo
+          )
+        );
+      } else {
+        // If can't follow suit, can play anything of the right length
+        validCombos = allCombos.filter(combo =>
+          combo.cards.length === leadingLength &&
+          isValidPlay(
+            combo.cards,
+            leadingCombo,
+            player.hand,
+            gameState.trumpInfo
+          )
+        );
+      }
+    } else {
+      // For any other case, apply general valid play rules
+      validCombos = allCombos.filter(combo =>
+        combo.cards.length === leadingLength &&
+        isValidPlay(
+          combo.cards,
+          leadingCombo,
+          player.hand,
+          gameState.trumpInfo
+        )
+      );
+    }
   }
   
   // If no valid combos, find partial matches (this handles the case where
   // player doesn't have enough cards of the leading suit)
   if (validCombos.length === 0 && gameState.currentTrick) {
-    const leadingLength = gameState.currentTrick.leadingCombo.length;
-    
-    // Create a combo of right length with whatever cards we have
-    const availableCards = [...player.hand].sort((a, b) => 
+    const leadingCombo = gameState.currentTrick.leadingCombo;
+    const leadingLength = leadingCombo.length;
+    const leadingSuit = getLeadingSuit(leadingCombo);
+
+    // First, check if the player has ANY cards of the leading suit
+    const leadingSuitCards = player.hand.filter(card =>
+      card.suit === leadingSuit && !isTrump(card, gameState.trumpInfo)
+    );
+
+    // If player has cards of the leading suit, they MUST play all of them first
+    if (leadingSuitCards.length > 0) {
+      if (leadingSuitCards.length >= leadingLength) {
+        // This shouldn't happen, as we should have found valid combos earlier
+        console.warn("AI has enough leading suit cards but no valid combo found - using all leading suit cards");
+        return leadingSuitCards.slice(0, leadingLength);
+      } else {
+        // Not enough cards of the leading suit, but must use all we have
+        // Plus some other cards to reach the required length
+        const otherCards = player.hand.filter(card =>
+          card.suit !== leadingSuit || isTrump(card, gameState.trumpInfo)
+        ).sort((a, b) => compareCards(a, b, gameState.trumpInfo));
+
+        const remainingNeeded = leadingLength - leadingSuitCards.length;
+        if (otherCards.length >= remainingNeeded) {
+          return [...leadingSuitCards, ...otherCards.slice(0, remainingNeeded)];
+        } else {
+          // Not enough cards total
+          console.warn(`AI player ${playerId} doesn't have enough cards (has: ${player.hand.length}, needs: ${leadingLength})`);
+          return [...leadingSuitCards, ...otherCards];
+        }
+      }
+    }
+
+    // If no cards of leading suit, just take lowest value cards
+    const availableCards = [...player.hand].sort((a, b) =>
       compareCards(a, b, gameState.trumpInfo)
     );
-    
+
     // Take the lowest cards up to the required length
+    if (availableCards.length < leadingLength) {
+      // Emergency handling: if we don't have enough cards, return all we have
+      console.warn(`AI player ${playerId} doesn't have enough cards (has: ${availableCards.length}, needs: ${leadingLength})`);
+      return availableCards;
+    }
+
     const forcedPlay = availableCards.slice(0, leadingLength);
-    
     return forcedPlay;
   }
   

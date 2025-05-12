@@ -117,15 +117,47 @@ const EnhancedGameScreen: React.FC = () => {
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
-    // Get AI move based on difficulty
-    const aiMove = getAIMove(
-      gameState,
-      currentPlayer.id,
-      gameConfig.aiDifficulty
-    );
+    // Safety check to ensure the current player is an AI
+    if (currentPlayer.isHuman) {
+      console.warn("handleAIMove called for human player");
+      setWaitingForAI(false);
+      return;
+    }
 
-    // Process the AI's play
-    processPlay(aiMove);
+    try {
+      // Get AI move based on difficulty
+      const aiMove = getAIMove(
+        gameState,
+        currentPlayer.id,
+        gameConfig.aiDifficulty
+      );
+
+      // Validate that we received a valid move
+      if (!aiMove || aiMove.length === 0) {
+        console.warn(`AI player ${currentPlayer.id} returned an empty move`);
+        // Emergency fallback: play the first card in hand if move is empty
+        if (currentPlayer.hand.length > 0) {
+          processPlay([currentPlayer.hand[0]]);
+        } else {
+          // If AI hand is somehow empty, skip turn
+          console.error(`AI player ${currentPlayer.id} has no cards to play`);
+          // Move to next player
+          const newState = { ...gameState };
+          newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+          setGameState(newState);
+        }
+      } else {
+        // Process the AI's play
+        processPlay(aiMove);
+      }
+    } catch (error) {
+      console.error("Error in AI move logic:", error);
+      // Emergency recovery: move to next player
+      const newState = { ...gameState };
+      newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+      setGameState(newState);
+    }
+
     setWaitingForAI(false);
   };
 
@@ -189,12 +221,21 @@ const EnhancedGameScreen: React.FC = () => {
     if (gameState &&
         gameState.gamePhase === 'playing' &&
         !waitingForAI &&
+        !showTrickResult && // Don't start a new AI move while showing trick result
         !gameState.players[gameState.currentPlayerIndex].isHuman) {
 
       // Set a delay for AI move to make the game feel more natural
       setWaitingForAI(true);
       const timer = setTimeout(() => {
-        handleAIMove();
+        // Double check that the conditions still apply before executing the move
+        // This prevents a race condition with trick completion
+        if (gameState.gamePhase === 'playing' &&
+            !gameState.players[gameState.currentPlayerIndex].isHuman) {
+          handleAIMove();
+        } else {
+          // Reset waiting flag if conditions changed while waiting
+          setWaitingForAI(false);
+        }
       }, 1500);
 
       setAiTimer(timer as unknown as NodeJS.Timeout);
@@ -205,7 +246,7 @@ const EnhancedGameScreen: React.FC = () => {
         clearTimeout(aiTimer);
       }
     };
-  }, [gameState, waitingForAI, handleAIMove, aiTimer]);
+  }, [gameState, waitingForAI, handleAIMove, aiTimer, showTrickResult]);
 
   // Animate thinking dots (continuous animation regardless of whose turn it is)
   useEffect(() => {
@@ -794,7 +835,8 @@ const EnhancedGameScreen: React.FC = () => {
               <View style={[
                 styles.labelContainer,
                 styles.topPlayerLabel, // Added extra spacing just for Bot 2
-                gameState?.players.find(p => p.id === 'ai2')?.team === 'A' ?
+                // Use defending status rather than fixed team assignment
+                gameState?.teams.find(t => t.id === gameState?.players.find(p => p.id === 'ai2')?.team)?.isDefending ?
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 2</Text>
@@ -850,7 +892,8 @@ const EnhancedGameScreen: React.FC = () => {
               <View style={styles.leftArea}>
                 <View style={[
                 styles.labelContainer,
-                gameState?.players.find(p => p.id === 'ai1')?.team === 'A' ?
+                // Use defending status rather than fixed team assignment
+                gameState?.teams.find(t => t.id === gameState?.players.find(p => p.id === 'ai1')?.team)?.isDefending ?
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 1</Text>
@@ -914,7 +957,8 @@ const EnhancedGameScreen: React.FC = () => {
               <View style={styles.rightArea}>
                 <View style={[
                 styles.labelContainer,
-                gameState?.players.find(p => p.id === 'ai3')?.team === 'A' ?
+                // Use defending status rather than fixed team assignment
+                gameState?.teams.find(t => t.id === gameState?.players.find(p => p.id === 'ai3')?.team)?.isDefending ?
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 3</Text>
@@ -969,7 +1013,8 @@ const EnhancedGameScreen: React.FC = () => {
             <View style={styles.bottomArea}>
               <View style={[
                 styles.labelContainer,
-                gameState?.players.find(p => p.isHuman)?.team === 'A' ?
+                // Use defending status rather than fixed team assignment
+                gameState?.teams.find(t => t.id === gameState?.players.find(p => p.isHuman)?.team)?.isDefending ?
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>You</Text>
@@ -1225,12 +1270,12 @@ const styles = StyleSheet.create({
     elevation: 1, // Subtle elevation
     position: 'relative', // For absolute positioning of thinking indicator
   },
-  // Team A label (defending team - green)
+  // Defending team label - green with shield
   teamALabel: {
     backgroundColor: 'rgba(46, 125, 50, 0.75)', // Slightly more transparent
     borderColor: '#E8F5E9', // Light green border
   },
-  // Team B label (attacking team - red)
+  // Attacking team label - red with sword
   teamBLabel: {
     backgroundColor: 'rgba(198, 40, 40, 0.75)', // Slightly more transparent
     borderColor: '#FFEBEE', // Light red border

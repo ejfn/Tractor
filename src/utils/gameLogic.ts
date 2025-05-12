@@ -92,69 +92,107 @@ export const dealCards = (state: GameState): GameState => {
 export const isTrump = (card: Card, trumpInfo: TrumpInfo): boolean => {
   // Jokers are always trump
   if (card.joker) return true;
-  
+
   // Cards of trump rank are trump
   if (card.rank === trumpInfo.trumpRank) return true;
-  
+
   // Cards of trump suit (if declared) are trump
   if (trumpInfo.declared && card.suit === trumpInfo.trumpSuit) return true;
-  
+
   return false;
+};
+
+// Get trump hierarchy level (for comparing trumps)
+export const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
+  // Not a trump
+  if (!isTrump(card, trumpInfo)) return 0;
+
+  // Red Joker - highest
+  if (card.joker === JokerType.Big) return 5;
+
+  // Black Joker - second highest
+  if (card.joker === JokerType.Small) return 4;
+
+  // Trump rank card in trump suit - third highest
+  if (card.rank === trumpInfo.trumpRank && card.suit === trumpInfo.trumpSuit) return 3;
+
+  // Trump rank cards in other suits - fourth highest
+  if (card.rank === trumpInfo.trumpRank) return 2;
+
+  // Trump suit cards - fifth highest
+  if (trumpInfo.declared && card.suit === trumpInfo.trumpSuit) return 1;
+
+  return 0; // Not a trump (shouldn't reach here)
 };
 
 // Compare two cards based on trump rules
 export const compareCards = (cardA: Card, cardB: Card, trumpInfo: TrumpInfo): number => {
-  // Check if cards are trump
+  // First compare by trump status
   const aIsTrump = isTrump(cardA, trumpInfo);
   const bIsTrump = isTrump(cardB, trumpInfo);
-  
+
   // If only one is trump, it wins
   if (aIsTrump && !bIsTrump) return 1;
   if (!aIsTrump && bIsTrump) return -1;
-  
+
   // If both are trump, check specific trump hierarchy
   if (aIsTrump && bIsTrump) {
-    // Jokers beat everything else
-    if (cardA.joker && !cardB.joker) return 1;
-    if (!cardA.joker && cardB.joker) return -1;
-    
-    // Big joker beats small joker
-    if (cardA.joker && cardB.joker) {
-      if (cardA.joker === JokerType.Big && cardB.joker === JokerType.Small) return 1;
-      if (cardA.joker === JokerType.Small && cardB.joker === JokerType.Big) return -1;
-      return 0; // Same joker (shouldn't happen with valid IDs)
+    // Compare using trump hierarchy levels
+    const aLevel = getTrumpLevel(cardA, trumpInfo);
+    const bLevel = getTrumpLevel(cardB, trumpInfo);
+
+    if (aLevel !== bLevel) {
+      return aLevel - bLevel; // Higher level wins
     }
-    
-    // Trump rank with trump suit beats trump rank with other suit
-    if (cardA.rank === trumpInfo.trumpRank && cardB.rank === trumpInfo.trumpRank) {
-      if (cardA.suit === trumpInfo.trumpSuit && cardB.suit !== trumpInfo.trumpSuit) return 1;
-      if (cardA.suit !== trumpInfo.trumpSuit && cardB.suit === trumpInfo.trumpSuit) return -1;
-      
-      // If both are trump rank, compare suits
+
+    // Same level trumps - need to compare further
+    if (aLevel === 2) {
+      // Both are trump rank in non-trump suits - compare suits
       if (cardA.suit && cardB.suit) {
-        return compareSuits(cardA.suit, cardB.suit);
+        return compareSuits(cardA.suit, cardB.suit, trumpInfo);
       }
-    }
-    
-    // If both are trump suit, compare ranks
-    if (cardA.suit === trumpInfo.trumpSuit && cardB.suit === trumpInfo.trumpSuit) {
+    } else if (aLevel === 1) {
+      // Both are trump suit - compare by rank
       return compareRanks(cardA.rank!, cardB.rank!);
     }
+
+    // Same type of jokers or other edge case - compare by ID
+    return cardA.id.localeCompare(cardB.id);
   }
-  
+
   // Non-trump comparison
   // If suits are the same, compare ranks
   if (cardA.suit === cardB.suit) {
     return compareRanks(cardA.rank!, cardB.rank!);
   }
-  
+
   // Different suits, and not trumps - first card played wins
+  // In Shengji, when following suit isn't possible, the first card played determines the suit
+  // so return 0 to indicate neither card has precedence based solely on value
   return 0;
 };
 
-// Compare suits (arbitrary order, doesn't matter as long as it's consistent)
-const compareSuits = (suitA: Suit, suitB: Suit): number => {
-  const suitOrder = [Suit.Spades, Suit.Hearts, Suit.Clubs, Suit.Diamonds];
+// Compare suits using rotated suit ordering based on the trump suit
+const compareSuits = (suitA: Suit, suitB: Suit, trumpInfo?: TrumpInfo): number => {
+  // Default suit order: maintains alternating black-red pattern
+  // Base order: Spades (black), Hearts (red), Clubs (black), Diamonds (red)
+  let suitOrder = [Suit.Spades, Suit.Hearts, Suit.Clubs, Suit.Diamonds];
+
+  // If we have a trump suit, rotate the order to put the trump suit first
+  // while maintaining the alternating black-red pattern
+  if (trumpInfo?.trumpSuit) {
+    const trumpSuitIndex = suitOrder.indexOf(trumpInfo.trumpSuit);
+    if (trumpSuitIndex > 0) {
+      // Rotate the array to put the trump suit first
+      suitOrder = [
+        ...suitOrder.slice(trumpSuitIndex),
+        ...suitOrder.slice(0, trumpSuitIndex)
+      ];
+    }
+  }
+
+  // Compare the suits in the (possibly rotated) order
+  // Higher index is higher value in Shengji
   return suitOrder.indexOf(suitB) - suitOrder.indexOf(suitA);
 };
 
@@ -330,37 +368,116 @@ const findTractors = (cards: Card[], trumpInfo: TrumpInfo, combos: Combo[]): voi
 
 // Check if a play is valid following Shengji rules
 export const isValidPlay = (
-  playedCards: Card[], 
-  leadingCombo: Card[] | null, 
-  playerHand: Card[], 
+  playedCards: Card[],
+  leadingCombo: Card[] | null,
+  playerHand: Card[],
   trumpInfo: TrumpInfo
 ): boolean => {
   // If no leading combo, any valid combo is acceptable
   if (!leadingCombo) {
     const combos = identifyCombos(playerHand, trumpInfo);
-    return combos.some(combo => 
-      combo.cards.length === playedCards.length && 
+    return combos.some(combo =>
+      combo.cards.length === playedCards.length &&
       combo.cards.every(card => playedCards.some(played => played.id === card.id))
     );
   }
-  
-  // Check if player has cards to follow suit/combo
-  const leadingSuit = getLeadingSuit(leadingCombo);
-  const cardsOfLeadingSuit = playerHand.filter(card => 
-    card.suit === leadingSuit && card.rank !== trumpInfo.trumpRank
-  );
-  
-  // If player has cards of leading suit, they must play them
-  if (cardsOfLeadingSuit.length >= leadingCombo.length) {
-    return playedCards.every(card => cardsOfLeadingSuit.some(handCard => handCard.id === card.id));
+
+  // Shengji rules: Must match the combination length
+  if (playedCards.length !== leadingCombo.length) {
+    return false;
   }
-  
-  // Player doesn't have enough cards of leading suit - can play trump or any other cards
-  return playedCards.length === leadingCombo.length;
+
+  // Get the leading combo's type and suit
+  const leadingSuit = getLeadingSuit(leadingCombo);
+  const leadingType = getComboType(leadingCombo);
+  const isLeadingTrump = leadingCombo.some(card => isTrump(card, trumpInfo));
+
+  // Find available cards in player's hand
+  const trumpCards = playerHand.filter(card => isTrump(card, trumpInfo));
+  const leadingSuitCards = playerHand.filter(card =>
+    card.suit === leadingSuit && !isTrump(card, trumpInfo)
+  );
+
+  // 1. If leading with trumps, must play trumps if you have them
+  if (isLeadingTrump) {
+    if (trumpCards.length >= leadingCombo.length) {
+      // Must play trump cards
+      return playedCards.every(card => isTrump(card, trumpInfo));
+    } else {
+      // Not enough trumps, can play anything
+      return true;
+    }
+  }
+
+  // 2. Check if player can match same combo type in same suit
+  const matchingCombos = identifyCombos(leadingSuitCards, trumpInfo).filter(
+    combo => combo.type === leadingType && combo.cards.length === leadingCombo.length
+  );
+
+  if (matchingCombos.length > 0) {
+    // Must play a matching combo in the same suit
+    const isMatchingCombo = matchingCombos.some(combo =>
+      combo.cards.every(card => playedCards.some(played => played.id === card.id))
+    );
+    return isMatchingCombo;
+  }
+
+  // 3. If can't match combo type in same suit, must still follow suit if possible
+  if (leadingSuitCards.length >= leadingCombo.length) {
+    // Must play cards of the leading suit
+    return playedCards.every(card =>
+      leadingSuitCards.some(handCard => handCard.id === card.id)
+    );
+  }
+
+  // 4. If player has some cards of the leading suit, but not enough for the combo,
+  // they must play all the cards they have of that suit
+  if (leadingSuitCards.length > 0 && leadingSuitCards.length < leadingCombo.length) {
+    // Count how many cards of the leading suit were played
+    const playedLeadingSuitCards = playedCards.filter(card =>
+      card.suit === leadingSuit && !isTrump(card, trumpInfo)
+    );
+
+    // Must use all available cards of the leading suit
+    // Check if all cards of the leading suit in the hand were played
+    const allLeadingSuitCardsPlayed = leadingSuitCards.every(handCard =>
+      playedLeadingSuitCards.some(playedCard => playedCard.id === handCard.id)
+    );
+
+    // Also check that we played exactly the right number of leading suit cards
+    const playedRightNumberOfLeadingSuitCards = playedLeadingSuitCards.length === leadingSuitCards.length;
+
+    if (!allLeadingSuitCardsPlayed || !playedRightNumberOfLeadingSuitCards) {
+      return false;
+    }
+
+    // The remaining cards can be anything to make up the required length
+    const playedNonLeadingSuitCount = playedCards.length - playedLeadingSuitCards.length;
+    const requiredNonLeadingSuitCount = leadingCombo.length - leadingSuitCards.length;
+
+    // Must play exactly the right number of total cards
+    if (playedNonLeadingSuitCount !== requiredNonLeadingSuitCount) {
+      return false;
+    }
+
+    // All cards must be from the player's hand
+    const allPlayedFromHand = playedCards.every(card =>
+      playerHand.some(handCard => handCard.id === card.id)
+    );
+
+    return allPlayedFromHand;
+  }
+
+  // 5. If not enough cards of leading suit, can play any valid combo of the right length
+  const allPlayedFromHand = playedCards.every(card =>
+    playerHand.some(handCard => handCard.id === card.id)
+  );
+
+  return allPlayedFromHand;
 };
 
 // Get the leading suit from a combo
-const getLeadingSuit = (combo: Card[]): Suit | undefined => {
+export const getLeadingSuit = (combo: Card[]): Suit | undefined => {
   // Find the first card that has a suit
   for (const card of combo) {
     if (card.suit) {
@@ -368,6 +485,62 @@ const getLeadingSuit = (combo: Card[]): Suit | undefined => {
     }
   }
   return undefined;
+};
+
+// Get the combo type (single, pair, etc.) based on the cards
+export const getComboType = (cards: Card[]): ComboType => {
+  if (cards.length === 1) {
+    return ComboType.Single;
+  } else if (cards.length === 2) {
+    // Check if it's a pair (same rank)
+    if (cards[0].rank === cards[1].rank) {
+      return ComboType.Pair;
+    }
+  } else if (cards.length === 3) {
+    // Check if it's a triplet (same rank)
+    if (cards[0].rank === cards[1].rank && cards[1].rank === cards[2].rank) {
+      return ComboType.Triplet;
+    }
+  } else if (cards.length === 4) {
+    // Check if it's a quad (same rank)
+    if (cards[0].rank === cards[1].rank &&
+        cards[1].rank === cards[2].rank &&
+        cards[2].rank === cards[3].rank) {
+      return ComboType.Quad;
+    }
+
+    // Check if it's a tractor (consecutive pairs)
+    if (cards[0].rank === cards[1].rank &&
+        cards[2].rank === cards[3].rank) {
+      // Make sure they're all the same suit (for proper Shengji tractors)
+      const sameSuit = cards[0].suit &&
+                      cards.every(card => card.suit === cards[0].suit);
+
+      if (sameSuit) {
+        // Get the rank values
+        const rankValues = cards.map(c => getRankValue(c.rank!));
+        // Sort ranks
+        rankValues.sort((a, b) => a - b);
+        // Check if consecutive (only 2 unique ranks with difference of 1)
+        if (new Set(rankValues).size === 2 &&
+            Math.abs(rankValues[0] - rankValues[2]) === 1) {
+          return ComboType.Tractor;
+        }
+      }
+    }
+  }
+
+  // Default to Single as fallback
+  return ComboType.Single;
+};
+
+// Helper to get numerical rank value
+const getRankValue = (rank: Rank): number => {
+  const rankOrder = [
+    Rank.Two, Rank.Three, Rank.Four, Rank.Five, Rank.Six, Rank.Seven,
+    Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King, Rank.Ace
+  ];
+  return rankOrder.indexOf(rank);
 };
 
 // Determine the winner of a trick
@@ -398,34 +571,61 @@ const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: TrumpInfo)
   if (comboA.length !== comboB.length) {
     throw new Error('Cannot compare combos of different lengths');
   }
-  
+
+  // Get combo types
+  const typeA = getComboType(comboA);
+  const typeB = getComboType(comboB);
+
   // For singles, directly compare cards
   if (comboA.length === 1) {
     return compareCards(comboA[0], comboB[0], trumpInfo);
   }
-  
-  // For multi-card combos, it gets more complex
-  // In Shengji, the suit of the first card usually determines the suit of the combo
-  const suitA = getLeadingSuit(comboA);
-  const suitB = getLeadingSuit(comboB);
-  
+
+  // Check if any combo contains trumps
+  const aIsTrump = comboA.some(card => isTrump(card, trumpInfo));
+  const bIsTrump = comboB.some(card => isTrump(card, trumpInfo));
+
   // If one is trump and the other isn't, trump wins
-  const aIsTrump = suitA === trumpInfo.trumpSuit || comboA.some(card => isTrump(card, trumpInfo));
-  const bIsTrump = suitB === trumpInfo.trumpSuit || comboB.some(card => isTrump(card, trumpInfo));
-  
   if (aIsTrump && !bIsTrump) return 1;
   if (!aIsTrump && bIsTrump) return -1;
-  
-  // If both are same suit or both are trump, compare the highest card of each
-  // (This is simplified - actual Shengji rules for multi-card combos are more complex)
-  const maxCardA = comboA.reduce((max, card) => 
+
+  // If both are trump or both non-trump, compare based on combo type rules
+
+  // For pairs, triplets, and quads (matching ranks)
+  if ((typeA === ComboType.Pair && typeB === ComboType.Pair) ||
+      (typeA === ComboType.Triplet && typeB === ComboType.Triplet) ||
+      (typeA === ComboType.Quad && typeB === ComboType.Quad)) {
+
+    // If they're the same type, compare the rank
+    if (comboA[0].rank && comboB[0].rank) {
+      return compareRanks(comboA[0].rank, comboB[0].rank);
+    }
+  }
+
+  // For tractors, compare the highest card in the tractor
+  if (typeA === ComboType.Tractor && typeB === ComboType.Tractor) {
+    // Find the highest card in each tractor
+    const maxCardA = comboA.reduce((max, card) =>
+      compareCards(max, card, trumpInfo) > 0 ? max : card, comboA[0]
+    );
+
+    const maxCardB = comboB.reduce((max, card) =>
+      compareCards(max, card, trumpInfo) > 0 ? max : card, comboB[0]
+    );
+
+    return compareCards(maxCardA, maxCardB, trumpInfo);
+  }
+
+  // If different types of combos, compare the highest card of each
+  // (as a fallback, though in real Shengji, different combo types would be invalid)
+  const maxCardA = comboA.reduce((max, card) =>
     compareCards(max, card, trumpInfo) > 0 ? max : card, comboA[0]
   );
-  
-  const maxCardB = comboB.reduce((max, card) => 
+
+  const maxCardB = comboB.reduce((max, card) =>
     compareCards(max, card, trumpInfo) > 0 ? max : card, comboB[0]
   );
-  
+
   return compareCards(maxCardA, maxCardB, trumpInfo);
 };
 
