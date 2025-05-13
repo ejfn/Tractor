@@ -1347,14 +1347,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Container for stacked cards
-  stackedCardContainer: {
-    width: 70,
-    height: 70,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   // Background stacked cards
   stackedCard: {
     position: 'absolute',

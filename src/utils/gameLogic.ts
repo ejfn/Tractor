@@ -221,10 +221,10 @@ export const identifyCombos = (cards: Card[], trumpInfo: TrumpInfo): Combo[] => 
     });
   });
   
-  // Look for pairs, triplets, and quads
+  // Look for pairs only
   Object.values(cardsBySuit).forEach(suitCards => {
     const cardsByRank = groupCardsByRank(suitCards);
-    
+
     Object.values(cardsByRank).forEach(rankCards => {
       // Pairs
       if (rankCards.length >= 2) {
@@ -236,32 +236,9 @@ export const identifyCombos = (cards: Card[], trumpInfo: TrumpInfo): Combo[] => 
           });
         }
       }
-      
-      // Triplets
-      if (rankCards.length >= 3) {
-        for (let i = 0; i < rankCards.length - 2; i++) {
-          combos.push({
-            type: ComboType.Triplet,
-            cards: [rankCards[i], rankCards[i + 1], rankCards[i + 2]],
-            value: getCardValue(rankCards[i], trumpInfo)
-          });
-        }
-      }
-      
-      // Quads
-      if (rankCards.length >= 4) {
-        for (let i = 0; i < rankCards.length - 3; i++) {
-          combos.push({
-            type: ComboType.Quad,
-            cards: [rankCards[i], rankCards[i + 1], rankCards[i + 2], rankCards[i + 3]],
-            value: getCardValue(rankCards[i], trumpInfo)
-          });
-        }
-      }
     });
     
-    // Look for straights and tractors within this suit
-    findStraights(suitCards, trumpInfo, combos);
+    // Look for tractors within this suit
     findTractors(suitCards, trumpInfo, combos);
   });
   
@@ -354,11 +331,6 @@ const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
   return value;
 };
 
-// Find straight runs in a suit
-const findStraights = (cards: Card[], trumpInfo: TrumpInfo, combos: Combo[]): void => {
-  // Implement straight finding logic
-  // This is a placeholder - would need complex logic to find all valid straights
-};
 
 // Find tractors (consecutive pairs) in a suit
 const findTractors = (cards: Card[], trumpInfo: TrumpInfo, combos: Combo[]): void => {
@@ -496,18 +468,7 @@ export const getComboType = (cards: Card[]): ComboType => {
     if (cards[0].rank === cards[1].rank) {
       return ComboType.Pair;
     }
-  } else if (cards.length === 3) {
-    // Check if it's a triplet (same rank)
-    if (cards[0].rank === cards[1].rank && cards[1].rank === cards[2].rank) {
-      return ComboType.Triplet;
-    }
   } else if (cards.length === 4) {
-    // Check if it's a quad (same rank)
-    if (cards[0].rank === cards[1].rank &&
-        cards[1].rank === cards[2].rank &&
-        cards[2].rank === cards[3].rank) {
-      return ComboType.Quad;
-    }
 
     // Check if it's a tractor (consecutive pairs)
     if (cards[0].rank === cards[1].rank &&
@@ -591,10 +552,8 @@ const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: TrumpInfo)
 
   // If both are trump or both non-trump, compare based on combo type rules
 
-  // For pairs, triplets, and quads (matching ranks)
-  if ((typeA === ComboType.Pair && typeB === ComboType.Pair) ||
-      (typeA === ComboType.Triplet && typeB === ComboType.Triplet) ||
-      (typeA === ComboType.Quad && typeB === ComboType.Quad)) {
+  // For pairs (matching ranks)
+  if (typeA === ComboType.Pair && typeB === ComboType.Pair) {
 
     // If they're the same type, compare the rank
     if (comboA[0].rank && comboB[0].rank) {

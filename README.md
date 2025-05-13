@@ -12,12 +12,54 @@ A React Native implementation of the Chinese card game Shengji (升级), also kn
 
 ## Game Rules
 
+### Basic Gameplay
+
 In Tractor (Shengji):
+
 - Players are divided into two teams (A and B)
 - One team defends while the other attacks
-- Trump cards are determined by rank and suit
-- Points are scored by capturing certain cards (5s, 10s, Kings)
+- Trump cards are determined by a trump rank and optionally a trump suit
+- Points are scored by capturing certain cards (5s = 5 points, 10s and Kings = 10 points)
 - The objective is to capture cards and advance through ranks from 2 to Ace
+
+### Trump Cards Hierarchy
+
+Trump cards are played in this order of strength (highest to lowest):
+
+1. Big Jokers
+2. Small Jokers
+3. Trump rank cards in the trump suit (e.g., 2♥ when 2 is trump rank and Hearts is trump suit)
+4. Trump rank cards in other suits (e.g., 2♦, 2♣, 2♠ when 2 is trump rank)
+5. Cards of the trump suit (e.g., all other Hearts when Hearts is trump suit)
+
+### Card Combinations
+
+#### Singles
+
+- Any card can be played as a single
+- Jokers and trump cards beat non-trump singles
+- Within trumps, the hierarchy above applies
+
+#### Pairs
+
+- A valid pair consists of two *identical* cards (same rank AND same suit)
+- Two Small Jokers (SJ-SJ) or two Big Jokers (BJ-BJ) form valid pairs
+- Cards of the same rank but different suits (e.g., 8♥-8♦) do NOT form a valid pair
+- Different jokers (SJ-BJ) do NOT form a valid pair
+
+#### Tractors
+
+- A Tractor is formed by consecutive pairs of the same suit
+- Example: 7♥-7♥-8♥-8♥ is a valid Tractor
+- All cards must be in the same suit
+- SJ-SJ-BJ-BJ forms a special Tractor (the highest possible)
+
+#### Tractor Rules
+
+- Pairs of different suits never form Tractors (7♥-7♥-8♠-8♠ is NOT a Tractor)
+- Trump cards of different levels never form Tractors (2♥-2♥-3♥-3♥ when 2 is trump rank is NOT a Tractor)
+- A-A-2-2 is NOT a Tractor (non-consecutive in rank order)
+- Any trump Tractor beats any non-trump Tractor of the same length (i.e., with the same number of pairs)
 
 ## Development
 

@@ -38,8 +38,5 @@ yarn-error.*
 
 app-example
 
-# Backup directory
-backup/
-
 **/.claude/settings.local.json
-coverage/**
+coverage/

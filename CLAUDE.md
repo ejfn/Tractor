@@ -47,13 +47,24 @@ The game implements the following key concepts:
    - Cards have suits, ranks, and jokers
    - Cards have point values (5s = 5 points, 10s and Ks = 10 points)
    - Trump cards are determined by a trump rank and optionally a trump suit
+   - Trump cards follow a hierarchy: Big Jokers > Small Jokers > Trump rank in trump suit > Trump rank in other suits > Trump suit cards
 
-3. **Game Flow**
+3. **Combo Types and Rules**
+   - Singles: Any card can be played as a single
+   - Pairs: Two identical cards (same rank AND same suit), including joker pairs (SJ-SJ, BJ-BJ)
+   - Tractors: Consecutive pairs of the same suit (e.g., 7♥-7♥-8♥-8♥)
+   - Special rules:
+     - Cards of same rank but different suits do NOT form pairs or tractors
+     - Trump cards of different levels don't form tractors with each other
+     - SJ-SJ-BJ-BJ forms a special tractor (the most powerful combo)
+     - Any trump combo beats any non-trump combo of the same type and length
+
+4. **Game Flow**
    - Phases: dealing, declaring, playing, scoring, gameOver
    - Players take turns playing cards following specific combination rules
    - Teams (A and B) alternate between defending and attacking
 
-4. **AI Logic**
+5. **AI Logic**
    - AI players make decisions based on difficulty level (Easy, Medium, Hard)
    - AI logic controls play selection and trump declaration
 
@@ -155,6 +166,7 @@ The game uses a rotated suit ordering system that maintains an alternating black
    - Ordering within the trump rank cards (lines 62-88)
 
 This approach ensures the player's hand is organized with:
+
 1. Jokers first (Big, then Small)
 2. Trump cards next (trump rank cards, then trump suit cards)
 3. Remaining suits in rotated order to maintain alternating black-red pattern

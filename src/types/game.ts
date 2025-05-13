@@ -85,11 +85,7 @@ export type GameState = {
 export enum ComboType {
   Single = 'Single',
   Pair = 'Pair',
-  Triplet = 'Triplet',
-  Quad = 'Quad',
-  Straight = 'Straight',
-  StraightPair = 'StraightPair', // Consecutive pairs
-  Tractor = 'Tractor', // Consecutive pairs/triplets of same suit
+  Tractor = 'Tractor', // Consecutive pairs of same suit
 }
 
 export type Combo = {
