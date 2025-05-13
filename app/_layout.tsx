@@ -6,7 +6,7 @@ import { Platform, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
 // Import the Colors constants
-import Colors from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Header title with "Tractor Card Game" on a single line
