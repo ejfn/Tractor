@@ -42,3 +42,4 @@ app-example
 backup/
 
 **/.claude/settings.local.json
+coverage/**
