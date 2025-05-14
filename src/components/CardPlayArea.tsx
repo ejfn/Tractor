@@ -4,8 +4,6 @@ import AnimatedCard from './AnimatedCard';
 import { Card as CardType, Player, Trick, TrumpInfo } from '../types/game'; // Using Card as CardType to avoid naming conflict
 import { isTrump } from '../utils/gameLogic';
 
-// Highlight winning cards with a border style instead of shadows
-
 interface CardPlayAreaProps {
   currentTrick: Trick | null;
   players: Player[];
@@ -92,7 +90,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
     if (currentTrick) {
       callbackCalledRef.current = false;
     }
-  }, [currentTrick?.leadingPlayerId]); // Only reset when a new trick starts
+  }, [currentTrick, currentTrick?.leadingPlayerId]); // Only reset when a new trick starts
 
   // Check if all animations are complete
   useEffect(() => {
@@ -112,8 +110,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         }
       }, 200); // Shorter delay - show result quicker after animations
     }
-  }, [completedAnimations, totalAnimationsNeeded, animationCompleted,
-     typeof onAnimationComplete === 'function' ? onAnimationComplete : undefined]);
+  }, [completedAnimations, totalAnimationsNeeded, animationCompleted, onAnimationComplete]);
 
   // Check if a player is winning
   const isWinning = (playerId: string) => {
@@ -142,25 +139,43 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   };
 
   // Add sequence information to cards
-  type CardWithSequence = CardType & { playSequence: number };
+  type CardWithSequence = CardType & {
+    playSequence: number;  // The order in which the card was played (0 = first, higher = later)
+    cardIndex: number;     // Index within player's combo (0 = first card in combo)
+    globalPlayOrder: number; // Global counter for absolute play order (for z-index)
+  };
 
-  // Get all cards played by position with sequence information
+  // Cards played by position with sequence information
   const topCards: CardWithSequence[] = [];
   const leftCards: CardWithSequence[] = [];
   const rightCards: CardWithSequence[] = [];
   const bottomCards: CardWithSequence[] = [];
+
+  // Track play sequence for each player's play
+  const playerSequenceMap: Record<string, number> = {};
+  
+  // Global counter to track absolute play order across all players (for z-index)
+  let globalPlayOrder = 0;
 
   // Check if the leading player has already played (to avoid duplication)
   const leadingPlayerHasPlayed = currentTrick.plays.some(play =>
     play.playerId === currentTrick.leadingPlayerId
   );
 
-  // If the leading player has not already played a card in the plays array,
-  // then use the leadingCombo to show their cards
+  // If the leading player has not already played, use leadingCombo
   if (!leadingPlayerHasPlayed) {
     const leadingPos = getPlayerPosition(currentTrick.leadingPlayerId);
-    currentTrick.leadingCombo.forEach(card => {
-      const cardWithSequence = { ...card, playSequence: 0 };
+    playerSequenceMap[currentTrick.leadingPlayerId] = 0; // First player is sequence 0
+    
+    currentTrick.leadingCombo.forEach((card, idx) => {
+      // Each card gets a unique global play order number
+      const cardWithSequence = { 
+        ...card, 
+        playSequence: 0,  // First player's sequence is 0
+        cardIndex: idx,   // Card index within the player's combo
+        globalPlayOrder: globalPlayOrder++ // Increment for each card played
+      };
+      
       if (leadingPos === 'top') topCards.push(cardWithSequence);
       if (leadingPos === 'left') leftCards.push(cardWithSequence);
       if (leadingPos === 'right') rightCards.push(cardWithSequence);
@@ -171,11 +186,20 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   // Add all plays with increasing sequence numbers
   currentTrick.plays.forEach((play, playIndex) => {
     const pos = getPlayerPosition(play.playerId);
-    // Sequence starts at 1 and goes up for each play
-    const sequence = playIndex + 1;
-
-    play.cards.forEach(card => {
-      const cardWithSequence = { ...card, playSequence: sequence };
+    const sequence = playIndex + 1; // Sequence starts at 1 and increases for each play
+    
+    // Record this player's sequence in the map
+    playerSequenceMap[play.playerId] = sequence;
+    
+    play.cards.forEach((card, idx) => {
+      // Each card gets a unique global play order number
+      const cardWithSequence = {
+        ...card,
+        playSequence: sequence,
+        cardIndex: idx, // Index within this player's combo
+        globalPlayOrder: globalPlayOrder++ // Increment for each card played
+      };
+      
       if (pos === 'top') topCards.push(cardWithSequence);
       if (pos === 'left') leftCards.push(cardWithSequence);
       if (pos === 'right') rightCards.push(cardWithSequence);
@@ -183,24 +207,18 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
     });
   });
 
-  // Sort cards by play sequence to ensure proper z-index rendering
-  topCards.sort((a, b) => a.playSequence - b.playSequence);
-  leftCards.sort((a, b) => a.playSequence - b.playSequence);
-  rightCards.sort((a, b) => a.playSequence - b.playSequence);
-  bottomCards.sort((a, b) => a.playSequence - b.playSequence);
+  // Sort cards by cardIndex to ensure proper display order within each player's area
+  topCards.sort((a, b) => a.cardIndex - b.cardIndex);
+  leftCards.sort((a, b) => a.cardIndex - b.cardIndex);
+  rightCards.sort((a, b) => a.cardIndex - b.cardIndex);
+  bottomCards.sort((a, b) => a.cardIndex - b.cardIndex);
 
   return (
     <View style={styles.container}>
       {/* Top player's cards */}
       <View style={styles.topPlayArea}>
         {topCards.length > 0 && (
-          <View style={[
-            styles.playedCardsContainer,
-            // Ensure proper stacking order - adjust base z-index by play order
-            {
-              zIndex: 90 // High base z-index for the top player
-            }
-          ]}>
+          <View style={[styles.playedCardsContainer]}>
             {topCards.map((card, index) => (
               <AnimatedCard
                 key={`top-${card.id}-${index}`}
@@ -215,8 +233,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   position: 'relative',
                   // Horizontal overlapping like human's hand
                   marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                  // Set z-index based on play sequence for stacking within a player's cards
-                  zIndex: 10 + card.playSequence, // This creates proper stacking within each player's cards
+                  // Use global play order for z-index, ensuring proper stacking
+                  zIndex: 10 + card.globalPlayOrder, // Higher values appear on top
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === 'android' && index === 0 && topCards.length > 1 && {
                     marginLeft: 15, // Smaller shift for tighter centering
@@ -239,13 +257,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         {/* Left player's cards */}
         <View style={styles.leftPlayArea}>
           {leftCards.length > 0 && (
-            <View style={[
-              styles.playedCardsContainer,
-              // Ensure proper stacking order - adjust base z-index by play order
-              {
-                zIndex: 80 // High base z-index for the left player
-              }
-            ]}>
+            <View style={[styles.playedCardsContainer]}>
               {leftCards.map((card, index) => (
                 <AnimatedCard
                   key={`left-${card.id}-${index}`}
@@ -260,8 +272,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     position: 'relative',
                     // Horizontal overlapping like human's hand
                     marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                    // Set z-index based on play sequence for stacking within a player's cards
-                    zIndex: 10 + card.playSequence, // This creates proper stacking within each player's cards
+                    // Use global play order for z-index, ensuring proper stacking
+                    zIndex: 10 + card.globalPlayOrder, // Higher values appear on top
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === 'android' && index === 0 && leftCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
@@ -287,13 +299,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         {/* Right player's cards */}
         <View style={styles.rightPlayArea}>
           {rightCards.length > 0 && (
-            <View style={[
-              styles.playedCardsContainer,
-              // Ensure proper stacking order - adjust base z-index by play order
-              {
-                zIndex: 70 // High base z-index for the right player
-              }
-            ]}>
+            <View style={[styles.playedCardsContainer]}>
               {rightCards.map((card, index) => (
                 <AnimatedCard
                   key={`right-${card.id}-${index}`}
@@ -308,8 +314,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     position: 'relative',
                     // Horizontal overlapping like human's hand
                     marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                    // Set z-index based on play sequence for stacking within a player's cards
-                    zIndex: 10 + card.playSequence, // This creates proper stacking within each player's cards
+                    // Use global play order for z-index, ensuring proper stacking
+                    zIndex: 10 + card.globalPlayOrder, // Higher values appear on top
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === 'android' && index === 0 && rightCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
@@ -331,13 +337,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       {/* Bottom player's cards */}
       <View style={styles.bottomPlayArea}>
         {bottomCards.length > 0 && (
-          <View style={[
-            styles.playedCardsContainer,
-            // Ensure proper stacking order - adjust base z-index by play order
-            {
-              zIndex: 60 // High base z-index for the bottom player
-            }
-          ]}>
+          <View style={[styles.playedCardsContainer]}>
             {bottomCards.map((card, index) => (
               <AnimatedCard
                 key={`bottom-${card.id}-${index}`}
@@ -352,8 +352,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   position: 'relative',
                   // Horizontal overlapping like human's hand
                   marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                  // Set z-index based on play sequence for stacking within a player's cards
-                  zIndex: 10 + card.playSequence, // This creates proper stacking within each player's cards
+                  // Use global play order for z-index, ensuring proper stacking
+                  zIndex: 10 + card.globalPlayOrder, // Higher values appear on top
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === 'android' && index === 0 && bottomCards.length > 1 && {
                     marginLeft: 15, // Smaller shift for tighter centering
@@ -389,7 +389,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: '100%',
   },
-  // Winning cards now use inline styling directly on the AnimatedCard
   // Layout areas for each player's cards - centered for each player
   topPlayArea: {
     width: '100%',
@@ -478,14 +477,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     width: '100%',
-  },
-  // Winning play highlight - now completely invisible
-  winningPlay: {
-    // Completely transparent with no effects
-    backgroundColor: 'transparent',
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
-    elevation: 0,
   },
   // Empty state
   emptyContainer: {

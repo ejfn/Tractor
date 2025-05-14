@@ -80,6 +80,25 @@ The game implements the following key concepts:
 - Optimized for mobile platforms (especially Android)
 - Web platform support is disabled for better performance focus
 
+## Quality Checks
+
+Before committing changes, always run:
+
+```bash
+# Check for linting issues
+npm run lint
+
+# Check for type errors
+npm run typecheck
+```
+
+Ensure that you address all errors before committing. You may see linting warnings, but they should not be increased from baseline. For tests, run:
+
+```bash
+# Run tests
+npm test
+```
+
 ## UI Implementation Details
 
 ### Card Rendering

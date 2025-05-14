@@ -475,7 +475,7 @@ const EnhancedGameScreen: React.FC = () => {
   
   // Auto-hide trick result after a delay and update game state
   useEffect(() => {
-    let hideTimer: NodeJS.Timeout | null = null;
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
     if (showTrickResult) {
       // Hide the trick result after a few seconds and continue the game
@@ -503,7 +503,7 @@ const EnhancedGameScreen: React.FC = () => {
     if (lastCompletedTrick) {
       hasShownResultRef.current = false;
     }
-  }, [lastCompletedTrick?.leadingPlayerId]); // Only reset when a new trick starts
+  }, [lastCompletedTrick, lastCompletedTrick?.leadingPlayerId]); // Only reset when a new trick starts
 
   // When showTrickResult becomes true, mark that we've shown it
   useEffect(() => {
@@ -514,7 +514,7 @@ const EnhancedGameScreen: React.FC = () => {
 
   // Simpler backup logic - only show once per trick and don't repeatedly trigger
   useEffect(() => {
-    let fallbackTimer: NodeJS.Timeout | null = null;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Only run the fallback if:
     // 1. We have a completed trick
@@ -565,7 +565,7 @@ const EnhancedGameScreen: React.FC = () => {
         clearTimeout(aiTimer);
       }
     };
-  }, [gameState, waitingForAI, handleAIMove, aiTimer, showTrickResult]);
+  }, [gameState, waitingForAI, handleAIMove, aiTimer, showTrickResult, lastCompletedTrick]);
 
   // Animate thinking dots (continuous animation regardless of whose turn it is)
   useEffect(() => {

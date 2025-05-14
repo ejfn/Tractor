@@ -7,7 +7,7 @@ module.exports = function(api) {
       ['@babel/plugin-transform-export-namespace-from'],
       ['react-native-reanimated/plugin'],
       ['module:react-native-dotenv'],
-      ['expo-router/babel'],
+      // Removed 'expo-router/babel' as it's deprecated in SDK 50+
     ],
     env: {
       production: {

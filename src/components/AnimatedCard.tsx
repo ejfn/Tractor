@@ -138,7 +138,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
         opacity.value = 1;
       }, delay);
     }
-  }, [isPlayed, delay, rotate, opacity, scale, typeof onAnimationComplete === 'function' ? onAnimationComplete : undefined]);
+  }, [isPlayed, delay, rotate, opacity, scale, onAnimationComplete]);
   
   // Card appearance animations
   const animatedStyle = useAnimatedStyle(() => {
