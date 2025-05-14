@@ -18,6 +18,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
   // Animation values
   const scoreAnimation = useRef(new Animated.Value(0)).current;
   const phaseAnimation = useRef(new Animated.Value(0)).current;
+  const trumpAnimation = useRef(new Animated.Value(0)).current;
   
   // Trigger animations when props change
   useEffect(() => {
@@ -51,6 +52,23 @@ const GameStatus: React.FC<GameStatusProps> = ({
       })
     ]).start();
   }, [gamePhase, phaseAnimation]);
+
+  // Trigger animation when trump info changes
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(trumpAnimation, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(trumpAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+        delay: 1500,
+      })
+    ]).start();
+  }, [trumpInfo, trumpAnimation]);
   
   // Animations for pulse effect
   const pulseScale = scoreAnimation.interpolate({
@@ -63,12 +81,17 @@ const GameStatus: React.FC<GameStatusProps> = ({
     outputRange: [1, 1.1, 1]
   });
 
+  const trumpScale = trumpAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 1.1, 1]
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.roundInfo}>
           <Text style={styles.roundText}>Round {roundNumber}</Text>
-          <Animated.View 
+          <Animated.View
             style={[styles.phaseIndicator, { transform: [{ scale: phaseScale }] }]}
           >
             <Text style={styles.phaseText}>{
@@ -78,22 +101,34 @@ const GameStatus: React.FC<GameStatusProps> = ({
         </View>
         
         <View style={styles.trumpInfo}>
-          <Text style={styles.infoLabel}>Trump:</Text>
-          <View style={styles.trumpDisplay}>
-            <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
-            {trumpInfo.trumpSuit && (
-              <Text style={[
-                styles.suitSymbol,
-                (trumpInfo.trumpSuit === Suit.Hearts || trumpInfo.trumpSuit === Suit.Diamonds)
-                  ? styles.redSuit : styles.blackSuit
-              ]}>
-                {trumpInfo.trumpSuit === Suit.Hearts ? '♥' :
-                 trumpInfo.trumpSuit === Suit.Diamonds ? '♦' :
-                 trumpInfo.trumpSuit === Suit.Clubs ? '♣' :
-                 trumpInfo.trumpSuit === Suit.Spades ? '♠' : ''}
-              </Text>
-            )}
-          </View>
+          <Text style={styles.trumpLabel}>Trump</Text>
+          <Animated.View style={[styles.trumpDisplay, { transform: [{ scale: trumpScale }] }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {trumpInfo.trumpSuit ? (
+                <>
+                  <Text style={[
+                    styles.trumpText,
+                    (trumpInfo.trumpSuit === Suit.Hearts || trumpInfo.trumpSuit === Suit.Diamonds)
+                      ? styles.redSuit : styles.blackSuit
+                  ]}>
+                    {trumpInfo.trumpRank}
+                  </Text>
+                  <Text style={[
+                    styles.suitSymbol,
+                    (trumpInfo.trumpSuit === Suit.Hearts || trumpInfo.trumpSuit === Suit.Diamonds)
+                      ? styles.redSuit : styles.blackSuit
+                  ]}>
+                    {trumpInfo.trumpSuit === Suit.Hearts ? '♥' :
+                     trumpInfo.trumpSuit === Suit.Diamonds ? '♦' :
+                     trumpInfo.trumpSuit === Suit.Clubs ? '♣' :
+                     trumpInfo.trumpSuit === Suit.Spades ? '♠' : ''}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
+              )}
+            </View>
+          </Animated.View>
         </View>
       </View>
       
@@ -177,6 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Platform.OS === 'android' ? 5 : 10, // Reduced margin on Android
     marginTop: Platform.OS === 'android' ? 2 : 0, // Slight top margin on Android
+    minHeight: 40, // Ensure consistent height
   },
   roundInfo: {
     flexDirection: 'row',
@@ -186,70 +222,76 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginRight: 10,
-    color: '#303F9F',
+    color: '#0a7ea4', // Teal to match the app's tint color
   },
   phaseIndicator: {
-    backgroundColor: '#303F9F',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: '#E1F5FE', // Solid light blue background
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: '#0a7ea4', // Teal border (app's tint color)
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 2,
+    minWidth: 65,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   phaseText: {
-    color: 'white',
-    fontSize: 12,
+    color: '#0a7ea4', // Teal text to match border
+    fontSize: 13,
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   trumpInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  infoLabel: {
-    fontSize: 14,
-    marginRight: 5,
+  trumpLabel: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#424242',
+    marginRight: 10,
+    color: '#0a7ea4', // Teal to match the app's tint color
   },
   trumpDisplay: {
-    backgroundColor: '#FFC107',
+    backgroundColor: '#E1F5FE', // Solid light blue background
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingVertical: 6,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
     elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.5)',
+    borderColor: '#0a7ea4', // Teal border (app's tint color)
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 65,  // Match typical width of phase indicator
+    height: 32,    // Fixed height to match phase indicator
   },
   trumpText: {
     fontWeight: 'bold',
-    color: '#212121',
-    fontSize: 15,
+    fontSize: 13,
+    marginRight: 1,
+    lineHeight: 16,
   },
   suitSymbol: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginLeft: 5,
+    marginLeft: 2,
+    lineHeight: 16,
+    marginBottom: 1, // Lift it up slightly
   },
   redSuit: {
-    color: '#D32F2F',
+    color: '#D32F2F', // Deeper red for contrast on light background
   },
   blackSuit: {
-    color: '#212121',
+    color: '#000000', // Black for contrast on light background
   },
   teamsContainer: {
     flexDirection: 'row',
