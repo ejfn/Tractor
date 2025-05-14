@@ -513,7 +513,9 @@ export const isValidPlay = (
     return allPlayedFromHand;
   }
 
-  // 5. If not enough cards of leading suit, can play any valid combo of the RIGHT TYPE and length
+  // 5. If no cards of the leading suit, can play ANY cards of the correct length,
+  // regardless of combo type - the combo type check is only applied when player has 
+  // enough cards of leading suit to form a valid combo
 
   // First, verify all played cards are from the player's hand
   const allPlayedFromHand = playedCards.every(card =>
@@ -524,7 +526,13 @@ export const isValidPlay = (
     return false;
   }
 
-  // We already checked the combo type at the beginning of the function
+  // If we have no cards of the leading suit, any selection of correct length is valid
+  if (leadingSuitCards.length === 0) {
+    // Just need to verify the length, which we've already done at the start
+    return true;
+  }
+
+  // Default - should only reach here in edge cases
   return true;
 };
 

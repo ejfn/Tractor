@@ -201,6 +201,34 @@ describe('Follow Suit Rules Tests', () => {
     // Both plays should be valid since player has no cards of leading suit
     expect(isValidPlay(validPair, leadingCombo, playerHand, trumpInfo)).toBe(true);
     expect(isValidPlay(validMix, leadingCombo, playerHand, trumpInfo)).toBe(true);
+    
+    // Test case for key scenario: two cards from same suit but not a pair (different ranks)
+    // when played against a leading pair
+    const specialCase = {
+      playerHand: [
+        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
+        createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1'),
+        createCard(Suit.Clubs, Rank.Nine, 'clubs_9_1')
+      ],
+      leadingCombo: [
+        createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_1'),
+        createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_2')
+      ],
+      playedCards: [
+        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
+        createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1')
+      ]
+    };
+    
+    // The played cards are two hearts of different ranks (not a proper pair)
+    // This should be valid when the player has no diamonds
+    expect(getComboType(specialCase.playedCards)).toBe(ComboType.Single);  // Not a pair
+    expect(isValidPlay(
+      specialCase.playedCards, 
+      specialCase.leadingCombo, 
+      specialCase.playerHand, 
+      trumpInfo
+    )).toBe(true);
   });
   
   test('Must play all cards of leading suit even if not enough for the combo', () => {
