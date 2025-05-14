@@ -281,12 +281,12 @@ export const AnimatedCard: React.FC<CardProps> = ({
   let borderWidth = 1;
 
   if (card.joker) {
-    // Enhanced styling for jokers (treated as trump cards)
-    bgColor = card.joker === 'Big' ? '#FFEBEE' : '#F5F5F5';
-    borderColor = '#D4B82F'; // Darker gold border like other trump cards
-    borderWidth = 1.5; // Slightly thicker border
+    // Standardized styling for jokers as trump cards
+    bgColor = '#FFFCEB'; // Consistent light gold background for all trump cards
+    borderColor = '#D4B82F'; // Gold border for all trump cards
+    borderWidth = 1.5; // Consistent border width for all trump cards
 
-    // Simplified joker card
+    // Joker colors maintained for readability
     const jokerColor = card.joker === 'Big' ? '#D32F2F' : '#000000';
 
     return (
@@ -396,21 +396,12 @@ export const AnimatedCard: React.FC<CardProps> = ({
     );
   }
 
-  // Enhanced trump card styling
+  // Standardized trump card styling - same for all trump cards
   if (isTrump) {
-    const isTopTrump = card.rank === 'A';  // Check for Ace trump
-
-    if (isTopTrump) {
-      // More distinctive styling for Ace trumps
-      bgColor = '#FFF9E0'; // Richer gold-cream tint
-      borderColor = '#D4B82F'; // Darker gold border
-      borderWidth = 1.5; // Thicker border
-    } else {
-      // More noticeable styling for regular trump cards
-      bgColor = '#FFFCEB'; // Light gold tint
-      borderColor = '#D4B82F'; // Darker gold border
-      borderWidth = 1; // Standard border width
-    }
+    // Consistent styling for all trump cards
+    bgColor = '#FFFCEB'; // Light gold tint for all trump cards
+    borderColor = '#D4B82F'; // Gold border for all trump cards
+    borderWidth = 1.5; // Consistent border width for all trump cards
   }
 
   // Render normal card with enhanced styling
