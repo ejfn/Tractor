@@ -351,9 +351,43 @@ export const getAIMove = (
     // If player has cards of the leading suit, they MUST play all of them first
     if (leadingSuitCards.length > 0) {
       if (leadingSuitCards.length >= leadingLength) {
-        // This shouldn't happen, as we should have found valid combos earlier
-        console.warn("AI has enough leading suit cards but no valid combo found - using all leading suit cards");
-        return leadingSuitCards.slice(0, leadingLength);
+        // This can happen when the AI has enough cards of the right suit
+        // but they don't form a valid combo (e.g., they don't match the pattern)
+        // We need to find a valid play using those suit cards
+
+        // Try to form a valid play by selecting the right cards of the suit
+        // Sort cards by value to ensure a consistent selection
+        const sortedLeadingSuitCards = [...leadingSuitCards].sort(
+          (a, b) => compareCards(a, b, gameState.trumpInfo)
+        );
+
+        // Check if the available cards can form a valid play
+        const selectedCards = sortedLeadingSuitCards.slice(0, leadingLength);
+        if (isValidPlay(selectedCards, leadingCombo, player.hand, gameState.trumpInfo)) {
+          return selectedCards;
+        }
+
+        // If we can't make a valid play from the leading suit cards alone,
+        // we might need to include some trump cards or other cards
+        // This is a complex case that depends on the game rules
+        console.warn("AI has enough leading suit cards but cannot form a valid combo - trying alternative selection");
+
+        // Look for any valid combinations with these suit cards
+        const possibleCombos = allCombos.filter(combo =>
+          combo.cards.length === leadingLength &&
+          isValidPlay(combo.cards, leadingCombo, player.hand, gameState.trumpInfo)
+        );
+
+        if (possibleCombos.length > 0) {
+          // Sort by value and take the lowest
+          possibleCombos.sort((a, b) => a.value - b.value);
+          return possibleCombos[0].cards;
+        }
+
+        // Last resort: just play the cards even if it's not a valid combo
+        // This should be caught by the game rules, but it's a fallback
+        console.warn("AI cannot find any valid play - using arbitrary cards of the leading suit");
+        return sortedLeadingSuitCards.slice(0, leadingLength);
       } else {
         // Not enough cards of the leading suit, but must use all we have
         // Plus some other cards to reach the required length

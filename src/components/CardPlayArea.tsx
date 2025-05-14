@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, Platform } from 'react-native';
 import AnimatedCard from './AnimatedCard';
 import { Card as CardType, Player, Trick, TrumpInfo } from '../types/game'; // Using Card as CardType to avoid naming conflict
@@ -11,14 +11,116 @@ interface CardPlayAreaProps {
   players: Player[];
   trumpInfo: TrumpInfo;
   winningPlayerId?: string;
+  onAnimationComplete?: (() => void); // Explicitly typed as function
 }
 
 const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   currentTrick,
   players,
   trumpInfo,
-  winningPlayerId
+  winningPlayerId,
+  onAnimationComplete
 }) => {
+  // Track animation states for all cards in the current trick
+  const [completedAnimations, setCompletedAnimations] = useState<number>(0);
+  const [totalAnimationsNeeded, setTotalAnimationsNeeded] = useState<number>(0);
+  const [animationCompleted, setAnimationCompleted] = useState<boolean>(false);
+
+  // Handler for individual card animations completing - explicitly typed as a function
+  const handleCardAnimationComplete = (): void => {
+    // Increment the animation counter
+    setCompletedAnimations(prev => prev + 1);
+  };
+
+  // Reset animation tracking when trick changes
+  useEffect(() => {
+    if (currentTrick) {
+      // Reset animation tracking
+      setCompletedAnimations(0);
+      setAnimationCompleted(false);
+
+      // Count total cards in this trick to track animations
+      let totalCards = 0;
+
+      // If leading player has not already played, count their cards
+      const leadingPlayerHasPlayed = currentTrick.plays.some(play =>
+        play.playerId === currentTrick.leadingPlayerId
+      );
+
+      if (!leadingPlayerHasPlayed) {
+        totalCards += currentTrick.leadingCombo.length;
+      }
+
+      // Count cards from all plays
+      currentTrick.plays.forEach(play => {
+        totalCards += play.cards.length;
+      });
+
+      // Ensure we have the right player count
+      const playerCount = currentTrick.plays.length + (leadingPlayerHasPlayed ? 0 : 1);
+
+      // Ensure we have a backup "minimum" card count for safety
+      const minExpectedCards = playerCount; // At least 1 card per player
+      if (totalCards < minExpectedCards) {
+        totalCards = minExpectedCards;
+      }
+
+      setTotalAnimationsNeeded(totalCards);
+
+      // Add a fallback timer to complete animations even if callbacks fail
+      const fallbackTimer = setTimeout(() => {
+        if (!animationCompleted) {
+          setCompletedAnimations(totalCards);
+        }
+      }, 1000); // 1 second fallback
+
+      // Clean up the fallback timer on component unmount or trick change
+      return () => clearTimeout(fallbackTimer);
+    } else {
+      // Reset counters when there's no current trick
+      setCompletedAnimations(0);
+      setTotalAnimationsNeeded(0);
+      setAnimationCompleted(false);
+    }
+  }, [currentTrick, animationCompleted]);
+
+  // Use a ref to track if we've called the callback for this trick
+  const callbackCalledRef = React.useRef(false);
+
+  // Reset the ref when the trick changes
+  useEffect(() => {
+    if (currentTrick) {
+      callbackCalledRef.current = false;
+    }
+  }, [currentTrick?.leadingPlayerId]); // Only reset when a new trick starts
+
+  // Check if all animations are complete
+  useEffect(() => {
+    if (completedAnimations >= totalAnimationsNeeded &&
+        totalAnimationsNeeded > 0 &&
+        !animationCompleted &&
+        !callbackCalledRef.current) { // Only trigger if we haven't already called the callback
+
+      // Mark as complete to prevent multiple callbacks
+      setAnimationCompleted(true);
+      callbackCalledRef.current = true; // Mark that we've called the callback
+
+      // Add a small delay to ensure all visual animations are complete
+      setTimeout(() => {
+        if (typeof onAnimationComplete === 'function') {
+          onAnimationComplete();
+        }
+      }, 200); // Shorter delay - show result quicker after animations
+    }
+  }, [completedAnimations, totalAnimationsNeeded, animationCompleted,
+     typeof onAnimationComplete === 'function' ? onAnimationComplete : undefined]);
+
+  // Check if a player is winning
+  const isWinning = (playerId: string) => {
+    return playerId === winningPlayerId;
+  };
+
+  // Early return for empty trick
   if (!currentTrick) {
     return (
       <View style={styles.container}>
@@ -28,11 +130,6 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       </View>
     );
   }
-
-  // Check if a player is winning
-  const isWinning = (playerId: string) => {
-    return playerId === winningPlayerId;
-  };
 
   // Find player positions by ID
   const getPlayerPosition = (playerId: string): 'top' | 'left' | 'right' | 'bottom' => {
@@ -112,6 +209,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                 isTrump={isTrump(card, trumpInfo)}
                 delay={index * 100}
                 scale={0.75} // Smaller played cards
+                onAnimationComplete={handleCardAnimationComplete}
                 style={{
                   // Position relative for regular stacking
                   position: 'relative',
@@ -156,6 +254,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   isTrump={isTrump(card, trumpInfo)}
                   delay={index * 100}
                   scale={0.75} // Smaller played cards
+                  onAnimationComplete={handleCardAnimationComplete}
                   style={{
                     // Position relative for regular stacking
                     position: 'relative',
@@ -203,6 +302,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   isTrump={isTrump(card, trumpInfo)}
                   delay={index * 100}
                   scale={0.75} // Smaller played cards
+                  onAnimationComplete={handleCardAnimationComplete}
                   style={{
                     // Position relative for regular stacking
                     position: 'relative',
@@ -246,6 +346,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                 isTrump={isTrump(card, trumpInfo)}
                 delay={index * 100}
                 scale={0.75} // Smaller played cards
+                onAnimationComplete={handleCardAnimationComplete}
                 style={{
                   // Position relative for regular stacking
                   position: 'relative',

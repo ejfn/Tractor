@@ -19,6 +19,7 @@ interface CardProps {
   delay?: number;
   scale?: number; // Add scale prop for bot cards
   style?: any; // Add style prop for additional styling
+  onAnimationComplete?: (() => void); // Add callback for animation completion - properly typed as function
 }
 
 export const AnimatedCard: React.FC<CardProps> = ({
@@ -30,7 +31,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
   isTrump = false,
   delay = 0,
   scale: cardScale = 1, // Default scale factor of 1, renamed to avoid conflict
-  style = {} // Default empty style object
+  style = {}, // Default empty style object
+  onAnimationComplete = undefined // Explicitly set default to undefined to ensure proper typing
 }) => {
   // Animated values
   const scale = useSharedValue(cardScale);
@@ -121,12 +123,22 @@ export const AnimatedCard: React.FC<CardProps> = ({
           duration: 300,
           easing: Easing.out(Easing.ease)
         });
-        scale.value = withTiming(1, { duration: 300 });
+
+        // Use animation completion callback for the scale animation
+        scale.value = withTiming(1, {
+          duration: 300
+        }, (finished) => {
+          if (finished && typeof onAnimationComplete === 'function') {
+            // Notify parent component that animation is complete
+            onAnimationComplete();
+          }
+        });
+
         // Always set opacity to 1 immediately to prevent any transparency
         opacity.value = 1;
       }, delay);
     }
-  }, [isPlayed, delay, rotate, opacity, scale]);
+  }, [isPlayed, delay, rotate, opacity, scale, typeof onAnimationComplete === 'function' ? onAnimationComplete : undefined]);
   
   // Card appearance animations
   const animatedStyle = useAnimatedStyle(() => {

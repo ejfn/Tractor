@@ -317,10 +317,33 @@ const EnhancedGameScreen: React.FC = () => {
       if (allCardsPlayed) {
         endRound(newState);
       } else {
-        // Pause to show trick result
+        // Store the information about the completed trick for animation
         setLastTrickWinner(newState.players[winningPlayerIndex].name);
         setLastTrickPoints(completedTrick.points);
-        setShowTrickResult(true);
+
+        // Reset showTrickResult to false before setting the new completed trick
+        // The CardPlayArea's onAnimationComplete callback will set it to true
+        // only after all four players' cards have been animated
+        setShowTrickResult(false);
+
+        // Save the completed trick with all info needed
+        const trickWithWinner = {...completedTrick, winningPlayerId: winningPlayerId};
+
+        // Ensure we have the complete trick info before setting state
+        if (trickWithWinner.plays.length === newState.players.length) {
+          setLastCompletedTrick(trickWithWinner);
+        } else {
+          // Add missing plays if needed to ensure all players are represented
+          while (trickWithWinner.plays.length < newState.players.length) {
+            // This is a fallback - it shouldn't happen in normal play
+            const missingPlayerId = newState.players[trickWithWinner.plays.length].id;
+            trickWithWinner.plays.push({
+              playerId: missingPlayerId,
+              cards: []
+            });
+          }
+          setLastCompletedTrick(trickWithWinner);
+        }
       }
     } else {
       // Move to next player
@@ -450,12 +473,74 @@ const EnhancedGameScreen: React.FC = () => {
     }
   }, [gameState, showTrumpDeclaration, checkAITrumpDeclaration]);
   
+  // Auto-hide trick result after a delay and update game state
+  useEffect(() => {
+    let hideTimer: NodeJS.Timeout | null = null;
+
+    if (showTrickResult) {
+      // Hide the trick result after a few seconds and continue the game
+      hideTimer = setTimeout(() => {
+        setShowTrickResult(false);
+
+        // Also clear the lastCompletedTrick to ensure we stop showing
+        // the completed trick and allow the next trick to start
+        setLastCompletedTrick(null);
+      }, 2000);
+    }
+
+    return () => {
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+      }
+    };
+  }, [showTrickResult]);
+
+  // We'll use a ref to track if we've ever shown the result for this trick
+  const hasShownResultRef = useRef(false);
+
+  // Reset the ref when a new trick is completed
+  useEffect(() => {
+    if (lastCompletedTrick) {
+      hasShownResultRef.current = false;
+    }
+  }, [lastCompletedTrick?.leadingPlayerId]); // Only reset when a new trick starts
+
+  // When showTrickResult becomes true, mark that we've shown it
+  useEffect(() => {
+    if (showTrickResult) {
+      hasShownResultRef.current = true;
+    }
+  }, [showTrickResult]);
+
+  // Simpler backup logic - only show once per trick and don't repeatedly trigger
+  useEffect(() => {
+    let fallbackTimer: NodeJS.Timeout | null = null;
+
+    // Only run the fallback if:
+    // 1. We have a completed trick
+    // 2. We're not currently showing the result
+    // 3. We haven't already shown the result for this trick
+    if (lastCompletedTrick && !showTrickResult && !hasShownResultRef.current) {
+      fallbackTimer = setTimeout(() => {
+        setShowTrickResult(true);
+        hasShownResultRef.current = true; // Mark that we've shown it
+      }, 1200); // 1.2 second fallback (much shorter)
+    }
+
+    return () => {
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+      }
+    };
+  }, [lastCompletedTrick, showTrickResult]);
+
   // Handle AI turns
   useEffect(() => {
     if (gameState &&
         gameState.gamePhase === 'playing' &&
         !waitingForAI &&
         !showTrickResult && // Don't start a new AI move while showing trick result
+        !lastCompletedTrick && // Also don't start a new AI move when there's a completed trick
         !gameState.players[gameState.currentPlayerIndex].isHuman) {
 
       // Set a delay for AI move to make the game feel more natural
@@ -689,8 +774,8 @@ const EnhancedGameScreen: React.FC = () => {
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 2</Text>
-                {/* Show thinking dots when it's this player's turn and they're thinking */}
-                {waitingForAI && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai2') && (
+                {/* Show thinking dots when it's this player's turn, they're thinking, and no trick result is showing */}
+                {waitingForAI && !showTrickResult && !lastCompletedTrick && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai2') && (
                   <View style={styles.thinkingIndicator}>
                     <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot1}]} />
                     <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot2}]} />
@@ -746,8 +831,8 @@ const EnhancedGameScreen: React.FC = () => {
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 1</Text>
-                {/* Show thinking dots when it's this player's turn and they're thinking */}
-                {waitingForAI && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai1') && (
+                {/* Show thinking dots when it's this player's turn, they're thinking, and no trick result is showing */}
+                {waitingForAI && !showTrickResult && !lastCompletedTrick && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai1') && (
                   <View style={styles.thinkingIndicator}>
                     <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot1}]} />
                     <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot2}]} />
@@ -795,10 +880,18 @@ const EnhancedGameScreen: React.FC = () => {
               {/* Center play area */}
               <View style={styles.centerArea}>
                 <CardPlayArea
-                  currentTrick={showTrickResult && lastCompletedTrick ? lastCompletedTrick : gameState.currentTrick}
+                  // Keep showing lastCompletedTrick, but only if it exists, otherwise show currentTrick
+                  // This ensures the trick stays visible until after the winner box is shown
+                  currentTrick={lastCompletedTrick || gameState.currentTrick}
                   players={gameState.players}
                   trumpInfo={gameState.trumpInfo}
-                  winningPlayerId={showTrickResult && lastCompletedTrick ? lastCompletedTrick.winningPlayerId : gameState.currentTrick?.winningPlayerId}
+                  winningPlayerId={lastCompletedTrick?.winningPlayerId || gameState.currentTrick?.winningPlayerId}
+                  onAnimationComplete={function animationCompleteHandler() {
+                    // Only show the trick result after all cards are animated
+                    if (lastCompletedTrick && !showTrickResult) {
+                      setShowTrickResult(true);
+                    }
+                  }}
                 />
               </View>
 
@@ -811,8 +904,8 @@ const EnhancedGameScreen: React.FC = () => {
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>Bot 3</Text>
-                {/* Show thinking dots when it's this player's turn and they're thinking */}
-                {waitingForAI && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai3') && (
+                {/* Show thinking dots when it's this player's turn, they're thinking, and no trick result is showing */}
+                {waitingForAI && !showTrickResult && !lastCompletedTrick && gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai3') && (
                   <View style={styles.thinkingIndicator}>
                     <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot1}]} />
                     <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot2}]} />
@@ -867,8 +960,8 @@ const EnhancedGameScreen: React.FC = () => {
                   styles.teamALabel : styles.teamBLabel
               ]}>
                 <Text style={styles.playerLabel}>You</Text>
-                {/* Show thinking dots when it's human player's turn */}
-                {gameState.currentPlayerIndex === humanPlayerIndex && (
+                {/* Show thinking dots when it's human player's turn and no trick result is showing */}
+                {gameState.currentPlayerIndex === humanPlayerIndex && !showTrickResult && !lastCompletedTrick && (
                   <View style={styles.thinkingIndicator}>
                     <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot1}]} />
                     <Animated.View style={[styles.thinkingDot, {opacity: thinkingDot2}]} />
