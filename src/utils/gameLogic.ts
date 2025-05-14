@@ -288,30 +288,36 @@ export const identifyCombos = (cards: Card[], trumpInfo: TrumpInfo): Combo[] => 
 // Group cards by suit (considering trumps)
 const groupCardsBySuit = (cards: Card[], trumpInfo: TrumpInfo): Record<string, Card[]> => {
   const cardsBySuit: Record<string, Card[]> = {};
-  
+
   cards.forEach(card => {
     let suitKey = 'joker';
-    
+
     if (card.suit) {
-      // If card is trump rank, group it with trumps
+      // For trumps, preserve their suit for pair matching
+      // This ensures cards of different suits don't form pairs,
+      // even if they're both trumps
+
       if (card.rank === trumpInfo.trumpRank) {
-        suitKey = 'trump';
+        // For trump rank cards, use a compound key with both trump indicator and suit
+        // This allows us to identify them as trumps while maintaining suit separation
+        suitKey = `trump_${card.suit}`;
       } else if (isTrump(card, trumpInfo)) {
-        // If card is trump suit, group it with trumps
-        suitKey = 'trump';
+        // If card is trump suit but not trump rank, group it with trumps
+        // These are all the same suit, so we can group them together
+        suitKey = 'trump_suit';
       } else {
         // Normal card
         suitKey = card.suit;
       }
     }
-    
+
     if (!cardsBySuit[suitKey]) {
       cardsBySuit[suitKey] = [];
     }
-    
+
     cardsBySuit[suitKey].push(card);
   });
-  
+
   return cardsBySuit;
 };
 
