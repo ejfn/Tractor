@@ -3,7 +3,6 @@ import {
   StyleSheet,
   View,
   Text,
-  Alert,
   Animated,
   Dimensions,
   Platform
@@ -15,6 +14,7 @@ import GameSetupScreen from '../components/GameSetupScreen';
 import GameOverScreen from '../components/GameOverScreen';
 import TrumpDeclarationModal from '../components/TrumpDeclarationModal';
 import TrickResultDisplay from '../components/TrickResultDisplay';
+import RoundCompleteModal from '../components/RoundCompleteModal';
 import {
   GameState,
   Card,
@@ -55,6 +55,8 @@ const EnhancedGameScreen: React.FC = () => {
   const [lastTrickWinner, setLastTrickWinner] = useState('');
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
   const [lastCompletedTrick, setLastCompletedTrick] = useState<Trick | null>(null);
+  const [showRoundComplete, setShowRoundComplete] = useState(false);
+  const [roundCompleteMessage, setRoundCompleteMessage] = useState('');
 
 
   // Animations - initialize with visible values for first render
@@ -69,6 +71,71 @@ const EnhancedGameScreen: React.FC = () => {
 
   // Timer for AI moves
   const [aiTimer, setAiTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Function to prepare for the next round
+  const prepareNextRound = (state: GameState) => {
+    const newState = { ...state };
+    
+    newState.roundNumber++;
+    newState.gamePhase = 'dealing';
+    
+    // Set trump rank to defending team's rank
+    const newDefendingTeam = newState.teams.find(t => t.isDefending);
+    if (newDefendingTeam) {
+      newState.trumpInfo.trumpRank = newDefendingTeam.currentRank;
+      newState.trumpInfo.trumpSuit = undefined;
+      newState.trumpInfo.declared = false;
+    }
+    
+    // Create and shuffle a new deck
+    const deck = initializeGame(
+      gameConfig.playerName,
+      gameConfig.teamNames,
+      newState.trumpInfo.trumpRank
+    ).deck;
+    
+    newState.deck = deck;
+    
+    // Deal cards
+    let cardIndex = 0;
+    const cardsPerPlayer = Math.floor((deck.length - 8) / newState.players.length);
+    
+    newState.players.forEach(player => {
+      player.hand = deck.slice(cardIndex, cardIndex + cardsPerPlayer);
+      cardIndex += cardsPerPlayer;
+    });
+    
+    // Set kitty cards
+    newState.kittyCards = deck.slice(deck.length - 8);
+    
+    // Reset trick history
+    newState.tricks = [];
+    newState.currentTrick = null;
+    
+    // First player is from defending team
+    const defendingPlayers = newState.players.filter(
+      p => p.team === newDefendingTeam?.id
+    );
+    newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
+    
+    // Set phase to declaring again
+    newState.gamePhase = 'declaring';
+    
+    setGameState(newState);
+    
+    // Check for trump declaration
+    const humanPlayer = newState.players.find(p => p.isHuman);
+    if (humanPlayer) {
+      const hasTrumpRank = humanPlayer.hand.some(
+        card => card.rank === newState.trumpInfo.trumpRank
+      );
+      
+      if (hasTrumpRank) {
+        setShowTrumpDeclaration(true);
+      }
+      // AI trump declaration is now handled by the separate useEffect
+    }
+  };
 
   // End the current round - defined at the top to avoid circular references
   const endRound = React.useCallback((state: GameState) => {
@@ -93,11 +160,8 @@ const EnhancedGameScreen: React.FC = () => {
           attackingTeam.isDefending = true;
 
           // Show round result
-          Alert.alert(
-            'Round Complete',
-            `Team ${attackingTeam.id} reached ${attackingTeam.points} points and advances to rank ${attackingTeam.currentRank}!`,
-            [{ text: 'Next Round' }]
-          );
+          setRoundCompleteMessage(`Team ${attackingTeam.id} reached ${attackingTeam.points} points and advances to rank ${attackingTeam.currentRank}!`);
+          setShowRoundComplete(true);
         } else {
           // Game over - attacking team reached Ace and won
           setGameOver(true);
@@ -112,11 +176,8 @@ const EnhancedGameScreen: React.FC = () => {
           defendingTeam.currentRank = rankOrder[currentRankIndex + 1];
 
           // Show round result
-          Alert.alert(
-            'Round Complete',
-            `Team ${defendingTeam.id} successfully defended with ${attackingTeam.points}/80 points for attackers! They advance to rank ${defendingTeam.currentRank}.`,
-            [{ text: 'Next Round' }]
-          );
+          setRoundCompleteMessage(`Team ${defendingTeam.id} successfully defended with ${attackingTeam.points}/80 points for attackers! They advance to rank ${defendingTeam.currentRank}.`);
+          setShowRoundComplete(true);
         } else {
           // Game over - defending team reached Ace and won
           setGameOver(true);
@@ -129,69 +190,12 @@ const EnhancedGameScreen: React.FC = () => {
       attackingTeam.points = 0;
     }
 
-    // If game not over, prepare next round
+    // If game not over, store the state for next round
     if (!gameOver) {
-      newState.roundNumber++;
-      newState.gamePhase = 'dealing';
-
-      // Set trump rank to defending team's rank
-      const newDefendingTeam = newState.teams.find(t => t.isDefending);
-      if (newDefendingTeam) {
-        newState.trumpInfo.trumpRank = newDefendingTeam.currentRank;
-        newState.trumpInfo.trumpSuit = undefined;
-        newState.trumpInfo.declared = false;
-      }
-
-      // Create and shuffle a new deck
-      const deck = initializeGame(
-        gameConfig.playerName,
-        gameConfig.teamNames,
-        newState.trumpInfo.trumpRank
-      ).deck;
-
-      newState.deck = deck;
-
-      // Deal cards
-      let cardIndex = 0;
-      const cardsPerPlayer = Math.floor((deck.length - 8) / newState.players.length);
-
-      newState.players.forEach(player => {
-        player.hand = deck.slice(cardIndex, cardIndex + cardsPerPlayer);
-        cardIndex += cardsPerPlayer;
-      });
-
-      // Set kitty cards
-      newState.kittyCards = deck.slice(deck.length - 8);
-
-      // Reset trick history
-      newState.tricks = [];
-      newState.currentTrick = null;
-
-      // First player is from defending team
-      const defendingPlayers = newState.players.filter(
-        p => p.team === newDefendingTeam?.id
-      );
-      newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
-
-      // Set phase to declaring again
-      newState.gamePhase = 'declaring';
-
-      setGameState(newState);
-
-      // Check for trump declaration
-      const humanPlayer = newState.players.find(p => p.isHuman);
-      if (humanPlayer) {
-        const hasTrumpRank = humanPlayer.hand.some(
-          card => card.rank === newState.trumpInfo.trumpRank
-        );
-
-        if (hasTrumpRank) {
-          setShowTrumpDeclaration(true);
-        }
-        // AI trump declaration is now handled by the separate useEffect
-      }
+      // Store the state to be processed after the modal is dismissed
+      pendingStateRef.current = newState;
     }
-  }, [gameConfig.playerName, gameConfig.teamNames, gameOver, setGameOver, setWinner, setShowTrumpDeclaration]);
+  }, [gameOver, setGameOver, setWinner, setShowTrumpDeclaration]);
 
   // Define functions used in useEffect hooks
   // Handle trump suit declaration - moved to the top to avoid circular dependencies
@@ -689,6 +693,20 @@ const EnhancedGameScreen: React.FC = () => {
   
   // Note: The endRound function was moved to the top of the file to avoid circular dependencies
   
+  // State to track if game state needs to be prepared for next round
+  // Reference to store state for next round processing
+  const pendingStateRef = useRef<GameState | null>(null);
+
+  // Handle proceeding to next round
+  const handleNextRound = () => {
+    setShowRoundComplete(false);
+    // Mark that we need to prepare the next round after the modal animation completes
+    if (pendingStateRef.current) {
+      prepareNextRound(pendingStateRef.current);
+      pendingStateRef.current = null;
+    }
+  };
+
   // Handle starting a new game
   const startNewGame = () => {
     setGameState(null);
@@ -999,6 +1017,15 @@ const EnhancedGameScreen: React.FC = () => {
             visible={!!gameState && showTrumpDeclaration}
             trumpInfo={gameState?.trumpInfo || { trumpRank: Rank.Two, declared: false }}
             onDeclareSuit={declareTrumpSuit}
+            fadeAnim={fadeAnim}
+            scaleAnim={scaleAnim}
+          />
+          
+          {/* Round complete modal */}
+          <RoundCompleteModal
+            visible={showRoundComplete}
+            message={roundCompleteMessage}
+            onNextRound={handleNextRound}
             fadeAnim={fadeAnim}
             scaleAnim={scaleAnim}
           />

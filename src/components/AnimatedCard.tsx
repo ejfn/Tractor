@@ -490,6 +490,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     // Performance optimizations
     backfaceVisibility: 'hidden',
+    // @ts-ignore - These are valid React Native style properties
     shouldRasterizeIOS: true, // iOS performance optimization
     renderToHardwareTextureAndroid: true, // Android performance optimization
     overflow: 'hidden',
@@ -503,6 +504,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     // Performance optimizations for card back too
     backfaceVisibility: 'hidden',
+    // @ts-ignore - These are valid React Native style properties
     shouldRasterizeIOS: true,
     renderToHardwareTextureAndroid: true,
   },

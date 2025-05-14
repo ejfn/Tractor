@@ -40,3 +40,4 @@ app-example
 
 **/.claude/settings.local.json
 coverage/
+debug/
