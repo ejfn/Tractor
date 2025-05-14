@@ -105,17 +105,17 @@ export const AnimatedCard: React.FC<CardProps> = ({
     }
   };
   
-  // Selection animation - improved for cleaner, snappier response
+  // Selection animation - improved with higher pop-up for better visibility
   useEffect(() => {
     if (selected) {
-      // Faster, more responsive animations with optimized easing
-      translateY.value = withTiming(-10 * cardScale, {
-        duration: 60, // Reduced duration for snappier response
-        easing: Easing.out(Easing.cubic) // Smoother easing for upward movement
+      // More pronounced upward movement for better visibility
+      translateY.value = withTiming(-20 * cardScale, { // Increased from -10 to -20 for higher pop
+        duration: 60, // Keep snappy response
+        easing: Easing.out(Easing.cubic) // Smooth easing for upward movement
       });
-      scale.value = withTiming(cardScale * 1.03, {
-        duration: 60, // Reduced duration for snappier response
-        easing: Easing.out(Easing.cubic) // Smoother easing for scale
+      scale.value = withTiming(cardScale * 1.05, { // Slightly larger scale for better visibility
+        duration: 60, // Keep snappy response
+        easing: Easing.out(Easing.cubic) // Smooth easing for scale
       });
       opacity.value = 1; // Ensure the card stays fully opaque when selected
     } else {
@@ -161,6 +161,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
   }, [isPlayed, delay, rotate, opacity, scale, onAnimationComplete]);
   
   // Card appearance animations with improved performance settings
+  // Create base animation style without shadows
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -172,16 +173,29 @@ export const AnimatedCard: React.FC<CardProps> = ({
       opacity: 1,
       // Add hardware acceleration hints for smoother animations
       backfaceVisibility: 'hidden',
-      // Include any additional styles passed as props
-      ...style,
-      // Ensure zIndex changes properly on selection for better stacking
-      zIndex: selected ? (style.zIndex ? style.zIndex + 5 : 5) : (style.zIndex || 0),
+      // Enhanced zIndex for selected cards to ensure they appear clearly above other cards
+      zIndex: selected ? (style.zIndex ? style.zIndex + 10 : 20) : (style.zIndex || 0),
     };
   }, [selected, style.zIndex]); // Add dependencies to avoid unnecessary recalculations
 
+  // Create shadow styles separately to avoid shadowOffset error
+  const shadowStyle = selected ? {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+  } : {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  };
+
   if (faceDown) {
     return (
-      <Animated.View style={[styles.card, animatedStyle]}>
+      <Animated.View style={[styles.card, shadowStyle, style, animatedStyle]}>
         <View style={styles.cardBack}>
           {/* Card back with simplified 3x3 grid pattern */}
           <View style={{
@@ -290,7 +304,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
     const jokerColor = card.joker === 'Big' ? '#D32F2F' : '#000000';
 
     return (
-      <Animated.View style={animatedStyle}>
+      <Animated.View style={[shadowStyle, style, animatedStyle]}>
         <TouchableOpacity
           style={[
             styles.card,
@@ -406,7 +420,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
   // Render normal card with enhanced styling
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[shadowStyle, style, animatedStyle]}>
       <TouchableOpacity
         style={[
           styles.card,

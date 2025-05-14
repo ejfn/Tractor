@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     minWidth: '100%',
-    paddingTop: 25, // Space for raised cards
+    paddingTop: 35, // Increased space for higher card pop-up (from 25 to 35)
     paddingBottom: 10,
     paddingHorizontal: 10,
     flexDirection: 'row', // Ensure horizontal layout
