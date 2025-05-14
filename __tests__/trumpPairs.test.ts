@@ -70,6 +70,46 @@ const fiveSpades2: Card = {
   points: 5
 };
 
+// Add more test cards for additional scenarios
+const sixSpades1: Card = {
+  suit: Suit.Spades,
+  rank: Rank.Six,
+  id: 'Spades_6_1',
+  points: 0
+};
+
+const sevenClubs1: Card = {
+  suit: Suit.Clubs,
+  rank: Rank.Seven,
+  id: 'Clubs_7_1',
+  points: 0
+};
+
+const sevenHearts1: Card = {
+  suit: Suit.Hearts,
+  rank: Rank.Seven,
+  id: 'Hearts_7_1',
+  points: 0
+};
+
+const smallJoker1: Card = {
+  joker: JokerType.Small,
+  id: 'Small_Joker_1',
+  points: 0
+};
+
+const smallJoker2: Card = {
+  joker: JokerType.Small,
+  id: 'Small_Joker_2',
+  points: 0
+};
+
+const bigJoker1: Card = {
+  joker: JokerType.Big,
+  id: 'Big_Joker_1',
+  points: 0
+};
+
 describe('Trump Pair Tests', () => {
   const trumpInfo: TrumpInfo = {
     trumpRank: Rank.Four,
@@ -242,5 +282,80 @@ describe('Trump Pair Tests', () => {
     if (spadesPairCombo && diamondsPairCombo) {
       expect(diamondsPairCombo.value).toBeGreaterThan(spadesPairCombo.value);
     }
+  });
+
+  // Additional tests for different card combinations
+
+  // Test - Same suit but different rank
+  test('5♠-6♠ does NOT form a valid pair (same suit, different rank)', () => {
+    const result = getComboType([fiveSpades1, sixSpades1]);
+    expect(result).not.toBe(ComboType.Pair);
+
+    // Should be treated as singles
+    expect(result).toBe(ComboType.Single);
+
+    // Check identifyCombos doesn't find a pair with these
+    const combos = identifyCombos([fiveSpades1, sixSpades1], trumpInfo);
+
+    const invalidPair = combos.find(combo =>
+      combo.type === ComboType.Pair &&
+      combo.cards.length === 2 &&
+      combo.cards.some(card => card.rank === Rank.Five) &&
+      combo.cards.some(card => card.rank === Rank.Six)
+    );
+
+    expect(invalidPair).toBeUndefined();
+  });
+
+  // Test - Non-trump cards of different suits
+  test('7♣-7♥ does NOT form a valid pair (same rank, different suits, non-trump)', () => {
+    // Verify these aren't trump cards
+    expect(isTrump(sevenClubs1, trumpInfo)).toBe(false);
+    expect(isTrump(sevenHearts1, trumpInfo)).toBe(false);
+
+    // Check they don't form a pair
+    const result = getComboType([sevenClubs1, sevenHearts1]);
+    expect(result).not.toBe(ComboType.Pair);
+
+    // Should be treated as singles
+    expect(result).toBe(ComboType.Single);
+  });
+
+  // Test - Valid joker pair
+  test('SJ-SJ forms a valid pair (same joker type)', () => {
+    const result = getComboType([smallJoker1, smallJoker2]);
+    expect(result).toBe(ComboType.Pair);
+
+    // Should be found as a pair in combos
+    const combos = identifyCombos([smallJoker1, smallJoker2], trumpInfo);
+
+    const smallJokerPair = combos.find(combo =>
+      combo.type === ComboType.Pair &&
+      combo.cards.length === 2 &&
+      combo.cards.every(card => card.joker === JokerType.Small)
+    );
+
+    expect(smallJokerPair).toBeDefined();
+  });
+
+  // Test - Different joker types
+  test('SJ-BJ does NOT form a valid pair (different joker types)', () => {
+    const result = getComboType([smallJoker1, bigJoker1]);
+    expect(result).not.toBe(ComboType.Pair);
+
+    // Should be treated as singles
+    expect(result).toBe(ComboType.Single);
+
+    // Should not be found as a pair in combos
+    const combos = identifyCombos([smallJoker1, bigJoker1], trumpInfo);
+
+    const invalidJokerPair = combos.find(combo =>
+      combo.type === ComboType.Pair &&
+      combo.cards.length === 2 &&
+      combo.cards.some(card => card.joker === JokerType.Small) &&
+      combo.cards.some(card => card.joker === JokerType.Big)
+    );
+
+    expect(invalidJokerPair).toBeUndefined();
   });
 });
