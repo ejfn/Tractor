@@ -755,8 +755,10 @@ const EnhancedGameScreen: React.FC = () => {
             gamePhase={gameState.gamePhase}
           />
 
-          {/* Simple square table layout */}
-          <View style={styles.gameTable}>
+          {/* Container with bottom margin */}
+          <View style={styles.tableContainer}>
+            {/* Simple square table layout */}
+            <View style={styles.gameTable}>
             {/* Trick winner notification */}
             <TrickResultDisplay
               visible={showTrickResult}
@@ -985,8 +987,12 @@ const EnhancedGameScreen: React.FC = () => {
 
             {/* Play button moved to PlayerHandAnimated component */}
           </View>
-          
+          </View>
+
           {/* We now use thinking dot indicators instead of a full-screen overlay */}
+
+          {/* Bottom spacing view */}
+          <View style={styles.bottomSpacing} />
 
           {/* Trump declaration modal */}
           <TrumpDeclarationModal
@@ -1011,10 +1017,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent', // Reverted from filled color to transparent
   },
+  bottomSpacing: {
+    height: 16, // Fixed height of 16px for bottom spacing
+    width: '100%',
+  },
   gameContainer: {
     flex: 1,
     padding: 0,
-    paddingTop: Platform.OS === 'android' ? 0 : 0, // Ensure no padding on Android
+    paddingTop: 0, // Ensure no padding on Android
+    marginTop: 5, // Add small margin at top to utilize space
+  },
+  tableContainer: {
+    flex: 1,
+    marginBottom: 16, // 16px bottom margin to match GameStatus top margin
   },
   loadingContainer: {
     flex: 1,
@@ -1087,11 +1102,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginLeft: 10,
     marginRight: 10,
-    marginTop: Platform.OS === 'android' ? 0 : 0, // No top margin to stick to GameStatus
-    marginBottom: 10,
+    marginTop: 5, // Small margin to stick to GameStatus
+    marginBottom: 0, // Reset margin bottom since we're using container padding instead
     flexDirection: 'column',
     justifyContent: 'space-between',
     padding: 10,
+    paddingBottom: 20, // Add extra padding at bottom for play button
   },
   // Top player - centered at the top of the table
   topArea: {
@@ -1134,12 +1150,12 @@ const styles = StyleSheet.create({
   // Bottom player - centered at the bottom of the table
   bottomArea: {
     width: '100%',
-    height: 230, // Kept same height
+    height: 280, // Even more height for the bottom area
     alignItems: 'center',
     justifyContent: 'center', // Center content vertically
     paddingTop: 0, // No padding at top
-    paddingBottom: 0, // No padding at bottom
-    marginBottom: 0, // No margin at bottom
+    paddingBottom: 35, // More padding at bottom for the play button
+    marginBottom: 2, // Minimal margin at bottom
   },
   // Play button - at the very bottom of the table
   buttonArea: {

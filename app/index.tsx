@@ -32,7 +32,10 @@ export default function Index() {
   // Debug UI removed since we fixed the issue
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      edges={['left', 'right']} // Only respect left and right edges, not top or bottom
+    >
       <StatusBar style="auto" />
       {hasError ? (
         <View style={styles.errorContainer}>

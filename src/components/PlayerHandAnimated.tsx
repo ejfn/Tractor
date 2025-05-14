@@ -321,9 +321,10 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     padding: 8,
-    paddingBottom: 45, // Extra space at bottom for the play button
+    paddingBottom: 65, // More space at bottom for the play button
     position: 'relative', // Establish positioning context
     backgroundColor: 'transparent',
+    marginBottom: 0, // No margin at bottom
   },
   currentPlayer: {
     backgroundColor: 'transparent',
@@ -458,7 +459,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     position: 'absolute', // Use absolute positioning
-    bottom: 0, // Position at the bottom
+    bottom: 0, // Position at the very bottom
     left: 0,
     right: 0,
     zIndex: 100, // Ensure it's above other elements
@@ -480,6 +481,7 @@ const styles = StyleSheet.create({
     width: '42%',
     minWidth: 130,
     height: 36,
+    marginBottom: 5, // Reduced margin bottom
   },
   playButtonText: {
     color: '#FFFFFF',

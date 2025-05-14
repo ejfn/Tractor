@@ -197,12 +197,12 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: 'transparent', // Reverted from green color to transparent
     borderRadius: 16, // Matched with gameTable border radius
-    padding: Platform.OS === 'android' ? 8 : 12, // Reduced padding on Android
-    paddingTop: Platform.OS === 'android' ? 0 : 5, // No top padding on Android
+    padding: 8, // Reduced padding on Android
+    paddingTop: 0, // No top padding on Android
     marginLeft: 10,
     marginRight: 10,
-    marginTop: 0, // No top margin to stick to the top
-    marginBottom: Platform.OS === 'android' ? 2 : 5, // Even smaller bottom margin on Android
+    marginTop: 16, // Increased top margin to 16px for more comfortable spacing
+    marginBottom: 2, // Even smaller bottom margin on Android
     borderWidth: 0, // Removed border
     borderColor: 'transparent',
   },
@@ -210,24 +210,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Platform.OS === 'android' ? 5 : 10, // Reduced margin on Android
-    marginTop: Platform.OS === 'android' ? 2 : 0, // Slight top margin on Android
-    minHeight: 40, // Ensure consistent height
+    marginBottom: 5, // Reduced margin
+    marginTop: 2, // Slight top margin
+    minHeight: 36, // Ensure consistent height
   },
   roundInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   roundText: {
-    fontSize: 16,
+    fontSize: 15, // Slightly smaller font
     fontWeight: 'bold',
-    marginRight: 10,
+    marginRight: 8, // Reduced margin
     color: '#0a7ea4', // Teal to match the app's tint color
   },
   phaseIndicator: {
     backgroundColor: '#E1F5FE', // Solid light blue background
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8, // Reduced horizontal padding
+    paddingVertical: 5, // Reduced vertical padding
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#0a7ea4', // Teal border (app's tint color)
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
     elevation: 2,
     minWidth: 65,
-    height: 32,
+    height: 28, // Reduced height
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -251,15 +251,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   trumpLabel: {
-    fontSize: 16,
+    fontSize: 15, // Slightly smaller font
     fontWeight: 'bold',
-    marginRight: 10,
+    marginRight: 8, // Reduced margin
     color: '#0a7ea4', // Teal to match the app's tint color
   },
   trumpDisplay: {
     backgroundColor: '#E1F5FE', // Solid light blue background
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8, // Reduced horizontal padding
+    paddingVertical: 5, // Reduced vertical padding
     borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 65,  // Match typical width of phase indicator
-    height: 32,    // Fixed height to match phase indicator
+    height: 28,    // Reduced height to match phase indicator
   },
   trumpText: {
     fontWeight: 'bold',
@@ -296,11 +296,12 @@ const styles = StyleSheet.create({
   teamsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: -4, // Pull team cards upward to save vertical space
   },
   teamCard: {
     flex: 1,
     borderRadius: 10,
-    padding: 12,
+    padding: 10, // Reduced padding
     marginHorizontal: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -322,10 +323,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6, // Reduced margin
   },
   teamName: {
-    fontSize: 16,
+    fontSize: 15, // Slightly smaller font
     fontWeight: 'bold',
     color: '#212121',
   },
@@ -360,7 +361,7 @@ const styles = StyleSheet.create({
   teamStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 6, // Reduced margin
   },
   statItem: {
     flexDirection: 'row',
@@ -384,16 +385,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   progressContainer: {
-    height: 10,
+    height: 8, // Reduced height
     backgroundColor: '#E0E0E0',
-    borderRadius: 5,
+    borderRadius: 4, // Reduced border radius
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   progressBar: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 3, // Smaller border radius to match container
   },
   defendingProgress: {
     backgroundColor: '#4CAF50',
