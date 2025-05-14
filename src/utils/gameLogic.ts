@@ -208,10 +208,10 @@ const compareRanks = (rankA: Rank, rankB: Rank): number => {
 // Identify valid combinations in a player's hand
 export const identifyCombos = (cards: Card[], trumpInfo: TrumpInfo): Combo[] => {
   const combos: Combo[] = [];
-  
+
   // Group cards by suit and rank
   const cardsBySuit = groupCardsBySuit(cards, trumpInfo);
-  
+
   // Look for singles
   cards.forEach(card => {
     combos.push({
@@ -220,9 +220,49 @@ export const identifyCombos = (cards: Card[], trumpInfo: TrumpInfo): Combo[] => 
       value: getCardValue(card, trumpInfo)
     });
   });
-  
-  // Look for pairs only
+
+  // Handle joker pairs separately
+  const smallJokers = cards.filter(card => card.joker === JokerType.Small);
+  const bigJokers = cards.filter(card => card.joker === JokerType.Big);
+
+  // Add Small Joker pairs
+  if (smallJokers.length >= 2) {
+    for (let i = 0; i < smallJokers.length - 1; i++) {
+      combos.push({
+        type: ComboType.Pair,
+        cards: [smallJokers[i], smallJokers[i + 1]],
+        value: getCardValue(smallJokers[i], trumpInfo)
+      });
+    }
+  }
+
+  // Add Big Joker pairs
+  if (bigJokers.length >= 2) {
+    for (let i = 0; i < bigJokers.length - 1; i++) {
+      combos.push({
+        type: ComboType.Pair,
+        cards: [bigJokers[i], bigJokers[i + 1]],
+        value: getCardValue(bigJokers[i], trumpInfo)
+      });
+    }
+  }
+
+  // Special tractor: SJ-SJ-BJ-BJ
+  if (smallJokers.length >= 2 && bigJokers.length >= 2) {
+    combos.push({
+      type: ComboType.Tractor,
+      cards: [...smallJokers.slice(0, 2), ...bigJokers.slice(0, 2)],
+      value: 10000 // Highest possible value
+    });
+  }
+
+  // Look for regular pairs and tractors
   Object.values(cardsBySuit).forEach(suitCards => {
+    // Skip the joker group since we've handled jokers separately
+    if (suitCards.length > 0 && suitCards[0].joker) {
+      return;
+    }
+
     const cardsByRank = groupCardsByRank(suitCards);
 
     Object.values(cardsByRank).forEach(rankCards => {
@@ -237,11 +277,11 @@ export const identifyCombos = (cards: Card[], trumpInfo: TrumpInfo): Combo[] => 
         }
       }
     });
-    
+
     // Look for tractors within this suit
     findTractors(suitCards, trumpInfo, combos);
   });
-  
+
   return combos;
 };
 
@@ -464,13 +504,25 @@ export const getComboType = (cards: Card[]): ComboType => {
   if (cards.length === 1) {
     return ComboType.Single;
   } else if (cards.length === 2) {
-    // Check if it's a pair (same rank)
-    if (cards[0].rank === cards[1].rank) {
+    // Check if it's a joker pair (two of the same joker type)
+    if (cards[0].joker && cards[1].joker && cards[0].joker === cards[1].joker) {
+      return ComboType.Pair;
+    }
+
+    // Check if it's a regular pair (same rank and suit)
+    if (cards[0].rank && cards[1].rank &&
+        cards[0].rank === cards[1].rank &&
+        cards[0].suit === cards[1].suit) {
       return ComboType.Pair;
     }
   } else if (cards.length === 4) {
+    // Check if it's a joker tractor (SJ-SJ-BJ-BJ)
+    if (cards.filter(c => c.joker === JokerType.Small).length === 2 &&
+        cards.filter(c => c.joker === JokerType.Big).length === 2) {
+      return ComboType.Tractor;
+    }
 
-    // Check if it's a tractor (consecutive pairs)
+    // Check if it's a regular tractor (consecutive pairs)
     if (cards[0].rank === cards[1].rank &&
         cards[2].rank === cards[3].rank) {
       // Make sure they're all the same suit (for proper Shengji tractors)
