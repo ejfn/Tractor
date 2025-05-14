@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Animated, Platform } from 'react-native';
-import { Team, TrumpInfo, Suit } from '../types/game';
+import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Suit, Team, TrumpInfo } from '../types/game';
 
 interface GameStatusProps {
   teams: [Team, Team];
@@ -199,6 +199,7 @@ const styles = StyleSheet.create({
     borderRadius: 16, // Matched with gameTable border radius
     padding: 8, // Reduced padding on Android
     paddingTop: 0, // No top padding on Android
+    paddingHorizontal: 0,
     marginLeft: 10,
     marginRight: 10,
     marginTop: 16, // Increased top margin to 16px for more comfortable spacing
@@ -210,9 +211,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 5, // Reduced margin
+    paddingHorizontal: 10,
+    marginBottom: 5, // Increased margin to create separation
     marginTop: 2, // Slight top margin
     minHeight: 36, // Ensure consistent height
+    paddingBottom: 10, // Add padding to increase separation
   },
   roundInfo: {
     flexDirection: 'row',
@@ -281,7 +284,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   suitSymbol: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     marginLeft: 2,
     lineHeight: 16,
@@ -296,7 +299,7 @@ const styles = StyleSheet.create({
   teamsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: -4, // Pull team cards upward to save vertical space
+    //marginHorizontal: 0
   },
   teamCard: {
     flex: 1,
