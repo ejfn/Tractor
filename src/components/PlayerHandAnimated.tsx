@@ -79,7 +79,7 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
           }
 
           // Create an object mapping each suit to its position in the rotated order
-          const suitOrder = {};
+          const suitOrder: Record<string, number> = {};
           rotatedOrder.forEach((suit, index) => {
             suitOrder[suit] = index;
           });
@@ -123,7 +123,7 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
       }
 
       // Create an object mapping each suit to its position in the rotated order
-      const suitOrder = {};
+      const suitOrder: Record<string, number> = {};
       rotatedOrder.forEach((suit, index) => {
         suitOrder[suit] = index;
       });

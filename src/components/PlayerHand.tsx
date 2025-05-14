@@ -93,7 +93,7 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
     const baseStyles = {
       position: 'absolute' as const,
       width: 24,
-      height: 35, 
+      height: 35,
       backgroundColor: 'transparent',
       zIndex: 100 - index,
     };
@@ -117,7 +117,7 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
         return {
           ...baseStyles,
           top: `${25 + index * 8}%`,
-          right: 15, 
+          right: 15,
           transform: [{ rotate: '270deg' }],
         };
       default:
@@ -137,20 +137,24 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
           </Text>
         </View>
 
-        {displayedCards.map((card, index) => (
-          <View
-            key={card.id}
-            style={getAICardStyles(index)}
-          >
-            <AnimatedCard
-              card={card}
-              faceDown={!showCards}
-              isTrump={isTrump(card, trumpInfo)}
-              delay={index * 20}
-              scale={0.4} // Smaller scale for AI cards
-            />
-          </View>
-        ))}
+        {displayedCards.map((card, index) => {
+          const cardStyle = getAICardStyles(index);
+          // TypeScript workaround for style type
+          return (
+            <View
+              key={card.id}
+              style={cardStyle as any}
+            >
+              <AnimatedCard
+                card={card}
+                faceDown={!showCards}
+                isTrump={isTrump(card, trumpInfo)}
+                delay={index * 20}
+                scale={0.4} // Smaller scale for AI cards
+              />
+            </View>
+          );
+        })}
       </View>
     );
   };

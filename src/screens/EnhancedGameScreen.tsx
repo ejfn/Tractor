@@ -3,10 +3,7 @@ import {
   StyleSheet,
   View,
   Text,
-  TouchableOpacity,
-  Modal,
   Alert,
-  ScrollView,
   Animated,
   Dimensions,
   Platform
@@ -14,12 +11,16 @@ import {
 import PlayerHandAnimated from '../components/PlayerHandAnimated';
 import CardPlayArea from '../components/CardPlayArea';
 import GameStatus from '../components/GameStatus';
+import GameSetupScreen from '../components/GameSetupScreen';
+import GameOverScreen from '../components/GameOverScreen';
+import TrumpDeclarationModal from '../components/TrumpDeclarationModal';
+import TrickResultDisplay from '../components/TrickResultDisplay';
 import {
   GameState,
   Card,
   Rank,
   Suit,
-  AIDifficulty
+  Trick
 } from '../types/game';
 import { 
   initializeGame, 
@@ -37,12 +38,12 @@ const EnhancedGameScreen: React.FC = () => {
   // Game state
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
-  const [gameConfig, setGameConfig] = useState({
+  // Game configuration (static, using Hard difficulty only)
+  const gameConfig = {
     playerName: 'You',
     teamNames: ['Team A', 'Team B'] as [string, string],
-    startingRank: Rank.Two,
-    aiDifficulty: AIDifficulty.Hard // Set AI to Hard difficulty
-  });
+    startingRank: Rank.Two
+  };
 
   // UI state
   const [showSetup, setShowSetup] = useState(false); // Skip setup screen
@@ -55,7 +56,7 @@ const EnhancedGameScreen: React.FC = () => {
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
   const [lastCompletedTrick, setLastCompletedTrick] = useState<Trick | null>(null);
 
-  
+
   // Animations - initialize with visible values for first render
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -65,13 +66,152 @@ const EnhancedGameScreen: React.FC = () => {
   const thinkingDot1 = useRef(new Animated.Value(1)).current;
   const thinkingDot2 = useRef(new Animated.Value(1)).current;
   const thinkingDot3 = useRef(new Animated.Value(1)).current;
-  
+
   // Timer for AI moves
   const [aiTimer, setAiTimer] = useState<NodeJS.Timeout | null>(null);
 
+  // End the current round - defined at the top to avoid circular references
+  const endRound = React.useCallback((state: GameState) => {
+    const newState = { ...state };
+
+    // Calculate scores and determine if a team levels up
+    const defendingTeam = newState.teams.find(t => t.isDefending);
+    const attackingTeam = newState.teams.find(t => !t.isDefending);
+
+    if (defendingTeam && attackingTeam) {
+      // Attacking team needs 80+ points to win
+      if (attackingTeam.points >= 80) {
+        // Attacking team levels up
+        const rankOrder = Object.values(Rank);
+        const currentRankIndex = rankOrder.indexOf(attackingTeam.currentRank);
+
+        if (currentRankIndex < rankOrder.length - 1) {
+          attackingTeam.currentRank = rankOrder[currentRankIndex + 1];
+
+          // Switch defending/attacking roles
+          defendingTeam.isDefending = false;
+          attackingTeam.isDefending = true;
+
+          // Show round result
+          Alert.alert(
+            'Round Complete',
+            `Team ${attackingTeam.id} reached ${attackingTeam.points} points and advances to rank ${attackingTeam.currentRank}!`,
+            [{ text: 'Next Round' }]
+          );
+        } else {
+          // Game over - attacking team reached Ace and won
+          setGameOver(true);
+          setWinner(attackingTeam.id);
+        }
+      } else {
+        // Defending team successfully defended
+        const rankOrder = Object.values(Rank);
+        const currentRankIndex = rankOrder.indexOf(defendingTeam.currentRank);
+
+        if (currentRankIndex < rankOrder.length - 1) {
+          defendingTeam.currentRank = rankOrder[currentRankIndex + 1];
+
+          // Show round result
+          Alert.alert(
+            'Round Complete',
+            `Team ${defendingTeam.id} successfully defended with ${attackingTeam.points}/80 points for attackers! They advance to rank ${defendingTeam.currentRank}.`,
+            [{ text: 'Next Round' }]
+          );
+        } else {
+          // Game over - defending team reached Ace and won
+          setGameOver(true);
+          setWinner(defendingTeam.id);
+        }
+      }
+
+      // Reset points for next round
+      defendingTeam.points = 0;
+      attackingTeam.points = 0;
+    }
+
+    // If game not over, prepare next round
+    if (!gameOver) {
+      newState.roundNumber++;
+      newState.gamePhase = 'dealing';
+
+      // Set trump rank to defending team's rank
+      const newDefendingTeam = newState.teams.find(t => t.isDefending);
+      if (newDefendingTeam) {
+        newState.trumpInfo.trumpRank = newDefendingTeam.currentRank;
+        newState.trumpInfo.trumpSuit = undefined;
+        newState.trumpInfo.declared = false;
+      }
+
+      // Create and shuffle a new deck
+      const deck = initializeGame(
+        gameConfig.playerName,
+        gameConfig.teamNames,
+        newState.trumpInfo.trumpRank
+      ).deck;
+
+      newState.deck = deck;
+
+      // Deal cards
+      let cardIndex = 0;
+      const cardsPerPlayer = Math.floor((deck.length - 8) / newState.players.length);
+
+      newState.players.forEach(player => {
+        player.hand = deck.slice(cardIndex, cardIndex + cardsPerPlayer);
+        cardIndex += cardsPerPlayer;
+      });
+
+      // Set kitty cards
+      newState.kittyCards = deck.slice(deck.length - 8);
+
+      // Reset trick history
+      newState.tricks = [];
+      newState.currentTrick = null;
+
+      // First player is from defending team
+      const defendingPlayers = newState.players.filter(
+        p => p.team === newDefendingTeam?.id
+      );
+      newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
+
+      // Set phase to declaring again
+      newState.gamePhase = 'declaring';
+
+      setGameState(newState);
+
+      // Check for trump declaration
+      const humanPlayer = newState.players.find(p => p.isHuman);
+      if (humanPlayer) {
+        const hasTrumpRank = humanPlayer.hand.some(
+          card => card.rank === newState.trumpInfo.trumpRank
+        );
+
+        if (hasTrumpRank) {
+          setShowTrumpDeclaration(true);
+        }
+        // AI trump declaration is now handled by the separate useEffect
+      }
+    }
+  }, [gameConfig.playerName, gameConfig.teamNames, gameOver, setGameOver, setWinner, setShowTrumpDeclaration]);
+
   // Define functions used in useEffect hooks
+  // Handle trump suit declaration - moved to the top to avoid circular dependencies
+  const declareTrumpSuit = React.useCallback((suit: Suit | null) => {
+    if (!gameState) return;
+
+    const newState = { ...gameState };
+
+    if (suit) {
+      newState.trumpInfo.trumpSuit = suit;
+      newState.trumpInfo.declared = true;
+    }
+
+    newState.gamePhase = 'playing';
+    setGameState(newState);
+    setShowTrumpDeclaration(false);
+  }, [gameState]);
+
   // Check if AI should declare trump
-  const checkAITrumpDeclaration = (state: GameState) => {
+  const checkAITrumpDeclaration = React.useCallback((state: GameState) => {
     // Find the first AI player with a trump rank card
     const aiWithTrump = state.players.find(p =>
       !p.isHuman && p.hand.some(card => card.rank === state.trumpInfo.trumpRank)
@@ -81,8 +221,7 @@ const EnhancedGameScreen: React.FC = () => {
       // Check if AI should declare based on strategy
       const shouldDeclare = shouldAIDeclare(
         state,
-        aiWithTrump.id,
-        gameConfig.aiDifficulty
+        aiWithTrump.id
       );
 
       if (shouldDeclare) {
@@ -109,10 +248,90 @@ const EnhancedGameScreen: React.FC = () => {
         declareTrumpSuit(maxSuit);
       }
     }
-  };
+  }, [declareTrumpSuit]);
+
+  // Process a play (human or AI) - moved up to fix circular dependencies
+  const processPlay = React.useCallback((cards: Card[]) => {
+    if (!gameState) return;
+
+    const newState = { ...gameState };
+    const currentPlayer = newState.players[newState.currentPlayerIndex];
+
+    // Ensure we have a current trick
+    if (!newState.currentTrick) {
+      newState.currentTrick = {
+        leadingPlayerId: currentPlayer.id,
+        leadingCombo: [...cards],
+        plays: [],
+        points: 0
+      };
+    }
+
+    // Add this play to the current trick
+    newState.currentTrick.plays.push({
+      playerId: currentPlayer.id,
+      cards: [...cards]
+    });
+
+    // Calculate points from this play
+    const playPoints = cards.reduce((sum, card) => sum + card.points, 0);
+    newState.currentTrick.points += playPoints;
+
+    // Remove played cards from player's hand
+    cards.forEach(playedCard => {
+      currentPlayer.hand = currentPlayer.hand.filter(
+        card => card.id !== playedCard.id
+      );
+    });
+
+    // Check if this completes a trick
+    if (newState.currentTrick.plays.length === newState.players.length) {
+      // Find the winner
+      const winningPlayerId = determineTrickWinner(
+        newState.currentTrick,
+        newState.trumpInfo
+      );
+
+      // Add points to the winning team
+      const winningPlayer = newState.players.find(p => p.id === winningPlayerId);
+      if (winningPlayer) {
+        const winningTeam = newState.teams.find(t => t.id === winningPlayer.team);
+        if (winningTeam) {
+          winningTeam.points += newState.currentTrick.points;
+        }
+      }
+
+      // Save this completed trick
+      const completedTrick = { ...newState.currentTrick };
+      newState.tricks.push(completedTrick);
+
+      // Set the winning player as the next player
+      const winningPlayerIndex = newState.players.findIndex(p => p.id === winningPlayerId);
+      newState.currentPlayerIndex = winningPlayerIndex;
+
+      // Clear current trick
+      newState.currentTrick = null;
+
+      // Check for end of round (no cards left)
+      const allCardsPlayed = newState.players.every(p => p.hand.length === 0);
+      if (allCardsPlayed) {
+        endRound(newState);
+      } else {
+        // Pause to show trick result
+        setLastTrickWinner(newState.players[winningPlayerIndex].name);
+        setLastTrickPoints(completedTrick.points);
+        setShowTrickResult(true);
+      }
+    } else {
+      // Move to next player
+      newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+    }
+
+    setGameState(newState);
+  }, [gameState, setLastTrickWinner, setLastTrickPoints, setShowTrickResult, endRound]);
 
   // Handle AI move
-  const handleAIMove = () => {
+  const handleAIMove = React.useCallback(() => {
     if (!gameState) return;
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
@@ -125,11 +344,10 @@ const EnhancedGameScreen: React.FC = () => {
     }
 
     try {
-      // Get AI move based on difficulty
+      // Get AI move (always uses hard difficulty)
       const aiMove = getAIMove(
         gameState,
-        currentPlayer.id,
-        gameConfig.aiDifficulty
+        currentPlayer.id
       );
 
       // Validate that we received a valid move
@@ -159,7 +377,7 @@ const EnhancedGameScreen: React.FC = () => {
     }
 
     setWaitingForAI(false);
-  };
+  }, [gameState, processPlay]);
 
   // Initialize animations
   useEffect(() => {
@@ -208,13 +426,29 @@ const EnhancedGameScreen: React.FC = () => {
 
         if (hasTrumpRank) {
           setShowTrumpDeclaration(true);
-        } else {
-          // Check if AI should declare trump
-          checkAITrumpDeclaration(newGameState);
+        }
+        // AI trump declaration is now handled in a separate useEffect
+      }
+    }
+  }, [showSetup, gameState, gameConfig.playerName, gameConfig.teamNames, gameConfig.startingRank]);
+
+  // Separate useEffect for AI trump declaration to avoid circular dependencies
+  useEffect(() => {
+    if (gameState && gameState.gamePhase === 'declaring' && !showTrumpDeclaration) {
+      // Check if human player has trump rank
+      const humanPlayer = gameState.players.find(p => p.isHuman);
+      if (humanPlayer) {
+        const hasTrumpRank = humanPlayer.hand.some(
+          card => card.rank === gameState.trumpInfo.trumpRank
+        );
+
+        // If human doesn't have trump rank, let AI check
+        if (!hasTrumpRank) {
+          checkAITrumpDeclaration(gameState);
         }
       }
     }
-  }, [showSetup, gameState, gameConfig.playerName, gameConfig.teamNames, gameConfig.startingRank, checkAITrumpDeclaration]);
+  }, [gameState, showTrumpDeclaration, checkAITrumpDeclaration]);
   
   // Handle AI turns
   useEffect(() => {
@@ -366,241 +600,9 @@ const EnhancedGameScreen: React.FC = () => {
     setSelectedCards([]);
   };
   
-  // Process a play (human or AI)
-  const processPlay = (cards: Card[]) => {
-    if (!gameState) return;
-    
-    const newState = { ...gameState };
-    const currentPlayer = newState.players[newState.currentPlayerIndex];
-    
-    // Starting a new trick
-    if (!newState.currentTrick) {
-      newState.currentTrick = {
-        leadingPlayerId: currentPlayer.id,
-        leadingCombo: [...cards],
-        plays: [],
-        points: 0
-      };
-    } else {
-      // Adding to existing trick
-      newState.currentTrick.plays.push({
-        playerId: currentPlayer.id,
-        cards: [...cards]
-      });
-    }
-    
-    // Remove played cards from hand
-    currentPlayer.hand = currentPlayer.hand.filter(
-      card => !cards.some(played => played.id === card.id)
-    );
-    
-    // Check if trick is complete (all players have played)
-    const playersInTrick = new Set([
-      newState.currentTrick.leadingPlayerId,
-      ...newState.currentTrick.plays.map(play => play.playerId)
-    ]);
-    
-    if (playersInTrick.size === newState.players.length) {
-      // Determine winner and award points
-      const winningPlayerId = determineTrickWinner(
-        newState.currentTrick,
-        newState.trumpInfo
-      );
-      
-      // Calculate points in the trick
-      const trickPoints = calculateTrickPoints(newState.currentTrick);
-      
-      // Find the winner's team
-      const winningPlayer = newState.players.find(p => p.id === winningPlayerId);
-      const winningTeam = winningPlayer ? newState.teams.find(t => t.id === winningPlayer.team) : null;
-      
-      if (winningTeam) {
-        winningTeam.points += trickPoints;
-      }
-      
-      // Store the completed trick
-      newState.currentTrick.winningPlayerId = winningPlayerId;
-      newState.currentTrick.points = trickPoints;
-      const completedTrick = { ...newState.currentTrick };
-      newState.tricks.push(completedTrick);
-
-      // Save the completed trick to display it during the result notification
-      setLastCompletedTrick(completedTrick);
-
-      // Show trick result feedback
-      setLastTrickWinner(winningPlayer?.name || '');
-      setLastTrickPoints(trickPoints);
-      setShowTrickResult(true);
-
-      // Start a new trick with winner as the leader for game logic
-      // but we'll still show the previous trick until notification disappears
-      newState.currentTrick = null;
-
-      // Set the next player to the winner of the trick
-      newState.currentPlayerIndex = newState.players.findIndex(p => p.id === winningPlayerId);
-
-      // Hide trick result after delay
-      setTimeout(() => {
-        setShowTrickResult(false);
-        // Clear the last completed trick only after notification disappears
-        setLastCompletedTrick(null);
-
-        // Check if round is over
-        if (newState.players.every(p => p.hand.length === 0)) {
-          // End the round and calculate results
-          endRound(newState);
-        }
-      }, 2000);
-    } else {
-      // Move to next player
-      newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
-    }
-    
-    setGameState(newState);
-  };
+  // Duplicate processPlay function was removed - the primary implementation is at the top of the file
   
-  // Duplicate functions removed, keeping only the instances defined earlier
-  
-  // Handle trump suit declaration
-  const declareTrumpSuit = (suit: Suit | null) => {
-    if (!gameState) return;
-    
-    const newState = { ...gameState };
-    
-    if (suit) {
-      newState.trumpInfo.trumpSuit = suit;
-      newState.trumpInfo.declared = true;
-    }
-    
-    newState.gamePhase = 'playing';
-    setGameState(newState);
-    setShowTrumpDeclaration(false);
-  };
-  
-  // End the current round
-  const endRound = (state: GameState) => {
-    const newState = { ...state };
-    
-    // Calculate scores and determine if a team levels up
-    const defendingTeam = newState.teams.find(t => t.isDefending);
-    const attackingTeam = newState.teams.find(t => !t.isDefending);
-    
-    if (defendingTeam && attackingTeam) {
-      // Attacking team needs 80+ points to win
-      if (attackingTeam.points >= 80) {
-        // Attacking team levels up
-        const rankOrder = Object.values(Rank);
-        const currentRankIndex = rankOrder.indexOf(attackingTeam.currentRank);
-        
-        if (currentRankIndex < rankOrder.length - 1) {
-          attackingTeam.currentRank = rankOrder[currentRankIndex + 1];
-          
-          // Switch defending/attacking roles
-          defendingTeam.isDefending = false;
-          attackingTeam.isDefending = true;
-          
-          // Show round result
-          Alert.alert(
-            'Round Complete',
-            `Team ${attackingTeam.id} reached ${attackingTeam.points} points and advances to rank ${attackingTeam.currentRank}!`,
-            [{ text: 'Next Round' }]
-          );
-        } else {
-          // Game over - attacking team reached Ace and won
-          setGameOver(true);
-          setWinner(attackingTeam.id);
-        }
-      } else {
-        // Defending team successfully defended
-        const rankOrder = Object.values(Rank);
-        const currentRankIndex = rankOrder.indexOf(defendingTeam.currentRank);
-        
-        if (currentRankIndex < rankOrder.length - 1) {
-          defendingTeam.currentRank = rankOrder[currentRankIndex + 1];
-          
-          // Show round result
-          Alert.alert(
-            'Round Complete',
-            `Team ${defendingTeam.id} successfully defended with ${attackingTeam.points}/80 points for attackers! They advance to rank ${defendingTeam.currentRank}.`,
-            [{ text: 'Next Round' }]
-          );
-        } else {
-          // Game over - defending team reached Ace and won
-          setGameOver(true);
-          setWinner(defendingTeam.id);
-        }
-      }
-      
-      // Reset points for next round
-      defendingTeam.points = 0;
-      attackingTeam.points = 0;
-    }
-    
-    // If game not over, prepare next round
-    if (!gameOver) {
-      newState.roundNumber++;
-      newState.gamePhase = 'dealing';
-      
-      // Set trump rank to defending team's rank
-      const newDefendingTeam = newState.teams.find(t => t.isDefending);
-      if (newDefendingTeam) {
-        newState.trumpInfo.trumpRank = newDefendingTeam.currentRank;
-        newState.trumpInfo.trumpSuit = undefined;
-        newState.trumpInfo.declared = false;
-      }
-      
-      // Create and shuffle a new deck
-      const deck = initializeGame(
-        gameConfig.playerName,
-        gameConfig.teamNames,
-        newState.trumpInfo.trumpRank
-      ).deck;
-      
-      newState.deck = deck;
-      
-      // Deal cards
-      let cardIndex = 0;
-      const cardsPerPlayer = Math.floor((deck.length - 8) / newState.players.length);
-      
-      newState.players.forEach(player => {
-        player.hand = deck.slice(cardIndex, cardIndex + cardsPerPlayer);
-        cardIndex += cardsPerPlayer;
-      });
-      
-      // Set kitty cards
-      newState.kittyCards = deck.slice(deck.length - 8);
-      
-      // Reset trick history
-      newState.tricks = [];
-      newState.currentTrick = null;
-      
-      // First player is from defending team
-      const defendingPlayers = newState.players.filter(
-        p => p.team === newDefendingTeam?.id
-      );
-      newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
-      
-      // Set phase to declaring again
-      newState.gamePhase = 'declaring';
-      
-      setGameState(newState);
-      
-      // Check for trump declaration
-      const humanPlayer = newState.players.find(p => p.isHuman);
-      if (humanPlayer) {
-        const hasTrumpRank = humanPlayer.hand.some(
-          card => card.rank === newState.trumpInfo.trumpRank
-        );
-        
-        if (hasTrumpRank) {
-          setShowTrumpDeclaration(true);
-        } else {
-          // Check if AI should declare trump
-          checkAITrumpDeclaration(newState);
-        }
-      }
-    }
-  };
+  // Note: The endRound function was moved to the top of the file to avoid circular dependencies
   
   // Handle starting a new game
   const startNewGame = () => {
@@ -618,190 +620,33 @@ const EnhancedGameScreen: React.FC = () => {
   
   // Setup screen with animations
   if (showSetup) {
-    // Force animation values to be visible during initial render
-    if (fadeAnim._value === 0) {
-      fadeAnim.setValue(1);
-      scaleAnim.setValue(1);
-    }
+    // Initialize animations
+    fadeAnim.setValue(1);
+    scaleAnim.setValue(1);
 
     return (
-      <View style={styles.setupContainer}>
-        <Animated.View
-          style={[
-            styles.setupCard,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}
-        >
-          <Text style={styles.gameTitle}>Tractor Single Player</Text>
-          <Text style={styles.subtitle}>Shengji (升级) Card Game</Text>
-
-          {/* Difficulty selection */}
-          <View style={styles.difficultyContainer}>
-            <Text style={styles.difficultyLabel}>AI Difficulty:</Text>
-            <View style={styles.difficultyButtons}>
-              {Object.values(AIDifficulty).map((difficulty) => (
-                <TouchableOpacity
-                  key={difficulty}
-                  style={[
-                    styles.difficultyButton,
-                    gameConfig.aiDifficulty === difficulty && styles.selectedDifficulty
-                  ]}
-                  onPress={() => setGameConfig({...gameConfig, aiDifficulty: difficulty})}
-                >
-                  <Text style={[
-                    styles.difficultyText,
-                    gameConfig.aiDifficulty === difficulty && styles.selectedDifficultyText
-                  ]}>
-                    {difficulty}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={startNewGame}
-          >
-            <Text style={styles.buttonText}>Start Game</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.creditsText}>
-            You vs 3 AI Players
-          </Text>
-        </Animated.View>
-      </View>
+      <GameSetupScreen
+        onStartGame={startNewGame}
+        fadeAnim={fadeAnim}
+        scaleAnim={scaleAnim}
+      />
     );
   }
   
   // Game over screen
   if (gameOver) {
     return (
-      <View style={styles.setupContainer}>
-        <Animated.View
-          style={[
-            styles.setupCard,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}
-        >
-          <Text style={styles.gameOverTitle}>Game Over!</Text>
-          <Text style={styles.winnerText}>
-            {winner === 'A' ? gameConfig.teamNames[0] : gameConfig.teamNames[1]} wins!
-          </Text>
-          
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={() => setShowSetup(true)}
-          >
-            <Text style={styles.buttonText}>New Game</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
+      <GameOverScreen
+        winner={winner}
+        teamNames={gameConfig.teamNames}
+        onNewGame={() => setShowSetup(true)}
+        fadeAnim={fadeAnim}
+        scaleAnim={scaleAnim}
+      />
     );
   }
   
-  // Trump declaration modal with suit-colored buttons
-  const renderTrumpDeclarationModal = () => {
-    if (!gameState || !showTrumpDeclaration) return null;
-    
-    return (
-      <Modal
-        visible={showTrumpDeclaration}
-        transparent={true}
-        animationType="slide"
-      >
-        <View style={styles.modalContainer}>
-          <Animated.View 
-            style={[
-              styles.modalContent,
-              {
-                transform: [{ scale: scaleAnim }],
-                opacity: fadeAnim
-              }
-            ]}
-          >
-            <Text style={styles.modalTitle}>Declare Trump Suit?</Text>
-            <Text style={styles.modalText}>
-              You have a {gameState.trumpInfo.trumpRank} in your hand.
-              Would you like to declare a trump suit?
-            </Text>
-            
-            <View style={styles.suitButtons}>
-              {Object.values(Suit).map(suit => {
-                let suitColor = '#000';
-                let bgColor = '#F5F5F5';
-                
-                switch(suit) {
-                  case Suit.Hearts:
-                  case Suit.Diamonds:
-                    suitColor = '#D32F2F';
-                    bgColor = '#FFEBEE';
-                    break;
-                  case Suit.Clubs:
-                  case Suit.Spades:
-                    suitColor = '#212121';
-                    bgColor = '#ECEFF1';
-                    break;
-                }
-                
-                return (
-                  <TouchableOpacity
-                    key={suit}
-                    style={[styles.suitButton, { backgroundColor: bgColor }]}
-                    onPress={() => declareTrumpSuit(suit)}
-                  >
-                    <Text style={[styles.suitSymbol, { color: suitColor }]}>
-                      {suit === Suit.Hearts ? '♥' : 
-                       suit === Suit.Diamonds ? '♦' : 
-                       suit === Suit.Clubs ? '♣' : '♠'}
-                    </Text>
-                    <Text style={[styles.suitText, { color: suitColor }]}>{suit}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            
-            <TouchableOpacity
-              style={styles.skipButton}
-              onPress={() => declareTrumpSuit(null)}
-            >
-              <Text style={styles.skipText}>Don&apos;t Declare</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
-    );
-  };
-  
-  // Trick result overlay - now positioned in top right
-  const renderTrickResultOverlay = () => {
-    // No standalone overlay anymore - we'll place it inside the game table
-    return null;
-  };
-
-  // New component that will be placed inside the game table
-  const renderTrickWinnerInTable = () => {
-    if (!showTrickResult) return null;
-
-    return (
-      <View style={styles.trickResultContent}>
-        <Text style={styles.trickWinnerText}>
-          {lastTrickWinner} wins!
-        </Text>
-        {lastTrickPoints > 0 && (
-          <Text style={styles.trickPointsText}>
-            +{lastTrickPoints} pts
-          </Text>
-        )}
-      </View>
-    );
-  };
+  // Components have been extracted into separate files
   
   // Find human player index
   const humanPlayerIndex = gameState?.players.findIndex(p => p.isHuman) ?? -1;
@@ -827,8 +672,12 @@ const EnhancedGameScreen: React.FC = () => {
 
           {/* Simple square table layout */}
           <View style={styles.gameTable}>
-            {/* Trick winner notification positioned within the table */}
-            {showTrickResult && renderTrickWinnerInTable()}
+            {/* Trick winner notification */}
+            <TrickResultDisplay
+              visible={showTrickResult}
+              winnerName={lastTrickWinner}
+              points={lastTrickPoints}
+            />
 
             {/* Top player (Bot 2) */}
             <View style={styles.topArea}>
@@ -1046,10 +895,14 @@ const EnhancedGameScreen: React.FC = () => {
           
           {/* We now use thinking dot indicators instead of a full-screen overlay */}
 
-          {/* Trick winner is now displayed directly in the game table */}
-
           {/* Trump declaration modal */}
-          {renderTrumpDeclarationModal()}
+          <TrumpDeclarationModal
+            visible={!!gameState && showTrumpDeclaration}
+            trumpInfo={gameState?.trumpInfo || { trumpRank: Rank.Two, declared: false }}
+            onDeclareSuit={declareTrumpSuit}
+            fadeAnim={fadeAnim}
+            scaleAnim={scaleAnim}
+          />
         </Animated.View>
       ) : (
         <View style={styles.loadingContainer}>
@@ -1111,38 +964,7 @@ const styles = StyleSheet.create({
     color: '#5C6BC0',
     textAlign: 'center',
   },
-  difficultyContainer: {
-    width: '100%',
-    marginBottom: 30,
-  },
-  difficultyLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  difficultyButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  difficultyButton: {
-    flex: 1,
-    padding: 12,
-    margin: 5,
-    borderRadius: 8,
-    backgroundColor: '#EEEEEE',
-    alignItems: 'center',
-  },
-  selectedDifficulty: {
-    backgroundColor: '#3F51B5',
-  },
-  difficultyText: {
-    fontWeight: 'bold',
-    color: '#424242',
-  },
-  selectedDifficultyText: {
-    color: '#FFFFFF',
-  },
+  // No difficulty options - AI always uses Hard difficulty
   startButton: {
     backgroundColor: '#3F51B5',
     paddingHorizontal: 30,

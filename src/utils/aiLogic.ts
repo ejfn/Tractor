@@ -3,7 +3,6 @@ import {
   GameState,
   Player,
   Combo,
-  AIDifficulty,
   TrumpInfo
 } from '../types/game';
 import {
@@ -11,9 +10,7 @@ import {
   isValidPlay,
   isTrump,
   compareCards,
-  getTrumpLevel,
-  getLeadingSuit,
-  getComboType
+  getLeadingSuit
 } from './gameLogic';
 
 // Base AI strategy interface
@@ -27,86 +24,10 @@ interface AIStrategy {
   declareTrumpSuit(gameState: GameState, player: Player): boolean;
 }
 
-// Easy AI strategy - plays randomly
-class EasyAIStrategy implements AIStrategy {
-  makePlay(
-    gameState: GameState, 
-    player: Player, 
-    validCombos: Combo[]
-  ): Card[] {
-    // Randomly select a valid combo
-    const randomIndex = Math.floor(Math.random() * validCombos.length);
-    return validCombos[randomIndex].cards;
-  }
-  
-  declareTrumpSuit(gameState: GameState, player: Player): boolean {
-    // Easy AI has 20% chance of declaring trump if it has a trump card
-    const hasTrumpRank = player.hand.some(
-      card => card.rank === gameState.trumpInfo.trumpRank
-    );
-    
-    if (hasTrumpRank && Math.random() < 0.2) {
-      return true;
-    }
-    
-    return false;
-  }
-}
+// Single AI strategy - always uses hard/expert level AI
 
-// Medium AI strategy - slightly smarter play
-class MediumAIStrategy implements AIStrategy {
-  makePlay(
-    gameState: GameState, 
-    player: Player, 
-    validCombos: Combo[]
-  ): Card[] {
-    const { currentTrick, trumpInfo } = gameState;
-    
-    // If leading, play lowest non-trump if possible
-    if (!currentTrick || !currentTrick.leadingCombo) {
-      // Sort combos by value (ascending)
-      const sortedCombos = [...validCombos].sort((a, b) => a.value - b.value);
-      
-      // Find the lowest non-trump combo if possible
-      const nonTrumpCombo = sortedCombos.find(
-        combo => !combo.cards.some(card => isTrump(card, trumpInfo))
-      );
-      
-      return nonTrumpCombo ? nonTrumpCombo.cards : sortedCombos[0].cards;
-    }
-    
-    // If following, try to win the trick if it has points
-    const trickHasPoints = currentTrick.plays.some(
-      play => play.cards.some(card => card.points > 0)
-    );
-    
-    if (trickHasPoints) {
-      // Sort by value (descending) to find the strongest play
-      const sortedCombos = [...validCombos].sort((a, b) => b.value - a.value);
-      return sortedCombos[0].cards;
-    }
-    
-    // If no points, play the lowest valued combo
-    const sortedCombos = [...validCombos].sort((a, b) => a.value - b.value);
-    return sortedCombos[0].cards;
-  }
-  
-  declareTrumpSuit(gameState: GameState, player: Player): boolean {
-    // Medium AI has 50% chance of declaring trump if it has 2+ trump cards
-    const trumpCards = player.hand.filter(
-      card => card.rank === gameState.trumpInfo.trumpRank
-    );
-    
-    if (trumpCards.length >= 2 && Math.random() < 0.5) {
-      return true;
-    }
-    
-    return false;
-  }
-}
-
-// Hard AI strategy - more advanced play
-class HardAIStrategy implements AIStrategy {
+// AI strategy implementation
+class AIStrategy implements AIStrategy {
   makePlay(
     gameState: GameState, 
     player: Player, 
@@ -311,25 +232,15 @@ class HardAIStrategy implements AIStrategy {
   }
 }
 
-// Factory to create AI strategy based on difficulty
-export const createAIStrategy = (difficulty: AIDifficulty): AIStrategy => {
-  switch (difficulty) {
-    case AIDifficulty.Easy:
-      return new EasyAIStrategy();
-    case AIDifficulty.Medium:
-      return new MediumAIStrategy();
-    case AIDifficulty.Hard:
-      return new HardAIStrategy();
-    default:
-      return new MediumAIStrategy();
-  }
+// Create AI strategy (there's only one level now)
+export const createAIStrategy = (): AIStrategy => {
+  return new AIStrategy();
 };
 
 // Main AI player logic
 export const getAIMove = (
   gameState: GameState,
-  playerId: string,
-  difficulty: AIDifficulty
+  playerId: string
 ): Card[] => {
   const player = gameState.players.find(p => p.id === playerId);
   if (!player) {
@@ -477,22 +388,21 @@ export const getAIMove = (
     return forcedPlay;
   }
   
-  // Use appropriate strategy to select cards to play
-  const strategy = createAIStrategy(difficulty);
+  // Use the AI strategy to select cards to play
+  const strategy = createAIStrategy();
   return strategy.makePlay(gameState, player, validCombos);
 };
 
 // AI trump declaration decision
 export const shouldAIDeclare = (
   gameState: GameState,
-  playerId: string,
-  difficulty: AIDifficulty
+  playerId: string
 ): boolean => {
   const player = gameState.players.find(p => p.id === playerId);
   if (!player) {
     throw new Error(`AI player with ID ${playerId} not found`);
   }
-  
-  const strategy = createAIStrategy(difficulty);
+
+  const strategy = createAIStrategy();
   return strategy.declareTrumpSuit(gameState, player);
 };

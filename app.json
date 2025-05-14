@@ -16,19 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#3F51B5"
       },
-      "navigationBarColor": "#3F51B5",
       "softwareKeyboardLayoutMode": "pan",
-      "statusBar": {
-        "backgroundColor": "#3F51B5",
-        "barStyle": "light-content"
-      },
       "edgeToEdgeEnabled": true
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png",
-      "enabled": false
     },
     "plugins": [
       "expo-router",

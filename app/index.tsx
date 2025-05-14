@@ -15,8 +15,11 @@ export default function Index() {
       // Render the enhanced game screen
       return <EnhancedGameScreen />;
     } catch (error) {
-      // Just log the error type but not the full details
-      setHasError(true);
+      // Log the error and set error state
+      console.error("Game loading error:", error instanceof Error ? error.message : String(error));
+      // We need to use setTimeout to avoid state updates during render
+      setTimeout(() => setHasError(true), 0);
+      // Return error UI
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Error loading game</Text>

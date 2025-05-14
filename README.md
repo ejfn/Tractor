@@ -4,11 +4,12 @@ A React Native implementation of the Chinese card game Shengji (升级), also kn
 
 ## Game Features
 
-- Single-player game against 3 AI opponents
+- Single-player game against 3 AI opponents with advanced strategy
 - 2 teams: Team A (you + Bot 2) and Team B (Bot 1 + Bot 3)
 - Trick-taking gameplay with trump cards
 - Visual card animations and modern UI
 - Special handling for jokers and trump cards
+- Optimized for mobile (especially Android) experience
 
 ## Game Rules
 
@@ -80,7 +81,13 @@ Trump cards are played in this order of strength (highest to lowest):
    ```bash
    npm run android  # Start on Android
    npm run ios      # Start on iOS
-   npm run web      # Start on web
+   ```
+
+4. Lint and Type Checking
+
+   ```bash
+   npm run lint     # Run ESLint
+   npm run typecheck # Run TypeScript checks
    ```
 
 ## Project Structure
@@ -95,6 +102,7 @@ Trump cards are played in this order of strength (highest to lowest):
 ## Technology
 
 - React Native with Expo
-- TypeScript
+- TypeScript with strict type checking
 - React Native Animated API for animations
 - Expo Router for navigation
+- Optimized for Android mobile experience

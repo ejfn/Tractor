@@ -4,12 +4,11 @@ import {
   determineTrickWinner,
   calculateTrickPoints
 } from '../src/utils/gameLogic';
-import { 
-  GameState, 
-  Card, 
-  Rank, 
-  Suit, 
-  AIDifficulty 
+import {
+  GameState,
+  Card,
+  Rank,
+  Suit
 } from '../src/types/game';
 
 // Mock dependencies
@@ -128,7 +127,7 @@ describe('Game Loop Tests', () => {
     const processAIMove = () => {
       const newState = { ...gameState };
       const currentPlayer = newState.players[newState.currentPlayerIndex];
-      const aiMove = getAIMove(newState, currentPlayer.id, AIDifficulty.Medium);
+      const aiMove = getAIMove(newState, currentPlayer.id);
       
       // Check if we got a valid move
       expect(aiMove).toBeDefined();

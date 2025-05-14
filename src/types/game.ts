@@ -94,16 +94,11 @@ export type Combo = {
   value: number; // Relative hand strength for comparison
 };
 
-// AI difficulty levels
-export enum AIDifficulty {
-  Easy = 'Easy',
-  Medium = 'Medium',
-  Hard = 'Hard',
-}
+// AI now always runs at Hard difficulty
 
 // Game configuration
 export type GameConfig = {
-  aiDifficulty: AIDifficulty;
+  // AI always uses Hard difficulty
   playerName: string;
   teamNames: [string, string];
   startingRank: Rank;

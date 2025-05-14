@@ -11,7 +11,7 @@ import {
   TrumpInfo,
   Team
 } from '../types/game';
-// UUID import was removed (unused)
+// No UUID used in this project
 
 // Create a new deck of cards (2 decks for Shengji)
 export const createDeck = (): Card[] => {

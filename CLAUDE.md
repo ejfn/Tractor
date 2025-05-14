@@ -20,10 +20,12 @@ npx expo start
 # Run on specific platforms
 npm run android  # Start on Android
 npm run ios      # Start on iOS
-npm run web      # Start on web
 
 # Linting
 npm run lint
+
+# Type checking
+npm run typecheck
 ```
 
 ### Project Structure
@@ -65,8 +67,9 @@ The game implements the following key concepts:
    - Teams (A and B) alternate between defending and attacking
 
 5. **AI Logic**
-   - AI players make decisions based on difficulty level (Easy, Medium, Hard)
-   - AI logic controls play selection and trump declaration
+   - AI players use advanced strategy logic (no difficulty settings)
+   - AI makes strategic decisions about card play and trump declaration
+   - AI analyzes trick points, partner position, and remaining cards
 
 ## Development Notes
 
@@ -74,6 +77,8 @@ The game implements the following key concepts:
 - UI is built with React Native components
 - Animations use React Native's Animated API
 - The project follows Expo's recommended structure and configuration
+- Optimized for mobile platforms (especially Android)
+- Web platform support is disabled for better performance focus
 
 ## UI Implementation Details
 
@@ -142,6 +147,9 @@ The game implements the following key concepts:
   - renderToHardwareTextureAndroid: true
 - Minimal shadow effects for better performance
 - Careful management of z-index for proper stacking
+- Web platform support disabled to focus on mobile performance
+- Removing web-specific styling code for cleaner implementation
+- Single AI strategy implementation (no difficulty switching) for simplicity
 
 ### Card Suit Ordering Logic
 

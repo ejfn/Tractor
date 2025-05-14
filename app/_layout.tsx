@@ -5,8 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
-// Import the Colors constants
-import { Colors } from '@/constants/Colors';
+// Import the color scheme hook
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Header title with "Tractor Card Game" on a single line
@@ -56,13 +55,6 @@ export default function RootLayout() {
           headerShown: true,
           headerStyle: {
             backgroundColor: '#3F51B5', // Deep blue background for header
-            elevation: 5, // For Android
-            shadowColor: '#000', // For iOS
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 4,
-            height: Platform.OS === 'android' ? 56 : undefined, // Standard Android header height
-            borderBottomWidth: 0, // Remove bottom border
           },
           headerTintColor: '#FFFFFF', // White text for header
           headerTitleAlign: 'center', // Center the header title

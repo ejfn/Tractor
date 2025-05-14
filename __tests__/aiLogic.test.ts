@@ -4,13 +4,13 @@ import {
   createAIStrategy
 } from '../src/utils/aiLogic';
 import {
-  Card, 
-  GameState, 
-  Rank, 
-  Suit, 
-  AIDifficulty,
+  Card,
+  GameState,
+  Rank,
+  Suit,
   JokerType,
-  Trick
+  Trick,
+  ComboType
 } from '../src/types/game';
 
 // Create a mock game state for testing
@@ -107,7 +107,7 @@ describe('AI Logic Tests', () => {
       gameState.currentPlayerIndex = 1; // AI1's turn
       
       // AI is leading, so any valid combo is acceptable
-      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      const move = getAIMove(gameState, 'ai1');
       
       // AI should return a valid move
       expect(move).toBeDefined();
@@ -145,7 +145,7 @@ describe('AI Logic Tests', () => {
       
       gameState.currentPlayerIndex = 1; // AI1's turn
       
-      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      const move = getAIMove(gameState, 'ai1');
       
       // AI should play the heart card since it must follow suit
       expect(move.length).toBe(1);
@@ -177,7 +177,7 @@ describe('AI Logic Tests', () => {
       
       gameState.currentPlayerIndex = 1; // AI1's turn
       
-      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      const move = getAIMove(gameState, 'ai1');
       
       // AI should play one card as required
       expect(move.length).toBe(1);
@@ -218,7 +218,7 @@ describe('AI Logic Tests', () => {
       
       gameState.currentPlayerIndex = 1; // AI1's turn
       
-      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      const move = getAIMove(gameState, 'ai1');
       
       // AI should play a pair of hearts
       expect(move.length).toBe(2);
@@ -256,7 +256,7 @@ describe('AI Logic Tests', () => {
       
       gameState.currentPlayerIndex = 1; // AI1's turn
       
-      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      const move = getAIMove(gameState, 'ai1');
       
       // AI should return whatever card it has, even if not enough cards
       expect(move.length).toBe(1);
@@ -284,7 +284,7 @@ describe('AI Logic Tests', () => {
 
       gameState.currentPlayerIndex = 1; // AI1's turn
 
-      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      const move = getAIMove(gameState, 'ai1');
 
       // AI should return empty array
       expect(move).toBeDefined();
@@ -323,7 +323,7 @@ describe('AI Logic Tests', () => {
 
       gameState.currentPlayerIndex = 1; // AI1's turn
 
-      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      const move = getAIMove(gameState, 'ai1');
 
       // AI must play the one diamond it has plus one other card
       expect(move.length).toBe(2);
@@ -368,7 +368,7 @@ describe('AI Logic Tests', () => {
 
       gameState.currentPlayerIndex = 1; // AI1's turn
 
-      const move = getAIMove(gameState, 'ai1', AIDifficulty.Medium);
+      const move = getAIMove(gameState, 'ai1');
 
       // AI must play the pair of diamonds
       expect(move.length).toBe(2);
@@ -384,7 +384,7 @@ describe('AI Logic Tests', () => {
   describe('AI Strategy Tests', () => {
     test('Easy strategy should always return a move', () => {
       const gameState = createMockGameState();
-      const strategy = createAIStrategy(AIDifficulty.Easy);
+      const strategy = createAIStrategy();
       
       // Give AI1 some cards
       gameState.players[1].hand = [
@@ -396,17 +396,17 @@ describe('AI Logic Tests', () => {
       // Create a simple valid combo for testing
       const validCombos = [
         {
-          type: 'Single',
+          type: ComboType.Single,
           cards: [createCard(Suit.Hearts, Rank.Six, 'hearts_6_1')],
           value: 6
         },
         {
-          type: 'Single',
+          type: ComboType.Single,
           cards: [createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1')],
           value: 7
         }
       ];
-      
+
       const move = strategy.makePlay(gameState, gameState.players[1], validCombos);
       
       // Move should exist and be valid
