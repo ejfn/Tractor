@@ -83,50 +83,70 @@ export const AnimatedCard: React.FC<CardProps> = ({
     return card.rank || '';
   };
 
-  // Handle card selection
+  // Handle card selection with improved touch response
   const handlePress = () => {
     if (onSelect) {
       // Ensure opacity is maintained during tap animation
       opacity.value = 1;
 
-      // Animate card when selected (faster animation)
-      scale.value = withSequence(
-        withTiming(1.1, { duration: 50 }), // Reduced from 100ms to 50ms
-        withTiming(1, { duration: 50 })    // Reduced from 100ms to 50ms
-      );
+      // Cleaner tap animation - single spring with a small bounce
+      scale.value = withTiming(1.05, {
+        duration: 25, // Extremely quick animation - almost immediate
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1) // Custom easing for a subtle bounce
+      });
+
+      // Call onSelect immediately instead of waiting for animation
       onSelect(card);
+
+      // Reset scale immediately after to prevent jumpy feeling
+      setTimeout(() => {
+        scale.value = withTiming(cardScale, { duration: 25 });
+      }, 50);
     }
   };
   
-  // Selection animation - faster using withTiming instead of withSpring
+  // Selection animation - improved for cleaner, snappier response
   useEffect(() => {
     if (selected) {
-      // Use withTiming with shorter duration for faster animation
-      translateY.value = withTiming(-10 * cardScale, { duration: 80 }); // Fast upward animation
-      scale.value = withTiming(cardScale * 1.03, { duration: 80 }); // Fast scale animation
+      // Faster, more responsive animations with optimized easing
+      translateY.value = withTiming(-10 * cardScale, {
+        duration: 60, // Reduced duration for snappier response
+        easing: Easing.out(Easing.cubic) // Smoother easing for upward movement
+      });
+      scale.value = withTiming(cardScale * 1.03, {
+        duration: 60, // Reduced duration for snappier response
+        easing: Easing.out(Easing.cubic) // Smoother easing for scale
+      });
       opacity.value = 1; // Ensure the card stays fully opaque when selected
     } else {
-      // Fast animation when deselecting
-      translateY.value = withTiming(0, { duration: 80 });
-      scale.value = withTiming(cardScale, { duration: 80 });
+      // Quick deselection with slightly different timing to feel natural
+      translateY.value = withTiming(0, {
+        duration: 70, // Slightly longer for deselection (feels more natural)
+        easing: Easing.inOut(Easing.cubic) // Smoother return to normal position
+      });
+      scale.value = withTiming(cardScale, {
+        duration: 70, // Slightly longer for deselection
+        easing: Easing.inOut(Easing.cubic)
+      });
       opacity.value = 1; // Ensure the card stays fully opaque when deselected
     }
   }, [selected, translateY, scale, opacity, cardScale]);
   
-  // Play animation - removed random rotation for stacked appearance
+  // Play animation - improved for cleaner, more refined appearance
   useEffect(() => {
     if (isPlayed) {
       // Delay animations for sequential effect
       setTimeout(() => {
-        // Set rotation to 0 for a neat stack
+        // Set rotation to 0 for a neat stack with improved easing
         rotate.value = withTiming('0deg', {
-          duration: 300,
-          easing: Easing.out(Easing.ease)
+          duration: 250, // Slightly reduced duration for more responsive feel
+          easing: Easing.out(Easing.cubic) // Cubic easing for smoother deceleration
         });
 
-        // Use animation completion callback for the scale animation
+        // Improved scale animation with completion callback
         scale.value = withTiming(1, {
-          duration: 300
+          duration: 250, // Match duration with rotation for consistent feel
+          easing: Easing.out(Easing.cubic) // Cubic easing for smoother deceleration
         }, (finished) => {
           if (finished && typeof onAnimationComplete === 'function') {
             // Notify parent component that animation is complete
@@ -140,7 +160,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
     }
   }, [isPlayed, delay, rotate, opacity, scale, onAnimationComplete]);
   
-  // Card appearance animations
+  // Card appearance animations with improved performance settings
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -150,10 +170,14 @@ export const AnimatedCard: React.FC<CardProps> = ({
       ],
       // Always force opacity to be 1 to prevent any transparency effects
       opacity: 1,
+      // Add hardware acceleration hints for smoother animations
+      backfaceVisibility: 'hidden',
       // Include any additional styles passed as props
       ...style,
+      // Ensure zIndex changes properly on selection for better stacking
+      zIndex: selected ? (style.zIndex ? style.zIndex + 5 : 5) : (style.zIndex || 0),
     };
-  });
+  }, [selected, style.zIndex]); // Add dependencies to avoid unnecessary recalculations
 
   if (faceDown) {
     return (
@@ -279,12 +303,13 @@ export const AnimatedCard: React.FC<CardProps> = ({
               alignItems: 'center',
               opacity: 1, // Ensure opacity is always 1
             }
-            // Removed selectedCard styling
           ]}
           onPress={handlePress}
           disabled={!onSelect}
-          activeOpacity={1.0} // Changed from 0.7 to 1.0 to prevent any transparency on press
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={1.0} // Keep full opacity on press
+          delayPressIn={0} // Remove delay for immediate feedback
+          pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }} // Larger touch area
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} // Increase hit area for easier tapping
         >
           {/* Card content with vertical JOKER text */}
           <View style={{
@@ -400,12 +425,13 @@ export const AnimatedCard: React.FC<CardProps> = ({
             borderWidth,
             opacity: 1, // Ensure opacity is always 1
           }
-          // Removed selectedCard styling
         ]}
         onPress={handlePress}
         disabled={!onSelect}
-        activeOpacity={1.0} // Changed from 0.7 to 1.0 to prevent any transparency on press
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        activeOpacity={1.0} // Keep full opacity on press
+        delayPressIn={0} // Remove delay for immediate feedback
+        pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }} // Larger touch area
+        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} // Increase hit area for easier tapping
       >
         {/* Card header with rank and suit */}
         <View style={styles.cardHeader}>
@@ -443,20 +469,24 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    width: 65, // Increased from 60 to 65
-    height: 95, // Increased from 85 to 95
+    width: 65, // Card width
+    height: 95, // Card height
     borderRadius: 6,
     borderWidth: 1,
     backgroundColor: '#FFFFFF',
     padding: 4,
     margin: 2,
     position: 'relative',
+    // Improve shadow for cleaner look
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+    // Performance optimizations
     backfaceVisibility: 'hidden',
+    shouldRasterizeIOS: true, // iOS performance optimization
+    renderToHardwareTextureAndroid: true, // Android performance optimization
     overflow: 'hidden',
   },
   cardBack: {
@@ -464,10 +494,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: 'transparent',
-    borderRadius: 8,
+    borderRadius: 6, // Match card border radius
     overflow: 'hidden',
+    // Performance optimizations for card back too
+    backfaceVisibility: 'hidden',
+    shouldRasterizeIOS: true,
+    renderToHardwareTextureAndroid: true,
   },
-  // Removed highlight styling, just keeping the opacity setting
+  // Using state-based styling controlled by animated values instead of this static style
   selectedCard: {
     opacity: 1, // Keep this to ensure no transparency when selected
   },
