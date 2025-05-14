@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, Animated, Platform } from 'react-native';
-import { Team, TrumpInfo } from '../types/game';
+import { Team, TrumpInfo, Suit } from '../types/game';
 
 interface GameStatusProps {
   teams: [Team, Team];
@@ -80,10 +80,19 @@ const GameStatus: React.FC<GameStatusProps> = ({
         <View style={styles.trumpInfo}>
           <Text style={styles.infoLabel}>Trump:</Text>
           <View style={styles.trumpDisplay}>
-            <Text style={styles.trumpText}>
-              {trumpInfo.trumpRank}
-              {trumpInfo.trumpSuit ? ` of ${trumpInfo.trumpSuit}` : ''}
-            </Text>
+            <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
+            {trumpInfo.trumpSuit && (
+              <Text style={[
+                styles.suitSymbol,
+                (trumpInfo.trumpSuit === Suit.Hearts || trumpInfo.trumpSuit === Suit.Diamonds)
+                  ? styles.redSuit : styles.blackSuit
+              ]}>
+                {trumpInfo.trumpSuit === Suit.Hearts ? '♥' :
+                 trumpInfo.trumpSuit === Suit.Diamonds ? '♦' :
+                 trumpInfo.trumpSuit === Suit.Clubs ? '♣' :
+                 trumpInfo.trumpSuit === Suit.Spades ? '♠' : ''}
+              </Text>
+            )}
           </View>
         </View>
       </View>
@@ -116,28 +125,32 @@ const GameStatus: React.FC<GameStatusProps> = ({
                 <Text style={styles.statValue}>{team.currentRank}</Text>
               </View>
               
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Points:</Text>
-                <Text style={[
-                  styles.statValue, 
-                  styles.pointsValue,
-                  team.points >= 80 && !team.isDefending ? styles.winningPoints : null
-                ]}>
-                  {team.points}/80
-                </Text>
-              </View>
+              {!team.isDefending && (
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Points:</Text>
+                  <Text style={[
+                    styles.statValue,
+                    styles.pointsValue,
+                    team.points >= 80 ? styles.winningPoints : null
+                  ]}>
+                    {team.points}/80
+                  </Text>
+                </View>
+              )}
             </View>
             
-            {/* Progress bar for points */}
-            <View style={styles.progressContainer}>
-              <View 
-                style={[
-                  styles.progressBar,
-                  team.isDefending ? styles.defendingProgress : styles.attackingProgress,
-                  { width: `${Math.min(100, (team.points / 80) * 100)}%` }
-                ]}
-              />
-            </View>
+            {/* Progress bar for points - only for attacking team */}
+            {!team.isDefending && (
+              <View style={styles.progressContainer}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    styles.attackingProgress,
+                    { width: `${Math.min(100, (team.points / 80) * 100)}%` }
+                  ]}
+                />
+              </View>
+            )}
           </Animated.View>
         ))}
       </View>
@@ -208,8 +221,8 @@ const styles = StyleSheet.create({
   },
   trumpDisplay: {
     backgroundColor: '#FFC107',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -218,9 +231,24 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: 'rgba(255, 193, 7, 0.5)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   trumpText: {
     fontWeight: 'bold',
+    color: '#212121',
+    fontSize: 15,
+  },
+  suitSymbol: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 5,
+  },
+  redSuit: {
+    color: '#D32F2F',
+  },
+  blackSuit: {
     color: '#212121',
   },
   teamsContainer: {

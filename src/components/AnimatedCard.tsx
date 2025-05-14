@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
-  withSpring,
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
   withSequence,
   Easing
 } from 'react-native-reanimated';
@@ -246,9 +245,10 @@ export const AnimatedCard: React.FC<CardProps> = ({
   let borderWidth = 1;
 
   if (card.joker) {
-    // Special styling for jokers
+    // Enhanced styling for jokers (treated as trump cards)
     bgColor = card.joker === 'Big' ? '#FFEBEE' : '#F5F5F5';
-    borderColor = card.joker === 'Big' ? '#D32F2F' : '#000000';
+    borderColor = '#D4B82F'; // Darker gold border like other trump cards
+    borderWidth = 1.5; // Slightly thicker border
 
     // Simplified joker card
     const jokerColor = card.joker === 'Big' ? '#D32F2F' : '#000000';
@@ -259,9 +259,9 @@ export const AnimatedCard: React.FC<CardProps> = ({
           style={[
             styles.card,
             {
-              backgroundColor: 'white',
-              borderColor: 'transparent', // No border for jokers
-              borderWidth: 0,
+              backgroundColor: bgColor,
+              borderColor: borderColor, // Gold border for jokers
+              borderWidth: 1,
               padding: 0,
               justifyContent: 'center',
               alignItems: 'center',
@@ -336,26 +336,43 @@ export const AnimatedCard: React.FC<CardProps> = ({
             }}>
               ★
             </Text>
+
+            {/* Trump indicator star */}
+            <View style={{
+              position: 'absolute',
+              top: 1,
+              right: 1,
+              width: 14,
+              height: 14,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+              <Text style={{
+                fontSize: 12,
+                color: '#D4B82F',
+                fontWeight: 'bold',
+              }}>★</Text>
+            </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
     );
   }
 
-  // More subtle trump card styling
+  // Enhanced trump card styling
   if (isTrump) {
-    // Very subtle styling for trump cards
-    const isTopTrump = card.rank === 'A';  // Simplified check for top trump
+    const isTopTrump = card.rank === 'A';  // Check for Ace trump
 
     if (isTopTrump) {
-      // Slight gold tint for Ace trumps
-      bgColor = '#FFFEF7'; // Very light gold tint
-      borderColor = '#E6D9A3'; // Subtle gold border
-      borderWidth = 1.5; // Slightly thicker border
+      // More distinctive styling for Ace trumps
+      bgColor = '#FFF9E0'; // Richer gold-cream tint
+      borderColor = '#D4B82F'; // Darker gold border
+      borderWidth = 1.5; // Thicker border
     } else {
-      // No special styling for regular trumps - removed visual indicator
-      // bgColor remains 'white'
-      // borderColor remains '#CCCCCC'
+      // More noticeable styling for regular trump cards
+      bgColor = '#FFFCEB'; // Light gold tint
+      borderColor = '#D4B82F'; // Darker gold border
+      borderWidth = 1; // Standard border width
     }
   }
 
@@ -385,7 +402,12 @@ export const AnimatedCard: React.FC<CardProps> = ({
             <Text style={[styles.suitSymbolSmall, { color: getColor() }]}>{getSuitSymbol()}</Text>
           </View>
 
-          {/* Trump indicator removed */}
+          {/* Subtle trump indicator */}
+          {isTrump && (
+            <View style={styles.trumpIndicator}>
+              <Text style={styles.trumpStar}>★</Text>
+            </View>
+          )}
         </View>
 
         {/* Card center with large suit symbol */}
@@ -475,7 +497,21 @@ const styles = StyleSheet.create({
   suit: {
     fontSize: 35,
   },
-  // Trump indicator styles removed
+  // Trump indicator styles
+  trumpIndicator: {
+    position: 'absolute',
+    top: 1,
+    right: 1,
+    width: 14,
+    height: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trumpStar: {
+    fontSize: 12,
+    color: '#D4B82F',
+    fontWeight: 'bold',
+  },
 });
 
 export default AnimatedCard;
