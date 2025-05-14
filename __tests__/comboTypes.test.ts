@@ -103,9 +103,9 @@ describe('Combo Type Identification Tests', () => {
       const hand = [smallJoker1, smallJoker2];
       const combos = identifyCombos(hand, trumpInfo);
 
-      // Should have 2 singles only - the current implementation doesn't support joker pairs
-      // but we test that getComboType would identify them correctly if provided
-      expect(combos.length).toBe(2);
+      // Expect 3 combos: 2 singles + 1 pair
+      // The original comment is outdated, as the implementation now includes joker pairs
+      expect(combos.length).toBe(3);
 
       // Test that getComboType would correctly identify a pair of jokers if given directly
       expect(getComboType([smallJoker1, smallJoker2])).toBe(ComboType.Pair);

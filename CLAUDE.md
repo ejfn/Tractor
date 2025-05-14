@@ -60,6 +60,10 @@ The game implements the following key concepts:
      - Trump cards of different levels don't form tractors with each other
      - SJ-SJ-BJ-BJ forms a special tractor (the most powerful combo)
      - Any trump combo beats any non-trump combo of the same type and length
+     - When following suit:
+       - If player has enough cards of the leading suit, they must play a valid combo of the same type in that suit
+       - If player has some cards of leading suit but not enough to form a valid combo, must use all those cards
+       - If player has no cards of leading suit, can play any cards of the correct length (combo type not enforced)
 
 4. **Game Flow**
    - Phases: dealing, declaring, playing, scoring, gameOver

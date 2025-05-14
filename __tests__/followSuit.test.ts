@@ -2,7 +2,8 @@ import {
   isValidPlay,
   getLeadingSuit,
   getComboType,
-  compareCards
+  compareCards,
+  isTrump
 } from '../src/utils/gameLogic';
 import {
   Card, 
@@ -167,34 +168,39 @@ describe('Follow Suit Rules Tests', () => {
     expect(isValidPlay(invalidPlayedCards2, leadingCombo, playerHand, trumpInfo)).toBe(false);
   });
   
-  test('When player has no cards of leading suit, can play any valid combo', () => {
+  test('When player has no cards of leading suit, any same-length combo can be played', () => {
     // Player has no diamonds, only hearts
     const playerHand = [
       createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
       createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2'),
       createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1')
     ];
-    
+
     // Leading with a pair of diamonds
     const leadingCombo = [
       createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_1'),
       createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_2')
     ];
-    
-    // Valid: Played a pair of hearts
-    const validPlayedCards1 = [
+
+    // Valid: Played a proper pair of hearts (same rank)
+    const validPair = [
       createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
       createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2')
     ];
-    
-    // Valid: Played any two cards from hand
-    const validPlayedCards2 = [
+
+    // Also Valid: Played any two cards since player has no leading suit
+    const validMix = [
       createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
       createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1')
     ];
-    
-    expect(isValidPlay(validPlayedCards1, leadingCombo, playerHand, trumpInfo)).toBe(true);
-    expect(isValidPlay(validPlayedCards2, leadingCombo, playerHand, trumpInfo)).toBe(true);
+
+    // Verify the combo types
+    expect(getComboType(validPair)).toBe(ComboType.Pair);
+    expect(getComboType(validMix)).toBe(ComboType.Single);
+
+    // Both plays should be valid since player has no cards of leading suit
+    expect(isValidPlay(validPair, leadingCombo, playerHand, trumpInfo)).toBe(true);
+    expect(isValidPlay(validMix, leadingCombo, playerHand, trumpInfo)).toBe(true);
   });
   
   test('Must play all cards of leading suit even if not enough for the combo', () => {
@@ -236,5 +242,60 @@ describe('Follow Suit Rules Tests', () => {
     expect(isValidPlay(validPlayedCards, leadingCombo, playerHand, trumpInfo)).toBe(true);
     expect(isValidPlay(invalidPlayedCards1, leadingCombo, playerHand, trumpInfo)).toBe(false);
     expect(isValidPlay(invalidPlayedCards2, leadingCombo, playerHand, trumpInfo)).toBe(false);
+  });
+
+  test('A♠-Q♠ cannot beat a leading 5♠-5♠ when 2♠ is trump', () => {
+    // Player has A♠ and Q♠ in hand (both trump cards due to trump suit)
+    const playerHand = [
+      createCard(Suit.Spades, Rank.Ace, 'spades_a_1'),
+      createCard(Suit.Spades, Rank.Queen, 'spades_q_1'),
+      createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1')
+    ];
+
+    // Leading with a pair of 5♠
+    const leadingCombo = [
+      createCard(Suit.Spades, Rank.Five, 'spades_5_1'),
+      createCard(Suit.Spades, Rank.Five, 'spades_5_2')
+    ];
+
+    // Attempt to play A♠-Q♠ (which is not a valid pair)
+    const invalidPlay = [
+      createCard(Suit.Spades, Rank.Ace, 'spades_a_1'),
+      createCard(Suit.Spades, Rank.Queen, 'spades_q_1')
+    ];
+
+    // First, confirm both cards are trumps
+    expect(isTrump(invalidPlay[0], trumpInfo)).toBe(true);
+    expect(isTrump(invalidPlay[1], trumpInfo)).toBe(true);
+
+    // Verify this wouldn't form a valid pair
+    expect(getComboType(invalidPlay)).not.toBe(ComboType.Pair);
+    expect(getComboType(invalidPlay)).toBe(ComboType.Single);
+
+    // Use console.log for debugging in tests
+    console.log('A-Q play type:', getComboType(invalidPlay));
+    console.log('Leading combo type:', getComboType(leadingCombo));
+    console.log('Leading suit:', getLeadingSuit(leadingCombo));
+    console.log('Are A-Q trump cards?', invalidPlay.map(c => isTrump(c, trumpInfo)));
+    console.log('Cards of leading suit in hand:', playerHand.filter(c => c.suit === Suit.Spades));
+
+    // Then verify it can't be played against a leading pair
+    expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
+
+    // For comparison, a valid play would be a proper pair like 7♥-7♥ if the player had it
+    const validPairHand = [
+      createCard(Suit.Spades, Rank.Ace, 'spades_a_1'),
+      createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
+      createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2')
+    ];
+
+    const validPlay = [
+      createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
+      createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2')
+    ];
+
+    // Confirm a proper pair would be allowed
+    expect(getComboType(validPlay)).toBe(ComboType.Pair);
+    expect(isValidPlay(validPlay, leadingCombo, validPairHand, trumpInfo)).toBe(true);
   });
 });

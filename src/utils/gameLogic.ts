@@ -391,6 +391,7 @@ export const isValidPlay = (
   playerHand: Card[],
   trumpInfo: TrumpInfo
 ): boolean => {
+  
   // If no leading combo, any valid combo is acceptable
   if (!leadingCombo) {
     const combos = identifyCombos(playerHand, trumpInfo);
@@ -405,22 +406,42 @@ export const isValidPlay = (
     return false;
   }
 
-  // Get the leading combo's type and suit
+  // Get the leading combo's suit
   const leadingSuit = getLeadingSuit(leadingCombo);
-  const leadingType = getComboType(leadingCombo);
   const isLeadingTrump = leadingCombo.some(card => isTrump(card, trumpInfo));
-
+  
   // Find available cards in player's hand
   const trumpCards = playerHand.filter(card => isTrump(card, trumpInfo));
   const leadingSuitCards = playerHand.filter(card =>
     card.suit === leadingSuit && !isTrump(card, trumpInfo)
   );
+  
+  // Get combo types
+  const leadingType = getComboType(leadingCombo);
+  const playedType = getComboType(playedCards);
+  
+  // CRITICAL: Only enforce combo type if player has ENOUGH cards of leading suit
+  // to form a valid combo of the same type
+  
+  // If we have enough leading suit cards to form the same combo type,
+  // then we must enforce that combo type
+  const hasEnoughLeadingSuitCards = leadingSuitCards.length >= leadingCombo.length;
+  const hasEnoughTrumpCards = isLeadingTrump && trumpCards.length >= leadingCombo.length;
+  
+  // Only enforce combo type if player could reasonably form a valid combo 
+  // of the same type using their cards
+  const playerHasEnoughCards = hasEnoughLeadingSuitCards || hasEnoughTrumpCards;
+                               
+  if (playerHasEnoughCards && playedType !== leadingType) {
+    return false;
+  }
 
   // 1. If leading with trumps, must play trumps if you have them
   if (isLeadingTrump) {
     if (trumpCards.length >= leadingCombo.length) {
       // Must play trump cards
-      return playedCards.every(card => isTrump(card, trumpInfo));
+      const allTrumps = playedCards.every(card => isTrump(card, trumpInfo));
+      return allTrumps;
     } else {
       // Not enough trumps, can play anything
       return true;
@@ -442,15 +463,21 @@ export const isValidPlay = (
 
   // 3. If can't match combo type in same suit, must still follow suit if possible
   if (leadingSuitCards.length >= leadingCombo.length) {
+    // We already checked if the played cards form a valid combo of the right type
+    // at the beginning of the function, but only if player has relevant cards
+    
     // Must play cards of the leading suit
-    return playedCards.every(card =>
+    const allLeadingSuit = playedCards.every(card =>
       leadingSuitCards.some(handCard => handCard.id === card.id)
     );
+    return allLeadingSuit;
   }
 
   // 4. If player has some cards of the leading suit, but not enough for the combo,
   // they must play all the cards they have of that suit
   if (leadingSuitCards.length > 0 && leadingSuitCards.length < leadingCombo.length) {
+    // This rule always applies regardless of combo type - must use all leading suit cards
+    
     // Count how many cards of the leading suit were played
     const playedLeadingSuitCards = playedCards.filter(card =>
       card.suit === leadingSuit && !isTrump(card, trumpInfo)
@@ -486,12 +513,19 @@ export const isValidPlay = (
     return allPlayedFromHand;
   }
 
-  // 5. If not enough cards of leading suit, can play any valid combo of the right length
+  // 5. If not enough cards of leading suit, can play any valid combo of the RIGHT TYPE and length
+
+  // First, verify all played cards are from the player's hand
   const allPlayedFromHand = playedCards.every(card =>
     playerHand.some(handCard => handCard.id === card.id)
   );
 
-  return allPlayedFromHand;
+  if (!allPlayedFromHand) {
+    return false;
+  }
+
+  // We already checked the combo type at the beginning of the function
+  return true;
 };
 
 // Get the leading suit from a combo
