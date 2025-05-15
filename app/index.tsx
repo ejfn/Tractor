@@ -3,8 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
-// Import both game screens
-import EnhancedGameScreen from '../src/screens/EnhancedGameScreen';
+// Import game screen
+import GameScreen from '../src/screens/GameScreen';
 
 export default function Index() {
   const [hasError, setHasError] = useState(false);
@@ -12,8 +12,8 @@ export default function Index() {
   // Function to render the game screen with error handling
   const renderGameScreen = () => {
     try {
-      // Render the enhanced game screen
-      return <EnhancedGameScreen />;
+      // Render the game screen
+      return <GameScreen />;
     } catch (error) {
       // Log the error and set error state
       console.error("Game loading error:", error instanceof Error ? error.message : String(error));
