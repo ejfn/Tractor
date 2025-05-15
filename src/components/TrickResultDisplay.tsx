@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 interface TrickResultDisplayProps {
@@ -15,6 +15,7 @@ const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
   winnerName,
   points
 }) => {
+  // Just use the visible prop directly - simpler code
   if (!visible) return null;
   
   return (

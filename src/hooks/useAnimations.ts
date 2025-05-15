@@ -63,11 +63,37 @@ export function useThinkingDots() {
   const dot1 = useRef(new Animated.Value(1)).current;
   const dot2 = useRef(new Animated.Value(1)).current;
   const dot3 = useRef(new Animated.Value(1)).current;
+  
+  // Use a ref to store the animation timers so we can clear them on cleanup
+  const timersRef = useRef<{[key: string]: any}>({});
+  
+  // Helper to clear all timers
+  const clearAllTimers = () => {
+    Object.values(timersRef.current).forEach(timer => {
+      clearTimeout(timer);
+    });
+    timersRef.current = {};
+  };
 
   // Animate thinking dots (continuous animation)
   useEffect(() => {
     // Create recursive animation function for the thinking dots
     const animateThinkingDots = () => {
+      // Reset any existing animations
+      dot1.stopAnimation();
+      dot2.stopAnimation();
+      dot3.stopAnimation();
+      
+      // Reset values to ensure consistent animation start
+      dot1.setValue(1);
+      dot2.setValue(1);
+      dot3.setValue(1);
+      
+      // Clear any existing timers
+      clearAllTimers();
+      
+      // Start animation sequence
+      
       // Sequence for first dot
       Animated.sequence([
         Animated.timing(dot1, {
@@ -83,7 +109,7 @@ export function useThinkingDots() {
       ]).start();
 
       // Sequence for second dot with delay
-      setTimeout(() => {
+      timersRef.current.timer1 = setTimeout(() => {
         Animated.sequence([
           Animated.timing(dot2, {
             toValue: 0.4,
@@ -99,7 +125,7 @@ export function useThinkingDots() {
       }, 150);
 
       // Sequence for third dot with more delay
-      setTimeout(() => {
+      timersRef.current.timer2 = setTimeout(() => {
         Animated.sequence([
           Animated.timing(dot3, {
             toValue: 0.4,
@@ -113,7 +139,7 @@ export function useThinkingDots() {
           })
         ]).start(() => {
           // After all animations complete, wait briefly and restart
-          setTimeout(animateThinkingDots, 300);
+          timersRef.current.timer3 = setTimeout(animateThinkingDots, 300);
         });
       }, 300);
     };
@@ -123,7 +149,11 @@ export function useThinkingDots() {
 
     // Clean up on unmount
     return () => {
-      // No explicit cleanup needed as animations will stop when component unmounts
+      // Cleanup animation resources
+      clearAllTimers();
+      dot1.stopAnimation();
+      dot2.stopAnimation();
+      dot3.stopAnimation();
     };
   }, [dot1, dot2, dot3]);
 

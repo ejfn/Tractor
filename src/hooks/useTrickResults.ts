@@ -1,5 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Trick } from '../types/game';
+import { 
+  TRICK_RESULT_DISPLAY_TIME, 
+  ANIMATION_COMPLETION_DELAY
+} from '../utils/gameTimings';
 
 /**
  * Hook for managing trick completion and result display
@@ -10,6 +14,15 @@ export function useTrickResults() {
   const [lastTrickWinner, setLastTrickWinner] = useState('');
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
   const [lastCompletedTrick, setLastCompletedTrick] = useState<Trick & { winningPlayerId?: string } | null>(null);
+  
+  // Create a callback ref that will be set by the parent component
+  // This will be called when it's safe to clear the currentTrick in the game state
+  const onTrickResultCompleteRef = useRef<() => void>(() => {});
+  const onTrickResultComplete = () => {
+    if (onTrickResultCompleteRef.current) {
+      onTrickResultCompleteRef.current();
+    }
+  };
   
   // We'll use a ref to track if we've ever shown the result for this trick
   const hasShownResultRef = useRef(false);
@@ -28,78 +41,66 @@ export function useTrickResults() {
     }
   }, [showTrickResult]);
 
-  // Auto-hide trick result after a delay and update game state
+  // Simple, reliable auto-hide after fixed time
   useEffect(() => {
-    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     if (showTrickResult) {
-      // Hide the trick result after a few seconds and continue the game
-      hideTimer = setTimeout(() => {
-        setShowTrickResult(false);
-
-        // Also clear the lastCompletedTrick to ensure we stop showing
-        // the completed trick and allow the next trick to start
-        setLastCompletedTrick(null);
-      }, 2000);
+      // Showing trick result notification
+      
+      // Set a timer to hide the result after the display time
+      // Just enough time to see who won the trick without slowing gameplay
+      timer = setTimeout(() => {
+        // Auto-hiding trick result notification
+        
+        // We'll clear everything at once to ensure synchronization
+        // This ensures the trick result and winner status disappear at the same time
+        
+        // Signal to clear the game state
+        if (onTrickResultCompleteRef.current) {
+          // Clearing game state currentTrick
+          onTrickResultCompleteRef.current();
+        }
+        
+        // Use a single setTimeout to clear both states simultaneously
+        // This fixes the issue where winner status and results disappear at different times
+        setTimeout(() => {
+          // Clearing trick result display and lastCompletedTrick simultaneously
+          // Hide the result UI
+          setShowTrickResult(false);
+          // Clear the completed trick data
+          setLastCompletedTrick(null);
+        }, 100); // Short delay to ensure state updates happen together
+      }, TRICK_RESULT_DISPLAY_TIME);
     }
-
+    
     return () => {
-      if (hideTimer) {
-        clearTimeout(hideTimer);
-      }
+      if (timer) clearTimeout(timer);
     };
-  }, [showTrickResult]);
+  }, [showTrickResult, lastTrickWinner, lastTrickPoints]);
 
-  // Simpler backup logic - only show once per trick and don't repeatedly trigger
-  useEffect(() => {
-    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+  // Safety timers have been removed as they might hide underlying issues
+  // instead of fixing the root causes
 
-    // Only run the fallback if:
-    // 1. We have a completed trick
-    // 2. We're not currently showing the result
-    // 3. We haven't already shown the result for this trick
-    if (lastCompletedTrick && !showTrickResult && !hasShownResultRef.current) {
-      fallbackTimer = setTimeout(() => {
-        setShowTrickResult(true);
-        hasShownResultRef.current = true; // Mark that we've shown it
-      }, 1200); // 1.2 second fallback (much shorter)
-    }
-
-    return () => {
-      if (fallbackTimer) {
-        clearTimeout(fallbackTimer);
-      }
-    };
-  }, [lastCompletedTrick, showTrickResult]);
-
-  // Handle a completed trick
+  // Handle a completed trick - simplified to just show result
   const handleTrickCompletion = (
     winnerName: string,
     points: number,
     trick: Trick & { winningPlayerId?: string }
   ) => {
+    // Store values for the trick result
     setLastTrickWinner(winnerName);
     setLastTrickPoints(points);
-
-    // Reset showTrickResult to false before setting the new completed trick
-    setShowTrickResult(false);
-
-    // Ensure we have the complete trick info before setting state
-    if (trick.plays.length === 4) { // Assuming always 4 players
-      setLastCompletedTrick(trick);
-    } else {
-      // This is a fallback that shouldn't normally be needed
-      console.warn("Incomplete trick detected in handleTrickCompletion");
-      setLastCompletedTrick(trick);
-    }
+    
+    // Prepare to show result
+    
+    // Show the result
+    setShowTrickResult(true);
   };
 
   // Handler for when all cards in trick are animated into position
   const handleTrickAnimationComplete = () => {
-    // Only show the trick result after all cards are animated
-    if (lastCompletedTrick && !showTrickResult) {
-      setShowTrickResult(true);
-    }
+    // Animation complete callback triggered
   };
 
   return {
@@ -109,6 +110,9 @@ export function useTrickResults() {
     lastCompletedTrick,
     setLastCompletedTrick,
     handleTrickCompletion,
-    handleTrickAnimationComplete
+    handleTrickAnimationComplete,
+    setTrickResultCompleteCallback: (callback: () => void) => {
+      onTrickResultCompleteRef.current = callback;
+    }
   };
 }

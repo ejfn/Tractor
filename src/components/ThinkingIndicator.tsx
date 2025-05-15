@@ -14,6 +14,11 @@ interface ThinkingIndicatorProps {
  * Component that displays animated thinking dots
  */
 const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({ visible, dots }) => {
+  // Track indicator visibility changes
+  React.useEffect(() => {
+    // Monitor when thinking indicator visibility changes
+  }, [visible]);
+
   if (!visible) return null;
 
   return (

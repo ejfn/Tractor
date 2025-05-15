@@ -630,7 +630,9 @@ export const determineTrickWinner = (trick: Trick, trumpInfo: TrumpInfo): string
 const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: TrumpInfo): number => {
   // Check if combos are the same type (singles, pairs, etc.)
   if (comboA.length !== comboB.length) {
-    throw new Error('Cannot compare combos of different lengths');
+    // In proper Tractor/Shengji, this should never happen
+    // Combos of different lengths cannot be compared - this is a fundamental rule violation
+    throw new Error(`Cannot compare combos of different lengths: ${comboA.length} vs ${comboB.length}`);
   }
 
   // Get combo types

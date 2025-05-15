@@ -33,6 +33,7 @@ interface GameScreenViewProps {
   gameOver: boolean;
   winner: 'A' | 'B' | null;
   waitingForAI: boolean;
+  waitingPlayerId: string;
   showTrickResult: boolean;
   lastTrickWinner: string;
   lastTrickPoints: number;
@@ -75,6 +76,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   gameOver,
   winner,
   waitingForAI,
+  waitingPlayerId,
   showTrickResult,
   lastTrickWinner,
   lastTrickPoints,
@@ -179,7 +181,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   player={ai2}
                   isDefending={ai2Team.isDefending}
                   isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai2')}
-                  waitingForAI={waitingForAI}
+                  waitingForAI={waitingForAI && waitingPlayerId === 'ai2'}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -193,7 +195,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   player={ai1}
                   isDefending={ai1Team.isDefending}
                   isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai1')}
-                  waitingForAI={waitingForAI}
+                  waitingForAI={waitingForAI && waitingPlayerId === 'ai1'}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -207,7 +209,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   player={ai3}
                   isDefending={ai3Team.isDefending}
                   isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai3')}
-                  waitingForAI={waitingForAI}
+                  waitingForAI={waitingForAI && waitingPlayerId === 'ai3'}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -231,7 +233,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
             }
             centerContent={
               <CardPlayArea
-                currentTrick={lastCompletedTrick || gameState.currentTrick}
+                currentTrick={gameState.currentTrick}
+                lastCompletedTrick={lastCompletedTrick}
                 players={gameState.players}
                 trumpInfo={gameState.trumpInfo}
                 winningPlayerId={lastCompletedTrick?.winningPlayerId || gameState.currentTrick?.winningPlayerId}

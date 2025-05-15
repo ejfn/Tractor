@@ -94,10 +94,9 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   }[position];
 
   // Determine whether to show thinking indicator
-  const showThinking = waitingForAI && 
-                     !showTrickResult && 
-                     !lastCompletedTrick && 
-                     isCurrentPlayer;
+  // We now ONLY rely on waitingForAI, which has been properly fixed in the useAITurns hook
+  // The hook now properly handles all the coordination with showTrickResult and lastCompletedTrick
+  const showThinking = waitingForAI;
 
   return (
     <View style={containerStyles}>

@@ -138,9 +138,13 @@ describe('gamePlayManager', () => {
       expect(result.newState.currentTrick).toBeTruthy();
       expect(result.newState.currentTrick?.leadingPlayerId).toBe('human');
       expect(result.newState.currentTrick?.leadingCombo).toEqual(cardsToPlay);
-      expect(result.newState.currentTrick?.plays).toHaveLength(1);
-      expect(result.newState.currentTrick?.plays[0].playerId).toBe('human');
-      expect(result.newState.currentTrick?.plays[0].cards).toEqual(cardsToPlay);
+      
+      // UPDATED: First player's cards are stored in leadingCombo, not in plays array
+      expect(result.newState.currentTrick?.plays).toHaveLength(0);
+      // Leading player's cards are in leadingCombo, not plays array
+      // expect(result.newState.currentTrick?.plays[0].playerId).toBe('human');
+      // expect(result.newState.currentTrick?.plays[0].cards).toEqual(cardsToPlay);
+      
       expect(result.newState.currentTrick?.points).toBe(5); // 5 points from the card
       
       // Verify the card was removed from the player's hand
@@ -184,9 +188,38 @@ describe('gamePlayManager', () => {
       // Mock determineTrickWinner to return ai1
       (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('ai1');
       
-      // Process the play for the last player in the trick
-      const cardsToPlay = [mockState.players[2].hand[0]]; // Spades 2
-      const result = processPlay(mockState, cardsToPlay);
+      // Start fresh with a clear game state for this test
+      const freshState = createMockGameState();
+      
+      // Setup a trick in progress with 3 players having played
+      // For a 4-player game, we need leader + 3 followers to complete a trick
+      freshState.currentTrick = {
+        leadingPlayerId: 'ai1',  // Bot 1 led
+        leadingCombo: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)],
+        plays: [
+          // Human has played 
+          {
+            playerId: 'human',
+            cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
+          },
+          // Bot 2 has played
+          {
+            playerId: 'ai2',
+            cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)]
+          }
+        ],
+        points: 5 // 5 points from the Spades 5
+      };
+      
+      // Setup the current player to be the last player in the trick (Bot 3)
+      freshState.currentPlayerIndex = 3; // ai3
+      
+      // Mock determineTrickWinner to return ai1
+      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('ai1');
+      
+      // Process the play for the last player in the trick (Bot 3)
+      const cardsToPlay = [freshState.players[3].hand[0]]; // Clubs 4 
+      const result = processPlay(freshState, cardsToPlay);
       
       // Verify the trick is complete
       expect(result.trickComplete).toBe(true);
@@ -196,14 +229,18 @@ describe('gamePlayManager', () => {
       // Verify the trick was added to the tricks array
       expect(result.newState.tricks).toHaveLength(1);
       
-      // Verify the current trick was cleared
-      expect(result.newState.currentTrick).toBeNull();
+      // UPDATED: Verify the current trick is NOT cleared immediately
+      // as per our new trick result display logic
+      expect(result.newState.currentTrick).not.toBeNull();
       
-      // Verify the currentPlayerIndex was updated to the winning player
+      // Verify the currentPlayerIndex was updated to the winning player (ai1 = index 1)
       expect(result.newState.currentPlayerIndex).toBe(1); // ai1
       
       // Verify points were awarded to the winning team
       expect(result.newState.teams[1].points).toBe(5); // Team B (ai1's team)
+      
+      // Verify the completedTrick is returned properly
+      expect(result.completedTrick).toBeTruthy();
     });
   });
 
