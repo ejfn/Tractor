@@ -249,6 +249,8 @@ describe('AI Logic Tests', () => {
         points: 0
       };
       
+      // NOTE: This test intentionally triggers a console warning
+      // The warning "AI player ai1 doesn't have enough cards" is expected
       // Give AI1 only one card (not enough to follow the pair)
       gameState.players[1].hand = [
         createCard(Suit.Hearts, Rank.Six, 'hearts_6_1')
@@ -279,6 +281,8 @@ describe('AI Logic Tests', () => {
         points: 0
       };
 
+      // NOTE: This test intentionally triggers a console warning
+      // The warning "AI player ai1 doesn't have enough cards" is expected
       // Give AI1 no cards (edge case)
       gameState.players[1].hand = [];
 

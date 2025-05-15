@@ -233,8 +233,9 @@ describe('gamePlayManager', () => {
       // as per our new trick result display logic
       expect(result.newState.currentTrick).not.toBeNull();
       
-      // Verify the currentPlayerIndex was updated to the winning player (ai1 = index 1)
-      expect(result.newState.currentPlayerIndex).toBe(1); // ai1
+      // With our new implementation, we set winningPlayerIndex but don't change currentPlayerIndex yet
+      // That happens in handleTrickResultComplete
+      expect(result.newState.winningPlayerIndex).toBe(1); // ai1
       
       // Verify points were awarded to the winning team
       expect(result.newState.teams[1].points).toBe(5); // Team B (ai1's team)
@@ -333,6 +334,8 @@ describe('gamePlayManager', () => {
     });
 
     test('should return error when called for human player', () => {
+      // NOTE: This test intentionally triggers a console warning to verify error handling
+      // The warning "getAIMoveWithErrorHandling called for human player" is expected
       const mockState = createMockGameState();
       mockState.currentPlayerIndex = 0; // human
       
@@ -345,6 +348,8 @@ describe('gamePlayManager', () => {
     });
 
     test('should handle empty AI move by returning fallback card', () => {
+      // NOTE: This test intentionally triggers a console warning to verify fallback behavior
+      // The warning "AI player ai1 returned an empty move" is expected
       const mockState = createMockGameState();
       mockState.currentPlayerIndex = 1; // ai1
       
@@ -359,6 +364,8 @@ describe('gamePlayManager', () => {
     });
 
     test('should handle error in AI move logic', () => {
+      // NOTE: This test intentionally triggers a console error to verify error handling
+      // The error "Error in AI move logic: Error: AI error" is expected
       const mockState = createMockGameState();
       mockState.currentPlayerIndex = 1; // ai1
       

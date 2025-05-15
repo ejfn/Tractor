@@ -160,9 +160,9 @@ describe('Player Transitions', () => {
     // Verify winningPlayerIndex is set correctly (human is index 0)
     expect(result.newState.winningPlayerIndex).toBe(0);
     
-    // With our current implementation, currentPlayerIndex should still be set correctly
-    // but the trick is not immediately cleared - that happens in handleTrickResultComplete
-    expect(result.newState.currentPlayerIndex).toBe(0);
+    // With our implementation, currentPlayerIndex is still set to the last player to play (AI3)
+    // The switch to the winning player happens in handleTrickResultComplete
+    expect(result.newState.currentPlayerIndex).toBe(3);
     expect(result.newState.currentTrick).not.toBeNull();
     
     // Now simulate the trick result display completion

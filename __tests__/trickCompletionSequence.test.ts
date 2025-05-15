@@ -316,7 +316,7 @@ describe('Trick Completion Sequence Integration', () => {
         const newState = {
           ...currentState,
           currentTrick: null,
-          currentPlayerIndex: winningIndex, // Set winner as next player
+          currentPlayerIndex: typeof winningIndex === 'number' ? winningIndex : currentState.currentPlayerIndex, // Set winner as next player
           winningPlayerIndex: undefined // Clear the winning player index
         };
         
@@ -422,7 +422,13 @@ describe('Trick Completion Sequence Integration', () => {
     // Helper function to process a complete trick
     const processCompleteTrick = (state: GameState, winnerIndex: number) => {
       // Create a completed trick
-      const completedTrick = {
+      const completedTrick: {
+        leadingPlayerId: string;
+        leadingCombo: Card[];
+        plays: { playerId: string; cards: Card[] }[];
+        points: number;
+        winningPlayerId: string;
+      } = {
         leadingPlayerId: state.players[state.currentPlayerIndex].id,
         leadingCombo: [state.players[state.currentPlayerIndex].hand[0]],
         plays: [],
@@ -479,7 +485,7 @@ describe('Trick Completion Sequence Integration', () => {
         const newState = {
           ...currentState,
           currentTrick: null,
-          currentPlayerIndex: winningIndex,
+          currentPlayerIndex: typeof winningIndex === 'number' ? winningIndex : currentState.currentPlayerIndex,
           winningPlayerIndex: undefined
         };
         

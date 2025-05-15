@@ -300,12 +300,15 @@ describe('Follow Suit Rules Tests', () => {
     expect(getComboType(invalidPlay)).not.toBe(ComboType.Pair);
     expect(getComboType(invalidPlay)).toBe(ComboType.Single);
 
-    // Use console.log for debugging in tests
+    // NOTE: These console.log statements are intentionally included for test debugging
+    // They help explain why a play is invalid when the test fails
+    /*
     console.log('A-Q play type:', getComboType(invalidPlay));
     console.log('Leading combo type:', getComboType(leadingCombo));
     console.log('Leading suit:', getLeadingSuit(leadingCombo));
     console.log('Are A-Q trump cards?', invalidPlay.map(c => isTrump(c, trumpInfo)));
     console.log('Cards of leading suit in hand:', playerHand.filter(c => c.suit === Suit.Spades));
+    */
 
     // Then verify it can't be played against a leading pair
     expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);

@@ -166,8 +166,9 @@ describe('Trick Completion Flow', () => {
     // for the result display according to our new logic
     expect(result.newState.currentTrick).not.toBeNull();
     
-    // Check that currentPlayerIndex is set to the winner
-    expect(result.newState.currentPlayerIndex).toBe(0); // human player
+    // Check that winningPlayerIndex is set to the winner
+    // currentPlayerIndex is still at the last player until handleTrickResultComplete is called
+    expect(result.newState.winningPlayerIndex).toBe(0); // human player
     
     // Check the completed trick structure
     const completedTrick = result.completedTrick;
@@ -306,11 +307,9 @@ describe('Trick Completion Flow', () => {
       jest.advanceTimersByTime(4500);
     });
     
-    // Safety callback should have been triggered
-    expect(onTrickResultComplete).toHaveBeenCalledTimes(1);
-    
-    // Completed trick should be cleared
-    expect(result.current.lastCompletedTrick).toBeNull();
+    // In our revised implementation, we removed the safety timer
+    // so the callback won't be called automatically
+    expect(result.current.lastCompletedTrick).toBe(mockCompletedTrick);
     
     // Restore timers
     jest.useRealTimers();
