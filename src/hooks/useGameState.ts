@@ -107,13 +107,7 @@ export function useGameState(config: GameConfig) {
     // Store the cards locally before processing to avoid race conditions
     const cardsToPlay = [...selectedCards];
     
-    // Keep the cards selected for better visual feedback
-    // We'll only clear them right before the play is processed
-    
-    // Add a delay to allow players to see the selected (raised) cards before playing
-    console.log(`Human played ${cardsToPlay.length} cards - keeping them selected for visual feedback`);
-    
-    // Use setTimeout to process the play with a delay
+    // Add a short delay to allow players to see the selected cards before playing
     setTimeout(() => {
       // Clear selected cards just before processing the play
       setSelectedCards([]);
@@ -151,14 +145,8 @@ export function useGameState(config: GameConfig) {
           timestamp: Date.now()
         };
         
-        // Log the completed trick to verify it has the correct structure
-        const playsCount = result.completedTrick.plays.length;
-        const expectedPlays = gameState.players.length - 1; // All players except the leader
-        
-        // Verify trick structure has expected number of plays
-        if (playsCount !== expectedPlays) {
-          console.warn(`Trick structure issue: Got ${playsCount} plays but expected ${expectedPlays}`);
-        }
+        // Completed trick should have plays from all players except the leader
+        // This ensures the trick structure is correct for display
       }
       
       // Now update game state AFTER setting up the trick completion data
@@ -275,13 +263,7 @@ export function useGameState(config: GameConfig) {
       // Update the state
       setGameState(newState);
       
-      // The key insight: We need to ensure React recognizes this state change
-      // The problem is that simply setting currentPlayerIndex might not trigger 
-      // the right effect in useAITurns if two state updates happen close together
-      
       // The useAITurns hook will detect the currentPlayerIndex change and trigger AI moves automatically
-      const nextPlayer = gameState.players[newState.currentPlayerIndex];
-      console.log(`Next trick leader: ${nextPlayer.name} (${nextPlayer.id})`);
       
     }
   };

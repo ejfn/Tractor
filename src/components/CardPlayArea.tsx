@@ -139,15 +139,12 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       setTimeout(() => {
         if (typeof onAnimationComplete === 'function') {
           onAnimationComplete();
-        } else {
-          console.warn('onAnimationComplete is not a function');
         }
       }, ANIMATION_COMPLETION_DELAY); // Delay to ensure cards are rendered properly
     }
   }, [completedAnimations, totalAnimationsNeeded, animationCompleted, onAnimationComplete, topCards, rightCards]);
   
-  // Force animation completion timer removed
-  // This allows animation issues to be identified and fixed properly
+  // Animation handling managed by completion callbacks
 
   // Check if a player is winning
   const isWinning = (playerId: string) => {

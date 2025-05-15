@@ -33,8 +33,7 @@ export function processPlay(state: GameState, cards: Card[]): {
     // Make sure we never add the leading player to the plays array
     // This prevents the duplicate cards issue
     if (currentPlayer.id === newState.currentTrick.leadingPlayerId) {
-      console.warn(`Leading player ${currentPlayer.id} is playing again - unusual!`);
-      // Skip adding to plays to avoid duplication, just update points
+      // Skip adding to plays to avoid duplication
     } else {
       // Add non-leading plays to the plays array
       newState.currentTrick.plays.push({
@@ -97,8 +96,7 @@ export function processPlay(state: GameState, cards: Card[]): {
     // Return trick completion info with winning player name
     const resultWinningPlayer = newState.players[winningPlayerIndex];
     
-    // We already set the winningPlayerId on the completedTrick object above
-    // This code is redundant but we'll keep it for clarity and safety
+    // Use the completed trick with winner ID for result display
     const trickWithWinner = completedTrick;
     
     return {
