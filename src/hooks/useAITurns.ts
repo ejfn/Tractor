@@ -172,6 +172,8 @@ export function useAITurns(
     // CRITICAL CHECK: Never process player transitions while a trick result is showing
     // or when we have a completed trick that needs to be processed
     if (showTrickResult || lastCompletedTrick) {
+      // Just update the ref without processing the transition
+      currentPlayerIndexRef.current = gameState.currentPlayerIndex;
       return;
     }
     
@@ -179,21 +181,13 @@ export function useAITurns(
     if (currentPlayerIndexRef.current !== null &&
         currentPlayerIndexRef.current !== gameState.currentPlayerIndex) {
       
-      // Find player indices
-      const prevPlayerIndex = currentPlayerIndexRef.current;
+      // Get current player index
       const currentPlayerIndex = gameState.currentPlayerIndex;
       
       // Get current player
       const currentPlayer = gameState.players[currentPlayerIndex];
       
       // Player transition detected
-      
-      // IMPORTANT: Block processing during trick results to avoid flashing thinking indicators
-      if (showTrickResult || lastCompletedTrick) {
-        // Skip processing during trick result display
-        currentPlayerIndexRef.current = currentPlayerIndex; // Update the ref but don't process
-        return;
-      }
       
       // Check if this is a transition to any AI player
       if (!currentPlayer.isHuman) {
@@ -212,39 +206,15 @@ export function useAITurns(
           // Then delay the actual AI move for better pacing
           setTimeout(() => {
             // Only proceed with move if we're still in a valid state
-            if (gameState.gamePhase === 'playing' && !showTrickResult) {
+            // Add additional check for trick result or completed trick
+            if (gameState.gamePhase === 'playing' && !showTrickResult && !lastCompletedTrick) {
               handleAIMove();
             } else {
               // Reset waiting state if conditions changed
               setWaitingForAI(false);
               setWaitingPlayerId('');
-              // No special handling needed
             }
           }, AI_MOVE_DELAY);
-        } else {
-          // If we're not immediately processing, still check conditions after a brief delay
-          // This addresses potential race conditions with game phase or result display
-          setTimeout(() => {
-            // Check all conditions to ensure we don't show thinking during trick results
-            if (gameState.gamePhase === 'playing' && !showTrickResult && !lastCompletedTrick && !waitingForAI) {
-              // Delayed showing thinking indicator
-              setWaitingForAI(true);
-              setWaitingPlayerId(currentPlayer.id);
-              
-              // Additional delay for the actual move
-              setTimeout(() => {
-                handleAIMove();
-              }, AI_MOVE_DELAY);
-            } else {
-              // Reset waiting state if conditions not met
-              if (waitingForAI && waitingPlayerId === currentPlayer.id) {
-                // Reset waiting state
-                setWaitingForAI(false);
-                setWaitingPlayerId('');
-              }
-              // Allow normal handling in the other effect
-            }
-          }, 100); // Much shorter delay for the condition check
         }
       }
       
@@ -254,7 +224,7 @@ export function useAITurns(
       // Initialize on first run
       currentPlayerIndexRef.current = gameState.currentPlayerIndex;
     }
-  }, [gameState?.currentPlayerIndex, gameState?.gamePhase, showTrickResult, lastCompletedTrick, handleAIMove, waitingForAI]);
+  }, [gameState, gameState?.currentPlayerIndex, gameState?.gamePhase, showTrickResult, lastCompletedTrick, handleAIMove, waitingForAI]);
   
   // Emergency reset mechanism has been removed to avoid hiding underlying issues
   // If there are mismatches between player states, they should be fixed properly at the source
@@ -282,15 +252,33 @@ export function useAITurns(
     
     // Current player is an AI player
     
-    // Set waitingForAI to true immediately to show thinking indicator
-    setWaitingForAI(true);
-    setWaitingPlayerId(currentPlayer.id);
+    // Ensure we have current trick state
+    // Use gameState directly in the setTimeout to get freshest state
     
-    // Then delay the actual AI move for better pacing
+    // Add delay before showing thinking indicator to avoid flashing during trick result transitions
     setTimeout(() => {
-      // Process AI move after a short delay
-      handleAIMove();
-    }, AI_MOVE_DELAY);
+      // Check again if trick result state has changed - if it has, don't show thinking indicator
+      if (showTrickResult || lastCompletedTrick) {
+        return; // Trick result is now showing, don't proceed
+      }
+      
+      // Set waitingForAI to true to show thinking indicator
+      setWaitingForAI(true);
+      setWaitingPlayerId(currentPlayer.id);
+      
+      // Then delay the actual AI move for better pacing
+      setTimeout(() => {
+        // Final check before AI actually moves
+        if (gameState.gamePhase === 'playing' && !showTrickResult && !lastCompletedTrick) {
+          // Process AI move after the delay
+          handleAIMove();
+        } else {
+          // Reset waiting state if conditions changed
+          setWaitingForAI(false);
+          setWaitingPlayerId('');
+        }
+      }, AI_MOVE_DELAY);
+    }, 100); // Short delay to catch potential trick result transitions
     
     // Cleanup timer on unmount/effect cleanup
     return () => {
@@ -300,7 +288,8 @@ export function useAITurns(
       }
     };
   }, [
-    gameState?.players,  // Add this to ensure the effect re-runs when players change
+    gameState,  // Include the full gameState to ensure we have the latest state
+    gameState?.players,  // Also keep individual properties to ensure the effect re-runs when they change
     gameState?.currentPlayerIndex, 
     gameState?.gamePhase,
     waitingForAI,
