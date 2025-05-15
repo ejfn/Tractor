@@ -72,24 +72,30 @@ Trump cards are played in this order of strength (highest to lowest):
 
 ## Development
 
+> ⚠️ **IMPORTANT: This is a mobile-only application!** 
+>
+> Tractor is designed exclusively for Android and iOS devices. It will not work properly in web browsers or desktop environments. See [MOBILE_ONLY.md](./docs/MOBILE_ONLY.md) for details.
+
 1. Install dependencies
 
    ```bash
    npm install
    ```
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-3. Run on specific platforms
+2. Start the app on a specific platform (recommended)
 
    ```bash
    npm run android  # Start on Android
    npm run ios      # Start on iOS
    ```
+
+3. Alternative: Use Expo CLI and select device
+
+   ```bash
+   npx expo start    # Then press 'a' for Android or 'i' for iOS
+   ```
+   
+   > ⚠️ **NOTE:** Do not try to run this in a web browser. It won't work!
 
 4. Lint and Type Checking
 
