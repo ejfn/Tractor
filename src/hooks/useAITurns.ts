@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState, Card } from '../types/game';
 import { getAIMoveWithErrorHandling } from '../utils/gamePlayManager';
 
@@ -21,41 +21,8 @@ export function useAITurns(
   const [waitingForAI, setWaitingForAI] = useState(false);
   const aiTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Handle AI turns
-  useEffect(() => {
-    if (gameState &&
-        gameState.gamePhase === 'playing' &&
-        !waitingForAI &&
-        !showTrickResult && // Don't start a new AI move while showing trick result
-        !lastCompletedTrick && // Also don't start a new AI move when there's a completed trick
-        !gameState.players[gameState.currentPlayerIndex].isHuman) {
-
-      // Set a delay for AI move to make the game feel more natural
-      setWaitingForAI(true);
-      const timer = setTimeout(() => {
-        // Double check that the conditions still apply before executing the move
-        // This prevents a race condition with trick completion
-        if (gameState?.gamePhase === 'playing' &&
-            !gameState.players[gameState.currentPlayerIndex].isHuman) {
-          handleAIMove();
-        } else {
-          // Reset waiting flag if conditions changed while waiting
-          setWaitingForAI(false);
-        }
-      }, 1500);
-
-      aiTimerRef.current = timer as unknown as NodeJS.Timeout;
-    }
-
-    return () => {
-      if (aiTimerRef.current) {
-        clearTimeout(aiTimerRef.current);
-      }
-    };
-  }, [gameState, waitingForAI, showTrickResult, lastCompletedTrick]);
-
-  // Handle AI move logic
-  const handleAIMove = () => {
+  // Handle AI move logic - using useCallback to prevent dependency cycle
+  const handleAIMove = useCallback(() => {
     if (!gameState) return;
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
@@ -88,7 +55,40 @@ export function useAITurns(
     }
 
     setWaitingForAI(false);
-  };
+  }, [gameState, processPlay]);
+
+  // Handle AI turns
+  useEffect(() => {
+    if (gameState &&
+        gameState.gamePhase === 'playing' &&
+        !waitingForAI &&
+        !showTrickResult && // Don't start a new AI move while showing trick result
+        !lastCompletedTrick && // Also don't start a new AI move when there's a completed trick
+        !gameState.players[gameState.currentPlayerIndex].isHuman) {
+
+      // Set a delay for AI move to make the game feel more natural
+      setWaitingForAI(true);
+      const timer = setTimeout(() => {
+        // Double check that the conditions still apply before executing the move
+        // This prevents a race condition with trick completion
+        if (gameState?.gamePhase === 'playing' &&
+            !gameState.players[gameState.currentPlayerIndex].isHuman) {
+          handleAIMove();
+        } else {
+          // Reset waiting flag if conditions changed while waiting
+          setWaitingForAI(false);
+        }
+      }, 1500);
+
+      aiTimerRef.current = timer as unknown as NodeJS.Timeout;
+    }
+
+    return () => {
+      if (aiTimerRef.current) {
+        clearTimeout(aiTimerRef.current);
+      }
+    };
+  }, [gameState, waitingForAI, showTrickResult, lastCompletedTrick, handleAIMove]);
 
   return {
     waitingForAI,

@@ -1,4 +1,4 @@
-import { GameState, Card, Player, Trick } from '../types/game';
+import { GameState, Card, Trick } from '../types/game';
 import { identifyCombos, isValidPlay, determineTrickWinner } from './gameLogic';
 import { getAIMove } from './aiLogic';
 
@@ -72,9 +72,6 @@ export function processPlay(state: GameState, cards: Card[]): {
     
     // Clear current trick
     newState.currentTrick = null;
-    
-    // Check for end of round (no cards left)
-    const allCardsPlayed = newState.players.every(p => p.hand.length === 0);
     
     // Return trick completion info with winning player name
     const resultWinningPlayer = newState.players[winningPlayerIndex];

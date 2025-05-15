@@ -57,7 +57,7 @@ describe('CardPlayArea', () => {
   });
 
   // Helper function to get container z-index from a rendered component
-  const getContainerZIndex = (container: Element): number => {
+  const getContainerZIndex = (container: any): number => {
     if (!container || !container.props || !container.props.style) return 0;
     
     const style = container.props.style;
@@ -284,7 +284,7 @@ function findPlayAreaContainers(renderResult: any) {
   return {};
 }
 
-function findContainerForCard(renderResult: any, cardTestId: string) {
+function findContainerForCard(renderResult: any, cardTestId: string): any {
   try {
     // Get the card element from the test ID
     const cardElement = renderResult.getByTestId(cardTestId);

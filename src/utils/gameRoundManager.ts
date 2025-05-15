@@ -1,4 +1,4 @@
-import { GameState, Team, Rank, Suit } from '../types/game';
+import { GameState, Rank } from '../types/game';
 import { initializeGame } from './gameLogic';
 
 /**

@@ -53,14 +53,14 @@ const GameScreenController: React.FC = () => {
     lastTrickWinner,
     lastTrickPoints,
     lastCompletedTrick,
-    handleTrickCompletion,
+    // handleTrickCompletion is not used in this component
     handleTrickAnimationComplete
   } = useTrickResults();
 
   // AI turn handling
   const {
     waitingForAI,
-    handleAIMove
+    // handleAIMove is not used directly, handled by the hook internally
   } = useAITurns(
     gameState,
     handleProcessPlay,

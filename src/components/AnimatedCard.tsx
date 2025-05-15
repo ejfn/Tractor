@@ -4,7 +4,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
   Easing
 } from 'react-native-reanimated';
 import { Card as CardType, Suit, JokerType } from '../types/game';
@@ -567,4 +566,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Export as both named and default for backward compatibility
 export default AnimatedCard;

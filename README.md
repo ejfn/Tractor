@@ -11,6 +11,14 @@ A React Native implementation of the Chinese card game Shengji (升级), also kn
 - Special handling for jokers and trump cards
 - Optimized for mobile (especially Android) experience
 
+## Documentation
+
+Detailed documentation is available in the [docs folder](./docs/):
+
+- [Project Architecture](./docs/ARCHITECTURE.md) - Component structure and code organization
+- [Testing Strategy](./docs/TESTING.md) - Test coverage and methodologies
+- [Documentation Index](./docs/README.md) - Overview of all documentation
+
 ## Game Rules
 
 ### Basic Gameplay
@@ -90,14 +98,37 @@ Trump cards are played in this order of strength (highest to lowest):
    npm run typecheck # Run TypeScript checks
    ```
 
+5. Running Tests
+
+   ```bash
+   npm test         # Run all tests
+   npm test -- --coverage # Run tests with coverage report
+   ```
+
 ## Project Structure
 
 - `/src/types/game.ts` - Core game type definitions
-- `/src/utils/gameLogic.ts` - Game mechanics and rule implementation
-- `/src/utils/aiLogic.ts` - AI player decision making
-- `/src/components/` - React components for game UI elements
-- `/src/screens/` - Screen component (EnhancedGameScreen)
+- `/src/utils/` - Game logic utilities
+  - `gameLogic.ts` - Core game mechanics and rule implementation
+  - `aiLogic.ts` - AI player decision making
+  - `gamePlayManager.ts` - Handles game play actions and validation
+  - `gameRoundManager.ts` - Manages round initialization and completion
+  - `trumpManager.ts` - Trump card declaration and management
+- `/src/hooks/` - Custom React hooks
+  - `useAnimations.ts` - Card animation effects
+  - `useAITurns.ts` - AI player turn management
+  - `useGameState.ts` - Game state management
+  - `useTrickResults.ts` - Trick completion and scoring
+- `/src/components/` - UI components
+  - Card components (AnimatedCard, CardBack, etc.)
+  - Player views (AIPlayerView, HumanPlayerView)
+  - Game table and layout components
+- `/src/screens/` - Screen components
+  - `GameScreen.tsx` - Main game screen (controller)
+  - `GameScreenView.tsx` - Presentation component
 - `/app/` - Expo Router app routing
+- `/__tests__/` - Unit and component tests
+- `/docs/` - Project documentation
 
 ## Technology
 
@@ -105,4 +136,5 @@ Trump cards are played in this order of strength (highest to lowest):
 - TypeScript with strict type checking
 - React Native Animated API for animations
 - Expo Router for navigation
+- Jest and React Testing Library for testing
 - Optimized for Android mobile experience

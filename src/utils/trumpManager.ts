@@ -1,4 +1,4 @@
-import { GameState, Suit, Card } from '../types/game';
+import { GameState, Suit } from '../types/game';
 import { shouldAIDeclare } from './aiLogic';
 
 /**

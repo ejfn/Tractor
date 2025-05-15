@@ -11,22 +11,23 @@ export default function Index() {
 
   // Function to render the game screen with error handling
   const renderGameScreen = () => {
+    let content;
     try {
-      // Render the game screen
-      return <GameScreen />;
+      content = <GameScreen />;
     } catch (error) {
       // Log the error and set error state
       console.error("Game loading error:", error instanceof Error ? error.message : String(error));
       // We need to use setTimeout to avoid state updates during render
       setTimeout(() => setHasError(true), 0);
-      // Return error UI
-      return (
+      // Set error UI content
+      content = (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Error loading game</Text>
           <Text>{error instanceof Error ? error.message : String(error)}</Text>
         </View>
       );
     }
+    return content;
   };
 
   // Debug UI removed since we fixed the issue
