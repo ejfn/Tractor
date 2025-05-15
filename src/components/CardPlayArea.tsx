@@ -3,6 +3,10 @@ import { StyleSheet, View, Text, Platform } from 'react-native';
 import AnimatedCard from './AnimatedCard';
 import { Card as CardType, Player, Trick, TrumpInfo } from '../types/game'; // Using Card as CardType to avoid naming conflict
 import { isTrump } from '../utils/gameLogic';
+import { 
+  CARD_ANIMATION_FALLBACK, 
+  ANIMATION_COMPLETION_DELAY 
+} from '../utils/gameTimings';
 
 interface CardPlayAreaProps {
   currentTrick: Trick | null;
@@ -10,6 +14,7 @@ interface CardPlayAreaProps {
   trumpInfo: TrumpInfo;
   winningPlayerId?: string;
   onAnimationComplete?: (() => void); // Explicitly typed as function
+  lastCompletedTrick?: Trick | null; // Add the lastCompletedTrick prop
 }
 
 const CardPlayArea: React.FC<CardPlayAreaProps> = ({
@@ -17,12 +22,18 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   players,
   trumpInfo,
   winningPlayerId,
-  onAnimationComplete
+  onAnimationComplete,
+  lastCompletedTrick
 }) => {
   // Track animation states for all cards in the current trick
   const [completedAnimations, setCompletedAnimations] = useState<number>(0);
   const [totalAnimationsNeeded, setTotalAnimationsNeeded] = useState<number>(0);
   const [animationCompleted, setAnimationCompleted] = useState<boolean>(false);
+
+  // Track changes to lastCompletedTrick
+  useEffect(() => {
+    // Removed debug logging
+  }, [lastCompletedTrick]);
 
   // Handler for individual card animations completing - explicitly typed as a function
   const handleCardAnimationComplete = (): void => {
@@ -70,7 +81,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         if (!animationCompleted) {
           setCompletedAnimations(totalCards);
         }
-      }, 1000); // 1 second fallback
+      }, CARD_ANIMATION_FALLBACK); // Fallback timer for animation completion
 
       // Clean up the fallback timer on component unmount or trick change
       return () => clearTimeout(fallbackTimer);
@@ -81,6 +92,25 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       setAnimationCompleted(false);
     }
   }, [currentTrick, animationCompleted]);
+
+  // Add sequence information to cards
+  type CardWithSequence = CardType & {
+    playSequence: number;  // The order in which the card was played (0 = first, higher = later)
+    cardIndex: number;     // Index within player's combo (0 = first card in combo)
+    globalPlayOrder: number; // Global counter for absolute play order (for z-index)
+  };
+
+  // Cards played by position with sequence information
+  const topCards: CardWithSequence[] = [];
+  const leftCards: CardWithSequence[] = [];
+  const rightCards: CardWithSequence[] = [];
+  const bottomCards: CardWithSequence[] = [];
+
+  // Track play sequence for each player's play
+  const playerSequenceMap: Record<string, number> = {};
+  
+  // Global counter to track absolute play order across all players (for z-index)
+  let globalPlayOrder = 0;
 
   // Use a ref to track if we've called the callback for this trick
   const callbackCalledRef = React.useRef(false);
@@ -103,22 +133,29 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       setAnimationCompleted(true);
       callbackCalledRef.current = true; // Mark that we've called the callback
 
+      // All animations complete - trigger callback
+
       // Add a small delay to ensure all visual animations are complete
       setTimeout(() => {
         if (typeof onAnimationComplete === 'function') {
           onAnimationComplete();
+        } else {
+          console.warn('onAnimationComplete is not a function');
         }
-      }, 200); // Shorter delay - show result quicker after animations
+      }, ANIMATION_COMPLETION_DELAY); // Delay to ensure cards are rendered properly
     }
-  }, [completedAnimations, totalAnimationsNeeded, animationCompleted, onAnimationComplete]);
+  }, [completedAnimations, totalAnimationsNeeded, animationCompleted, onAnimationComplete, topCards, rightCards]);
+  
+  // Force animation completion timer removed
+  // This allows animation issues to be identified and fixed properly
 
   // Check if a player is winning
   const isWinning = (playerId: string) => {
     return playerId === winningPlayerId;
   };
 
-  // Early return for empty trick
-  if (!currentTrick) {
+  // Early return for empty trick, but keep showing if we have a completed trick
+  if (!currentTrick && !lastCompletedTrick) {
     return (
       <View style={styles.container}>
         <View style={styles.emptyContainer}>
@@ -127,85 +164,80 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       </View>
     );
   }
+  
+  // Select which trick to display
+  // Show the lastCompletedTrick if available, otherwise show the currentTrick
+  const workingTrick = lastCompletedTrick || currentTrick;
 
   // Find player positions by ID
   const getPlayerPosition = (playerId: string): 'top' | 'left' | 'right' | 'bottom' => {
     // This mapping assumes players are in a fixed order:
     // ai1 = left, ai2 = top, ai3 = right, human = bottom
-    if (playerId === 'ai1') return 'left';
-    if (playerId === 'ai2') return 'top';
-    if (playerId === 'ai3') return 'right';
+    if (playerId === 'ai1') {
+      return 'left';
+    }
+    if (playerId === 'ai2') {
+      return 'top';
+    }
+    if (playerId === 'ai3') {
+      return 'right';
+    }
     return 'bottom'; // human player or unknown
   };
 
-  // Add sequence information to cards
-  type CardWithSequence = CardType & {
-    playSequence: number;  // The order in which the card was played (0 = first, higher = later)
-    cardIndex: number;     // Index within player's combo (0 = first card in combo)
-    globalPlayOrder: number; // Global counter for absolute play order (for z-index)
-  };
+  // Only process if we have a working trick
+  if (workingTrick) {
+    // Check if the leading player has already played (to avoid duplication)
+    const leadingPlayerPlays = workingTrick.plays.filter(play => 
+      play.playerId === workingTrick.leadingPlayerId
+    );
+    const leadingPlayerHasPlayed = leadingPlayerPlays.length > 0;
 
-  // Cards played by position with sequence information
-  const topCards: CardWithSequence[] = [];
-  const leftCards: CardWithSequence[] = [];
-  const rightCards: CardWithSequence[] = [];
-  const bottomCards: CardWithSequence[] = [];
-
-  // Track play sequence for each player's play
-  const playerSequenceMap: Record<string, number> = {};
-  
-  // Global counter to track absolute play order across all players (for z-index)
-  let globalPlayOrder = 0;
-
-  // Check if the leading player has already played (to avoid duplication)
-  const leadingPlayerHasPlayed = currentTrick.plays.some(play =>
-    play.playerId === currentTrick.leadingPlayerId
-  );
-
-  // If the leading player has not already played, use leadingCombo
-  if (!leadingPlayerHasPlayed) {
-    const leadingPos = getPlayerPosition(currentTrick.leadingPlayerId);
-    playerSequenceMap[currentTrick.leadingPlayerId] = 0; // First player is sequence 0
-    
-    currentTrick.leadingCombo.forEach((card, idx) => {
-      // Each card gets a unique global play order number
-      const cardWithSequence = { 
-        ...card, 
-        playSequence: 0,  // First player's sequence is 0
-        cardIndex: idx,   // Card index within the player's combo
-        globalPlayOrder: globalPlayOrder++ // Increment for each card played
-      };
+    // If the leading player has not already played, use leadingCombo
+    if (!leadingPlayerHasPlayed) {
+      const leadingPos = getPlayerPosition(workingTrick.leadingPlayerId);
+      playerSequenceMap[workingTrick.leadingPlayerId] = 0; // First player is sequence 0
       
-      if (leadingPos === 'top') topCards.push(cardWithSequence);
-      if (leadingPos === 'left') leftCards.push(cardWithSequence);
-      if (leadingPos === 'right') rightCards.push(cardWithSequence);
-      if (leadingPos === 'bottom') bottomCards.push(cardWithSequence);
+      workingTrick.leadingCombo.forEach((card, idx) => {
+        // Each card gets a unique global play order number
+        const cardWithSequence = { 
+          ...card, 
+          playSequence: 0,  // First player's sequence is 0
+          cardIndex: idx,   // Card index within the player's combo
+          globalPlayOrder: globalPlayOrder++ // Increment for each card played
+        };
+        
+        if (leadingPos === 'top') topCards.push(cardWithSequence);
+        if (leadingPos === 'left') leftCards.push(cardWithSequence);
+        if (leadingPos === 'right') rightCards.push(cardWithSequence);
+        if (leadingPos === 'bottom') bottomCards.push(cardWithSequence);
+      });
+    }
+
+    // Add all plays with increasing sequence numbers
+    workingTrick.plays.forEach((play, playIndex) => {
+      const pos = getPlayerPosition(play.playerId);
+      const sequence = playIndex + 1; // Sequence starts at 1 and increases for each play
+      
+      // Record this player's sequence in the map
+      playerSequenceMap[play.playerId] = sequence;
+      
+      play.cards.forEach((card, idx) => {
+        // Each card gets a unique global play order number
+        const cardWithSequence = {
+          ...card,
+          playSequence: sequence,
+          cardIndex: idx, // Index within this player's combo
+          globalPlayOrder: globalPlayOrder++ // Increment for each card played
+        };
+        
+        if (pos === 'top') topCards.push(cardWithSequence);
+        if (pos === 'left') leftCards.push(cardWithSequence);
+        if (pos === 'right') rightCards.push(cardWithSequence);
+        if (pos === 'bottom') bottomCards.push(cardWithSequence);
+      });
     });
   }
-
-  // Add all plays with increasing sequence numbers
-  currentTrick.plays.forEach((play, playIndex) => {
-    const pos = getPlayerPosition(play.playerId);
-    const sequence = playIndex + 1; // Sequence starts at 1 and increases for each play
-    
-    // Record this player's sequence in the map
-    playerSequenceMap[play.playerId] = sequence;
-    
-    play.cards.forEach((card, idx) => {
-      // Each card gets a unique global play order number
-      const cardWithSequence = {
-        ...card,
-        playSequence: sequence,
-        cardIndex: idx, // Index within this player's combo
-        globalPlayOrder: globalPlayOrder++ // Increment for each card played
-      };
-      
-      if (pos === 'top') topCards.push(cardWithSequence);
-      if (pos === 'left') leftCards.push(cardWithSequence);
-      if (pos === 'right') rightCards.push(cardWithSequence);
-      if (pos === 'bottom') bottomCards.push(cardWithSequence);
-    });
-  });
 
   // Sort cards by cardIndex to ensure proper display order within each player's area
   topCards.sort((a, b) => a.cardIndex - b.cardIndex);

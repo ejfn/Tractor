@@ -14,6 +14,7 @@ import {
   processPlay,
   validatePlay
 } from '../utils/gamePlayManager';
+import { MOVE_COMPLETION_DELAY } from '../utils/gameTimings';
 
 /**
  * Configuration for the game setup
@@ -22,6 +23,14 @@ interface GameConfig {
   playerName: string;
   teamNames: [string, string];
   startingRank: Rank;
+}
+
+// Interface for trick completion data
+interface TrickCompletionData {
+  winnerName: string;
+  points: number;
+  completedTrick: any; // Using any to avoid circular dependencies
+  timestamp: number;
 }
 
 /**
@@ -44,6 +53,9 @@ export function useGameState(config: GameConfig) {
   const [showRoundComplete, setShowRoundComplete] = useState(false);
   const [roundCompleteMessage, setRoundCompleteMessage] = useState('');
   const pendingStateRef = useRef<GameState | null>(null);
+  
+  // Ref for trick completion data (used for communication with other hooks)
+  const trickCompletionDataRef = useRef<TrickCompletionData | null>(null);
 
   // Initialize game
   const initGame = () => {
@@ -92,9 +104,23 @@ export function useGameState(config: GameConfig) {
       return;
     }
     
-    // Process the play
-    handleProcessPlay(selectedCards);
-    setSelectedCards([]);
+    // Store the cards locally before processing to avoid race conditions
+    const cardsToPlay = [...selectedCards];
+    
+    // Keep the cards selected for better visual feedback
+    // We'll only clear them right before the play is processed
+    
+    // Add a delay to allow players to see the selected (raised) cards before playing
+    console.log(`Human played ${cardsToPlay.length} cards - keeping them selected for visual feedback`);
+    
+    // Use setTimeout to process the play with a delay
+    setTimeout(() => {
+      // Clear selected cards just before processing the play
+      setSelectedCards([]);
+      
+      // Process the play - this will remove cards from the player's hand
+      handleProcessPlay(cardsToPlay);
+    }, 250); // Short delay just to keep the UI responsive
   };
 
   // Process a play (wrapper around the utility function)
@@ -103,19 +129,49 @@ export function useGameState(config: GameConfig) {
     
     const result = processPlay(gameState, cards);
     
-    // Set the new game state
-    setGameState(result.newState);
-    
-    // If the trick is complete, handle result
+    // For trick complete scenario, we need to handle things in a specific order
     if (result.trickComplete && result.trickWinner && result.completedTrick) {
-      // This would typically update trick result display
-      // We'll assume this is handled via another hook or by the controller
+      // Trick completed - winner and points recorded
+      
+      // IMPORTANT: Store trick data in ref BEFORE updating state
+      // This ensures the trick result handler can access it immediately
+      if (result.completedTrick) {
+        // Store trick completion data in a ref
+        // IMPORTANT: A completed trick has leadingCombo (first play) + plays (follow plays)
+        // For a 4-player game, the plays array should have exactly 3 entries when complete
+        trickCompletionDataRef.current = {
+          winnerName: result.trickWinner,
+          points: result.trickPoints || 0,
+          completedTrick: {
+            ...result.completedTrick,
+            // Make sure we deep copy all data to prevent reference issues
+            plays: [...result.completedTrick.plays],
+            leadingCombo: [...result.completedTrick.leadingCombo]
+          },
+          timestamp: Date.now()
+        };
+        
+        // Log the completed trick to verify it has the correct structure
+        const playsCount = result.completedTrick.plays.length;
+        const expectedPlays = gameState.players.length - 1; // All players except the leader
+        
+        // Verify trick structure has expected number of plays
+        if (playsCount !== expectedPlays) {
+          console.warn(`Trick structure issue: Got ${playsCount} plays but expected ${expectedPlays}`);
+        }
+      }
+      
+      // Now update game state AFTER setting up the trick completion data
+      setGameState(result.newState);
       
       // Check for end of round (no cards left)
       const allCardsPlayed = result.newState.players.every(p => p.hand.length === 0);
       if (allCardsPlayed) {
         handleEndRound(result.newState);
       }
+    } else {
+      // Regular play (not completing a trick)
+      setGameState(result.newState);
     }
   };
 
@@ -200,6 +256,36 @@ export function useGameState(config: GameConfig) {
     // Initialize will be called on next render due to dependency changes
   };
 
+  // Function to clear trick after result is displayed
+  const handleTrickResultComplete = () => {
+    if (gameState) {
+      // Now safe to clear currentTrick from game state
+      
+      // When a trick is completed, the winning player becomes the next player to lead
+      // winningPlayerIndex is set in gamePlayManager.ts when determining the trick winner
+      
+      // Create a new state copy with currentTrick set to null and player index set to the winner
+      const newState = {
+        ...gameState,
+        currentTrick: null,
+        currentPlayerIndex: gameState.winningPlayerIndex ?? gameState.currentPlayerIndex, // Use the winner as next player
+        winningPlayerIndex: undefined // Clear the winning player index
+      };
+      
+      // Update the state
+      setGameState(newState);
+      
+      // The key insight: We need to ensure React recognizes this state change
+      // The problem is that simply setting currentPlayerIndex might not trigger 
+      // the right effect in useAITurns if two state updates happen close together
+      
+      // The useAITurns hook will detect the currentPlayerIndex change and trigger AI moves automatically
+      const nextPlayer = gameState.players[newState.currentPlayerIndex];
+      console.log(`Next trick leader: ${nextPlayer.name} (${nextPlayer.id})`);
+      
+    }
+  };
+
   return {
     // State
     gameState,
@@ -210,6 +296,9 @@ export function useGameState(config: GameConfig) {
     winner,
     showRoundComplete,
     roundCompleteMessage,
+    
+    // Trick completion data ref (for communication with other hooks)
+    trickCompletionDataRef,
     
     // Initializers
     initGame,
@@ -222,6 +311,7 @@ export function useGameState(config: GameConfig) {
     handleCheckAITrumpDeclaration,
     handleNextRound,
     startNewGame,
+    handleTrickResultComplete,
     
     // Setters
     setGameState,

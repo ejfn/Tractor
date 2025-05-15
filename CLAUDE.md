@@ -30,11 +30,18 @@ npm run typecheck
 
 ### Project Structure
 
-- `/src/types/game.ts` - Core game type definitions
+- `/src/types/game.ts` - Core game type definitions including GameState, Card, Player, Trick
 - `/src/utils/gameLogic.ts` - Game mechanics and rule implementation
+- `/src/utils/gamePlayManager.ts` - Manages card plays, trick completion, and winner determination
+- `/src/utils/gameTimings.ts` - Centralized constants for animation and game timing
 - `/src/utils/aiLogic.ts` - AI player decision making
+- `/src/hooks/` - Custom React hooks for game state management:
+  - `useGameState.ts` - Core game state and actions
+  - `useAITurns.ts` - AI turn handling and thinking indicators
+  - `useTrickResults.ts` - Trick result display management
+  - `useAnimations.ts` - Card animations and timing
 - `/src/components/` - React components for game UI elements
-- `/src/screens/` - Screen components (GameScreen, EnhancedGameScreen)
+- `/src/screens/` - Screen components (GameScreenController, GameScreenView)
 - `/app/` - Expo Router app routing
 
 ## Core Game Architecture
@@ -42,8 +49,13 @@ npm run typecheck
 The game implements the following key concepts:
 
 1. **Game State Management**
-   - The game state is managed through React state in `EnhancedGameScreen.tsx`
+   - The game state is managed through custom hooks in `/src/hooks/`:
+     - `useGameState.ts`: Core game state management and actions
+     - `useAITurns.ts`: AI player turn handling and thinking indicators
+     - `useTrickResults.ts`: Trick completion result display
+     - `useAnimations.ts`: Card animations and transitions
    - The `GameState` type defines the complete state of the game
+   - State transitions properly preserve the winning player when a trick completes
 
 2. **Card Mechanics**
    - Cards have suits, ranks, and jokers
@@ -96,12 +108,72 @@ npm run lint
 npm run typecheck
 ```
 
+Ensure that you:
+
+- Always do type checking
+- Always do linting
+- Always run all tests before committing
+
 Ensure that you address all errors before committing. You may see linting warnings, but they should not be increased from baseline. For tests, run:
 
 ```bash
 # Run tests
 npm test
 ```
+
+## Implementation Philosophy
+
+- All safety timers have been removed in favor of more robust error handling
+- The system uses a fail-fast approach for invalid states rather than silent recovery
+- Game timing constants are centralized in `gameTimings.ts` for consistent pacing:
+  - AI_MOVE_DELAY = 800ms (thinking animation duration)
+  - MOVE_COMPLETION_DELAY = 1200ms (time to see cards after play)
+  - CARD_ANIMATION_FALLBACK = 1000ms (maximum time to wait for card animations)
+  - ANIMATION_COMPLETION_DELAY = 200ms (delay after animations complete before callback)
+  - TRICK_RESULT_DISPLAY_TIME = 2000ms (time to show trick results)
+- State transitions are synchronized to ensure visual consistency
+- The useAITurns hook handles all AI players with a consistent approach (no special case handling)
+- Error handling is more explicit to aid debugging
+- Special case fixes are avoided; general solutions are preferred that work for all players
+
+## Trick Completion & Results Flow
+
+The game follows a specific sequence when completing tricks to ensure the user experience is smooth:
+
+1. **Trick Completion Sequence**:
+   - When all 4 players have played cards, the trick is considered complete
+   - The winner is determined based on card comparison rules
+   - The winning player index is stored in `gameState.winningPlayerIndex` for later use
+   - The completed trick is stored in `lastCompletedTrick` for display
+   - The trick result (winner name + points) is shown in the top-right corner
+
+2. **Display Timing**:
+   - All 4 players' cards MUST remain visible on the table when the result is shown
+   - The trick result notification displays for 2 seconds
+   - After the notification is hidden, the cards are cleared from the table
+   - The game then proceeds to the next trick with the winning player starting
+
+3. **Implementation Details**:
+   - Cards should NEVER disappear before the trick result is shown
+   - The completed trick with all 4 players' cards must be displayed during the result display
+   - Sequence must be followed: (1) show trick result (2) hide result (3) clear cards
+   - State transitions are synchronized to ensure consistent visual experience
+   - `handleTrickResultComplete` clears the current trick and sets the winner as the next player
+   - Player transitions are properly handled to maintain gameplay flow
+
+4. **Component Responsibilities**:
+   - `useGameState`: Manages core game state including player transitions after tricks
+   - `useTrickResults`: Manages the timing of result display and clearing
+   - `useAITurns`: Handles AI player decisions in correct sequence
+   - `CardPlayArea`: Handles the display of cards on the table (respects lastCompletedTrick)
+   - `TrickResultDisplay`: Shows the winner notification in the top-right
+   - `GameScreenController`: Coordinates all components through the trick completion
+
+5. **Testing**:
+   - The trick completion flow has unit tests in `__tests__/trickCompletion.test.ts`
+   - Tests verify that cards remain visible until after the result is shown
+   - Tests ensure proper cleanup happens after the result is hidden
+   - Synchronized state transitions handle reliable game flow
 
 ## UI Implementation Details
 
@@ -169,10 +241,17 @@ npm test
   - shouldRasterizeIOS: true
   - renderToHardwareTextureAndroid: true
 - Minimal shadow effects for better performance
-- Careful management of z-index for proper stacking
+- Careful management of z-index for proper stacking with globalPlayOrder for cards
+- Proper card positioning and sequencing in CardPlayArea for consistent rendering
 - Web platform support disabled to focus on mobile performance
 - Removing web-specific styling code for cleaner implementation
 - Single AI strategy implementation (no difficulty switching) for simplicity
+- Centralized timing constants for predictable animations and game pacing
+- Fail-fast approach to error handling for easier debugging
+- Synchronized state transitions for visual consistency
+- Avoidance of special case handling for specific AI players
+- Consistent player transition handling for all players
+- Proper trick completion flow with clear state transitions
 
 ### Card Suit Ordering Logic
 
@@ -201,3 +280,16 @@ This approach ensures the player's hand is organized with:
 1. Jokers first (Big, then Small)
 2. Trump cards next (trump rank cards, then trump suit cards)
 3. Remaining suits in rotated order to maintain alternating black-red pattern
+
+## Implementation Notes
+
+- When comparing two combos, always throw an error when different lengths occur
+- In `gamePlayManager.ts`, trick completion requires all non-leading players to have played
+- Trick plays array should contain exactly (players.length - 1) plays when complete
+- Leading player's cards are stored in trick.leadingCombo, not in the plays array
+- The CardPlayArea component handles both current tricks and display of completed tricks
+- In useAITurns, avoid special case handling for different AI players
+- Use the winningPlayerIndex in GameState to properly track the winner between trick completion and result display
+- Prefer general solutions that work for all players rather than special case fixes
+- Always block AI moves during trick result display to prevent incorrect state transitions
+- Follow the proper sequence for trick completion: play → show result → clear → trick winner as next player

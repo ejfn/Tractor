@@ -20,19 +20,31 @@ export function processPlay(state: GameState, cards: Card[]): {
   
   // Ensure we have a current trick
   if (!newState.currentTrick) {
+    // For the first player, create new trick and don't add to plays array
     newState.currentTrick = {
       leadingPlayerId: currentPlayer.id,
       leadingCombo: [...cards],
       plays: [],
       points: 0
     };
+    
+    // First player is leading the trick
+  } else {
+    // Make sure we never add the leading player to the plays array
+    // This prevents the duplicate cards issue
+    if (currentPlayer.id === newState.currentTrick.leadingPlayerId) {
+      console.warn(`Leading player ${currentPlayer.id} is playing again - unusual!`);
+      // Skip adding to plays to avoid duplication, just update points
+    } else {
+      // Add non-leading plays to the plays array
+      newState.currentTrick.plays.push({
+        playerId: currentPlayer.id,
+        cards: [...cards]
+      });
+      
+      // Add player's follow cards to the trick
+    }
   }
-  
-  // Add this play to the current trick
-  newState.currentTrick.plays.push({
-    playerId: currentPlayer.id,
-    cards: [...cards]
-  });
   
   // Calculate points from this play
   const playPoints = cards.reduce((sum, card) => sum + card.points, 0);
@@ -45,8 +57,9 @@ export function processPlay(state: GameState, cards: Card[]): {
     );
   });
   
-  // Check if this completes a trick
-  if (newState.currentTrick.plays.length === newState.players.length) {
+  // Check if this completes a trick - should be plays.length = players.length-1
+  // Since the leading player's cards are in leadingCombo, not in the plays array
+  if (newState.currentTrick.plays.length === newState.players.length - 1) {
     // Find the winner
     const winningPlayerId = determineTrickWinner(
       newState.currentTrick,
@@ -62,22 +75,31 @@ export function processPlay(state: GameState, cards: Card[]): {
       }
     }
     
-    // Save this completed trick
-    const completedTrick = { ...newState.currentTrick };
+    // Save this completed trick with the winningPlayerId explicitly set
+    const completedTrick = { 
+      ...newState.currentTrick,
+      winningPlayerId: winningPlayerId // Explicitly set the winning player ID 
+    };
     newState.tricks.push(completedTrick);
     
-    // Set the winning player as the next player
+    // Store the winning player index to use when clearing the trick
     const winningPlayerIndex = newState.players.findIndex(p => p.id === winningPlayerId);
-    newState.currentPlayerIndex = winningPlayerIndex;
+    newState.winningPlayerIndex = winningPlayerIndex;
     
-    // Clear current trick
-    newState.currentTrick = null;
+    // Set winner as the next player to lead
+  
+    // DO NOT clear current trick immediately
+    // We'll keep it in the state so cards remain visible
+    // The UI will use this currentTrick until the trick result is shown
+    // Only then will we use the saved completedTrick for displaying the result
+    // newState.currentTrick = null; -- REMOVED THIS LINE
     
     // Return trick completion info with winning player name
     const resultWinningPlayer = newState.players[winningPlayerIndex];
     
-    // Add winning player ID to the completed trick for reference
-    const trickWithWinner = {...completedTrick, winningPlayerId};
+    // We already set the winningPlayerId on the completedTrick object above
+    // This code is redundant but we'll keep it for clarity and safety
+    const trickWithWinner = completedTrick;
     
     return {
       newState,
