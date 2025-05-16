@@ -80,11 +80,9 @@ export function useAITurns(
     }
 
     try {
-      // Create a guaranteed copy of the gameState to avoid any potential issues
-      const gameStateCopy = JSON.parse(JSON.stringify(gameState));
-      
-      // Get AI move with error handling
-      const { cards, error } = getAIMoveWithErrorHandling(gameStateCopy);
+      // Get AI move with error handling - pass the actual game state
+      // The AI logic should not mutate the state, just read from it
+      const { cards, error } = getAIMoveWithErrorHandling(gameState);
 
       if (error) {
         console.error(`Error in AI move logic for ${currentPlayer.name}:`, error);
