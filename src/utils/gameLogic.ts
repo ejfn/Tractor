@@ -380,8 +380,49 @@ const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
 
 // Find tractors (consecutive pairs) in a suit
 const findTractors = (cards: Card[], trumpInfo: TrumpInfo, combos: Combo[]): void => {
-  // Implement tractor finding logic
-  // This is a placeholder - would need complex logic to find all valid tractors
+  // Group cards by rank
+  const cardsByRank = groupCardsByRank(cards);
+  
+  // Find all pairs
+  const pairs: { rank: Rank; cards: Card[] }[] = [];
+  Object.entries(cardsByRank).forEach(([rank, rankCards]) => {
+    if (rankCards.length >= 2) {
+      // Add all possible pairs of this rank
+      for (let i = 0; i < rankCards.length - 1; i += 2) {
+        pairs.push({
+          rank: rank as Rank,
+          cards: [rankCards[i], rankCards[i + 1]]
+        });
+      }
+    }
+  });
+  
+  // Sort pairs by rank value
+  pairs.sort((a, b) => getRankValue(a.rank) - getRankValue(b.rank));
+  
+  // Find consecutive pairs to form tractors
+  for (let i = 0; i < pairs.length - 1; i++) {
+    const currentRankValue = getRankValue(pairs[i].rank);
+    const nextRankValue = getRankValue(pairs[i + 1].rank);
+    
+    // Check if consecutive
+    if (nextRankValue - currentRankValue === 1) {
+      // Found a tractor!
+      const tractorCards = [...pairs[i].cards, ...pairs[i + 1].cards];
+      
+      // Calculate value based on the highest rank in the tractor
+      const value = Math.max(
+        getCardValue(pairs[i].cards[0], trumpInfo),
+        getCardValue(pairs[i + 1].cards[0], trumpInfo)
+      );
+      
+      combos.push({
+        type: ComboType.Tractor,
+        cards: tractorCards,
+        value: value
+      });
+    }
+  }
 };
 
 // Check if a play is valid following Shengji rules
@@ -571,20 +612,29 @@ export const getComboType = (cards: Card[]): ComboType => {
     }
 
     // Check if it's a regular tractor (consecutive pairs)
-    if (cards[0].rank === cards[1].rank &&
-        cards[2].rank === cards[3].rank) {
-      // Make sure they're all the same suit (for proper Shengji tractors)
-      const sameSuit = cards[0].suit &&
-                      cards.every(card => card.suit === cards[0].suit);
+    // First check if all cards are the same suit
+    const sameSuit = cards[0].suit &&
+                    cards.every(card => card.suit === cards[0].suit);
 
-      if (sameSuit) {
-        // Get the rank values
-        const rankValues = cards.map(c => getRankValue(c.rank!));
-        // Sort ranks
-        rankValues.sort((a, b) => a - b);
-        // Check if consecutive (only 2 unique ranks with difference of 1)
-        if (new Set(rankValues).size === 2 &&
-            Math.abs(rankValues[0] - rankValues[2]) === 1) {
+    if (sameSuit) {
+      // Group cards by rank to find pairs
+      const rankCounts = new Map<Rank, number>();
+      cards.forEach(card => {
+        if (card.rank) {
+          rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1);
+        }
+      });
+
+      // Check if we have exactly 2 pairs
+      const pairs = Array.from(rankCounts.entries()).filter(([_, count]) => count === 2);
+      
+      if (pairs.length === 2) {
+        // Get the rank values of the pairs
+        const pairRanks = pairs.map(([rank, _]) => getRankValue(rank));
+        pairRanks.sort((a, b) => a - b);
+        
+        // Check if the pairs are consecutive
+        if (Math.abs(pairRanks[0] - pairRanks[1]) === 1) {
           return ComboType.Tractor;
         }
       }

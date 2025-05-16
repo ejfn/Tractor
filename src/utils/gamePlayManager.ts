@@ -15,7 +15,15 @@ export function processPlay(state: GameState, cards: Card[]): {
   trickPoints?: number;
   completedTrick?: Trick;
 } {
-  const newState = { ...state };
+  // Create a deep copy of the state to avoid mutating the original
+  const newState = { 
+    ...state,
+    players: state.players.map(p => ({
+      ...p,
+      hand: [...p.hand] // Deep copy the hand array
+    })),
+    teams: state.teams.map(t => ({ ...t })) // Deep copy teams too
+  };
   const currentPlayer = newState.players[newState.currentPlayerIndex];
   
   // Ensure we have a current trick

@@ -166,6 +166,49 @@ describe('Combo Type Identification Tests', () => {
       expect(getComboType(hand)).toBe(ComboType.Tractor);
     });
     
+    test('Should identify tractor 6♦-6♦-5♦-5♦ in all possible card orderings', () => {
+      // Create cards for a tractor: 5-5-6-6 of Diamonds
+      const d6a = createCard(Suit.Diamonds, Rank.Six, 'diamonds_6_1');
+      const d6b = createCard(Suit.Diamonds, Rank.Six, 'diamonds_6_2');
+      const d5a = createCard(Suit.Diamonds, Rank.Five, 'diamonds_5_1');
+      const d5b = createCard(Suit.Diamonds, Rank.Five, 'diamonds_5_2');
+      
+      // All possible permutations of 4 cards
+      const allOrderings = [
+        [d5a, d5b, d6a, d6b], // 5566
+        [d5a, d5b, d6b, d6a], // 5565 (swapped 6s)
+        [d5b, d5a, d6a, d6b], // 5566 (swapped 5s)
+        [d5b, d5a, d6b, d6a], // 5565 (swapped both)
+        [d5a, d6a, d5b, d6b], // 5656
+        [d5a, d6a, d6b, d5b], // 5665
+        [d5a, d6b, d5b, d6a], // 5656 (different)
+        [d5a, d6b, d6a, d5b], // 5665 (different)
+        [d5b, d6a, d5a, d6b], // 5656 (different)
+        [d5b, d6a, d6b, d5a], // 5665 (different)
+        [d5b, d6b, d5a, d6a], // 5656 (different)
+        [d5b, d6b, d6a, d5a], // 5665 (different)
+        [d6a, d6b, d5a, d5b], // 6655
+        [d6a, d6b, d5b, d5a], // 6655 (swapped 5s)
+        [d6b, d6a, d5a, d5b], // 6655 (swapped 6s)
+        [d6b, d6a, d5b, d5a], // 6655 (swapped both)
+        [d6a, d5a, d6b, d5b], // 6565
+        [d6a, d5a, d5b, d6b], // 6556
+        [d6a, d5b, d6b, d5a], // 6565 (different)
+        [d6a, d5b, d5a, d6b], // 6556 (different)
+        [d6b, d5a, d6a, d5b], // 6565 (different)
+        [d6b, d5a, d5b, d6a], // 6556 (different)
+        [d6b, d5b, d6a, d5a], // 6565 (different)
+        [d6b, d5b, d5a, d6a], // 6556 (different)
+      ];
+      
+      // All orderings should be recognized as tractors
+      allOrderings.forEach((ordering, index) => {
+        const orderString = ordering.map(c => c.rank === Rank.Five ? '5' : '6').join('');
+        expect(getComboType(ordering)).toBe(ComboType.Tractor, 
+          `Failed for ordering ${index}: ${orderString}`);
+      });
+    });
+    
     test('Non-consecutive pairs should not form a tractor', () => {
       // Create cards for non-consecutive pairs: 5-5-9-9 of Hearts
       const heart5a = createCard(Suit.Hearts, Rank.Five, 'hearts_5_1');

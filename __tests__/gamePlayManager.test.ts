@@ -380,4 +380,136 @@ describe('gamePlayManager', () => {
       expect(result.error).toContain('Error generating AI move');
     });
   });
+
+  describe('State Immutability', () => {
+    test('should not mutate the original game state when processing plays', () => {
+      const originalState = createMockGameState();
+      const originalPlayerHand = [...originalState.players[0].hand];
+      const originalPlayerHandIds = originalPlayerHand.map(c => c.id);
+      const cardsToPlay = [originalState.players[0].hand[0]];
+
+      // Process the play
+      const result = processPlay(originalState, cardsToPlay);
+
+      // Verify original state was not mutated
+      expect(originalState.players[0].hand.length).toBe(2);
+      expect(originalState.players[0].hand.map(c => c.id)).toEqual(originalPlayerHandIds);
+      
+      // Verify new state has the card removed
+      expect(result.newState.players[0].hand.length).toBe(1);
+      expect(result.newState.players[0].hand.map(c => c.id)).not.toContainEqual(cardsToPlay[0].id);
+    });
+
+    test('should create deep copies of all players and their hands', () => {
+      const originalState = createMockGameState();
+      const cardsToPlay = [originalState.players[0].hand[0]];
+
+      const result = processPlay(originalState, cardsToPlay);
+
+      // Verify all players are different references
+      originalState.players.forEach((player, index) => {
+        expect(result.newState.players[index]).not.toBe(player);
+        expect(result.newState.players[index].hand).not.toBe(player.hand);
+      });
+    });
+
+    test('should create deep copies of teams', () => {
+      const originalState = createMockGameState();
+      const cardsToPlay = [originalState.players[0].hand[0]];
+
+      const result = processPlay(originalState, cardsToPlay);
+
+      // Verify teams are different references
+      originalState.teams.forEach((team, index) => {
+        expect(result.newState.teams[index]).not.toBe(team);
+      });
+    });
+  });
+
+  describe('Card Count Consistency', () => {
+    test('should maintain equal card counts for all players throughout a full game', () => {
+      let state = createMockGameState();
+      
+      // Mock determineTrickWinner to return different winners for variety
+      const winners = ['human', 'ai1', 'ai2', 'ai3'];
+      let winnerIndex = 0;
+      (gameLogic.determineTrickWinner as jest.Mock).mockImplementation(() => {
+        return winners[winnerIndex++ % 4];
+      });
+
+      // Initial state - verify all players have same card count
+      const initialCardCount = state.players[0].hand.length;
+      state.players.forEach(player => {
+        expect(player.hand.length).toBe(initialCardCount);
+      });
+
+      // Play multiple complete tricks
+      for (let trickNum = 0; trickNum < 2; trickNum++) {
+        // Play 4 cards (one complete trick)
+        for (let playNum = 0; playNum < 4; playNum++) {
+          const currentPlayer = state.players[state.currentPlayerIndex];
+          const cardsToPlay = [currentPlayer.hand[0]];
+          
+          const result = processPlay(state, cardsToPlay);
+          state = result.newState;
+
+          // After each play, verify card counts are consistent
+          if (result.trickComplete) {
+            // After a complete trick, all players should have the same number of cards
+            const cardCounts = state.players.map(p => p.hand.length);
+            const uniqueCounts = new Set(cardCounts);
+            expect(uniqueCounts.size).toBe(1); // All players should have same card count
+          } else {
+            // Mid-trick: verify no cards were lost or duplicated
+            const totalCards = state.players.reduce((sum, player) => sum + player.hand.length, 0);
+            const expectedTotalCards = initialCardCount * 4 - ((trickNum * 4) + (playNum + 1));
+            expect(totalCards).toBe(expectedTotalCards);
+          }
+        }
+      }
+
+      // Final verification: all players should have played equal number of cards
+      const finalCardCounts = state.players.map(p => p.hand.length);
+      expect(new Set(finalCardCounts).size).toBe(1); // All counts should be the same
+    });
+
+    test('should handle concurrent plays without causing uneven card distribution', () => {
+      const state1 = createMockGameState();
+      const state2 = { ...state1 }; // Shallow copy to simulate concurrent access
+      
+      // Player 1 plays from state1
+      const result1 = processPlay(state1, [state1.players[0].hand[0]]);
+      
+      // Player 2 plays from state2 (simulating a race condition)
+      state2.currentPlayerIndex = 1;
+      const result2 = processPlay(state2, [state2.players[1].hand[0]]);
+      
+      // Both results should have correct card counts
+      expect(result1.newState.players[0].hand.length).toBe(1);
+      expect(result1.newState.players[1].hand.length).toBe(2); // Not played yet in this state
+      
+      expect(result2.newState.players[0].hand.length).toBe(2); // Not played yet in this state
+      expect(result2.newState.players[1].hand.length).toBe(1);
+    });
+
+    test('should never allow a player to have negative cards or have cards disappear unexpectedly', () => {
+      const state = createMockGameState();
+      const playerHand = state.players[0].hand;
+      
+      // Try to play same card multiple times (simulating a bug)
+      const cardToPlay = playerHand[0];
+      
+      // First play should succeed
+      const result1 = processPlay(state, [cardToPlay]);
+      expect(result1.newState.players[0].hand.length).toBe(1);
+      
+      // Second play with the same card from original state should also work
+      // because processPlay should not mutate the original state
+      const result2 = processPlay(state, [cardToPlay]);
+      expect(result2.newState.players[0].hand.length).toBe(1);
+      
+      // Original state should still have 2 cards
+      expect(state.players[0].hand.length).toBe(2);
+    });
+  });
 });

@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: 10,  // Increased from 3 to 10
     paddingHorizontal: 14,
     borderWidth: 0.5,
     shadowColor: '#000',
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 5,
+    marginTop: 8,  // Increased from 5 to 8
   },
   botCardsRow: {
     flexDirection: 'row',

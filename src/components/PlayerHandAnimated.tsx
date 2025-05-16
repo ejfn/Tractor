@@ -282,7 +282,7 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
               Object.assign(viewStyle, {
                 transform: [{ rotate: '90deg' }],
                 position: 'absolute',
-                top: 30 + (index * 12), // Stacked vertically with less overlap
+                top: 5 + (index * 12), // Start from lower position since name is not absolute
                 left: 15, // Fixed left position
               });
             } else if (isRightPlayer) {
@@ -290,7 +290,7 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
               Object.assign(viewStyle, {
                 transform: [{ rotate: '270deg' }],
                 position: 'absolute',
-                top: 30 + (index * 12), // Stacked vertically with less overlap
+                top: 5 + (index * 12), // Start from lower position since name is not absolute
                 right: 15, // Fixed right position
               });
             }
@@ -349,36 +349,31 @@ const styles = StyleSheet.create({
     width: 60,
     alignSelf: 'center',
     paddingTop: 30, // Additional padding at the top for player name
+    minHeight: 200, // Ensure enough height for cards
   },
   rightAiContainer: {
     width: 60,
     alignSelf: 'center',
     paddingTop: 30, // Additional padding at the top for player name
+    minHeight: 200, // Ensure enough height for cards
   },
   playerNameContainer: {
-    position: 'absolute',
     zIndex: 50,
     alignItems: 'center',
     width: '100%',
+    marginBottom: 5,
   },
   topPlayerName: {
-    top: 0,
-    left: 0,
-    right: 0,
     alignItems: 'center',
     marginBottom: 10, // Add extra spacing for Bot 2 specifically
   },
   leftPlayerName: {
-    top: 0,
-    left: 0,
-    right: 0,
     alignItems: 'center',
+    marginBottom: 8,
   },
   rightPlayerName: {
-    top: 0,
-    left: 0,
-    right: 0,
     alignItems: 'center',
+    marginBottom: 8,
   },
   playerName: {
     fontSize: 12,
@@ -395,7 +390,7 @@ const styles = StyleSheet.create({
   },
   cardsScrollContainer: {
     width: '100%',
-    height: 125,
+    height: 140,
     backgroundColor: 'transparent',
     position: 'relative',
   },
@@ -418,7 +413,7 @@ const styles = StyleSheet.create({
   },
   scrollViewStyle: {
     width: '100%',
-    height: 125,
+    height: 140,
     backgroundColor: 'transparent',
   },
   scrollViewContent: {
@@ -448,12 +443,12 @@ const styles = StyleSheet.create({
   },
   leftHandContainer: {
     width: '100%',
-    height: '100%',
+    height: 150, // Fixed height to accommodate stacked cards
     position: 'relative',
   },
   rightHandContainer: {
     width: '100%',
-    height: '100%',
+    height: 150, // Fixed height to accommodate stacked cards
     position: 'relative',
   },
   // Play button styles
