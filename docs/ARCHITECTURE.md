@@ -8,18 +8,16 @@ The application follows a Controller/View separation pattern to separate game lo
 
 ```mermaid
 graph TD
-    A["Game Screen (Container)"] --> B["Controller (Game Logic)"]
-    B --> C["View (Presentation)"]
-    B --> D["Custom Hooks"]
-    D --> E["Utility Modules"]
+    A["Controller (Game Logic)"] --> B["View (Presentation)"]
+    A --> C["Custom Hooks"]
+    C --> D["Utility Modules"]
 ```
 
 ## Code Organization
 
 ### 1. Screen Components
 
-- **GameScreen** (`src/screens/GameScreen.tsx`): Container component that serves as the entry point
-- **GameScreenController** (`src/screens/GameScreenController.tsx`): Manages game logic and state
+- **GameScreenController** (`src/screens/GameScreenController.tsx`): The main entry point that manages game logic and state
 - **GameScreenView** (`src/screens/GameScreenView.tsx`): Handles the visual presentation of the game
 
 ### 2. UI Components
@@ -86,17 +84,16 @@ graph LR
 
 ```mermaid
 graph TD
-    A["GameScreen"] --> B["GameScreenController"]
-    B --> C["GameScreenView"]
-    C --> D["GameTable"]
-    D --> E["AIPlayerView - Top"]
-    D --> F["AIPlayerView - Left"]
-    D --> G["AIPlayerView - Right"]
-    D --> H["HumanPlayerView"]
-    D --> I["CardPlayArea"]
-    I --> J["TrickResultDisplay"]
-    H --> K["PlayerHandAnimated"]
-    K --> L["AnimatedCard"]
+    A["GameScreenController"] --> B["GameScreenView"]
+    B --> C["GameTable"]
+    C --> D["AIPlayerView - Top"]
+    C --> E["AIPlayerView - Left"]
+    C --> F["AIPlayerView - Right"]
+    C --> G["HumanPlayerView"]
+    C --> H["CardPlayArea"]
+    H --> I["TrickResultDisplay"]
+    G --> J["PlayerHandAnimated"]
+    J --> K["AnimatedCard"]
 ```
 
 ## Key Patterns

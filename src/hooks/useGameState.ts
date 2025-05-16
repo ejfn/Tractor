@@ -14,7 +14,7 @@ import {
   processPlay,
   validatePlay
 } from '../utils/gamePlayManager';
-import { MOVE_COMPLETION_DELAY } from '../utils/gameTimings';
+// import { MOVE_COMPLETION_DELAY } from '../utils/gameTimings';
 
 /**
  * Configuration for the game setup

@@ -3,8 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
-// Import game screen
-import GameScreen from '../src/screens/GameScreen';
+// Import game screen controller directly
+import GameScreenController from '../src/screens/GameScreenController';
 
 export default function Index() {
   const [hasError, setHasError] = useState(false);
@@ -13,7 +13,7 @@ export default function Index() {
   const renderGameScreen = () => {
     let content;
     try {
-      content = <GameScreen />;
+      content = <GameScreenController />;
     } catch (error) {
       // Log the error and set error state
       console.error("Game loading error:", error instanceof Error ? error.message : String(error));

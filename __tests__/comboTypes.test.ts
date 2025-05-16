@@ -13,6 +13,7 @@ import {
   ComboType,
   Combo
 } from '../src/types/game';
+import { describe, test, expect } from '@jest/globals';
 
 // Helper function to create regular cards
 const createCard = (suit: Suit, rank: Rank, id: string): Card => {
@@ -204,8 +205,7 @@ describe('Combo Type Identification Tests', () => {
       // All orderings should be recognized as tractors
       allOrderings.forEach((ordering, index) => {
         const orderString = ordering.map(c => c.rank === Rank.Five ? '5' : '6').join('');
-        expect(getComboType(ordering)).toBe(ComboType.Tractor, 
-          `Failed for ordering ${index}: ${orderString}`);
+        expect(getComboType(ordering)).toBe(ComboType.Tractor);
       });
     });
     

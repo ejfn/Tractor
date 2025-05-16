@@ -47,7 +47,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       {/* Use dark status bar on Android for better visibility */}
       <StatusBar style={Platform.OS === 'android' ? 'light' : 'auto'} />
-      {/* Render a view under the status bar for edge-to-edge mode */}
+      {/* Render a view under the status bar to change its background on Android */}
       {Platform.OS === 'android' && (
         <View 
           style={{

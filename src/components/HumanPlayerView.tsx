@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import PlayerHandAnimated from './PlayerHandAnimated';
+import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Card, Player, TrumpInfo } from '../types/game';
+import HumanHandAnimated from './HumanHandAnimated';
 import ThinkingIndicator from './ThinkingIndicator';
-import { Player, Card, TrumpInfo } from '../types/game';
+import { sharedStyles } from '../styles/sharedStyles';
 
 interface HumanPlayerViewProps {
   player: Player;
@@ -39,12 +40,12 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   thinkingDots
 }) => {
   return (
-    <View style={styles.bottomArea}>
+    <View style={styles.container}>
       <View style={[
-        styles.labelContainer,
-        isDefending ? styles.teamALabel : styles.teamBLabel
+        sharedStyles.labelContainer,
+        isDefending ? sharedStyles.teamALabel : sharedStyles.teamBLabel
       ]}>
-        <Text style={styles.playerLabel}>You</Text>
+        <Text style={sharedStyles.playerLabel}>You</Text>
         {isCurrentPlayer && !showTrickResult && !lastCompletedTrick && (
           <ThinkingIndicator
             visible={true}
@@ -52,13 +53,12 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
           />
         )}
       </View>
-      <PlayerHandAnimated
+      <HumanHandAnimated
         player={player}
         isCurrentPlayer={isCurrentPlayer}
         selectedCards={selectedCards}
         onCardSelect={onCardSelect}
         onPlayCards={onPlayCards}
-        showCards={true}
         trumpInfo={trumpInfo}
         canPlay={canPlay}
       />
@@ -67,47 +67,11 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
 };
 
 const styles = StyleSheet.create({
-  bottomArea: {
+  container: {
+    ...sharedStyles.playerViewContainer,
     width: '100%',
-    height: 280,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 10,
-    paddingBottom: 35,
-    marginBottom: 2,
-  },
-  labelContainer: {
-    height: 26,
-    minWidth: 75,
-    borderRadius: 13,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 5,
-    paddingHorizontal: 14,
-    borderWidth: 0.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-    position: 'relative',
-  },
-  teamALabel: {
-    backgroundColor: 'rgba(46, 125, 50, 0.75)',
-    borderColor: '#E8F5E9',
-  },
-  teamBLabel: {
-    backgroundColor: 'rgba(198, 40, 40, 0.75)',
-    borderColor: '#FFEBEE',
-  },
-  playerLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'white',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
+    height: '100%',
+    paddingTop: 12,
   },
 });
 

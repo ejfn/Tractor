@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, Platform } from 'react-native';
-import AnimatedCard from './AnimatedCard';
+import AnimatedCardComponent from './AnimatedCard';
 import { Card as CardType, Player, Trick, TrumpInfo } from '../types/game'; // Using Card as CardType to avoid naming conflict
 import { isTrump } from '../utils/gameLogic';
 import { 
@@ -142,7 +142,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         }
       }, ANIMATION_COMPLETION_DELAY); // Delay to ensure cards are rendered properly
     }
-  }, [completedAnimations, totalAnimationsNeeded, animationCompleted, onAnimationComplete, topCards, rightCards]);
+  }, [completedAnimations, totalAnimationsNeeded, animationCompleted, onAnimationComplete]);
   
   // Animation handling managed by completion callbacks
 
@@ -249,7 +249,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         {topCards.length > 0 && (
           <View style={[styles.playedCardsContainer]}>
             {topCards.map((card, index) => (
-              <AnimatedCard
+              <AnimatedCardComponent
                 key={`top-${card.id}-${index}`}
                 card={card}
                 isPlayed={true}
@@ -288,7 +288,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
           {leftCards.length > 0 && (
             <View style={[styles.playedCardsContainer]}>
               {leftCards.map((card, index) => (
-                <AnimatedCard
+                <AnimatedCardComponent
                   key={`left-${card.id}-${index}`}
                   card={card}
                   isPlayed={true}
@@ -330,7 +330,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
           {rightCards.length > 0 && (
             <View style={[styles.playedCardsContainer]}>
               {rightCards.map((card, index) => (
-                <AnimatedCard
+                <AnimatedCardComponent
                   key={`right-${card.id}-${index}`}
                   card={card}
                   isPlayed={true}
@@ -368,7 +368,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
         {bottomCards.length > 0 && (
           <View style={[styles.playedCardsContainer]}>
             {bottomCards.map((card, index) => (
-              <AnimatedCard
+              <AnimatedCardComponent
                 key={`bottom-${card.id}-${index}`}
                 card={card}
                 isPlayed={true}
