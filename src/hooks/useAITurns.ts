@@ -50,10 +50,14 @@ export function useAITurns(
       return;
     }
     
-    // Block if we're showing trick result, have a completed trick waiting, or round is complete
+    // Check if current trick is complete but not cleared
+    const currentTrickComplete = gameState.currentTrick && 
+      gameState.currentTrick.plays.length === gameState.players.length - 1;
+    
+    // Block if we're showing trick result, have a completed trick waiting, trick is complete, or round is complete
     // This helps prevent "thinking of next trick round is showing before trick result disappears"
-    if (showTrickResult || lastCompletedTrick || showRoundComplete) {
-      // AI move blocked while trick result is showing or round complete
+    if (showTrickResult || lastCompletedTrick || showRoundComplete || currentTrickComplete) {
+      // AI move blocked while trick result is showing, trick complete, or round complete
       setWaitingForAI(false);
       setWaitingPlayerId('');
       return;
@@ -69,10 +73,17 @@ export function useAITurns(
     }
 
     // Additional safety checks for ALL bots - double-check game state
-    const botReady = gameState.gamePhase === 'playing' && !showTrickResult && !showRoundComplete;
+    // Also check if currentTrick is complete (but not cleared yet)
+    const trickComplete = gameState.currentTrick && 
+      gameState.currentTrick.plays.length === gameState.players.length - 1;
+    
+    const botReady = gameState.gamePhase === 'playing' && 
+      !showTrickResult && 
+      !showRoundComplete && 
+      !trickComplete; // Don't let AI play if trick is complete but not cleared
     
     if (!botReady) {
-      console.warn(`${currentPlayer.name} move attempted during invalid game state: phase=${gameState.gamePhase}, showResult=${showTrickResult}, roundComplete=${showRoundComplete}`);
+      console.warn(`${currentPlayer.name} move attempted during invalid game state: phase=${gameState.gamePhase}, showResult=${showTrickResult}, roundComplete=${showRoundComplete}, trickComplete=${trickComplete}`);
       
       setWaitingForAI(false);
       setWaitingPlayerId('');
@@ -133,8 +144,13 @@ export function useAITurns(
   useEffect(() => {
     if (!gameState) return;
     
-    // Block processing if showing trick result, round complete, or not playing
-    if (showTrickResult || lastCompletedTrick || showRoundComplete || gameState.gamePhase !== 'playing') {
+    // Check if the current trick is complete but not cleared
+    const currentTrickComplete = gameState.currentTrick && 
+      gameState.currentTrick.plays.length === gameState.players.length - 1;
+    
+    // Block processing if showing trick result, round complete, trick is complete, or not playing
+    if (showTrickResult || lastCompletedTrick || showRoundComplete || 
+        gameState.gamePhase !== 'playing' || currentTrickComplete) {
       return;
     }
     
