@@ -72,7 +72,8 @@ const GameScreenController: React.FC = () => {
     gameState,
     handleProcessPlay,
     showTrickResult,
-    lastCompletedTrick
+    lastCompletedTrick,
+    showRoundComplete
   );
 
   // Initialize game on first render

@@ -190,9 +190,10 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
                     styles.cardWrapper,
                     {
                       marginLeft: index === 0 ? 0 : -cardOverlap,
-                      zIndex: index
+                      zIndex: index // Normal z-index so the rightmost card is on top
                     }
                   ]}
+                  pointerEvents="box-none"
                 >
                   <AnimatedCard
                     card={card}

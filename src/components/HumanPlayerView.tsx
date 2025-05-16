@@ -13,6 +13,8 @@ interface HumanPlayerViewProps {
   onPlayCards: () => void;
   canPlay: boolean;
   trumpInfo: TrumpInfo;
+  showTrickResult?: boolean;
+  lastCompletedTrick?: any;
   thinkingDots: {
     dot1: Animated.Value;
     dot2: Animated.Value;
@@ -32,6 +34,8 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   onPlayCards,
   canPlay,
   trumpInfo,
+  showTrickResult = false,
+  lastCompletedTrick = null,
   thinkingDots
 }) => {
   return (
@@ -41,7 +45,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
         isDefending ? styles.teamALabel : styles.teamBLabel
       ]}>
         <Text style={styles.playerLabel}>You</Text>
-        {isCurrentPlayer && (
+        {isCurrentPlayer && !showTrickResult && !lastCompletedTrick && (
           <ThinkingIndicator
             visible={true}
             dots={thinkingDots}

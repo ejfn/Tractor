@@ -321,8 +321,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
           disabled={!onSelect}
           activeOpacity={1.0} // Keep full opacity on press
           delayPressIn={0} // Remove delay for immediate feedback
-          pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }} // Larger touch area
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} // Increase hit area for easier tapping
+          pressRetentionOffset={{ top: 1, bottom: 1, left: 1, right: 1 }} // Minimal touch area expansion
+          hitSlop={{ top: 1, bottom: 1, left: 1, right: 1 }} // Minimal hit area expansion
         >
           {/* Card content with vertical JOKER text */}
           <View style={{
@@ -434,8 +434,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
         disabled={!onSelect}
         activeOpacity={1.0} // Keep full opacity on press
         delayPressIn={0} // Remove delay for immediate feedback
-        pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }} // Larger touch area
-        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} // Increase hit area for easier tapping
+        pressRetentionOffset={{ top: 1, bottom: 1, left: 1, right: 1 }} // Minimal touch area expansion
+        hitSlop={{ top: 1, bottom: 1, left: 1, right: 1 }} // Minimal hit area expansion
       >
         {/* Card header with rank and suit */}
         <View style={styles.cardHeader}>

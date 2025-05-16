@@ -227,6 +227,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   onPlayCards={onPlayCards}
                   canPlay={canPlay}
                   trumpInfo={gameState.trumpInfo}
+                  showTrickResult={showTrickResult}
+                  lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
                 />
               ) : null

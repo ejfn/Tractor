@@ -65,7 +65,7 @@ describe('HumanPlayerView', () => {
     declared: true
   });
 
-  test('renders correctly for current player', () => {
+  test('renders correctly for current player without trick result', () => {
     const thinkingDots = createAnimatedValues();
     const player = createMockPlayer();
     const trumpInfo = createMockTrumpInfo();
@@ -80,6 +80,8 @@ describe('HumanPlayerView', () => {
         onPlayCards={jest.fn()}
         canPlay={true}
         trumpInfo={trumpInfo}
+        showTrickResult={false}
+        lastCompletedTrick={null}
         thinkingDots={thinkingDots}
       />
     );
@@ -92,6 +94,34 @@ describe('HumanPlayerView', () => {
     
     // Check that the player hand is rendered
     expect(getByTestId('player-hand-animated')).toBeTruthy();
+  });
+
+  test('does not show thinking indicator when trick result is shown', () => {
+    const thinkingDots = createAnimatedValues();
+    const player = createMockPlayer();
+    const trumpInfo = createMockTrumpInfo();
+    
+    const { getByText, queryByTestId } = render(
+      <HumanPlayerView 
+        player={player}
+        isCurrentPlayer={true}
+        isDefending={true}
+        selectedCards={[]}
+        onCardSelect={jest.fn()}
+        onPlayCards={jest.fn()}
+        canPlay={true}
+        trumpInfo={trumpInfo}
+        showTrickResult={true}
+        lastCompletedTrick={null}
+        thinkingDots={thinkingDots}
+      />
+    );
+    
+    // Check that the player label is displayed
+    expect(getByText('You')).toBeTruthy();
+    
+    // Check that the thinking indicator is not visible
+    expect(queryByTestId('thinking-indicator-visible')).toBeNull();
   });
 
   test('renders correctly for non-current player', () => {
@@ -109,6 +139,8 @@ describe('HumanPlayerView', () => {
         onPlayCards={jest.fn()}
         canPlay={false}
         trumpInfo={trumpInfo}
+        showTrickResult={false}
+        lastCompletedTrick={null}
         thinkingDots={thinkingDots}
       />
     );
@@ -135,6 +167,8 @@ describe('HumanPlayerView', () => {
         onPlayCards={jest.fn()}
         canPlay={false}
         trumpInfo={trumpInfo}
+        showTrickResult={false}
+        lastCompletedTrick={null}
         thinkingDots={thinkingDots}
       />
     );
@@ -158,6 +192,8 @@ describe('HumanPlayerView', () => {
         onPlayCards={jest.fn()}
         canPlay={false}
         trumpInfo={trumpInfo}
+        showTrickResult={false}
+        lastCompletedTrick={null}
         thinkingDots={thinkingDots}
       />
     );
@@ -182,6 +218,8 @@ describe('HumanPlayerView', () => {
         onPlayCards={jest.fn()}
         canPlay={true}
         trumpInfo={trumpInfo}
+        showTrickResult={false}
+        lastCompletedTrick={null}
         thinkingDots={thinkingDots}
       />
     );
@@ -207,6 +245,8 @@ describe('HumanPlayerView', () => {
         onPlayCards={mockOnPlayCards}
         canPlay={true}
         trumpInfo={trumpInfo}
+        showTrickResult={false}
+        lastCompletedTrick={null}
         thinkingDots={thinkingDots}
       />
     );
