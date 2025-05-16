@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import AnimatedCard from './AnimatedCard';
+import AnimatedCardComponent from './AnimatedCard';
 import { Card as CardType, Player, TrumpInfo } from '../types/game';
 import { isTrump } from '../utils/gameLogic';
 
@@ -73,7 +73,7 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
                 }
               ]}
             >
-              <AnimatedCard
+              <AnimatedCardComponent
                 card={card}
                 onSelect={isCurrentPlayer ? onCardSelect : undefined}
                 selected={isCardSelected(card)}
@@ -145,7 +145,7 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
               key={card.id}
               style={cardStyle as any}
             >
-              <AnimatedCard
+              <AnimatedCardComponent
                 card={card}
                 faceDown={!showCards}
                 isTrump={isTrump(card, trumpInfo)}

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
+import { sharedStyles } from '../styles/sharedStyles';
+import { Player, Trick } from '../types/game';
 import CardBack from './CardBack';
 import ThinkingIndicator from './ThinkingIndicator';
-import { Player, Trick } from '../types/game';
 
 interface AIPlayerViewProps {
   position: 'top' | 'left' | 'right';
@@ -32,44 +33,36 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   lastCompletedTrick,
   thinkingDots
 }) => {
-  // Determine the container styles based on position
-  const containerStyles = {
-    top: styles.topArea,
-    left: styles.leftArea,
-    right: styles.rightArea
-  }[position];
+  // GameTable provides the container sizing/positioning,
+  // so we don't need wrapper styles
 
-  // Determine card container layout
-  const stackContainerStyle = position === 'top' ? 
-    styles.cardStackContainer : 
-    [styles.cardStackContainer, { flexDirection: 'column' as const, marginTop: 10 }];
-
-  // Determine card layout direction
-  const cardsLayoutStyle = {
-    top: { flexDirection: 'row-reverse' as const },
-    left: { flexDirection: 'column-reverse' as const },
-    right: { flexDirection: 'column' as const }
-  }[position];
-
-  // Get CSS class name for card container
-  const cardsContainerClass = position === 'top' ? styles.botCardsRow : styles.botCardsColumn;
+  const getCardContainerStyle = () => {
+    switch (position) {
+      case 'top':
+        return styles.topCardStackContainer;
+      case 'left':
+        return styles.leftCardStackContainer;
+      case 'right':
+        return styles.rightCardStackContainer;
+    }
+  }
 
   // Get card styling function based on position
   const getCardStyle = (index: number) => {
     switch (position) {
       case 'top':
         return {
-          marginLeft: index < 9 ? -44 : 0,
+          left: 10 * index,
           transform: [{ rotate: '0deg' }]
         };
       case 'left':
         return {
-          marginTop: index < 9 ? -40 : 0,
+          bottom: 10 * (index -1),
           transform: [{ rotate: '270deg' }]
         };
       case 'right':
         return {
-          marginBottom: index < 9 ? -40 : 0,
+          top: 10 * (index -1),
           transform: [{ rotate: '90deg' }]
         };
     }
@@ -77,15 +70,11 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
 
   // Label style with the team color
   const labelStyle = [
-    styles.labelContainer,
-    isDefending ? styles.teamALabel : styles.teamBLabel
+    sharedStyles.labelContainer,
+    styles.aiLabelSpacing,
+    isDefending ? sharedStyles.teamALabel : sharedStyles.teamBLabel
   ];
   
-  // Add extra spacing for top player label
-  if (position === 'top') {
-    labelStyle.push(styles.topPlayerLabel as any);
-  }
-
   // Get player label based on position
   const playerLabel = {
     top: 'Bot 2',
@@ -99,108 +88,60 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   const showThinking = waitingForAI && !showTrickResult && !lastCompletedTrick;
 
   return (
-    <View style={containerStyles}>
+    <View style={styles.container}>
       <View style={labelStyle}>
-        <Text style={styles.playerLabel}>{playerLabel}</Text>
+        <Text style={sharedStyles.playerLabel}>{playerLabel}</Text>
         <ThinkingIndicator 
           visible={showThinking}
           dots={thinkingDots}
         />
       </View>
-      <View style={stackContainerStyle}>
-        <View style={[cardsContainerClass, cardsLayoutStyle]}>
-          {[...Array(Math.min(10, player.hand.length))].map((_, i) => (
-            <View
-              key={`${position}-card-${i}`}
-              style={[
-                styles.botCardSmall,
-                getCardStyle(i)
-              ]}
-            >
-              <CardBack />
-            </View>
-          ))}
-        </View>
+      <View style={[
+          getCardContainerStyle()
+        ]}>
+        {[...Array(Math.min(10, player.hand.length))].map((_, i) => (
+          <View
+            key={`${position}-card-${i}`}
+            style={[
+              styles.botCardSmall,
+              getCardStyle(i)
+            ]}
+          >
+            <CardBack />
+          </View>
+        ))}
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  topArea: {
-    width: '100%',
-    height: 110,
-    marginTop: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+  container: sharedStyles.playerViewContainer,
+  aiLabelSpacing: {
+    marginBottom: 25,  // AI players need more margin bottom than human
   },
-  leftArea: {
-    width: 100,
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rightArea: {
-    width: 100,
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  labelContainer: {
-    height: 26,
-    minWidth: 75,
-    borderRadius: 13,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,  // Increased from 3 to 10
-    paddingHorizontal: 14,
-    borderWidth: 0.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-    position: 'relative',
-  },
-  teamALabel: {
-    backgroundColor: 'rgba(46, 125, 50, 0.75)',
-    borderColor: '#E8F5E9',
-  },
-  teamBLabel: {
-    backgroundColor: 'rgba(198, 40, 40, 0.75)',
-    borderColor: '#FFEBEE',
-  },
-  topPlayerLabel: {
-    marginBottom: 15,
-  },
-  playerLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'white',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
-  },
-  cardStackContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,  // Increased from 5 to 8
-  },
-  botCardsRow: {
+  topCardStackContainer: {
+    width: 125,
+    height: 50,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 10,
   },
-  botCardsColumn: {
+  leftCardStackContainer: {
+    width: 50,
+    height: 120,
+    flexDirection: 'column-reverse',
+    alignItems: 'center',
+  },
+  rightCardStackContainer: {
+    width: 50,
+    height: 125,
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   botCardSmall: {
-    width: 35,
-    height: 49,
+    width: 36,
+    height: 50,
     backgroundColor: '#4169E1',
     borderRadius: 3,
     borderWidth: 1,
@@ -208,7 +149,7 @@ const styles = StyleSheet.create({
     zIndex: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    position: 'absolute',
   },
 });
 

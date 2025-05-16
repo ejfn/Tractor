@@ -1,4 +1,4 @@
-import { GameState, Card, Trick } from '../types/game';
+import { GameState, Card, Trick, Team } from '../types/game';
 import { identifyCombos, isValidPlay, determineTrickWinner } from './gameLogic';
 import { getAIMove } from './aiLogic';
 

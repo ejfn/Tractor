@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 interface GameTableProps {
   topPlayer: ReactNode;
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   // Top player - centered at the top of the table
   topArea: {
     width: '100%',
-    height: 110,
+    height: 120,
     marginTop: 15,
     alignItems: 'center',
     justifyContent: 'center',
@@ -118,9 +118,6 @@ const styles = StyleSheet.create({
     height: 280,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 0,
-    paddingBottom: 25,
-    marginBottom: 0,
   },
 });
 

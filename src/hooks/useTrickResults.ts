@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trick } from '../types/game';
 import { 
-  TRICK_RESULT_DISPLAY_TIME, 
-  ANIMATION_COMPLETION_DELAY
+  TRICK_RESULT_DISPLAY_TIME
 } from '../utils/gameTimings';
 
 /**
@@ -18,11 +17,7 @@ export function useTrickResults() {
   // Create a callback ref that will be set by the parent component
   // This will be called when it's safe to clear the currentTrick in the game state
   const onTrickResultCompleteRef = useRef<() => void>(() => {});
-  const onTrickResultComplete = () => {
-    if (onTrickResultCompleteRef.current) {
-      onTrickResultCompleteRef.current();
-    }
-  };
+  // onTrickResultComplete is not currently being used, but keeping for potential future use
   
   // We'll use a ref to track if we've ever shown the result for this trick
   const hasShownResultRef = useRef(false);

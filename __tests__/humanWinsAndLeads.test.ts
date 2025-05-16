@@ -1,17 +1,18 @@
-import { GameState } from '../src/types/game';
+import { GameState, Rank, Card } from '../src/types/game';
 import { initializeGame } from '../src/utils/gameLogic';
 import { processPlay } from '../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../src/utils/gamePlayManager';
+import { describe, test, expect } from '@jest/globals';
 
 describe('Human Wins and Leads Bug', () => {
   test('Human wins first trick and leads second', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], '2');
+    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
     let state = gameState;
     
     // Give human high cards to ensure they win
-    const humanAces = state.players[0].hand.filter(c => c.rank === 'A');
-    const humanKings = state.players[0].hand.filter(c => c.rank === 'K');
-    const humanOther = state.players[0].hand.filter(c => c.rank !== 'A' && c.rank !== 'K');
+    const humanAces = state.players[0].hand.filter(c => c.rank === Rank.Ace);
+    const humanKings = state.players[0].hand.filter(c => c.rank === Rank.King);
+    const humanOther = state.players[0].hand.filter(c => c.rank !== Rank.Ace && c.rank !== Rank.King);
     
     // Give human multiple aces and kings
     state.players[0].hand = [...humanAces, ...humanKings, ...humanOther.slice(0, 25 - humanAces.length - humanKings.length)];
@@ -24,10 +25,10 @@ describe('Human Wins and Leads Bug', () => {
       const currentPlayer = state.players[state.currentPlayerIndex];
       const cardsBefore = state.players.map(p => p.hand.length);
       
-      let cardsToPlay = [];
+      let cardsToPlay: Card[] = [];
       if (currentPlayer.isHuman) {
         // Human plays an ace to ensure winning
-        const ace = currentPlayer.hand.find(c => c.rank === 'A');
+        const ace = currentPlayer.hand.find(c => c.rank === Rank.Ace);
         cardsToPlay = [ace || currentPlayer.hand[0]];
       } else {
         const aiMove = getAIMoveWithErrorHandling(state);
@@ -77,7 +78,7 @@ describe('Human Wins and Leads Bug', () => {
     
     // Check for pairs the human might play
     const humanPlayer = state.players[humanIndex];
-    let humanCards = [];
+    let humanCards: Card[] = [];
     
     // Look for pairs
     for (let i = 0; i < humanPlayer.hand.length - 1; i++) {
@@ -148,7 +149,7 @@ describe('Human Wins and Leads Bug', () => {
     for (let play = 1; play < 4; play++) {
       const currentPlayer = state.players[state.currentPlayerIndex];
       
-      let cardsToPlay = [];
+      let cardsToPlay: Card[] = [];
       if (currentPlayer.isHuman) {
         cardsToPlay = [currentPlayer.hand[0]];
       } else {
