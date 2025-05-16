@@ -26,17 +26,17 @@ export function processPlay(state: GameState, cards: Card[]): {
   };
   const currentPlayer = newState.players[newState.currentPlayerIndex];
   
-  // Ensure we have a current trick
-  // Special case: if currentTrick exists but it's complete and this player is the winner, start a new trick
+  // Check if we should start a new trick
+  // Rules:
+  // 1. If no current trick exists, start a new one
+  // 2. If current trick is complete AND this player won it, start a new one
+  //    (but only in testing or after the UI has shown the result)
   const isTrickComplete = newState.currentTrick && 
     newState.currentTrick.plays.length === newState.players.length - 1;
   
-  // Check if current player won the last trick (they would be leading the new trick)
-  // This check handles the case where the winning player leads the next trick
-  const wasWinnerOfLastTrick = newState.currentPlayerIndex === newState.winningPlayerIndex || 
-    (newState.currentTrick && newState.currentTrick.winningPlayerId === currentPlayer.id);
+  const isWinner = newState.currentPlayerIndex === newState.winningPlayerIndex;
   
-  if (!newState.currentTrick || (isTrickComplete && wasWinnerOfLastTrick)) {
+  if (!newState.currentTrick || (isTrickComplete && isWinner)) {
     // For the first player, create new trick and don't add to plays array
     newState.currentTrick = {
       leadingPlayerId: currentPlayer.id,
@@ -46,7 +46,8 @@ export function processPlay(state: GameState, cards: Card[]): {
     };
     
     // First player is leading the trick
-  } else {
+  } else if (newState.currentTrick) {
+    // Trick exists - add to plays array
     // Make sure we never add the leading player to the plays array
     // This prevents the duplicate cards issue
     if (currentPlayer.id === newState.currentTrick.leadingPlayerId) {
@@ -62,6 +63,13 @@ export function processPlay(state: GameState, cards: Card[]): {
       
       // Add player's follow cards to the trick
     }
+  } else {
+    // This should never happen - no current trick but not starting new one
+    console.error(`Invalid state: no currentTrick for player ${currentPlayer.id}`);
+    return {
+      newState: state,
+      trickComplete: false
+    };
   }
   
   // Calculate points from this play
