@@ -22,12 +22,21 @@ export function processPlay(state: GameState, cards: Card[]): {
       ...p,
       hand: [...p.hand] // Deep copy the hand array
     })),
-    teams: state.teams.map(t => ({ ...t })) // Deep copy teams too
+    teams: state.teams.map(t => ({ ...t })) as [Team, Team] // Deep copy teams too
   };
   const currentPlayer = newState.players[newState.currentPlayerIndex];
   
   // Ensure we have a current trick
-  if (!newState.currentTrick) {
+  // Special case: if currentTrick exists but it's complete and this player is the winner, start a new trick
+  const isTrickComplete = newState.currentTrick && 
+    newState.currentTrick.plays.length === newState.players.length - 1;
+  
+  // Check if current player won the last trick (they would be leading the new trick)
+  // This check handles the case where the winning player leads the next trick
+  const wasWinnerOfLastTrick = newState.currentPlayerIndex === newState.winningPlayerIndex || 
+    (newState.currentTrick && newState.currentTrick.winningPlayerId === currentPlayer.id);
+  
+  if (!newState.currentTrick || (isTrickComplete && wasWinnerOfLastTrick)) {
     // For the first player, create new trick and don't add to plays array
     newState.currentTrick = {
       leadingPlayerId: currentPlayer.id,
@@ -41,7 +50,9 @@ export function processPlay(state: GameState, cards: Card[]): {
     // Make sure we never add the leading player to the plays array
     // This prevents the duplicate cards issue
     if (currentPlayer.id === newState.currentTrick.leadingPlayerId) {
-      // Skip adding to plays to avoid duplication
+      // This is the leading player playing again - this should never happen in a normal game
+      // Log an error but continue processing
+      console.error(`Warning: Leading player ${currentPlayer.id} is playing again in the same trick`);
     } else {
       // Add non-leading plays to the plays array
       newState.currentTrick.plays.push({
@@ -58,11 +69,18 @@ export function processPlay(state: GameState, cards: Card[]): {
   newState.currentTrick.points += playPoints;
   
   // Remove played cards from player's hand
-  cards.forEach(playedCard => {
-    currentPlayer.hand = currentPlayer.hand.filter(
-      card => card.id !== playedCard.id
+  // Find the current player in our deep-copied state
+  const playerIndex = newState.players.findIndex(p => p.id === currentPlayer.id);
+  
+  if (playerIndex !== -1) {
+    // Create a new hand array without the played cards
+    const newHand = newState.players[playerIndex].hand.filter(
+      card => !cards.some(playedCard => playedCard.id === card.id)
     );
-  });
+    
+    // Update the player's hand in the new state
+    newState.players[playerIndex].hand = newHand;
+  }
   
   // Check if this completes a trick - should be plays.length = players.length-1
   // Since the leading player's cards are in leadingCombo, not in the plays array
@@ -94,6 +112,7 @@ export function processPlay(state: GameState, cards: Card[]): {
     newState.winningPlayerIndex = winningPlayerIndex;
     
     // Set winner as the next player to lead
+    newState.currentPlayerIndex = winningPlayerIndex;
   
     // DO NOT clear current trick immediately
     // We'll keep it in the state so cards remain visible
@@ -136,6 +155,12 @@ export function getAIMoveWithErrorHandling(state: GameState): {
 } {
   try {
     const currentPlayer = state.players[state.currentPlayerIndex];
+    
+    // Safety check to ensure we have a valid current player
+    if (!currentPlayer) {
+      console.error(`Invalid currentPlayerIndex: ${state.currentPlayerIndex} for ${state.players.length} players`);
+      return { cards: [], error: `Invalid player index: ${state.currentPlayerIndex}` };
+    }
     
     // Safety check to ensure the current player is an AI
     if (currentPlayer.isHuman) {

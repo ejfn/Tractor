@@ -160,9 +160,9 @@ describe('Player Transitions', () => {
     // Verify winningPlayerIndex is set correctly (human is index 0)
     expect(result.newState.winningPlayerIndex).toBe(0);
     
-    // With our implementation, currentPlayerIndex is still set to the last player to play (AI3)
-    // The switch to the winning player happens in handleTrickResultComplete
-    expect(result.newState.currentPlayerIndex).toBe(3);
+    // With our implementation, currentPlayerIndex is immediately set to the winning player
+    // This ensures proper player transitions when a human wins and leads next
+    expect(result.newState.currentPlayerIndex).toBe(0); // Set to winner (human)
     expect(result.newState.currentTrick).not.toBeNull();
     
     // Now simulate the trick result display completion
@@ -170,11 +170,11 @@ describe('Player Transitions', () => {
     const finalState = {
       ...result.newState,
       currentTrick: null,
-      currentPlayerIndex: result.newState.winningPlayerIndex,
+      // Note: currentPlayerIndex is already set to winner in processPlay
       winningPlayerIndex: undefined
     };
     
-    // Verify the human player (index 0) is now the current player
+    // Verify the human player (index 0) is still the current player
     expect(finalState.currentPlayerIndex).toBe(0);
     expect(finalState.currentTrick).toBeNull();
   });
