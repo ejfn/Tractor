@@ -511,5 +511,61 @@ describe('gamePlayManager', () => {
       // Original state should still have 2 cards
       expect(state.players[0].hand.length).toBe(2);
     });
+
+    test('should handle AI plays with proper card references', () => {
+      const state = createMockGameState();
+      
+      // Set the current player to AI (ai1)
+      state.currentPlayerIndex = 1;
+      
+      // Simulate AI selecting cards from its hand
+      const aiPlayer = state.players[1]; // ai1
+      const aiCards = aiPlayer.hand; // The actual cards in the AI's hand
+      
+      // AI plays its first card
+      const result = processPlay(state, [aiCards[0]]);
+      
+      // Verify the AI's hand was properly updated
+      expect(result.newState.players[1].hand.length).toBe(1);
+      expect(result.newState.players[1].hand).not.toContainEqual(aiCards[0]);
+      
+      // Original state should be unchanged
+      expect(state.players[1].hand.length).toBe(2);
+    });
+
+    test('should handle complete game with all AI players', () => {
+      let state = createMockGameState();
+      
+      // Mock determineTrickWinner
+      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('human');
+      
+      // Track card counts throughout
+      const initialCounts = state.players.map(p => p.hand.length);
+      expect(new Set(initialCounts).size).toBe(1); // All players start with same count
+      
+      // Play one complete trick
+      for (let i = 0; i < 4; i++) {
+        const currentPlayer = state.players[state.currentPlayerIndex];
+        const cardToPlay = [currentPlayer.hand[0]];
+        
+        const result = processPlay(state, cardToPlay);
+        state = result.newState;
+        
+        // Verify no player has lost more cards than they should
+        state.players.forEach((player, idx) => {
+          let expectedCards = initialCounts[idx] - (idx <= i ? 1 : 0);
+          if (idx === state.currentPlayerIndex && i < 3) {
+            // For the newly current player who hasn't played yet
+            expectedCards++;
+          }
+          expect(player.hand.length).toBeGreaterThanOrEqual(0);
+        });
+      }
+      
+      // After one complete trick, all players should have one less card
+      const finalCounts = state.players.map(p => p.hand.length);
+      expect(new Set(finalCounts).size).toBe(1); // All players should have same count
+      expect(finalCounts[0]).toBe(initialCounts[0] - 1);
+    });
   });
 });

@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, Text, View } from 'react-native';
+import { Platform, Text, View, StatusBar as RNStatusBar } from 'react-native';
 import 'react-native-reanimated';
 
 // Import the color scheme hook
@@ -46,10 +46,20 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       {/* Use dark status bar on Android for better visibility */}
-      <StatusBar style={Platform.OS === 'android' ? 'light' : 'auto'}
-        backgroundColor="#3F51B5" // Match header for consistent look
-        translucent={false} // Ensure proper positioning on Android
-      />
+      <StatusBar style={Platform.OS === 'android' ? 'light' : 'auto'} />
+      {/* Render a view under the status bar for edge-to-edge mode */}
+      {Platform.OS === 'android' && (
+        <View 
+          style={{
+            backgroundColor: '#3F51B5',
+            height: RNStatusBar.currentHeight || 0,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+          }}
+        />
+      )}
       <Stack
         screenOptions={{
           headerShown: true,
