@@ -215,6 +215,7 @@ const PlayerHandAnimated: React.FC<PlayerHandProps> = ({
             <TouchableOpacity
               style={styles.playButton}
               onPress={onPlayCards}
+              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
             >
               <Text style={styles.playButtonText}>
                 {selectedCards.length === 1 ? 'Play 1 Card' : `Play ${selectedCards.length} Cards`}
@@ -322,7 +323,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     padding: 8,
-    paddingBottom: 65, // More space at bottom for the play button
+    paddingBottom: 55, // Space at bottom for the play button
     position: 'relative', // Establish positioning context
     backgroundColor: 'transparent',
     marginBottom: 0, // No margin at bottom
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
   },
   cardsScrollContainer: {
     width: '100%',
-    height: 130,
+    height: 125,
     backgroundColor: 'transparent',
     position: 'relative',
   },
@@ -417,12 +418,12 @@ const styles = StyleSheet.create({
   },
   scrollViewStyle: {
     width: '100%',
-    height: 130,
+    height: 125,
     backgroundColor: 'transparent',
   },
   scrollViewContent: {
     minWidth: '100%',
-    paddingTop: 35, // Increased space for higher card pop-up (from 25 to 35)
+    paddingTop: 45, // Increased space for higher card pop-up and better separation from label
     paddingBottom: 10,
     paddingHorizontal: 10,
     flexDirection: 'row', // Ensure horizontal layout
@@ -459,16 +460,17 @@ const styles = StyleSheet.create({
   playButtonContainer: {
     width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
     position: 'absolute', // Use absolute positioning
-    bottom: 0, // Position at the very bottom
-    left: 0,
-    right: 0,
+    bottom: -5, // Move down from the current position
+    left: 8, // Account for container padding
+    right: 8, // Account for container padding
     zIndex: 100, // Ensure it's above other elements
   },
   playButton: {
     backgroundColor: '#C62828', // Slightly brighter red
     paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -479,8 +481,8 @@ const styles = StyleSheet.create({
     elevation: 6,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
-    width: '42%',
     minWidth: 130,
+    maxWidth: 200,
     height: 36,
     marginBottom: 5, // Reduced margin bottom
   },

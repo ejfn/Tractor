@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 0,
-    paddingBottom: 35,
-    marginBottom: 2,
+    paddingBottom: 25,
+    marginBottom: 0,
   },
 });
 
