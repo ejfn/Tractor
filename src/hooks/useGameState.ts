@@ -76,9 +76,24 @@ export function useGameState(config: GameConfig) {
 
   // Handle card selection
   const handleCardSelect = (card: Card) => {
-    if (gameState?.gamePhase !== 'playing') return;
+    if (!gameState) return;
     
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    
+    // Handle trump declaration mode - select card but don't declare immediately
+    if (showTrumpDeclaration && currentPlayer.isHuman) {
+      if (card.rank === gameState.trumpInfo.trumpRank && card.suit) {
+        // Toggle selection of trump cards
+        if (selectedCards.some(c => c.id === card.id)) {
+          setSelectedCards([]);
+        } else {
+          setSelectedCards([card]);
+        }
+      }
+      return;
+    }
+    
+    if (gameState.gamePhase !== 'playing') return;
     
     // Only allow current player to select cards
     if (!currentPlayer.isHuman) return;
@@ -170,6 +185,17 @@ export function useGameState(config: GameConfig) {
     const newState = declareTrumpSuit(gameState, suit);
     setGameState(newState);
     setShowTrumpDeclaration(false);
+    setSelectedCards([]);
+  };
+  
+  // Confirm trump declaration with selected card
+  const handleConfirmTrumpDeclaration = () => {
+    if (!gameState || selectedCards.length === 0) return;
+    
+    const selectedCard = selectedCards[0];
+    if (selectedCard.suit) {
+      handleDeclareTrumpSuit(selectedCard.suit);
+    }
   };
 
   // Handle check for AI trump declaration
@@ -290,6 +316,7 @@ export function useGameState(config: GameConfig) {
     handlePlay,
     handleProcessPlay,
     handleDeclareTrumpSuit,
+    handleConfirmTrumpDeclaration,
     handleCheckAITrumpDeclaration,
     handleNextRound,
     startNewGame,

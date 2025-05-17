@@ -6,7 +6,9 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Animated,
+  Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Suit, TrumpInfo } from '../types/game';
 
 interface TrumpDeclarationModalProps {
@@ -35,16 +37,22 @@ const TrumpDeclarationModal: React.FC<TrumpDeclarationModalProps> = ({
       transparent={true}
       animationType="slide"
     >
-      <View style={styles.modalContainer}>
-        <Animated.View 
-          style={[
-            styles.modalContent,
-            {
-              transform: [{ scale: scaleAnim }],
-              opacity: fadeAnim
-            }
-          ]}
-        >
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity 
+          style={styles.dismissArea} 
+          activeOpacity={1}
+          onPress={() => onDeclareSuit(null)}
+        />
+        <SafeAreaView style={styles.bottomSheetContainer}>
+          <Animated.View 
+            style={[
+              styles.bottomSheet,
+              {
+                transform: [{ scale: scaleAnim }],
+                opacity: fadeAnim
+              }
+            ]}
+          >
           <Text style={styles.modalTitle}>Declare Trump Suit?</Text>
           <Text style={styles.modalText}>
             You have a {trumpInfo.trumpRank} in your hand.
@@ -93,54 +101,63 @@ const TrumpDeclarationModal: React.FC<TrumpDeclarationModalProps> = ({
           >
             <Text style={styles.skipText}>Don&apos;t Declare</Text>
           </TouchableOpacity>
-        </Animated.View>
+          </Animated.View>
+        </SafeAreaView>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
-  modalContent: {
+  dismissArea: {
+    flex: 1,
+  },
+  bottomSheetContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  bottomSheet: {
     backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 16,
-    width: '90%',
-    maxWidth: 400,
+    paddingTop: 16,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 40,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     alignItems: 'center',
-    elevation: 5,
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: 'center',
     color: '#333',
   },
   modalText: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
     color: '#666',
   },
   suitButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    marginBottom: 15,
+    marginBottom: 12,
   },
   suitButton: {
-    padding: 15,
-    margin: 5,
+    padding: 12,
+    margin: 4,
     borderRadius: 10,
     width: '45%',
     alignItems: 'center',
@@ -151,9 +168,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   suitSymbol: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   suitText: {
     fontSize: 16,
@@ -161,17 +178,17 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     backgroundColor: '#90A4AE',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
     borderRadius: 10,
-    marginTop: 5,
+    marginTop: 8,
     width: '100%',
     alignItems: 'center',
   },
   skipText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 14,
   },
 });
 
