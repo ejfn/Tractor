@@ -14,12 +14,12 @@ import CardPlayArea from '../components/CardPlayArea';
 import GameStatus from '../components/GameStatus';
 import GameSetupScreen from '../components/GameSetupScreen';
 import GameOverScreen from '../components/GameOverScreen';
-import TrumpDeclarationModal from '../components/TrumpDeclarationModal';
+// import TrumpDeclarationModal from '../components/TrumpDeclarationModal'; // Not used anymore
 import TrickResultDisplay from '../components/TrickResultDisplay';
 import RoundCompleteModal from '../components/RoundCompleteModal';
 
 // Types
-import { GameState, Card, Trick, Rank } from '../types/game';
+import { GameState, Card, Trick } from '../types/game';
 
 interface GameScreenViewProps {
   // Game state
@@ -57,6 +57,7 @@ interface GameScreenViewProps {
   onPlayCards: () => void;
   onStartNewGame: () => void;
   onDeclareTrumpSuit: (suit: any) => void;
+  onConfirmTrumpDeclaration: () => void;
   onNextRound: () => void;
   onAnimationComplete: () => void;
 }
@@ -96,6 +97,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onPlayCards,
   onStartNewGame,
   onDeclareTrumpSuit,
+  onConfirmTrumpDeclaration,
   onNextRound,
   onAnimationComplete
 }) => {
@@ -230,6 +232,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
+                  trumpDeclarationMode={showTrumpDeclaration}
+                  onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
+                  onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
                 />
               ) : null
             }
@@ -256,7 +261,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         {/* Bottom spacing view */}
         <View style={styles.bottomSpacing} />
 
-        {/* Trump declaration modal */}
+        {/* Trump declaration modal - removed in favor of in-hand selection
         <TrumpDeclarationModal
           visible={!!gameState && showTrumpDeclaration}
           trumpInfo={gameState?.trumpInfo || { trumpRank: Rank.Two, declared: false }}
@@ -264,6 +269,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           fadeAnim={fadeAnim}
           scaleAnim={scaleAnim}
         />
+        */}
         
         {/* Round complete modal */}
         <RoundCompleteModal

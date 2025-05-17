@@ -21,6 +21,9 @@ interface HumanPlayerViewProps {
     dot2: Animated.Value;
     dot3: Animated.Value;
   };
+  trumpDeclarationMode?: boolean;
+  onSkipTrumpDeclaration?: () => void;
+  onConfirmTrumpDeclaration?: () => void;
 }
 
 /**
@@ -37,7 +40,10 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   trumpInfo,
   showTrickResult = false,
   lastCompletedTrick = null,
-  thinkingDots
+  thinkingDots,
+  trumpDeclarationMode = false,
+  onSkipTrumpDeclaration,
+  onConfirmTrumpDeclaration
 }) => {
   return (
     <View style={styles.container}>
@@ -61,6 +67,9 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
         onPlayCards={onPlayCards}
         trumpInfo={trumpInfo}
         canPlay={canPlay}
+        trumpDeclarationMode={trumpDeclarationMode}
+        onSkipTrumpDeclaration={onSkipTrumpDeclaration}
+        onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
       />
     </View>
   );
@@ -71,7 +80,7 @@ const styles = StyleSheet.create({
     ...sharedStyles.playerViewContainer,
     width: '100%',
     height: '100%',
-    paddingTop: 12,
+    paddingTop: 8,
   },
 });
 

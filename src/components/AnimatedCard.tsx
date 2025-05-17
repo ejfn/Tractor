@@ -19,6 +19,7 @@ interface CardProps {
   scale?: number; // Add scale prop for bot cards
   style?: any; // Add style prop for additional styling
   onAnimationComplete?: (() => void); // Add callback for animation completion - properly typed as function
+  disabled?: boolean; // Add disabled prop for trump declaration mode
 }
 
 export const AnimatedCard: React.FC<CardProps> = ({
@@ -31,7 +32,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
   delay = 0,
   scale: cardScale = 1, // Default scale factor of 1, renamed to avoid conflict
   style = {}, // Default empty style object
-  onAnimationComplete = undefined // Explicitly set default to undefined to ensure proper typing
+  onAnimationComplete = undefined, // Explicitly set default to undefined to ensure proper typing
+  disabled = false
 }) => {
   // Animated values
   const scale = useSharedValue(cardScale);
@@ -84,7 +86,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
   // Handle card selection with improved touch response
   const handlePress = () => {
-    if (onSelect) {
+    if (onSelect && !disabled) {
       // Ensure opacity is maintained during tap animation
       opacity.value = 1;
 
@@ -168,14 +170,14 @@ export const AnimatedCard: React.FC<CardProps> = ({
         { translateY: translateY.value },
         { rotate: rotate.value }
       ],
-      // Always force opacity to be 1 to prevent any transparency effects
-      opacity: 1,
+      // Apply opacity based on disabled state - use higher opacity for better visibility
+      opacity: disabled ? 0.7 : 1,
       // Add hardware acceleration hints for smoother animations
       backfaceVisibility: 'hidden',
       // Enhanced zIndex for selected cards to ensure they appear clearly above other cards
       zIndex: selected ? (style.zIndex ? style.zIndex + 10 : 20) : (style.zIndex || 0),
     };
-  }, [selected, style.zIndex]); // Add dependencies to avoid unnecessary recalculations
+  }, [selected, disabled, style.zIndex]); // Add dependencies to avoid unnecessary recalculations
 
   // Create shadow styles separately to avoid shadowOffset error
   const shadowStyle = selected ? {

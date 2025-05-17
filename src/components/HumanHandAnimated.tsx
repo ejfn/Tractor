@@ -12,6 +12,9 @@ interface HumanHandAnimatedProps {
   onPlayCards?: () => void;
   trumpInfo: TrumpInfo;
   canPlay?: boolean;
+  trumpDeclarationMode?: boolean;
+  onSkipTrumpDeclaration?: () => void;
+  onConfirmTrumpDeclaration?: () => void;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -23,7 +26,10 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
   onCardSelect,
   onPlayCards,
   trumpInfo,
-  canPlay = false
+  canPlay = false,
+  trumpDeclarationMode = false,
+  onSkipTrumpDeclaration,
+  onConfirmTrumpDeclaration
 }) => {
   // Sort cards by suit and rank for better display
   const sortedHand = [...player.hand].sort((a, b) => {
@@ -131,19 +137,28 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
     return selectedCards.some(c => c.id === card.id);
   };
 
+  // Don't filter cards - show full hand even in trump declaration mode
+  const displayHand = sortedHand;
+  
+  // Check if card is selectable in trump declaration mode
+  const isCardSelectableForTrump = (card: CardType) => {
+    return trumpDeclarationMode ? card.rank === trumpInfo.trumpRank : true;
+  };
+    
+
   // Constants for card layout
   const cardWidth = 65;
   const cardOverlap = 40;
   const visibleCardWidth = cardWidth - cardOverlap;
 
   // Calculate total width and scrolling needs
-  const totalCardsWidth = cardWidth + (sortedHand.length - 1) * visibleCardWidth;
+  const totalCardsWidth = cardWidth + (displayHand.length - 1) * visibleCardWidth;
   const availableWidth = SCREEN_WIDTH - 40;
   const needsScrolling = totalCardsWidth > availableWidth;
 
   return (
     <View style={styles.container} testID="player-hand-animated">
-      <View style={styles.cardsScrollContainer}>
+      <View style={styles.handContainer}>
         <ScrollView
           horizontal={true}
           showsHorizontalScrollIndicator={false}
@@ -158,7 +173,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
           scrollEnabled={true}
         >
           <View style={styles.cardRow}>
-            {sortedHand.map((card, index) => (
+            {displayHand.map((card, index) => (
               <View
                 key={card.id}
                 style={[
@@ -172,19 +187,44 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
               >
                 <AnimatedCardComponent
                   card={card}
-                  onSelect={isCurrentPlayer ? onCardSelect : undefined}
+                  onSelect={isCurrentPlayer && isCardSelectableForTrump(card) ? onCardSelect : undefined}
                   selected={isCardSelected(card)}
                   faceDown={false}
                   isTrump={isTrump(card, trumpInfo)}
                   delay={index * 30}
+                  disabled={trumpDeclarationMode && !isCardSelectableForTrump(card)}
                 />
               </View>
             ))}
           </View>
         </ScrollView>
       </View>
-
-      {canPlay && selectedCards.length > 0 && onPlayCards && (
+      
+      {trumpDeclarationMode && (
+        <View style={styles.trumpDeclareSimple}>
+          <Text style={styles.trumpDeclareText}>
+            Select a {trumpInfo.trumpRank} to declare trump
+          </Text>
+          <View style={styles.buttonRow}>
+            {selectedCards.length > 0 && onConfirmTrumpDeclaration && (
+              <TouchableOpacity
+                style={styles.confirmButtonSimple}
+                onPress={onConfirmTrumpDeclaration}
+              >
+                <Text style={styles.buttonText}>OK</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.skipButtonSimple}
+              onPress={onSkipTrumpDeclaration}
+            >
+              <Text style={styles.buttonText}>Skip</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      
+      {!trumpDeclarationMode && canPlay && selectedCards.length > 0 && onPlayCards && (
         <View style={styles.playButtonContainer}>
           <TouchableOpacity
             style={styles.playButton}
@@ -203,17 +243,17 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     width: '100%',
-    paddingHorizontal: 8,
-    position: 'relative',
+    height: '100%',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
     backgroundColor: 'transparent',
   },
-  cardsScrollContainer: {
-    width: '100%',
+  handContainer: {
     height: 140,
-    backgroundColor: 'transparent',
-    position: 'relative',
+    width: '100%',
+    paddingHorizontal: 4,
+    marginTop: 10,
   },
   scrollViewStyle: {
     width: '100%',
@@ -222,8 +262,8 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     minWidth: '100%',
-    paddingTop: 45,
-    paddingBottom: 10,
+    paddingTop: 35,
+    paddingBottom: 20,
     paddingHorizontal: 10,
     flexDirection: 'row',
   },
@@ -239,7 +279,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     zIndex: 100,
   },
   playButton: {
@@ -267,6 +308,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     flexShrink: 1,
+  },
+  trumpDeclareSimple: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  trumpDeclareText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+  },
+  confirmButtonSimple: {
+    backgroundColor: '#3F51B5',
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  skipButtonSimple: {
+    backgroundColor: '#6C757D',
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

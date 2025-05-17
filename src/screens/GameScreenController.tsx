@@ -45,6 +45,7 @@ const GameScreenController: React.FC = () => {
     handlePlay,
     handleProcessPlay,
     handleDeclareTrumpSuit,
+    handleConfirmTrumpDeclaration,
     handleCheckAITrumpDeclaration,
     handleNextRound,
     startNewGame,
@@ -173,6 +174,7 @@ const GameScreenController: React.FC = () => {
       onPlayCards={handlePlay}
       onStartNewGame={startNewGame}
       onDeclareTrumpSuit={handleDeclareTrumpSuit}
+      onConfirmTrumpDeclaration={handleConfirmTrumpDeclaration}
       onNextRound={handleNextRound}
       onAnimationComplete={onAnimationComplete}
     />
