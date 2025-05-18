@@ -76,6 +76,9 @@ git push origin ejfn/add-new-feature -u
 gh pr create --title "Your PR title" --body "Description"
 ```
 
+### Git Workflow Notes
+- Do not commit directly into main branch
+
 ### EAS CLI
 
 EAS CLI is a project dependency. Always use `npx`:

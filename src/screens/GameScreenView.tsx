@@ -243,7 +243,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
-                  isTransitioningTricks={isTransitioningTricks}
                   trumpDeclarationMode={showTrumpDeclaration}
                   onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
                   onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
