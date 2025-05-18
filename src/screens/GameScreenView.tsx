@@ -4,6 +4,7 @@ import {
   View,
   Text,
   Animated,
+  TouchableOpacity,
 } from 'react-native';
 
 // Components
@@ -125,6 +126,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
     );
   }
   
+  
   // Loading state
   if (!gameState) {
     return (
@@ -172,6 +174,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           roundNumber={gameState.roundNumber}
           gamePhase={gameState.gamePhase}
         />
+
 
         {/* Container with bottom margin */}
         <View style={styles.tableContainer}>
@@ -270,9 +273,10 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           scaleAnim={scaleAnim}
         />
         */}
+        
       </Animated.View>
       
-      {/* Round complete modal - moved outside animated container */}
+      {/* Round complete modal - outside of AnimatedView */}
       <RoundCompleteModal
         visible={showRoundComplete}
         message={roundCompleteMessage}

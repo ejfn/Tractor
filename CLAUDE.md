@@ -26,6 +26,9 @@ npm run lint
 
 # Type checking
 npm run typecheck
+
+# Run all quality checks
+npm run qualitycheck  # Runs typecheck, lint, and test
 ```
 
 ### Project Structure

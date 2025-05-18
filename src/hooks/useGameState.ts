@@ -16,6 +16,7 @@ import {
 } from '../utils/gamePlayManager';
 // import { MOVE_COMPLETION_DELAY } from '../utils/gameTimings';
 
+
 /**
  * Configuration for the game setup
  */
@@ -302,6 +303,7 @@ export function useGameState(config: GameConfig) {
     }
   };
 
+
   return {
     // State
     gameState,
@@ -329,6 +331,7 @@ export function useGameState(config: GameConfig) {
     handleNextRound,
     startNewGame,
     handleTrickResultComplete,
+    
     
     // Setters
     setGameState,

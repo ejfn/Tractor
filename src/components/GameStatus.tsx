@@ -16,26 +16,8 @@ const GameStatus: React.FC<GameStatusProps> = ({
   gamePhase
 }) => {
   // Animation values
-  const scoreAnimation = useRef(new Animated.Value(0)).current;
   const phaseAnimation = useRef(new Animated.Value(0)).current;
   const trumpAnimation = useRef(new Animated.Value(0)).current;
-  
-  // Trigger animations when props change
-  useEffect(() => {
-    Animated.sequence([
-      Animated.timing(scoreAnimation, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scoreAnimation, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-        delay: 1000,
-      })
-    ]).start();
-  }, [teams, scoreAnimation]);
   
   useEffect(() => {
     Animated.sequence([
@@ -70,12 +52,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
     ]).start();
   }, [trumpInfo, trumpAnimation]);
   
-  // Animations for pulse effect
-  const pulseScale = scoreAnimation.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.05, 1]
-  });
-  
+  // Animations for phase and trump
   const phaseScale = phaseAnimation.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: [1, 1.1, 1]
@@ -134,12 +111,11 @@ const GameStatus: React.FC<GameStatusProps> = ({
       
       <View style={styles.teamsContainer}>
         {teams.map(team => (
-          <Animated.View 
+          <View 
             key={team.id}
             style={[
               styles.teamCard,
-              team.isDefending ? styles.defendingTeam : styles.attackingTeam,
-              { transform: [{ scale: pulseScale }] }
+              team.isDefending ? styles.defendingTeam : styles.attackingTeam
             ]}
           >
             <View style={styles.teamHeader}>
@@ -186,7 +162,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
                 />
               </View>
             )}
-          </Animated.View>
+          </View>
         ))}
       </View>
     </View>
