@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trick } from '../types/game';
 import { 
-  TRICK_RESULT_DISPLAY_TIME
+  TRICK_RESULT_DISPLAY_TIME,
+  STATE_UPDATE_SYNC_DELAY
 } from '../utils/gameTimings';
 
 /**
@@ -13,6 +14,7 @@ export function useTrickResults() {
   const [lastTrickWinner, setLastTrickWinner] = useState('');
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
   const [lastCompletedTrick, setLastCompletedTrick] = useState<Trick & { winningPlayerId?: string } | null>(null);
+  const [isTransitioningTricks, setIsTransitioningTricks] = useState(false);
   
   // Create a callback ref that will be set by the parent component
   // This will be called when it's safe to clear the currentTrick in the game state
@@ -65,7 +67,9 @@ export function useTrickResults() {
           setShowTrickResult(false);
           // Clear the completed trick data
           setLastCompletedTrick(null);
-        }, 100); // Short delay to ensure state updates happen together
+          // Mark transition as complete
+          setIsTransitioningTricks(false);
+        }, STATE_UPDATE_SYNC_DELAY);
       }, TRICK_RESULT_DISPLAY_TIME);
     }
     
@@ -87,7 +91,8 @@ export function useTrickResults() {
     setLastTrickWinner(winnerName);
     setLastTrickPoints(points);
     
-    // Prepare to show result
+    // Mark that we're transitioning between tricks
+    setIsTransitioningTricks(true);
     
     // Show the result
     setShowTrickResult(true);
@@ -103,6 +108,7 @@ export function useTrickResults() {
     lastTrickWinner,
     lastTrickPoints,
     lastCompletedTrick,
+    isTransitioningTricks,
     setLastCompletedTrick,
     handleTrickCompletion,
     handleTrickAnimationComplete,

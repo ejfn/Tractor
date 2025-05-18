@@ -14,7 +14,11 @@ import {
   processPlay,
   validatePlay
 } from '../utils/gamePlayManager';
-import { TRICK_RESULT_DISPLAY_TIME } from '../utils/gameTimings';
+import { 
+  TRICK_RESULT_DISPLAY_TIME,
+  CARD_SELECTION_DELAY,
+  ROUND_COMPLETE_BUFFER 
+} from '../utils/gameTimings';
 
 
 /**
@@ -138,7 +142,7 @@ export function useGameState(config: GameConfig) {
       
       // Process the play - this will remove cards from the player's hand
       handleProcessPlay(cardsToPlay);
-    }, 250); // Short delay just to keep the UI responsive
+    }, CARD_SELECTION_DELAY);
   };
 
   // Process a play (wrapper around the utility function)
@@ -186,7 +190,7 @@ export function useGameState(config: GameConfig) {
         // Add delay to ensure trick result displays before round complete modal
         setTimeout(() => {
           handleEndRound(endingState);
-        }, TRICK_RESULT_DISPLAY_TIME + 500); // Wait for trick result to finish + small buffer
+        }, TRICK_RESULT_DISPLAY_TIME + ROUND_COMPLETE_BUFFER);
       }
     } else {
       // Regular play (not completing a trick)

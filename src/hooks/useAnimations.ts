@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { Animated, Dimensions } from 'react-native';
+import { THINKING_DOTS_INTERVAL } from '../utils/gameTimings';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -139,9 +140,9 @@ export function useThinkingDots() {
           })
         ]).start(() => {
           // After all animations complete, wait briefly and restart
-          timersRef.current.timer3 = setTimeout(animateThinkingDots, 300);
+          timersRef.current.timer3 = setTimeout(animateThinkingDots, THINKING_DOTS_INTERVAL);
         });
-      }, 300);
+      }, THINKING_DOTS_INTERVAL);
     };
 
     // Start the animation loop

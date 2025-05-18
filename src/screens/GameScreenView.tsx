@@ -44,6 +44,7 @@ interface GameScreenViewProps {
   showRoundComplete: boolean;
   roundCompleteMessage: string;
   teamNames: [string, string];
+  isTransitioningTricks: boolean;
   
   // Animations
   fadeAnim: Animated.Value;
@@ -88,6 +89,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   showRoundComplete,
   roundCompleteMessage,
   teamNames,
+  isTransitioningTricks,
   
   // Animations
   fadeAnim,
@@ -241,6 +243,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
+                  isTransitioningTricks={isTransitioningTricks}
                   trumpDeclarationMode={showTrumpDeclaration}
                   onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
                   onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
