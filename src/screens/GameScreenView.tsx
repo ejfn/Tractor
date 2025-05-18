@@ -21,6 +21,9 @@ import RoundCompleteModal from '../components/RoundCompleteModal';
 // Types
 import { GameState, Card, Trick } from '../types/game';
 
+// Utils
+import { validatePlay } from '../utils/gamePlayManager';
+
 interface GameScreenViewProps {
   // Game state
   gameState: GameState | null;
@@ -41,6 +44,7 @@ interface GameScreenViewProps {
   showRoundComplete: boolean;
   roundCompleteMessage: string;
   teamNames: [string, string];
+  isTransitioningTricks: boolean;
   
   // Animations
   fadeAnim: Animated.Value;
@@ -85,6 +89,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   showRoundComplete,
   roundCompleteMessage,
   teamNames,
+  isTransitioningTricks,
   
   // Animations
   fadeAnim,
@@ -144,6 +149,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   
   const isPlayerCurrentTurn = gameState.currentPlayerIndex === humanPlayerIndex;
   const canPlay = gameState.gamePhase === 'playing' && isPlayerCurrentTurn;
+  
+  // Check if selected cards are valid to play
+  const isValidPlay = selectedCards.length > 0 && validatePlay(gameState, selectedCards);
   
   // Team ID for each player
   const getPlayerTeam = (playerId: string) => {
@@ -230,10 +238,12 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   onCardSelect={onCardSelect}
                   onPlayCards={onPlayCards}
                   canPlay={canPlay}
+                  isValidPlay={isValidPlay}
                   trumpInfo={gameState.trumpInfo}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
+                  isTransitioningTricks={isTransitioningTricks}
                   trumpDeclarationMode={showTrumpDeclaration}
                   onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
                   onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}

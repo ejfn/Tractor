@@ -16,3 +16,11 @@ export const ANIMATION_COMPLETION_DELAY = 500;  // Delay after animations comple
 
 // Card animation timings
 export const CARD_ANIMATION_FALLBACK = 1000;    // Fallback timeout for card animations if callback fails
+
+// UI interaction timings
+export const CARD_SELECTION_DELAY = 250;        // Delay before processing human card selection
+export const ROUND_COMPLETE_BUFFER = 500;       // Additional buffer after trick result before round complete modal
+export const STATE_UPDATE_SYNC_DELAY = 100;     // Short delay to ensure state updates happen together
+
+// Animation loop timings
+export const THINKING_DOTS_INTERVAL = 300;      // Interval for thinking dots animation loop

@@ -5,7 +5,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Animated,
-  Dimensions 
+  Dimensions,
+  SafeAreaView 
 } from 'react-native';
 
 interface GameOverScreenProps {
@@ -78,7 +79,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
   });
   
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Confetti animations */}
       <Animated.Text 
         style={[
@@ -164,7 +165,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
           </View>
         </TouchableOpacity>
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 };
 

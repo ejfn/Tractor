@@ -12,6 +12,7 @@ interface HumanHandAnimatedProps {
   onPlayCards?: () => void;
   trumpInfo: TrumpInfo;
   canPlay?: boolean;
+  isValidPlay?: boolean;
   trumpDeclarationMode?: boolean;
   onSkipTrumpDeclaration?: () => void;
   onConfirmTrumpDeclaration?: () => void;
@@ -29,6 +30,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
   onPlayCards,
   trumpInfo,
   canPlay = false,
+  isValidPlay = true,
   trumpDeclarationMode = false,
   onSkipTrumpDeclaration,
   onConfirmTrumpDeclaration,
@@ -231,11 +233,12 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
       {!trumpDeclarationMode && canPlay && selectedCards.length > 0 && onPlayCards && (
         <View style={styles.playButtonContainer}>
           <TouchableOpacity
-            style={styles.playButton}
+            style={[styles.playButton, !isValidPlay && styles.disabledButton]}
             onPress={onPlayCards}
+            disabled={!isValidPlay}
             hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
           >
-            <Text style={styles.playButtonText}>
+            <Text style={[styles.playButtonText, !isValidPlay && styles.disabledButtonText]}>
               {selectedCards.length === 1 ? 'Play 1 Card' : `Play ${selectedCards.length} Cards`}
             </Text>
           </TouchableOpacity>
@@ -317,6 +320,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     alignItems: 'center',
+    marginTop: -10, // Move up by 10 pixels
   },
   trumpDeclareText: {
     fontSize: 14,
@@ -348,6 +352,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  disabledButton: {
+    backgroundColor: 'rgba(128, 128, 128, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    opacity: 0.6,
+  },
+  disabledButtonText: {
+    color: 'rgba(255, 255, 255, 0.5)',
   },
 });
 

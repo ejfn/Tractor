@@ -123,11 +123,24 @@ npx eas --version
 ### Timing Constants
 
 ```typescript
-AI_MOVE_DELAY = 800ms              // AI thinking animation
-MOVE_COMPLETION_DELAY = 1200ms     // Time to see played cards
+// Player move timings
+AI_MOVE_DELAY = 600ms              // AI thinking animation
+MOVE_COMPLETION_DELAY = 1000ms     // Time to see played cards
+
+// Trick result display timings
+TRICK_RESULT_DISPLAY_TIME = 1500ms // Trick result display
+ANIMATION_COMPLETION_DELAY = 500ms // Post-animation delay
+
+// Card animation timings
 CARD_ANIMATION_FALLBACK = 1000ms   // Max animation wait
-ANIMATION_COMPLETION_DELAY = 200ms // Post-animation delay
-TRICK_RESULT_DISPLAY_TIME = 2000ms // Trick result display
+
+// UI interaction timings
+CARD_SELECTION_DELAY = 250ms       // Human card selection feedback
+ROUND_COMPLETE_BUFFER = 500ms      // Buffer after trick result
+STATE_UPDATE_SYNC_DELAY = 100ms    // State update synchronization
+
+// Animation loop timings
+THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 ```
 
 ## UI Implementation

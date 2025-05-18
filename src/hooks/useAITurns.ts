@@ -148,7 +148,7 @@ export function useAITurns(
     const currentTrickComplete = gameState.currentTrick && 
       gameState.currentTrick.plays.length === gameState.players.length - 1;
     
-    // Block processing if showing trick result, round complete, trick is complete, or not playing
+    // Block processing if showing trick result, round complete, trick is complete, or not in playing phase
     if (showTrickResult || lastCompletedTrick || showRoundComplete || 
         gameState.gamePhase !== 'playing' || currentTrickComplete) {
       return;

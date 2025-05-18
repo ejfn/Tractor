@@ -59,6 +59,7 @@ const GameScreenController: React.FC = () => {
     lastTrickWinner,
     lastTrickPoints,
     lastCompletedTrick,
+    isTransitioningTricks,
     setLastCompletedTrick,
     handleTrickCompletion,
     handleTrickAnimationComplete,
@@ -163,6 +164,7 @@ const GameScreenController: React.FC = () => {
       showRoundComplete={showRoundComplete}
       roundCompleteMessage={roundCompleteMessage}
       teamNames={gameConfig.teamNames}
+      isTransitioningTricks={isTransitioningTricks}
       
       // Animations
       fadeAnim={fadeAnim}

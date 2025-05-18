@@ -14,7 +14,11 @@ import {
   processPlay,
   validatePlay
 } from '../utils/gamePlayManager';
-// import { MOVE_COMPLETION_DELAY } from '../utils/gameTimings';
+import { 
+  TRICK_RESULT_DISPLAY_TIME,
+  CARD_SELECTION_DELAY,
+  ROUND_COMPLETE_BUFFER 
+} from '../utils/gameTimings';
 
 
 /**
@@ -138,7 +142,7 @@ export function useGameState(config: GameConfig) {
       
       // Process the play - this will remove cards from the player's hand
       handleProcessPlay(cardsToPlay);
-    }, 250); // Short delay just to keep the UI responsive
+    }, CARD_SELECTION_DELAY);
   };
 
   // Process a play (wrapper around the utility function)
@@ -179,7 +183,14 @@ export function useGameState(config: GameConfig) {
       // Check for end of round (no cards left)
       const allCardsPlayed = result.newState.players.every(p => p.hand.length === 0);
       if (allCardsPlayed) {
-        handleEndRound(result.newState);
+        // Set game phase to 'roundEnd' to prevent AI moves
+        const endingState = { ...result.newState, gamePhase: 'roundEnd' as const };
+        setGameState(endingState);
+        
+        // Add delay to ensure trick result displays before round complete modal
+        setTimeout(() => {
+          handleEndRound(endingState);
+        }, TRICK_RESULT_DISPLAY_TIME + ROUND_COMPLETE_BUFFER);
       }
     } else {
       // Regular play (not completing a trick)
@@ -234,6 +245,9 @@ export function useGameState(config: GameConfig) {
     const result = endRound(state);
     
     if (result.gameOver) {
+      // Set game phase to 'gameOver' to prevent AI moves
+      const gameOverState = { ...state, gamePhase: 'gameOver' as const };
+      setGameState(gameOverState);
       setGameOver(true);
       setWinner(result.winner);
     } else {
