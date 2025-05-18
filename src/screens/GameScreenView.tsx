@@ -4,7 +4,6 @@ import {
   View,
   Text,
   Animated,
-  TouchableOpacity,
 } from 'react-native';
 
 // Components

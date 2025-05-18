@@ -70,7 +70,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         })
       ),
     ]).start();
-  }, []);
+  }, [confettiAnim1, confettiAnim2, confettiAnim3, floatAnim]);
   
   const translateY = floatAnim.interpolate({
     inputRange: [0, 1],
@@ -168,7 +168,6 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
   );
 };
 
-const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {

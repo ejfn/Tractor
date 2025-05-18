@@ -5,8 +5,7 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Modal,
-  Animated,
-  Dimensions
+  Animated
 } from 'react-native';
 
 interface RoundCompleteModalProps {
@@ -56,7 +55,7 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, bounceAnim, fadeAnim, scaleAnim]);
   
   if (!visible) return null;
   
@@ -118,7 +117,6 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   );
 };
 
-const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   overlay: {
