@@ -59,25 +59,30 @@ npm run qualitycheck  # Runs all checks
 
 ### Git Workflow
 
-This repository has branch protection rules. All changes must go through pull requests:
+**IMPORTANT: The main branch is protected. All changes MUST go through pull requests.**
 
 ```bash
-# 1. Create feature branch (format: {user}/{feature-name})
+# 1. ALWAYS create a feature branch (format: {user}/{feature-name})
 git checkout -b ejfn/add-new-feature
 
 # 2. Make changes and commit
 git add .
 git commit -m "Your commit message"
 
-# 3. Push to origin
+# 3. Push to origin (NEVER push to main directly)
 git push origin ejfn/add-new-feature -u
 
-# 4. Create PR
+# 4. Create PR for review
 gh pr create --title "Your PR title" --body "Description"
 ```
 
-### Git Workflow Notes
-- Do not commit directly into main branch
+### Git Workflow Rules
+
+- **NEVER commit or push directly to main branch**
+- **ALWAYS create a feature branch for any changes**
+- **ALWAYS create a pull request for code review**
+- The main branch requires PR approval before merging
+- Use descriptive branch names: `ejfn/fix-scoring`, `ejfn/add-tests`
 
 ### EAS CLI
 
@@ -149,17 +154,20 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 ## UI Implementation
 
 ### Card Rendering
+
 - Human cards: 65x95px (bottom)
 - AI cards: 40x60px (top, left, right)
 - Card backs: 3x3 grid with "T" emblem
 
 ### Player Layout
+
 - **Human**: Bottom, no label, -40px overlap
 - **Bot 1**: Left, rotated 90°, -48px vertical overlap
 - **Bot 2**: Top, rotated 180°, -30px horizontal overlap
 - **Bot 3**: Right, rotated 270°, -48px vertical overlap
 
 ### Performance Optimizations
+
 - React Native rendering flags enabled
 - Minimal shadows
 - Single AI strategy (no difficulty settings)
@@ -169,6 +177,7 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 ## Technical Notes
 
 ### Trick Completion Flow
+
 1. All 4 players play cards
 2. Determine winner, store in `winningPlayerIndex`
 3. Display trick result for 2 seconds
@@ -176,7 +185,9 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 5. Winner leads next trick
 
 ### Card Suit Ordering
+
 Trump suit rotates to first position while maintaining alternating black-red pattern:
+
 - No trump: ♠ ♥ ♣ ♦
 - Hearts trump: ♥ ♣ ♦ ♠
 - Clubs trump: ♣ ♦ ♠ ♥
@@ -184,6 +195,7 @@ Trump suit rotates to first position while maintaining alternating black-red pat
 - Spades trump: ♠ ♥ ♣ ♦
 
 ### Important Rules
+
 - Different suits never form pairs/tractors
 - Trump combos beat non-trump combos of same type
 - Leading player's cards stored in `trick.leadingCombo`
