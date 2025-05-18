@@ -79,7 +79,7 @@ export type GameState = {
   roundNumber: number;
   currentPlayerIndex: number;
   winningPlayerIndex?: number; // Stores index of the trick winner who will lead next trick
-  gamePhase: 'dealing' | 'declaring' | 'playing' | 'scoring' | 'gameOver';
+  gamePhase: 'dealing' | 'declaring' | 'playing' | 'scoring' | 'roundEnd' | 'gameOver';
 };
 
 // Combination types for valid plays

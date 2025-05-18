@@ -13,6 +13,7 @@ interface HumanPlayerViewProps {
   onCardSelect: (card: Card) => void;
   onPlayCards: () => void;
   canPlay: boolean;
+  isValidPlay?: boolean;
   trumpInfo: TrumpInfo;
   showTrickResult?: boolean;
   lastCompletedTrick?: any;
@@ -37,6 +38,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   onCardSelect,
   onPlayCards,
   canPlay,
+  isValidPlay = true,
   trumpInfo,
   showTrickResult = false,
   lastCompletedTrick = null,
@@ -67,6 +69,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
         onPlayCards={onPlayCards}
         trumpInfo={trumpInfo}
         canPlay={canPlay}
+        isValidPlay={isValidPlay}
         trumpDeclarationMode={trumpDeclarationMode}
         onSkipTrumpDeclaration={onSkipTrumpDeclaration}
         onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}

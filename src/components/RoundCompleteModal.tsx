@@ -5,7 +5,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Modal,
-  Animated
+  Animated,
+  SafeAreaView
 } from 'react-native';
 
 interface RoundCompleteModalProps {
@@ -70,20 +71,20 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
       transparent={true}
       animationType="fade"
       onRequestClose={onNextRound}
-      style={{ zIndex: 9999 }}
     >
-      <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+      <SafeAreaView style={styles.modalWrapper}>
+        <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
         <Animated.View 
-          style={[
-            styles.modalContent,
-            {
-              transform: [
-                { scale: scaleAnim },
-                { translateY: translateY }
-              ]
-            }
-          ]}
-        >
+            style={[
+              styles.modalContent,
+              {
+                transform: [
+                  { scale: scaleAnim },
+                  { translateY: translateY }
+                ]
+              }
+            ]}
+          >
           {/* Background effects */}
           <View style={styles.backgroundDeco1} />
           <View style={styles.backgroundDeco2} />
@@ -113,24 +114,22 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
           <View style={[styles.corner, styles.bottomRight]} />
         </Animated.View>
       </Animated.View>
+      </SafeAreaView>
     </Modal>
   );
 };
 
 
 const styles = StyleSheet.create({
+  modalWrapper: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
   },
   modalContent: {
     backgroundColor: '#FAFAFA',
