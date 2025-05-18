@@ -62,6 +62,7 @@ export function useGameState(config: GameConfig) {
     if (!showSetupInternal && !gameState) {
       initGame();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array for mount only
 
   // Initialize game
