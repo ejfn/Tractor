@@ -193,7 +193,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
               >
                 <AnimatedCardComponent
                   card={card}
-                  onSelect={isCurrentPlayer && isCardSelectableForTrump(card) && !showTrickResult && !lastCompletedTrick ? onCardSelect : undefined}
+                  onSelect={(trumpDeclarationMode || isCurrentPlayer) && isCardSelectableForTrump(card) && !showTrickResult && !lastCompletedTrick ? onCardSelect : undefined}
                   selected={isCardSelected(card)}
                   faceDown={false}
                   isTrump={isTrump(card, trumpInfo)}
