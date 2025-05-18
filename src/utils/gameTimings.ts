@@ -7,11 +7,11 @@
  */
 
 // Player move timings
-export const AI_MOVE_DELAY = 800;           // Delay before AI makes a move (thinking animation time)
-export const MOVE_COMPLETION_DELAY = 1200;  // Delay after any player's move completes
+export const AI_MOVE_DELAY = 600;           // Delay before AI makes a move (thinking animation time)
+export const MOVE_COMPLETION_DELAY = 1000;  // Delay after any player's move completes
 
 // Trick result display timings
-export const TRICK_RESULT_DISPLAY_TIME = 2000;  // Duration to show the trick result notification
+export const TRICK_RESULT_DISPLAY_TIME = 1500;  // Duration to show the trick result notification
 export const ANIMATION_COMPLETION_DELAY = 500;  // Delay after animations complete before processing next step
 
 // Card animation timings

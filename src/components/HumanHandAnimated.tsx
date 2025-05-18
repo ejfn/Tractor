@@ -15,6 +15,8 @@ interface HumanHandAnimatedProps {
   trumpDeclarationMode?: boolean;
   onSkipTrumpDeclaration?: () => void;
   onConfirmTrumpDeclaration?: () => void;
+  showTrickResult?: boolean;
+  lastCompletedTrick?: any;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -29,7 +31,9 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
   canPlay = false,
   trumpDeclarationMode = false,
   onSkipTrumpDeclaration,
-  onConfirmTrumpDeclaration
+  onConfirmTrumpDeclaration,
+  showTrickResult = false,
+  lastCompletedTrick = null
 }) => {
   // Sort cards by suit and rank for better display
   const sortedHand = [...player.hand].sort((a, b) => {
@@ -187,7 +191,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
               >
                 <AnimatedCardComponent
                   card={card}
-                  onSelect={isCurrentPlayer && isCardSelectableForTrump(card) ? onCardSelect : undefined}
+                  onSelect={isCurrentPlayer && isCardSelectableForTrump(card) && !showTrickResult && !lastCompletedTrick ? onCardSelect : undefined}
                   selected={isCardSelected(card)}
                   faceDown={false}
                   isTrump={isTrump(card, trumpInfo)}

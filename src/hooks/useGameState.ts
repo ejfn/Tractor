@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { GameState, Card, Suit, Rank } from '../types/game';
 import { initializeGame } from '../utils/gameLogic';
 import { 
@@ -56,6 +56,14 @@ export function useGameState(config: GameConfig) {
   
   // Ref for trick completion data (used for communication with other hooks)
   const trickCompletionDataRef = useRef<TrickCompletionData | null>(null);
+
+  // Initialize game on component mount if no game state exists
+  useEffect(() => {
+    if (!showSetupInternal && !gameState) {
+      initGame();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array for mount only
 
   // Initialize game
   const initGame = () => {

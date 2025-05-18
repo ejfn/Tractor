@@ -270,16 +270,16 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           scaleAnim={scaleAnim}
         />
         */}
-        
-        {/* Round complete modal */}
-        <RoundCompleteModal
-          visible={showRoundComplete}
-          message={roundCompleteMessage}
-          onNextRound={onNextRound}
-          fadeAnim={fadeAnim}
-          scaleAnim={scaleAnim}
-        />
       </Animated.View>
+      
+      {/* Round complete modal - moved outside animated container */}
+      <RoundCompleteModal
+        visible={showRoundComplete}
+        message={roundCompleteMessage}
+        onNextRound={onNextRound}
+        fadeAnim={fadeAnim}
+        scaleAnim={scaleAnim}
+      />
     </View>
   );
 };
