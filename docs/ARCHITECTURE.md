@@ -164,6 +164,45 @@ The game uses React Native's Animated API for fluid card interactions:
 3. **Interpolation**: Translates animation progress to visual properties
 4. **Performance**: Uses native driver where possible for smooth performance
 
+## Scoring and Rank Advancement Rules
+
+### Point Scoring
+
+- **5s**: 5 points each
+- **10s and Kings**: 10 points each
+- **Other cards**: 0 points
+- **Target**: Attacking team needs 80+ points to win the round
+
+### Rank Advancement Rules
+
+#### When Defending Team Successfully Defends (Attackers < 80 points)
+
+The defending team advances based on the attacking team's points:
+
+- **40-79 points**: Defenders advance +1 rank
+- **< 40 points**: Defenders advance +2 ranks
+- **0 points**: Defenders advance +3 ranks
+
+#### When Attacking Team Wins (Attackers ≥ 80 points)
+
+The attacking team becomes the new defending team and:
+
+- **80-119 points**: Play at their current rank (no advancement)
+- **120-159 points**: Advance +1 rank
+- **160-199 points**: Advance +2 ranks
+- **Pattern**: For every additional 40 points beyond 80, advance +1 rank
+
+#### Examples
+
+Scenario: Team A at rank 5, Team B at rank 3 (defending)
+
+- Team A scores 60 points → Team B advances to rank 4, remains defending
+- Team A scores 25 points → Team B advances to rank 5, remains defending
+- Team A scores 0 points → Team B advances to rank 6, remains defending
+- Team A scores 100 points → Team A becomes defending at rank 5
+- Team A scores 140 points → Team A becomes defending at rank 6
+- Team A scores 180 points → Team A becomes defending at rank 7
+
 ## Performance Considerations
 
 - **Component Memoization**: Key components use React.memo to prevent unnecessary rerenders

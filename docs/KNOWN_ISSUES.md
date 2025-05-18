@@ -112,3 +112,67 @@ The human player's thinking indicator briefly flashes when the human wins a tric
 - Consider deeper refactoring of state transition timing
 - Investigate if trick completion and UI state updates can be better synchronized
 - May require changes to how `currentPlayerIndex` is updated relative to UI state
+
+## Game Rules Issues
+
+### Next Round Starting Player
+
+**Status**: Known Issue
+
+**Description**:
+The game currently selects the first player from the defending team to start the next round, but this doesn't follow the correct Tractor/Shengji rules.
+
+**Technical Details**:
+- Current implementation in `gameRoundManager.ts` uses `defendingPlayers[0]`
+- Correct rules should be:
+  - **First round**: Trump declarer goes first, their team becomes defending
+  - **Following rounds**:
+    - If defending team defends: The OTHER player in defending team plays first
+    - If attacking team wins: The next player (clockwise) from attacking team plays first
+- Current implementation doesn't track who declared trump or alternate between teammates
+
+**Current State**:
+- Always selects first player from array of defending team players
+- Doesn't alternate between teammates when defending team wins
+- Doesn't rotate correctly when attacking team wins
+- May result in same player always going first
+
+**Example Issues**:
+- If Human & Bot2 (Team A) defend and win, Bot2 should play first next round, not Human
+- If Bot1 & Bot3 (Team B) attack and win, the next player after current should play first
+
+**Next Steps**:
+- Track trump declarer for first round
+- Implement teammate alternation for defending team wins
+- Implement clockwise rotation for attacking team wins
+- Add tests to verify correct player selection logic
+
+### Game Rotation Direction
+
+**Status**: Known Issue
+
+**Description**:
+The game currently uses clockwise rotation for player turns and next player selection, but traditional Tractor/Shengji is played counter-clockwise.
+
+**Technical Details**:
+- Current implementation rotates clockwise (Human → Bot1 → Bot2 → Bot3)
+- Traditional game should rotate counter-clockwise (Human → Bot3 → Bot2 → Bot1)
+- Affects:
+  - Turn order during tricks
+  - Next player selection when attacking team wins
+  - Player positioning expectations
+
+**Current State**:
+- All player rotations are clockwise
+- May confuse players familiar with traditional counter-clockwise play
+- Impacts strategic play as position-based strategies are reversed
+
+**Example Issues**:
+- When attacking team wins, next player is selected clockwise instead of counter-clockwise
+- During tricks, play proceeds clockwise instead of the traditional counter-clockwise
+
+**Next Steps**:
+- Update player rotation logic throughout the codebase
+- Modify next player selection to use counter-clockwise order
+- Update UI player positions if needed
+- Add tests to verify counter-clockwise rotation

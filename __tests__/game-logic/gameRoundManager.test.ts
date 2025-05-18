@@ -233,8 +233,8 @@ describe('gameRoundManager', () => {
       // Verify game is not over yet
       expect(result.gameOver).toBe(false);
       
-      // Verify team B's rank was increased
-      expect(result.newState.teams[1].currentRank).toBe(Rank.Three);
+      // Verify team B's rank was NOT increased (with 80 points exactly, they don't advance)
+      expect(result.newState.teams[1].currentRank).toBe(Rank.Two);
       
       // Verify defending status was swapped
       expect(result.newState.teams[0].isDefending).toBe(false);
@@ -242,26 +242,26 @@ describe('gameRoundManager', () => {
       
       // Verify round complete message
       expect(result.roundCompleteMessage).toContain('Team B');
-      expect(result.roundCompleteMessage).toContain('rank 3');
+      expect(result.roundCompleteMessage).toContain('will defend at rank 2');
     });
 
     test('should end the round with defending team winning', () => {
       const mockState = createMockGameState();
       
-      // Team A is defending and has more points
+      // Team A is defending
       mockState.teams[0].isDefending = true;
       mockState.teams[1].isDefending = false;
       
-      // Attacking team has less than 80 points
-      mockState.teams[0].points = 70;
-      mockState.teams[1].points = 30;
+      // Attacking team (B) has less than 40 points, so defending team advances 2 ranks
+      mockState.teams[0].points = 0;  // Defending team points
+      mockState.teams[1].points = 30; // Attacking team points
       
       const result = endRound(mockState);
       
       // Note: gamePhase is not updated by endRound function
       
-      // Verify defending team's rank increases
-      expect(result.newState.teams[0].currentRank).toBe(Rank.Three);
+      // Verify defending team's rank increases by 2 (from Rank.Two to Rank.Four)
+      expect(result.newState.teams[0].currentRank).toBe(Rank.Four);
       
       // Verify winner is null (since it's just a rank advancement)
       expect(result.winner).toBe(null);
@@ -275,36 +275,34 @@ describe('gameRoundManager', () => {
       
       // Verify round complete message
       expect(result.roundCompleteMessage).toContain('Team A');
-      expect(result.roundCompleteMessage).toContain('successfully defended');
+      expect(result.roundCompleteMessage).toContain('held attackers to only 30 points');
+      expect(result.roundCompleteMessage).toContain('advances 2 ranks');
     });
 
-    test('should handle team reaching highest rank without ending game', () => {
+    test('should handle team reaching highest rank and winning the game', () => {
       const mockState = createMockGameState();
       
-      // Set team B to have a high rank
+      // Set team B to have a high rank (King)
       mockState.teams[1].currentRank = Rank.King;
       
-      // Make team B the attacking team and win
+      // Make team B the attacking team and win with high points
       mockState.teams[0].isDefending = true;
       mockState.teams[1].isDefending = false;
       
       mockState.teams[0].points = 30;
-      mockState.teams[1].points = 80; // 80+ points needed to win as attacker
+      mockState.teams[1].points = 120; // 120+ points gives them 1 rank advancement
       
       const result = endRound(mockState);
       
-      // Note: gamePhase is not updated by endRound function
+      // Since team B advances from King to Ace, the game should be over
+      expect(result.gameOver).toBe(true);
+      expect(result.winner).toBe('B');
       
-      // Verify team B's rank was increased to Ace
-      expect(result.newState.teams[1].currentRank).toBe(Rank.Ace);
+      // Note: The teams still have their final state
+      expect(result.newState.teams[1].currentRank).toBe(Rank.King); // Remains King when game ends
       
-      // Note: Looking at the implementation, game isn't marked as over
-      // even when reaching Ace - this might be an implementation detail
-      
-      // Verify round complete message
-      expect(result.roundCompleteMessage).not.toBe('');
-      expect(result.roundCompleteMessage).toContain('Team B');
-      expect(result.roundCompleteMessage).toContain('advances to rank');
+      // Verify no round complete message when game is over
+      expect(result.roundCompleteMessage).toBe('');
     });
   });
 });

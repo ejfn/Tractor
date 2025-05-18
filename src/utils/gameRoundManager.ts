@@ -84,21 +84,37 @@ export function endRound(state: GameState): {
   const attackingTeam = newState.teams.find(t => !t.isDefending);
   
   if (defendingTeam && attackingTeam) {
+    const rankOrder = Object.values(Rank);
+    const points = attackingTeam.points;
+    
     // Attacking team needs 80+ points to win
-    if (attackingTeam.points >= 80) {
-      // Attacking team levels up
-      const rankOrder = Object.values(Rank);
-      const currentRankIndex = rankOrder.indexOf(attackingTeam.currentRank);
+    if (points >= 80) {
+      // Attacking team wins and becomes new defending team
+      let rankAdvancement = 0;
       
-      if (currentRankIndex < rankOrder.length - 1) {
-        attackingTeam.currentRank = rankOrder[currentRankIndex + 1];
+      // Calculate rank advancement based on points
+      // For every 40 points above 80, advance one additional rank
+      if (points >= 120) {
+        rankAdvancement = Math.floor((points - 80) / 40);
+      }
+      
+      // Update attacking team's rank
+      const currentRankIndex = rankOrder.indexOf(attackingTeam.currentRank);
+      const newRankIndex = Math.min(currentRankIndex + rankAdvancement, rankOrder.length - 1);
+      
+      if (newRankIndex < rankOrder.length - 1) {
+        attackingTeam.currentRank = rankOrder[newRankIndex];
         
         // Switch defending/attacking roles
         defendingTeam.isDefending = false;
         attackingTeam.isDefending = true;
         
         // Create round result message
-        roundCompleteMessage = `Team ${attackingTeam.id} reached ${attackingTeam.points} points and advances to rank ${attackingTeam.currentRank}!`;
+        if (rankAdvancement === 0) {
+          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and will defend at rank ${attackingTeam.currentRank}!`;
+        } else {
+          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and advances ${rankAdvancement} rank${rankAdvancement > 1 ? 's' : ''} to ${attackingTeam.currentRank}!`;
+        }
       } else {
         // Game over - attacking team reached Ace and won
         gameOver = true;
@@ -106,14 +122,34 @@ export function endRound(state: GameState): {
       }
     } else {
       // Defending team successfully defended
-      const rankOrder = Object.values(Rank);
-      const currentRankIndex = rankOrder.indexOf(defendingTeam.currentRank);
+      let rankAdvancement = 1; // Default advancement
       
-      if (currentRankIndex < rankOrder.length - 1) {
-        defendingTeam.currentRank = rankOrder[currentRankIndex + 1];
+      // Calculate rank advancement based on attacker's points
+      if (points < 40) {
+        rankAdvancement = 2;
+      }
+      if (points === 0) {
+        rankAdvancement = 3;
+      }
+      
+      // Update defending team's rank
+      const currentRankIndex = rankOrder.indexOf(defendingTeam.currentRank);
+      const newRankIndex = Math.min(currentRankIndex + rankAdvancement, rankOrder.length - 1);
+      
+      if (newRankIndex < rankOrder.length - 1) {
+        defendingTeam.currentRank = rankOrder[newRankIndex];
         
         // Create round result message
-        roundCompleteMessage = `Team ${defendingTeam.id} successfully defended with ${attackingTeam.points}/80 points for attackers! They advance to rank ${defendingTeam.currentRank}.`;
+        let pointMessage = '';
+        if (points === 0) {
+          pointMessage = 'shut out the attackers (0 points)';
+        } else if (points < 40) {
+          pointMessage = `held attackers to only ${points} points`;
+        } else {
+          pointMessage = `defended with attackers getting ${points}/80 points`;
+        }
+        
+        roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and advances ${rankAdvancement} rank${rankAdvancement > 1 ? 's' : ''} to ${defendingTeam.currentRank}!`;
       } else {
         // Game over - defending team reached Ace and won
         gameOver = true;
