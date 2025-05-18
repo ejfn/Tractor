@@ -4,18 +4,15 @@ import {
   Text, 
   TouchableOpacity, 
   StyleSheet, 
-  Animated,
-  Modal,
-  Platform
+  Modal
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface RoundCompleteModalProps {
   visible: boolean;
   message: string;
   onNextRound: () => void;
-  fadeAnim: Animated.Value;
-  scaleAnim: Animated.Value;
+  fadeAnim?: any;
+  scaleAnim?: any;
 }
 
 /**
@@ -25,97 +22,83 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   visible,
   message,
   onNextRound,
-  fadeAnim,
-  scaleAnim
 }) => {
+  if (!visible) return null;
+  
   return (
     <Modal
-      transparent={true}
       visible={visible}
+      transparent={true}
       animationType="fade"
       onRequestClose={onNextRound}
     >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <Animated.View
-            style={[
-              styles.card,
-              {
-                opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }]
-              }
-            ]}
+      <View style={styles.overlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.title}>Round Complete</Text>
+          <Text style={styles.message}>{message}</Text>
+          
+          <TouchableOpacity
+            style={styles.button}
+            onPress={onNextRound}
+            activeOpacity={0.7}
           >
-            <Text style={styles.title}>Round Complete</Text>
-            <Text style={styles.message}>{message}</Text>
-            
-            <TouchableOpacity
-              style={styles.button}
-              onPress={onNextRound}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.buttonText}>NEXT ROUND</Text>
-            </TouchableOpacity>
-          </Animated.View>
+            <Text style={styles.buttonText}>NEXT ROUND</Text>
+          </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)', // Semi-transparent background
-  },
-  container: {
-    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: Platform.OS === 'android' ? 20 : 0, // Add padding for Android
   },
-  card: {
+  modalContent: {
     backgroundColor: 'white',
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
+    borderRadius: 15,
+    padding: 25,
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 350,
+    alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+    elevation: 6,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#3F51B5',
-    marginBottom: 16,
-    textAlign: 'center',
+    marginBottom: 15,
   },
   message: {
     fontSize: 16,
-    color: '#212121',
-    marginBottom: 30,
+    color: '#333',
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 10,
+    marginBottom: 25,
+    lineHeight: 22,
   },
   button: {
     backgroundColor: '#3F51B5',
     paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 30,
-    minWidth: 150,
-    maxWidth: '80%',
-    alignItems: 'center',
+    paddingHorizontal: 35,
+    borderRadius: 25,
+    minWidth: 140,
   },
   buttonText: {
     color: 'white',
-    fontWeight: 'bold',
     fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

@@ -70,6 +70,8 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
         trumpDeclarationMode={trumpDeclarationMode}
         onSkipTrumpDeclaration={onSkipTrumpDeclaration}
         onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
+        showTrickResult={showTrickResult}
+        lastCompletedTrick={lastCompletedTrick}
       />
     </View>
   );

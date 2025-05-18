@@ -183,9 +183,11 @@ export function getAIMoveWithErrorHandling(state: GameState): {
     if (!aiMove || aiMove.length === 0) {
       console.warn(`AI player ${currentPlayer.id} returned an empty move`);
       
-      // Emergency fallback: play the first card in hand if move is empty
+      // Emergency fallback: play cards to match the combo length
       if (currentPlayer.hand.length > 0) {
-        return { cards: [currentPlayer.hand[0]] };
+        const comboLength = state.currentTrick?.leadingCombo?.length || 1;
+        const cardsToPlay = currentPlayer.hand.slice(0, Math.min(comboLength, currentPlayer.hand.length));
+        return { cards: cardsToPlay };
       } else {
         // If AI hand is somehow empty, return error
         return { 

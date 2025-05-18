@@ -464,18 +464,27 @@ export const isValidPlay = (
   // CRITICAL: Only enforce combo type if player has ENOUGH cards of leading suit
   // to form a valid combo of the same type
   
-  // If we have enough leading suit cards to form the same combo type,
-  // then we must enforce that combo type
-  const hasEnoughLeadingSuitCards = leadingSuitCards.length >= leadingCombo.length;
-  const hasEnoughTrumpCards = isLeadingTrump && trumpCards.length >= leadingCombo.length;
+  // Check if player can actually form a matching combo
+  const canFormMatchingCombo = () => {
+    if (isLeadingTrump && trumpCards.length >= leadingCombo.length) {
+      const trumpCombos = identifyCombos(trumpCards, trumpInfo);
+      return trumpCombos.some(combo => 
+        combo.type === leadingType && combo.cards.length === leadingCombo.length
+      );
+    } else if (leadingSuitCards.length >= leadingCombo.length) {
+      const suitCombos = identifyCombos(leadingSuitCards, trumpInfo);
+      return suitCombos.some(combo => 
+        combo.type === leadingType && combo.cards.length === leadingCombo.length
+      );
+    }
+    return false;
+  };
   
-  // Only enforce combo type if player could reasonably form a valid combo 
-  // of the same type using their cards
-  const playerHasEnoughCards = hasEnoughLeadingSuitCards || hasEnoughTrumpCards;
-                               
-  if (playerHasEnoughCards && playedType !== leadingType) {
+  // Only enforce combo type if player can actually form a matching combo
+  if (canFormMatchingCombo() && playedType !== leadingType) {
     return false;
   }
+  
 
   // 1. If leading with trumps, must play trumps if you have them
   if (isLeadingTrump) {
@@ -502,11 +511,9 @@ export const isValidPlay = (
     return isMatchingCombo;
   }
 
-  // 3. If can't match combo type in same suit, must still follow suit if possible
+  // 3. If can't match combo type in same suit but have enough cards of the suit,
+  // must play cards of the leading suit (combo type not enforced)
   if (leadingSuitCards.length >= leadingCombo.length) {
-    // We already checked if the played cards form a valid combo of the right type
-    // at the beginning of the function, but only if player has relevant cards
-    
     // Must play cards of the leading suit
     const allLeadingSuit = playedCards.every(card =>
       leadingSuitCards.some(handCard => handCard.id === card.id)
@@ -677,7 +684,7 @@ export const determineTrickWinner = (trick: Trick, trumpInfo: TrumpInfo): string
 };
 
 // Compare two card combinations
-const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: TrumpInfo): number => {
+export const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: TrumpInfo): number => {
   // Check if combos are the same type (singles, pairs, etc.)
   if (comboA.length !== comboB.length) {
     // In proper Tractor/Shengji, this should never happen
@@ -703,14 +710,29 @@ const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: TrumpInfo)
   if (!aIsTrump && bIsTrump) return -1;
 
   // If both are trump or both non-trump, compare based on combo type rules
+  
+  // CRITICAL: Pairs always beat singles of the same length
+  if (typeA === ComboType.Pair && typeB !== ComboType.Pair) {
+    return 1; // Pair beats non-pair
+  }
+  if (typeA !== ComboType.Pair && typeB === ComboType.Pair) {
+    return -1; // Non-pair loses to pair
+  }
 
   // For pairs (matching ranks)
   if (typeA === ComboType.Pair && typeB === ComboType.Pair) {
-
     // If they're the same type, compare the rank
     if (comboA[0].rank && comboB[0].rank) {
       return compareRanks(comboA[0].rank, comboB[0].rank);
     }
+  }
+
+  // For tractors vs non-tractors
+  if (typeA === ComboType.Tractor && typeB !== ComboType.Tractor) {
+    return 1; // Tractor beats non-tractor
+  }
+  if (typeA !== ComboType.Tractor && typeB === ComboType.Tractor) {
+    return -1; // Non-tractor loses to tractor
   }
 
   // For tractors, compare the highest card in the tractor
@@ -727,8 +749,8 @@ const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: TrumpInfo)
     return compareCards(maxCardA, maxCardB, trumpInfo);
   }
 
-  // If different types of combos, compare the highest card of each
-  // (as a fallback, though in real Shengji, different combo types would be invalid)
+  // If different types of combos but same total cards, should already be handled above
+  // This shouldn't happen in proper Shengji
   const maxCardA = comboA.reduce((max, card) =>
     compareCards(max, card, trumpInfo) > 0 ? max : card, comboA[0]
   );
