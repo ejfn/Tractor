@@ -2,55 +2,62 @@
 
 This document details current known issues in the Tractor card game application and their status.
 
-## AI Turn Handling
+## Game Logic Issues
 
-### Bot 1 Not Playing After Human Player
-
-**Status**: In Progress
-
-**Description**: 
-There is an issue where Bot 1 (the player to the left of the human player) sometimes fails to play cards after the human player completes their turn. The bot appears to get into a "thinking" state but does not complete its move.
-
-**Technical Details**:
-- The issue appears to be related to state management in the `useAITurns` hook
-- Enhanced logging has been added to track the game state transitions
-- The `handleAIMove` function may not be receiving the correct game state when called
-- `useAITurns` may not properly detect the player change from human to Bot 1
-
-**Workaround**:
-When playing the game, if Bot 1 gets stuck in a thinking state:
-1. Force-quit the application
-2. Restart the game
-3. The issue may not occur on every playthrough
-
-**Progress**:
-- Added comprehensive logging to debug the AI turn flow
-- Implemented defensive code in the AI move handling logic
-- Added fallbacks for empty moves (will play a random card if AI logic fails)
-- Created tests for the `useAITurns` hook to help isolate the issue
-
-**Next Steps**:
-- Analyze logs from the running app to determine exact failure point
-- Investigate potential race conditions in state updates
-- Consider rewriting the AI turn management with a more direct approach
-- Test on different devices to see if the issue is platform-specific
-
-## UI and Display
-
-### Card Animation Flicker
+### Card Strength Rules
 
 **Status**: Known Issue
 
 **Description**:
-On some Android devices, card animations may occasionally flicker during transitions.
+The card strength comparison logic (which cards can win over others) is not correctly implemented according to proper Tractor/Shengji rules.
 
 **Technical Details**:
-- May be related to hardware acceleration settings
-- More pronounced on older devices with limited GPU capability
+- Incorrect trump card hierarchy implementation
+- Issues with consecutive pairs (tractor) strength calculation
+- Problems with following suit requirements and when trumps can be played
+- Card strength comparison doesn't properly handle all edge cases
 
-**Workaround**:
-- No user workaround currently available
-- Development team is collecting data on affected devices
+**Current State**:
+- Affects core gameplay mechanics
+- May result in incorrect trick winners
+- Players may notice cards winning when they shouldn't
+
+**Next Steps**:
+- Review and correct card strength comparison logic in `gameLogic.ts`
+- Implement proper trump hierarchy rules
+- Add comprehensive tests for all card combination scenarios
+- Ensure following suit rules are correctly enforced
+
+### Bot Intelligence
+
+**Status**: Known Issue
+
+**Description**:
+The bot players (AI opponents) lack strategic intelligence and make poor gameplay decisions.
+
+**Technical Details**:
+- Bots use programmed logic rather than machine learning models
+- Current implementation focuses on valid moves rather than strategic play
+- Bots don't consider:
+  - Card counting or tracking played cards
+  - Partner's plays and team strategy
+  - Optimal trump declaration timing
+  - Strategic holding of high cards
+  - Point card management
+
+**Current State**:
+- Bots play randomly from valid options
+- No difficulty levels implemented
+- Makes the game too easy for experienced players
+- Doesn't provide realistic gameplay experience
+
+**Next Steps**:
+- Implement basic strategy patterns (e.g., playing low cards when losing)
+- Add card tracking to remember what's been played
+- Implement partner awareness for team play
+- Consider difficulty levels (easy, medium, hard)
+- Add strategic decision making for trump declaration
+- Improve point card play decisions
 
 ## Platform Limitations
 
@@ -70,3 +77,38 @@ The application is specifically designed for mobile platforms (Android and iOS) 
 **Next Steps**:
 - No plans to add web support
 - See [MOBILE_ONLY.md](./MOBILE_ONLY.md) for more details on platform support
+
+## UI Timing Issues
+
+### Human Thinking Indicator Flash
+
+**Status**: Known Issue
+
+**Description**:
+The human player's thinking indicator briefly flashes when the human wins a trick, appearing momentarily during the transition before the trick result is displayed.
+
+**Technical Details**:
+- Issue occurs due to timing gap between state updates
+- When human wins a trick:
+  1. `currentPlayerIndex` is immediately set to the human (winner)
+  2. `isCurrentPlayer` becomes true
+  3. Brief delay before `showTrickResult` is set to true
+  4. During this gap, the thinking indicator condition `isCurrentPlayer && !showTrickResult` evaluates to true
+  5. Thinking indicator appears briefly then disappears when trick result shows
+- Particularly noticeable when the last AI player's card animation is still playing
+
+**Attempted Solutions**:
+- Adding `waitingForAI` check - didn't help as it's already false when AI completes move
+- Checking current trick state - too complex and didn't resolve timing issue
+- Adding delay to thinking indicator - works but adds unwanted delay to all human turns
+- Using `isTransitioningTricks` state - didn't fully resolve the timing gap
+
+**Current State**:
+- Issue remains unresolved but is cosmetic only
+- Does not affect gameplay functionality
+- Most noticeable when human wins tricks against AI players
+
+**Next Steps**:
+- Consider deeper refactoring of state transition timing
+- Investigate if trick completion and UI state updates can be better synchronized
+- May require changes to how `currentPlayerIndex` is updated relative to UI state
