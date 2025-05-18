@@ -2,145 +2,150 @@
 
 A React Native implementation of the Chinese card game Shengji (升级), also known as Tractor. This is a trick-taking card game where players work in teams to advance through card ranks.
 
+![Mobile Only](https://img.shields.io/badge/Platform-Mobile%20Only-red)
+![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
+
 ## Game Features
 
 - Single-player game against 3 AI opponents with advanced strategy
-- 2 teams: Team A (you + Bot 2) and Team B (Bot 1 + Bot 3)
+- 2 teams: Team A (you + Bot 2) vs Team B (Bot 1 + Bot 3)
 - Trick-taking gameplay with trump cards
 - Visual card animations and modern UI
 - Special handling for jokers and trump cards
 - Optimized for mobile (especially Android) experience
 
-## Documentation
+## Quick Start
 
-Detailed documentation is available in the [docs folder](./docs/):
+> ⚠️ **IMPORTANT: This is a mobile-only application!**  
+> Tractor is designed exclusively for Android and iOS devices. It will not work in web browsers.
 
-- [Project Architecture](./docs/ARCHITECTURE.md) - Component structure and code organization
-- [Testing Strategy](./docs/TESTING.md) - Test coverage and methodologies
-- [Documentation Index](./docs/README.md) - Overview of all documentation
+```bash
+# Install dependencies
+npm install
+
+# Start on Android
+npm run android
+
+# Start on iOS
+npm run ios
+
+# Or use Expo CLI
+npx expo start  # Press 'a' for Android or 'i' for iOS
+```
 
 ## Game Rules
 
 ### Basic Gameplay
 
-In Tractor (Shengji):
-
-- Players are divided into two teams (A and B)
+- 4 players divided into 2 teams (A and B)
 - One team defends while the other attacks
-- Trump cards are determined by a trump rank and optionally a trump suit
-- Points are scored by capturing certain cards (5s = 5 points, 10s and Kings = 10 points)
-- The objective is to capture cards and advance through ranks from 2 to Ace
+- Trump cards determined by rank and optionally suit
+- Points scored by capturing 5s (5 points), 10s and Kings (10 points)
+- Objective: capture cards and advance through ranks (2 to Ace)
 
-### Trump Cards Hierarchy
+### Trump Hierarchy
 
-Trump cards are played in this order of strength (highest to lowest):
+From highest to lowest:
 
-1. Big Jokers
-2. Small Jokers
-3. Trump rank cards in the trump suit (e.g., 2♥ when 2 is trump rank and Hearts is trump suit)
-4. Trump rank cards in other suits (e.g., 2♦, 2♣, 2♠ when 2 is trump rank)
-5. Cards of the trump suit (e.g., all other Hearts when Hearts is trump suit)
+1. **Big Jokers**
+2. **Small Jokers**
+3. **Trump rank in trump suit** (e.g., 2♥ when 2 is trump and Hearts is trump suit)
+4. **Trump rank in other suits** (e.g., 2♦, 2♣, 2♠)
+5. **Trump suit cards** (all other Hearts when Hearts is trump)
 
 ### Card Combinations
 
 #### Singles
-
-- Any card can be played as a single
-- Jokers and trump cards beat non-trump singles
-- Within trumps, the hierarchy above applies
+- Any single card
+- Trump cards beat non-trump singles
 
 #### Pairs
-
-- A valid pair consists of two *identical* cards (same rank AND same suit)
-- Two Small Jokers (SJ-SJ) or two Big Jokers (BJ-BJ) form valid pairs
-- Cards of the same rank but different suits (e.g., 8♥-8♦) do NOT form a valid pair
-- Different jokers (SJ-BJ) do NOT form a valid pair
+- Two identical cards (same rank AND same suit)
+- Valid: 8♥-8♥, SJ-SJ, BJ-BJ
+- Invalid: 8♥-8♦ (different suits), SJ-BJ (different jokers)
 
 #### Tractors
-
-- A Tractor is formed by consecutive pairs of the same suit
-- Example: 7♥-7♥-8♥-8♥ is a valid Tractor
-- All cards must be in the same suit
-- SJ-SJ-BJ-BJ forms a special Tractor (the highest possible)
-
-#### Tractor Rules
-
-- Pairs of different suits never form Tractors (7♥-7♥-8♠-8♠ is NOT a Tractor)
-- Trump cards of different levels never form Tractors (2♥-2♥-3♥-3♥ when 2 is trump rank is NOT a Tractor)
-- A-A-2-2 is NOT a Tractor (non-consecutive in rank order)
-- Any trump Tractor beats any non-trump Tractor of the same length (i.e., with the same number of pairs)
+- Consecutive pairs of the same suit
+- Valid: 7♥-7♥-8♥-8♥
+- Special: SJ-SJ-BJ-BJ (highest tractor)
+- Invalid: 
+  - Different suits (7♥-7♥-8♠-8♠)
+  - Non-consecutive (A-A-2-2)
+  - Trump ranks when one is trump (2♥-2♥-3♥-3♥ when 2 is trump)
 
 ## Development
 
-> ⚠️ **IMPORTANT: This is a mobile-only application!** 
->
-> Tractor is designed exclusively for Android and iOS devices. It will not work properly in web browsers or desktop environments. See [MOBILE_ONLY.md](./docs/MOBILE_ONLY.md) for details.
+### Commands
 
-1. Install dependencies
+```bash
+npm run lint          # Run ESLint
+npm run typecheck     # TypeScript checks
+npm run test          # Run tests
+npm run qualitycheck  # Run all checks (typecheck + lint + test)
+```
 
-   ```bash
-   npm install
-   ```
+### Project Structure
 
-2. Start the app on a specific platform (recommended)
+```
+/src/
+├── types/            # Type definitions
+├── utils/            # Game logic
+├── hooks/            # Custom React hooks
+├── components/       # UI components
+├── screens/          # Screen components
+└── __tests__/        # Test files
 
-   ```bash
-   npm run android  # Start on Android
-   npm run ios      # Start on iOS
-   ```
+/app/                 # Expo Router configuration
+/docs/                # Additional documentation
+```
 
-3. Alternative: Use Expo CLI and select device
+### Key Files
 
-   ```bash
-   npx expo start    # Then press 'a' for Android or 'i' for iOS
-   ```
-   
-   > ⚠️ **NOTE:** Do not try to run this in a web browser. It won't work!
+- `src/types/game.ts` - Core game types
+- `src/utils/gameLogic.ts` - Game mechanics
+- `src/utils/aiLogic.ts` - AI strategy
+- `src/hooks/useGameState.ts` - State management
+- `src/screens/GameScreenController.tsx` - Main game controller
 
-4. Lint and Type Checking
+## Documentation
 
-   ```bash
-   npm run lint     # Run ESLint
-   npm run typecheck # Run TypeScript checks
-   ```
+For detailed information, see the [docs folder](./docs/):
 
-5. Running Tests
+- [Architecture](./docs/ARCHITECTURE.md) - Component structure
+- [Testing](./docs/TESTING.md) - Test coverage
+- [Mobile Only](./docs/MOBILE_ONLY.md) - Platform details
+- [Known Issues](./docs/KNOWN_ISSUES.md) - Current bugs
 
-   ```bash
-   npm test         # Run all tests
-   npm test -- --coverage # Run tests with coverage report
-   ```
+## Technology Stack
 
-## Project Structure
+- **React Native** with Expo
+- **TypeScript** with strict checking
+- **Animated API** for card animations
+- **Expo Router** for navigation
+- **Jest** & React Testing Library
+- **EAS** for builds and updates
 
-- `/src/types/game.ts` - Core game type definitions
-- `/src/utils/` - Game logic utilities
-  - `gameLogic.ts` - Core game mechanics and rule implementation
-  - `aiLogic.ts` - AI player decision making
-  - `gamePlayManager.ts` - Handles game play actions and validation
-  - `gameRoundManager.ts` - Manages round initialization and completion
-  - `trumpManager.ts` - Trump card declaration and management
-- `/src/hooks/` - Custom React hooks
-  - `useAnimations.ts` - Card animation effects
-  - `useAITurns.ts` - AI player turn management
-  - `useGameState.ts` - Game state management
-  - `useTrickResults.ts` - Trick completion and scoring
-- `/src/components/` - UI components
-  - Card components (AnimatedCard, CardBack, etc.)
-  - Player views (AIPlayerView, HumanPlayerView)
-  - Game table and layout components
-- `/src/screens/` - Screen components
-  - `GameScreen.tsx` - Main game screen (controller)
-  - `GameScreenView.tsx` - Presentation component
-- `/app/` - Expo Router app routing
-- `/__tests__/` - Unit and component tests
-- `/docs/` - Project documentation
+## Requirements
 
-## Technology
+- Node.js 18+ 
+- npm 9+
+- iOS Simulator (Mac) or Android Emulator
+- Expo CLI (`npx expo`)
 
-- React Native with Expo
-- TypeScript with strict type checking
-- React Native Animated API for animations
-- Expo Router for navigation
-- Jest and React Testing Library for testing
-- Optimized for Android mobile experience
+## Contributing
+
+1. Create a feature branch: `{user}/{feature-name}`
+2. Make changes and test thoroughly
+3. Run `npm run qualitycheck`
+4. Submit a pull request
+
+## License
+
+[Add your license here]
+
+## Acknowledgments
+
+- Original Shengji/Tractor card game
+- React Native and Expo teams
+- Contributors and testers
