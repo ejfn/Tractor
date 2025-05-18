@@ -296,3 +296,4 @@ This approach ensures the player's hand is organized with:
 - Prefer general solutions that work for all players rather than special case fixes
 - Always block AI moves during trick result display to prevent incorrect state transitions
 - Follow the proper sequence for trick completion: play → show result → clear → trick winner as next player
+- When creating git branches, use the format `{user}/{feature-name}` (e.g., `ejfn/enhance-round-complete-modal`)
