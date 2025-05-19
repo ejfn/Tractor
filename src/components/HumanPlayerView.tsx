@@ -25,6 +25,9 @@ interface HumanPlayerViewProps {
   trumpDeclarationMode?: boolean;
   onSkipTrumpDeclaration?: () => void;
   onConfirmTrumpDeclaration?: () => void;
+  currentPlayerIndex?: number;
+  winningPlayerIndex?: number;
+  currentTrick?: any;
 }
 
 /**
@@ -45,7 +48,10 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   thinkingDots,
   trumpDeclarationMode = false,
   onSkipTrumpDeclaration,
-  onConfirmTrumpDeclaration
+  onConfirmTrumpDeclaration,
+  currentPlayerIndex,
+  winningPlayerIndex,
+  currentTrick
 }) => {
   return (
     <View style={styles.container}>
@@ -54,7 +60,8 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
         isDefending ? sharedStyles.teamALabel : sharedStyles.teamBLabel
       ]}>
         <Text style={sharedStyles.playerLabel}>You</Text>
-        {isCurrentPlayer && !showTrickResult && !lastCompletedTrick && (
+        {isCurrentPlayer && !showTrickResult && !lastCompletedTrick && 
+         !(currentPlayerIndex === winningPlayerIndex && currentTrick) && (
           <ThinkingIndicator
             visible={true}
             dots={thinkingDots}

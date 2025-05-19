@@ -264,7 +264,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   // Horizontal overlapping like human's hand
                   marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
                   // Use global play order for z-index, ensuring proper stacking
-                  zIndex: 10 + card.globalPlayOrder, // Higher values appear on top
+                  zIndex: 100 + card.globalPlayOrder, // Higher values appear on top
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === 'android' && index === 0 && topCards.length > 1 && {
                     marginLeft: 15, // Smaller shift for tighter centering
@@ -303,7 +303,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     // Horizontal overlapping like human's hand
                     marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
                     // Use global play order for z-index, ensuring proper stacking
-                    zIndex: 10 + card.globalPlayOrder, // Higher values appear on top
+                    zIndex: 100 + card.globalPlayOrder, // Higher values appear on top
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === 'android' && index === 0 && leftCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
@@ -345,7 +345,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     // Horizontal overlapping like human's hand
                     marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
                     // Use global play order for z-index, ensuring proper stacking
-                    zIndex: 10 + card.globalPlayOrder, // Higher values appear on top
+                    zIndex: 100 + card.globalPlayOrder, // Higher values appear on top
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === 'android' && index === 0 && rightCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
@@ -383,7 +383,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   // Horizontal overlapping like human's hand
                   marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
                   // Use global play order for z-index, ensuring proper stacking
-                  zIndex: 10 + card.globalPlayOrder, // Higher values appear on top
+                  zIndex: 100 + card.globalPlayOrder, // Higher values appear on top
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === 'android' && index === 0 && bottomCards.length > 1 && {
                     marginLeft: 15, // Smaller shift for tighter centering
@@ -418,6 +418,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'space-between',
     height: '100%',
+    zIndex: 50, // Higher than all player hands (which are at z-index 5)
   },
   // Layout areas for each player's cards - centered for each player
   topPlayArea: {

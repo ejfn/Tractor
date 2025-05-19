@@ -246,6 +246,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   trumpDeclarationMode={showTrumpDeclaration}
                   onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
                   onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
+                  currentPlayerIndex={gameState.currentPlayerIndex}
+                  winningPlayerIndex={gameState.winningPlayerIndex}
+                  currentTrick={gameState.currentTrick}
                 />
               ) : null
             }
