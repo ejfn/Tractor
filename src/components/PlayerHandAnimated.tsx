@@ -38,8 +38,9 @@ const PlayerHandAnimated: React.FC<PlayerHandAnimatedProps> = ({
     );
   } else {
     // Determine AI position based on player id
+    // Swapped positions for counter-clockwise rotation
     const position = player.id === 'ai2' ? 'top' : 
-                    player.id === 'ai1' ? 'left' : 'right';
+                    player.id === 'ai3' ? 'left' : 'right';
     
     return (
       <AIHandAnimated

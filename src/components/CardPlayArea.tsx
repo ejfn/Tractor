@@ -169,14 +169,15 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   // Find player positions by ID
   const getPlayerPosition = (playerId: string): 'top' | 'left' | 'right' | 'bottom' => {
     // This mapping assumes players are in a fixed order:
-    // ai1 = left, ai2 = top, ai3 = right, human = bottom
-    if (playerId === 'ai1') {
+    // ai3 = left, ai2 = top, ai1 = right, human = bottom
+    // This creates counter-clockwise rotation when viewed from human's perspective
+    if (playerId === 'ai3') {
       return 'left';
     }
     if (playerId === 'ai2') {
       return 'top';
     }
-    if (playerId === 'ai3') {
+    if (playerId === 'ai1') {
       return 'right';
     }
     return 'bottom'; // human player or unknown

@@ -8,7 +8,10 @@ Welcome to the Tractor card game documentation. This folder contains comprehensi
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Detailed architectural design and code organization
 - [TESTING.md](TESTING.md) - Testing methodology, coverage, and best practices
 - [MOBILE_ONLY.md](MOBILE_ONLY.md) - Important information about mobile-only support
-- [KNOWN_ISSUES.md](KNOWN_ISSUES.md) - List of known issues and their status
+
+## Issue Tracking
+
+Issues are now tracked on GitHub. See the [Issues](https://github.com/ejfn/Tractor/issues) page for current known issues and their status.
 
 ## Project Overview
 
