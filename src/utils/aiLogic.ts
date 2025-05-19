@@ -3,7 +3,8 @@ import {
   GameState,
   Player,
   Combo,
-  TrumpInfo
+  TrumpInfo,
+  ComboType
 } from '../types/game';
 import {
   identifyCombos,
@@ -282,16 +283,55 @@ export const getAIMove = (
           )
         );
       } else {
-        // If no trump combos, can play anything of the right length
-        validCombos = allCombos.filter(combo =>
-          combo.cards.length === leadingLength &&
-          isValidPlay(
-            combo.cards,
-            leadingCombo,
-            player.hand,
-            gameState.trumpInfo
-          )
-        );
+        // Check if the player has any trump cards at all
+        const hasTrumpCards = player.hand.some(card => isTrump(card, gameState.trumpInfo));
+        
+        if (hasTrumpCards) {
+          // If player has trump cards but not trump combos, they should prioritize playing trumps
+          // as singles rather than forming non-trump combos
+          const trumpCards = player.hand.filter(card => isTrump(card, gameState.trumpInfo))
+            .sort((a, b) => compareCards(a, b, gameState.trumpInfo));
+            
+          // Create simple combos with individual trump cards
+          const singleTrumpCombos = trumpCards.map(card => ({
+            type: ComboType.Single,
+            cards: [card],
+            value: 50 + (card.rank === gameState.trumpInfo.trumpRank ? 100 : 0)
+          }));
+          
+          // Check if we have enough trump cards to match the leading length
+          if (trumpCards.length >= leadingLength) {
+            // If we do, construct a combo of the right length using trump cards
+            const trumpCombo = {
+              type: ComboType.Single, // Might not be a real pair/combo, but we're using singles
+              cards: trumpCards.slice(0, leadingLength),
+              value: 200
+            };
+            validCombos = [trumpCombo];
+          } else {
+            // For other lengths, just check general valid plays
+            validCombos = allCombos.filter(combo =>
+              combo.cards.length === leadingLength &&
+              isValidPlay(
+                combo.cards,
+                leadingCombo,
+                player.hand,
+                gameState.trumpInfo
+              )
+            );
+          }
+        } else {
+          // If no trump cards at all, can play anything of the right length
+          validCombos = allCombos.filter(combo =>
+            combo.cards.length === leadingLength &&
+            isValidPlay(
+              combo.cards,
+              leadingCombo,
+              player.hand,
+              gameState.trumpInfo
+            )
+          );
+        }
       }
     } else if (leadingSuit) {
       // If leading with a specific suit, prioritize that suit
