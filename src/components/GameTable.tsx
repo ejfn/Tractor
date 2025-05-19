@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    zIndex: 10, // Higher than side players
   },
   // Right player - along the right edge of the table at middle height
   rightArea: {
