@@ -201,13 +201,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               ) : null
             }
             leftPlayer={
-              ai1 && ai1Team ? (
+              ai3 && ai3Team ? (
                 <AIPlayerView
                   position="left"
-                  player={ai1}
-                  isDefending={ai1Team.isDefending}
-                  isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai1')}
-                  waitingForAI={waitingForAI && waitingPlayerId === 'ai1'}
+                  player={ai3}
+                  isDefending={ai3Team.isDefending}
+                  isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai3')}
+                  waitingForAI={waitingForAI && waitingPlayerId === 'ai3'}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -215,13 +215,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               ) : null
             }
             rightPlayer={
-              ai3 && ai3Team ? (
+              ai1 && ai1Team ? (
                 <AIPlayerView
                   position="right"
-                  player={ai3}
-                  isDefending={ai3Team.isDefending}
-                  isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai3')}
-                  waitingForAI={waitingForAI && waitingPlayerId === 'ai3'}
+                  player={ai1}
+                  isDefending={ai1Team.isDefending}
+                  isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai1')}
+                  waitingForAI={waitingForAI && waitingPlayerId === 'ai1'}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}

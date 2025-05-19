@@ -798,8 +798,8 @@ export const initializeGame = (
       team: 'A'
     },
     {
-      id: 'ai3',
-      name: 'Bot 3',
+      id: 'ai1',
+      name: 'Bot 1',
       isHuman: false,
       hand: [],
       currentRank: startingRank,
@@ -814,8 +814,8 @@ export const initializeGame = (
       team: 'A'
     },
     {
-      id: 'ai1',
-      name: 'Bot 1',
+      id: 'ai3',
+      name: 'Bot 3',
       isHuman: false,
       hand: [],
       currentRank: startingRank,

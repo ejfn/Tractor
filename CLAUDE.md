@@ -162,9 +162,9 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 ### Player Layout
 
 - **Human**: Bottom, no label, -40px overlap
-- **Bot 3**: Left, rotated 90°, -48px vertical overlap
+- **Bot 1**: Left, rotated 90°, -48px vertical overlap
 - **Bot 2**: Top, rotated 180°, -30px horizontal overlap
-- **Bot 1**: Right, rotated 270°, -48px vertical overlap
+- **Bot 3**: Right, rotated 270°, -48px vertical overlap
 
 ### Performance Optimizations
 

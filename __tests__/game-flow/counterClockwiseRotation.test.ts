@@ -20,8 +20,8 @@ describe('Counter-clockwise rotation', () => {
         team: 'A'
       },
       {
-        id: 'ai3',
-        name: 'Bot 3',
+        id: 'ai1',
+        name: 'Bot 1',
         isHuman: false,
         hand: [],
         currentRank: Rank.Two,
@@ -36,8 +36,8 @@ describe('Counter-clockwise rotation', () => {
         team: 'A'
       },
       {
-        id: 'ai1',
-        name: 'Bot 1',
+        id: 'ai3',
+        name: 'Bot 3',
         isHuman: false,
         hand: [],
         currentRank: Rank.Two,
@@ -55,7 +55,7 @@ describe('Counter-clockwise rotation', () => {
       },
       {
         id: 'B',
-        players: ['ai3', 'ai1'],
+        players: ['ai1', 'ai3'],
         currentRank: Rank.Two,
         points: 0,
         isDefending: false
@@ -80,7 +80,7 @@ describe('Counter-clockwise rotation', () => {
     };
   };
 
-  test('Players should rotate counter-clockwise', () => {
+  test('Players should rotate counter-clockwise from human perspective', () => {
     const gameState = createMockGameState();
     
     // Give players cards
@@ -91,17 +91,17 @@ describe('Counter-clockwise rotation', () => {
     
     // Human (index 0) plays first
     const result1 = processPlay(gameState, [gameState.players[0].hand[0]]);
-    expect(result1.newState.currentPlayerIndex).toBe(1); // Bot 3
+    expect(result1.newState.currentPlayerIndex).toBe(1); // Bot 1
     
-    // Bot 3 (index 1) plays
+    // Bot 1 (index 1) plays
     const result2 = processPlay(result1.newState, [result1.newState.players[1].hand[0]]);
     expect(result2.newState.currentPlayerIndex).toBe(2); // Bot 2
     
     // Bot 2 (index 2) plays
     const result3 = processPlay(result2.newState, [result2.newState.players[2].hand[0]]);
-    expect(result3.newState.currentPlayerIndex).toBe(3); // Bot 1
+    expect(result3.newState.currentPlayerIndex).toBe(3); // Bot 3
     
-    // Bot 1 (index 3) plays - completes trick
+    // Bot 3 (index 3) plays - completes trick
     const result4 = processPlay(result3.newState, [result3.newState.players[3].hand[0]]);
     
     // After trick completion, winner (Human with Ace) should be next
@@ -110,19 +110,23 @@ describe('Counter-clockwise rotation', () => {
     expect(result4.newState.currentPlayerIndex).toBe(0); // Human won
   });
 
-  test('Counter-clockwise rotation matches traditional Tractor order', () => {
+  test('Visual positions match counter-clockwise layout', () => {
     const gameState = createMockGameState();
     
-    // Verify player order matches counter-clockwise layout
-    expect(gameState.players[0].name).toBe('Human');  // Bottom
-    expect(gameState.players[1].name).toBe('Bot 3');  // Left (was right)
-    expect(gameState.players[2].name).toBe('Bot 2');  // Top
-    expect(gameState.players[3].name).toBe('Bot 1');  // Right (was left)
+    // Verify player order in the array (logical order)
+    expect(gameState.players[0].name).toBe('Human');  // Bottom (human perspective)
+    expect(gameState.players[1].name).toBe('Bot 1');  // Next in array
+    expect(gameState.players[2].name).toBe('Bot 2');  // Next in array
+    expect(gameState.players[3].name).toBe('Bot 3');  // Next in array
+    
+    // Visual positions (swapped for counter-clockwise from human's view):
+    // Human (bottom) → Bot 3 (left) → Bot 2 (top) → Bot 1 (right) → Human
+    // This is achieved by swapping Bot 1 and Bot 3 visual positions
     
     // Verify team assignments remain correct
     expect(gameState.players[0].team).toBe('A'); // Human - Team A
-    expect(gameState.players[1].team).toBe('B'); // Bot 3 - Team B
+    expect(gameState.players[1].team).toBe('B'); // Bot 1 - Team B
     expect(gameState.players[2].team).toBe('A'); // Bot 2 - Team A
-    expect(gameState.players[3].team).toBe('B'); // Bot 1 - Team B
+    expect(gameState.players[3].team).toBe('B'); // Bot 3 - Team B
   });
 });

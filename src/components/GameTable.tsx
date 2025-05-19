@@ -33,7 +33,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Middle row */}
       <View style={styles.middleRow}>
-        {/* Left player (Bot 1) */}
+        {/* Left player (Bot 3 - counter-clockwise) */}
         <View style={styles.leftArea}>
           {leftPlayer}
         </View>
@@ -43,7 +43,7 @@ const GameTable: React.FC<GameTableProps> = ({
           {centerContent}
         </View>
 
-        {/* Right player (Bot 3) */}
+        {/* Right player (Bot 1 - counter-clockwise) */}
         <View style={styles.rightArea}>
           {rightPlayer}
         </View>
