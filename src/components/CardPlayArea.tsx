@@ -309,7 +309,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       marginLeft: 15, // Smaller shift for tighter centering
                     }),
                     // Simple border for winning cards (works on Android)
-                    ...(isWinning(players.find(p => p.id === 'ai1')?.id || '') && {
+                    ...(isWinning(players.find(p => p.id === 'ai3')?.id || '') && {
                       borderWidth: 2,
                       borderColor: '#FFC107',
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -351,7 +351,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       marginLeft: 15, // Smaller shift for tighter centering
                     }),
                     // Simple border for winning cards (works on Android)
-                    ...(isWinning(players.find(p => p.id === 'ai3')?.id || '') && {
+                    ...(isWinning(players.find(p => p.id === 'ai1')?.id || '') && {
                       borderWidth: 2,
                       borderColor: '#FFC107',
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
