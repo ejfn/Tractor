@@ -26,14 +26,14 @@ const GameTable: React.FC<GameTableProps> = ({
       {/* Trick winner notification */}
       {trickResult}
       
-      {/* Top player (Bot 2) */}
+      {/* Top player (Bot 2 - plays 3rd in counter-clockwise order) */}
       <View style={styles.topArea}>
         {topPlayer}
       </View>
 
       {/* Middle row */}
       <View style={styles.middleRow}>
-        {/* Left player (Bot 3 - counter-clockwise) */}
+        {/* Left player (Bot 3 - plays 4th in counter-clockwise order) */}
         <View style={styles.leftArea}>
           {leftPlayer}
         </View>
@@ -43,13 +43,13 @@ const GameTable: React.FC<GameTableProps> = ({
           {centerContent}
         </View>
 
-        {/* Right player (Bot 1 - counter-clockwise) */}
+        {/* Right player (Bot 1 - plays 2nd in counter-clockwise order) */}
         <View style={styles.rightArea}>
           {rightPlayer}
         </View>
       </View>
 
-      {/* Bottom area - human player's hand */}
+      {/* Bottom area - human player's hand (plays 1st) */}
       <View style={styles.bottomArea}>
         {bottomPlayer}
       </View>
