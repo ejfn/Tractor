@@ -78,8 +78,8 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   // Get player label based on position
   const playerLabel = {
     top: 'Bot 2',
-    left: 'Bot 1',
-    right: 'Bot 3'
+    left: 'Bot 3',
+    right: 'Bot 1'
   }[position];
 
   // Determine whether to show thinking indicator
