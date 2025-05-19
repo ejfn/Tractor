@@ -17,7 +17,7 @@ describe('Final Card Count Verification', () => {
       // Play all 4 players
       for (let playNum = 0; playNum < 4; playNum++) {
         const currentPlayer = state.players[state.currentPlayerIndex];
-        const bot3Index = 3;
+        const bot3Index = state.players.findIndex(p => p.name === 'Bot 3');
         const bot3Before = state.players[bot3Index].hand.length;
         
         // Get cards to play
