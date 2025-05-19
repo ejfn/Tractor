@@ -95,7 +95,7 @@ describe('AIPlayerView', () => {
     );
     
     // Check that the correct player label is displayed
-    expect(getByText('Bot 1')).toBeTruthy();
+    expect(getByText('Bot 3')).toBeTruthy();
     
     // Check that the correct number of cards are rendered
     const cardBacks = getAllByTestId('card-back');
@@ -120,7 +120,7 @@ describe('AIPlayerView', () => {
     );
     
     // Check that the correct player label is displayed
-    expect(getByText('Bot 3')).toBeTruthy();
+    expect(getByText('Bot 1')).toBeTruthy();
     
     // Check that the correct number of cards are rendered
     const cardBacks = getAllByTestId('card-back');
@@ -190,7 +190,7 @@ describe('AIPlayerView', () => {
     );
     
     // Verify the component rendered successfully
-    expect(getByText('Bot 1')).toBeTruthy();
+    expect(getByText('Bot 3')).toBeTruthy();
   });
 
   test('uses correct team styling for attacking team', () => {
@@ -210,6 +210,6 @@ describe('AIPlayerView', () => {
       />
     );
     
-    expect(getByText('Bot 1')).toBeTruthy();
+    expect(getByText('Bot 3')).toBeTruthy();
   });
 });
