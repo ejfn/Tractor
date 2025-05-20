@@ -44,7 +44,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={(colorScheme === 'dark') ? DarkTheme : DefaultTheme}>
       {/* Use dark status bar on Android for better visibility */}
       <StatusBar style={Platform.OS === 'android' ? 'light' : 'auto'} />
       {/* Render a view under the status bar to change its background on Android */}
@@ -68,7 +68,7 @@ export default function RootLayout() {
           },
           headerTintColor: '#FFFFFF', // White text for header
           headerTitleAlign: 'center', // Center the header title
-          headerTitle: (props) => <HeaderTitle />,
+          headerTitle: (props: any) => <HeaderTitle />,
           // Ensure header has no back button or other elements that would take space
           headerLeft: () => null,
           headerRight: () => null,

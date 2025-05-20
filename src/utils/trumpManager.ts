@@ -13,6 +13,10 @@ export function declareTrumpSuit(state: GameState, suit: Suit | null): GameState
   if (suit) {
     newState.trumpInfo.trumpSuit = suit;
     newState.trumpInfo.declared = true;
+    
+    // Record the player who declared trump
+    const currentPlayer = newState.players[newState.currentPlayerIndex];
+    newState.trumpInfo.declarerPlayerId = currentPlayer.id;
   }
   
   newState.gamePhase = 'playing';

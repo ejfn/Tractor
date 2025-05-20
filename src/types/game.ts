@@ -66,6 +66,7 @@ export type TrumpInfo = {
   trumpRank: Rank;
   trumpSuit?: Suit;
   declared: boolean;
+  declarerPlayerId?: string; // ID of the player who declared trump
 };
 
 export type GameState = {
@@ -79,6 +80,7 @@ export type GameState = {
   roundNumber: number;
   currentPlayerIndex: number;
   winningPlayerIndex?: number; // Stores index of the trick winner who will lead next trick
+  lastRoundStartingPlayerIndex?: number; // Stores index of the player who started last round
   gamePhase: 'dealing' | 'declaring' | 'playing' | 'scoring' | 'roundEnd' | 'gameOver';
 };
 
