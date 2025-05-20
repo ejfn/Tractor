@@ -721,9 +721,17 @@ export const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: Tru
 
   // For pairs (matching ranks)
   if (typeA === ComboType.Pair && typeB === ComboType.Pair) {
-    // If they're the same type, compare the rank
+    // If they're the same type, ONLY compare the rank if they're from the same suit
+    // Otherwise, in Shengji rules, the leading combo always wins unless trumps are involved
+    // (and we've already handled the trump cases above)
     if (comboA[0].rank && comboB[0].rank) {
-      return compareRanks(comboA[0].rank, comboB[0].rank);
+      // Only compare ranks if from the same suit
+      if (comboA[0].suit && comboB[0].suit && comboA[0].suit === comboB[0].suit) {
+        return compareRanks(comboA[0].rank, comboB[0].rank);
+      } else {
+        // Different suits and both are pairs - in Shengji, the leading combo (comboA) wins
+        return 1; 
+      }
     }
   }
 
@@ -737,6 +745,20 @@ export const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: Tru
 
   // For tractors, compare the highest card in the tractor
   if (typeA === ComboType.Tractor && typeB === ComboType.Tractor) {
+    // First, check if the tractors are from the same suit
+    const suitA = comboA[0].suit;
+    const suitB = comboB[0].suit;
+    
+    const allSameSuitA = suitA && comboA.every(card => card.suit === suitA);
+    const allSameSuitB = suitB && comboB.every(card => card.suit === suitB);
+    
+    // If both are valid tractors from different suits, the leading combo (comboA) wins
+    // (We've already handled the trump cases above)
+    if (allSameSuitA && allSameSuitB && suitA !== suitB) {
+      return 1; // Leading tractor wins when comparing across different suits
+    }
+    
+    // If they're from the same suit, compare the highest cards
     // Find the highest card in each tractor
     const maxCardA = comboA.reduce((max, card) =>
       compareCards(max, card, trumpInfo) > 0 ? max : card, comboA[0]
