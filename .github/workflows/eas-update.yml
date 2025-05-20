@@ -1,13 +1,20 @@
-name: EAS Update Production
+name: EAS Update
 
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # Semver tags like v1.2.3
   workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name to deploy (defaults to GitHub ref)'
+        required: false
+        type: string
 
-# Prevent concurrent production deployments
+# Prevent concurrent deployments due to rate limits
 concurrency:
-  group: production-deploy
+  group: eas-update
   cancel-in-progress: false  # Queue deployments instead of canceling
 
 jobs:
@@ -37,7 +44,39 @@ jobs:
         eas-version: latest
         token: ${{ secrets.EXPO_TOKEN }}
 
+    - name: Set deployment variables
+      id: vars
+      run: |
+        # Debug information
+        echo "GITHUB_REF: $GITHUB_REF"
+        echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
+        
+        # Determine the deployment branch and message based on the trigger
+        if [[ $GITHUB_REF == refs/tags/v* ]]; then
+          # For semver tags (v1.2.3) deploy to production
+          echo "EAS_BRANCH=production" >> $GITHUB_OUTPUT
+          echo "EAS_MESSAGE=Release ${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "Deploying to production branch from tag: ${GITHUB_REF#refs/tags/}"
+        elif [[ $GITHUB_REF == refs/heads/main ]]; then
+          # For main branch deploy to preview
+          echo "EAS_BRANCH=preview" >> $GITHUB_OUTPUT
+          echo "EAS_MESSAGE=Update from main branch" >> $GITHUB_OUTPUT
+          echo "Deploying to preview branch from main"
+        else
+          # For other branches use the branch name or manual input
+          BRANCH_NAME="${{ inputs.branch_name }}"
+          if [[ -z "$BRANCH_NAME" ]]; then
+            # Extract branch name from GITHUB_REF if not provided as input
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          fi
+          # Clean up branch name for use as EAS branch (replace slashes)
+          CLEAN_BRANCH=${BRANCH_NAME//\//-}
+          echo "EAS_BRANCH=$CLEAN_BRANCH" >> $GITHUB_OUTPUT
+          echo "EAS_MESSAGE=Development build from $BRANCH_NAME branch" >> $GITHUB_OUTPUT
+          echo "Deploying to branch: $CLEAN_BRANCH from $BRANCH_NAME"
+        fi
+
     - name: EAS Update
-      run: npx eas update --branch production --message "Automated update from main branch"
+      run: npx eas update --branch ${{ steps.vars.outputs.EAS_BRANCH }} --message "${{ steps.vars.outputs.EAS_MESSAGE }}"
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
