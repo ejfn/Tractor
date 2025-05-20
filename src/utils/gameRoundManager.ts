@@ -51,11 +51,99 @@ export function prepareNextRound(
   newState.tricks = [];
   newState.currentTrick = null;
   
-  // First player is from defending team
-  const defendingPlayers = newState.players.filter(
-    p => p.team === newDefendingTeam?.id
-  );
-  newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
+  // Save the current first player index for the next round
+  if (newState.currentPlayerIndex !== undefined) {
+    newState.lastRoundStartingPlayerIndex = newState.currentPlayerIndex;
+  }
+  
+  // Determine first player for the round based on rules:
+  // First round: Trump declarer goes first (their team becomes defending)
+  // Subsequent rounds:
+  //   - If defending team successfully defended, the OTHER player on the defending team goes first
+  //   - If attacking team won, the next player counter-clockwise (from the attacking team) goes first
+  
+  // Get the defending and attacking teams
+  const defendingTeam = newDefendingTeam;
+  const attackingTeam = newState.teams.find(t => !t.isDefending);
+  
+  // Get the player IDs from each team
+  const defendingPlayers = newState.players.filter(p => p.team === defendingTeam?.id);
+  const attackingPlayers = newState.players.filter(p => p.team === attackingTeam?.id);
+  
+  // Handle first round when we have a trump declarer
+  if (newState.roundNumber === 1 && newState.trumpInfo.declarerPlayerId) {
+    // Find index of the trump declarer
+    const declarerIndex = newState.players.findIndex(
+      p => p.id === newState.trumpInfo.declarerPlayerId
+    );
+    
+    if (declarerIndex !== -1) {
+      newState.currentPlayerIndex = declarerIndex;
+    } else {
+      // Fallback if declarer not found
+      newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
+    }
+  } 
+  // For subsequent rounds
+  else if (newState.roundNumber > 1) {
+    const didAttackingTeamWin = attackingTeam?.isDefending === true;
+    
+    if (didAttackingTeamWin) {
+      // Attacking team won and becomes the new defending team
+      // Next player counter-clockwise from attacking team goes first
+      
+      // Find which player on the attacking team played first last round
+      const attackingTeamLastRoundStarter = attackingPlayers.find(
+        p => newState.players.indexOf(p) === newState.lastRoundStartingPlayerIndex
+      );
+      
+      if (attackingTeamLastRoundStarter) {
+        // The other player on the attacking team goes first
+        const otherPlayer = attackingPlayers.find(
+          p => p.id !== attackingTeamLastRoundStarter.id
+        );
+        
+        if (otherPlayer) {
+          newState.currentPlayerIndex = newState.players.indexOf(otherPlayer);
+        } else {
+          // Fallback
+          newState.currentPlayerIndex = newState.players.indexOf(attackingPlayers[0]);
+        }
+      } else {
+        // If we can't determine who played first last round
+        newState.currentPlayerIndex = newState.players.indexOf(attackingPlayers[0]);
+      }
+    } else {
+      // Defending team successfully defended
+      // The other player on defending team should start
+      
+      // Find which player on the defending team played first last round
+      const defendingTeamLastRoundStarter = defendingPlayers.find(
+        p => newState.players.indexOf(p) === newState.lastRoundStartingPlayerIndex
+      );
+      
+      if (defendingTeamLastRoundStarter) {
+        // The other player on the defending team goes first
+        const otherPlayer = defendingPlayers.find(
+          p => p.id !== defendingTeamLastRoundStarter.id
+        );
+        
+        if (otherPlayer) {
+          newState.currentPlayerIndex = newState.players.indexOf(otherPlayer);
+        } else {
+          // Fallback
+          newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
+        }
+      } else {
+        // If we can't determine who played first last round
+        newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
+      }
+    }
+  }
+  // Fallback for any other case
+  else {
+    newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
+  }
   
   // Set phase to declaring again
   newState.gamePhase = 'declaring';

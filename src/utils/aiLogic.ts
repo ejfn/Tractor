@@ -293,11 +293,12 @@ export const getAIMove = (
             .sort((a, b) => compareCards(a, b, gameState.trumpInfo));
             
           // Create simple combos with individual trump cards
-          const singleTrumpCombos = trumpCards.map(card => ({
-            type: ComboType.Single,
-            cards: [card],
-            value: 50 + (card.rank === gameState.trumpInfo.trumpRank ? 100 : 0)
-          }));
+          // Unused in current logic but kept for potential future use
+          // const singleTrumpCombos = trumpCards.map(card => ({
+          //   type: ComboType.Single,
+          //   cards: [card],
+          //   value: 50 + (card.rank === gameState.trumpInfo.trumpRank ? 100 : 0)
+          // }));
           
           // Check if we have enough trump cards to match the leading length
           if (trumpCards.length >= leadingLength) {
