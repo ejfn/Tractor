@@ -3,7 +3,8 @@ import {
   identifyCombos,
   isTrump,
   compareCards,
-  compareCardCombos
+  compareCardCombos,
+  determineTrickWinner
 } from '../../src/utils/gameLogic';
 import {
   Card,
@@ -397,5 +398,90 @@ describe('Trump Pair Tests', () => {
     // Test the key scenario - proper pair should beat mixed-suit non-pair
     const comparison = compareCardCombos(properPair, invalidPair, nonFiveTrumpInfo);
     expect(comparison).toBeGreaterThan(0); // properPair should win
+  });
+
+  // Test for the scenario where a higher rank pair should not win against a leading pair of a different suit
+  test('When comparing pairs from different suits, the leading pair always wins regardless of rank', () => {
+    // Create a trumpInfo where 2 is the trump rank and diamonds is the trump suit
+    const trumpTwoDiamonds: TrumpInfo = {
+      trumpRank: Rank.Two,
+      trumpSuit: Suit.Diamonds,
+      declared: true
+    };
+
+    // Create a pair of fives (lower rank, non-trump)
+    const fivePair = [fiveSpades1, fiveSpades2];
+    
+    // Create a pair of tens (higher rank, non-trump)
+    const tenPair = [
+      {
+        suit: Suit.Clubs,
+        rank: Rank.Ten,
+        id: 'Clubs_10_1',
+        points: 10
+      },
+      {
+        suit: Suit.Clubs,
+        rank: Rank.Ten,
+        id: 'Clubs_10_2',
+        points: 10
+      }
+    ];
+
+    // Verify both are proper pairs
+    expect(getComboType(fivePair)).toBe(ComboType.Pair);
+    expect(getComboType(tenPair)).toBe(ComboType.Pair);
+    
+    // Verify neither contains trump cards
+    fivePair.forEach(card => {
+      expect(isTrump(card, trumpTwoDiamonds)).toBe(false);
+    });
+    
+    tenPair.forEach(card => {
+      expect(isTrump(card, trumpTwoDiamonds)).toBe(false);
+    });
+    
+    // We know that Ten is a higher rank than Five (based on the Rank enum ordering)
+    // This is just to confirm our test premise without using the private compareRanks function
+    
+    // In Shengji, when comparing pairs from different suits, 
+    // the leading pair always wins (when no trumps are involved)
+    const comparison = compareCardCombos(fivePair, tenPair, trumpTwoDiamonds);
+    expect(comparison).toBeGreaterThan(0); // Leading pair (fivePair) should win
+  });
+  
+  // Test for the scenario where a higher rank pair of the same suit wins
+  test('When comparing pairs from the same suit, the higher rank pair should win', () => {
+    const trumpTwoDiamonds: TrumpInfo = {
+      trumpRank: Rank.Two,
+      trumpSuit: Suit.Diamonds,
+      declared: true
+    };
+
+    // Create a pair of fives (lower rank, same suit)
+    const fivePair = [fiveSpades1, fiveSpades2];
+    
+    // Create a pair of sixes (higher rank, same suit)
+    const sixPair = [
+      sixSpades1,
+      {
+        suit: Suit.Spades,
+        rank: Rank.Six,
+        id: 'Spades_6_2',
+        points: 0
+      }
+    ];
+
+    // Verify both are proper pairs and from the same suit
+    expect(getComboType(fivePair)).toBe(ComboType.Pair);
+    expect(getComboType(sixPair)).toBe(ComboType.Pair);
+    expect(fivePair[0].suit).toBe(sixPair[0].suit);
+    
+    // We know that Six is a higher rank than Five (based on the Rank enum ordering)
+    // This is just to confirm our test premise without using the private compareRanks function
+    
+    // When comparing pairs from the same suit, the higher rank pair should win
+    const comparison = compareCardCombos(fivePair, sixPair, trumpTwoDiamonds);
+    expect(comparison).toBeLessThan(0); // Higher rank pair (sixPair) should win
   });
 });
