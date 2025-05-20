@@ -751,6 +751,30 @@ export const compareCardCombos = (comboA: Card[], comboB: Card[], trumpInfo: Tru
 
   // If different types of combos but same total cards, should already be handled above
   // This shouldn't happen in proper Shengji
+  
+  // Check for a specific case where both are marked as "singles" but one is actually
+  // multiple cards of the same suit and the other is mixed suits
+  if (comboA.length > 1) {
+    // For multi-card plays, the rule in Shengji is that the leading suit's play wins
+    // unless beaten by a trump play or a proper combo (like a pair)
+    
+    // Get the suit of the leading combo (the one that should win if no trump/proper combo)
+    const leadingSuit = getLeadingSuit([...comboA, ...comboB]);
+    
+    // If both are non-trump and we have a leading suit,
+    // the combo that follows the leading suit wins
+    if (leadingSuit && !aIsTrump && !bIsTrump) {
+      // Count how many cards match the leading suit in each combo
+      const aMatchCount = comboA.filter(card => card.suit === leadingSuit).length;
+      const bMatchCount = comboB.filter(card => card.suit === leadingSuit).length;
+      
+      // If one follows the suit better than the other, it wins
+      if (aMatchCount > bMatchCount) return 1;
+      if (aMatchCount < bMatchCount) return -1;
+    }
+  }
+  
+  // Default fallback: compare highest cards
   const maxCardA = comboA.reduce((max, card) =>
     compareCards(max, card, trumpInfo) > 0 ? max : card, comboA[0]
   );

@@ -2,7 +2,8 @@ import {
   getComboType,
   identifyCombos,
   isTrump,
-  compareCards
+  compareCards,
+  compareCardCombos
 } from '../../src/utils/gameLogic';
 import {
   Card,
@@ -357,5 +358,44 @@ describe('Trump Pair Tests', () => {
     );
 
     expect(invalidJokerPair).toBeUndefined();
+  });
+
+  // Test for Issue #34 - Non-trump pair from different suits should not beat a leading non-trump pair
+  test('A non-trump pair from different suits should not beat a leading non-trump pair', () => {
+    // Create a new trumpInfo where 5's aren't trump
+    const nonFiveTrumpInfo: TrumpInfo = {
+      trumpRank: Rank.Seven,
+      trumpSuit: Suit.Diamonds,
+      declared: true
+    };
+
+    // Create a proper pair of five spades (non-trump)
+    const properPair = [fiveSpades1, fiveSpades2];
+    
+    // Create an "invalid pair" of same rank but different suits (also non-trump)
+    const invalidPair = [
+      {
+        suit: Suit.Hearts,
+        rank: Rank.Five,
+        id: 'Hearts_5_1',
+        points: 5
+      },
+      {
+        suit: Suit.Clubs,
+        rank: Rank.Five,
+        id: 'Clubs_5_1',
+        points: 5
+      }
+    ];
+
+    // Verify proper pair is actually a pair
+    expect(getComboType(properPair)).toBe(ComboType.Pair);
+    
+    // Verify mixed-suit "pair" is not actually a pair
+    expect(getComboType(invalidPair)).toBe(ComboType.Single);
+    
+    // Test the key scenario - proper pair should beat mixed-suit non-pair
+    const comparison = compareCardCombos(properPair, invalidPair, nonFiveTrumpInfo);
+    expect(comparison).toBeGreaterThan(0); // properPair should win
   });
 });
