@@ -94,7 +94,7 @@ export function useGameState(config: GameConfig) {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     
     // Handle trump declaration mode - select card but don't declare immediately
-    if (showTrumpDeclaration && currentPlayer.isHuman) {
+    if (showTrumpDeclaration) {
       if (card.rank === gameState.trumpInfo.trumpRank && card.suit) {
         // Toggle selection of trump cards
         if (selectedCards.some(c => c.id === card.id)) {
