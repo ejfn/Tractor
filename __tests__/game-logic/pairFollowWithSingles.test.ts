@@ -20,12 +20,19 @@ describe('Pair Follow With Singles', () => {
     cardId = 0;
     
     // Create playing game state with teams set correctly
+    // Set trump to Spades to avoid confusion with Hearts in the test
     mockState = createPlayingGameState({
       teams: createTestTeams({
         A: { isDefending: true, points: 0 },
         B: { isDefending: false, points: 0 }
       }),
-      currentPlayerId: 'player'
+      currentPlayerId: 'player',
+      trumpInfo: {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Spades,
+        declared: true,
+        declarerPlayerId: 'ai1'
+      }
     });
     
     humanPlayer = GameStateUtils.getPlayerById(mockState, 'player');

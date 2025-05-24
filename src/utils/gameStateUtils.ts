@@ -1,4 +1,4 @@
-import { GameState, Player, Team } from '../types/game';
+import { GameState, Player, Team } from "../types/game";
 
 export class GameStateUtils {
   static getPlayerById(gameState: GameState, playerId: string): Player {
@@ -11,7 +11,7 @@ export class GameStateUtils {
 
   static getPlayerIndex(gameState: GameState, playerId: string): number {
     const playerIds = Object.keys(gameState.players);
-    const index = playerIds.findIndex(id => id === playerId);
+    const index = playerIds.findIndex((id) => id === playerId);
     if (index === -1) {
       throw new Error(`Player with id ${playerId} not found`);
     }
@@ -20,16 +20,16 @@ export class GameStateUtils {
 
   static getPlayersInOrder(gameState: GameState): Player[] {
     // Return players in positional order: bottom, right, top, left
-    const positionOrder = ['bottom', 'right', 'top', 'left'];
+    const positionOrder = ["bottom", "right", "top", "left"];
     const playersByPosition = new Map();
-    
-    Object.values(gameState.players).forEach(player => {
+
+    Object.values(gameState.players).forEach((player) => {
       playersByPosition.set(player.position, player);
     });
-    
+
     return positionOrder
-      .map(position => playersByPosition.get(position))
-      .filter(player => player !== undefined);
+      .map((position) => playersByPosition.get(position))
+      .filter((player) => player !== undefined);
   }
 
   static getTeam(gameState: GameState, teamId: "A" | "B"): Team {
@@ -41,7 +41,9 @@ export class GameStateUtils {
   }
 
   static findPlayersByTeam(gameState: GameState, teamId: "A" | "B"): Player[] {
-    return Object.values(gameState.players).filter(player => player.teamId === teamId);
+    return Object.values(gameState.players).filter(
+      (player) => player.teamId === teamId,
+    );
   }
 
   static getCurrentPlayer(gameState: GameState): Player {
@@ -50,11 +52,13 @@ export class GameStateUtils {
 
   static getNextPlayer(gameState: GameState, currentPlayerId: string): Player {
     const playersInOrder = this.getPlayersInOrder(gameState);
-    const currentIndex = playersInOrder.findIndex(p => p.id === currentPlayerId);
+    const currentIndex = playersInOrder.findIndex(
+      (p) => p.id === currentPlayerId,
+    );
     if (currentIndex === -1) {
       throw new Error(`Player ${currentPlayerId} not found in play order`);
     }
-    
+
     const nextIndex = (currentIndex + 1) % playersInOrder.length;
     return playersInOrder[nextIndex];
   }
@@ -76,16 +80,19 @@ export class GameStateUtils {
     return gameState.currentPlayerId === playerId;
   }
 
-  static getTrickWinner(gameState: GameState, trickIndex: number): Player | null {
+  static getTrickWinner(
+    gameState: GameState,
+    trickIndex: number,
+  ): Player | null {
     if (trickIndex >= gameState.tricks.length) {
       return null;
     }
-    
+
     const trick = gameState.tricks[trickIndex];
     if (!trick.winningPlayerId) {
       return null;
     }
-    
+
     return this.getPlayerById(gameState, trick.winningPlayerId);
   }
 
@@ -97,39 +104,47 @@ export class GameStateUtils {
     return Object.keys(gameState.teams).length;
   }
 
-  static updatePlayer(gameState: GameState, playerId: string, updates: Partial<Player>): GameState {
+  static updatePlayer(
+    gameState: GameState,
+    playerId: string,
+    updates: Partial<Player>,
+  ): GameState {
     const existingPlayer = this.getPlayerById(gameState, playerId);
-    
+
     return {
       ...gameState,
       players: {
         ...gameState.players,
         [playerId]: {
           ...existingPlayer,
-          ...updates
-        }
-      }
+          ...updates,
+        },
+      },
     };
   }
 
-  static updateTeam(gameState: GameState, teamId: "A" | "B", updates: Partial<Team>): GameState {
+  static updateTeam(
+    gameState: GameState,
+    teamId: "A" | "B",
+    updates: Partial<Team>,
+  ): GameState {
     const existingTeam = this.getTeam(gameState, teamId);
-    
+
     return {
       ...gameState,
       teams: {
         ...gameState.teams,
         [teamId]: {
           ...existingTeam,
-          ...updates
-        }
-      }
+          ...updates,
+        },
+      },
     };
   }
 
   // Additional helper methods that tests expect
   static findAIPlayers(gameState: GameState): Player[] {
-    return Object.values(gameState.players).filter(player => !player.isHuman);
+    return Object.values(gameState.players).filter((player) => !player.isHuman);
   }
 
   static getPlayerOrder(gameState: GameState): Player[] {
@@ -141,9 +156,11 @@ export class GameStateUtils {
   }
 
   static findHumanPlayer(gameState: GameState): Player {
-    const humanPlayer = Object.values(gameState.players).find(player => player.isHuman);
+    const humanPlayer = Object.values(gameState.players).find(
+      (player) => player.isHuman,
+    );
     if (!humanPlayer) {
-      throw new Error('No human player found');
+      throw new Error("No human player found");
     }
     return humanPlayer;
   }
