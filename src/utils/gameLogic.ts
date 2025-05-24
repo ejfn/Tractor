@@ -153,19 +153,18 @@ export const compareCards = (
       return aLevel - bLevel; // Higher level wins
     }
 
-    // Same level trumps - need to compare further
+    // Same level trumps - need to handle specific cases
     if (aLevel === 2) {
-      // Both are trump rank in non-trump suits - compare suits
-      if (cardA.suit && cardB.suit) {
-        return compareSuits(cardA.suit, cardB.suit, trumpInfo);
-      }
+      // Both are trump rank in non-trump suits - they have equal strength
+      // Return 0 to indicate equal strength (first played wins in trick context)
+      return 0;
     } else if (aLevel === 1) {
       // Both are trump suit - compare by rank
       return compareRanks(cardA.rank!, cardB.rank!);
+    } else {
+      // Same level jokers or trump rank in trump suit - equal strength
+      return 0;
     }
-
-    // Same type of jokers or other edge case - compare by ID
-    return cardA.id.localeCompare(cardB.id);
   }
 
   // Non-trump comparison
@@ -174,38 +173,8 @@ export const compareCards = (
     return compareRanks(cardA.rank!, cardB.rank!);
   }
 
-  // Different suits, and not trumps - first card played wins
-  // In Shengji, when following suit isn't possible, the first card played determines the suit
-  // so return 0 to indicate neither card has precedence based solely on value
+  // Different suits, and not trumps - equal strength (first played wins)
   return 0;
-};
-
-// Compare suits using rotated suit ordering based on the trump suit
-const compareSuits = (
-  suitA: Suit,
-  suitB: Suit,
-  trumpInfo?: TrumpInfo,
-): number => {
-  // Default suit order: maintains alternating black-red pattern
-  // Base order: Spades (black), Hearts (red), Clubs (black), Diamonds (red)
-  let suitOrder = [Suit.Spades, Suit.Hearts, Suit.Clubs, Suit.Diamonds];
-
-  // If we have a trump suit, rotate the order to put the trump suit first
-  // while maintaining the alternating black-red pattern
-  if (trumpInfo?.trumpSuit) {
-    const trumpSuitIndex = suitOrder.indexOf(trumpInfo.trumpSuit);
-    if (trumpSuitIndex > 0) {
-      // Rotate the array to put the trump suit first
-      suitOrder = [
-        ...suitOrder.slice(trumpSuitIndex),
-        ...suitOrder.slice(0, trumpSuitIndex),
-      ];
-    }
-  }
-
-  // Compare the suits in the (possibly rotated) order
-  // Higher index is higher value in Shengji
-  return suitOrder.indexOf(suitB) - suitOrder.indexOf(suitA);
 };
 
 // Compare ranks
