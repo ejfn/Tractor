@@ -37,7 +37,6 @@ const createMockGameState = (): GameState => {
           createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
         ],
         team: 'A',
-        currentRank: Rank.Two
       },
       {
         id: 'ai1',
@@ -48,7 +47,6 @@ const createMockGameState = (): GameState => {
           createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
         ],
         team: 'B',
-        currentRank: Rank.Two
       },
       {
         id: 'ai2',
@@ -59,7 +57,6 @@ const createMockGameState = (): GameState => {
           createMockCard('hearts_a_1', Suit.Hearts, Rank.Ace)
         ],
         team: 'A',
-        currentRank: Rank.Two
       },
       {
         id: 'ai3',
@@ -70,22 +67,19 @@ const createMockGameState = (): GameState => {
           createMockCard('diamonds_10_1', Suit.Diamonds, Rank.Ten, 10)
         ],
         team: 'B',
-        currentRank: Rank.Two
       }
     ],
     teams: [
       {
         id: 'A',
-        players: ['player', 'ai2'],
-        points: 0,
         currentRank: Rank.Two,
+        points: 0,
         isDefending: true
       },
       {
         id: 'B',
-        players: ['ai1', 'ai3'],
-        points: 0,
         currentRank: Rank.Two,
+        points: 0,
         isDefending: false
       }
     ],
@@ -151,7 +145,7 @@ describe('gameRoundManager', () => {
         deck: mockDeck
       });
       
-      const result = prepareNextRound(mockState, 'Player Name', ['Team A', 'Team B']);
+      const result = prepareNextRound(mockState);
       
       // Verify round number was incremented
       expect(result.roundNumber).toBe(2);
@@ -184,12 +178,8 @@ describe('gameRoundManager', () => {
       expect(result.tricks.length).toBe(0);
       expect(result.currentTrick).toBeNull();
       
-      // Verify initializeGame was called with the right params
-      expect(gameLogic.initializeGame).toHaveBeenCalledWith(
-        'Player Name',
-        ['Team A', 'Team B'],
-        Rank.Two
-      );
+      // Verify initializeGame was called
+      expect(gameLogic.initializeGame).toHaveBeenCalled();
     });
   });
 

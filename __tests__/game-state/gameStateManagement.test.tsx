@@ -41,11 +41,7 @@ jest.mock('../../src/utils/gameRoundManager', () => ({
 
 // Test component that uses the useGameState hook
 const TestComponent: React.FC<{ onStateChange?: (state: any) => void }> = ({ onStateChange }) => {
-  const gameStateHook = useGameState({
-    playerName: 'Test Player',
-    teamNames: ['Team A', 'Team B'],
-    startingRank: Rank.Two
-  });
+  const gameStateHook = useGameState();
 
   // Call onStateChange whenever state changes
   React.useEffect(() => {
@@ -58,7 +54,6 @@ const TestComponent: React.FC<{ onStateChange?: (state: any) => void }> = ({ onS
     <View>
       <Text testID="game-phase">{gameStateHook.gameState?.gamePhase || 'none'}</Text>
       <Text testID="current-player-index">{gameStateHook.gameState?.currentPlayerIndex}</Text>
-      <Text testID="winning-player-index">{gameStateHook.gameState?.winningPlayerIndex}</Text>
       <Button 
         testID="trick-complete-button"
         title="Complete Trick" 
@@ -106,7 +101,6 @@ const createMockGameState = (): GameState => {
         ],
         isHuman: true,
         team: 'A',
-        currentRank: Rank.Two
       },
       {
         id: 'ai1',
@@ -117,7 +111,6 @@ const createMockGameState = (): GameState => {
         ],
         isHuman: false,
         team: 'B',
-        currentRank: Rank.Two
       },
       {
         id: 'ai2',
@@ -128,7 +121,6 @@ const createMockGameState = (): GameState => {
         ],
         isHuman: false,
         team: 'A',
-        currentRank: Rank.Two
       },
       {
         id: 'ai3',
@@ -139,12 +131,11 @@ const createMockGameState = (): GameState => {
         ],
         isHuman: false,
         team: 'B',
-        currentRank: Rank.Two
       }
     ],
     teams: [
-      { id: 'A', currentRank: Rank.Two, isDefending: true, players: ['human', 'ai2'], points: 0 },
-      { id: 'B', currentRank: Rank.Two, isDefending: false, players: ['ai1', 'ai3'], points: 0 }
+      { id: 'A', currentRank: Rank.Two, isDefending: true, points: 0 },
+      { id: 'B', currentRank: Rank.Two, isDefending: false, points: 0 }
     ],
     currentPlayerIndex: 0,
     trumpInfo: {
@@ -167,10 +158,9 @@ describe('Game State Management', () => {
     jest.clearAllMocks();
   });
 
-  test('winningPlayerIndex is properly stored and used in handleTrickResultComplete', async () => {
+  test('handles trick completion correctly', async () => {
     // Setup mock game state
     const mockState = createMockGameState();
-    mockState.winningPlayerIndex = 2; // AI2 is the winner (index 2)
     mockState.currentTrick = {
       leadingPlayerId: 'human',
       leadingCombo: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)],
@@ -188,7 +178,8 @@ describe('Game State Management', () => {
           cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)]
         }
       ],
-      points: 5
+      points: 5,
+      winningPlayerId: 'ai2' // ai2's Spades 2 wins because 2 is trump rank
     };
 
     // Mock initializeGame to return our mock state
@@ -209,10 +200,6 @@ describe('Game State Management', () => {
     });
 
     // The state should already have our mock data from initializeGame
-    expect(currentHookState.gameState.winningPlayerIndex).toBe(2);
-    
-    // Check initial state
-    expect(getByTestId('winning-player-index').props.children).toBe(2);
     
     // Trigger trick result complete
     fireEvent.press(getByTestId('trick-complete-button'));
@@ -221,7 +208,6 @@ describe('Game State Management', () => {
     await waitFor(() => {
       expect(currentHookState.gameState.currentPlayerIndex).toBe(2);
       expect(currentHookState.gameState.currentTrick).toBeNull();
-      expect(currentHookState.gameState.winningPlayerIndex).toBeUndefined();
     });
   });
 

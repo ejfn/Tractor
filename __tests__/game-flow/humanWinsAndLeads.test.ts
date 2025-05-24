@@ -6,7 +6,7 @@ import { describe, test, expect } from '@jest/globals';
 
 describe('Human Wins and Leads Bug', () => {
   test('Human wins first trick and leads second', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Give human high cards to ensure they win
@@ -56,7 +56,6 @@ describe('Human Wins and Leads Bug', () => {
       
       if (result.trickComplete) {
         console.log(`\nTrick complete! Winner: ${result.trickWinner}`);
-        console.log(`Winning player index: ${state.winningPlayerIndex}`);
       }
     }
     

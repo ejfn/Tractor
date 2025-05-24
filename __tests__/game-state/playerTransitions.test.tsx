@@ -59,13 +59,11 @@ jest.mock('../../src/utils/gameLogic', () => ({
     }],
     teams: [{
       id: 'A',
-      players: ['human', 'ai2'],
       currentRank: 2,
       points: 0,
       isDefending: true
     }, {
       id: 'B',
-      players: ['ai1', 'ai3'],
       currentRank: 2, 
       points: 0,
       isDefending: false
@@ -116,11 +114,7 @@ interface TestComponentProps {
 }
 
 const TestComponent: React.FC<TestComponentProps> = ({ initialState, onStateChange }) => {
-  const gameStateHook = useGameState({
-    playerName: 'Test Player',
-    teamNames: ['Team A', 'Team B'],
-    startingRank: Rank.Two
-  });
+  const gameStateHook = useGameState();
 
   // @ts-ignore - Test mock type mismatch
   const aiTurnsHook = useAITurns(
@@ -160,7 +154,6 @@ const TestComponent: React.FC<TestComponentProps> = ({ initialState, onStateChan
         {gameStateHook.gameState?.players[gameStateHook.gameState.currentPlayerIndex]?.name}
       </Text>
       <Text testID="winning-player-index">
-        {gameStateHook.gameState?.winningPlayerIndex}
       </Text>
       <Text testID="ai-thinking">
         {aiTurnsHook.waitingForAI ? 'thinking' : 'idle'}
@@ -201,7 +194,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
         createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
         createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
       ],
-      currentRank: Rank.Two,
       team: 'A'
     },
     {
@@ -212,7 +204,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
         createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
         createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
       ],
-      currentRank: Rank.Two,
       team: 'B'
     },
     {
@@ -223,7 +214,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
         createMockCard('spades_2_1', Suit.Spades, Rank.Two),
         createMockCard('hearts_q_1', Suit.Hearts, Rank.Queen)
       ],
-      currentRank: Rank.Two,
       team: 'A'
     },
     {
@@ -234,7 +224,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
         createMockCard('clubs_4_1', Suit.Clubs, Rank.Four),
         createMockCard('diamonds_6_1', Suit.Diamonds, Rank.Six)
       ],
-      currentRank: Rank.Two,
       team: 'B'
     }
   ];
@@ -242,8 +231,8 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
   return {
     players,
     teams: [
-      { id: 'A', currentRank: Rank.Two, isDefending: true, players: ['human', 'ai2'], points: 0 },
-      { id: 'B', currentRank: Rank.Two, isDefending: false, players: ['ai1', 'ai3'], points: 0 }
+      { id: 'A', currentRank: Rank.Two, isDefending: true, points: 0 },
+      { id: 'B', currentRank: Rank.Two, isDefending: false, points: 0 }
     ],
     trumpInfo: {
       trumpRank: Rank.Two,
@@ -255,7 +244,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
     currentTrick: null,
     deck: [],
     kittyCards: [],
-    winningPlayerIndex: undefined,
     tricks: [],
     roundNumber: 1
   };
@@ -290,7 +278,6 @@ describe('Player Transitions', () => {
     (processPlay as jest.Mock).mockImplementation((state, cards) => {
       const updatedState = {
         ...state,
-        winningPlayerIndex: 0, // Human wins
         currentPlayerIndex: 0, // Human becomes next player
         currentTrick: null, // Trick is cleared after completion
         players: state.players.map((p: Player) => ({
@@ -339,7 +326,6 @@ describe('Player Transitions', () => {
     // Wait for state update after play
     await waitFor(() => {
       const latestState = stateChanges[stateChanges.length - 1];
-      expect(latestState.gameState.winningPlayerIndex).toBe(0);
     }, { timeout: 3000 });
 
     // Verify the human is set as next player after trick completion
@@ -374,7 +360,6 @@ describe('Player Transitions', () => {
     (processPlay as jest.Mock).mockImplementation((state, cards) => {
       const updatedState = {
         ...state,
-        winningPlayerIndex: 2, // Bot 2 wins
         currentPlayerIndex: 2, // Bot 2 becomes next player
         currentTrick: null,
         players: state.players.map((p: Player) => ({
@@ -411,7 +396,6 @@ describe('Player Transitions', () => {
     // Wait for state to be updated with winner
     await waitFor(() => {
       const latestState = stateChanges[stateChanges.length - 1];
-      expect(latestState.gameState.winningPlayerIndex).toBe(2);
     }, { timeout: 3000 });
 
     // Verify winning player becomes current player after trick

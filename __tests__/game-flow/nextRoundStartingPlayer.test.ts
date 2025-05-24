@@ -6,7 +6,7 @@ import { declareTrumpSuit } from '../../src/utils/trumpManager';
 describe('Next round starting player selection', () => {
   // Test utilities
   const createTestGameState = (): GameState => {
-    return initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    return initializeGame();
   };
 
   const completeRound = (state: GameState, attackingTeamWins: boolean): GameState => {
@@ -50,7 +50,7 @@ describe('Next round starting player selection', () => {
     endedState.roundNumber = 0;
     
     // Prepare next round (will be round 1)
-    const nextRoundState = prepareNextRound(endedState, 'Human', ['Team A', 'Team B']);
+    const nextRoundState = prepareNextRound(endedState);
     
     // Verify the round number is 1
     expect(nextRoundState.roundNumber).toBe(1);
@@ -89,7 +89,7 @@ describe('Next round starting player selection', () => {
     const endedState = completeRound(state, false);
     
     // Prepare next round
-    const nextRoundState = prepareNextRound(endedState, 'Human', ['Team A', 'Team B']);
+    const nextRoundState = prepareNextRound(endedState);
     
     // Expect the other player from Team A (Bot2, index 2) to go first
     expect(nextRoundState.currentPlayerIndex).toBe(2);
@@ -120,7 +120,7 @@ describe('Next round starting player selection', () => {
     const endedState = completeRound(state, true);
     
     // Prepare next round
-    const nextRoundState = prepareNextRound(endedState, 'Human', ['Team A', 'Team B']);
+    const nextRoundState = prepareNextRound(endedState);
     
     // Expect the other player from Team B (Bot3, index 3) to go first
     expect(nextRoundState.currentPlayerIndex).toBe(3);
@@ -151,7 +151,7 @@ describe('Next round starting player selection', () => {
     const endedRound2 = completeRound(state, false);
     
     // Prepare round 3
-    const round3State = prepareNextRound(endedRound2, 'Human', ['Team A', 'Team B']);
+    const round3State = prepareNextRound(endedRound2);
     
     // Expect Human (index 0) to go first in round 3
     expect(round3State.currentPlayerIndex).toBe(0);
@@ -160,7 +160,7 @@ describe('Next round starting player selection', () => {
     const endedRound3 = completeRound(round3State, false);
     
     // Prepare round 4
-    const round4State = prepareNextRound(endedRound3, 'Human', ['Team A', 'Team B']);
+    const round4State = prepareNextRound(endedRound3);
     
     // Expect Bot2 (index 2) to go first again in round 4
     expect(round4State.currentPlayerIndex).toBe(2);

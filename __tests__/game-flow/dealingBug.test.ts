@@ -6,7 +6,7 @@ describe('Card Dealing Bug Test', () => {
     // Create multiple games to check consistency
     for (let i = 0; i < 5; i++) {
       console.log(`\n=== Game ${i + 1} ===`);
-      const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+      const gameState = initializeGame();
       
       console.log('Initial card counts:');
       gameState.players.forEach((player, idx) => {

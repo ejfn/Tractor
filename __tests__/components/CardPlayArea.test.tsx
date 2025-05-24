@@ -35,10 +35,6 @@ jest.mock('../../src/components/AnimatedCard', () => {
 describe('CardPlayArea', () => {
   // Mock data for testing
   const mockPlayers: Player[] = [
-    { id: 'human', name: 'You', hand: [], isHuman: true, team: 'A', currentRank: Rank.Two },
-    { id: 'ai1', name: 'Bot 1', hand: [], isHuman: false, team: 'B', currentRank: Rank.Two },
-    { id: 'ai2', name: 'Bot 2', hand: [], isHuman: false, team: 'A', currentRank: Rank.Two },
-    { id: 'ai3', name: 'Bot 3', hand: [], isHuman: false, team: 'B', currentRank: Rank.Two },
   ];
 
   const mockTrumpInfo: TrumpInfo = {

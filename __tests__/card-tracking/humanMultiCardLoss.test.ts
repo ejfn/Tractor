@@ -5,7 +5,7 @@ import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
 
 describe('Human Multi-Card Loss Bug', () => {
   test('Reproduce human losing multiple cards', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     console.log('=== Initial state ===');

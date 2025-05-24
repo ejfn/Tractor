@@ -26,7 +26,6 @@ const mockPlayer: Player = {
   hand: [],
   isHuman: true,
   team: 'A',
-  currentRank: Rank.Two
 };
 
 const mockTrumpInfo: TrumpInfo = {
@@ -41,7 +40,7 @@ const mockThinkingDots = {
   dot3: new Animated.Value(0)
 };
 
-const mockCurrentTrick = { 
+const mockCurrentTrickHumanWon = { 
   leadingPlayerId: 'ai1',
   leadingCombo: [],
   plays: [
@@ -49,13 +48,23 @@ const mockCurrentTrick = {
     { playerId: 'ai3', cards: [] },
     { playerId: 'human', cards: [] }
   ],
-  points: 10
+  points: 10,
+  winningPlayerId: 'human' // Human won this trick
+};
+
+const mockCurrentTrickOngoing = { 
+  leadingPlayerId: 'ai1',
+  leadingCombo: [],
+  plays: [
+    { playerId: 'ai2', cards: [] }
+  ],
+  points: 5
+  // No winningPlayerId yet - trick is still ongoing
 };
 
 describe('Human Thinking Indicator Flash Fix', () => {
   it('should not show thinking indicator when human just won a trick', () => {
     // Test the specific scenario where the human wins a trick
-    // currentPlayerIndex and winningPlayerIndex are both set to human
     // but there's still a currentTrick (not cleared yet)
     const humanPlayerIndex = 0;
     
@@ -74,8 +83,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
         lastCompletedTrick={null}  // No completed trick yet
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
-        winningPlayerIndex={humanPlayerIndex}  // Human won the trick
-        currentTrick={mockCurrentTrick}  // Trick still exists
+        currentTrick={mockCurrentTrickHumanWon}  // Trick still exists with human as winner
       />
     );
 
@@ -102,8 +110,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
         lastCompletedTrick={null}  // No completed trick
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
-        winningPlayerIndex={undefined}  // No winner yet
-        currentTrick={mockCurrentTrick}  // Active trick
+        currentTrick={mockCurrentTrickOngoing}  // Active trick without human winning yet
       />
     );
 
@@ -129,7 +136,6 @@ describe('Human Thinking Indicator Flash Fix', () => {
         lastCompletedTrick={null}
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
-        winningPlayerIndex={humanPlayerIndex}
         currentTrick={null}
       />
     );
@@ -157,7 +163,6 @@ describe('Human Thinking Indicator Flash Fix', () => {
         lastCompletedTrick={null}  
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
-        winningPlayerIndex={humanPlayerIndex}  // Human is winner
         currentTrick={null}  // No current trick - leading new trick
       />
     );
@@ -185,8 +190,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
         lastCompletedTrick={null}
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={aiPlayerIndex}
-        winningPlayerIndex={undefined}
-        currentTrick={mockCurrentTrick}
+        currentTrick={mockCurrentTrickOngoing}  // Ongoing trick, AI's turn initially
       />
     );
 
@@ -210,8 +214,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
         lastCompletedTrick={null}  // Not set YET
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}  // Human is current
-        winningPlayerIndex={humanPlayerIndex}  // Human won
-        currentTrick={mockCurrentTrick}  // Trick still exists
+        currentTrick={mockCurrentTrickHumanWon}  // Trick still exists with human as winner
       />
     );
 
@@ -234,7 +237,6 @@ describe('Human Thinking Indicator Flash Fix', () => {
         lastCompletedTrick={null}  // Cleared
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
-        winningPlayerIndex={humanPlayerIndex}  // Still the winner
         currentTrick={null}  // Trick cleared - starting new trick
       />
     );

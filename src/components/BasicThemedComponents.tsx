@@ -1,29 +1,28 @@
-import { Text, View, TextProps, ViewProps, StyleSheet } from 'react-native';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Text, View, TextProps, ViewProps, StyleSheet } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Simple themed text component for 404 page
-export function ThemedText({ 
-  type = 'body',
+export function ThemedText({
+  type = "body",
   lightColor,
   darkColor,
   style,
   ...props
-}: TextProps & { 
-  type?: 'title' | 'body' | 'link' | 'label' | 'caption',
-  lightColor?: string, 
-  darkColor?: string 
+}: TextProps & {
+  type?: "title" | "body" | "link" | "label" | "caption";
+  lightColor?: string;
+  darkColor?: string;
 }) {
   const colorScheme = useColorScheme();
-  const color = colorScheme === 'dark' 
-    ? darkColor ?? '#fff' 
-    : lightColor ?? '#000';
-  
+  const color =
+    colorScheme === "dark" ? (darkColor ?? "#fff") : (lightColor ?? "#000");
+
   const textStyle = [
     styles.text,
-    type === 'title' && styles.title,
-    type === 'link' && styles.link,
-    type === 'label' && styles.label,
-    type === 'caption' && styles.caption,
+    type === "title" && styles.title,
+    type === "link" && styles.link,
+    type === "label" && styles.label,
+    type === "caption" && styles.caption,
     { color },
     style,
   ];
@@ -37,14 +36,13 @@ export function ThemedView({
   darkColor,
   style,
   ...props
-}: ViewProps & { 
-  lightColor?: string, 
-  darkColor?: string 
+}: ViewProps & {
+  lightColor?: string;
+  darkColor?: string;
 }) {
   const colorScheme = useColorScheme();
-  const backgroundColor = colorScheme === 'dark' 
-    ? darkColor ?? '#000' 
-    : lightColor ?? '#fff';
+  const backgroundColor =
+    colorScheme === "dark" ? (darkColor ?? "#000") : (lightColor ?? "#fff");
 
   return <View style={[{ backgroundColor }, style]} {...props} />;
 }
@@ -55,19 +53,19 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   link: {
-    color: '#2e78b7',
-    fontWeight: 'bold',
+    color: "#2e78b7",
+    fontWeight: "bold",
   },
   label: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
   caption: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
 });

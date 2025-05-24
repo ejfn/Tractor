@@ -1,13 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
+import React, { useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
   Modal,
   Animated,
-  SafeAreaView
-} from 'react-native';
+  SafeAreaView,
+} from "react-native";
 
 interface RoundCompleteModalProps {
   visible: boolean;
@@ -28,14 +28,14 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  
+
   useEffect(() => {
     if (visible) {
       // Reset animations
       scaleAnim.setValue(0);
       bounceAnim.setValue(0);
       fadeAnim.setValue(0);
-      
+
       // Start animations
       Animated.parallel([
         Animated.spring(scaleAnim, {
@@ -57,14 +57,14 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
       ]).start();
     }
   }, [visible, bounceAnim, fadeAnim, scaleAnim]);
-  
+
   if (!visible) return null;
-  
+
   const translateY = bounceAnim.interpolate({
     inputRange: [0, 0.5, 0.7, 0.85, 1],
     outputRange: [50, -10, 5, -2, 0],
   });
-  
+
   return (
     <Modal
       visible={visible}
@@ -74,51 +74,47 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
     >
       <SafeAreaView style={styles.modalWrapper}>
         <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
-        <Animated.View 
+          <Animated.View
             style={[
               styles.modalContent,
               {
-                transform: [
-                  { scale: scaleAnim },
-                  { translateY: translateY }
-                ]
-              }
+                transform: [{ scale: scaleAnim }, { translateY: translateY }],
+              },
             ]}
           >
-          {/* Background effects */}
-          <View style={styles.backgroundDeco1} />
-          <View style={styles.backgroundDeco2} />
-          
-          {/* Trophy/Crown emoji for winner */}
-          <Text style={styles.trophy}>
-            {message.toLowerCase().includes('advance') ? '⚔️' : '🛡️'}
-          </Text>
-          
-          <Text style={styles.title}>Round Complete!</Text>
-          <Text style={styles.message}>{message}</Text>
-          
-          <TouchableOpacity
-            style={styles.button}
-            onPress={onNextRound}
-            activeOpacity={0.8}
-          >
-            <View style={styles.buttonGradient}>
-              <Text style={styles.buttonText}>NEXT ROUND →</Text>
-            </View>
-          </TouchableOpacity>
-          
-          {/* Decorative corners */}
-          <View style={[styles.corner, styles.topLeft]} />
-          <View style={[styles.corner, styles.topRight]} />
-          <View style={[styles.corner, styles.bottomLeft]} />
-          <View style={[styles.corner, styles.bottomRight]} />
+            {/* Background effects */}
+            <View style={styles.backgroundDeco1} />
+            <View style={styles.backgroundDeco2} />
+
+            {/* Trophy/Crown emoji for winner */}
+            <Text style={styles.trophy}>
+              {message.toLowerCase().includes("advance") ? "⚔️" : "🛡️"}
+            </Text>
+
+            <Text style={styles.title}>Round Complete!</Text>
+            <Text style={styles.message}>{message}</Text>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={onNextRound}
+              activeOpacity={0.8}
+            >
+              <View style={styles.buttonGradient}>
+                <Text style={styles.buttonText}>NEXT ROUND →</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Decorative corners */}
+            <View style={[styles.corner, styles.topLeft]} />
+            <View style={[styles.corner, styles.topRight]} />
+            <View style={[styles.corner, styles.bottomLeft]} />
+            <View style={[styles.corner, styles.bottomRight]} />
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
       </SafeAreaView>
     </Modal>
   );
 };
-
 
 const styles = StyleSheet.create({
   modalWrapper: {
@@ -126,19 +122,19 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   modalContent: {
-    backgroundColor: '#FAFAFA',
+    backgroundColor: "#FAFAFA",
     borderRadius: 20,
     padding: 30,
-    width: '100%',
+    width: "100%",
     maxWidth: 380,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 8,
@@ -148,59 +144,59 @@ const styles = StyleSheet.create({
     elevation: 12,
     zIndex: 10000,
     borderWidth: 3,
-    borderColor: '#FFD700',
-    position: 'relative',
-    overflow: 'hidden',
+    borderColor: "#FFD700",
+    position: "relative",
+    overflow: "hidden",
   },
   backgroundDeco1: {
-    position: 'absolute',
+    position: "absolute",
     top: -50,
     right: -50,
     width: 150,
     height: 150,
-    backgroundColor: '#FFD700',
+    backgroundColor: "#FFD700",
     borderRadius: 75,
     opacity: 0.1,
   },
   backgroundDeco2: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -70,
     left: -70,
     width: 200,
     height: 200,
-    backgroundColor: '#3F51B5',
+    backgroundColor: "#3F51B5",
     borderRadius: 100,
     opacity: 0.08,
   },
   trophy: {
     fontSize: 60,
     marginBottom: 15,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 3,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2C3E50',
+    fontWeight: "bold",
+    color: "#2C3E50",
     marginBottom: 10,
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textAlign: "center",
+    textShadowColor: "rgba(0, 0, 0, 0.1)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
   message: {
     fontSize: 18,
-    color: '#34495E',
-    textAlign: 'center',
+    color: "#34495E",
+    textAlign: "center",
     marginBottom: 30,
     lineHeight: 26,
-    fontWeight: '500',
+    fontWeight: "500",
     paddingHorizontal: 20,
   },
   button: {
     marginTop: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -210,30 +206,30 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonGradient: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     paddingVertical: 16,
     paddingHorizontal: 45,
     borderRadius: 30,
     minWidth: 200,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: '#45a049',
+    borderColor: "#45a049",
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   corner: {
-    position: 'absolute',
+    position: "absolute",
     width: 30,
     height: 30,
-    borderColor: '#FFD700',
+    borderColor: "#FFD700",
     borderWidth: 3,
   },
   topLeft: {

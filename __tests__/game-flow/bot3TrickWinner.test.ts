@@ -5,7 +5,7 @@ import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
 
 describe('Bot 3 Trick Winner Issue', () => {
   test('Check Bot 3 winning tricks and player index handling', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Give Bot 3 really high cards to ensure it wins tricks
@@ -74,7 +74,6 @@ describe('Bot 3 Trick Winner Issue', () => {
         
         if (result.trickComplete) {
           console.log(`Trick complete! Winner: ${result.trickWinner}`);
-          console.log(`winningPlayerIndex in state: ${state.winningPlayerIndex}`);
           
           // Debug: Check who should be the next player
           const expectedNextPlayer = state.players.findIndex(p => p.name === result.trickWinner);
@@ -127,7 +126,7 @@ describe('Bot 3 Trick Winner Issue', () => {
   });
   
   test('Examine winner index calculation', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     
     console.log('\n=== Testing winner index calculation ===');
     

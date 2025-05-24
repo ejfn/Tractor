@@ -5,7 +5,7 @@ import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
 
 describe('Double Play Detection Tests', () => {
   test('Track each player play-by-play', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Detailed tracking for each player
@@ -142,7 +142,7 @@ describe('Double Play Detection Tests', () => {
   });
   
   test('Test trick completion detection', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     console.log('\n=== Testing trick completion ===');

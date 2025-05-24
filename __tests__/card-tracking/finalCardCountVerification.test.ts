@@ -5,7 +5,7 @@ import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
 
 describe('Final Card Count Verification', () => {
   test('Bot 3 maintains correct card count throughout extended gameplay', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Play 10 complete tricks
@@ -82,7 +82,7 @@ describe('Final Card Count Verification', () => {
   });
   
   test('Winner correctly becomes next player', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Give Bot 3 all the aces to ensure it wins

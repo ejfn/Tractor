@@ -6,8 +6,8 @@ describe('Advanced Scoring Rules', () => {
     defendingTeam: Team,
     attackingTeam: Team
   ): GameState => ({
+    players: [],
     teams: [defendingTeam, attackingTeam],
-    players: [] as Player[],
     deck: [],
     trumpInfo: {
       trumpRank: Rank.Two,
@@ -26,16 +26,14 @@ describe('Advanced Scoring Rules', () => {
     it('should advance defending team by 1 rank when attackers get 40-79 points', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.Three,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
-        isDefending: false,
         currentRank: Rank.Five,
+        isDefending: false,
         points: 65
       };
 
@@ -51,16 +49,14 @@ describe('Advanced Scoring Rules', () => {
     it('should advance defending team by 2 ranks when attackers get < 40 points', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.Three,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
-        isDefending: false,
         currentRank: Rank.Five,
+        isDefending: false,
         points: 25
       };
 
@@ -76,16 +72,14 @@ describe('Advanced Scoring Rules', () => {
     it('should advance defending team by 3 ranks when attackers get 0 points', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.Three,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
-        isDefending: false,
         currentRank: Rank.Five,
+        isDefending: false,
         points: 0
       };
 
@@ -101,16 +95,14 @@ describe('Advanced Scoring Rules', () => {
     it('should win the game when defending team reaches Ace', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.King,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
-        isDefending: false,
         currentRank: Rank.Five,
+        isDefending: false,
         points: 0
       };
 
@@ -126,16 +118,14 @@ describe('Advanced Scoring Rules', () => {
     it('should switch roles without rank advancement when attackers get 80-119 points', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.Three,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
-        isDefending: false,
         currentRank: Rank.Five,
+        isDefending: false,
         points: 100
       };
 
@@ -152,16 +142,14 @@ describe('Advanced Scoring Rules', () => {
     it('should advance attacking team by 1 rank when they get 120-159 points', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.Three,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
-        isDefending: false,
         currentRank: Rank.Five,
+        isDefending: false,
         points: 140
       };
 
@@ -177,16 +165,14 @@ describe('Advanced Scoring Rules', () => {
     it('should advance attacking team by 2 ranks when they get 160-199 points', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.Three,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
-        isDefending: false,
         currentRank: Rank.Five,
+        isDefending: false,
         points: 180
       };
 
@@ -202,16 +188,14 @@ describe('Advanced Scoring Rules', () => {
     it('should advance attacking team by 3 ranks when they get 200+ points', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.Three,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
-        isDefending: false,
         currentRank: Rank.Five,
+        isDefending: false,
         points: 220
       };
 
@@ -227,16 +211,14 @@ describe('Advanced Scoring Rules', () => {
     it('should win the game when attacking team reaches Ace', () => {
       const defendingTeam: Team = {
         id: 'A',
-        players: [],
-        isDefending: true,
         currentRank: Rank.Three,
+        isDefending: true,
         points: 0
       };
       const attackingTeam: Team = {
         id: 'B',
-        players: [],
+        currentRank: Rank.King,
         isDefending: false,
-        currentRank: Rank.Queen,
         points: 160
       };
 
@@ -252,8 +234,8 @@ describe('Advanced Scoring Rules', () => {
     it('should end game when team at Ace would advance further', () => {
       // Test defending team at Ace winning
       const defendingAtAce = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Ace, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Five, points: 0 }
+        { id: 'A', currentRank: Rank.Ace, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.Five, isDefending: false, points: 0 }
       );
       const resultDefending = endRound(defendingAtAce);
       expect(resultDefending.gameOver).toBe(true);
@@ -262,8 +244,8 @@ describe('Advanced Scoring Rules', () => {
 
       // Test attacking team at King winning with high points (would go beyond Ace)
       const attackingAtKing = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Three, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.King, points: 160 }
+        { id: 'A', currentRank: Rank.Three, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.King, isDefending: false, points: 120 }
       );
       const resultAttacking = endRound(attackingAtKing);
       expect(resultAttacking.gameOver).toBe(true);
@@ -272,8 +254,8 @@ describe('Advanced Scoring Rules', () => {
 
       // Test attacking team at Queen winning with very high points (would go 2 ranks beyond Ace)
       const attackingAtQueen = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Three, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Queen, points: 200 }
+        { id: 'A', currentRank: Rank.Three, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.Queen, isDefending: false, points: 160 }
       );
       const resultAttackingQueen = endRound(attackingAtQueen);
       expect(resultAttackingQueen.gameOver).toBe(true);
@@ -282,8 +264,8 @@ describe('Advanced Scoring Rules', () => {
 
       // Test defending team at King defending against 0 points (would advance 3 ranks beyond Ace)
       const defendingAtKing = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.King, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Five, points: 0 }
+        { id: 'A', currentRank: Rank.King, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.Five, isDefending: false, points: 0 }
       );
       const resultDefendingKing = endRound(defendingAtKing);
       expect(resultDefendingKing.gameOver).toBe(true);
@@ -292,8 +274,8 @@ describe('Advanced Scoring Rules', () => {
 
       // Test defending team at Queen defending with <40 points (would advance 2 ranks beyond Ace)
       const defendingAtQueen = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Queen, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Five, points: 30 }
+        { id: 'A', currentRank: Rank.Queen, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.Five, isDefending: false, points: 30 }
       );
       const resultDefendingQueen = endRound(defendingAtQueen);
       expect(resultDefendingQueen.gameOver).toBe(true);
@@ -302,8 +284,8 @@ describe('Advanced Scoring Rules', () => {
 
       // Test defending team at Ten defending with <40 points (advances to Ace exactly)
       const defendingAtTen = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Ten, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Five, points: 30 }
+        { id: 'A', currentRank: Rank.Ten, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.Five, isDefending: false, points: 30 }
       );
       const resultDefendingTen = endRound(defendingAtTen);
       expect(resultDefendingTen.gameOver).toBe(false);
@@ -315,16 +297,16 @@ describe('Advanced Scoring Rules', () => {
     it('should handle exact point boundaries correctly', () => {
       // Test 40 points (should be 1 rank advancement)
       const gameState40 = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Three, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Five, points: 40 }
+        { id: 'A', currentRank: Rank.Three, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.Five, isDefending: false, points: 40 }
       );
       const result40 = endRound(gameState40);
       expect(result40.newState.teams[0].currentRank).toBe(Rank.Four);
 
       // Test 80 points (attacking team wins, no advancement)
       const gameState80 = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Three, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Five, points: 80 }
+        { id: 'A', currentRank: Rank.Three, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.Five, isDefending: false, points: 80 }
       );
       const result80 = endRound(gameState80);
       expect(result80.newState.teams[1].currentRank).toBe(Rank.Five);
@@ -332,8 +314,8 @@ describe('Advanced Scoring Rules', () => {
 
       // Test 120 points (attacking team wins, 1 rank advancement)
       const gameState120 = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Three, points: 0 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Five, points: 120 }
+        { id: 'A', currentRank: Rank.Three, isDefending: true, points: 0 },
+        { id: 'B', currentRank: Rank.Five, isDefending: false, points: 120 }
       );
       const result120 = endRound(gameState120);
       expect(result120.newState.teams[1].currentRank).toBe(Rank.Six);
@@ -341,8 +323,8 @@ describe('Advanced Scoring Rules', () => {
 
     it('should reset team points for the next round', () => {
       const gameState = createMockGameState(
-        { id: 'A', players: [], isDefending: true, currentRank: Rank.Three, points: 25 },
-        { id: 'B', players: [], isDefending: false, currentRank: Rank.Five, points: 65 }
+        { id: 'A', currentRank: Rank.Three, isDefending: true, points: 50 },
+        { id: 'B', currentRank: Rank.Five, isDefending: false, points: 100 }
       );
       const result = endRound(gameState);
 

@@ -33,8 +33,7 @@ const createMockGameState = (): GameState => {
           createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10),
           createMockCard('spades_2_1', Suit.Spades, Rank.Two, 0) // Trump rank card
         ],
-        team: 'A',
-        currentRank: Rank.Two
+        team: 'A'
       },
       {
         id: 'ai1',
@@ -45,23 +44,20 @@ const createMockGameState = (): GameState => {
           createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack),
           createMockCard('hearts_2_1', Suit.Hearts, Rank.Two, 0) // Trump rank card
         ],
-        team: 'B',
-        currentRank: Rank.Two
+        team: 'B'
       }
     ],
     teams: [
       {
         id: 'A',
-        players: ['player'],
-        points: 0,
         currentRank: Rank.Two,
+        points: 0,
         isDefending: true
       },
       {
         id: 'B',
-        players: ['ai1'],
-        points: 0,
         currentRank: Rank.Two,
+        points: 0,
         isDefending: false
       }
     ],

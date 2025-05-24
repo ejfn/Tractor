@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { Trick } from '../types/game';
-import { 
+import { useState, useEffect, useRef } from "react";
+import { Trick } from "../types/game";
+import {
   TRICK_RESULT_DISPLAY_TIME,
-  STATE_UPDATE_SYNC_DELAY
-} from '../utils/gameTimings';
+  STATE_UPDATE_SYNC_DELAY,
+} from "../utils/gameTimings";
 
 /**
  * Hook for managing trick completion and result display
@@ -11,16 +11,18 @@ import {
  */
 export function useTrickResults() {
   const [showTrickResult, setShowTrickResult] = useState(false);
-  const [lastTrickWinner, setLastTrickWinner] = useState('');
+  const [lastTrickWinner, setLastTrickWinner] = useState("");
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
-  const [lastCompletedTrick, setLastCompletedTrick] = useState<Trick & { winningPlayerId?: string } | null>(null);
+  const [lastCompletedTrick, setLastCompletedTrick] = useState<
+    (Trick & { winningPlayerId?: string }) | null
+  >(null);
   const [isTransitioningTricks, setIsTransitioningTricks] = useState(false);
-  
+
   // Create a callback ref that will be set by the parent component
   // This will be called when it's safe to clear the currentTrick in the game state
   const onTrickResultCompleteRef = useRef<() => void>(() => {});
   // onTrickResultComplete is not currently being used, but keeping for potential future use
-  
+
   // We'll use a ref to track if we've ever shown the result for this trick
   const hasShownResultRef = useRef(false);
 
@@ -44,21 +46,21 @@ export function useTrickResults() {
 
     if (showTrickResult) {
       // Showing trick result notification
-      
+
       // Set a timer to hide the result after the display time
       // Just enough time to see who won the trick without slowing gameplay
       timer = setTimeout(() => {
         // Auto-hiding trick result notification
-        
+
         // We'll clear everything at once to ensure synchronization
         // This ensures the trick result and winner status disappear at the same time
-        
+
         // Signal to clear the game state
         if (onTrickResultCompleteRef.current) {
           // Clearing game state currentTrick
           onTrickResultCompleteRef.current();
         }
-        
+
         // Use a single setTimeout to clear both states simultaneously
         // This fixes the issue where winner status and results disappear at different times
         setTimeout(() => {
@@ -72,7 +74,7 @@ export function useTrickResults() {
         }, STATE_UPDATE_SYNC_DELAY);
       }, TRICK_RESULT_DISPLAY_TIME);
     }
-    
+
     return () => {
       if (timer) clearTimeout(timer);
     };
@@ -85,15 +87,15 @@ export function useTrickResults() {
   const handleTrickCompletion = (
     winnerName: string,
     points: number,
-    trick: Trick & { winningPlayerId?: string }
+    trick: Trick & { winningPlayerId?: string },
   ) => {
     // Store values for the trick result
     setLastTrickWinner(winnerName);
     setLastTrickPoints(points);
-    
+
     // Mark that we're transitioning between tricks
     setIsTransitioningTricks(true);
-    
+
     // Show the result
     setShowTrickResult(true);
   };
@@ -114,6 +116,6 @@ export function useTrickResults() {
     handleTrickAnimationComplete,
     setTrickResultCompleteCallback: (callback: () => void) => {
       onTrickResultCompleteRef.current = callback;
-    }
+    },
   };
 }
