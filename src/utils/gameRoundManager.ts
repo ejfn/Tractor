@@ -43,10 +43,8 @@ export function prepareNextRound(state: GameState): GameState {
   newState.tricks = [];
   newState.currentTrick = null;
 
-  // Save the current first player index for the next round
-  if (newState.currentPlayerIndex !== undefined) {
-    newState.lastRoundStartingPlayerIndex = newState.currentPlayerIndex;
-  }
+  // Note: lastRoundStartingPlayerIndex is now saved when transitioning to Playing phase
+  // in declareTrumpSuit to avoid issues with AI rotation during declaring phase
 
   // Determine first player for the round based on rules:
   // First round: Trump declarer goes first (their team becomes defending)
