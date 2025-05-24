@@ -1,9 +1,9 @@
-import React from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
-import { Card, Player, TrumpInfo } from '../types/game';
-import HumanHandAnimated from './HumanHandAnimated';
-import ThinkingIndicator from './ThinkingIndicator';
-import { sharedStyles } from '../styles/sharedStyles';
+import React from "react";
+import { Animated, StyleSheet, Text, View } from "react-native";
+import { Card, Player, TrumpInfo } from "../types/game";
+import HumanHandAnimated from "./HumanHandAnimated";
+import ThinkingIndicator from "./ThinkingIndicator";
+import { sharedStyles } from "../styles/sharedStyles";
 
 interface HumanPlayerViewProps {
   player: Player;
@@ -26,7 +26,6 @@ interface HumanPlayerViewProps {
   onSkipTrumpDeclaration?: () => void;
   onConfirmTrumpDeclaration?: () => void;
   currentPlayerIndex?: number;
-  winningPlayerIndex?: number;
   currentTrick?: any;
 }
 
@@ -50,23 +49,23 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   onSkipTrumpDeclaration,
   onConfirmTrumpDeclaration,
   currentPlayerIndex,
-  winningPlayerIndex,
-  currentTrick
+  currentTrick,
 }) => {
   return (
     <View style={styles.container}>
-      <View style={[
-        sharedStyles.labelContainer,
-        isDefending ? sharedStyles.teamALabel : sharedStyles.teamBLabel
-      ]}>
+      <View
+        style={[
+          sharedStyles.labelContainer,
+          isDefending ? sharedStyles.teamALabel : sharedStyles.teamBLabel,
+        ]}
+      >
         <Text style={sharedStyles.playerLabel}>You</Text>
-        {isCurrentPlayer && !showTrickResult && !lastCompletedTrick && 
-         !(currentPlayerIndex === winningPlayerIndex && currentTrick) && (
-          <ThinkingIndicator
-            visible={true}
-            dots={thinkingDots}
-          />
-        )}
+        {isCurrentPlayer &&
+          !showTrickResult &&
+          !lastCompletedTrick &&
+          !(currentTrick?.winningPlayerId === player.id && currentTrick) && (
+            <ThinkingIndicator visible={true} dots={thinkingDots} />
+          )}
       </View>
       <HumanHandAnimated
         player={player}
@@ -90,8 +89,8 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     ...sharedStyles.playerViewContainer,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     paddingTop: 8,
   },
 });

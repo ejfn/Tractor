@@ -16,7 +16,6 @@ describe('Counter-clockwise rotation', () => {
         name: 'Human',
         isHuman: true,
         hand: [],
-        currentRank: Rank.Two,
         team: 'A'
       },
       {
@@ -24,7 +23,6 @@ describe('Counter-clockwise rotation', () => {
         name: 'Bot 1',
         isHuman: false,
         hand: [],
-        currentRank: Rank.Two,
         team: 'B'
       },
       {
@@ -32,7 +30,6 @@ describe('Counter-clockwise rotation', () => {
         name: 'Bot 2',
         isHuman: false,
         hand: [],
-        currentRank: Rank.Two,
         team: 'A'
       },
       {
@@ -40,7 +37,6 @@ describe('Counter-clockwise rotation', () => {
         name: 'Bot 3',
         isHuman: false,
         hand: [],
-        currentRank: Rank.Two,
         team: 'B'
       }
     ];
@@ -48,14 +44,12 @@ describe('Counter-clockwise rotation', () => {
     const teams: [Team, Team] = [
       {
         id: 'A',
-        players: ['player', 'ai2'],
         currentRank: Rank.Two,
         points: 0,
         isDefending: true
       },
       {
         id: 'B',
-        players: ['ai1', 'ai3'],
         currentRank: Rank.Two,
         points: 0,
         isDefending: false

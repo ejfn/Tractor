@@ -23,7 +23,7 @@ describe('Bot 3 Card Loss Investigation', () => {
   };
   
   test('Track Bot 3 through multiple complete tricks', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Find Bot 3 index
@@ -144,7 +144,7 @@ describe('Bot 3 Card Loss Investigation', () => {
   test('Check for state mutation in real game flow', () => {
     console.log('\n=== STATE MUTATION TEST ===');
     
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     
     // Deep copy to preserve original
     const originalStateCopy = JSON.parse(JSON.stringify(gameState));

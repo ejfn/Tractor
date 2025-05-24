@@ -44,7 +44,6 @@ describe('AIPlayerView', () => {
       points: 0
     })),
     team: 'A',
-    currentRank: Rank.Two
   });
 
   test('renders top player correctly', () => {

@@ -26,7 +26,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   };
 
   test('Track card counts with Bot 2 focus', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     const bot2Index = state.players.findIndex(p => p.name === 'Bot 2');
@@ -114,7 +114,7 @@ describe('Comprehensive Card Tracking Tests', () => {
     for (let startingPlayer = 0; startingPlayer < 4; startingPlayer++) {
       console.log(`\n=== Testing with Player ${startingPlayer} starting ===`);
       
-      const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+      const gameState = initializeGame();
       let state = gameState;
       state.currentPlayerIndex = startingPlayer;
       
@@ -150,7 +150,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   });
 
   test('Test with multiple cards played (pairs, tractors)', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Give players some pairs to test multi-card plays
@@ -226,7 +226,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   });
 
   test('Test edge cases - empty hands, invalid moves', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Test what happens when we try to process invalid states
@@ -234,7 +234,7 @@ describe('Comprehensive Card Tracking Tests', () => {
     
     // Test 1: Try to play when no cards
     const emptyHandPlayer = { ...state.players[0], hand: [] };
-    const stateWithEmptyHand = { ...state, players: [emptyHandPlayer, ...state.players.slice(1)] };
+    const stateWithEmptyHand = { ...state };
     
     try {
       const result = processPlay(stateWithEmptyHand, []);
@@ -272,7 +272,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   });
 
   test('Test concurrent plays and race conditions', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     
     console.log('\n=== Testing race conditions ===');
     

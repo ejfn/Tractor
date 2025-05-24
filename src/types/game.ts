@@ -1,29 +1,29 @@
 export enum Suit {
-  Hearts = 'Hearts',
-  Diamonds = 'Diamonds',
-  Clubs = 'Clubs',
-  Spades = 'Spades',
+  Hearts = "Hearts",
+  Diamonds = "Diamonds",
+  Clubs = "Clubs",
+  Spades = "Spades",
 }
 
 export enum Rank {
-  Two = '2',
-  Three = '3',
-  Four = '4',
-  Five = '5',
-  Six = '6',
-  Seven = '7',
-  Eight = '8',
-  Nine = '9',
-  Ten = '10',
-  Jack = 'J',
-  Queen = 'Q',
-  King = 'K',
-  Ace = 'A',
+  Two = "2",
+  Three = "3",
+  Four = "4",
+  Five = "5",
+  Six = "6",
+  Seven = "7",
+  Eight = "8",
+  Nine = "9",
+  Ten = "10",
+  Jack = "J",
+  Queen = "Q",
+  King = "K",
+  Ace = "A",
 }
 
 export enum JokerType {
-  Small = 'Small',
-  Big = 'Big',
+  Small = "Small",
+  Big = "Big",
 }
 
 export type Card = {
@@ -39,13 +39,11 @@ export type Player = {
   name: string;
   isHuman: boolean;
   hand: Card[];
-  currentRank: Rank; // Player's current rank in the game
-  team: 'A' | 'B'; // Team identifier
+  team: "A" | "B"; // Team identifier
 };
 
 export type Team = {
-  id: 'A' | 'B';
-  players: string[]; // Array of player IDs
+  id: "A" | "B";
   currentRank: Rank;
   points: number;
   isDefending: boolean; // Whether this team is defending in the current round
@@ -74,21 +72,26 @@ export type GameState = {
   teams: [Team, Team];
   deck: Card[];
   kittyCards: Card[]; // Bottom cards that no one gets to see
-  currentTrick: Trick | null;
+  currentTrick: Trick | null; // The trick currently being played (null when no trick in progress)
   trumpInfo: TrumpInfo;
-  tricks: Trick[];
+  tricks: Trick[]; // History of all completed tricks in the current round
   roundNumber: number;
   currentPlayerIndex: number;
-  winningPlayerIndex?: number; // Stores index of the trick winner who will lead next trick
   lastRoundStartingPlayerIndex?: number; // Stores index of the player who started last round
-  gamePhase: 'dealing' | 'declaring' | 'playing' | 'scoring' | 'roundEnd' | 'gameOver';
+  gamePhase:
+    | "dealing"
+    | "declaring"
+    | "playing"
+    | "scoring"
+    | "roundEnd"
+    | "gameOver";
 };
 
 // Combination types for valid plays
 export enum ComboType {
-  Single = 'Single',
-  Pair = 'Pair',
-  Tractor = 'Tractor', // Consecutive pairs of same suit
+  Single = "Single",
+  Pair = "Pair",
+  Tractor = "Tractor", // Consecutive pairs of same suit
 }
 
 export type Combo = {
@@ -98,11 +101,3 @@ export type Combo = {
 };
 
 // AI now always runs at Hard difficulty
-
-// Game configuration
-export type GameConfig = {
-  // AI always uses Hard difficulty
-  playerName: string;
-  teamNames: [string, string];
-  startingRank: Rank;
-};

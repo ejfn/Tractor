@@ -25,7 +25,6 @@ const createMockGameState = (): GameState => {
         name: 'Human',
         isHuman: true,
         hand: [],
-        currentRank: Rank.Two,
         team: 'A'
       },
       {
@@ -33,7 +32,6 @@ const createMockGameState = (): GameState => {
         name: 'Bot 1',
         isHuman: false,
         hand: [],
-        currentRank: Rank.Two,
         team: 'B'
       },
       {
@@ -41,7 +39,6 @@ const createMockGameState = (): GameState => {
         name: 'Bot 2',
         isHuman: false,
         hand: [],
-        currentRank: Rank.Two,
         team: 'A'
       },
       {
@@ -49,21 +46,18 @@ const createMockGameState = (): GameState => {
         name: 'Bot 3',
         isHuman: false,
         hand: [],
-        currentRank: Rank.Two,
         team: 'B'
       }
     ],
     teams: [
       {
         id: 'A',
-        players: ['player', 'ai2'],
         currentRank: Rank.Two,
         points: 0,
         isDefending: true
       },
       {
         id: 'B',
-        players: ['ai1', 'ai3'],
         currentRank: Rank.Two,
         points: 0,
         isDefending: false

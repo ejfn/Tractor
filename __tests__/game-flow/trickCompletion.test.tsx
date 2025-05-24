@@ -53,13 +53,11 @@ jest.mock('../../src/utils/gameLogic', () => ({
     }],
     teams: [{
       id: 'A',
-      players: ['human', 'ai2'],
       currentRank: 2,
       points: 0,
       isDefending: true
     }, {
       id: 'B', 
-      players: ['ai1', 'ai3'],
       currentRank: 2,
       points: 0,
       isDefending: false
@@ -99,11 +97,7 @@ const TestComponent: React.FC<{
   initialState?: GameState,
   onStateChange?: (state: any) => void
 }> = ({ initialState, onStateChange }) => {
-  const gameStateHook = useGameState({
-    playerName: 'Test Player',
-    teamNames: ['Team A', 'Team B'],
-    startingRank: Rank.Two
-  });
+  const gameStateHook = useGameState();
 
   const trickResultsHook = useTrickResults();
 
@@ -202,7 +196,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
           createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
           createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
         ],
-        currentRank: Rank.Two,
         team: 'A'
       },
       {
@@ -213,7 +206,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
           createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
           createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
         ],
-        currentRank: Rank.Two,
         team: 'B'
       },
       {
@@ -224,7 +216,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
           createMockCard('spades_2_1', Suit.Spades, Rank.Two),
           createMockCard('hearts_q_1', Suit.Hearts, Rank.Queen)
         ],
-        currentRank: Rank.Two,
         team: 'A'
       },
       {
@@ -235,13 +226,12 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
           createMockCard('clubs_4_1', Suit.Clubs, Rank.Four),
           createMockCard('diamonds_6_1', Suit.Diamonds, Rank.Six)
         ],
-        currentRank: Rank.Two,
         team: 'B'
       }
     ],
     teams: [
-      { id: 'A', currentRank: Rank.Two, isDefending: true, players: ['human', 'ai2'], points: 0 },
-      { id: 'B', currentRank: Rank.Two, isDefending: false, players: ['ai1', 'ai3'], points: 0 }
+      { id: 'A', currentRank: Rank.Two, isDefending: true, points: 0 },
+      { id: 'B', currentRank: Rank.Two, isDefending: false, points: 0 }
     ],
     trumpInfo: {
       trumpRank: Rank.Two,
@@ -299,7 +289,6 @@ describe('Trick Completion Flow', () => {
       newState: {
         ...stateHistory[stateHistory.length - 1].gameState,
         currentPlayerIndex: 0,
-        winningPlayerIndex: 0,
         currentTrick: null // Trick should be null after completion
       },
       trickComplete: true,

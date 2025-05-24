@@ -6,11 +6,7 @@ import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
 describe('Card Count Integration Test', () => {
   test('Track card removal through processPlay', () => {
     // Initialize game with 4 players
-    const gameState = initializeGame(
-      'Human', 
-      ['Team A', 'Team B'],
-      Rank.Two
-    );
+    const gameState = initializeGame();
     
     let state = gameState;
     
@@ -77,11 +73,7 @@ describe('Card Count Integration Test', () => {
   });
   
   test('Track processPlay with state mutations', () => {
-    const gameState = initializeGame(
-      'Human', 
-      ['Team A', 'Team B'],
-      Rank.Two
-    );
+    const gameState = initializeGame();
     
     // Make first play
     console.log('\n=== Testing state mutation ===');

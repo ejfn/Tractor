@@ -9,7 +9,7 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 describe('Timing Synchronization Tests', () => {
   test('Simulate race condition during trick completion', async () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     console.log('=== Testing timing synchronization ===');
@@ -57,8 +57,6 @@ describe('Timing Synchronization Tests', () => {
         const clearedState = {
           ...state,
           currentTrick: null,
-          currentPlayerIndex: state.winningPlayerIndex ?? state.currentPlayerIndex,
-          winningPlayerIndex: undefined
         };
         state = clearedState;
         logState('After clearing trick', state);
@@ -118,7 +116,7 @@ describe('Timing Synchronization Tests', () => {
   });
   
   test('Check for state mutations during async operations', async () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     console.log('\n=== Testing state mutations ===');

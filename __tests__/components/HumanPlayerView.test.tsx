@@ -55,7 +55,6 @@ describe('HumanPlayerView', () => {
       }
     ],
     team: 'A',
-    currentRank: Rank.Two
   });
 
   // Create mock trump info

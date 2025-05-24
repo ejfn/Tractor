@@ -54,7 +54,6 @@ const createMockGameState = (): GameState => {
           createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
         ],
         team: 'A',
-        currentRank: Rank.Two
       },
       {
         id: 'ai1',
@@ -65,7 +64,6 @@ const createMockGameState = (): GameState => {
           createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
         ],
         team: 'B',
-        currentRank: Rank.Two
       },
       {
         id: 'ai2',
@@ -76,7 +74,6 @@ const createMockGameState = (): GameState => {
           createMockCard('hearts_a_1', Suit.Hearts, Rank.Ace)
         ],
         team: 'A',
-        currentRank: Rank.Two
       },
       {
         id: 'ai3',
@@ -87,22 +84,19 @@ const createMockGameState = (): GameState => {
           createMockCard('diamonds_10_1', Suit.Diamonds, Rank.Ten, 10)
         ],
         team: 'B',
-        currentRank: Rank.Two
       }
     ],
     teams: [
       {
         id: 'A',
-        players: ['human', 'ai2'],
-        points: 0,
         currentRank: Rank.Two,
+        points: 0,
         isDefending: true
       },
       {
         id: 'B',
-        players: ['ai1', 'ai3'],
-        points: 0,
         currentRank: Rank.Two,
+        points: 0,
         isDefending: false
       }
     ],
@@ -233,9 +227,7 @@ describe('gamePlayManager', () => {
       // as per our new trick result display logic
       expect(result.newState.currentTrick).not.toBeNull();
       
-      // With our new implementation, we set winningPlayerIndex but don't change currentPlayerIndex yet
       // That happens in handleTrickResultComplete
-      expect(result.newState.winningPlayerIndex).toBe(1); // ai1
       
       // Verify points were awarded to the winning team
       expect(result.newState.teams[1].points).toBe(5); // Team B (ai1's team)

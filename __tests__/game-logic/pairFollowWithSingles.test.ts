@@ -23,7 +23,6 @@ describe('Pair Follow With Singles', () => {
       hand: [],
       isHuman: true,
       team: 'A',
-      currentRank: Rank.Two
     };
     
     const ai1: Player = {
@@ -32,14 +31,13 @@ describe('Pair Follow With Singles', () => {
       hand: [],
       isHuman: false,
       team: 'B',
-      currentRank: Rank.Two
     };
     
     mockState = {
       players: [humanPlayer, ai1],
       teams: [
-        { id: 'A', players: ['human'], currentRank: Rank.Two, points: 0, isDefending: true },
-        { id: 'B', players: ['ai1'], currentRank: Rank.Two, points: 0, isDefending: false }
+        { id: 'A', currentRank: Rank.Two, points: 0, isDefending: true },
+        { id: 'B', currentRank: Rank.Two, points: 0, isDefending: false }
       ],
       deck: [],
       kittyCards: [],

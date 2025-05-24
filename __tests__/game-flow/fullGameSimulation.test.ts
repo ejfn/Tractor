@@ -5,7 +5,7 @@ import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
 
 describe('Full Game Simulation', () => {
   test('Play complete game monitoring all card counts', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    const gameState = initializeGame();
     let state = gameState;
     
     // Complete game tracking

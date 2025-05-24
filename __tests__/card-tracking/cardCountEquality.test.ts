@@ -49,7 +49,7 @@ describe('Card Count Equality', () => {
   
   it('maintains equal card counts after multiple tricks', () => {
     // Create fresh game state
-    let state = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    let state = initializeGame();
     state = dealCards(state);
     state.gamePhase = 'playing';
     state.trumpInfo.trumpSuit = Suit.Spades;
@@ -80,7 +80,7 @@ describe('Card Count Equality', () => {
   
   it('handles human winning and leading next trick', () => {
     // Create fresh game state
-    let state = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    let state = initializeGame();
     state = dealCards(state);
     state.gamePhase = 'playing';
     state.trumpInfo.trumpSuit = Suit.Spades;
@@ -109,7 +109,7 @@ describe('Card Count Equality', () => {
     
     // Human should have won
     expect(trickResult.trickComplete).toBe(true);
-    expect(trickResult.trickWinner).toBe('Human');
+    expect(trickResult.trickWinner).toBe('You');
     expect(state.currentPlayerIndex).toBe(0); // Human should be next
     
     const countsAfterTrick1 = state.players.map(p => p.hand.length);
@@ -144,7 +144,7 @@ describe('Card Count Equality', () => {
   
   it('maintains counts when different combo types are played', () => {
     // Start fresh with a new game to ensure no state interference
-    let state = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
+    let state = initializeGame();
     state = dealCards(state);
     state.gamePhase = 'playing';
     state.trumpInfo.trumpSuit = Suit.Spades;

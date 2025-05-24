@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
+import React, { useState } from "react";
+import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 // Import game screen controller directly
-import GameScreenController from '../src/screens/GameScreenController';
+import GameScreenController from "../src/screens/GameScreenController";
 
 export default function Index() {
   const [hasError, setHasError] = useState(false);
@@ -16,7 +16,10 @@ export default function Index() {
       content = <GameScreenController />;
     } catch (error) {
       // Log the error and set error state
-      console.error("Game loading error:", error instanceof Error ? error.message : String(error));
+      console.error(
+        "Game loading error:",
+        error instanceof Error ? error.message : String(error),
+      );
       // We need to use setTimeout to avoid state updates during render
       setTimeout(() => setHasError(true), 0);
       // Set error UI content
@@ -35,7 +38,7 @@ export default function Index() {
   return (
     <SafeAreaView
       style={styles.container}
-      edges={['left', 'right']} // Only respect left and right edges, not top or bottom
+      edges={["left", "right"]} // Only respect left and right edges, not top or bottom
     >
       <StatusBar style="auto" />
       {hasError ? (
@@ -49,9 +52,7 @@ export default function Index() {
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.gameContainer}>
-          {renderGameScreen()}
-        </View>
+        <View style={styles.gameContainer}>{renderGameScreen()}</View>
       )}
     </SafeAreaView>
   );
@@ -60,34 +61,34 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
   },
   gameContainer: {
     flex: 1,
-    position: 'relative',
+    position: "relative",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFEBEE',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFEBEE",
     padding: 20,
   },
   errorText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#D32F2F',
+    fontWeight: "bold",
+    color: "#D32F2F",
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#3F51B5',
+    backgroundColor: "#3F51B5",
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 8,
   },
   retryText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
     fontSize: 16,
   },
   // Debug styles removed
