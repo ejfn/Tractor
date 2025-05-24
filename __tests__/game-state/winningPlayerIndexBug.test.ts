@@ -1,42 +1,42 @@
-import { GameState, Rank } from '../../src/types/game';
+import { GameState, Rank, Player } from '../../src/types/game';
 import { initializeGame } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
-// Helper function to get current player ID from game state
+// Helper function to get current player ID from game gameState
 function getCurrentPlayerId(gameState: GameState): string {
   if (gameState.gamePhase === 'playing' && gameState.currentTrick) {
-    // During play, determine next player based on trick state
+    // During play, determine next player based on trick gameState
     const trickPlayCount = gameState.currentTrick.plays.length;
-    const leadPlayerIndex = gameState.players.findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId);
-    const currentPlayerIndex = (leadPlayerIndex + trickPlayCount + 1) % gameState.players.length;
-    return gameState.players[currentPlayerIndex].id;
+    const leadPlayerIndex = GameStateUtils.getPlayersInOrder(gameState).findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId);
+    const currentPlayerIndex = (leadPlayerIndex + trickPlayCount + 1) % GameStateUtils.getPlayersInOrder(gameState).length;
+    return GameStateUtils.getPlayersInOrder(gameState)[currentPlayerIndex].id;
   } else if (gameState.gamePhase === 'playing' && !gameState.currentTrick) {
     // No active trick - check if there's a completed trick to find the winner
     if (gameState.tricks.length > 0) {
       const lastTrick = gameState.tricks[gameState.tricks.length - 1];
-      return lastTrick.winningPlayerId || gameState.players[0].id;
+      return lastTrick.winningPlayerId || GameStateUtils.getPlayersInOrder(gameState)[0].id;
     } else {
       // First trick of the round - use first player
-      return gameState.players[0].id;
+      return GameStateUtils.getPlayersInOrder(gameState)[0].id;
     }
   } else {
     // Not in playing phase - use first player as default
-    return gameState.players[0].id;
+    return GameStateUtils.getPlayersInOrder(gameState)[0].id;
   }
 }
 
 describe('Winning Player Index Bug', () => {
   test('Verify winningPlayerIndex is set correctly', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
-    let state = gameState;
+    let gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
     
     console.log('=== Testing winningPlayerIndex ===');
     
     // Play one trick and track winner
     for (let play = 0; play < 4; play++) {
-      const currentPlayerId = getCurrentPlayerId(state);
-      const currentPlayer = state.players.find(p => p.id === currentPlayerId);
+      const currentPlayerId = getCurrentPlayerId(gameState);
+      const currentPlayer = GameStateUtils.getAllPlayers(gameState).find(p => p.id === currentPlayerId);
       if (!currentPlayer) {
         throw new Error(`No current player found with ID ${currentPlayerId}`);
       }
@@ -49,11 +49,11 @@ describe('Winning Player Index Bug', () => {
       if (currentPlayer.isHuman) {
         cardsToPlay = [currentPlayer.hand[0]];
       } else {
-        const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
+        const aiMove = getAIMoveWithErrorHandling(gameState, currentPlayer.id);
         cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
       }
       
-      const result = processPlay(state, cardsToPlay, currentPlayer.id);
+      const result = processPlay(gameState, cardsToPlay, currentPlayer.id);
       
       console.log(`After play:`);
       console.log(`  trickComplete: ${result.trickComplete}`);
@@ -62,32 +62,31 @@ describe('Winning Player Index Bug', () => {
         console.log(`  trickWinner: ${result.trickWinner}`);
         
         // Verify winner makes sense
-        const expectedWinnerIndex = result.newState.players.findIndex(p => p.name === result.trickWinner);
+        const expectedWinnerIndex = GameStateUtils.getPlayersInOrder(gameState).findIndex((p: Player) => p.name === result.trickWinner);
         if (expectedWinnerIndex === -1) {
           throw new Error(`Trick winner "${result.trickWinner}" not found in players`);
         }
       }
       
-      state = result.newState;
+      gameState = result.newState;
     }
   });
   
   test('Check winningPlayerIndex across multiple tricks', () => {
-    const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
-    let state = gameState;
+    let gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
     
     // Give human high cards to win some tricks
-    const humanAces = state.players[0].hand.filter(c => c.rank === 'A');
-    const humanKings = state.players[0].hand.filter(c => c.rank === 'K');
-    const humanOther = state.players[0].hand.filter(c => c.rank !== 'A' && c.rank !== 'K');
-    state.players[0].hand = [...humanAces, ...humanKings, ...humanOther.slice(0, 25 - humanAces.length - humanKings.length)];
+    const humanAces = GameStateUtils.getPlayersInOrder(gameState)[0].hand.filter(c => c.rank === 'A');
+    const humanKings = GameStateUtils.getPlayersInOrder(gameState)[0].hand.filter(c => c.rank === 'K');
+    const humanOther = GameStateUtils.getPlayersInOrder(gameState)[0].hand.filter(c => c.rank !== 'A' && c.rank !== 'K');
+    GameStateUtils.getPlayersInOrder(gameState)[0].hand = [...humanAces, ...humanKings, ...humanOther.slice(0, 25 - humanAces.length - humanKings.length)];
     
     console.log('\n=== Playing multiple tricks ===');
     
     for (let trickNum = 0; trickNum < 3; trickNum++) {
       console.log(`\n--- TRICK ${trickNum + 1} ---`);
-      const currentPlayerId = getCurrentPlayerId(state);
-      const currentPlayer = state.players.find(p => p.id === currentPlayerId);
+      const currentPlayerId = getCurrentPlayerId(gameState);
+      const currentPlayer = GameStateUtils.getAllPlayers(gameState).find(p => p.id === currentPlayerId);
       if (!currentPlayer) {
         throw new Error(`No current player found with ID ${currentPlayerId}`);
       }
@@ -96,8 +95,8 @@ describe('Winning Player Index Bug', () => {
       let trickResult = null;
       
       for (let play = 0; play < 4; play++) {
-        const currentPlayerId = getCurrentPlayerId(state);
-        const currentPlayer = state.players.find(p => p.id === currentPlayerId);
+        const currentPlayerId = getCurrentPlayerId(gameState);
+        const currentPlayer = GameStateUtils.getAllPlayers(gameState).find(p => p.id === currentPlayerId);
         if (!currentPlayer) {
           throw new Error(`No current player found with ID ${currentPlayerId}`);
         }
@@ -106,12 +105,12 @@ describe('Winning Player Index Bug', () => {
         if (currentPlayer.isHuman) {
           cardsToPlay = [currentPlayer.hand[0]];
         } else {
-          const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
+          const aiMove = getAIMoveWithErrorHandling(gameState, currentPlayer.id);
           cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
         }
         
-        const result = processPlay(state, cardsToPlay, currentPlayer.id);
-        state = result.newState;
+        const result = processPlay(gameState, cardsToPlay, currentPlayer.id);
+        gameState = result.newState;
         
         if (result.trickComplete) {
           trickResult = result;
@@ -123,8 +122,8 @@ describe('Winning Player Index Bug', () => {
       // Check if the next player is correct (winner should be next)
       const expectedNextPlayer = trickResult?.trickWinner;
       if (expectedNextPlayer) {
-        const nextPlayerId = getCurrentPlayerId(state);
-        const expectedWinnerPlayer = state.players.find(p => p.name === expectedNextPlayer);
+        const nextPlayerId = getCurrentPlayerId(gameState);
+        const expectedWinnerPlayer = GameStateUtils.getAllPlayers(gameState).find(p => p.name === expectedNextPlayer);
         if (expectedWinnerPlayer && nextPlayerId !== expectedWinnerPlayer.id) {
           console.warn(`Expected ${expectedNextPlayer} to be current player, but current is ${nextPlayerId}`);
         }

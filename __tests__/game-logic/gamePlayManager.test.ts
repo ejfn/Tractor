@@ -9,8 +9,10 @@ import {
   Rank, 
   Suit, 
   JokerType, 
-  TrumpInfo 
+  TrumpInfo,
+  PlayerPosition 
 } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import * as gameLogic from '../../src/utils/gameLogic';
 import * as aiLogic from '../../src/utils/aiLogic';
 
@@ -19,21 +21,25 @@ function getCurrentPlayerId(gameState: GameState): string {
   if (gameState.gamePhase === 'playing' && gameState.currentTrick) {
     // During play, determine next player based on trick state
     const trickPlayCount = gameState.currentTrick.plays.length;
-    const leadPlayerIndex = gameState.players.findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId);
-    const currentPlayerIndex = (leadPlayerIndex + trickPlayCount + 1) % gameState.players.length;
-    return gameState.players[currentPlayerIndex].id;
+    const leadPlayerIndex = GameStateUtils.getPlayerIndex(gameState, gameState.currentTrick.leadingPlayerId);
+    const playersInOrder = GameStateUtils.getPlayersInOrder(gameState);
+    const currentPlayerIndex = (leadPlayerIndex + trickPlayCount + 1) % playersInOrder.length;
+    return playersInOrder[currentPlayerIndex].id;
   } else if (gameState.gamePhase === 'playing' && !gameState.currentTrick) {
     // No active trick - check if there's a completed trick to find the winner
     if (gameState.tricks.length > 0) {
       const lastTrick = gameState.tricks[gameState.tricks.length - 1];
-      return lastTrick.winningPlayerId || gameState.players[0].id;
+      const playersInOrder = GameStateUtils.getPlayersInOrder(gameState);
+      return lastTrick.winningPlayerId || playersInOrder[0].id;
     } else {
       // First trick of the round - use first player
-      return gameState.players[0].id;
+      const playersInOrder = GameStateUtils.getPlayersInOrder(gameState);
+      return playersInOrder[0].id;
     }
   } else {
     // Not in playing phase - use first player as default
-    return gameState.players[0].id;
+    const playersInOrder = GameStateUtils.getPlayersInOrder(gameState);
+    return playersInOrder[0].id;
   }
 }
 
@@ -67,19 +73,20 @@ const createMockJoker = (id: string, type: JokerType, points = 0): Card => ({
 
 const createMockGameState = (): GameState => {
   return {
-    players: [
-      {
-        id: 'human',
+    players: {
+      'player': {
+        id: 'player',
         name: 'You',
         isHuman: true,
         hand: [
           createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
           createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
         ],
-        team: 'A',
-        currentRank: Rank.Two
+        teamId: 'A',
+        position: 'bottom' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai1': {
         id: 'ai1',
         name: 'Bot 1',
         isHuman: false,
@@ -87,10 +94,11 @@ const createMockGameState = (): GameState => {
           createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
           createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
         ],
-        team: 'B',
-        currentRank: Rank.Two
+        teamId: 'B',
+        position: 'right' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai2': {
         id: 'ai2',
         name: 'Bot 2',
         isHuman: false,
@@ -98,10 +106,11 @@ const createMockGameState = (): GameState => {
           createMockCard('spades_2_1', Suit.Spades, Rank.Two),
           createMockCard('hearts_a_1', Suit.Hearts, Rank.Ace)
         ],
-        team: 'A',
-        currentRank: Rank.Two
+        teamId: 'A',
+        position: 'top' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai3': {
         id: 'ai3',
         name: 'Bot 3',
         isHuman: false,
@@ -109,26 +118,25 @@ const createMockGameState = (): GameState => {
           createMockCard('clubs_4_1', Suit.Clubs, Rank.Four),
           createMockCard('diamonds_10_1', Suit.Diamonds, Rank.Ten, 10)
         ],
-        team: 'B',
-        currentRank: Rank.Two
+        teamId: 'B',
+        position: 'left' as PlayerPosition,
+        isThinking: false
       }
-    ],
-    teams: [
-      {
+    },
+    teams: {
+      'A': {
         id: 'A',
-        players: ['human', 'ai2'],
         points: 0,
         currentRank: Rank.Two,
         isDefending: true
       },
-      {
+      'B': {
         id: 'B',
-        players: ['ai1', 'ai3'],
         points: 0,
         currentRank: Rank.Two,
         isDefending: false
       }
-    ],
+    },
     trumpInfo: {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
@@ -139,7 +147,9 @@ const createMockGameState = (): GameState => {
     currentTrick: null,
     tricks: [],
     deck: [],
-    kittyCards: []
+    kittyCards: [],
+    currentPlayerId: 'player',
+    selectedCards: []
   };
 };
 
@@ -151,27 +161,29 @@ describe('gamePlayManager', () => {
   describe('processPlay', () => {
     test('should process a play and update the game state correctly', () => {
       const mockState = createMockGameState();
-      const cardsToPlay = [mockState.players[0].hand[0]]; // Spades 5
+      const humanPlayer = GameStateUtils.getPlayerById(mockState, 'player');
+      const cardsToPlay = [humanPlayer.hand[0]]; // Spades 5
       
       // Initial play - should create a new trick
-      const result = processPlay(mockState, cardsToPlay, 'human');
+      const result = processPlay(mockState, cardsToPlay, 'player');
       
       // Verify the state was updated correctly
       expect(result.newState.currentTrick).toBeTruthy();
-      expect(result.newState.currentTrick?.leadingPlayerId).toBe('human');
+      expect(result.newState.currentTrick?.leadingPlayerId).toBe('player');
       expect(result.newState.currentTrick?.leadingCombo).toEqual(cardsToPlay);
       
       // UPDATED: First player's cards are stored in leadingCombo, not in plays array
       expect(result.newState.currentTrick?.plays).toHaveLength(0);
       // Leading player's cards are in leadingCombo, not plays array
-      // expect(result.newState.currentTrick?.plays[0].playerId).toBe('human');
+      // expect(result.newState.currentTrick?.plays[0].playerId).toBe('player');
       // expect(result.newState.currentTrick?.plays[0].cards).toEqual(cardsToPlay);
       
       expect(result.newState.currentTrick?.points).toBe(5); // 5 points from the card
       
       // Verify the card was removed from the player's hand
-      expect(result.newState.players[0].hand).toHaveLength(1);
-      expect(result.newState.players[0].hand[0].id).toBe('hearts_k_1');
+      const updatedHumanPlayer = GameStateUtils.getPlayerById(result.newState, 'player');
+      expect(updatedHumanPlayer.hand).toHaveLength(1);
+      expect(updatedHumanPlayer.hand[0].id).toBe('hearts_k_1');
       
       // Verify the trick was created and play setup correctly
       // The next player would be determined by the trick state
@@ -194,7 +206,7 @@ describe('gamePlayManager', () => {
             cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)]
           },
           {
-            playerId: 'human',
+            playerId: 'player',
             cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
           },
           {
@@ -220,7 +232,7 @@ describe('gamePlayManager', () => {
         plays: [
           // Human has played 
           {
-            playerId: 'human',
+            playerId: 'player',
             cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
           },
           // Bot 2 has played
@@ -237,7 +249,8 @@ describe('gamePlayManager', () => {
       (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('ai1');
       
       // Process the play for the last player in the trick (Bot 3)
-      const cardsToPlay = [freshState.players[3].hand[0]]; // Clubs 4 
+      const ai3Player = GameStateUtils.getPlayerById(freshState, 'ai3');
+      const cardsToPlay = [ai3Player.hand[0]]; // Clubs 4 
       const result = processPlay(freshState, cardsToPlay, 'ai3');
       
       // Verify the trick is complete
@@ -257,7 +270,8 @@ describe('gamePlayManager', () => {
       expect(result.newState.tricks[0].winningPlayerId).toBe('ai1');
       
       // Verify points were awarded to the winning team
-      expect(result.newState.teams[1].points).toBe(5); // Team B (ai1's team)
+      const teamB = GameStateUtils.getTeam(result.newState, 'B');
+      expect(teamB.points).toBe(5); // Team B (ai1's team)
       
       // Verify the completedTrick is returned properly
       expect(result.completedTrick).toBeTruthy();
@@ -269,18 +283,19 @@ describe('gamePlayManager', () => {
       const mockState = createMockGameState();
       mockState.currentTrick = null; // Leading a trick
       
-      const cardsToPlay = [mockState.players[0].hand[0]]; // Spades 5
+      const humanPlayer = GameStateUtils.getPlayerById(mockState, 'player');
+      const cardsToPlay = [humanPlayer.hand[0]]; // Spades 5
       
       // Mock identifyCombos to return a valid combo
       (gameLogic.identifyCombos as jest.Mock).mockReturnValue([
         { type: 'Single', cards: cardsToPlay }
       ]);
       
-      const result = validatePlay(mockState, cardsToPlay, 'human');
+      const result = validatePlay(mockState, cardsToPlay, 'player');
       
       // Verify identifyCombos was called with the player's hand
       expect(gameLogic.identifyCombos).toHaveBeenCalledWith(
-        mockState.players[0].hand,
+        humanPlayer.hand,
         mockState.trumpInfo
       );
       
@@ -303,18 +318,19 @@ describe('gamePlayManager', () => {
         points: 0
       };
       
-      const cardsToPlay = [mockState.players[0].hand[0]]; // Spades 5
+      const cardsToPlay = [mockState.players['player'].hand[0]]; // Spades 5
       
       // Mock isValidPlay to return true
       (gameLogic.isValidPlay as jest.Mock).mockReturnValue(true);
       
-      const result = validatePlay(mockState, cardsToPlay, 'human');
+      const result = validatePlay(mockState, cardsToPlay, 'player');
       
       // Verify isValidPlay was called with the correct parameters
+      const humanPlayer = GameStateUtils.getPlayerById(mockState, 'player');
       expect(gameLogic.isValidPlay).toHaveBeenCalledWith(
         cardsToPlay,
         mockState.currentTrick.leadingCombo,
-        mockState.players[0].hand,
+        humanPlayer.hand,
         mockState.trumpInfo
       );
       
@@ -325,10 +341,10 @@ describe('gamePlayManager', () => {
       const mockState = createMockGameState();
       
       // Return false for invalid plays
-      expect(validatePlay(mockState, [], 'human')).toBe(false);
+      expect(validatePlay(mockState, [], 'player')).toBe(false);
       
       // Setup state to be null
-      expect(validatePlay(null as unknown as GameState, [createMockCard('spades_5_1', Suit.Spades, Rank.Five)], 'human')).toBe(false);
+      expect(validatePlay(null as unknown as GameState, [createMockCard('spades_5_1', Suit.Spades, Rank.Five)], 'player')).toBe(false);
     });
   });
 
@@ -336,7 +352,8 @@ describe('gamePlayManager', () => {
     test('should return AI move when successful', () => {
       const mockState = createMockGameState();
       
-      const aiMove = [mockState.players[1].hand[0]]; // Diamonds 3
+      const ai1Player = GameStateUtils.getPlayerById(mockState, 'ai1');
+      const aiMove = [ai1Player.hand[0]]; // Diamonds 3
       
       // Mock getAIMove to return a valid move
       (aiLogic.getAIMove as jest.Mock).mockReturnValue(aiMove);
@@ -356,7 +373,7 @@ describe('gamePlayManager', () => {
       // The warning "getAIMoveWithErrorHandling called for human player" is expected
       const mockState = createMockGameState();
       
-      const result = getAIMoveWithErrorHandling(mockState, 'human');
+      const result = getAIMoveWithErrorHandling(mockState, 'player');
       
       expect(result).toEqual({
         cards: [],
@@ -374,8 +391,9 @@ describe('gamePlayManager', () => {
       
       const result = getAIMoveWithErrorHandling(mockState, 'ai1');
       
+      const ai1Player = GameStateUtils.getPlayerById(mockState, 'ai1');
       expect(result).toEqual({
-        cards: [mockState.players[1].hand[0]] // First card in hand as fallback
+        cards: [ai1Player.hand[0]] // First card in hand as fallback
       });
     });
 
@@ -399,44 +417,53 @@ describe('gamePlayManager', () => {
   describe('State Immutability', () => {
     test('should not mutate the original game state when processing plays', () => {
       const originalState = createMockGameState();
-      const originalPlayerHand = [...originalState.players[0].hand];
+      const originalHumanPlayer = GameStateUtils.getPlayerById(originalState, 'player');
+      const originalPlayerHand = [...originalHumanPlayer.hand];
       const originalPlayerHandIds = originalPlayerHand.map(c => c.id);
-      const cardsToPlay = [originalState.players[0].hand[0]];
+      const cardsToPlay = [originalHumanPlayer.hand[0]];
 
       // Process the play
-      const result = processPlay(originalState, cardsToPlay, 'human');
+      const result = processPlay(originalState, cardsToPlay, 'player');
 
       // Verify original state was not mutated
-      expect(originalState.players[0].hand.length).toBe(2);
-      expect(originalState.players[0].hand.map(c => c.id)).toEqual(originalPlayerHandIds);
+      const originalHumanPlayerAfter = GameStateUtils.getPlayerById(originalState, 'player');
+      expect(originalHumanPlayerAfter.hand.length).toBe(2);
+      expect(originalHumanPlayerAfter.hand.map(c => c.id)).toEqual(originalPlayerHandIds);
       
       // Verify new state has the card removed
-      expect(result.newState.players[0].hand.length).toBe(1);
-      expect(result.newState.players[0].hand.map(c => c.id)).not.toContainEqual(cardsToPlay[0].id);
+      const newHumanPlayer = GameStateUtils.getPlayerById(result.newState, 'player');
+      expect(newHumanPlayer.hand.length).toBe(1);
+      expect(newHumanPlayer.hand.map(c => c.id)).not.toContainEqual(cardsToPlay[0].id);
     });
 
     test('should create deep copies of all players and their hands', () => {
       const originalState = createMockGameState();
-      const cardsToPlay = [originalState.players[0].hand[0]];
+      const humanPlayer = GameStateUtils.getPlayerById(originalState, 'player');
+      const cardsToPlay = [humanPlayer.hand[0]];
 
-      const result = processPlay(originalState, cardsToPlay, 'human');
+      const result = processPlay(originalState, cardsToPlay, 'player');
 
       // Verify all players are different references
-      originalState.players.forEach((player, index) => {
-        expect(result.newState.players[index]).not.toBe(player);
-        expect(result.newState.players[index].hand).not.toBe(player.hand);
+      const originalPlayers = GameStateUtils.getAllPlayers(originalState);
+      originalPlayers.forEach((player) => {
+        const newPlayer = GameStateUtils.getPlayerById(result.newState, player.id);
+        expect(newPlayer).not.toBe(player);
+        expect(newPlayer.hand).not.toBe(player.hand);
       });
     });
 
     test('should create deep copies of teams', () => {
       const originalState = createMockGameState();
-      const cardsToPlay = [originalState.players[0].hand[0]];
+      const humanPlayer = GameStateUtils.getPlayerById(originalState, 'player');
+      const cardsToPlay = [humanPlayer.hand[0]];
 
-      const result = processPlay(originalState, cardsToPlay, 'human');
+      const result = processPlay(originalState, cardsToPlay, 'player');
 
       // Verify teams are different references
-      originalState.teams.forEach((team, index) => {
-        expect(result.newState.teams[index]).not.toBe(team);
+      const originalTeams = GameStateUtils.getAllTeams(originalState);
+      originalTeams.forEach((team) => {
+        const newTeam = GameStateUtils.getTeam(result.newState, team.id);
+        expect(newTeam).not.toBe(team);
       });
     });
   });
@@ -446,15 +473,16 @@ describe('gamePlayManager', () => {
       let state = createMockGameState();
       
       // Mock determineTrickWinner to return different winners for variety
-      const winners = ['human', 'ai1', 'ai2', 'ai3'];
+      const winners = ['player', 'ai1', 'ai2', 'ai3'];
       let winnerIndex = 0;
       (gameLogic.determineTrickWinner as jest.Mock).mockImplementation(() => {
         return winners[winnerIndex++ % 4];
       });
 
       // Initial state - verify all players have same card count
-      const initialCardCount = state.players[0].hand.length;
-      state.players.forEach(player => {
+      const players = GameStateUtils.getAllPlayers(state);
+      const initialCardCount = players[0].hand.length;
+      players.forEach(player => {
         expect(player.hand.length).toBe(initialCardCount);
       });
 
@@ -463,7 +491,7 @@ describe('gamePlayManager', () => {
         // Play 4 cards (one complete trick)
         for (let playNum = 0; playNum < 4; playNum++) {
           const currentPlayerId = getCurrentPlayerId(state);
-          const currentPlayer = state.players.find(p => p.id === currentPlayerId);
+          const currentPlayer = GameStateUtils.findPlayerById(state, currentPlayerId);
           if (!currentPlayer) {
             throw new Error(`No current player found with ID ${currentPlayerId}`);
           }
@@ -475,13 +503,15 @@ describe('gamePlayManager', () => {
           // After each play, verify card counts are consistent
           if (result.trickComplete) {
             // After a complete trick, all players should have the same number of cards
-            const cardCounts = state.players.map(p => p.hand.length);
+            const allPlayers = GameStateUtils.getAllPlayers(state);
+            const cardCounts = allPlayers.map(p => p.hand.length);
             const uniqueCounts = new Set(cardCounts);
             expect(uniqueCounts.size).toBe(1); // All players should have same card count
           } else {
             // Mid-trick: verify no cards were lost or duplicated
-            const totalCards = state.players.reduce((sum, player) => sum + player.hand.length, 0);
-            const currentPlayerIndex = state.players.findIndex(p => p.id === currentPlayer.id);
+            const allPlayers = GameStateUtils.getAllPlayers(state);
+            const totalCards = allPlayers.reduce((sum, player) => sum + player.hand.length, 0);
+            const currentPlayerIndex = GameStateUtils.getPlayerIndex(state, currentPlayer.id);
             const expectedTotalCards = initialCardCount * 4 - ((trickNum * 4) + (playNum + 1));
             expect(totalCards).toBe(expectedTotalCards);
           }
@@ -489,7 +519,8 @@ describe('gamePlayManager', () => {
       }
 
       // Final verification: all players should have played equal number of cards
-      const finalCardCounts = state.players.map(p => p.hand.length);
+      const allPlayers = GameStateUtils.getAllPlayers(state);
+      const finalCardCounts = allPlayers.map(p => p.hand.length);
       expect(new Set(finalCardCounts).size).toBe(1); // All counts should be the same
     });
 
@@ -498,71 +529,76 @@ describe('gamePlayManager', () => {
       const state2 = { ...state1 }; // Shallow copy to simulate concurrent access
       
       // Player 1 plays from state1
-      const result1 = processPlay(state1, [state1.players[0].hand[0]], state1.players[0].id);
+      const player1 = GameStateUtils.getPlayerById(state1, 'player');
+      const result1 = processPlay(state1, [player1.hand[0]], player1.id);
       
       // Player 2 plays from state2 (simulating a race condition)
-      const result2 = processPlay(state2, [state2.players[1].hand[0]], state2.players[1].id);
+      const player2 = GameStateUtils.getPlayerById(state2, 'ai1');
+      const result2 = processPlay(state2, [player2.hand[0]], player2.id);
       
       // Both results should have correct card counts
-      expect(result1.newState.players[0].hand.length).toBe(1);
-      expect(result1.newState.players[1].hand.length).toBe(2); // Not played yet in this state
+      expect(GameStateUtils.getPlayerById(result1.newState, 'player').hand.length).toBe(1);
+      expect(GameStateUtils.getPlayerById(result1.newState, 'ai1').hand.length).toBe(2); // Not played yet in this state
       
-      expect(result2.newState.players[0].hand.length).toBe(2); // Not played yet in this state
-      expect(result2.newState.players[1].hand.length).toBe(1);
+      expect(GameStateUtils.getPlayerById(result2.newState, 'player').hand.length).toBe(2); // Not played yet in this state
+      expect(GameStateUtils.getPlayerById(result2.newState, 'ai1').hand.length).toBe(1);
     });
 
     test('should never allow a player to have negative cards or have cards disappear unexpectedly', () => {
       const state = createMockGameState();
-      const playerHand = state.players[0].hand;
+      const humanPlayer = GameStateUtils.getPlayerById(state, 'player');
+      const playerHand = humanPlayer.hand;
       
       // Try to play same card multiple times (simulating a bug)
       const cardToPlay = playerHand[0];
       
       // First play should succeed
-      const result1 = processPlay(state, [cardToPlay], 'human');
-      expect(result1.newState.players[0].hand.length).toBe(1);
+      const result1 = processPlay(state, [cardToPlay], 'player');
+      expect(GameStateUtils.getPlayerById(result1.newState, 'player').hand.length).toBe(1);
       
       // Second play with the same card from original state should also work
       // because processPlay should not mutate the original state
-      const result2 = processPlay(state, [cardToPlay], 'human');
-      expect(result2.newState.players[0].hand.length).toBe(1);
+      const result2 = processPlay(state, [cardToPlay], 'player');
+      expect(GameStateUtils.getPlayerById(result2.newState, 'player').hand.length).toBe(1);
       
       // Original state should still have 2 cards
-      expect(state.players[0].hand.length).toBe(2);
+      expect(GameStateUtils.getPlayerById(state, 'player').hand.length).toBe(2);
     });
 
     test('should handle AI plays with proper card references', () => {
       const state = createMockGameState();
       
       // Simulate AI selecting cards from its hand
-      const aiPlayer = state.players[1]; // ai1
+      const aiPlayer = GameStateUtils.getPlayerById(state, 'ai1');
       const aiCards = aiPlayer.hand; // The actual cards in the AI's hand
       
       // AI plays its first card
       const result = processPlay(state, [aiCards[0]], 'ai1');
       
       // Verify the AI's hand was properly updated
-      expect(result.newState.players[1].hand.length).toBe(1);
-      expect(result.newState.players[1].hand).not.toContainEqual(aiCards[0]);
+      const updatedAiPlayer = GameStateUtils.getPlayerById(result.newState, 'ai1');
+      expect(updatedAiPlayer.hand.length).toBe(1);
+      expect(updatedAiPlayer.hand).not.toContainEqual(aiCards[0]);
       
       // Original state should be unchanged
-      expect(state.players[1].hand.length).toBe(2);
+      expect(GameStateUtils.getPlayerById(state, 'ai1').hand.length).toBe(2);
     });
 
     test('should handle complete game with all AI players', () => {
       let state = createMockGameState();
       
       // Mock determineTrickWinner
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('human');
+      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('player');
       
       // Track card counts throughout
-      const initialCounts = state.players.map(p => p.hand.length);
+      const allPlayers = GameStateUtils.getAllPlayers(state);
+      const initialCounts = allPlayers.map(p => p.hand.length);
       expect(new Set(initialCounts).size).toBe(1); // All players start with same count
       
       // Play one complete trick
       for (let i = 0; i < 4; i++) {
         const currentPlayerId = getCurrentPlayerId(state);
-        const currentPlayer = state.players.find(p => p.id === currentPlayerId);
+        const currentPlayer = GameStateUtils.findPlayerById(state, currentPlayerId);
         if (!currentPlayer) {
           throw new Error(`No current player found with ID ${currentPlayerId}`);
         }
@@ -572,13 +608,15 @@ describe('gamePlayManager', () => {
         state = result.newState;
         
         // Verify no player has lost more cards than they should
-        state.players.forEach((player, idx) => {
+        const currentPlayers = GameStateUtils.getAllPlayers(state);
+        currentPlayers.forEach((player) => {
           expect(player.hand.length).toBeGreaterThanOrEqual(0);
         });
       }
       
       // After one complete trick, all players should have one less card
-      const finalCounts = state.players.map(p => p.hand.length);
+      const finalPlayers = GameStateUtils.getAllPlayers(state);
+      const finalCounts = finalPlayers.map(p => p.hand.length);
       expect(new Set(finalCounts).size).toBe(1); // All players should have same count
       expect(finalCounts[0]).toBe(initialCounts[0] - 1);
     });

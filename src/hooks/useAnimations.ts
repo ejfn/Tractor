@@ -1,8 +1,8 @@
-import { useRef, useEffect } from 'react';
-import { Animated, Dimensions } from 'react-native';
-import { THINKING_DOTS_INTERVAL } from '../utils/gameTimings';
+import { useRef, useEffect } from "react";
+import { Animated, Dimensions } from "react-native";
+import { THINKING_DOTS_INTERVAL } from "../utils/gameTimings";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 /**
  * Hook for managing UI animations in the game
@@ -13,7 +13,9 @@ export function useUIAnimations(showScreen: boolean) {
   // Initialize with visible values for first render
   const fadeAnim = useRef(new Animated.Value(showScreen ? 1 : 0)).current;
   const scaleAnim = useRef(new Animated.Value(showScreen ? 1 : 0.95)).current;
-  const slideAnim = useRef(new Animated.Value(showScreen ? 0 : SCREEN_WIDTH)).current;
+  const slideAnim = useRef(
+    new Animated.Value(showScreen ? 0 : SCREEN_WIDTH),
+  ).current;
 
   // Initialize animations when screen changes
   useEffect(() => {
@@ -42,7 +44,7 @@ export function useUIAnimations(showScreen: boolean) {
             toValue: 0,
             duration: 500,
             useNativeDriver: true,
-          })
+          }),
         ]).start();
       }, 100);
     }
@@ -51,7 +53,7 @@ export function useUIAnimations(showScreen: boolean) {
   return {
     fadeAnim,
     scaleAnim,
-    slideAnim
+    slideAnim,
   };
 }
 
@@ -64,13 +66,13 @@ export function useThinkingDots() {
   const dot1 = useRef(new Animated.Value(1)).current;
   const dot2 = useRef(new Animated.Value(1)).current;
   const dot3 = useRef(new Animated.Value(1)).current;
-  
+
   // Use a ref to store the animation timers so we can clear them on cleanup
-  const timersRef = useRef<{[key: string]: any}>({});
-  
+  const timersRef = useRef<{ [key: string]: any }>({});
+
   // Helper to clear all timers
   const clearAllTimers = () => {
-    Object.values(timersRef.current).forEach(timer => {
+    Object.values(timersRef.current).forEach((timer) => {
       clearTimeout(timer);
     });
     timersRef.current = {};
@@ -84,29 +86,29 @@ export function useThinkingDots() {
       dot1.stopAnimation();
       dot2.stopAnimation();
       dot3.stopAnimation();
-      
+
       // Reset values to ensure consistent animation start
       dot1.setValue(1);
       dot2.setValue(1);
       dot3.setValue(1);
-      
+
       // Clear any existing timers
       clearAllTimers();
-      
+
       // Start animation sequence
-      
+
       // Sequence for first dot
       Animated.sequence([
         Animated.timing(dot1, {
           toValue: 0.4,
           duration: 300,
-          useNativeDriver: true
+          useNativeDriver: true,
         }),
         Animated.timing(dot1, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true
-        })
+          useNativeDriver: true,
+        }),
       ]).start();
 
       // Sequence for second dot with delay
@@ -115,13 +117,13 @@ export function useThinkingDots() {
           Animated.timing(dot2, {
             toValue: 0.4,
             duration: 300,
-            useNativeDriver: true
+            useNativeDriver: true,
           }),
           Animated.timing(dot2, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true
-          })
+            useNativeDriver: true,
+          }),
         ]).start();
       }, 150);
 
@@ -131,16 +133,19 @@ export function useThinkingDots() {
           Animated.timing(dot3, {
             toValue: 0.4,
             duration: 300,
-            useNativeDriver: true
+            useNativeDriver: true,
           }),
           Animated.timing(dot3, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true
-          })
+            useNativeDriver: true,
+          }),
         ]).start(() => {
           // After all animations complete, wait briefly and restart
-          timersRef.current.timer3 = setTimeout(animateThinkingDots, THINKING_DOTS_INTERVAL);
+          timersRef.current.timer3 = setTimeout(
+            animateThinkingDots,
+            THINKING_DOTS_INTERVAL,
+          );
         });
       }, THINKING_DOTS_INTERVAL);
     };
@@ -159,6 +164,6 @@ export function useThinkingDots() {
   }, [dot1, dot2, dot3]);
 
   return {
-    dots: { dot1, dot2, dot3 }
+    dots: { dot1, dot2, dot3 },
   };
 }

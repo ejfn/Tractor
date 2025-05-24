@@ -1,11 +1,13 @@
-import { GameState, Rank, Suit } from '../../src/types/game';
+import { GameState, Player, Rank, Suit, Team } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import { initializeGame } from '../../src/utils/gameLogic';
 import { prepareNextRound, endRound } from '../../src/utils/gameRoundManager';
 import { declareTrumpSuit } from '../../src/utils/trumpManager';
+import { createTestGameState, createTestCard, createTest } from '../helpers/testUtils';
 
 describe('Next round starting player selection', () => {
   // Test utilities
-  const createTestGameState = (): GameState => {
+  const createInitialGameState = (): GameState => {
     return initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
   };
 
@@ -14,7 +16,7 @@ describe('Next round starting player selection', () => {
     const stateCopy = { ...state };
     
     // Modify points to determine winner
-    const attackingTeam = stateCopy.teams.find(t => !t.isDefending);
+    const attackingTeam = Object.values(stateCopy.teams).find((t: Team) => !t.isDefending);
     if (attackingTeam) {
       // If attacking team should win, give them 80+ points
       // Otherwise, give them less than 80 points
@@ -28,12 +30,12 @@ describe('Next round starting player selection', () => {
 
   test('First round: trump declarer goes first', () => {
     // Create a new game state
-    const state = createTestGameState();
+    const state = createInitialGameState();
     
     // Human player (index 0) declares trump
     const humanIndex = 0;
     // currentPlayerIndex removed from GameState
-    const humanPlayer = state.players[humanIndex];
+    const humanPlayer = GameStateUtils.getPlayersInOrder(state)[humanIndex];
     
     // Declare trump
     const declaredState = declareTrumpSuit(state, Suit.Hearts, humanPlayer.id);
@@ -56,8 +58,8 @@ describe('Next round starting player selection', () => {
     expect(nextRoundState.roundNumber).toBe(1);
     
     // Find the index of the trump declarer in the player array
-    const declarerIndex = nextRoundState.players.findIndex(
-      p => p.id === declaredState.trumpInfo.declarerPlayerId
+    const declarerIndex = GameStateUtils.getPlayersInOrder(nextRoundState).findIndex(
+      (p: Player) => p.id === declaredState.trumpInfo.declarerPlayerId
     );
     
     // Note: currentPlayerIndex was removed from GameState, so we can't directly verify
@@ -67,22 +69,22 @@ describe('Next round starting player selection', () => {
 
   test('Following rounds: defending team defends - other defending player goes first', () => {
     // Create a new game state (round 1)
-    const state = createTestGameState();
+    const state = createInitialGameState();
     state.roundNumber = 1;
     
     // Set up defending team (Team A with Human and Bot2)
-    state.players[0].team = 'A'; // Human
-    state.players[1].team = 'B'; // Bot1
-    state.players[2].team = 'A'; // Bot2
-    state.players[3].team = 'B'; // Bot3
+    GameStateUtils.getPlayersInOrder(state)[0].teamId = 'A'; // Human
+    GameStateUtils.getPlayersInOrder(state)[1].teamId = 'B'; // Bot1
+    GameStateUtils.getPlayersInOrder(state)[2].teamId = 'A'; // Bot2
+    GameStateUtils.getPlayersInOrder(state)[3].teamId = 'B'; // Bot3
     
     // Note: currentPlayerIndex and lastRoundStartingPlayerIndex removed from GameState
     
     // Set Team A as defending
-    state.teams[0].id = 'A';
-    state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
-    state.teams[1].isDefending = false;
+    state.teams['A'].id = 'A';
+    state.teams['A'].isDefending = true;
+    state.teams['B'].id = 'B';
+    state.teams['B'].isDefending = false;
     
     // Complete the round with defending team winning
     const endedState = completeRound(state, false);
@@ -96,22 +98,22 @@ describe('Next round starting player selection', () => {
 
   test('Following rounds: attacking team wins - teammate of attacker goes first', () => {
     // Create a new game state (round 1)
-    const state = createTestGameState();
+    const state = createInitialGameState();
     state.roundNumber = 1;
     
     // Set up teams
-    state.players[0].team = 'A'; // Human
-    state.players[1].team = 'B'; // Bot1
-    state.players[2].team = 'A'; // Bot2
-    state.players[3].team = 'B'; // Bot3
+    GameStateUtils.getPlayersInOrder(state)[0].teamId = 'A'; // Human
+    GameStateUtils.getPlayersInOrder(state)[1].teamId = 'B'; // Bot1
+    GameStateUtils.getPlayersInOrder(state)[2].teamId = 'A'; // Bot2
+    GameStateUtils.getPlayersInOrder(state)[3].teamId = 'B'; // Bot3
     
     // Note: currentPlayerIndex and lastRoundStartingPlayerIndex removed from GameState
     
     // Set Team B as attacking
-    state.teams[0].id = 'A';
-    state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
-    state.teams[1].isDefending = false;
+    state.teams['A'].id = 'A';
+    state.teams['A'].isDefending = true;
+    state.teams['B'].id = 'B';
+    state.teams['B'].isDefending = false;
     
     // Complete the round with attacking team winning
     const endedState = completeRound(state, true);
@@ -125,22 +127,22 @@ describe('Next round starting player selection', () => {
 
   test('Alternates between teammates across multiple rounds (defending team)', () => {
     // Create a new game state (round 2)
-    const state = createTestGameState();
+    const state = createInitialGameState();
     state.roundNumber = 2;
     
     // Set up teams
-    state.players[0].team = 'A'; // Human
-    state.players[1].team = 'B'; // Bot1
-    state.players[2].team = 'A'; // Bot2
-    state.players[3].team = 'B'; // Bot3
+    GameStateUtils.getPlayersInOrder(state)[0].teamId = 'A'; // Human
+    GameStateUtils.getPlayersInOrder(state)[1].teamId = 'B'; // Bot1
+    GameStateUtils.getPlayersInOrder(state)[2].teamId = 'A'; // Bot2
+    GameStateUtils.getPlayersInOrder(state)[3].teamId = 'B'; // Bot3
     
     // Note: currentPlayerIndex and lastRoundStartingPlayerIndex removed from GameState
     
     // Set Team A as defending
-    state.teams[0].id = 'A';
-    state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
-    state.teams[1].isDefending = false;
+    state.teams['A'].id = 'A';
+    state.teams['A'].isDefending = true;
+    state.teams['B'].id = 'B';
+    state.teams['B'].isDefending = false;
     
     // Complete round 2 with defending team winning
     const endedRound2 = completeRound(state, false);

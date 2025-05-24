@@ -13,6 +13,7 @@ import {
   ComboType,
   Combo
 } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import { describe, test, expect } from '@jest/globals';
 
 // Helper function to create regular cards

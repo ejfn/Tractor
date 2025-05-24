@@ -1,4 +1,5 @@
-import { GameState, Card, Rank, Suit } from '../../src/types/game';
+import { GameState, Card, Rank, Suit, Player } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import { initializeGame, dealCards } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
@@ -16,10 +17,10 @@ describe('Double Play Detection Tests', () => {
     let incorrectCardCounts = 0;
     const doublePlayData: Record<string, { plays: number, cardsPlayed: number, startingCards: number }> = {};
     
-    console.log(`Initial card counts: ${state.players.map(p => p.hand.length).join(', ')}`);
+    console.log(`Initial card counts: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')}`);
     
     // Initialize tracking for each player
-    state.players.forEach(player => {
+    GameStateUtils.getAllPlayers(state).forEach(player => {
       doublePlayData[player.name] = {
         plays: 0,
         cardsPlayed: 0,
@@ -30,13 +31,13 @@ describe('Double Play Detection Tests', () => {
     // Play 3 complete tricks with detailed logging
     for (let trickNum = 0; trickNum < 3; trickNum++) {
       console.log(`\n=== TRICK ${trickNum + 1} ===`);
-      console.log(`Starting card counts: ${state.players.map(p => p.hand.length).join(', ')}`);
+      console.log(`Starting card counts: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')}`);
       
       // Use simple sequential play like other working tests
       for (let playNum = 0; playNum < 4; playNum++) {
         const currentPlayerIdx = playNum;
-        const currentPlayer = state.players[currentPlayerIdx];
-        const allCardsBefore = state.players.map(p => p.hand.length);
+        const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIdx];
+        const allCardsBefore = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
         
         console.log(`\nPlay ${playNum + 1}: Player ${currentPlayerIdx} (${currentPlayer.name})`);
         console.log(`Cards before: ${allCardsBefore.join(', ')}`);
@@ -52,7 +53,7 @@ describe('Double Play Detection Tests', () => {
         
         // Process the play
         const result = processPlay(state, cardsToPlay, currentPlayer.id);
-        const allCardsAfter = result.newState.players.map(p => p.hand.length);
+        const allCardsAfter = GameStateUtils.getAllPlayers(result.newState).map(p => p.hand.length);
         
         console.log(`Cards after: ${allCardsAfter.join(', ')}`);
         console.log(`Processing play for player ${currentPlayerIdx} (${currentPlayer.name})`);
@@ -80,7 +81,7 @@ describe('Double Play Detection Tests', () => {
       state.currentTrick = null;
       
       // After each trick, verify equal card counts
-      const endCounts = state.players.map(p => p.hand.length);
+      const endCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       const uniqueCounts = new Set(endCounts);
       
       if (uniqueCounts.size > 1) {
@@ -98,7 +99,7 @@ describe('Double Play Detection Tests', () => {
     console.log(`Incorrect card counts detected: ${incorrectCardCounts}`);
     
     // Verify each player played exactly 3 times (one per trick)
-    state.players.forEach(player => {
+    GameStateUtils.getAllPlayers(state).forEach(player => {
       const playerData = doublePlayData[player.name];
       console.log(`${player.name}: ${playerData.plays} plays, ${playerData.cardsPlayed} cards played`);
       expect(playerData.plays).toBe(3); // Should have played in each of 3 tricks
@@ -122,11 +123,11 @@ describe('Double Play Detection Tests', () => {
     for (let i = 0; i < 8; i++) { // Play 2 tricks worth
       // Use sequential logic for testing
       const currentPlayerIdx = i % 4;
-      const currentPlayer = state.players[currentPlayerIdx];
+      const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIdx];
       currentTrickPlayers.push(currentPlayer.name);
       
       // Track cards before
-      const beforeCounts = state.players.map(p => p.hand.length);
+      const beforeCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       // Simple single card play
       const cardsToPlay = [currentPlayer.hand[0]];
@@ -148,7 +149,7 @@ describe('Double Play Detection Tests', () => {
       }
       
       // Verify only current player lost cards
-      const afterCounts = state.players.map(p => p.hand.length);
+      const afterCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       for (let j = 0; j < 4; j++) {
         const expected = j === currentPlayerIdx ? beforeCounts[j] - 1 : beforeCounts[j];
         expect(afterCounts[j]).toBe(expected);

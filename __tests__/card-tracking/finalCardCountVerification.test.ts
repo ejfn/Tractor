@@ -1,7 +1,8 @@
-import { GameState, Rank } from '../../src/types/game';
+import { GameState, Rank, Player } from '../../src/types/game';
 import { initializeGame } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 describe('Final Card Count Verification', () => {
   test('Bot 3 maintains correct card count throughout extended gameplay', () => {
@@ -10,16 +11,17 @@ describe('Final Card Count Verification', () => {
     
     // Play 10 complete tricks
     for (let trickNum = 0; trickNum < 10; trickNum++) {
-      const trickStartCounts = state.players.map(p => p.hand.length);
+      const trickStartCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       console.log(`\nTrick ${trickNum + 1} starting with counts: ${trickStartCounts.join(', ')}`);
       
       // Play all 4 players
       for (let playNum = 0; playNum < 4; playNum++) {
         const currentPlayerIndex = playNum; // Sequential play for testing
-        const currentPlayer = state.players[currentPlayerIndex];
-        const bot3Index = state.players.findIndex(p => p.name === 'Bot 3');
-        const bot3Before = state.players[bot3Index].hand.length;
+        const allPlayers = GameStateUtils.getPlayersInOrder(state);
+        const currentPlayer = allPlayers[currentPlayerIndex];
+        const bot3 = GameStateUtils.getPlayerById(state, 'ai3');
+        const bot3Before = bot3.hand.length;
         
         // Get cards to play
         let cardsToPlay: any[] = [];
@@ -34,15 +36,15 @@ describe('Final Card Count Verification', () => {
         const result = processPlay(state, cardsToPlay, currentPlayer.id);
         state = result.newState;
         
-        const bot3After = state.players[bot3Index].hand.length;
+        const bot3After = GameStateUtils.getPlayerById(state, 'ai3').hand.length;
         
         // Verify Bot 3 only lost cards when it was its turn
-        if (currentPlayerIndex === bot3Index) {
+        if (currentPlayer.id === 'ai3') {
           // Bot 3 just played or trick completed with Bot 3 as last player
-          if (bot3Before === bot3After && currentPlayer.name === 'Bot 3') {
+          if (bot3Before === bot3After && currentPlayer.id === 'ai3') {
             throw new Error(`Bot 3 didn't lose cards when it played!`);
           }
-        } else if (bot3Before !== bot3After && currentPlayer.name !== 'Bot 3') {
+        } else if (bot3Before !== bot3After && currentPlayer.id !== 'ai3') {
           throw new Error(`Bot 3 lost cards when it wasn't its turn! Player ${currentPlayer.name} was playing.`);
         }
         
@@ -52,7 +54,7 @@ describe('Final Card Count Verification', () => {
       }
       
       // Verify equal card counts after each trick
-      const trickEndCounts = state.players.map(p => p.hand.length);
+      const trickEndCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       const uniqueCounts = new Set(trickEndCounts);
       
       if (uniqueCounts.size > 1) {
@@ -61,7 +63,7 @@ describe('Final Card Count Verification', () => {
         
         // Show which players have different counts
         const expectedCount = trickEndCounts[0];
-        state.players.forEach((player, idx) => {
+        GameStateUtils.getAllPlayers(state).forEach((player: Player, idx) => {
           if (player.hand.length !== expectedCount) {
             console.error(`  ${player.name} has ${player.hand.length} cards, expected ${expectedCount}`);
           }
@@ -74,11 +76,11 @@ describe('Final Card Count Verification', () => {
     }
     
     // Final verification
-    const finalCounts = state.players.map(p => p.hand.length);
+    const finalCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     console.log(`\nFinal card counts after 10 tricks: ${finalCounts.join(', ')}`);
     
     expect(new Set(finalCounts).size).toBe(1);
-    expect(finalCounts[3]).toBe(finalCounts[0]); // Bot 3 has same as Human
+    expect(GameStateUtils.getPlayerById(state, 'ai3').hand.length).toBe(GameStateUtils.getPlayerById(state, 'player').hand.length); // Bot 3 has same as Human
   });
   
   test('Winner correctly becomes next player', () => {
@@ -86,30 +88,31 @@ describe('Final Card Count Verification', () => {
     let state = gameState;
     
     // Give Bot 3 all the aces to ensure it wins
-    const bot3Index = 3;
-    const allAces = state.players.flatMap(p => p.hand.filter(c => c.rank === 'A'));
-    const nonAcesBot3 = state.players[bot3Index].hand.filter(c => c.rank !== 'A');
-    const otherCards = state.players.flatMap((p, idx) => 
-      idx !== bot3Index ? p.hand.filter(c => c.rank !== 'A') : []
+    const allPlayers = GameStateUtils.getAllPlayers(state);
+    const allAces = allPlayers.flatMap(p => p.hand.filter(c => c.rank === 'A'));
+    const bot3 = GameStateUtils.getPlayerById(state, 'ai3');
+    const nonAcesBot3 = bot3.hand.filter(c => c.rank !== 'A');
+    const otherCards = allPlayers.flatMap(p => 
+      p.id !== 'ai3' ? p.hand.filter(c => c.rank !== 'A') : []
     );
     
     // Redistribute cards: Bot 3 gets all aces
-    state.players[bot3Index].hand = [...allAces, ...nonAcesBot3.slice(0, 25 - allAces.length)];
-    state.players.forEach((player, idx) => {
-      if (idx !== bot3Index) {
-        const startIdx = idx * 25;
-        player.hand = otherCards.slice(startIdx, startIdx + 25);
-      }
+    gameState.players['ai3'].hand = [...allAces, ...nonAcesBot3.slice(0, 25 - allAces.length)];
+    const playerIds = ['player', 'ai1', 'ai2'];
+    playerIds.forEach((playerId, idx) => {
+      const startIdx = idx * 25;
+      gameState.players[playerId].hand = otherCards.slice(startIdx, startIdx + 25);
     });
     
-    console.log(`Bot 3 has ${state.players[bot3Index].hand.filter(c => c.rank === 'A').length} aces`);
+    console.log(`Bot 3 has ${bot3.hand.filter(c => c.rank === 'A').length} aces`);
     
     // Play a trick
     let winners: string[] = [];
     
     for (let playNum = 0; playNum < 4; playNum++) {
       const currentPlayerIndex = playNum; // Sequential play for testing
-      const currentPlayer = state.players[currentPlayerIndex];
+      const allPlayers = GameStateUtils.getPlayersInOrder(state);
+      const currentPlayer = allPlayers[currentPlayerIndex];
       
       let cardsToPlay: any[] = [];
       if (currentPlayer.isHuman) {
@@ -126,7 +129,7 @@ describe('Final Card Count Verification', () => {
         winners.push(result.trickWinner!);
         console.log(`Trick winner: ${result.trickWinner}`);
         console.log(`Next player should be: ${result.trickWinner}`);
-        console.log(`Next player is: ${state.players[currentPlayerIndex].name}`);
+        console.log(`Next player is: ${currentPlayer.name}`);
         
         // Verify winner is the next player - we can't verify this directly since currentPlayerIndex was removed
         // The winner is stored in the completed trick for future reference

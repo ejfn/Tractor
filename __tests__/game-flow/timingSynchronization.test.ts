@@ -1,4 +1,5 @@
 import { GameState, Rank } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import { initializeGame } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
@@ -22,7 +23,7 @@ describe('Timing Synchronization Tests', () => {
       stateHistory.push({
         time: Date.now() - startTime,
         event,
-        cardCounts: state.players.map(p => p.hand.length)
+        cardCounts: GameStateUtils.getAllPlayers(state).map(p => p.hand.length)
       });
     };
     
@@ -30,14 +31,14 @@ describe('Timing Synchronization Tests', () => {
     for (let play = 0; play < 4; play++) {
       // Calculate current player based on trick state
       let currentPlayerIndex = 0;
-      if (state.currentTrick) {
-        const leadPlayerIndex = state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId);
-        currentPlayerIndex = (leadPlayerIndex + state.currentTrick.plays.length + 1) % 4;
+      if (gameState.currentTrick) {
+        const leadPlayerIndex = GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId);
+        currentPlayerIndex = (leadPlayerIndex + gameState.currentTrick.plays.length + 1) % 4;
       } else if (state.tricks.length > 0) {
         const lastTrick = state.tricks[state.tricks.length - 1];
-        currentPlayerIndex = state.players.findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
+        currentPlayerIndex = GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
       }
-      const currentPlayer = state.players[currentPlayerIndex];
+      const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIndex];
       logState(`Before play ${play + 1}`, state);
       
       let cardsToPlay: any[] = [];
@@ -76,8 +77,8 @@ describe('Timing Synchronization Tests', () => {
         // Start next trick
         // Find next player based on last completed trick
         const lastTrickWinner = state.tricks[state.tricks.length - 1]?.winningPlayerId;
-        const nextPlayerIndex = state.players.findIndex(p => p.id === lastTrickWinner) || 0;
-        const nextPlayer = state.players[nextPlayerIndex];
+        const nextPlayerIndex = GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === lastTrickWinner) || 0;
+        const nextPlayer = gameState.players[nextPlayerIndex];
         console.log(`\nNext trick starts with ${nextPlayer.name}`);
       }
     }
@@ -85,14 +86,14 @@ describe('Timing Synchronization Tests', () => {
     // Play one more play to see what happens
     // Calculate current player
     let currentPlayerIndex = 0;
-    if (state.currentTrick) {
-      const leadPlayerIndex = state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId);
-      currentPlayerIndex = (leadPlayerIndex + state.currentTrick.plays.length + 1) % 4;
+    if (gameState.currentTrick) {
+      const leadPlayerIndex = GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId);
+      currentPlayerIndex = (leadPlayerIndex + gameState.currentTrick.plays.length + 1) % 4;
     } else if (state.tricks.length > 0) {
       const lastTrick = state.tricks[state.tricks.length - 1];
-      currentPlayerIndex = state.players.findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
+      currentPlayerIndex = GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
     }
-    const currentPlayer = state.players[currentPlayerIndex];
+    const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIndex];
     logState('Before second trick play', state);
     
     let cardsToPlay: any[] = [];
@@ -145,14 +146,14 @@ describe('Timing Synchronization Tests', () => {
     for (let play = 0; play < 4; play++) {
       // Calculate current player
       let currentPlayerIndex = 0;
-      if (state.currentTrick) {
-        const leadPlayerIndex = state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId);
-        currentPlayerIndex = (leadPlayerIndex + state.currentTrick.plays.length + 1) % 4;
+      if (gameState.currentTrick) {
+        const leadPlayerIndex = GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId);
+        currentPlayerIndex = (leadPlayerIndex + gameState.currentTrick.plays.length + 1) % 4;
       } else if (state.tricks.length > 0) {
         const lastTrick = state.tricks[state.tricks.length - 1];
-        currentPlayerIndex = state.players.findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
+        currentPlayerIndex = GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
       }
-      const currentPlayer = state.players[currentPlayerIndex];
+      const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIndex];
       
       let cardsToPlay: any[] = [];
       if (currentPlayer.isHuman) {
@@ -167,7 +168,7 @@ describe('Timing Synchronization Tests', () => {
       if (result.trickComplete) {
         // Store state references to check for mutations
         const originalState = state;
-        const originalCardCounts = state.players.map(p => p.hand.length);
+        const originalCardCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
         // Store original state properties that we can check
         
         state = result.newState;
@@ -176,7 +177,7 @@ describe('Timing Synchronization Tests', () => {
         await wait(100);
         
         // Check if original state was mutated
-        const currentCardCounts = originalState.players.map(p => p.hand.length);
+        const currentCardCounts = GameStateUtils.getAllPlayers(originalState).map(p => p.hand.length);
         
         if (JSON.stringify(originalCardCounts) !== JSON.stringify(currentCardCounts)) {
           console.error('ERROR: Original state was mutated during async operation!');

@@ -2,6 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
 import { Card, Suit, Rank, Player, TrumpInfo } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import { Animated } from 'react-native';
 
 // Mock the ThinkingIndicator to easily check if it's rendered
@@ -25,8 +26,9 @@ const mockPlayer: Player = {
   name: 'Test Player',
   hand: [],
   isHuman: true,
-  team: 'A',
-  currentRank: Rank.Two
+  teamId: 'A',
+  position: 'bottom',
+  isThinking: false
 };
 
 const mockTrumpInfo: TrumpInfo = {

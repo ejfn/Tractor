@@ -1,4 +1,5 @@
-import { Rank } from '../../src/types/game';
+import { Rank, Player } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import { initializeGame, createDeck } from '../../src/utils/gameLogic';
 
 describe('Card Dealing Bug Test', () => {
@@ -9,12 +10,12 @@ describe('Card Dealing Bug Test', () => {
       const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
       
       console.log('Initial card counts:');
-      gameState.players.forEach((player, idx) => {
+      GameStateUtils.getPlayersInOrder(gameState).forEach((player: Player, idx) => {
         console.log(`  Player ${idx} (${player.name}): ${player.hand.length} cards`);
       });
       
       // Check that all players have the same number of cards
-      const cardCounts = gameState.players.map(p => p.hand.length);
+      const cardCounts = GameStateUtils.getAllPlayers(gameState).map(p => p.hand.length);
       const uniqueCounts = new Set(cardCounts);
       
       if (uniqueCounts.size > 1) {
@@ -77,7 +78,7 @@ describe('Card Dealing Bug Test', () => {
     
     console.log(`\nDealing ${cardsPerPlayer} cards to each player from deck of ${shuffledDeck.length}`);
     
-    players.forEach((player, index) => {
+    players.forEach((player: any, index) => {
       const startIdx = index * cardsPerPlayer;
       const endIdx = startIdx + cardsPerPlayer;
       player.hand = shuffledDeck.slice(startIdx, endIdx);
@@ -94,7 +95,7 @@ describe('Card Dealing Bug Test', () => {
     
     // Check for overlapping or missing cards
     const allIndices = new Set<number>();
-    players.forEach((player, playerIdx) => {
+    players.forEach((player: any, playerIdx) => {
       const startIdx = playerIdx * cardsPerPlayer;
       for (let i = 0; i < player.hand.length; i++) {
         allIndices.add(startIdx + i);

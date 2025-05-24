@@ -2,6 +2,7 @@ import { GameState, Card, Player, Rank, Suit } from '../../src/types/game';
 import { initializeGame, dealCards } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 describe('Card Count Equality', () => {
   let gameState: GameState;
@@ -17,8 +18,9 @@ describe('Card Count Equality', () => {
     // Play all 4 players
     for (let i = 0; i < 4; i++) {
       // Simple sequential play for testing
-      const currentPlayerIndex = i;
-      const currentPlayer = currentState.players[currentPlayerIndex];
+      const playerIds = ['player', 'ai1', 'ai2', 'ai3'];
+      const currentPlayerId = playerIds[i];
+      const currentPlayer = GameStateUtils.getPlayerById(currentState, currentPlayerId);
       
       let cardsToPlay: Card[] = [];
       
@@ -57,7 +59,7 @@ describe('Card Count Equality', () => {
     state.trumpInfo.trumpSuit = Suit.Spades;
     
     for (let trickNum = 1; trickNum <= 5; trickNum++) {
-      const initialCounts = state.players.map(p => p.hand.length);
+      const initialCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       // All players should start with equal counts
       const allEqual = initialCounts.every(count => count === initialCounts[0]);
@@ -65,7 +67,7 @@ describe('Card Count Equality', () => {
       
       state = playFullTrick(state);
       
-      const afterCounts = state.players.map(p => p.hand.length);
+      const afterCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       // All players should still have equal counts
       const stillEqual = afterCounts.every(count => count === afterCounts[0]);
@@ -96,14 +98,16 @@ describe('Card Count Equality', () => {
     };
     
     // Replace human's first card with big joker
-    state.players[0].hand[0] = bigJoker;
-    let trickResult = processPlay(state, [bigJoker], state.players[0].id);
+    const humanPlayer = GameStateUtils.getPlayerById(state, 'player');
+    humanPlayer.hand[0] = bigJoker;
+    let trickResult = processPlay(state, [bigJoker], humanPlayer.id);
     state = trickResult.newState;
     
     // Bot plays  
     for (let i = 1; i < 4; i++) {
-      const currentPlayerIndex = i;
-      const bot = state.players[currentPlayerIndex];
+      const playerIds = ['player', 'ai1', 'ai2', 'ai3'];
+      const botId = playerIds[i];
+      const bot = GameStateUtils.getPlayerById(state, botId);
       const aiMove = getAIMoveWithErrorHandling(state, bot.id);
       const cardsToPlay = aiMove.error ? [bot.hand[0]] : aiMove.cards;
       trickResult = processPlay(state, cardsToPlay, bot.id);
@@ -115,14 +119,14 @@ describe('Card Count Equality', () => {
     expect(trickResult.trickWinner).toBe('Human');
     // Check that human is next leader by checking if their hand has big joker removed
     
-    const countsAfterTrick1 = state.players.map(p => p.hand.length);
+    const countsAfterTrick1 = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     expect(countsAfterTrick1).toEqual([24, 24, 24, 24]);
     
     // Clear current trick (simulating UI flow)
     state.currentTrick = null;
     
     // Now human leads second trick with a single card
-    const human = state.players[0];
+    const human = GameStateUtils.getPlayerById(state, 'player');
     const humanCards = [human.hand[0]];
     
     // Play second trick with single cards only
@@ -131,14 +135,15 @@ describe('Card Count Equality', () => {
     
     // All other players play singles too
     for (let i = 1; i < 4; i++) {
-      const currentPlayerIndex = i;
-      const bot = state.players[currentPlayerIndex];
+      const playerIds = ['player', 'ai1', 'ai2', 'ai3'];
+      const botId = playerIds[i];
+      const bot = GameStateUtils.getPlayerById(state, botId);
       const botCards = [bot.hand[0]];
       trickResult = processPlay(state, botCards, bot.id);
       state = trickResult.newState;
     }
     
-    const finalCounts = state.players.map(p => p.hand.length);
+    const finalCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     const expectedCount = 23; // All players should have 23 cards
     
     // All players should have equal counts
@@ -154,22 +159,24 @@ describe('Card Count Equality', () => {
     state.trumpInfo.trumpSuit = Suit.Spades;
     
     // Verify initial state has correct counts
-    const initialCounts = state.players.map(p => p.hand.length);
+    const initialCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     expect(initialCounts).toEqual([25, 25, 25, 25]);
     
     // Test single card play
-    const singleResult = processPlay(state, [state.players[0].hand[0]], state.players[0].id);
+    const humanPlayer = GameStateUtils.getPlayerById(state, 'player');
+    const singleResult = processPlay(state, [humanPlayer.hand[0]], humanPlayer.id);
     state = singleResult.newState;
     
     // Continue trick
     for (let i = 1; i < 4; i++) {
-      const currentPlayerIndex = i;
-      const player = state.players[currentPlayerIndex];
+      const playerIds = ['player', 'ai1', 'ai2', 'ai3'];
+      const playerId = playerIds[i];
+      const player = GameStateUtils.getPlayerById(state, playerId);
       const result = processPlay(state, [player.hand[0]], player.id);
       state = result.newState;
     }
     
-    expect(state.players.map(p => p.hand.length)).toEqual([24, 24, 24, 24]);
+    expect(GameStateUtils.getAllPlayers(state).map(p => p.hand.length)).toEqual([24, 24, 24, 24]);
     
     // Clear for next trick
     state.currentTrick = null;
@@ -179,7 +186,7 @@ describe('Card Count Equality', () => {
     // We'll simulate the human being the trick winner
     
     // Find or create a pair for the human player
-    const human = state.players[0];
+    const human = GameStateUtils.getPlayerById(state, 'player');
     let pairCards: Card[] = [];
     
     // Look for existing pairs
@@ -203,15 +210,16 @@ describe('Card Count Equality', () => {
     }
     
     // Human plays pair
-    const pairResult = processPlay(state, pairCards, state.players[0].id);
+    const pairResult = processPlay(state, pairCards, human.id);
     state = pairResult.newState;
     
     // Others follow with 2 cards each - all non-leading players should play
     let playersPlayed = 1; // Human already played
     
     while (playersPlayed < 4) {
-      const currentPlayerIndex = playersPlayed;
-      const player = state.players[currentPlayerIndex];
+      const playerIds = ['player', 'ai1', 'ai2', 'ai3'];
+      const playerId = playerIds[playersPlayed];
+      const player = GameStateUtils.getPlayerById(state, playerId);
       
       const initialCount = player.hand.length;
       const aiMove = getAIMoveWithErrorHandling(state, player.id);
@@ -223,7 +231,7 @@ describe('Card Count Equality', () => {
       }
       
       // Check all players before this play
-      const beforeCounts = state.players.map(p => p.hand.length);
+      const beforeCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       const result = processPlay(state, cards, player.id);
       // Process play doesn't return error property
@@ -238,7 +246,7 @@ describe('Card Count Equality', () => {
       playersPlayed++;
     }
     
-    const finalCounts = state.players.map(p => p.hand.length);
+    const finalCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     expect(finalCounts).toEqual([22, 22, 22, 22]);
   });
 });

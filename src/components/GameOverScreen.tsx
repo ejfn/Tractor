@@ -1,16 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
+import React, { useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
   Animated,
   Dimensions,
-  SafeAreaView 
-} from 'react-native';
+  SafeAreaView,
+} from "react-native";
 
 interface GameOverScreenProps {
-  winner: 'A' | 'B' | null;
+  winner: "A" | "B" | null;
   teamNames: [string, string];
   onNewGame: () => void;
   fadeAnim: Animated.Value;
@@ -25,13 +25,13 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
   teamNames,
   onNewGame,
   fadeAnim,
-  scaleAnim
+  scaleAnim,
 }) => {
   const confettiAnim1 = useRef(new Animated.Value(0)).current;
   const confettiAnim2 = useRef(new Animated.Value(0)).current;
   const confettiAnim3 = useRef(new Animated.Value(0)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
-  
+
   useEffect(() => {
     // Start animations
     Animated.parallel([
@@ -47,99 +47,102 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
             duration: 2000,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ),
       Animated.loop(
         Animated.timing(confettiAnim1, {
           toValue: 1,
           duration: 3000,
           useNativeDriver: true,
-        })
+        }),
       ),
       Animated.loop(
         Animated.timing(confettiAnim2, {
           toValue: 1,
           duration: 3500,
           useNativeDriver: true,
-        })
+        }),
       ),
       Animated.loop(
         Animated.timing(confettiAnim3, {
           toValue: 1,
           duration: 4000,
           useNativeDriver: true,
-        })
+        }),
       ),
     ]).start();
   }, [confettiAnim1, confettiAnim2, confettiAnim3, floatAnim]);
-  
+
   const translateY = floatAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -10],
   });
-  
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Confetti animations */}
-      <Animated.Text 
+      <Animated.Text
         style={[
-          styles.confetti, 
-          { 
-            left: '20%',
-            transform: [{
-              translateY: confettiAnim1.interpolate({
-                inputRange: [0, 1],
-                outputRange: [-100, Dimensions.get('window').height + 100],
-              })
-            }]
-          }
+          styles.confetti,
+          {
+            left: "20%",
+            transform: [
+              {
+                translateY: confettiAnim1.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-100, Dimensions.get("window").height + 100],
+                }),
+              },
+            ],
+          },
         ]}
       >
         🎉
       </Animated.Text>
-      <Animated.Text 
+      <Animated.Text
         style={[
-          styles.confetti, 
-          { 
-            left: '50%',
-            transform: [{
-              translateY: confettiAnim2.interpolate({
-                inputRange: [0, 1],
-                outputRange: [-100, Dimensions.get('window').height + 100],
-              })
-            }]
-          }
+          styles.confetti,
+          {
+            left: "50%",
+            transform: [
+              {
+                translateY: confettiAnim2.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-100, Dimensions.get("window").height + 100],
+                }),
+              },
+            ],
+          },
         ]}
       >
         🎊
       </Animated.Text>
-      <Animated.Text 
+      <Animated.Text
         style={[
-          styles.confetti, 
-          { 
-            left: '80%',
-            transform: [{
-              translateY: confettiAnim3.interpolate({
-                inputRange: [0, 1],
-                outputRange: [-100, Dimensions.get('window').height + 100],
-              })
-            }]
-          }
+          styles.confetti,
+          {
+            left: "80%",
+            transform: [
+              {
+                translateY: confettiAnim3.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-100, Dimensions.get("window").height + 100],
+                }),
+              },
+            ],
+          },
         ]}
       >
         🏆
       </Animated.Text>
-      
+
       <Animated.View
         style={[
           styles.card,
           {
             opacity: fadeAnim,
-            transform: [
-              { scale: scaleAnim },
-              { translateY: translateY }
-            ]
-          }
+            transform: [{ scale: scaleAnim }, { translateY: translateY }],
+          },
         ]}
       >
         {/* Decorative corners */}
@@ -147,14 +150,14 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         <View style={[styles.corner, styles.topRight]} />
         <View style={[styles.corner, styles.bottomLeft]} />
         <View style={[styles.corner, styles.bottomRight]} />
-        
+
         <Text style={styles.trophy}>🏆</Text>
         <Text style={styles.title}>Victory!</Text>
         <Text style={styles.winnerText}>
-          {winner === 'A' ? teamNames[0] : teamNames[1]} wins the game!
+          {winner === "A" ? teamNames[0] : teamNames[1]} wins the game!
         </Text>
         <Text style={styles.congratsText}>Congratulations!</Text>
-        
+
         <TouchableOpacity
           style={styles.button}
           onPress={onNewGame}
@@ -169,70 +172,69 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#3F51B5',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#3F51B5",
   },
   confetti: {
-    position: 'absolute',
+    position: "absolute",
     fontSize: 40,
     zIndex: 10,
   },
   card: {
-    backgroundColor: '#FAFAFA',
+    backgroundColor: "#FAFAFA",
     padding: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    width: '90%',
+    alignItems: "center",
+    width: "90%",
     maxWidth: 400,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.4,
     shadowRadius: 15,
     elevation: 15,
     borderWidth: 4,
-    borderColor: '#FFD700',
-    position: 'relative',
-    overflow: 'hidden',
+    borderColor: "#FFD700",
+    position: "relative",
+    overflow: "hidden",
   },
   trophy: {
     fontSize: 80,
     marginBottom: 20,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 3,
   },
   title: {
     fontSize: 36,
-    fontWeight: 'bold',
-    color: '#2C3E50',
+    fontWeight: "bold",
+    color: "#2C3E50",
     marginBottom: 10,
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textAlign: "center",
+    textShadowColor: "rgba(0, 0, 0, 0.1)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
   winnerText: {
     fontSize: 24,
-    color: '#34495E',
+    color: "#34495E",
     marginBottom: 10,
-    textAlign: 'center',
-    fontWeight: '600',
+    textAlign: "center",
+    fontWeight: "600",
   },
   congratsText: {
     fontSize: 20,
-    color: '#7F8C8D',
+    color: "#7F8C8D",
     marginBottom: 30,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
+    fontStyle: "italic",
   },
   button: {
     marginTop: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 5,
@@ -242,30 +244,30 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   buttonGradient: {
-    backgroundColor: '#E91E63',
+    backgroundColor: "#E91E63",
     paddingVertical: 18,
     paddingHorizontal: 50,
     borderRadius: 35,
     minWidth: 250,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 3,
-    borderColor: '#C2185B',
+    borderColor: "#C2185B",
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     letterSpacing: 1.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   corner: {
-    position: 'absolute',
+    position: "absolute",
     width: 35,
     height: 35,
-    borderColor: '#FFD700',
+    borderColor: "#FFD700",
     borderWidth: 4,
   },
   topLeft: {

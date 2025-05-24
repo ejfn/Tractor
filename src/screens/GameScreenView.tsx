@@ -1,41 +1,39 @@
-import React from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  Animated,
-} from 'react-native';
+import React from "react";
+import { StyleSheet, View, Text, Animated } from "react-native";
 
 // Components
-import GameTable from '../components/GameTable';
-import AIPlayerView from '../components/AIPlayerView';
-import HumanPlayerView from '../components/HumanPlayerView';
-import CardPlayArea from '../components/CardPlayArea';
-import GameStatus from '../components/GameStatus';
-import GameSetupScreen from '../components/GameSetupScreen';
-import GameOverScreen from '../components/GameOverScreen';
+import GameTable from "../components/GameTable";
+import AIPlayerView from "../components/AIPlayerView";
+import HumanPlayerView from "../components/HumanPlayerView";
+import CardPlayArea from "../components/CardPlayArea";
+import GameStatus from "../components/GameStatus";
+import GameSetupScreen from "../components/GameSetupScreen";
+import GameOverScreen from "../components/GameOverScreen";
 // import TrumpDeclarationModal from '../components/TrumpDeclarationModal'; // Not used anymore
-import TrickResultDisplay from '../components/TrickResultDisplay';
-import RoundCompleteModal from '../components/RoundCompleteModal';
+import TrickResultDisplay from "../components/TrickResultDisplay";
+import RoundCompleteModal from "../components/RoundCompleteModal";
 
 // Types
-import { GameState, Card, Trick } from '../types/game';
-import { PlayerStateManager } from '../types/playerState';
+import { GameState, Card, Trick, Player } from "../types/game";
 
 // Utils
-import { validatePlay } from '../utils/gamePlayManager';
+import { validatePlay } from "../utils/gamePlayManager";
 
 interface GameScreenViewProps {
   // Game state
   gameState: GameState | null;
   selectedCards: Card[];
-  playerStateManager: PlayerStateManager | null;
-  
+
+  // Player data
+  players: Record<string, Player> | null;
+  currentPlayerId?: string;
+  thinkingPlayerId?: string;
+
   // UI state
   showSetup: boolean;
   showTrumpDeclaration: boolean;
   gameOver: boolean;
-  winner: 'A' | 'B' | null;
+  winner: "A" | "B" | null;
   showTrickResult: boolean;
   lastTrickWinner: string;
   lastTrickPoints: number;
@@ -44,7 +42,7 @@ interface GameScreenViewProps {
   roundCompleteMessage: string;
   teamNames: [string, string];
   isTransitioningTricks: boolean;
-  
+
   // Animations
   fadeAnim: Animated.Value;
   scaleAnim: Animated.Value;
@@ -54,7 +52,7 @@ interface GameScreenViewProps {
     dot2: Animated.Value;
     dot3: Animated.Value;
   };
-  
+
   // Handlers
   onCardSelect: (card: Card) => void;
   onPlayCards: () => void;
@@ -72,8 +70,12 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   // Game state
   gameState,
   selectedCards,
-  playerStateManager,
-  
+
+  // Player data
+  players,
+  currentPlayerId,
+  thinkingPlayerId,
+
   // UI state
   showSetup,
   showTrumpDeclaration,
@@ -87,13 +89,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   roundCompleteMessage,
   teamNames,
   isTransitioningTricks,
-  
+
   // Animations
   fadeAnim,
   scaleAnim,
   slideAnim,
   thinkingDots,
-  
+
   // Handlers
   onCardSelect,
   onPlayCards,
@@ -101,7 +103,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onDeclareTrumpSuit,
   onConfirmTrumpDeclaration,
   onNextRound,
-  onAnimationComplete
+  onAnimationComplete,
 }) => {
   // Setup screen with animations
   if (showSetup) {
@@ -113,7 +115,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
       />
     );
   }
-  
+
   // Game over screen
   if (gameOver) {
     return (
@@ -126,67 +128,78 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
       />
     );
   }
-  
-  
+
   // Loading state
-  if (!gameState || !playerStateManager) {
+  if (!gameState || !players) {
     return (
       <View style={styles.loadingContainer}>
         <Text>Loading game...</Text>
       </View>
     );
   }
-  
-  // Get player states using the manager
-  const humanPlayerState = playerStateManager.getHumanPlayerState();
-  const topPlayerState = playerStateManager.getPlayerStateByPosition('top');
-  const leftPlayerState = playerStateManager.getPlayerStateByPosition('left');
-  const rightPlayerState = playerStateManager.getPlayerStateByPosition('right');
-  
-  if (!humanPlayerState) {
+
+  // Get players for different positions
+  const humanPlayer = Object.values(players).find((player) => player.isHuman);
+  const topPlayer = Object.values(players).find(
+    (player) => player.position === "top",
+  );
+  const leftPlayer = Object.values(players).find(
+    (player) => player.position === "left",
+  );
+  const rightPlayer = Object.values(players).find(
+    (player) => player.position === "right",
+  );
+
+  if (!humanPlayer) {
     return (
       <View style={styles.container}>
         <Text>Error: Human player not found</Text>
       </View>
     );
   }
-  
-  const isPlayerCurrentTurn = humanPlayerState.isCurrentTurn;
-  const canPlay = gameState.gamePhase === 'playing' && isPlayerCurrentTurn;
-  
+
+  const isPlayerCurrentTurn = gameState.currentPlayerId === humanPlayer.id;
+  const canPlay = gameState.gamePhase === "playing" && isPlayerCurrentTurn;
+
   // Check if selected cards are valid to play
-  const humanPlayer = gameState.players.find(p => p.isHuman);
-  const isValidPlay = selectedCards.length > 0 && humanPlayer && validatePlay(gameState, selectedCards, humanPlayer.id);
-  
+  const isValidPlay =
+    selectedCards.length > 0 &&
+    humanPlayer &&
+    validatePlay(gameState, selectedCards, humanPlayer.id);
+
+  // Helper function to get team by teamId
+  const getTeam = (teamId: "A" | "B") => gameState.teams[teamId];
+
   return (
     <View style={styles.container}>
-      <Animated.View style={[
-        styles.gameContainer,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateX: slideAnim }]
-        }
-      ]}>
+      <Animated.View
+        style={[
+          styles.gameContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateX: slideAnim }],
+          },
+        ]}
+      >
         {/* Game status bar above table */}
         <GameStatus
-          teams={gameState.teams}
+          teams={Object.values(gameState.teams)}
           trumpInfo={gameState.trumpInfo}
           roundNumber={gameState.roundNumber}
           gamePhase={gameState.gamePhase}
         />
 
-
         {/* Container with bottom margin */}
         <View style={styles.tableContainer}>
           <GameTable
             topPlayer={
-              topPlayerState ? (
+              topPlayer ? (
                 <AIPlayerView
                   position="top"
-                  player={topPlayerState.player}
-                  isDefending={topPlayerState.team.isDefending}
-                  isCurrentPlayer={topPlayerState.isCurrentTurn}
-                  waitingForAI={topPlayerState.isThinking}
+                  player={topPlayer}
+                  isDefending={getTeam(topPlayer.teamId)?.isDefending ?? false}
+                  isCurrentPlayer={gameState.currentPlayerId === topPlayer.id}
+                  waitingForAI={topPlayer.isThinking}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -194,13 +207,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               ) : null
             }
             leftPlayer={
-              leftPlayerState ? (
+              leftPlayer ? (
                 <AIPlayerView
                   position="left"
-                  player={leftPlayerState.player}
-                  isDefending={leftPlayerState.team.isDefending}
-                  isCurrentPlayer={leftPlayerState.isCurrentTurn}
-                  waitingForAI={leftPlayerState.isThinking}
+                  player={leftPlayer}
+                  isDefending={getTeam(leftPlayer.teamId)?.isDefending ?? false}
+                  isCurrentPlayer={gameState.currentPlayerId === leftPlayer.id}
+                  waitingForAI={leftPlayer.isThinking}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -208,13 +221,15 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               ) : null
             }
             rightPlayer={
-              rightPlayerState ? (
+              rightPlayer ? (
                 <AIPlayerView
                   position="right"
-                  player={rightPlayerState.player}
-                  isDefending={rightPlayerState.team.isDefending}
-                  isCurrentPlayer={rightPlayerState.isCurrentTurn}
-                  waitingForAI={rightPlayerState.isThinking}
+                  player={rightPlayer}
+                  isDefending={
+                    getTeam(rightPlayer.teamId)?.isDefending ?? false
+                  }
+                  isCurrentPlayer={gameState.currentPlayerId === rightPlayer.id}
+                  waitingForAI={rightPlayer.isThinking}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -222,11 +237,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               ) : null
             }
             bottomPlayer={
-              humanPlayerState ? (
+              humanPlayer ? (
                 <HumanPlayerView
-                  player={humanPlayerState.player}
-                  isCurrentPlayer={humanPlayerState.isCurrentTurn}
-                  isDefending={humanPlayerState.team.isDefending}
+                  player={humanPlayer}
+                  isCurrentPlayer={gameState.currentPlayerId === humanPlayer.id}
+                  isDefending={
+                    getTeam(humanPlayer.teamId)?.isDefending ?? false
+                  }
                   selectedCards={selectedCards}
                   onCardSelect={onCardSelect}
                   onPlayCards={onPlayCards}
@@ -239,8 +256,18 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   trumpDeclarationMode={showTrumpDeclaration}
                   onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
                   onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
-                  currentPlayerIndex={humanPlayer ? gameState.players.indexOf(humanPlayer) : 0}
-                  winningPlayerIndex={playerStateManager?.trickWinnerId ? gameState.players.findIndex(p => p.id === playerStateManager.trickWinnerId) : undefined}
+                  currentPlayerIndex={
+                    humanPlayer
+                      ? Object.keys(gameState.players).indexOf(humanPlayer.id)
+                      : 0
+                  }
+                  winningPlayerIndex={
+                    gameState?.currentTrick?.winningPlayerId
+                      ? Object.keys(gameState.players).indexOf(
+                          gameState.currentTrick.winningPlayerId,
+                        )
+                      : undefined
+                  }
                   currentTrick={gameState.currentTrick}
                 />
               ) : null
@@ -249,9 +276,12 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               <CardPlayArea
                 currentTrick={gameState.currentTrick}
                 lastCompletedTrick={lastCompletedTrick}
-                players={gameState.players}
+                players={Object.values(gameState.players)}
                 trumpInfo={gameState.trumpInfo}
-                winningPlayerId={lastCompletedTrick?.winningPlayerId || gameState.currentTrick?.winningPlayerId}
+                winningPlayerId={
+                  lastCompletedTrick?.winningPlayerId ||
+                  gameState.currentTrick?.winningPlayerId
+                }
                 onAnimationComplete={onAnimationComplete}
               />
             }
@@ -277,9 +307,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           scaleAnim={scaleAnim}
         />
         */}
-        
       </Animated.View>
-      
+
       {/* Round complete modal - outside of AnimatedView */}
       <RoundCompleteModal
         visible={showRoundComplete}
@@ -295,11 +324,11 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   bottomSpacing: {
     height: 16,
-    width: '100%',
+    width: "100%",
   },
   gameContainer: {
     flex: 1,
@@ -313,9 +342,9 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#3F51B5',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#3F51B5",
   },
 });
 

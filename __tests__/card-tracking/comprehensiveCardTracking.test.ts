@@ -1,17 +1,18 @@
-import { GameState, Card, Rank } from '../../src/types/game';
+import { GameState, Card, Rank, Player } from '../../src/types/game';
 import { initializeGame, dealCards } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 describe('Comprehensive Card Tracking Tests', () => {
   // Helper function to verify card counts
   const verifyCardCounts = (state: GameState, expected?: number) => {
-    const counts = state.players.map(p => p.hand.length);
+    const counts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     const uniqueCounts = new Set(counts);
     
     if (uniqueCounts.size > 1) {
       console.error('ERROR: Unequal card counts detected!');
-      state.players.forEach((p, idx) => {
+      GameStateUtils.getAllPlayers(state).forEach((p: Player, idx) => {
         console.error(`  ${p.name}: ${p.hand.length} cards`);
       });
       return false;
@@ -32,16 +33,17 @@ describe('Comprehensive Card Tracking Tests', () => {
     state.gamePhase = 'playing';
     state.trumpInfo.trumpSuit = 'Spades' as any;
     
-    const initialCounts = state.players.map(p => p.hand.length);
+    const initialCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     
     // Play 3 simple tricks with single cards
     for (let trickNum = 0; trickNum < 3; trickNum++) {
-      const beforeCounts = state.players.map(p => p.hand.length);
+      const beforeCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       // Play a complete trick with 4 players
       for (let playNum = 0; playNum < 4; playNum++) {
         const currentPlayerIndex = playNum;
-        const currentPlayer = state.players[currentPlayerIndex];
+        const allPlayers = GameStateUtils.getPlayersInOrder(state);
+        const currentPlayer = allPlayers[currentPlayerIndex];
         
         // Always play single cards to keep it simple
         const cardsToPlay = [currentPlayer.hand[0]];
@@ -50,7 +52,7 @@ describe('Comprehensive Card Tracking Tests', () => {
         state = result.newState;
       }
       
-      const afterCounts = state.players.map(p => p.hand.length);
+      const afterCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       // Verify all players have equal counts
       expect(verifyCardCounts(state)).toBe(true);
@@ -73,12 +75,13 @@ describe('Comprehensive Card Tracking Tests', () => {
       
       // Play 5 tricks with single cards only
       for (let trickNum = 0; trickNum < 5; trickNum++) {
-        const startCounts = state.players.map(p => p.hand.length);
+        const startCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
         
         for (let playNum = 0; playNum < 4; playNum++) {
           // Simple sequential play for testing
           const currentPlayerIndex = playNum;
-          const currentPlayer = state.players[currentPlayerIndex];
+          const allPlayers = GameStateUtils.getPlayersInOrder(state);
+          const currentPlayer = allPlayers[currentPlayerIndex];
           
           // Force all players to play singles
           const cardsToPlay = [currentPlayer.hand[0]];
@@ -87,7 +90,7 @@ describe('Comprehensive Card Tracking Tests', () => {
           state = result.newState;
         }
         
-        const endCounts = state.players.map(p => p.hand.length);
+        const endCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
         const expectedCount = startCounts[0] - 1;
         
         // Verify all players lost exactly 1 card
@@ -115,7 +118,8 @@ describe('Comprehensive Card Tracking Tests', () => {
       for (let playNum = 0; playNum < 4; playNum++) {
         // Simple sequential play for testing
         const currentPlayerIndex = playNum;
-        const currentPlayer = state.players[currentPlayerIndex];
+        const allPlayers = GameStateUtils.getPlayersInOrder(state);
+        const currentPlayer = allPlayers[currentPlayerIndex];
         
         const cardsToPlay = [currentPlayer.hand[0]];
         
@@ -138,11 +142,12 @@ describe('Comprehensive Card Tracking Tests', () => {
     
     // Test 2: Regular gameplay to near-empty hands
     let trickCounter = 0;
-    while (state.players.every(p => p.hand.length > 3)) {
+    while (GameStateUtils.getAllPlayers(state).every(p => p.hand.length > 3)) {
       for (let playNum = 0; playNum < 4; playNum++) {
         // Simple sequential play for testing
         const currentPlayerIndex = playNum;
-        const currentPlayer = state.players[currentPlayerIndex];
+        const allPlayers = GameStateUtils.getPlayersInOrder(state);
+        const currentPlayer = allPlayers[currentPlayerIndex];
         
         let cardsToPlay: Card[] = [];
         if (currentPlayer.isHuman) {
@@ -177,19 +182,20 @@ describe('Comprehensive Card Tracking Tests', () => {
     state.trumpInfo.trumpSuit = 'Spades' as any;
     
     // Simulate multiple players trying to play at once
-    const player0Cards = [state.players[0].hand[0]];
-    const player1Cards = [state.players[1].hand[0]];
+    const allPlayers = GameStateUtils.getPlayersInOrder(state);
+    const player0Cards = [allPlayers[0].hand[0]];
+    const player1Cards = [allPlayers[1].hand[0]];
     
     // Process first play
-    const result1 = processPlay(state, player0Cards, state.players[0].id);
+    const result1 = processPlay(state, player0Cards, allPlayers[0].id);
     
     // Try to process second play with original state (simulating race condition)
     try {
-      const result2 = processPlay(state, player1Cards, state.players[1].id);
+      const result2 = processPlay(state, player1Cards, allPlayers[1].id);
       
       // Check if original state was mutated
-      const originalCounts = state.players.map(p => p.hand.length);
-      const result1Counts = result1.newState.players.map(p => p.hand.length);
+      const originalCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
+      const result1Counts = GameStateUtils.getAllPlayers(result1.newState).map(p => p.hand.length);
       
       if (JSON.stringify(originalCounts) !== JSON.stringify([25, 25, 25, 25])) {
         console.error('ERROR: Original state was mutated!');

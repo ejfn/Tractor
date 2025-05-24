@@ -3,6 +3,8 @@ import { render } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import AIPlayerView from '../../src/components/AIPlayerView';
 import { Player, Suit, Rank } from '../../src/types/game';
+import { createTest, createTestGameState, createTestCard } from '../helpers/testUtils';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 // Mock dependencies
 jest.mock('../../src/components/ThinkingIndicator', () => {
@@ -43,13 +45,14 @@ describe('AIPlayerView', () => {
       rank: Rank.Ace,
       points: 0
     })),
-    team: 'A',
-    currentRank: Rank.Two
+    teamId: 'A',
+    position: 'right',
+    isThinking: false
   });
 
   test('renders top player correctly', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(15);
+    const player = { ...createMockPlayer(10), id: 'ai2', name: 'Bot 2' };
     
     const { getAllByTestId, getByText } = render(
       <AIPlayerView 
@@ -79,7 +82,7 @@ describe('AIPlayerView', () => {
 
   test('renders left player correctly', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(5);
+    const player = { ...createMockPlayer(5), id: 'ai3', name: 'Bot 3' };
     
     const { getAllByTestId, getByText } = render(
       <AIPlayerView 
@@ -104,7 +107,7 @@ describe('AIPlayerView', () => {
 
   test('renders right player correctly', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(3);
+    const player = { ...createMockPlayer(3), id: 'ai1', name: 'Bot 1' };
     
     const { getAllByTestId, getByText } = render(
       <AIPlayerView 
@@ -129,7 +132,7 @@ describe('AIPlayerView', () => {
 
   test('shows thinking indicator when it is AI turn', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(5);
+    const player = createTest("ai3");
     
     const { getAllByTestId } = render(
       <AIPlayerView 
@@ -151,7 +154,7 @@ describe('AIPlayerView', () => {
 
   test('hides thinking indicator when showTrickResult is true', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(5);
+    const player = createTest("ai3");
     
     const { getAllByTestId } = render(
       <AIPlayerView 
@@ -174,7 +177,7 @@ describe('AIPlayerView', () => {
 
   test('uses correct team styling for defending team', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(5);
+    const player = createTest("ai3");
     
     const { getByText } = render(
       <AIPlayerView 
@@ -195,7 +198,7 @@ describe('AIPlayerView', () => {
 
   test('uses correct team styling for attacking team', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(5);
+    const player = createTest("ai3");
     
     const { getByText } = render(
       <AIPlayerView 

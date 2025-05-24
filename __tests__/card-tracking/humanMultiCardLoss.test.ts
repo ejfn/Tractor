@@ -1,7 +1,8 @@
-import { GameState, Card, Rank } from '../../src/types/game';
+import { GameState, Card, Rank, Player } from '../../src/types/game';
 import { initializeGame } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 describe('Human Multi-Card Loss Bug', () => {
   test('Reproduce human losing multiple cards', () => {
@@ -9,21 +10,21 @@ describe('Human Multi-Card Loss Bug', () => {
     let state = gameState;
     
     console.log('=== Initial state ===');
-    console.log(`All players have: ${state.players.map(p => p.hand.length).join(', ')} cards`);
+    console.log(`All players have: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')} cards`);
     
     // Play first trick - Human wins
     console.log('\n=== TRICK 1 ===');
     for (let play = 0; play < 4; play++) {
-      const currentPlayerIndex = (state.currentTrick ? 
-        state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
+      const currentPlayerIndex = (gameState.currentTrick ? 
+        GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId) + gameState.currentTrick.plays.length + 1 
         : 0) % 4;
-      const currentPlayer = state.players[currentPlayerIndex];
-      const cardsBefore = state.players.map(p => p.hand.length);
+      const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIndex];
+      const cardsBefore = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       let cardsToPlay = [currentPlayer.hand[0]];
       const result = processPlay(state, cardsToPlay, currentPlayer.id);
       
-      const cardsAfter = result.newState.players.map(p => p.hand.length);
+      const cardsAfter = GameStateUtils.getAllPlayers(result.newState).map(p => p.hand.length);
       console.log(`${currentPlayer.name}: ${cardsBefore[currentPlayerIndex]} -> ${cardsAfter[currentPlayerIndex]}`);
       
       state = result.newState;
@@ -33,18 +34,18 @@ describe('Human Multi-Card Loss Bug', () => {
       }
     }
     
-    console.log(`After trick 1: ${state.players.map(p => p.hand.length).join(', ')}`);
+    console.log(`After trick 1: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')}`);
     
     // Play second trick - focus on human's turn
     console.log('\n=== TRICK 2 ===');
     
     // First play (should be the previous winner)
-    const currentPlayerIndex = (state.currentTrick ? 
-      state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
+    const currentPlayerIndex = (gameState.currentTrick ? 
+      GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId) + gameState.currentTrick.plays.length + 1 
       : 0) % 4;
-    const firstPlayer = state.players[currentPlayerIndex];
+    const firstPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIndex];
     console.log(`\nFirst player: ${firstPlayer.name} (index ${currentPlayerIndex})`);
-    console.log(`Cards before ALL players: ${state.players.map(p => p.hand.length).join(', ')}`);
+    console.log(`Cards before ALL players: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')}`);
     
     // Get the specific cards the human will play
     let humanCardsToPlay = [];
@@ -79,17 +80,17 @@ describe('Human Multi-Card Loss Bug', () => {
     const result = processPlay(state, humanCardsToPlay, firstPlayer.id);
     
     console.log('\nAfter processing play:');
-    const cardsAfter = result.newState.players.map(p => p.hand.length);
+    const cardsAfter = GameStateUtils.getAllPlayers(result.newState).map(p => p.hand.length);
     console.log(`Cards after ALL players: ${cardsAfter.join(', ')}`);
     
     // Check each player's card change
     for (let i = 0; i < 4; i++) {
-      const before = beforeState.players[i].hand.length;
-      const after = result.newState.players[i].hand.length;
+      const before = GameStateUtils.getPlayersInOrder(beforeState)[i].hand.length;
+      const after = GameStateUtils.getPlayersInOrder(result.newState)[i].hand.length;
       const diff = before - after;
       
       if (diff !== 0) {
-        console.log(`Player ${i} (${state.players[i].name}): lost ${diff} cards`);
+        console.log(`Player ${i} (${GameStateUtils.getPlayersInOrder(state)[i].name}): lost ${diff} cards`);
         
         if (i === currentPlayerIndex && diff !== humanCardsToPlay.length) {
           console.error(`ERROR: Player ${i} should have lost ${humanCardsToPlay.length} cards but lost ${diff}`);
@@ -101,8 +102,8 @@ describe('Human Multi-Card Loss Bug', () => {
     
     // Check if this reproduces the bug
     const humanIndex = 0;
-    const humanBefore = beforeState.players[humanIndex].hand.length;
-    const humanAfter = result.newState.players[humanIndex].hand.length;
+    const humanBefore = GameStateUtils.getPlayersInOrder(beforeState)[humanIndex].hand.length;
+    const humanAfter = GameStateUtils.getPlayersInOrder(result.newState)[humanIndex].hand.length;
     const humanLost = humanBefore - humanAfter;
     
     if (humanLost > humanCardsToPlay.length) {
@@ -133,11 +134,11 @@ describe('Human Multi-Card Loss Bug', () => {
     
     // Play rest of trick 2
     for (let play = 1; play < 4; play++) {
-      const currentPlayerIndex = (state.currentTrick ? 
-        state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
+      const currentPlayerIndex = (gameState.currentTrick ? 
+        GameStateUtils.getPlayersInOrder(state).findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId) + gameState.currentTrick.plays.length + 1 
         : 0) % 4;
-      const currentPlayer = state.players[currentPlayerIndex];
-      const cardsBefore = state.players.map(p => p.hand.length);
+      const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIndex];
+      const cardsBefore = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       let cardsToPlay = [];
       if (currentPlayer.isHuman) {
@@ -148,7 +149,7 @@ describe('Human Multi-Card Loss Bug', () => {
       }
       
       const result = processPlay(state, cardsToPlay, currentPlayer.id);
-      const cardsAfter = result.newState.players.map(p => p.hand.length);
+      const cardsAfter = GameStateUtils.getAllPlayers(result.newState).map(p => p.hand.length);
       
       console.log(`${currentPlayer.name}: ${cardsBefore[currentPlayerIndex]} -> ${cardsAfter[currentPlayerIndex]}`);
       
@@ -156,22 +157,22 @@ describe('Human Multi-Card Loss Bug', () => {
       for (let i = 0; i < 4; i++) {
         const diff = cardsBefore[i] - cardsAfter[i];
         if (diff > 0 && i !== currentPlayerIndex) {
-          console.error(`ERROR: Player ${i} (${state.players[i].name}) lost ${diff} cards but wasn't playing`);
+          console.error(`ERROR: Player ${i} (${GameStateUtils.getPlayersInOrder(state)[i].name}) lost ${diff} cards but wasn't playing`);
         }
       }
       
       state = result.newState;
     }
     
-    console.log(`\nAfter trick 2: ${state.players.map(p => p.hand.length).join(', ')}`);
+    console.log(`\nAfter trick 2: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')}`);
     
     // Final verification
-    const finalCounts = state.players.map(p => p.hand.length);
+    const finalCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     const expectedCount = 25 - 2; // Started with 25, played 2 tricks
     
     finalCounts.forEach((count, idx) => {
       if (count !== expectedCount) {
-        console.error(`ERROR: Player ${idx} (${state.players[idx].name}) has ${count} cards, expected ${expectedCount}`);
+        console.error(`ERROR: Player ${idx} (${GameStateUtils.getPlayersInOrder(state)[idx].name}) has ${count} cards, expected ${expectedCount}`);
       }
     });
   });

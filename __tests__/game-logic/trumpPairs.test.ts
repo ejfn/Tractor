@@ -6,6 +6,7 @@ import {
   compareCardCombos,
   determineTrickWinner
 } from '../../src/utils/gameLogic';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import {
   Card,
   ComboType,

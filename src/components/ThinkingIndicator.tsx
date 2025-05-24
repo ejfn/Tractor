@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React from "react";
+import { View, StyleSheet, Animated } from "react-native";
 
 interface ThinkingIndicatorProps {
   visible: boolean;
@@ -13,7 +13,10 @@ interface ThinkingIndicatorProps {
 /**
  * Component that displays animated thinking dots
  */
-const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({ visible, dots }) => {
+const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
+  visible,
+  dots,
+}) => {
   // Track indicator visibility changes
   React.useEffect(() => {
     // Monitor when thinking indicator visibility changes
@@ -23,26 +26,26 @@ const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({ visible, dots }) 
 
   return (
     <View style={styles.thinkingIndicator}>
-      <Animated.View style={[styles.thinkingDot, {opacity: dots.dot1}]} />
-      <Animated.View style={[styles.thinkingDot, {opacity: dots.dot2}]} />
-      <Animated.View style={[styles.thinkingDot, {opacity: dots.dot3}]} />
+      <Animated.View style={[styles.thinkingDot, { opacity: dots.dot1 }]} />
+      <Animated.View style={[styles.thinkingDot, { opacity: dots.dot2 }]} />
+      <Animated.View style={[styles.thinkingDot, { opacity: dots.dot3 }]} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   thinkingIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     right: -8,
-    backgroundColor: '#FFC107',
+    backgroundColor: "#FFC107",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#FFD54F',
-    flexDirection: 'row',
-    shadowColor: '#000',
+    borderColor: "#FFD54F",
+    flexDirection: "row",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
@@ -53,7 +56,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     marginHorizontal: 1,
   },
 });

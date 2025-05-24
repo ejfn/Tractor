@@ -6,8 +6,10 @@ import {
   GameState, 
   Rank, 
   Suit, 
-  Card
+  Card,
+  PlayerPosition
 } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import * as gameLogic from '../../src/utils/gameLogic';
 
 // Mock dependencies
@@ -27,8 +29,8 @@ const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card =>
 // Create mock game state for testing
 const createMockGameState = (): GameState => {
   return {
-    players: [
-      {
+    players: {
+      'player': {
         id: 'player',
         name: 'You',
         isHuman: true,
@@ -36,10 +38,11 @@ const createMockGameState = (): GameState => {
           createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
           createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
         ],
-        team: 'A',
-        currentRank: Rank.Two
+        teamId: 'A',
+        position: 'bottom' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai1': {
         id: 'ai1',
         name: 'Bot 1',
         isHuman: false,
@@ -47,10 +50,11 @@ const createMockGameState = (): GameState => {
           createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
           createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
         ],
-        team: 'B',
-        currentRank: Rank.Two
+        teamId: 'B',
+        position: 'right' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai2': {
         id: 'ai2',
         name: 'Bot 2',
         isHuman: false,
@@ -58,10 +62,11 @@ const createMockGameState = (): GameState => {
           createMockCard('spades_2_1', Suit.Spades, Rank.Two),
           createMockCard('hearts_a_1', Suit.Hearts, Rank.Ace)
         ],
-        team: 'A',
-        currentRank: Rank.Two
+        teamId: 'A',
+        position: 'top' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai3': {
         id: 'ai3',
         name: 'Bot 3',
         isHuman: false,
@@ -69,26 +74,25 @@ const createMockGameState = (): GameState => {
           createMockCard('clubs_4_1', Suit.Clubs, Rank.Four),
           createMockCard('diamonds_10_1', Suit.Diamonds, Rank.Ten, 10)
         ],
-        team: 'B',
-        currentRank: Rank.Two
+        teamId: 'B',
+        position: 'left' as PlayerPosition,
+        isThinking: false
       }
-    ],
-    teams: [
-      {
+    },
+    teams: {
+      'A': {
         id: 'A',
-        players: ['player', 'ai2'],
         points: 0,
         currentRank: Rank.Two,
         isDefending: true
       },
-      {
+      'B': {
         id: 'B',
-        players: ['ai1', 'ai3'],
         points: 0,
         currentRank: Rank.Two,
         isDefending: false
       }
-    ],
+    },
     trumpInfo: {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
@@ -124,7 +128,9 @@ const createMockGameState = (): GameState => {
       }
     ],
     deck: [],
-    kittyCards: []
+    kittyCards: [],
+    currentPlayerId: 'player',
+    selectedCards: []
   };
 };
 
@@ -164,15 +170,17 @@ describe('gameRoundManager', () => {
       expect(result.trumpInfo.trumpRank).toBe(Rank.Two); // Same as defending team's rank
       
       // Verify trump rank was set from defending team
-      expect(result.trumpInfo.trumpRank).toBe(result.teams.find(t => t.isDefending)?.currentRank);
+      const defendingTeam = GameStateUtils.getAllTeams(result).find(t => t.isDefending);
+      expect(result.trumpInfo.trumpRank).toBe(defendingTeam?.currentRank);
       
       // Verify deck was created
       expect(result.deck).toEqual(mockDeck);
       
       // Verify cards were dealt to players
-      const cardsPerPlayer = Math.floor((mockDeck.length - 8) / mockState.players.length);
+      const playersInOrder = GameStateUtils.getPlayersInOrder(mockState);
+      const cardsPerPlayer = Math.floor((mockDeck.length - 8) / playersInOrder.length);
       
-      result.players.forEach(player => {
+      GameStateUtils.getAllPlayers(result).forEach(player => {
         expect(player.hand.length).toBe(cardsPerPlayer);
       });
       
@@ -195,16 +203,16 @@ describe('gameRoundManager', () => {
   describe('endRound', () => {
     test('should end the round with team A winning', () => {
       const mockState = createMockGameState();
-      mockState.teams[0].points = 80; // Team A has more points
-      mockState.teams[1].points = 20;
+      mockState.teams['A'].points = 80; // Team A has more points
+      mockState.teams['B'].points = 20;
       
       const result = endRound(mockState);
       
       // Note: gamePhase is not updated by endRound function
       
       // Verify teams' points are reset for next round
-      expect(result.newState.teams[0].points).toBe(0);
-      expect(result.newState.teams[1].points).toBe(0);
+      expect(result.newState.teams['A'].points).toBe(0);
+      expect(result.newState.teams['B'].points).toBe(0);
       
       // Verify winner is Team A
       expect(result.winner).toBe(null); // Winner is null since Team A is already defending, they just level up
@@ -219,8 +227,8 @@ describe('gameRoundManager', () => {
 
     test('should end the round with team B winning and advancing rank', () => {
       const mockState = createMockGameState();
-      mockState.teams[0].points = 30; // Team A has fewer points
-      mockState.teams[1].points = 80; // Team B has 80+ points (important for winning)
+      mockState.teams['A'].points = 30; // Team A has fewer points
+      mockState.teams['B'].points = 80; // Team B has 80+ points (important for winning)
       
       const result = endRound(mockState);
       
@@ -233,11 +241,11 @@ describe('gameRoundManager', () => {
       expect(result.gameOver).toBe(false);
       
       // Verify team B's rank was NOT increased (with 80 points exactly, they don't advance)
-      expect(result.newState.teams[1].currentRank).toBe(Rank.Two);
+      expect(result.newState.teams['B'].currentRank).toBe(Rank.Two);
       
       // Verify defending status was swapped
-      expect(result.newState.teams[0].isDefending).toBe(false);
-      expect(result.newState.teams[1].isDefending).toBe(true);
+      expect(result.newState.teams['A'].isDefending).toBe(false);
+      expect(result.newState.teams['B'].isDefending).toBe(true);
       
       // Verify round complete message
       expect(result.roundCompleteMessage).toContain('Team B');
@@ -248,19 +256,19 @@ describe('gameRoundManager', () => {
       const mockState = createMockGameState();
       
       // Team A is defending
-      mockState.teams[0].isDefending = true;
-      mockState.teams[1].isDefending = false;
+      mockState.teams['A'].isDefending = true;
+      mockState.teams['B'].isDefending = false;
       
       // Attacking team (B) has less than 40 points, so defending team advances 2 ranks
-      mockState.teams[0].points = 0;  // Defending team points
-      mockState.teams[1].points = 30; // Attacking team points
+      mockState.teams['A'].points = 0;  // Defending team points
+      mockState.teams['B'].points = 30; // Attacking team points
       
       const result = endRound(mockState);
       
       // Note: gamePhase is not updated by endRound function
       
       // Verify defending team's rank increases by 2 (from Rank.Two to Rank.Four)
-      expect(result.newState.teams[0].currentRank).toBe(Rank.Four);
+      expect(result.newState.teams['A'].currentRank).toBe(Rank.Four);
       
       // Verify winner is null (since it's just a rank advancement)
       expect(result.winner).toBe(null);
@@ -269,8 +277,8 @@ describe('gameRoundManager', () => {
       expect(result.gameOver).toBe(false);
       
       // Verify defending status remains the same
-      expect(result.newState.teams[0].isDefending).toBe(true);
-      expect(result.newState.teams[1].isDefending).toBe(false);
+      expect(result.newState.teams['A'].isDefending).toBe(true);
+      expect(result.newState.teams['B'].isDefending).toBe(false);
       
       // Verify round complete message
       expect(result.roundCompleteMessage).toContain('Team A');
@@ -282,14 +290,14 @@ describe('gameRoundManager', () => {
       const mockState = createMockGameState();
       
       // Set team B to have a high rank (King)
-      mockState.teams[1].currentRank = Rank.King;
+      mockState.teams['B'].currentRank = Rank.King;
       
       // Make team B the attacking team and win with high points
-      mockState.teams[0].isDefending = true;
-      mockState.teams[1].isDefending = false;
+      mockState.teams['A'].isDefending = true;
+      mockState.teams['B'].isDefending = false;
       
-      mockState.teams[0].points = 30;
-      mockState.teams[1].points = 120; // 120+ points gives them 1 rank advancement
+      mockState.teams['A'].points = 30;
+      mockState.teams['B'].points = 120; // 120+ points gives them 1 rank advancement
       
       const result = endRound(mockState);
       
@@ -298,7 +306,7 @@ describe('gameRoundManager', () => {
       expect(result.winner).toBe('B');
       
       // Note: The teams still have their final state
-      expect(result.newState.teams[1].currentRank).toBe(Rank.King); // Remains King when game ends
+      expect(result.newState.teams['B'].currentRank).toBe(Rank.King); // Remains King when game ends
       
       // Verify no round complete message when game is over
       expect(result.roundCompleteMessage).toBe('');

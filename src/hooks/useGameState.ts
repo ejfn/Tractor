@@ -1,34 +1,25 @@
-import { useState, useRef, useEffect } from 'react';
-import { GameState, Card, Suit, Rank } from '../types/game';
-import { initializeGame } from '../utils/gameLogic';
-import { 
-  prepareNextRound, 
-  endRound 
-} from '../utils/gameRoundManager';
-import { 
-  declareTrumpSuit, 
-  checkAITrumpDeclaration, 
-  humanHasTrumpRank 
-} from '../utils/trumpManager';
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  processPlay,
-  validatePlay
-} from '../utils/gamePlayManager';
-import { 
+  GameState,
+  Card,
+  Suit,
+  Rank,
+  PlayerPosition,
+  Player,
+} from "../types/game";
+import { initializeGame } from "../utils/gameLogic";
+import { prepareNextRound, endRound } from "../utils/gameRoundManager";
+import {
+  declareTrumpSuit,
+  checkAITrumpDeclaration,
+  humanHasTrumpRank,
+} from "../utils/trumpManager";
+import { processPlay, validatePlay } from "../utils/gamePlayManager";
+import {
   TRICK_RESULT_DISPLAY_TIME,
   CARD_SELECTION_DELAY,
-  ROUND_COMPLETE_BUFFER 
-} from '../utils/gameTimings';
-import { usePlayerState } from './usePlayerState';
-
-/**
- * Configuration for the game setup
- */
-interface GameConfig {
-  playerName: string;
-  teamNames: [string, string];
-  startingRank: Rank;
-}
+  ROUND_COMPLETE_BUFFER,
+} from "../utils/gameTimings";
 
 // Interface for trick completion data
 interface TrickCompletionData {
@@ -40,28 +31,143 @@ interface TrickCompletionData {
 
 /**
  * Hook for managing the complete game state
- * @param config Game configuration
  * @returns Game state and state updater functions
  */
-export function useGameState(config: GameConfig) {
+export function useGameState() {
   // Core game state
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [selectedCards, setSelectedCards] = useState<Card[]>([]);
-  
-  // Unified player state management
-  const playerStateManager = usePlayerState(gameState, selectedCards, setSelectedCards);
-  
+
+  // Players are directly from gameState
+  const players = gameState?.players || null;
+
+  // Helper methods for player state management
+  const getPlayer = useCallback(
+    (playerId: string): Player | undefined => {
+      return players?.[playerId];
+    },
+    [players],
+  );
+
+  const getPlayerByPosition = useCallback(
+    (position: PlayerPosition): Player | undefined => {
+      if (!players) return undefined;
+      return Object.values(players).find(
+        (player) => player.position === position,
+      );
+    },
+    [players],
+  );
+
+  const getCurrentPlayer = useCallback((): Player | null => {
+    if (!gameState || !players) {
+      return null;
+    }
+    // Find current player using currentPlayerId
+    const currentPlayer = players[gameState.currentPlayerId];
+    if (!currentPlayer) {
+      console.error(`Current player not found: ${gameState.currentPlayerId}`);
+      return null;
+    }
+    return currentPlayer;
+  }, [gameState, players]);
+
+  const getHumanPlayer = useCallback((): Player | undefined => {
+    if (!players) return undefined;
+    return Object.values(players).find((player) => player.isHuman);
+  }, [players]);
+
+  const getAllPlayers = useCallback((): Player[] => {
+    if (!players) return [];
+    // Return in playing order (by players key order)
+    return Object.values(players);
+  }, [players]);
+
+  const getPlayerIndex = useCallback(
+    (playerId: string): number => {
+      if (!gameState) return -1;
+      const playerIds = Object.keys(gameState.players);
+      return playerIds.findIndex((id) => id === playerId);
+    },
+    [gameState],
+  );
+
+  const getNextPlayerId = useCallback(
+    (playerId: string): string | null => {
+      if (!gameState) return null;
+      const playerIds = Object.keys(gameState.players);
+      const currentIndex = getPlayerIndex(playerId);
+      if (currentIndex === -1) {
+        console.error("Player not found:", playerId);
+        return null;
+      }
+      const nextIndex = (currentIndex + 1) % playerIds.length;
+      return playerIds[nextIndex];
+    },
+    [gameState, getPlayerIndex],
+  );
+
+  const setCurrentPlayer = useCallback(
+    (playerId: string): void => {
+      if (!gameState) return;
+      setGameState({
+        ...gameState,
+        currentPlayerId: playerId,
+      });
+    },
+    [gameState],
+  );
+
+  const setThinkingPlayer = useCallback(
+    (playerId: string | undefined): void => {
+      if (!gameState) return;
+
+      // Update all players to clear/set thinking status
+      const updatedPlayers = { ...gameState.players };
+      Object.keys(updatedPlayers).forEach((id) => {
+        updatedPlayers[id] = {
+          ...updatedPlayers[id],
+          isThinking: id === playerId,
+        };
+      });
+
+      setGameState({
+        ...gameState,
+        players: updatedPlayers,
+      });
+    },
+    [gameState],
+  );
+
+  const updatePlayer = useCallback(
+    (playerId: string, updates: Partial<Omit<Player, "id">>): void => {
+      if (!gameState) return;
+
+      // Update the player in gameState
+      setGameState({
+        ...gameState,
+        players: {
+          ...gameState.players,
+          [playerId]: {
+            ...gameState.players[playerId],
+            ...updates,
+          },
+        },
+      });
+    },
+    [gameState],
+  );
+
   // Game flow control
   const [showSetupInternal, setShowSetupInternal] = useState(false);
   const [showTrumpDeclaration, setShowTrumpDeclaration] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [winner, setWinner] = useState<'A' | 'B' | null>(null);
-  
+  const [winner, setWinner] = useState<"A" | "B" | null>(null);
+
   // Round completion
   const [showRoundComplete, setShowRoundComplete] = useState(false);
-  const [roundCompleteMessage, setRoundCompleteMessage] = useState('');
+  const [roundCompleteMessage, setRoundCompleteMessage] = useState("");
   const pendingStateRef = useRef<GameState | null>(null);
-  
+
   // Ref for trick completion data (used for communication with other hooks)
   const trickCompletionDataRef = useRef<TrickCompletionData | null>(null);
 
@@ -77,11 +183,11 @@ export function useGameState(config: GameConfig) {
   const initGame = () => {
     if (!showSetupInternal && !gameState) {
       const newGameState = initializeGame(
-        config.playerName,
-        config.teamNames,
-        config.startingRank
+        "You",
+        ["Team A", "Team B"],
+        Rank.Two,
       );
-      
+
       setGameState(newGameState);
 
       // Check if player has trump rank to declare
@@ -93,60 +199,91 @@ export function useGameState(config: GameConfig) {
 
   // Handle card selection
   const handleCardSelect = (card: Card) => {
-    if (!gameState || !playerStateManager) return;
-    
-    const currentPlayerState = playerStateManager.getCurrentPlayerState();
-    const currentPlayer = currentPlayerState.player;
-    
+    if (!gameState) return;
+
+    const currentPlayer = getCurrentPlayer();
+    if (!currentPlayer) return;
+
     // Handle trump declaration mode - select card but don't declare immediately
     if (showTrumpDeclaration) {
       if (card.rank === gameState.trumpInfo.trumpRank && card.suit) {
         // Toggle selection of trump cards
-        if (selectedCards.some(c => c.id === card.id)) {
-          setSelectedCards([]);
+        if (gameState.selectedCards.some((c) => c.id === card.id)) {
+          setGameState({
+            ...gameState,
+            selectedCards: [],
+          });
         } else {
-          setSelectedCards([card]);
+          setGameState({
+            ...gameState,
+            selectedCards: [card],
+          });
         }
       }
       return;
     }
-    
-    if (gameState.gamePhase !== 'playing') return;
-    
+
+    if (gameState.gamePhase !== "playing") return;
+
     // Only allow current player to select cards
-    if (!currentPlayerState.isCurrentTurn || !currentPlayer.isHuman) return;
-    
+    if (
+      gameState.currentPlayerId !== currentPlayer.id ||
+      !currentPlayer.isHuman
+    )
+      return;
+
     // Toggle card selection
-    if (selectedCards.some(c => c.id === card.id)) {
-      setSelectedCards(selectedCards.filter(c => c.id !== card.id));
+    if (gameState.selectedCards.some((c) => c.id === card.id)) {
+      setGameState({
+        ...gameState,
+        selectedCards: gameState.selectedCards.filter((c) => c.id !== card.id),
+      });
     } else {
-      setSelectedCards([...selectedCards, card]);
+      setGameState({
+        ...gameState,
+        selectedCards: [...gameState.selectedCards, card],
+      });
     }
   };
 
   // Handle play button click
   const handlePlay = () => {
-    if (!gameState || !playerStateManager || selectedCards.length === 0) return;
-    
-    const currentPlayerState = playerStateManager.getCurrentPlayerState();
-    
+    if (!gameState || gameState.selectedCards.length === 0) return;
+
+    const currentPlayer = getCurrentPlayer();
+    if (!currentPlayer) return;
+
     // Check if play is valid
-    const isValid = validatePlay(gameState, selectedCards, currentPlayerState.player.id);
-    
+    const isValid = validatePlay(
+      gameState,
+      gameState.selectedCards,
+      currentPlayer.id,
+    );
+
     if (!isValid) {
       // In a real implementation, we'd show an alert or error message
-      console.warn('Invalid Play', 'Please select a valid combination of cards.');
+      console.warn(
+        "Invalid Play",
+        "Please select a valid combination of cards.",
+      );
       return;
     }
-    
+
     // Store the cards locally before processing to avoid race conditions
-    const cardsToPlay = [...selectedCards];
-    
+    const cardsToPlay = [...gameState.selectedCards];
+
     // Add a short delay to allow players to see the selected cards before playing
     setTimeout(() => {
       // Clear selected cards just before processing the play
-      setSelectedCards([]);
-      
+      setGameState((prev) =>
+        prev
+          ? {
+              ...prev,
+              selectedCards: [],
+            }
+          : null,
+      );
+
       // Process the play - this will remove cards from the player's hand
       handleProcessPlay(cardsToPlay);
     }, CARD_SELECTION_DELAY);
@@ -154,15 +291,16 @@ export function useGameState(config: GameConfig) {
 
   // Process a play (wrapper around the utility function)
   const handleProcessPlay = (cards: Card[]) => {
-    if (!gameState || !playerStateManager) return;
-    
-    const currentPlayerState = playerStateManager.getCurrentPlayerState();
-    const result = processPlay(gameState, cards, currentPlayerState.player.id);
-    
+    if (!gameState) return;
+
+    const currentPlayer = getCurrentPlayer();
+    if (!currentPlayer) return;
+    const result = processPlay(gameState, cards, currentPlayer.id);
+
     // For trick complete scenario, we need to handle things in a specific order
     if (result.trickComplete && result.trickWinner && result.completedTrick) {
       // Trick completed - winner and points recorded
-      
+
       // IMPORTANT: Store trick data in ref BEFORE updating state
       // This ensures the trick result handler can access it immediately
       if (result.completedTrick) {
@@ -176,26 +314,30 @@ export function useGameState(config: GameConfig) {
             ...result.completedTrick,
             // Make sure we deep copy all data to prevent reference issues
             plays: [...result.completedTrick.plays],
-            leadingCombo: [...result.completedTrick.leadingCombo]
+            leadingCombo: [...result.completedTrick.leadingCombo],
           },
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
-        
+
         // Completed trick should have plays from all players except the leader
         // This ensures the trick structure is correct for display
       }
-      
-      
+
       // Now update game state AFTER setting up the trick completion data
       setGameState(result.newState);
-      
+
       // Check for end of round (no cards left)
-      const allCardsPlayed = result.newState.players.every(p => p.hand.length === 0);
+      const allCardsPlayed = Object.values(result.newState.players).every(
+        (p) => p.hand.length === 0,
+      );
       if (allCardsPlayed) {
         // Set game phase to 'roundEnd' to prevent AI moves
-        const endingState = { ...result.newState, gamePhase: 'roundEnd' as const };
+        const endingState = {
+          ...result.newState,
+          gamePhase: "roundEnd" as const,
+        };
         setGameState(endingState);
-        
+
         // Add delay to ensure trick result displays before round complete modal
         setTimeout(() => {
           handleEndRound(endingState);
@@ -209,21 +351,24 @@ export function useGameState(config: GameConfig) {
 
   // Handle trump suit declaration
   const handleDeclareTrumpSuit = (suit: Suit | null) => {
-    if (!gameState || !playerStateManager) return;
-    
-    const currentPlayerState = playerStateManager.getCurrentPlayerState();
-    const newState = declareTrumpSuit(gameState, suit, currentPlayerState.player.id);
-    
-    setGameState(newState);
+    if (!gameState) return;
+
+    const currentPlayer = getCurrentPlayer();
+    if (!currentPlayer) return;
+    const newState = declareTrumpSuit(gameState, suit, currentPlayer.id);
+
+    setGameState({
+      ...newState,
+      selectedCards: [],
+    });
     setShowTrumpDeclaration(false);
-    setSelectedCards([]);
   };
-  
+
   // Confirm trump declaration with selected card
   const handleConfirmTrumpDeclaration = () => {
-    if (!gameState || selectedCards.length === 0) return;
-    
-    const selectedCard = selectedCards[0];
+    if (!gameState || gameState.selectedCards.length === 0) return;
+
+    const selectedCard = gameState.selectedCards[0];
     if (selectedCard.suit) {
       handleDeclareTrumpSuit(selectedCard.suit);
     }
@@ -231,19 +376,24 @@ export function useGameState(config: GameConfig) {
 
   // Handle check for AI trump declaration
   const handleCheckAITrumpDeclaration = () => {
-    if (!gameState || gameState.gamePhase !== 'declaring' || showTrumpDeclaration) return;
-    
+    if (
+      !gameState ||
+      gameState.gamePhase !== "declaring" ||
+      showTrumpDeclaration
+    )
+      return;
+
     // Find the human player
-    const humanPlayer = gameState.players.find(p => p.isHuman);
+    const humanPlayer = Object.values(gameState.players).find((p) => p.isHuman);
     if (humanPlayer) {
       const hasTrumpRank = humanPlayer.hand.some(
-        card => card.rank === gameState.trumpInfo.trumpRank
+        (card) => card.rank === gameState.trumpInfo.trumpRank,
       );
-      
+
       // If human doesn't have trump rank, let AI check
       if (!hasTrumpRank) {
         const { shouldDeclare, suit } = checkAITrumpDeclaration(gameState);
-        
+
         if (shouldDeclare && suit) {
           handleDeclareTrumpSuit(suit);
         }
@@ -254,17 +404,17 @@ export function useGameState(config: GameConfig) {
   // Handle end of round
   const handleEndRound = (state: GameState) => {
     const result = endRound(state);
-    
+
     if (result.gameOver) {
       // Set game phase to 'gameOver' to prevent AI moves
-      const gameOverState = { ...state, gamePhase: 'gameOver' as const };
+      const gameOverState = { ...state, gamePhase: "gameOver" as const };
       setGameState(gameOverState);
       setGameOver(true);
       setWinner(result.winner);
     } else {
       setRoundCompleteMessage(result.roundCompleteMessage);
       setShowRoundComplete(true);
-      
+
       // Store the state to be processed after the modal is dismissed
       pendingStateRef.current = result.newState;
     }
@@ -273,18 +423,17 @@ export function useGameState(config: GameConfig) {
   // Handle proceeding to next round
   const handleNextRound = () => {
     setShowRoundComplete(false);
-    
+
     // Process the pending state after the modal animation completes
     if (pendingStateRef.current) {
-      const nextRoundState = prepareNextRound(
-        pendingStateRef.current,
-        config.playerName,
-        config.teamNames
-      );
-      
+      const nextRoundState = prepareNextRound(pendingStateRef.current, "You", [
+        "Team A",
+        "Team B",
+      ]);
+
       setGameState(nextRoundState);
       pendingStateRef.current = null;
-      
+
       // Check for trump declaration
       if (humanHasTrumpRank(nextRoundState)) {
         setShowTrumpDeclaration(true);
@@ -295,12 +444,11 @@ export function useGameState(config: GameConfig) {
   // Handle starting a new game
   const startNewGame = () => {
     setGameState(null);
-    setSelectedCards([]);
     setShowSetupInternal(false);
     setGameOver(false);
     setWinner(null);
     pendingStateRef.current = null;
-    
+
     // Initialize will be called on next render due to dependency changes
   };
 
@@ -308,46 +456,64 @@ export function useGameState(config: GameConfig) {
   const handleTrickResultComplete = () => {
     if (gameState) {
       // Now safe to clear currentTrick from game state
-      
+
       // When a trick is completed, clear the current trick
       // The winning player is already set as the current player in gamePlayManager
       const newState = {
         ...gameState,
-        currentTrick: null
+        currentTrick: null,
       };
-      
+
       // Set compatibility fields from PlayerStateManager
       // Current player is tracked by PlayerStateManager
-      
+
       // Update the state
       setGameState(newState);
-      
+
       // The useAITurns hook will detect the player state change and trigger AI moves automatically
-      
     }
   };
-
 
   return {
     // State
     gameState,
-    selectedCards,
+    selectedCards: gameState?.selectedCards || [],
     showSetup: showSetupInternal,
     showTrumpDeclaration,
     gameOver,
     winner,
     showRoundComplete,
     roundCompleteMessage,
-    
-    // Player state management
-    playerStateManager,
-    
+    teamNames: ["Team A", "Team B"] as [string, string],
+
+    // Player management (unified)
+    players,
+    currentPlayerId: gameState?.currentPlayerId,
+    trickLeaderId: gameState?.currentTrick?.leadingPlayerId,
+    trickWinnerId: gameState?.currentTrick?.winningPlayerId,
+    trumpDeclarerId: gameState?.trumpInfo.declarerPlayerId,
+    thinkingPlayerId: players
+      ? Object.values(players).find((p) => p.isThinking)?.id
+      : undefined,
+
+    // Player methods
+    getPlayer,
+    getPlayerByPosition,
+    getCurrentPlayer,
+    getHumanPlayer,
+    getAllPlayers,
+    getPlayerIndex,
+    getNextPlayerId,
+    setCurrentPlayer,
+    setThinkingPlayer,
+    updatePlayer,
+
     // Trick completion data ref (for communication with other hooks)
     trickCompletionDataRef,
-    
+
     // Initializers
     initGame,
-    
+
     // Actions
     handleCardSelect,
     handlePlay,
@@ -358,12 +524,18 @@ export function useGameState(config: GameConfig) {
     handleNextRound,
     startNewGame,
     handleTrickResultComplete,
-    
-    
+
     // Setters
     setGameState,
-    setSelectedCards,
+    setSelectedCards: (cards: Card[]) => {
+      if (gameState) {
+        setGameState({
+          ...gameState,
+          selectedCards: cards,
+        });
+      }
+    },
     setShowSetup: setShowSetupInternal,
-    setShowTrumpDeclaration
+    setShowTrumpDeclaration,
   };
 }

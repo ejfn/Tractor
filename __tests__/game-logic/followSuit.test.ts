@@ -13,6 +13,7 @@ import {
   TrumpInfo,
   ComboType
 } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 // Helper function to create cards
 const createCard = (suit: Suit, rank: Rank, id: string): Card => {

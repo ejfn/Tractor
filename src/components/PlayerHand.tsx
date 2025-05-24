@@ -1,8 +1,8 @@
-import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
-import AnimatedCardComponent from './AnimatedCard';
-import { Card as CardType, Player, TrumpInfo } from '../types/game';
-import { isTrump } from '../utils/gameLogic';
+import React from "react";
+import { StyleSheet, View, Text } from "react-native";
+import AnimatedCardComponent from "./AnimatedCard";
+import { Card as CardType, Player, TrumpInfo } from "../types/game";
+import { isTrump } from "../utils/gameLogic";
 
 interface PlayerHandProps {
   player: Player;
@@ -11,7 +11,7 @@ interface PlayerHandProps {
   onCardSelect?: (card: CardType) => void;
   showCards: boolean;
   trumpInfo: TrumpInfo;
-  position: 'bottom' | 'top' | 'left' | 'right';
+  position: "bottom" | "top" | "left" | "right";
 }
 
 const PlayerHand: React.FC<PlayerHandProps> = ({
@@ -21,41 +21,52 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
   onCardSelect,
   showCards,
   trumpInfo,
-  position
+  position,
 }) => {
   // Sort cards by suit and rank for better display
   const sortedHand = [...player.hand].sort((a, b) => {
     // Jokers first
     if (a.joker && !b.joker) return -1;
     if (!a.joker && b.joker) return 1;
-    
+
     // Trump cards next
     const aIsTrump = isTrump(a, trumpInfo);
     const bIsTrump = isTrump(b, trumpInfo);
-    
+
     if (aIsTrump && !bIsTrump) return -1;
     if (!aIsTrump && bIsTrump) return 1;
-    
+
     // Compare suits
     if (a.suit && b.suit && a.suit !== b.suit) {
-      const suitOrder = { 'Spades': 0, 'Hearts': 1, 'Clubs': 2, 'Diamonds': 3 };
+      const suitOrder = { Spades: 0, Hearts: 1, Clubs: 2, Diamonds: 3 };
       return suitOrder[a.suit] - suitOrder[b.suit];
     }
-    
+
     // Compare ranks
     if (a.rank && b.rank) {
       const rankOrder = {
-        '2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7,
-        '10': 8, 'J': 9, 'Q': 10, 'K': 11, 'A': 12
+        "2": 0,
+        "3": 1,
+        "4": 2,
+        "5": 3,
+        "6": 4,
+        "7": 5,
+        "8": 6,
+        "9": 7,
+        "10": 8,
+        J: 9,
+        Q: 10,
+        K: 11,
+        A: 12,
       };
       return rankOrder[a.rank] - rankOrder[b.rank];
     }
-    
+
     return 0;
   });
 
   const isCardSelected = (card: CardType) => {
-    return selectedCards.some(c => c.id === card.id);
+    return selectedCards.some((c) => c.id === card.id);
   };
 
   const renderHumanHand = () => {
@@ -70,7 +81,7 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
                 {
                   marginLeft: index === 0 ? 0 : -40, // Tighter stacking
                   zIndex: 1000 - index, // Consistent z-index based on card order
-                }
+                },
               ]}
             >
               <AnimatedCardComponent
@@ -91,34 +102,34 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
   // Calculate styles based on position
   const getAICardStyles = (index: number) => {
     const baseStyles = {
-      position: 'absolute' as const,
+      position: "absolute" as const,
       width: 24,
       height: 35,
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       zIndex: 100 - index,
     };
 
-    switch(position) {
-      case 'top':
+    switch (position) {
+      case "top":
         return {
           ...baseStyles,
           left: `${40 + index * 8}%`,
           top: 15,
-          transform: [{ rotate: '180deg' }],
+          transform: [{ rotate: "180deg" }],
         };
-      case 'left':
+      case "left":
         return {
           ...baseStyles,
           top: `${25 + index * 8}%`,
           left: 15,
-          transform: [{ rotate: '90deg' }],
+          transform: [{ rotate: "90deg" }],
         };
-      case 'right':
+      case "right":
         return {
           ...baseStyles,
           top: `${25 + index * 8}%`,
           right: 15,
-          transform: [{ rotate: '270deg' }],
+          transform: [{ rotate: "270deg" }],
         };
       default:
         return baseStyles;
@@ -127,13 +138,13 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
 
   const renderAIHand = () => {
     const displayedCards = sortedHand.slice(0, Math.min(7, sortedHand.length));
-    
+
     return (
       <View style={[styles.aiHandContainer]}>
         <View style={styles.playerLabelContainer}>
           <Text style={styles.playerLabel}>
-            {player.name} {isCurrentPlayer ? '⭐' : ''}
-            {player.hand.length > 0 ? ` (${player.hand.length})` : ''}
+            {player.name} {isCurrentPlayer ? "⭐" : ""}
+            {player.hand.length > 0 ? ` (${player.hand.length})` : ""}
           </Text>
         </View>
 
@@ -141,10 +152,7 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
           const cardStyle = getAICardStyles(index);
           // TypeScript workaround for style type
           return (
-            <View
-              key={card.id}
-              style={cardStyle as any}
-            >
+            <View key={card.id} style={cardStyle as any}>
               <AnimatedCardComponent
                 card={card}
                 faceDown={!showCards}
@@ -159,7 +167,7 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
     );
   };
 
-  if (position === 'bottom') {
+  if (position === "bottom") {
     return renderHumanHand();
   } else {
     return renderAIHand();
@@ -168,14 +176,14 @@ const PlayerHand: React.FC<PlayerHandProps> = ({
 
 const styles = StyleSheet.create({
   humanHandContainer: {
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     paddingVertical: 5,
   },
   humanCardRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
     minHeight: 95,
     marginBottom: 10,
   },
@@ -184,28 +192,28 @@ const styles = StyleSheet.create({
     width: 65,
   },
   aiHandContainer: {
-    position: 'relative',
-    width: '100%',
-    height: '100%',
+    position: "relative",
+    width: "100%",
+    height: "100%",
   },
   playerLabelContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: -25,
     left: 0,
     right: 0,
-    alignItems: 'center',
+    alignItems: "center",
     zIndex: 200,
   },
   playerLabel: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: 'white',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    fontWeight: "bold",
+    color: "white",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
-    overflow: 'hidden',
-    textAlign: 'center',
+    overflow: "hidden",
+    textAlign: "center",
   },
 });
 

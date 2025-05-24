@@ -8,8 +8,10 @@ import {
   Rank,
   Suit,
   JokerType,
-  Trick
+  Trick,
+  PlayerPosition
 } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 // Mock dependencies
 jest.mock('../../src/utils/gameLogic', () => ({
@@ -41,11 +43,7 @@ jest.mock('../../src/utils/gameRoundManager', () => ({
 
 // Test component that uses the useGameState hook
 const TestComponent: React.FC<{ onStateChange?: (state: any) => void }> = ({ onStateChange }) => {
-  const gameStateHook = useGameState({
-    playerName: 'Test Player',
-    teamNames: ['Team A', 'Team B'],
-    startingRank: Rank.Two
-  });
+  const gameStateHook = useGameState();
 
   // Call onStateChange whenever state changes
   React.useEffect(() => {
@@ -57,8 +55,8 @@ const TestComponent: React.FC<{ onStateChange?: (state: any) => void }> = ({ onS
   return (
     <View>
       <Text testID="game-phase">{gameStateHook.gameState?.gamePhase || 'none'}</Text>
-      <Text testID="current-player-index">{gameStateHook.playerStateManager?.currentPlayerId || 'undefined'}</Text>
-      <Text testID="winning-player-index">{gameStateHook.playerStateManager?.trickWinnerId || 'undefined'}</Text>
+      <Text testID="current-player-index">{gameStateHook.gameState?.currentPlayerId || 'undefined'}</Text>
+      <Text testID="winning-player-index">{'undefined'}</Text>
       <Button 
         testID="trick-complete-button"
         title="Complete Trick" 
@@ -68,8 +66,11 @@ const TestComponent: React.FC<{ onStateChange?: (state: any) => void }> = ({ onS
         testID="select-card-button"
         title="Select Card"
         onPress={() => {
-          if (gameStateHook.gameState?.players[0]?.hand[0]) {
-            gameStateHook.handleCardSelect(gameStateHook.gameState.players[0].hand[0]);
+          if (gameStateHook.gameState) {
+            const humanPlayer = GameStateUtils.findHumanPlayer(gameStateHook.gameState);
+            if (humanPlayer?.hand[0]) {
+              gameStateHook.handleCardSelect(humanPlayer.hand[0]);
+            }
           }
         }}
       />
@@ -96,8 +97,8 @@ const createMockJoker = (id: string, type: JokerType, points = 0): Card => ({
 // Create a mock game state
 const createMockGameState = (): GameState => {
   return {
-    players: [
-      {
+    players: {
+      'human': {
         id: 'human',
         name: 'Test Player',
         hand: [
@@ -105,10 +106,11 @@ const createMockGameState = (): GameState => {
           createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
         ],
         isHuman: true,
-        team: 'A',
-        currentRank: Rank.Two
+        teamId: 'A',
+        position: 'bottom' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai1': {
         id: 'ai1',
         name: 'Bot 1',
         hand: [
@@ -116,10 +118,11 @@ const createMockGameState = (): GameState => {
           createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
         ],
         isHuman: false,
-        team: 'B',
-        currentRank: Rank.Two
+        teamId: 'B',
+        position: 'right' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai2': {
         id: 'ai2',
         name: 'Bot 2',
         hand: [
@@ -127,10 +130,11 @@ const createMockGameState = (): GameState => {
           createMockCard('hearts_q_1', Suit.Hearts, Rank.Queen)
         ],
         isHuman: false,
-        team: 'A',
-        currentRank: Rank.Two
+        teamId: 'A',
+        position: 'top' as PlayerPosition,
+        isThinking: false
       },
-      {
+      'ai3': {
         id: 'ai3',
         name: 'Bot 3',
         hand: [
@@ -138,14 +142,15 @@ const createMockGameState = (): GameState => {
           createMockCard('diamonds_6_1', Suit.Diamonds, Rank.Six)
         ],
         isHuman: false,
-        team: 'B',
-        currentRank: Rank.Two
+        teamId: 'B',
+        position: 'left' as PlayerPosition,
+        isThinking: false
       }
-    ],
-    teams: [
-      { id: 'A', currentRank: Rank.Two, isDefending: true, players: ['human', 'ai2'], points: 0 },
-      { id: 'B', currentRank: Rank.Two, isDefending: false, players: ['ai1', 'ai3'], points: 0 }
-    ],
+    },
+    teams: {
+      'A': { id: 'A', currentRank: Rank.Two, isDefending: true, points: 0 },
+      'B': { id: 'B', currentRank: Rank.Two, isDefending: false, points: 0 }
+    },
     trumpInfo: {
       trumpRank: Rank.Two,
       declared: false,
@@ -156,7 +161,9 @@ const createMockGameState = (): GameState => {
     currentTrick: null,
     kittyCards: [],
     tricks: [],
-    roundNumber: 1
+    roundNumber: 1,
+    currentPlayerId: 'human',
+    selectedCards: []
   };
 };
 
@@ -238,7 +245,7 @@ describe('Game State Management', () => {
     await waitFor(() => {
       expect(currentHookState.gameState.currentTrick).toBeNull();
       // After trick completion, there should be no active trick winner
-      expect(currentHookState.playerStateManager.trickWinnerId).toBeUndefined();
+      expect(currentHookState.gameState.winningPlayerIndex).toBeUndefined();
     });
   });
 

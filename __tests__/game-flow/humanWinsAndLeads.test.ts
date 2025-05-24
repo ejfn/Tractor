@@ -1,4 +1,5 @@
-import { GameState, Rank, Card } from '../../src/types/game';
+import { GameState, Rank, Card, Player } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import { initializeGame } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
@@ -10,23 +11,21 @@ describe('Human Wins and Leads Bug', () => {
     let state = gameState;
     
     // Give human high cards to ensure they win
-    const humanAces = state.players[0].hand.filter(c => c.rank === Rank.Ace);
-    const humanKings = state.players[0].hand.filter(c => c.rank === Rank.King);
-    const humanOther = state.players[0].hand.filter(c => c.rank !== Rank.Ace && c.rank !== Rank.King);
+    const humanAces = GameStateUtils.getPlayersInOrder(state)[0].hand.filter(c => c.rank === Rank.Ace);
+    const humanKings = GameStateUtils.getPlayersInOrder(state)[0].hand.filter(c => c.rank === Rank.King);
+    const humanOther = GameStateUtils.getPlayersInOrder(state)[0].hand.filter(c => c.rank !== Rank.Ace && c.rank !== Rank.King);
     
     // Give human multiple aces and kings
-    state.players[0].hand = [...humanAces, ...humanKings, ...humanOther.slice(0, 25 - humanAces.length - humanKings.length)];
+    GameStateUtils.getPlayersInOrder(state)[0].hand = [...humanAces, ...humanKings, ...humanOther.slice(0, 25 - humanAces.length - humanKings.length)];
     
     console.log('=== First Trick (Human should win) ===');
-    console.log(`Initial counts: ${state.players.map(p => p.hand.length).join(', ')}`);
+    console.log(`Initial counts: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')}`);
     
     // Play first trick
     for (let play = 0; play < 4; play++) {
-      const currentPlayerIndex = (state.currentTrick ? 
-        state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
-        : 0) % 4;
-      const currentPlayer = state.players[currentPlayerIndex];
-      const cardsBefore = state.players.map(p => p.hand.length);
+      const currentPlayerIndex = play;
+      const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIndex];
+      const cardsBefore = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
       
       let cardsToPlay: Card[] = [];
       if (currentPlayer.isHuman) {
@@ -42,7 +41,7 @@ describe('Human Wins and Leads Bug', () => {
       console.log(`Before: ${cardsBefore.join(', ')}`);
       
       const result = processPlay(state, cardsToPlay, currentPlayer.id);
-      const cardsAfter = result.newState.players.map(p => p.hand.length);
+      const cardsAfter = GameStateUtils.getAllPlayers(result.newState).map(p => p.hand.length);
       
       console.log(`After: ${cardsAfter.join(', ')}`);
       // Remove reference to newState.currentPlayerIndex as it may not exist
@@ -51,7 +50,7 @@ describe('Human Wins and Leads Bug', () => {
       for (let i = 0; i < 4; i++) {
         const loss = cardsBefore[i] - cardsAfter[i];
         if (loss > 0 && i !== currentPlayerIndex) {
-          console.error(`ERROR: Player ${i} (${state.players[i].name}) lost ${loss} cards but wasn't playing!`);
+          console.error(`ERROR: Player ${i} (${GameStateUtils.getPlayersInOrder(state)[i].name}) lost ${loss} cards but wasn't playing!`);
         }
       }
       
@@ -63,8 +62,8 @@ describe('Human Wins and Leads Bug', () => {
       }
     }
     
-    console.log(`\nAfter trick 1: ${state.players.map(p => p.hand.length).join(', ')}`);
-    expect(state.players.map(p => p.hand.length)).toEqual([24, 24, 24, 24]);
+    console.log(`\nAfter trick 1: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')}`);
+    expect(GameStateUtils.getAllPlayers(state).map(p => p.hand.length)).toEqual([24, 24, 24, 24]);
     
     // Now the human should be leading the second trick
     console.log('\n=== Second Trick (Human leads) ===');
@@ -72,15 +71,15 @@ describe('Human Wins and Leads Bug', () => {
     
     // First play of second trick - HUMAN SHOULD BE PLAYING
     const humanIndex = 0;
-    const humanBefore = state.players[humanIndex].hand.length;
-    const allBefore = state.players.map(p => p.hand.length);
+    const humanBefore = GameStateUtils.getPlayersInOrder(state)[humanIndex].hand.length;
+    const allBefore = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     
     console.log(`\nBefore human plays:`);
     console.log(`All counts: ${allBefore.join(', ')}`);
     console.log(`Human has ${humanBefore} cards`);
     
     // Check for pairs the human might play
-    const humanPlayer = state.players[humanIndex];
+    const humanPlayer = GameStateUtils.getPlayersInOrder(state)[humanIndex];
     let humanCards: Card[] = [];
     
     // Look for pairs
@@ -108,7 +107,7 @@ describe('Human Wins and Leads Bug', () => {
     const result = processPlay(state, humanCards, humanPlayer.id);
     
     console.log(`\nAfter processing human's play:`);
-    const allAfter = result.newState.players.map(p => p.hand.length);
+    const allAfter = GameStateUtils.getAllPlayers(result.newState).map(p => p.hand.length);
     console.log(`All counts: ${allAfter.join(', ')}`);
     // Process completed
     
@@ -119,7 +118,7 @@ describe('Human Wins and Leads Bug', () => {
       const loss = before - after;
       
       if (loss > 0) {
-        console.log(`Player ${i} (${state.players[i].name}): ${before} -> ${after} (lost ${loss} cards)`);
+        console.log(`Player ${i} (${GameStateUtils.getPlayersInOrder(state)[i].name}): ${before} -> ${after} (lost ${loss} cards)`);
         
         if (i === humanIndex) {
           console.log(`Human played ${humanCards.length} cards and lost ${loss} cards`);
@@ -128,7 +127,7 @@ describe('Human Wins and Leads Bug', () => {
             
             // Find which cards were actually removed
             const beforeIds = beforeProcessing.players[i].hand.map((c: any) => c.id);
-            const afterIds = result.newState.players[i].hand.map(c => c.id);
+            const afterIds = GameStateUtils.getPlayersInOrder(result.newState)[i].hand.map(c => c.id);
             const removedIds = beforeIds.filter((id: string) => !afterIds.includes(id));
             
             console.error(`Cards that were removed: ${removedIds.join(', ')}`);
@@ -150,10 +149,8 @@ describe('Human Wins and Leads Bug', () => {
     
     console.log('\nContinuing second trick...');
     for (let play = 1; play < 4; play++) {
-      const currentPlayerIndex = (state.currentTrick ? 
-        state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
-        : 0) % 4;
-      const currentPlayer = state.players[currentPlayerIndex];
+      const currentPlayerIndex = play;
+      const currentPlayer = GameStateUtils.getPlayersInOrder(state)[currentPlayerIndex];
       
       let cardsToPlay: Card[] = [];
       if (currentPlayer.isHuman) {
@@ -165,14 +162,14 @@ describe('Human Wins and Leads Bug', () => {
       
       const beforeHandLength = currentPlayer.hand.length;
       const result = processPlay(state, cardsToPlay, currentPlayer.id);
-      const afterHandLength = result.newState.players[currentPlayerIndex].hand.length;
+      const afterHandLength = GameStateUtils.getPlayersInOrder(result.newState)[currentPlayerIndex].hand.length;
       console.log(`${currentPlayer.name}: ${beforeHandLength} -> ${afterHandLength}`);
       
       state = result.newState;
     }
     
     // Final check
-    console.log(`\nFinal counts: ${state.players.map(p => p.hand.length).join(', ')}`);
+    console.log(`\nFinal counts: ${GameStateUtils.getAllPlayers(state).map(p => p.hand.length).join(', ')}`);
     
     // All players should have lost exactly 1 card in first trick + N cards in second trick (where N is what human led)
     const cardsPlayedInSecondTrick = humanCards.length;
@@ -181,19 +178,19 @@ describe('Human Wins and Leads Bug', () => {
     console.log(`\nExpected count: ${expectedCount} (25 - 1 - ${cardsPlayedInSecondTrick})`);
     
     // All players should have equal card counts
-    const allCounts = state.players.map(p => p.hand.length);
+    const allCounts = GameStateUtils.getAllPlayers(state).map(p => p.hand.length);
     const countsEqual = allCounts.every(count => count === allCounts[0]);
     
     expect(countsEqual).toBe(true);
     if (!countsEqual) {
       console.error('Card counts are not equal!');
-      state.players.forEach((player, idx) => {
+      GameStateUtils.getAllPlayers(state).forEach((player: Player, idx) => {
         console.error(`Player ${idx} (${player.name}): ${player.hand.length} cards`);
       });
     }
     
     // Also verify all have the expected count
-    state.players.forEach((player, idx) => {
+    GameStateUtils.getAllPlayers(state).forEach((player: Player, idx) => {
       expect(player.hand.length).toBe(expectedCount);
     });
   });

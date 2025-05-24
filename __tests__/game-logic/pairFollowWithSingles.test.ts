@@ -1,54 +1,34 @@
 import { Card, GameState, Player, Rank, Suit, Team, Trick } from '../../src/types/game';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import { isValidPlay, identifyCombos } from '../../src/utils/gameLogic';
+import { 
+  createPlayingGameState, 
+  createTestCard, 
+  createTestTeams,
+  setPlayerCards
+} from '../helpers/testUtils';
 
 describe('Pair Follow With Singles', () => {
   let mockState: GameState;
   let humanPlayer: Player;
   let cardId = 0;
   
-  const createCard = (suit: Suit, rank: Rank): Card => ({
-    id: `card-${cardId++}`,
-    suit,
-    rank,
-    points: rank === Rank.King || rank === Rank.Ten ? 10 : rank === Rank.Five ? 5 : 0
-  });
+  const createCard = (suit: Suit, rank: Rank): Card => 
+    createTestCard(suit, rank, undefined, `card-${cardId++}`);
   
   beforeEach(() => {
     cardId = 0;
     
-    // Create basic game state
-    humanPlayer = {
-      id: 'human',
-      name: 'Human',
-      hand: [],
-      isHuman: true,
-      team: 'A',
-      currentRank: Rank.Two
-    };
+    // Create playing game state with teams set correctly
+    mockState = createPlayingGameState({
+      teams: createTestTeams({
+        A: { isDefending: true, points: 0 },
+        B: { isDefending: false, points: 0 }
+      }),
+      currentPlayerId: 'player'
+    });
     
-    const ai1: Player = {
-      id: 'ai1',
-      name: 'Bot 1',
-      hand: [],
-      isHuman: false,
-      team: 'B',
-      currentRank: Rank.Two
-    };
-    
-    mockState = {
-      players: [humanPlayer, ai1],
-      teams: [
-        { id: 'A', players: ['human'], currentRank: Rank.Two, points: 0, isDefending: true },
-        { id: 'B', players: ['ai1'], currentRank: Rank.Two, points: 0, isDefending: false }
-      ],
-      deck: [],
-      kittyCards: [],
-      currentTrick: null,
-      trumpInfo: { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades },
-      tricks: [],
-      roundNumber: 1,
-      gamePhase: 'playing' as const
-    };
+    humanPlayer = GameStateUtils.getPlayerById(mockState, 'player');
   });
   
   test('player can select two different cards of same suit when following a pair', () => {

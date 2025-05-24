@@ -4,92 +4,19 @@ import {
   determineTrickWinner,
   calculateTrickPoints
 } from '../../src/utils/gameLogic';
+import { GameStateUtils } from '../../src/utils/gameStateUtils';
 import {
   GameState,
   Card,
   Rank,
   Suit
 } from '../../src/types/game';
+import { createTestGameState, createTestCard } from '../helpers/testUtils';
 
 // Mock dependencies
 jest.mock('../../src/utils/aiLogic', () => ({
   getAIMove: jest.fn(),
 }));
-
-// Create mock game state
-const createMockGameState = (): GameState => {
-  return {
-    players: [
-      {
-        id: 'player',
-        name: 'Human',
-        isHuman: true,
-        hand: [],
-        currentRank: Rank.Two,
-        team: 'A'
-      },
-      {
-        id: 'ai1',
-        name: 'Bot 1',
-        isHuman: false,
-        hand: [],
-        currentRank: Rank.Two,
-        team: 'B'
-      },
-      {
-        id: 'ai2',
-        name: 'Bot 2',
-        isHuman: false,
-        hand: [],
-        currentRank: Rank.Two,
-        team: 'A'
-      },
-      {
-        id: 'ai3',
-        name: 'Bot 3',
-        isHuman: false,
-        hand: [],
-        currentRank: Rank.Two,
-        team: 'B'
-      }
-    ],
-    teams: [
-      {
-        id: 'A',
-        players: ['player', 'ai2'],
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: true
-      },
-      {
-        id: 'B',
-        players: ['ai1', 'ai3'],
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: false
-      }
-    ],
-    deck: [],
-    kittyCards: [],
-    currentTrick: null,
-    trumpInfo: {
-      trumpRank: Rank.Two,
-      declared: false
-    },
-    tricks: [],
-    roundNumber: 1,
-    // currentPlayerIndex removed from GameState
-    gamePhase: 'playing'
-  };
-};
-
-// Helper function to create cards
-const createCard = (suit: Suit, rank: Rank, id: string): Card => {
-  let points = 0;
-  if (rank === Rank.Five) points = 5;
-  if (rank === Rank.Ten || rank === Rank.King) points = 10;
-  return { suit, rank, id, points };
-};
 
 describe('Game Loop Tests', () => {
   beforeEach(() => {
@@ -97,44 +24,44 @@ describe('Game Loop Tests', () => {
   });
 
   test('Game loop should handle AI player with no valid plays', () => {
-    const gameState = createMockGameState();
+    const gameState = createTestGameState();
     
     // Create a trick with Hearts as leading suit
     gameState.currentTrick = {
       leadingPlayerId: 'player',
-      leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
+      leadingCombo: [createTestCard(Suit.Hearts, Rank.Ace, undefined, 'hearts_a_1')],
       plays: [
         {
           playerId: 'player',
-          cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+          cards: [createTestCard(Suit.Hearts, Rank.Ace, undefined, 'hearts_a_1')]
         }
       ],
       points: 0
     };
     
     // Give AI1 non-heart cards
-    gameState.players[1].hand = [
-      createCard(Suit.Spades, Rank.Seven, 'spades_7_1'),
-      createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_1')
+    GameStateUtils.getPlayersInOrder(gameState)[1].hand = [
+      createTestCard(Suit.Spades, Rank.Seven, undefined, 'spades_7_1'),
+      createTestCard(Suit.Diamonds, Rank.Ten, undefined, 'diamonds_10_1')
     ];
     
-    // Set up trick state to simulate AI1's turn
+    // Set up trick gameState to simulate AI1's turn
     gameState.currentTrick!.plays = [
       {
         playerId: 'player',
-        cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+        cards: [createTestCard(Suit.Hearts, Rank.Ace, undefined, 'hearts_a_1')]
       }
     ];
     
     // Simulate AI returning a valid play
-    (getAIMove as jest.Mock).mockReturnValue([createCard(Suit.Spades, Rank.Seven, 'spades_7_1')]);
+    (getAIMove as jest.Mock).mockReturnValue([createTestCard(Suit.Spades, Rank.Seven, undefined, 'spades_7_1')]);
     
     // Simulate processing the AI move (from EnhancedGameScreen)
     const processAIMove = () => {
       const newState = { ...gameState };
       // Calculate current player (AI1 in this test)
       const currentPlayerIndex = 1;
-      const currentPlayer = newState.players[currentPlayerIndex];
+      const currentPlayer = GameStateUtils.getPlayersInOrder(newState)[currentPlayerIndex];
       const aiMove = getAIMove(newState, currentPlayer.id);
       
       // Check if we got a valid move
@@ -165,48 +92,48 @@ describe('Game Loop Tests', () => {
     expect(updatedState.currentTrick!.plays[1].cards.length).toBe(1);
     
     // Verify card was removed from hand
-    expect(updatedState.players[1].hand.length).toBe(1);
+    expect(GameStateUtils.getPlayersInOrder(updatedState)[1].hand.length).toBe(1);
     
-    // Verify trick state was updated correctly
+    // Verify trick gameState was updated correctly
     expect(updatedState.currentTrick!.plays.length).toBe(2);
   });
 
   test('Game loop should handle trick completion and winner determination', () => {
-    const gameState = createMockGameState();
+    const gameState = createTestGameState();
     
     // Give all players cards for this trick
-    gameState.players[0].hand = [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')];
-    gameState.players[1].hand = [createCard(Suit.Hearts, Rank.King, 'hearts_k_1')];
-    gameState.players[2].hand = [createCard(Suit.Hearts, Rank.Queen, 'hearts_q_1')];
-    gameState.players[3].hand = [createCard(Suit.Hearts, Rank.Jack, 'hearts_j_1')];
+    GameStateUtils.getPlayersInOrder(gameState)[0].hand = [createTestCard(Suit.Hearts, Rank.Ace, undefined, 'hearts_a_1')];
+    GameStateUtils.getPlayersInOrder(gameState)[1].hand = [createTestCard(Suit.Hearts, Rank.King, undefined, 'hearts_k_1')];
+    GameStateUtils.getPlayersInOrder(gameState)[2].hand = [createTestCard(Suit.Hearts, Rank.Queen, undefined, 'hearts_q_1')];
+    GameStateUtils.getPlayersInOrder(gameState)[3].hand = [createTestCard(Suit.Hearts, Rank.Jack, undefined, 'hearts_j_1')];
     
     // Start a trick with player 0 leading
     gameState.currentTrick = {
       leadingPlayerId: 'player',
-      leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
+      leadingCombo: [createTestCard(Suit.Hearts, Rank.Ace, undefined, 'hearts_a_1')],
       plays: [
         {
           playerId: 'player',
-          cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+          cards: [createTestCard(Suit.Hearts, Rank.Ace, undefined, 'hearts_a_1')]
         }
       ],
       points: 0
     };
     
     // Remove the card from player 0's hand
-    gameState.players[0].hand = [];
+    GameStateUtils.getPlayersInOrder(gameState)[0].hand = [];
     
-    // Player 1's turn (simulated by trick state)
+    // Player 1's turn (simulated by trick gameState)
     
     // Process player 1's move
     const processPlayer1Move = () => {
       const newState = { ...gameState };
       // Player 1's turn
       const currentPlayerIndex = 1;
-      const currentPlayer = newState.players[currentPlayerIndex];
+      const currentPlayer = GameStateUtils.getPlayersInOrder(newState)[currentPlayerIndex];
       
       // Play the King of Hearts
-      const move = [createCard(Suit.Hearts, Rank.King, 'hearts_k_1')];
+      const move = [createTestCard(Suit.Hearts, Rank.King, undefined, 'hearts_k_1')];
       
       // Add to trick
       newState.currentTrick!.plays.push({
@@ -225,14 +152,14 @@ describe('Game Loop Tests', () => {
     };
     
     // Process player 2's move
-    const processPlayer2Move = (state: GameState) => {
-      const newState = { ...state };
+    const processPlayer2Move = (gameState: GameState) => {
+      const newState = { ...gameState };
       // Player 2's turn
       const currentPlayerIndex = 2;
-      const currentPlayer = newState.players[currentPlayerIndex];
+      const currentPlayer = GameStateUtils.getPlayersInOrder(newState)[currentPlayerIndex];
       
       // Play the Queen of Hearts
-      const move = [createCard(Suit.Hearts, Rank.Queen, 'hearts_q_1')];
+      const move = [createTestCard(Suit.Hearts, Rank.Queen, undefined, 'hearts_q_1')];
       
       // Add to trick
       newState.currentTrick!.plays.push({
@@ -251,14 +178,14 @@ describe('Game Loop Tests', () => {
     };
     
     // Process player 3's move (completes the trick)
-    const processPlayer3Move = (state: GameState) => {
-      const newState = { ...state };
+    const processPlayer3Move = (gameState: GameState) => {
+      const newState = { ...gameState };
       // Player 3's turn
       const currentPlayerIndex = 3;
-      const currentPlayer = newState.players[currentPlayerIndex];
+      const currentPlayer = GameStateUtils.getPlayersInOrder(newState)[currentPlayerIndex];
       
       // Play the Jack of Hearts
-      const move = [createCard(Suit.Hearts, Rank.Jack, 'hearts_j_1')];
+      const move = [createTestCard(Suit.Hearts, Rank.Jack, undefined, 'hearts_j_1')];
       
       // Add to trick
       newState.currentTrick!.plays.push({
@@ -278,9 +205,9 @@ describe('Game Loop Tests', () => {
       const trickPoints = calculateTrickPoints(newState.currentTrick!);
       
       // Find winning team
-      const winningPlayer = newState.players.find(p => p.id === winningPlayerId);
+      const winningPlayer = GameStateUtils.getAllPlayers(newState).find(p => p.id === winningPlayerId);
       const winningTeam = winningPlayer ? 
-        newState.teams.find(t => t.id === winningPlayer.team) :
+        newState.teams[winningPlayer.teamId] :
         null;
       
       if (winningTeam) {
@@ -314,7 +241,7 @@ describe('Game Loop Tests', () => {
     
     // Points should be awarded (10 for King, 0 for others)
     expect(finalState.tricks[0].points).toBe(10);
-    expect(finalState.teams[0].points).toBe(10); // Team A won and got 10 points
+    expect(finalState.teams['A'].points).toBe(10); // Team A won and got 10 points
     
     // Winner stored in completed trick
     expect(finalState.tricks[0].winningPlayerId).toBe('player');
