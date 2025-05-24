@@ -51,7 +51,7 @@ describe('Bot 3 Card Loss Investigation', () => {
       processPlayCalls = []; // Reset tracking for each trick
       
       for (let playNum = 0; playNum < 4; playNum++) {
-        const currentPlayerId = playOrder[playNum]; // Sequential play for testing
+        const currentPlayerId = playOrder[playNum].id; // Sequential play for testing
         const currentPlayer = gameState.players[currentPlayerId];
         if (!currentPlayer) {
           throw new Error(`Player ${currentPlayerId} not found`);
@@ -179,9 +179,9 @@ describe('Bot 3 Card Loss Investigation', () => {
     console.log('New state hand lengths:', newHandLengths.join(', '));
     
     // Only the human player should have lost a card
-    const playOrder = getPlayOrder();
-    const newPlayersByOrder = playOrder.map(id => firstPlay.newState.players[id]);
-    const originalPlayersByOrder = playOrder.map(id => originalStateCopy.players[id]);
+    const playOrder = getPlayOrder(gameState);
+    const newPlayersByOrder = playOrder.map(player => firstPlay.newState.players[player.id]);
+    const originalPlayersByOrder = playOrder.map(player => originalStateCopy.players[player.id]);
     
     expect(newPlayersByOrder[0].hand.length).toBe(originalPlayersByOrder[0].hand.length - 1); // human
     expect(newPlayersByOrder[1].hand.length).toBe(originalPlayersByOrder[1].hand.length); // bot1

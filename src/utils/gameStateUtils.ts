@@ -126,4 +126,25 @@ export class GameStateUtils {
       }
     };
   }
+
+  // Additional helper methods that tests expect
+  static findAIPlayers(gameState: GameState): Player[] {
+    return Object.values(gameState.players).filter(player => !player.isHuman);
+  }
+
+  static getPlayerOrder(gameState: GameState): Player[] {
+    return this.getPlayersInOrder(gameState);
+  }
+
+  static findPlayerById(gameState: GameState, playerId: string): Player {
+    return this.getPlayerById(gameState, playerId);
+  }
+
+  static findHumanPlayer(gameState: GameState): Player {
+    const humanPlayer = Object.values(gameState.players).find(player => player.isHuman);
+    if (!humanPlayer) {
+      throw new Error('No human player found');
+    }
+    return humanPlayer;
+  }
 }

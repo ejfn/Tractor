@@ -3,7 +3,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
 import { Player, Card, Suit, Rank, TrumpInfo } from '../../src/types/game';
-import { createTest, createTestGameState, createTestCard, createTestTrumpInfo } from '../helpers/testUtils';
+import { createTestPlayer, createTestGameState, createTestCard, createTestTrumpInfo } from '../helpers/testUtils';
 import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 // Mock dependencies
@@ -39,7 +39,7 @@ describe('HumanPlayerView', () => {
 
   test('renders correctly for current player', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createTest("human");
+    const player = createTestPlayer("human", "Human Player", [], true, "A", "bottom");
     const trumpInfo = createTestTrumpInfo();
     
     const { getByText } = render(

@@ -3,7 +3,7 @@ import { render } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import AIPlayerView from '../../src/components/AIPlayerView';
 import { Player, Suit, Rank } from '../../src/types/game';
-import { createTest, createTestGameState, createTestCard } from '../helpers/testUtils';
+import { createTest, createTestGameState, createTestCard, createTestPlayer } from '../helpers/testUtils';
 import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
 // Mock dependencies
@@ -132,7 +132,7 @@ describe('AIPlayerView', () => {
 
   test('shows thinking indicator when it is AI turn', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createTest("ai3");
+    const player = createTestPlayer("ai3", "Bot 3", [], false, "B", "left");
     
     const { getAllByTestId } = render(
       <AIPlayerView 
@@ -154,7 +154,7 @@ describe('AIPlayerView', () => {
 
   test('hides thinking indicator when showTrickResult is true', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createTest("ai3");
+    const player = createTestPlayer("ai3", "Bot 3", [], false, "B", "left");
     
     const { getAllByTestId } = render(
       <AIPlayerView 
@@ -177,7 +177,7 @@ describe('AIPlayerView', () => {
 
   test('uses correct team styling for defending team', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createTest("ai3");
+    const player = createTestPlayer("ai3", "Bot 3", [], false, "B", "left");
     
     const { getByText } = render(
       <AIPlayerView 
@@ -198,7 +198,7 @@ describe('AIPlayerView', () => {
 
   test('uses correct team styling for attacking team', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createTest("ai3");
+    const player = createTestPlayer("ai3", "Bot 3", [], false, "B", "left");
     
     const { getByText } = render(
       <AIPlayerView 

@@ -1,31 +1,31 @@
 import { GameState, Player, Team, Card, Suit, Rank, JokerType, PlayerPosition, TrumpInfo, Trick } from '../../src/types/game';
 import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
-export function createTestCard(suit?: Suit, rank?: Rank, joker?: JokerType): Card {
-  const id = joker ? `joker-${joker}` : `${suit}-${rank}`;
+export function createTestCard(suit?: Suit, rank?: Rank, joker?: JokerType, id?: string): Card {
+  const cardId = id || (joker ? `joker-${joker}` : `${suit}-${rank}`);
   let points = 0;
   
   if (rank === Rank.Five) points = 5;
   if (rank === Rank.Ten || rank === Rank.King) points = 10;
   
-  return { suit, rank, joker, id, points };
+  return { suit, rank, joker, id: cardId, points };
 }
 
 export function createTestPlayer(
   id: string,
-  name: string,
-  hand: Card[] = [],
-  isHuman: boolean = false,
-  teamId: "A" | "B" = "A",
-  position: PlayerPosition = "bottom"
+  name?: string,
+  hand?: Card[],
+  isHuman?: boolean,
+  teamId?: "A" | "B",
+  position?: PlayerPosition
 ): Player {
   return {
     id,
-    name,
-    hand,
-    isHuman,
-    teamId,
-    position,
+    name: name || `Player ${id}`,
+    hand: hand || [],
+    isHuman: isHuman || false,
+    teamId: teamId || "A",
+    position: position || "bottom",
     isThinking: false
   };
 }
@@ -41,6 +41,16 @@ export function createTestTeam(
     currentRank,
     points,
     isDefending
+  };
+}
+
+export function createTestTeams(overrides?: {
+  A?: Partial<Team>;
+  B?: Partial<Team>;
+}): Record<"A" | "B", Team> {
+  return {
+    'A': { ...createTestTeam('A'), ...overrides?.A },
+    'B': { ...createTestTeam('B'), ...overrides?.B }
   };
 }
 
