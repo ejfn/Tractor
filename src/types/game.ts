@@ -26,6 +26,29 @@ export enum JokerType {
   Big = "Big",
 }
 
+export enum PlayerId {
+  Human = "human",
+  Bot1 = "bot1",
+  Bot2 = "bot2",
+  Bot3 = "bot3",
+}
+
+export enum PlayerName {
+  Human = "You",
+  Bot1 = "Bot 1",
+  Bot2 = "Bot 2",
+  Bot3 = "Bot 3",
+}
+
+export enum GamePhase {
+  Dealing = "dealing",
+  Declaring = "declaring",
+  Playing = "playing",
+  Scoring = "scoring",
+  RoundEnd = "roundEnd",
+  GameOver = "gameOver",
+}
+
 export type Card = {
   suit?: Suit;
   rank?: Rank;
@@ -35,8 +58,8 @@ export type Card = {
 };
 
 export type Player = {
-  id: string;
-  name: string;
+  id: PlayerId;
+  name: PlayerName;
   isHuman: boolean;
   hand: Card[];
   team: "A" | "B"; // Team identifier
@@ -78,13 +101,7 @@ export type GameState = {
   roundNumber: number;
   currentPlayerIndex: number;
   lastRoundStartingPlayerIndex?: number; // Stores index of the player who started last round
-  gamePhase:
-    | "dealing"
-    | "declaring"
-    | "playing"
-    | "scoring"
-    | "roundEnd"
-    | "gameOver";
+  gamePhase: GamePhase;
 };
 
 // Combination types for valid plays

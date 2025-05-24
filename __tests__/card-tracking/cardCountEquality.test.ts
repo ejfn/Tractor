@@ -1,4 +1,4 @@
-import { GameState, Card, Player, Rank, Suit } from '../../src/types/game';
+import { GameState, Card, Player, Rank, Suit, GamePhase } from '../../src/types/game';
 import { initializeGame, dealCards } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
@@ -51,7 +51,7 @@ describe('Card Count Equality', () => {
     // Create fresh game state
     let state = initializeGame();
     state = dealCards(state);
-    state.gamePhase = 'playing';
+    state.gamePhase = GamePhase.Playing;
     state.trumpInfo.trumpSuit = Suit.Spades;
     
     for (let trickNum = 1; trickNum <= 5; trickNum++) {
@@ -82,7 +82,7 @@ describe('Card Count Equality', () => {
     // Create fresh game state
     let state = initializeGame();
     state = dealCards(state);
-    state.gamePhase = 'playing';
+    state.gamePhase = GamePhase.Playing;
     state.trumpInfo.trumpSuit = Suit.Spades;
     
     // Arrange the first trick so human wins
@@ -146,7 +146,7 @@ describe('Card Count Equality', () => {
     // Start fresh with a new game to ensure no state interference
     let state = initializeGame();
     state = dealCards(state);
-    state.gamePhase = 'playing';
+    state.gamePhase = GamePhase.Playing;
     state.trumpInfo.trumpSuit = Suit.Spades;
     
     // Verify initial state has correct counts

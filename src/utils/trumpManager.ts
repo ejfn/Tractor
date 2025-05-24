@@ -1,4 +1,4 @@
-import { GameState, Suit } from "../types/game";
+import { GameState, Suit, GamePhase } from "../types/game";
 import { shouldAIDeclare } from "./aiLogic";
 
 /**
@@ -22,7 +22,7 @@ export function declareTrumpSuit(
     newState.trumpInfo.declarerPlayerId = currentPlayer.id;
   }
 
-  newState.gamePhase = "playing";
+  newState.gamePhase = GamePhase.Playing;
   return newState;
 }
 

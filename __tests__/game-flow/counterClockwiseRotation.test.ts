@@ -1,5 +1,6 @@
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { GameState, Player, Rank, Suit, Card, Team } from '../../src/types/game';
+import { createRotationTestGameState } from '../helpers/testUtils';
 
 describe('Counter-clockwise rotation', () => {
   const createCard = (suit: Suit, rank: Rank, id: string): Card => ({
@@ -9,70 +10,7 @@ describe('Counter-clockwise rotation', () => {
     points: 0
   });
 
-  const createMockGameState = (): GameState => {
-    const players: Player[] = [
-      {
-        id: 'player',
-        name: 'Human',
-        isHuman: true,
-        hand: [],
-        team: 'A'
-      },
-      {
-        id: 'ai1',
-        name: 'Bot 1',
-        isHuman: false,
-        hand: [],
-        team: 'B'
-      },
-      {
-        id: 'ai2',
-        name: 'Bot 2',
-        isHuman: false,
-        hand: [],
-        team: 'A'
-      },
-      {
-        id: 'ai3',
-        name: 'Bot 3',
-        isHuman: false,
-        hand: [],
-        team: 'B'
-      }
-    ];
-
-    const teams: [Team, Team] = [
-      {
-        id: 'A',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: true
-      },
-      {
-        id: 'B',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: false
-      }
-    ];
-
-    return {
-      players,
-      teams,
-      deck: [],
-      kittyCards: [],
-      currentTrick: null,
-      trumpInfo: {
-        trumpRank: Rank.Two,
-        trumpSuit: Suit.Hearts,
-        declared: true
-      },
-      tricks: [],
-      roundNumber: 1,
-      currentPlayerIndex: 0,
-      gamePhase: 'playing'
-    };
-  };
+  const createMockGameState = createRotationTestGameState;
 
   test('Players should rotate counter-clockwise from human perspective', () => {
     const gameState = createMockGameState();
@@ -100,7 +38,7 @@ describe('Counter-clockwise rotation', () => {
     
     // After trick completion, winner (Human with Ace) should be next
     expect(result4.trickComplete).toBe(true);
-    expect(result4.trickWinner).toBe('Human');
+    expect(result4.trickWinner).toBe('You');
     expect(result4.newState.currentPlayerIndex).toBe(0); // Human won
   });
 
@@ -108,7 +46,7 @@ describe('Counter-clockwise rotation', () => {
     const gameState = createMockGameState();
     
     // Verify player order in the array (logical order)
-    expect(gameState.players[0].name).toBe('Human');  // Bottom (human perspective)
+    expect(gameState.players[0].name).toBe('You');  // Bottom (human perspective)
     expect(gameState.players[1].name).toBe('Bot 1');  // Next in array
     expect(gameState.players[2].name).toBe('Bot 2');  // Next in array
     expect(gameState.players[3].name).toBe('Bot 3');  // Next in array

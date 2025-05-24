@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { View } from 'react-native';
 import CardPlayArea from '../../src/components/CardPlayArea';
-import { Card, Player, Suit, Rank, Trick, TrumpInfo } from '../../src/types/game';
+import { Card, Player, Suit, Rank, Trick, TrumpInfo, PlayerId } from '../../src/types/game';
 
 // Mock AnimatedCard component for testing
 jest.mock('../../src/components/AnimatedCard', () => {
@@ -82,13 +82,13 @@ describe('CardPlayArea', () => {
     const ai3Card = createMockCard('ai3-card', Suit.Hearts, Rank.King);
 
     const mockTrick: Trick = {
-      leadingPlayerId: 'ai2',
+      leadingPlayerId: PlayerId.Bot2,
       leadingCombo: [ai2Card],
       plays: [
-        { playerId: 'ai2', cards: [ai2Card] },
-        { playerId: 'ai3', cards: [ai3Card] },
-        { playerId: 'human', cards: [humanCard] },
-        { playerId: 'ai1', cards: [ai1Card] },
+        { playerId: PlayerId.Bot2, cards: [ai2Card] },
+        { playerId: PlayerId.Bot3, cards: [ai3Card] },
+        { playerId: PlayerId.Human, cards: [humanCard] },
+        { playerId: PlayerId.Bot1, cards: [ai1Card] },
       ],
       points: 0
     };
@@ -132,13 +132,13 @@ describe('CardPlayArea', () => {
     const ai3Card = createMockCard('ai3-card', Suit.Hearts, Rank.King);
 
     const mockTrick: Trick = {
-      leadingPlayerId: 'ai2',
+      leadingPlayerId: PlayerId.Bot2,
       leadingCombo: [ai2Card],
       plays: [
-        { playerId: 'ai2', cards: [ai2Card] },
-        { playerId: 'ai3', cards: [ai3Card] },
-        { playerId: 'human', cards: [humanCard] },
-        { playerId: 'ai1', cards: [ai1Card] },
+        { playerId: PlayerId.Bot2, cards: [ai2Card] },
+        { playerId: PlayerId.Bot3, cards: [ai3Card] },
+        { playerId: PlayerId.Human, cards: [humanCard] },
+        { playerId: PlayerId.Bot1, cards: [ai1Card] },
       ],
       points: 0
     };
@@ -180,13 +180,13 @@ describe('CardPlayArea', () => {
     const ai3Card = createMockCard('ai3-card', Suit.Hearts, Rank.King);
 
     const mockTrick: Trick = {
-      leadingPlayerId: 'human',
+      leadingPlayerId: PlayerId.Human,
       leadingCombo: [humanCard],
       plays: [
-        { playerId: 'human', cards: [humanCard] },
-        { playerId: 'ai1', cards: [ai1Card] },
-        { playerId: 'ai2', cards: [ai2Card] },
-        { playerId: 'ai3', cards: [ai3Card] },
+        { playerId: PlayerId.Human, cards: [humanCard] },
+        { playerId: PlayerId.Bot1, cards: [ai1Card] },
+        { playerId: PlayerId.Bot2, cards: [ai2Card] },
+        { playerId: PlayerId.Bot3, cards: [ai3Card] },
       ],
       points: 0
     };
@@ -227,11 +227,11 @@ describe('CardPlayArea', () => {
     
     // Create a trick with multiple cards per play
     const mockTrick: Trick = {
-      leadingPlayerId: 'human',
+      leadingPlayerId: PlayerId.Human,
       leadingCombo: [humanCard1, humanCard2],
       plays: [
-        { playerId: 'human', cards: [humanCard1, humanCard2] },
-        { playerId: 'ai1', cards: [ai1Card1, ai1Card2] },
+        { playerId: PlayerId.Human, cards: [humanCard1, humanCard2] },
+        { playerId: PlayerId.Bot1, cards: [ai1Card1, ai1Card2] },
       ],
       points: 0
     };

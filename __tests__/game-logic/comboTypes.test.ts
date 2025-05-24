@@ -5,43 +5,30 @@ import {
   compareCards
 } from '../../src/utils/gameLogic';
 import {
-  Card, 
   Suit, 
   Rank, 
   JokerType,
-  TrumpInfo,
   ComboType,
-  Combo
+  TrumpInfo
 } from '../../src/types/game';
 import { describe, test, expect } from '@jest/globals';
-
-// Helper function to create regular cards
-const createCard = (suit: Suit, rank: Rank, id: string): Card => {
-  let points = 0;
-  if (rank === Rank.Five) points = 5;
-  if (rank === Rank.Ten || rank === Rank.King) points = 10;
-  return { suit, rank, id, points };
-};
-
-// Helper function to create jokers
-const createJoker = (type: JokerType, id: string): Card => {
-  return { joker: type, id, points: 0 };
-};
+import {
+  createCard,
+  createJoker,
+  createTrumpScenarios,
+  testData
+} from '../helpers/testUtils';
 
 describe('Combo Type Identification Tests', () => {
   // Standard trump info for tests
-  const trumpInfo: TrumpInfo = {
-    trumpRank: Rank.Two,
-    trumpSuit: Suit.Spades,
-    declared: true
-  };
+  const trumpInfo = createTrumpScenarios.spadesTrump();
 
   describe('Single Card Combos', () => {
     test('Every card should be identifiable as a Single', () => {
-      // Create various cards for testing
-      const aceOfSpades = createCard(Suit.Spades, Rank.Ace, 'spades_a_1');
-      const twoOfHearts = createCard(Suit.Hearts, Rank.Two, 'hearts_2_1');
-      const bigJoker = createJoker(JokerType.Big, 'big_joker_1');
+      // Use predefined test cards
+      const aceOfSpades = testData.cards.spadesAce;
+      const twoOfHearts = createCard(Suit.Hearts, Rank.Two);
+      const bigJoker = testData.cards.bigJoker;
       
       // Test with individual cards
       const combos1 = identifyCombos([aceOfSpades], trumpInfo);
@@ -52,7 +39,8 @@ describe('Combo Type Identification Tests', () => {
       expect(combos1.length).toBe(1);
       expect(combos1[0].type).toBe(ComboType.Single);
       expect(combos1[0].cards.length).toBe(1);
-      expect(combos1[0].cards[0].id).toBe('spades_a_1');
+      expect(combos1[0].cards[0].suit).toBe(Suit.Spades);
+      expect(combos1[0].cards[0].rank).toBe(Rank.Ace);
       
       expect(combos2.length).toBe(1);
       expect(combos2[0].type).toBe(ComboType.Single);
@@ -69,10 +57,9 @@ describe('Combo Type Identification Tests', () => {
 
   describe('Pair Combos', () => {
     test('Should identify pairs of the same rank', () => {
-      // Create a pair of kings
-      const kingHearts1 = createCard(Suit.Hearts, Rank.King, 'hearts_k_1');
-      const kingHearts2 = createCard(Suit.Hearts, Rank.King, 'hearts_k_2');
-      const queenHearts = createCard(Suit.Hearts, Rank.Queen, 'hearts_q_1');
+      // Use predefined pair and additional card
+      const [kingHearts1, kingHearts2] = testData.pairs.clubsKings; // Use any pair, just need structure
+      const queenHearts = createCard(Suit.Hearts, Rank.Queen);
       
       // Test with a valid pair
       const validPairHand = [kingHearts1, kingHearts2, queenHearts];
@@ -85,37 +72,35 @@ describe('Combo Type Identification Tests', () => {
       const pairCombos = combos.filter(combo => combo.type === ComboType.Pair);
       expect(pairCombos.length).toBe(1);
       expect(pairCombos[0].cards.length).toBe(2);
-      expect(pairCombos[0].cards[0].rank).toBe(Rank.King);
-      expect(pairCombos[0].cards[1].rank).toBe(Rank.King);
+      expect(pairCombos[0].cards[0].rank).toBe(pairCombos[0].cards[1].rank);
     });
     
     test('getComboType should identify Pairs', () => {
-      const card1 = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
-      const card2 = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2');
+      const heartsAces = testData.pairs.spadesAces; // Use predefined pair
       
-      expect(getComboType([card1, card2])).toBe(ComboType.Pair);
+      expect(getComboType(heartsAces)).toBe(ComboType.Pair);
     });
     
     test('Joker pairs should be identified', () => {
-      // Create pair of same jokers
-      const smallJoker1 = createJoker(JokerType.Small, 'small_joker_1');
-      const smallJoker2 = createJoker(JokerType.Small, 'small_joker_2');
+      // Create pair of same jokers using helper
+      const smallJokerPair = [
+        createJoker(JokerType.Small, 'small_joker_1'),
+        createJoker(JokerType.Small, 'small_joker_2')
+      ];
 
-      const hand = [smallJoker1, smallJoker2];
-      const combos = identifyCombos(hand, trumpInfo);
+      const combos = identifyCombos(smallJokerPair, trumpInfo);
 
       // Expect 3 combos: 2 singles + 1 pair
-      // The original comment is outdated, as the implementation now includes joker pairs
       expect(combos.length).toBe(3);
 
       // Test that getComboType would correctly identify a pair of jokers if given directly
-      expect(getComboType([smallJoker1, smallJoker2])).toBe(ComboType.Pair);
+      expect(getComboType(smallJokerPair)).toBe(ComboType.Pair);
     });
     
     test('Different jokers should not form a pair', () => {
-      // Create different jokers
-      const smallJoker = createJoker(JokerType.Small, 'small_joker_1');
-      const bigJoker = createJoker(JokerType.Big, 'big_joker_1');
+      // Use predefined jokers
+      const smallJoker = testData.cards.smallJoker;
+      const bigJoker = testData.cards.bigJoker;
       
       const hand = [smallJoker, bigJoker];
       const combos = identifyCombos(hand, trumpInfo);

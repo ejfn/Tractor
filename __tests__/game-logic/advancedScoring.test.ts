@@ -1,26 +1,16 @@
 import { endRound } from '../../src/utils/gameRoundManager';
 import { GameState, Team, Player, Rank } from '../../src/types/game';
+import { createScoringGameState } from '../helpers/testUtils';
 
 describe('Advanced Scoring Rules', () => {
   const createMockGameState = (
     defendingTeam: Team,
     attackingTeam: Team
-  ): GameState => ({
-    players: [],
-    teams: [defendingTeam, attackingTeam],
-    deck: [],
-    trumpInfo: {
-      trumpRank: Rank.Two,
-      trumpSuit: undefined,
-      declared: false
-    },
-    currentPlayerIndex: 0,
-    currentTrick: null,
-    gamePhase: 'playing',
-    tricks: [],
-    roundNumber: 1,
-    kittyCards: []
-  });
+  ): GameState => {
+    const state = createScoringGameState();
+    state.teams = [defendingTeam, attackingTeam];
+    return state;
+  };
 
   describe('Defending Team Successfully Defends', () => {
     it('should advance defending team by 1 rank when attackers get 40-79 points', () => {

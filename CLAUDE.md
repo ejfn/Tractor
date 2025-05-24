@@ -30,7 +30,7 @@ npm test              # Run tests
 
 ```
 /src/
-├── types/game.ts          # Core game type definitions
+├── types/game.ts          # Core game type definitions with enums
 ├── utils/                 # Game logic utilities
 │   ├── gameLogic.ts       # Core mechanics and rules
 │   ├── gamePlayManager.ts # Card play validation and tricks
@@ -44,7 +44,7 @@ npm test              # Run tests
 │   └── useAnimations.ts   # Card animations
 ├── components/            # UI components
 ├── screens/               # Screen components
-└── __tests__/             # Test files
+└── __tests__/             # Test files with type-safe utilities
 ```
 
 ## Development Guidelines
@@ -173,6 +173,62 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 - Single AI strategy (no difficulty settings)
 - Web platform disabled
 - Centralized timing for predictable animations
+
+## Type Safety and Code Quality
+
+### Enum Usage
+
+The codebase uses TypeScript enums to eliminate magic strings and ensure type safety:
+
+```typescript
+// Player identification - use instead of magic strings
+enum PlayerId {
+  Human = 'human',
+  Bot1 = 'bot1', 
+  Bot2 = 'bot2',
+  Bot3 = 'bot3'
+}
+
+// Player display names
+enum PlayerName {
+  Human = 'You',
+  Bot1 = 'Bot 1',
+  Bot2 = 'Bot 2',
+  Bot3 = 'Bot 3'
+}
+
+// Game phases - replaces string literals
+enum GamePhase {
+  Dealing = 'dealing',
+  Declaring = 'declaring', 
+  Playing = 'playing',
+  Scoring = 'scoring',
+  RoundEnd = 'roundEnd',
+  GameOver = 'gameOver'
+}
+```
+
+**Always use enums instead of magic strings:**
+- ✅ `PlayerId.Human` instead of `'human'`
+- ✅ `GamePhase.Playing` instead of `'playing'`  
+- ✅ `PlayerName.Bot1` instead of `'Bot 1'`
+
+### Testing Best Practices
+
+- **Avoid unnecessary mocks**: Since Shengji has deterministic initialization, prefer using real `initializeGame` over mocking
+- **Use type-safe test utilities**: Import enums in test files and use them consistently
+- **Jest mock limitations**: Only mock what needs to be controlled for the specific test
+- **Test realism**: Use actual game logic when possible for more realistic test coverage
+
+```typescript
+// Good: Use real initialization + targeted mocking
+jest.mock('../../src/utils/gameLogic', () => ({
+  ...jest.requireActual('../../src/utils/gameLogic'),
+  determineTrickWinner: jest.fn() // Only mock what you need to control
+}));
+
+// Avoid: Large mock objects that duplicate real code
+```
 
 ## Technical Notes
 

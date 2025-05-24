@@ -1,4 +1,4 @@
-import { GameState, Rank } from "../types/game";
+import { GameState, Rank, GamePhase } from "../types/game";
 import { initializeGame } from "./gameLogic";
 
 /**
@@ -10,7 +10,7 @@ export function prepareNextRound(state: GameState): GameState {
   const newState = { ...state };
 
   newState.roundNumber++;
-  newState.gamePhase = "dealing";
+  newState.gamePhase = GamePhase.Dealing;
 
   // Set trump rank to defending team's rank
   const newDefendingTeam = newState.teams.find((t) => t.isDefending);
@@ -154,7 +154,7 @@ export function prepareNextRound(state: GameState): GameState {
   }
 
   // Set phase to declaring again
-  newState.gamePhase = "declaring";
+  newState.gamePhase = GamePhase.Declaring;
 
   return newState;
 }

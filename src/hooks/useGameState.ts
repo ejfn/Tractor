@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { GameState, Card, Suit } from "../types/game";
+import { GameState, Card, Suit, GamePhase } from "../types/game";
 import { initializeGame } from "../utils/gameLogic";
 import { prepareNextRound, endRound } from "../utils/gameRoundManager";
 import {
@@ -85,7 +85,7 @@ export function useGameState() {
       return;
     }
 
-    if (gameState.gamePhase !== "playing") return;
+    if (gameState.gamePhase !== GamePhase.Playing) return;
 
     // Only allow current player to select cards
     if (!currentPlayer.isHuman) return;
@@ -170,7 +170,7 @@ export function useGameState() {
         // Set game phase to 'roundEnd' to prevent AI moves
         const endingState = {
           ...result.newState,
-          gamePhase: "roundEnd" as const,
+          gamePhase: GamePhase.RoundEnd,
         };
         setGameState(endingState);
 
@@ -209,7 +209,7 @@ export function useGameState() {
   const handleCheckAITrumpDeclaration = () => {
     if (
       !gameState ||
-      gameState.gamePhase !== "declaring" ||
+      gameState.gamePhase !== GamePhase.Declaring ||
       showTrumpDeclaration
     )
       return;
@@ -238,7 +238,7 @@ export function useGameState() {
 
     if (result.gameOver) {
       // Set game phase to 'gameOver' to prevent AI moves
-      const gameOverState = { ...state, gamePhase: "gameOver" as const };
+      const gameOverState = { ...state, gamePhase: GamePhase.GameOver };
       setGameState(gameOverState);
       setGameOver(true);
       setWinner(result.winner);

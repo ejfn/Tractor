@@ -1,4 +1,4 @@
-import { Card, GameState, Player, Rank, Suit, Team, Trick } from '../../src/types/game';
+import { Card, GameState, Player, Rank, Suit, Team, Trick, PlayerId, PlayerName, GamePhase } from '../../src/types/game';
 import { isValidPlay, identifyCombos } from '../../src/utils/gameLogic';
 
 describe('Pair Follow With Singles', () => {
@@ -18,16 +18,16 @@ describe('Pair Follow With Singles', () => {
     
     // Create basic game state
     humanPlayer = {
-      id: 'human',
-      name: 'Human',
+      id: PlayerId.Human,
+      name: PlayerName.Human,
       hand: [],
       isHuman: true,
       team: 'A',
     };
     
     const ai1: Player = {
-      id: 'ai1',
-      name: 'Bot 1',
+      id: PlayerId.Bot1,
+      name: PlayerName.Bot1,
       hand: [],
       isHuman: false,
       team: 'B',
@@ -46,7 +46,7 @@ describe('Pair Follow With Singles', () => {
       tricks: [],
       roundNumber: 1,
       currentPlayerIndex: 0,
-      gamePhase: 'playing' as const
+      gamePhase: GamePhase.Playing
     };
   });
   

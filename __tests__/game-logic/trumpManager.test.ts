@@ -1,80 +1,18 @@
-import { 
-  declareTrumpSuit, 
+import { PlayerId, Suit } from '../../src/types/game';
+import * as aiLogic from '../../src/utils/aiLogic';
+import {
   checkAITrumpDeclaration,
+  declareTrumpSuit,
   humanHasTrumpRank
 } from '../../src/utils/trumpManager';
-import { GameState, Suit, Rank, Card } from '../../src/types/game';
-import * as aiLogic from '../../src/utils/aiLogic';
+import { createTrumpDeclarationGameState } from '../helpers/testUtils';
 
 // Mock dependencies
 jest.mock('../../src/utils/aiLogic', () => ({
   shouldAIDeclare: jest.fn()
 }));
 
-// Helper function to create test cards
-const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card => ({
-  id,
-  suit,
-  rank,
-  points,
-  joker: undefined
-});
-
-// Create mock game state for testing
-const createMockGameState = (): GameState => {
-  return {
-    players: [
-      {
-        id: 'player',
-        name: 'You',
-        isHuman: true,
-        hand: [
-          createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
-          createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10),
-          createMockCard('spades_2_1', Suit.Spades, Rank.Two, 0) // Trump rank card
-        ],
-        team: 'A'
-      },
-      {
-        id: 'ai1',
-        name: 'Bot 1',
-        isHuman: false,
-        hand: [
-          createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
-          createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack),
-          createMockCard('hearts_2_1', Suit.Hearts, Rank.Two, 0) // Trump rank card
-        ],
-        team: 'B'
-      }
-    ],
-    teams: [
-      {
-        id: 'A',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: true
-      },
-      {
-        id: 'B',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: false
-      }
-    ],
-    trumpInfo: {
-      trumpRank: Rank.Two,
-      trumpSuit: undefined,
-      declared: false
-    },
-    gamePhase: 'declaring',
-    roundNumber: 1,
-    currentPlayerIndex: 0,
-    currentTrick: null,
-    tricks: [],
-    deck: [],
-    kittyCards: []
-  };
-};
+const createMockGameState = createTrumpDeclarationGameState;
 
 describe('trumpManager', () => {
   afterEach(() => {
@@ -138,7 +76,7 @@ describe('trumpManager', () => {
       expect(result.suit).toBeNull();
       
       // Verify shouldAIDeclare was called with correct args
-      expect(aiLogic.shouldAIDeclare).toHaveBeenCalledWith(mockState, 'ai1');
+      expect(aiLogic.shouldAIDeclare).toHaveBeenCalledWith(mockState, PlayerId.Bot1);
     });
 
     test('should return true and suit when AI should declare', () => {
@@ -150,10 +88,10 @@ describe('trumpManager', () => {
       const result = checkAITrumpDeclaration(mockState);
       
       expect(result.shouldDeclare).toBe(true);
-      expect(result.suit).toBe(Suit.Diamonds); // Diamonds is chosen by the implementation
+      expect(result.suit).toBe(Suit.Clubs); // Clubs is chosen by the implementation
       
       // Verify shouldAIDeclare was called with correct args
-      expect(aiLogic.shouldAIDeclare).toHaveBeenCalledWith(mockState, 'ai1');
+      expect(aiLogic.shouldAIDeclare).toHaveBeenCalledWith(mockState, PlayerId.Bot1);
     });
   });
 

@@ -75,12 +75,8 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
     isDefending ? sharedStyles.teamALabel : sharedStyles.teamBLabel,
   ];
 
-  // Get player label based on position
-  const playerLabel = {
-    top: "Bot 2",
-    left: "Bot 3",
-    right: "Bot 1",
-  }[position];
+  // Get player label from player name
+  const playerLabel = player.name;
 
   // Determine whether to show thinking indicator
   // Double-check that we're not showing thinking during trick result display

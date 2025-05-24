@@ -8,6 +8,7 @@ import {
   Suit, 
   Card
 } from '../../src/types/game';
+import { createFullGameStateWithTricks } from '../helpers/testUtils';
 import * as gameLogic from '../../src/utils/gameLogic';
 
 // Mock dependencies
@@ -15,113 +16,7 @@ jest.mock('../../src/utils/gameLogic', () => ({
   initializeGame: jest.fn()
 }));
 
-// Helper function to create test cards
-const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card => ({
-  id,
-  suit,
-  rank,
-  points,
-  joker: undefined
-});
-
-// Create mock game state for testing
-const createMockGameState = (): GameState => {
-  return {
-    players: [
-      {
-        id: 'player',
-        name: 'You',
-        isHuman: true,
-        hand: [
-          createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
-          createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
-        ],
-        team: 'A',
-      },
-      {
-        id: 'ai1',
-        name: 'Bot 1',
-        isHuman: false,
-        hand: [
-          createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
-          createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
-        ],
-        team: 'B',
-      },
-      {
-        id: 'ai2',
-        name: 'Bot 2',
-        isHuman: false,
-        hand: [
-          createMockCard('spades_2_1', Suit.Spades, Rank.Two),
-          createMockCard('hearts_a_1', Suit.Hearts, Rank.Ace)
-        ],
-        team: 'A',
-      },
-      {
-        id: 'ai3',
-        name: 'Bot 3',
-        isHuman: false,
-        hand: [
-          createMockCard('clubs_4_1', Suit.Clubs, Rank.Four),
-          createMockCard('diamonds_10_1', Suit.Diamonds, Rank.Ten, 10)
-        ],
-        team: 'B',
-      }
-    ],
-    teams: [
-      {
-        id: 'A',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: true
-      },
-      {
-        id: 'B',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: false
-      }
-    ],
-    trumpInfo: {
-      trumpRank: Rank.Two,
-      trumpSuit: Suit.Spades,
-      declared: true
-    },
-    gamePhase: 'playing',
-    roundNumber: 1,
-    currentPlayerIndex: 0,
-    currentTrick: null,
-    tricks: [
-      {
-        leadingPlayerId: 'player',
-        leadingCombo: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)],
-        plays: [
-          {
-            playerId: 'player',
-            cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
-          },
-          {
-            playerId: 'ai1',
-            cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)]
-          },
-          {
-            playerId: 'ai2',
-            cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)]
-          },
-          {
-            playerId: 'ai3',
-            cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)]
-          }
-        ],
-        points: 5,
-        winningPlayerId: 'player'
-      }
-    ],
-    deck: [],
-    kittyCards: []
-  };
-};
+const createMockGameState = createFullGameStateWithTricks;
 
 describe('gameRoundManager', () => {
   afterEach(() => {

@@ -5,75 +5,21 @@ import { useTrickResults } from '../../src/hooks/useTrickResults';
 import { useGameState } from '../../src/hooks/useGameState';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { determineTrickWinner } from '../../src/utils/gameLogic';
+import { createComponentTestGameState } from '../helpers/testUtils';
 import { 
   GameState, 
   Card, 
   Rank, 
-  Suit
+  Suit,
+  PlayerId,
+  PlayerName
 } from '../../src/types/game';
 
 // Mock dependencies
 jest.mock('../../src/utils/gameLogic', () => ({
+  ...jest.requireActual('../../src/utils/gameLogic'),
   determineTrickWinner: jest.fn(),
   isTrump: jest.fn(),
-  initializeGame: jest.fn(() => ({
-    players: [{
-      id: 'human',
-      name: 'Human',
-      isHuman: true,
-      hand: [{
-        id: 'spades_5_1',
-        suit: 1, // Spades
-        rank: 5,
-        points: 5
-      }],
-      currentRank: 2,
-      team: 'A'
-    }, {
-      id: 'ai1',
-      name: 'Bot 1',
-      isHuman: false,
-      hand: [],
-      currentRank: 2,
-      team: 'B'
-    }, {
-      id: 'ai2',
-      name: 'Bot 2',
-      isHuman: false,
-      hand: [],
-      currentRank: 2,
-      team: 'A'
-    }, {
-      id: 'ai3',
-      name: 'Bot 3',
-      isHuman: false,
-      hand: [],
-      currentRank: 2,
-      team: 'B'
-    }],
-    teams: [{
-      id: 'A',
-      currentRank: 2,
-      points: 0,
-      isDefending: true
-    }, {
-      id: 'B', 
-      currentRank: 2,
-      points: 0,
-      isDefending: false
-    }],
-    currentPlayerIndex: 0,
-    gamePhase: 'playing',
-    trumpInfo: {
-      trumpRank: 2,
-      declared: false
-    },
-    tricks: [],
-    deck: [],
-    kittyCards: [],
-    roundNumber: 1,
-    currentTrick: null
-  })),
   identifyCombos: jest.fn(),
   isValidPlay: jest.fn(),
   humanHasTrumpRank: jest.fn().mockReturnValue(false)
@@ -101,12 +47,14 @@ const TestComponent: React.FC<{
 
   const trickResultsHook = useTrickResults();
 
-  // Initialize state if provided
+  // Initialize state
   React.useEffect(() => {
     if (initialState) {
       gameStateHook.setGameState(initialState);
+    } else {
+      gameStateHook.initGame();
     }
-  }, []);
+  }, [initialState]);
 
   // Track state changes
   React.useEffect(() => {
@@ -184,68 +132,10 @@ const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card =>
   points
 });
 
-// Create mock game state
 const createMockGameState = (currentPlayerIndex = 0): GameState => {
-  return {
-    players: [
-      {
-        id: 'human',
-        name: 'Human',
-        isHuman: true,
-        hand: [
-          createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
-          createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
-        ],
-        team: 'A'
-      },
-      {
-        id: 'ai1',
-        name: 'Bot 1',
-        isHuman: false,
-        hand: [
-          createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
-          createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
-        ],
-        team: 'B'
-      },
-      {
-        id: 'ai2',
-        name: 'Bot 2',
-        isHuman: false,
-        hand: [
-          createMockCard('spades_2_1', Suit.Spades, Rank.Two),
-          createMockCard('hearts_q_1', Suit.Hearts, Rank.Queen)
-        ],
-        team: 'A'
-      },
-      {
-        id: 'ai3',
-        name: 'Bot 3',
-        isHuman: false,
-        hand: [
-          createMockCard('clubs_4_1', Suit.Clubs, Rank.Four),
-          createMockCard('diamonds_6_1', Suit.Diamonds, Rank.Six)
-        ],
-        team: 'B'
-      }
-    ],
-    teams: [
-      { id: 'A', currentRank: Rank.Two, isDefending: true, points: 0 },
-      { id: 'B', currentRank: Rank.Two, isDefending: false, points: 0 }
-    ],
-    trumpInfo: {
-      trumpRank: Rank.Two,
-      declared: false,
-      trumpSuit: undefined
-    },
-    gamePhase: 'playing',
-    currentPlayerIndex: currentPlayerIndex,
-    currentTrick: null,
-    deck: [],
-    kittyCards: [],
-    tricks: [],
-    roundNumber: 1
-  };
+  const state = createComponentTestGameState();
+  state.currentPlayerIndex = currentPlayerIndex;
+  return state;
 };
 
 describe('Trick Completion Flow', () => {
@@ -256,14 +146,11 @@ describe('Trick Completion Flow', () => {
   test('should complete a trick when all 4 players have played', async () => {
     const mockState = createMockGameState();
     
-    // Mock initializeGame to return our state
-    const mockInitializeGame = require('../../src/utils/gameLogic').initializeGame;
-    mockInitializeGame.mockReturnValue(mockState);
-    
     let stateHistory: any[] = [];
     
     const { getByTestId } = render(
       <TestComponent 
+        initialState={mockState}
         onStateChange={(state) => stateHistory.push(state)}
       />
     );
@@ -278,9 +165,9 @@ describe('Trick Completion Flow', () => {
       leadingPlayerId: 'human',
       leadingCombo: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)],
       plays: [
-        { playerId: 'ai1', cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)] },
-        { playerId: 'ai2', cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)] },
-        { playerId: 'ai3', cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)] }
+        { playerId: 'bot1', cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)] },
+        { playerId: 'bot2', cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)] },
+        { playerId: 'bot3', cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)] }
       ],
       points: 5
     };

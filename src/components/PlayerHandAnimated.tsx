@@ -1,7 +1,7 @@
 import React from "react";
-import { Card as CardType, Player, TrumpInfo } from "../types/game";
-import HumanHandAnimated from "./HumanHandAnimated";
+import { Card as CardType, Player, PlayerId, TrumpInfo } from "../types/game";
 import AIHandAnimated from "./AIHandAnimated";
+import HumanHandAnimated from "./HumanHandAnimated";
 
 interface PlayerHandAnimatedProps {
   player: Player;
@@ -40,7 +40,11 @@ const PlayerHandAnimated: React.FC<PlayerHandAnimatedProps> = ({
     // Determine AI position based on player id
     // Swapped positions for counter-clockwise rotation
     const position =
-      player.id === "ai2" ? "top" : player.id === "ai3" ? "left" : "right";
+      player.id === PlayerId.Bot2
+        ? "top"
+        : player.id === PlayerId.Bot3
+          ? "left"
+          : "right";
 
     return (
       <AIHandAnimated

@@ -1,8 +1,8 @@
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
 import { Animated } from 'react-native';
 import AIPlayerView from '../../src/components/AIPlayerView';
-import { Player, Suit, Rank } from '../../src/types/game';
+import { Player, PlayerId, PlayerName, Rank, Suit } from '../../src/types/game';
 
 // Mock dependencies
 jest.mock('../../src/components/ThinkingIndicator', () => {
@@ -33,9 +33,9 @@ describe('AIPlayerView', () => {
   });
 
   // Mock player data
-  const createMockPlayer = (handSize: number): Player => ({
-    id: 'ai1',
-    name: 'Bot 1',
+  const createMockPlayer = (handSize: number, playerId: PlayerId = PlayerId.Bot1, playerName: PlayerName = PlayerName.Bot1): Player => ({
+    id: playerId,
+    name: playerName,
     isHuman: false,
     hand: Array(handSize).fill(null).map((_, i) => ({
       id: `card-${i}`,
@@ -48,7 +48,7 @@ describe('AIPlayerView', () => {
 
   test('renders top player correctly', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(15);
+    const player = createMockPlayer(15, PlayerId.Bot2, PlayerName.Bot2);
     
     const { getAllByTestId, getByText } = render(
       <AIPlayerView 
@@ -78,7 +78,7 @@ describe('AIPlayerView', () => {
 
   test('renders left player correctly', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(5);
+    const player = createMockPlayer(5, PlayerId.Bot3, PlayerName.Bot3);
     
     const { getAllByTestId, getByText } = render(
       <AIPlayerView 
@@ -173,7 +173,7 @@ describe('AIPlayerView', () => {
 
   test('uses correct team styling for defending team', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(5);
+    const player = createMockPlayer(5, PlayerId.Bot3, PlayerName.Bot3);
     
     const { getByText } = render(
       <AIPlayerView 
@@ -194,7 +194,7 @@ describe('AIPlayerView', () => {
 
   test('uses correct team styling for attacking team', () => {
     const thinkingDots = createAnimatedValues();
-    const player = createMockPlayer(5);
+    const player = createMockPlayer(5, PlayerId.Bot3, PlayerName.Bot3);
     
     const { getByText } = render(
       <AIPlayerView 

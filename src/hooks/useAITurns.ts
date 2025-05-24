@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { GameState, Card } from "../types/game";
+import { GameState, Card, GamePhase } from "../types/game";
 import { getAIMoveWithErrorHandling } from "../utils/gamePlayManager";
 import { AI_MOVE_DELAY } from "../utils/gameTimings";
 
@@ -90,7 +90,7 @@ export function useAITurns(
       gameState.currentTrick.plays.length === gameState.players.length - 1;
 
     const botReady =
-      gameState.gamePhase === "playing" &&
+      gameState.gamePhase === GamePhase.Playing &&
       !showTrickResult &&
       !showRoundComplete &&
       !trickComplete; // Don't let AI play if trick is complete but not cleared
@@ -186,7 +186,7 @@ export function useAITurns(
       showTrickResult ||
       lastCompletedTrick ||
       showRoundComplete ||
-      gameState.gamePhase !== "playing" ||
+      gameState.gamePhase !== GamePhase.Playing ||
       currentTrickComplete
     ) {
       return;
@@ -231,7 +231,7 @@ export function useAITurns(
     if (!gameState) return;
 
     // If game is not in playing phase, clear any thinking indicators
-    if (gameState.gamePhase !== "playing" && waitingForAI) {
+    if (gameState.gamePhase !== GamePhase.Playing && waitingForAI) {
       setWaitingForAI(false);
       setWaitingPlayerId("");
     }

@@ -1,15 +1,18 @@
 import {
   Card,
-  Suit,
-  Rank,
-  JokerType,
-  GameState,
-  Player,
   Combo,
   ComboType,
+  GameState,
+  GamePhase,
+  JokerType,
+  Player,
+  PlayerId,
+  PlayerName,
+  Rank,
+  Suit,
+  Team,
   Trick,
   TrumpInfo,
-  Team,
 } from "../types/game";
 // No UUID used in this project
 
@@ -83,7 +86,7 @@ export const dealCards = (state: GameState): GameState => {
   newState.kittyCards = deck.slice(deck.length - 8);
 
   // Update game phase
-  newState.gamePhase = "declaring";
+  newState.gamePhase = GamePhase.Declaring;
 
   return newState;
 };
@@ -916,29 +919,29 @@ export const initializeGame = (): GameState => {
   // Create players (1 human, 3 AI)
   const players: Player[] = [
     {
-      id: "player",
-      name: "You",
+      id: PlayerId.Human,
+      name: PlayerName.Human,
       isHuman: true,
       hand: [],
       team: "A",
     },
     {
-      id: "ai1",
-      name: "Bot 1",
+      id: PlayerId.Bot1,
+      name: PlayerName.Bot1,
       isHuman: false,
       hand: [],
       team: "B",
     },
     {
-      id: "ai2",
-      name: "Bot 2",
+      id: PlayerId.Bot2,
+      name: PlayerName.Bot2,
       isHuman: false,
       hand: [],
       team: "A",
     },
     {
-      id: "ai3",
-      name: "Bot 3",
+      id: PlayerId.Bot3,
+      name: PlayerName.Bot3,
       isHuman: false,
       hand: [],
       team: "B",
@@ -978,7 +981,7 @@ export const initializeGame = (): GameState => {
     tricks: [],
     roundNumber: 1,
     currentPlayerIndex: 0,
-    gamePhase: "dealing",
+    gamePhase: GamePhase.Dealing,
   };
 
   // Deal cards to players
