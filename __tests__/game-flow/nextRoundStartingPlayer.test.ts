@@ -147,8 +147,11 @@ describe('Next round starting player selection', () => {
     state.teams[1].id = 'B';
     state.teams[1].isDefending = false;
     
+    // Simulate trump declaration to save the starting player index
+    const declaredState2 = declareTrumpSuit(state, Suit.Hearts);
+    
     // Complete round 2 with defending team winning
-    const endedRound2 = completeRound(state, false);
+    const endedRound2 = completeRound(declaredState2, false);
     
     // Prepare round 3
     const round3State = prepareNextRound(endedRound2);
@@ -156,8 +159,11 @@ describe('Next round starting player selection', () => {
     // Expect Human (index 0) to go first in round 3
     expect(round3State.currentPlayerIndex).toBe(0);
     
+    // Simulate trump declaration for round 3 to save the starting player index
+    const declaredState3 = declareTrumpSuit(round3State, Suit.Clubs);
+    
     // Complete round 3 with defending team winning again
-    const endedRound3 = completeRound(round3State, false);
+    const endedRound3 = completeRound(declaredState3, false);
     
     // Prepare round 4
     const round4State = prepareNextRound(endedRound3);

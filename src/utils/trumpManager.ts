@@ -22,6 +22,10 @@ export function declareTrumpSuit(
     newState.trumpInfo.declarerPlayerId = currentPlayer.id;
   }
 
+  // Save the starting player for this round when transitioning to Playing phase
+  // This ensures we capture the correct starting player before any AI rotation during declaring
+  newState.lastRoundStartingPlayerIndex = newState.currentPlayerIndex;
+
   newState.gamePhase = GamePhase.Playing;
   return newState;
 }
