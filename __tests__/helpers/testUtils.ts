@@ -71,9 +71,9 @@ export function createTestTrumpInfo(
 export function createTestGameState(overrides: Partial<GameState> = {}): GameState {
   const defaultPlayers = {
     'player': createTestPlayer('player', 'Human', [], true, 'A', 'bottom'),
-    'ai1': createTestPlayer('ai1', 'AI 1', [], false, 'B', 'right'),
-    'ai2': createTestPlayer('ai2', 'AI 2', [], false, 'A', 'top'),
-    'ai3': createTestPlayer('ai3', 'AI 3', [], false, 'B', 'left')
+    'ai1': createTestPlayer('ai1', 'Bot 1', [], false, 'B', 'right'),
+    'ai2': createTestPlayer('ai2', 'Bot 2', [], false, 'A', 'top'),
+    'ai3': createTestPlayer('ai3', 'Bot 3', [], false, 'B', 'left')
   };
 
   const defaultTeams = {
