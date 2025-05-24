@@ -72,7 +72,6 @@ const createMockGameState = (): GameState => {
     },
     gamePhase: 'declaring',
     roundNumber: 1,
-    currentPlayerIndex: 0,
     currentTrick: null,
     tricks: [],
     deck: [],
@@ -88,7 +87,7 @@ describe('trumpManager', () => {
   describe('declareTrumpSuit', () => {
     test('should update game state when declaring a trump suit', () => {
       const mockState = createMockGameState();
-      const result = declareTrumpSuit(mockState, Suit.Spades);
+      const result = declareTrumpSuit(mockState, Suit.Spades, 'player');
       
       // Verify trump suit was set
       expect(result.trumpInfo.trumpSuit).toBe(Suit.Spades);
@@ -102,7 +101,7 @@ describe('trumpManager', () => {
 
     test('should update game phase without setting trump suit when skipping declaration', () => {
       const mockState = createMockGameState();
-      const result = declareTrumpSuit(mockState, null);
+      const result = declareTrumpSuit(mockState, null, 'player');
       
       // Verify trump suit remains undefined
       expect(result.trumpInfo.trumpSuit).toBeUndefined();

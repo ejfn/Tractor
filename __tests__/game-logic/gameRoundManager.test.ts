@@ -96,7 +96,6 @@ const createMockGameState = (): GameState => {
     },
     gamePhase: 'playing',
     roundNumber: 1,
-    currentPlayerIndex: 0,
     currentTrick: null,
     tricks: [
       {

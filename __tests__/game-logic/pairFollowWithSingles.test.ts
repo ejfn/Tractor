@@ -47,7 +47,6 @@ describe('Pair Follow With Singles', () => {
       trumpInfo: { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades },
       tricks: [],
       roundNumber: 1,
-      currentPlayerIndex: 0,
       gamePhase: 'playing' as const
     };
   });

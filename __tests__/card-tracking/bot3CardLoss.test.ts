@@ -8,8 +8,8 @@ describe('Bot 3 Card Loss Investigation', () => {
   let processPlayCalls: { playerName: string, cardCount: number, timestamp: number }[] = [];
   
   // Mock processPlay to track calls
-  const trackProcessPlay = (state: GameState, cards: any[]) => {
-    const currentPlayer = state.players[state.currentPlayerIndex];
+  const trackProcessPlay = (state: GameState, cards: any[], playerId: string) => {
+    const currentPlayer = state.players.find(p => p.id === playerId)!;
     processPlayCalls.push({
       playerName: currentPlayer.name,
       cardCount: cards.length,
@@ -19,7 +19,7 @@ describe('Bot 3 Card Loss Investigation', () => {
     console.log(`[TRACK] processPlay called for ${currentPlayer.name} with ${cards.length} cards`);
     
     // Call the real processPlay
-    return processPlay(state, cards);
+    return processPlay(state, cards, playerId);
   };
   
   test('Track Bot 3 through multiple complete tricks', () => {
@@ -46,10 +46,11 @@ describe('Bot 3 Card Loss Investigation', () => {
       processPlayCalls = []; // Reset tracking for each trick
       
       for (let playNum = 0; playNum < 4; playNum++) {
-        const currentPlayer = state.players[state.currentPlayerIndex];
+        const currentPlayerIndex = playNum; // Sequential play for testing
+        const currentPlayer = state.players[currentPlayerIndex];
         const bot3Before = state.players[bot3Index].hand.length;
         
-        console.log(`\nPlay ${playNum + 1}: Player ${state.currentPlayerIndex} (${currentPlayer.name})`);
+        console.log(`\nPlay ${playNum + 1}: Player ${currentPlayerIndex} (${currentPlayer.name})`);
         console.log(`Card counts before: ${state.players.map((p, i) => `${i}:${p.hand.length}`).join(', ')}`);
         
         // Determine cards to play
@@ -57,7 +58,7 @@ describe('Bot 3 Card Loss Investigation', () => {
         if (currentPlayer.isHuman) {
           cardsToPlay = [currentPlayer.hand[0]];
         } else {
-          const aiMove = getAIMoveWithErrorHandling(state);
+          const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
           if (aiMove.error) {
             console.error(`AI Error: ${aiMove.error}`);
             cardsToPlay = currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
@@ -67,7 +68,7 @@ describe('Bot 3 Card Loss Investigation', () => {
         }
         
         // Process the play
-        const result = trackProcessPlay(state, cardsToPlay);
+        const result = trackProcessPlay(state, cardsToPlay, currentPlayer.id);
         state = result.newState;
         
         const bot3After = state.players[bot3Index].hand.length;
@@ -78,20 +79,20 @@ describe('Bot 3 Card Loss Investigation', () => {
           playNum,
           cardsBefore: bot3Before,
           cardsAfter: bot3After,
-          action: state.currentPlayerIndex === bot3Index ? 'played' : 'waiting',
-          currentPlayerIndex: state.currentPlayerIndex
+          action: currentPlayerIndex === bot3Index ? 'played' : 'waiting',
+          currentPlayerIndex: currentPlayerIndex
         });
         
         console.log(`Card counts after: ${state.players.map((p, i) => `${i}:${p.hand.length}`).join(', ')}`);
         
         // Check if Bot 3 lost cards incorrectly
-        // Note: The currentPlayerIndex in the original state tells us who just played
-        const playerWhoJustPlayed = currentPlayer.id.includes('3') ? bot3Index : state.currentPlayerIndex;
+        // Note: The currentPlayerIndex tells us who just played
+        const playerWhoJustPlayed = currentPlayerIndex;
         
         if (bot3Before !== bot3After && playerWhoJustPlayed !== bot3Index) {
           console.error(`ERROR: Bot 3 lost ${bot3Before - bot3After} cards but wasn't playing!`);
           console.error(`Player who just played: ${currentPlayer.name} (index ${playerWhoJustPlayed})`);
-          console.error(`Current player index after play: ${state.currentPlayerIndex}`);
+          console.error(`Current player index after play: ${currentPlayerIndex}`);
           console.error(`Process play calls in this trick:`);
           processPlayCalls.forEach(call => {
             console.error(`  ${call.playerName} at ${call.timestamp}`);
@@ -150,7 +151,7 @@ describe('Bot 3 Card Loss Investigation', () => {
     const originalStateCopy = JSON.parse(JSON.stringify(gameState));
     
     // Make first play
-    const firstPlay = processPlay(gameState, [gameState.players[0].hand[0]]);
+    const firstPlay = processPlay(gameState, [gameState.players[0].hand[0]], gameState.players[0].id);
     
     // Check if original was mutated
     const originalHandLengths = originalStateCopy.players.map((p: Player) => p.hand.length);

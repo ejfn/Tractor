@@ -903,7 +903,6 @@ export const initializeGame = (
     },
     tricks: [],
     roundNumber: 1,
-    currentPlayerIndex: 0,
     gamePhase: 'dealing'
   };
   

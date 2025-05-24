@@ -39,6 +39,7 @@ const GameScreenController: React.FC = () => {
     winner,
     showRoundComplete,
     roundCompleteMessage,
+    playerStateManager,
     trickCompletionDataRef,
     
     initGame,
@@ -66,17 +67,14 @@ const GameScreenController: React.FC = () => {
     setTrickResultCompleteCallback
   } = useTrickResults();
 
-  // AI turn handling
-  const {
-    waitingForAI,
-    waitingPlayerId,
-    // handleAIMove is not used directly, handled by the hook internally
-  } = useAITurns(
+  // AI turn handling - this hook manages AI moves automatically
+  useAITurns(
     gameState,
     handleProcessPlay,
     showTrickResult,
     lastCompletedTrick,
-    showRoundComplete
+    showRoundComplete,
+    playerStateManager
   );
 
   // Initialize game on first render
@@ -99,9 +97,6 @@ const GameScreenController: React.FC = () => {
   }, [gameState, gameState?.gamePhase, showTrumpDeclaration, handleCheckAITrumpDeclaration]);
   
   // We've removed the player change detector - keeping it simple
-
-  // Find human player index
-  const humanPlayerIndex = gameState?.players.findIndex(p => p.isHuman) ?? -1;
 
   // Use a ref to track the last processed trick completion timestamp
   const lastProcessedTrickTimestampRef = useRef<number>(0);
@@ -135,7 +130,7 @@ const GameScreenController: React.FC = () => {
         // No extra defensive timers needed anymore - keeping it simple
       }
     }
-  }, [gameState?.currentPlayerIndex, trickCompletionDataRef, handleTrickCompletion, setLastCompletedTrick, gameState?.currentTrick, handleTrickResultComplete]);
+  }, [playerStateManager?.currentPlayerId, trickCompletionDataRef, handleTrickCompletion, setLastCompletedTrick, gameState?.currentTrick, handleTrickResultComplete]);
 
   // When card animations in play area are complete
   const onAnimationComplete = () => {
@@ -148,15 +143,12 @@ const GameScreenController: React.FC = () => {
       // Game state
       gameState={gameState}
       selectedCards={selectedCards}
-      humanPlayerIndex={humanPlayerIndex}
       
       // UI state
       showSetup={showSetup}
       showTrumpDeclaration={showTrumpDeclaration}
       gameOver={gameOver}
       winner={winner}
-      waitingForAI={waitingForAI}
-      waitingPlayerId={waitingPlayerId}
       showTrickResult={showTrickResult}
       lastTrickWinner={lastTrickWinner}
       lastTrickPoints={lastTrickPoints}
@@ -165,6 +157,7 @@ const GameScreenController: React.FC = () => {
       roundCompleteMessage={roundCompleteMessage}
       teamNames={gameConfig.teamNames}
       isTransitioningTricks={isTransitioningTricks}
+      playerStateManager={playerStateManager}
       
       // Animations
       fadeAnim={fadeAnim}

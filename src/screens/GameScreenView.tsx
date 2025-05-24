@@ -20,6 +20,7 @@ import RoundCompleteModal from '../components/RoundCompleteModal';
 
 // Types
 import { GameState, Card, Trick } from '../types/game';
+import { PlayerStateManager } from '../types/playerState';
 
 // Utils
 import { validatePlay } from '../utils/gamePlayManager';
@@ -28,15 +29,13 @@ interface GameScreenViewProps {
   // Game state
   gameState: GameState | null;
   selectedCards: Card[];
-  humanPlayerIndex: number;
+  playerStateManager: PlayerStateManager | null;
   
   // UI state
   showSetup: boolean;
   showTrumpDeclaration: boolean;
   gameOver: boolean;
   winner: 'A' | 'B' | null;
-  waitingForAI: boolean;
-  waitingPlayerId: string;
   showTrickResult: boolean;
   lastTrickWinner: string;
   lastTrickPoints: number;
@@ -73,15 +72,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   // Game state
   gameState,
   selectedCards,
-  humanPlayerIndex,
+  playerStateManager,
   
   // UI state
   showSetup,
   showTrumpDeclaration,
   gameOver,
   winner,
-  waitingForAI,
-  waitingPlayerId,
   showTrickResult,
   lastTrickWinner,
   lastTrickPoints,
@@ -132,7 +129,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   
   
   // Loading state
-  if (!gameState) {
+  if (!gameState || !playerStateManager) {
     return (
       <View style={styles.loadingContainer}>
         <Text>Loading game...</Text>
@@ -140,30 +137,26 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
     );
   }
   
-  // Get data for view components
-  const humanPlayer = gameState.players[humanPlayerIndex];
+  // Get player states using the manager
+  const humanPlayerState = playerStateManager.getHumanPlayerState();
+  const topPlayerState = playerStateManager.getPlayerStateByPosition('top');
+  const leftPlayerState = playerStateManager.getPlayerStateByPosition('left');
+  const rightPlayerState = playerStateManager.getPlayerStateByPosition('right');
   
-  const ai1 = gameState.players.find(p => p.id === 'ai1');
-  const ai2 = gameState.players.find(p => p.id === 'ai2');
-  const ai3 = gameState.players.find(p => p.id === 'ai3');
+  if (!humanPlayerState) {
+    return (
+      <View style={styles.container}>
+        <Text>Error: Human player not found</Text>
+      </View>
+    );
+  }
   
-  const isPlayerCurrentTurn = gameState.currentPlayerIndex === humanPlayerIndex;
+  const isPlayerCurrentTurn = humanPlayerState.isCurrentTurn;
   const canPlay = gameState.gamePhase === 'playing' && isPlayerCurrentTurn;
   
   // Check if selected cards are valid to play
-  const isValidPlay = selectedCards.length > 0 && validatePlay(gameState, selectedCards);
-  
-  // Team ID for each player
-  const getPlayerTeam = (playerId: string) => {
-    const player = gameState.players.find(p => p.id === playerId);
-    if (!player) return undefined;
-    return gameState.teams.find(t => t.id === player.team);
-  };
-  
-  const ai1Team = getPlayerTeam('ai1');
-  const ai2Team = getPlayerTeam('ai2');
-  const ai3Team = getPlayerTeam('ai3');
-  const humanTeam = getPlayerTeam(humanPlayer.id);
+  const humanPlayer = gameState.players.find(p => p.isHuman);
+  const isValidPlay = selectedCards.length > 0 && humanPlayer && validatePlay(gameState, selectedCards, humanPlayer.id);
   
   return (
     <View style={styles.container}>
@@ -187,13 +180,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         <View style={styles.tableContainer}>
           <GameTable
             topPlayer={
-              ai2 && ai2Team ? (
+              topPlayerState ? (
                 <AIPlayerView
                   position="top"
-                  player={ai2}
-                  isDefending={ai2Team.isDefending}
-                  isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai2')}
-                  waitingForAI={waitingForAI && waitingPlayerId === 'ai2'}
+                  player={topPlayerState.player}
+                  isDefending={topPlayerState.team.isDefending}
+                  isCurrentPlayer={topPlayerState.isCurrentTurn}
+                  waitingForAI={topPlayerState.isThinking}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -201,13 +194,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               ) : null
             }
             leftPlayer={
-              ai3 && ai3Team ? (
+              leftPlayerState ? (
                 <AIPlayerView
                   position="left"
-                  player={ai3}
-                  isDefending={ai3Team.isDefending}
-                  isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai3')}
-                  waitingForAI={waitingForAI && waitingPlayerId === 'ai3'}
+                  player={leftPlayerState.player}
+                  isDefending={leftPlayerState.team.isDefending}
+                  isCurrentPlayer={leftPlayerState.isCurrentTurn}
+                  waitingForAI={leftPlayerState.isThinking}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -215,13 +208,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               ) : null
             }
             rightPlayer={
-              ai1 && ai1Team ? (
+              rightPlayerState ? (
                 <AIPlayerView
                   position="right"
-                  player={ai1}
-                  isDefending={ai1Team.isDefending}
-                  isCurrentPlayer={gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === 'ai1')}
-                  waitingForAI={waitingForAI && waitingPlayerId === 'ai1'}
+                  player={rightPlayerState.player}
+                  isDefending={rightPlayerState.team.isDefending}
+                  isCurrentPlayer={rightPlayerState.isCurrentTurn}
+                  waitingForAI={rightPlayerState.isThinking}
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
@@ -229,11 +222,11 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
               ) : null
             }
             bottomPlayer={
-              humanPlayer && humanTeam ? (
+              humanPlayerState ? (
                 <HumanPlayerView
-                  player={humanPlayer}
-                  isCurrentPlayer={isPlayerCurrentTurn}
-                  isDefending={humanTeam.isDefending}
+                  player={humanPlayerState.player}
+                  isCurrentPlayer={humanPlayerState.isCurrentTurn}
+                  isDefending={humanPlayerState.team.isDefending}
                   selectedCards={selectedCards}
                   onCardSelect={onCardSelect}
                   onPlayCards={onPlayCards}
@@ -246,8 +239,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   trumpDeclarationMode={showTrumpDeclaration}
                   onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
                   onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
-                  currentPlayerIndex={gameState.currentPlayerIndex}
-                  winningPlayerIndex={gameState.winningPlayerIndex}
+                  currentPlayerIndex={humanPlayer ? gameState.players.indexOf(humanPlayer) : 0}
+                  winningPlayerIndex={playerStateManager?.trickWinnerId ? gameState.players.findIndex(p => p.id === playerStateManager.trickWinnerId) : undefined}
                   currentTrick={gameState.currentTrick}
                 />
               ) : null

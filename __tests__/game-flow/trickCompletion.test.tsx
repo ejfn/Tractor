@@ -64,7 +64,6 @@ jest.mock('../../src/utils/gameLogic', () => ({
       points: 0,
       isDefending: false
     }],
-    currentPlayerIndex: 0,
     gamePhase: 'playing',
     trumpInfo: {
       trumpRank: 2,
@@ -145,7 +144,7 @@ const TestComponent: React.FC<{
   return (
     <View>
       <Text testID="phase">{gameStateHook.gameState?.gamePhase}</Text>
-      <Text testID="current-player-index">{gameStateHook.gameState?.currentPlayerIndex}</Text>
+      <Text testID="current-player-id">{gameStateHook.playerStateManager?.currentPlayerId}</Text>
       <Text testID="show-trick-result">{trickResultsHook.showTrickResult ? 'true' : 'false'}</Text>
       <Text testID="last-trick-winner">{trickResultsHook.lastTrickWinner}</Text>
       <Text testID="last-trick-points">{trickResultsHook.lastTrickPoints}</Text>
@@ -155,8 +154,8 @@ const TestComponent: React.FC<{
         title="Play Card"
         onPress={() => {
           if (gameStateHook.gameState) {
-            const currentPlayer = gameStateHook.gameState.players[gameStateHook.gameState.currentPlayerIndex];
-            if (currentPlayer.hand.length > 0) {
+            const currentPlayer = gameStateHook.gameState.players.find(p => p.id === gameStateHook.playerStateManager?.currentPlayerId);
+            if (currentPlayer && currentPlayer.hand.length > 0) {
               // Call handleProcessPlay directly to avoid timeout
               gameStateHook.handleProcessPlay([currentPlayer.hand[0]]);
             }
@@ -249,7 +248,6 @@ const createMockGameState = (currentPlayerIndex = 0): GameState => {
       trumpSuit: undefined
     },
     gamePhase: 'playing',
-    currentPlayerIndex: currentPlayerIndex,
     currentTrick: null,
     deck: [],
     kittyCards: [],
@@ -298,8 +296,6 @@ describe('Trick Completion Flow', () => {
     (processPlay as jest.Mock).mockReturnValue({
       newState: {
         ...stateHistory[stateHistory.length - 1].gameState,
-        currentPlayerIndex: 0,
-        winningPlayerIndex: 0,
         currentTrick: null // Trick should be null after completion
       },
       trickComplete: true,

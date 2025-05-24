@@ -78,9 +78,6 @@ export type GameState = {
   trumpInfo: TrumpInfo;
   tricks: Trick[];
   roundNumber: number;
-  currentPlayerIndex: number;
-  winningPlayerIndex?: number; // Stores index of the trick winner who will lead next trick
-  lastRoundStartingPlayerIndex?: number; // Stores index of the player who started last round
   gamePhase: 'dealing' | 'declaring' | 'playing' | 'scoring' | 'roundEnd' | 'gameOver';
 };
 

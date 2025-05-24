@@ -22,7 +22,7 @@ describe('Card Count Integration Test', () => {
     
     // Play one complete trick
     for (let play = 0; play < 4; play++) {
-      const currentPlayerIdx = state.currentPlayerIndex;
+      const currentPlayerIdx = play; // Start with player 0 and proceed sequentially
       const currentPlayer = state.players[currentPlayerIdx];
       console.log(`\n--- Play ${play + 1} ---`);
       console.log(`Current player: ${currentPlayerIdx} (${currentPlayer.name})`);
@@ -37,12 +37,12 @@ describe('Card Count Integration Test', () => {
       const cardIdsBefore = state.players.map(p => p.hand.map(c => c.id));
       
       // Process the play
-      const result = processPlay(state, cardsToPlay);
+      const result = processPlay(state, cardsToPlay, currentPlayer.id);
       
       // Update state
       state = result.newState;
       console.log(`Card counts after: ${state.players.map(p => p.hand.length).join(', ')}`);
-      console.log(`New current player: ${state.currentPlayerIndex}`);
+      console.log(`New current player: ${currentPlayerIdx}`);
       
       // Track changes
       state.players.forEach((player, idx) => {
@@ -91,7 +91,7 @@ describe('Card Count Integration Test', () => {
     console.log(`Player 0 has ${originalState.players[0].hand.length} cards`);
     
     // Process human play
-    const result1 = processPlay(originalState, [originalState.players[0].hand[0]]);
+    const result1 = processPlay(originalState, [originalState.players[0].hand[0]], originalState.players[0].id);
     
     console.log(`After play:`);
     console.log(`  Original state player 0: ${originalState.players[0].hand.length} cards`);
@@ -105,21 +105,27 @@ describe('Card Count Integration Test', () => {
       console.error(`  After: ${player0CardsAfter.length} cards`);
     }
     
-    // Now make another play with the new state
-    const currentPlayer = result1.newState.players[result1.newState.currentPlayerIndex];
+    // Now make another play with the new state - determine next player
+    let nextPlayerIndex = 1; // Next player after human (index 0)
+    if (result1.newState.currentTrick) {
+      const leadPlayerIndex = result1.newState.players.findIndex(p => p.id === result1.newState.currentTrick!.leadingPlayerId);
+      nextPlayerIndex = (leadPlayerIndex + result1.newState.currentTrick.plays.length + 1) % 4;
+    }
     
-    console.log(`\nPlayer ${result1.newState.currentPlayerIndex} (${currentPlayer.name}) playing...`);
+    const currentPlayer = result1.newState.players[nextPlayerIndex];
+    
+    console.log(`\nPlayer ${nextPlayerIndex} (${currentPlayer.name}) playing...`);
     const cardsBefore = result1.newState.players.map(p => p.hand.length);
     
     let cardsToPlay: Card[] = [];
     if (currentPlayer.isHuman) {
       cardsToPlay = [currentPlayer.hand[0]];
     } else {
-      const aiMove = getAIMoveWithErrorHandling(result1.newState);
+      const aiMove = getAIMoveWithErrorHandling(result1.newState, currentPlayer.id);
       cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
     }
     
-    const result2 = processPlay(result1.newState, cardsToPlay);
+    const result2 = processPlay(result1.newState, cardsToPlay, currentPlayer.id);
     
     console.log(`Card counts:`);
     console.log(`  Before: ${cardsBefore.join(', ')}`);
@@ -129,7 +135,7 @@ describe('Card Count Integration Test', () => {
     result2.newState.players.forEach((player, idx) => {
       const before = cardsBefore[idx];
       const after = player.hand.length;
-      const wasCurrentPlayer = idx === result1.newState.currentPlayerIndex;
+      const wasCurrentPlayer = idx === nextPlayerIndex;
       
       if (wasCurrentPlayer) {
         expect(after).toBe(before - cardsToPlay.length);

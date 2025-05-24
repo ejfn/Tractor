@@ -6,9 +6,10 @@ import { getAIMove } from './aiLogic';
  * Process a player's play (human or AI)
  * @param state Current game state
  * @param cards The cards being played
+ * @param currentPlayerId ID of the current player
  * @returns Object with updated state and trick completion info
  */
-export function processPlay(state: GameState, cards: Card[]): {
+export function processPlay(state: GameState, cards: Card[], currentPlayerId: string): {
   newState: GameState;
   trickComplete: boolean;
   trickWinner?: string;
@@ -24,7 +25,14 @@ export function processPlay(state: GameState, cards: Card[]): {
     })),
     teams: state.teams.map(t => ({ ...t })) as [Team, Team] // Deep copy teams too
   };
-  const currentPlayer = newState.players[newState.currentPlayerIndex];
+  
+  // Find the current player by ID
+  const currentPlayer = newState.players.find(p => p.id === currentPlayerId);
+  if (!currentPlayer) {
+    throw new Error(`Player with ID ${currentPlayerId} not found`);
+  }
+  
+  const currentPlayerIndex = newState.players.indexOf(currentPlayer);
   
   // Check if we should start a new trick
   // Rules:
@@ -34,7 +42,9 @@ export function processPlay(state: GameState, cards: Card[]): {
   const isTrickComplete = newState.currentTrick && 
     newState.currentTrick.plays.length === newState.players.length - 1;
   
-  const isWinner = newState.currentPlayerIndex === newState.winningPlayerIndex;
+  // Check if this player is the winner of the previous trick
+  const isWinner = newState.tricks.length > 0 && 
+    newState.players[currentPlayerIndex].id === newState.tricks[newState.tricks.length - 1].winningPlayerId;
   
   if (!newState.currentTrick || (isTrickComplete && isWinner)) {
     // For the first player, create new trick and don't add to plays array
@@ -77,18 +87,15 @@ export function processPlay(state: GameState, cards: Card[]): {
   newState.currentTrick.points += playPoints;
   
   // Remove played cards from player's hand
-  // Find the current player in our deep-copied state
-  const playerIndex = newState.players.findIndex(p => p.id === currentPlayer.id);
+  // Use the currentPlayerIndex we already computed
   
-  if (playerIndex !== -1) {
-    // Create a new hand array without the played cards
-    const newHand = newState.players[playerIndex].hand.filter(
+  // Create a new hand array without the played cards
+  const newHand = newState.players[currentPlayerIndex].hand.filter(
       card => !cards.some(playedCard => playedCard.id === card.id)
     );
     
     // Update the player's hand in the new state
-    newState.players[playerIndex].hand = newHand;
-  }
+    newState.players[currentPlayerIndex].hand = newHand;
   
   // Check if this completes a trick - should be plays.length = players.length-1
   // Since the leading player's cards are in leadingCombo, not in the plays array
@@ -115,12 +122,10 @@ export function processPlay(state: GameState, cards: Card[]): {
     };
     newState.tricks.push(completedTrick);
     
-    // Store the winning player index to use when clearing the trick
-    const winningPlayerIndex = newState.players.findIndex(p => p.id === winningPlayerId);
-    newState.winningPlayerIndex = winningPlayerIndex;
+    // Winning player will be tracked via PlayerStateManager
     
-    // Set winner as the next player to lead
-    newState.currentPlayerIndex = winningPlayerIndex;
+    // The winning player will lead the next trick
+    // This is handled by the PlayerStateManager when determining current player
   
     // DO NOT clear current trick immediately
     // We'll keep it in the state so cards remain visible
@@ -129,7 +134,7 @@ export function processPlay(state: GameState, cards: Card[]): {
     // newState.currentTrick = null; -- REMOVED THIS LINE
     
     // Return trick completion info with winning player name
-    const resultWinningPlayer = newState.players[winningPlayerIndex];
+    const winningPlayer = newState.players.find(p => p.id === winningPlayerId);
     
     // Use the completed trick with winner ID for result display
     const trickWithWinner = completedTrick;
@@ -137,13 +142,13 @@ export function processPlay(state: GameState, cards: Card[]): {
     return {
       newState,
       trickComplete: true,
-      trickWinner: resultWinningPlayer?.name || 'Unknown Player',
+      trickWinner: winningPlayer?.name || 'Unknown Player',
       trickPoints: completedTrick.points,
       completedTrick: trickWithWinner,
     };
   } else {
-    // Move to next player
-    newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+    // Move to next player (this will be handled by PlayerStateManager)
+    // The next player is determined by the trick state
     
     return {
       newState,
@@ -155,20 +160,22 @@ export function processPlay(state: GameState, cards: Card[]): {
 /**
  * Get the AI's move based on the current game state
  * @param state Current game state
+ * @param currentPlayerId ID of the current player
  * @returns Object with the cards to play and any error
  */
-export function getAIMoveWithErrorHandling(state: GameState): {
+export function getAIMoveWithErrorHandling(state: GameState, currentPlayerId: string): {
   cards: Card[];
   error?: string;
 } {
   try {
-    const currentPlayer = state.players[state.currentPlayerIndex];
+    // Find the current player by ID
+    const currentPlayer = state.players.find(p => p.id === currentPlayerId);
     
-    // Safety check to ensure we have a valid current player
     if (!currentPlayer) {
-      console.error(`Invalid currentPlayerIndex: ${state.currentPlayerIndex} for ${state.players.length} players`);
-      return { cards: [], error: `Invalid player index: ${state.currentPlayerIndex}` };
+      return { cards: [], error: `Player with ID ${currentPlayerId} not found` };
     }
+    
+    // Note: currentPlayerIndex could be used for index-based operations if needed
     
     // Safety check to ensure the current player is an AI
     if (currentPlayer.isHuman) {
@@ -211,12 +218,14 @@ export function getAIMoveWithErrorHandling(state: GameState): {
  * Validate if a play is valid according to game rules
  * @param state Current game state
  * @param cards Cards being played
+ * @param currentPlayerId ID of the current player
  * @returns Boolean indicating if the play is valid
  */
-export function validatePlay(state: GameState, cards: Card[]): boolean {
+export function validatePlay(state: GameState, cards: Card[], currentPlayerId: string): boolean {
   if (!state || cards.length === 0) return false;
   
-  const currentPlayer = state.players[state.currentPlayerIndex];
+  const currentPlayer = state.players.find(p => p.id === currentPlayerId);
+  if (!currentPlayer) return false;
   
   if (!state.currentTrick) {
     // Player is leading - any combo is valid

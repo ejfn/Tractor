@@ -14,7 +14,6 @@ describe('Advanced Scoring Rules', () => {
       trumpSuit: undefined,
       declared: false
     },
-    currentPlayerIndex: 0,
     currentTrick: null,
     gamePhase: 'playing',
     tricks: [],

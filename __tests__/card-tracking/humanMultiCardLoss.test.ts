@@ -14,14 +14,17 @@ describe('Human Multi-Card Loss Bug', () => {
     // Play first trick - Human wins
     console.log('\n=== TRICK 1 ===');
     for (let play = 0; play < 4; play++) {
-      const currentPlayer = state.players[state.currentPlayerIndex];
+      const currentPlayerIndex = (state.currentTrick ? 
+        state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
+        : 0) % 4;
+      const currentPlayer = state.players[currentPlayerIndex];
       const cardsBefore = state.players.map(p => p.hand.length);
       
       let cardsToPlay = [currentPlayer.hand[0]];
-      const result = processPlay(state, cardsToPlay);
+      const result = processPlay(state, cardsToPlay, currentPlayer.id);
       
       const cardsAfter = result.newState.players.map(p => p.hand.length);
-      console.log(`${currentPlayer.name}: ${cardsBefore[state.currentPlayerIndex]} -> ${cardsAfter[state.currentPlayerIndex]}`);
+      console.log(`${currentPlayer.name}: ${cardsBefore[currentPlayerIndex]} -> ${cardsAfter[currentPlayerIndex]}`);
       
       state = result.newState;
       
@@ -36,8 +39,11 @@ describe('Human Multi-Card Loss Bug', () => {
     console.log('\n=== TRICK 2 ===');
     
     // First play (should be the previous winner)
-    const firstPlayer = state.players[state.currentPlayerIndex];
-    console.log(`\nFirst player: ${firstPlayer.name} (index ${state.currentPlayerIndex})`);
+    const currentPlayerIndex = (state.currentTrick ? 
+      state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
+      : 0) % 4;
+    const firstPlayer = state.players[currentPlayerIndex];
+    console.log(`\nFirst player: ${firstPlayer.name} (index ${currentPlayerIndex})`);
     console.log(`Cards before ALL players: ${state.players.map(p => p.hand.length).join(', ')}`);
     
     // Get the specific cards the human will play
@@ -62,7 +68,7 @@ describe('Human Multi-Card Loss Bug', () => {
         humanCardsToPlay = [firstPlayer.hand[0]];
       }
     } else {
-      const aiMove = getAIMoveWithErrorHandling(state);
+      const aiMove = getAIMoveWithErrorHandling(state, firstPlayer.id);
       humanCardsToPlay = aiMove.error ? [firstPlayer.hand[0]] : aiMove.cards;
     }
     
@@ -70,7 +76,7 @@ describe('Human Multi-Card Loss Bug', () => {
     
     // Process the play with detailed tracking
     const beforeState = JSON.parse(JSON.stringify(state)); // Deep copy for comparison
-    const result = processPlay(state, humanCardsToPlay);
+    const result = processPlay(state, humanCardsToPlay, firstPlayer.id);
     
     console.log('\nAfter processing play:');
     const cardsAfter = result.newState.players.map(p => p.hand.length);
@@ -85,9 +91,9 @@ describe('Human Multi-Card Loss Bug', () => {
       if (diff !== 0) {
         console.log(`Player ${i} (${state.players[i].name}): lost ${diff} cards`);
         
-        if (i === state.currentPlayerIndex && diff !== humanCardsToPlay.length) {
+        if (i === currentPlayerIndex && diff !== humanCardsToPlay.length) {
           console.error(`ERROR: Player ${i} should have lost ${humanCardsToPlay.length} cards but lost ${diff}`);
-        } else if (i !== state.currentPlayerIndex && diff > 0) {
+        } else if (i !== currentPlayerIndex && diff > 0) {
           console.error(`ERROR: Player ${i} wasn't playing but lost ${diff} cards`);
         }
       }
@@ -104,7 +110,7 @@ describe('Human Multi-Card Loss Bug', () => {
       
       // Analyze what happened
       console.log('\nDebugging info:');
-      console.log(`Current player index: ${state.currentPlayerIndex}`);
+      console.log(`Current player index: ${currentPlayerIndex}`);
       console.log(`Human player index: ${humanIndex}`);
       console.log(`Cards played IDs: ${humanCardsToPlay.map(c => c.id).join(', ')}`);
       
@@ -127,26 +133,29 @@ describe('Human Multi-Card Loss Bug', () => {
     
     // Play rest of trick 2
     for (let play = 1; play < 4; play++) {
-      const currentPlayer = state.players[state.currentPlayerIndex];
+      const currentPlayerIndex = (state.currentTrick ? 
+        state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
+        : 0) % 4;
+      const currentPlayer = state.players[currentPlayerIndex];
       const cardsBefore = state.players.map(p => p.hand.length);
       
       let cardsToPlay = [];
       if (currentPlayer.isHuman) {
         cardsToPlay = [currentPlayer.hand[0]];
       } else {
-        const aiMove = getAIMoveWithErrorHandling(state);
+        const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
         cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
       }
       
-      const result = processPlay(state, cardsToPlay);
+      const result = processPlay(state, cardsToPlay, currentPlayer.id);
       const cardsAfter = result.newState.players.map(p => p.hand.length);
       
-      console.log(`${currentPlayer.name}: ${cardsBefore[state.currentPlayerIndex]} -> ${cardsAfter[state.currentPlayerIndex]}`);
+      console.log(`${currentPlayer.name}: ${cardsBefore[currentPlayerIndex]} -> ${cardsAfter[currentPlayerIndex]}`);
       
       // Check for anomalies
       for (let i = 0; i < 4; i++) {
         const diff = cardsBefore[i] - cardsAfter[i];
-        if (diff > 0 && i !== state.currentPlayerIndex) {
+        if (diff > 0 && i !== currentPlayerIndex) {
           console.error(`ERROR: Player ${i} (${state.players[i].name}) lost ${diff} cards but wasn't playing`);
         }
       }

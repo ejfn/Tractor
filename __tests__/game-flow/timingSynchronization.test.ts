@@ -15,32 +15,40 @@ describe('Timing Synchronization Tests', () => {
     console.log('=== Testing timing synchronization ===');
     
     // Track state changes
-    const stateHistory: { time: number, event: string, currentPlayerIndex: number, cardCounts: number[] }[] = [];
+    const stateHistory: { time: number, event: string, cardCounts: number[] }[] = [];
     const startTime = Date.now();
     
     const logState = (event: string, state: GameState) => {
       stateHistory.push({
         time: Date.now() - startTime,
         event,
-        currentPlayerIndex: state.currentPlayerIndex,
         cardCounts: state.players.map(p => p.hand.length)
       });
     };
     
     // Play one complete trick
     for (let play = 0; play < 4; play++) {
-      const currentPlayer = state.players[state.currentPlayerIndex];
+      // Calculate current player based on trick state
+      let currentPlayerIndex = 0;
+      if (state.currentTrick) {
+        const leadPlayerIndex = state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId);
+        currentPlayerIndex = (leadPlayerIndex + state.currentTrick.plays.length + 1) % 4;
+      } else if (state.tricks.length > 0) {
+        const lastTrick = state.tricks[state.tricks.length - 1];
+        currentPlayerIndex = state.players.findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
+      }
+      const currentPlayer = state.players[currentPlayerIndex];
       logState(`Before play ${play + 1}`, state);
       
       let cardsToPlay: any[] = [];
       if (currentPlayer.isHuman) {
         cardsToPlay = [currentPlayer.hand[0]];
       } else {
-        const aiMove = getAIMoveWithErrorHandling(state);
+        const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
         cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
       }
       
-      const result = processPlay(state, cardsToPlay);
+      const result = processPlay(state, cardsToPlay, currentPlayer.id);
       state = result.newState;
       logState(`After play ${play + 1}`, state);
       
@@ -56,9 +64,7 @@ describe('Timing Synchronization Tests', () => {
         // 2. The handleTrickResultComplete callback runs
         const clearedState = {
           ...state,
-          currentTrick: null,
-          currentPlayerIndex: state.winningPlayerIndex ?? state.currentPlayerIndex,
-          winningPlayerIndex: undefined
+          currentTrick: null
         };
         state = clearedState;
         logState('After clearing trick', state);
@@ -68,31 +74,43 @@ describe('Timing Synchronization Tests', () => {
         logState('After final delay', state);
         
         // Start next trick
-        const nextPlayer = state.players[state.currentPlayerIndex];
+        // Find next player based on last completed trick
+        const lastTrickWinner = state.tricks[state.tricks.length - 1]?.winningPlayerId;
+        const nextPlayerIndex = state.players.findIndex(p => p.id === lastTrickWinner) || 0;
+        const nextPlayer = state.players[nextPlayerIndex];
         console.log(`\nNext trick starts with ${nextPlayer.name}`);
       }
     }
     
     // Play one more play to see what happens
-    const currentPlayer = state.players[state.currentPlayerIndex];
+    // Calculate current player
+    let currentPlayerIndex = 0;
+    if (state.currentTrick) {
+      const leadPlayerIndex = state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId);
+      currentPlayerIndex = (leadPlayerIndex + state.currentTrick.plays.length + 1) % 4;
+    } else if (state.tricks.length > 0) {
+      const lastTrick = state.tricks[state.tricks.length - 1];
+      currentPlayerIndex = state.players.findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
+    }
+    const currentPlayer = state.players[currentPlayerIndex];
     logState('Before second trick play', state);
     
     let cardsToPlay: any[] = [];
     if (currentPlayer.isHuman) {
       cardsToPlay = [currentPlayer.hand[0]];
     } else {
-      const aiMove = getAIMoveWithErrorHandling(state);
+      const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
       cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
     }
     
-    const result = processPlay(state, cardsToPlay);
+    const result = processPlay(state, cardsToPlay, currentPlayer.id);
     state = result.newState;
     logState('After second trick play', state);
     
     // Analyze the history
     console.log('\n=== State History ===');
     stateHistory.forEach(entry => {
-      console.log(`${entry.time}ms: ${entry.event} - Player ${entry.currentPlayerIndex}, Cards: ${entry.cardCounts.join(',')}`);
+      console.log(`${entry.time}ms: ${entry.event} - Cards: ${entry.cardCounts.join(',')}`);
     });
     
     // Check for anomalies
@@ -125,23 +143,32 @@ describe('Timing Synchronization Tests', () => {
     
     // Play to complete a trick
     for (let play = 0; play < 4; play++) {
-      const currentPlayer = state.players[state.currentPlayerIndex];
+      // Calculate current player
+      let currentPlayerIndex = 0;
+      if (state.currentTrick) {
+        const leadPlayerIndex = state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId);
+        currentPlayerIndex = (leadPlayerIndex + state.currentTrick.plays.length + 1) % 4;
+      } else if (state.tricks.length > 0) {
+        const lastTrick = state.tricks[state.tricks.length - 1];
+        currentPlayerIndex = state.players.findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
+      }
+      const currentPlayer = state.players[currentPlayerIndex];
       
       let cardsToPlay: any[] = [];
       if (currentPlayer.isHuman) {
         cardsToPlay = [currentPlayer.hand[0]];
       } else {
-        const aiMove = getAIMoveWithErrorHandling(state);
+        const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
         cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
       }
       
-      const result = processPlay(state, cardsToPlay);
+      const result = processPlay(state, cardsToPlay, currentPlayer.id);
       
       if (result.trickComplete) {
         // Store state references to check for mutations
         const originalState = state;
         const originalCardCounts = state.players.map(p => p.hand.length);
-        const originalPlayerIndex = state.currentPlayerIndex;
+        // Store original state properties that we can check
         
         state = result.newState;
         
@@ -157,9 +184,7 @@ describe('Timing Synchronization Tests', () => {
           console.error(`  Current counts: ${currentCardCounts.join(',')}`);
         }
         
-        if (originalState.currentPlayerIndex !== originalPlayerIndex) {
-          console.error('ERROR: Original currentPlayerIndex was mutated!');
-        }
+        // currentPlayerIndex was removed from GameState
       } else {
         state = result.newState;
       }

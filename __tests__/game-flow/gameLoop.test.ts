@@ -78,7 +78,7 @@ const createMockGameState = (): GameState => {
     },
     tricks: [],
     roundNumber: 1,
-    currentPlayerIndex: 0,
+    // currentPlayerIndex removed from GameState
     gamePhase: 'playing'
   };
 };
@@ -118,7 +118,13 @@ describe('Game Loop Tests', () => {
       createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_1')
     ];
     
-    gameState.currentPlayerIndex = 1; // AI1's turn
+    // Set up trick state to simulate AI1's turn
+    gameState.currentTrick!.plays = [
+      {
+        playerId: 'player',
+        cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+      }
+    ];
     
     // Simulate AI returning a valid play
     (getAIMove as jest.Mock).mockReturnValue([createCard(Suit.Spades, Rank.Seven, 'spades_7_1')]);
@@ -126,7 +132,9 @@ describe('Game Loop Tests', () => {
     // Simulate processing the AI move (from EnhancedGameScreen)
     const processAIMove = () => {
       const newState = { ...gameState };
-      const currentPlayer = newState.players[newState.currentPlayerIndex];
+      // Calculate current player (AI1 in this test)
+      const currentPlayerIndex = 1;
+      const currentPlayer = newState.players[currentPlayerIndex];
       const aiMove = getAIMove(newState, currentPlayer.id);
       
       // Check if we got a valid move
@@ -144,8 +152,7 @@ describe('Game Loop Tests', () => {
         card => !aiMove.some(played => played.id === card.id)
       );
       
-      // Move to next player
-      newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+      // Move to next player would be handled by the actual game logic
       
       return newState;
     };
@@ -160,8 +167,8 @@ describe('Game Loop Tests', () => {
     // Verify card was removed from hand
     expect(updatedState.players[1].hand.length).toBe(1);
     
-    // Verify it moved to next player
-    expect(updatedState.currentPlayerIndex).toBe(2);
+    // Verify trick state was updated correctly
+    expect(updatedState.currentTrick!.plays.length).toBe(2);
   });
 
   test('Game loop should handle trick completion and winner determination', () => {
@@ -189,13 +196,14 @@ describe('Game Loop Tests', () => {
     // Remove the card from player 0's hand
     gameState.players[0].hand = [];
     
-    // Player 1's turn
-    gameState.currentPlayerIndex = 1;
+    // Player 1's turn (simulated by trick state)
     
     // Process player 1's move
     const processPlayer1Move = () => {
       const newState = { ...gameState };
-      const currentPlayer = newState.players[newState.currentPlayerIndex];
+      // Player 1's turn
+      const currentPlayerIndex = 1;
+      const currentPlayer = newState.players[currentPlayerIndex];
       
       // Play the King of Hearts
       const move = [createCard(Suit.Hearts, Rank.King, 'hearts_k_1')];
@@ -211,8 +219,7 @@ describe('Game Loop Tests', () => {
         card => !move.some(played => played.id === card.id)
       );
       
-      // Move to next player
-      newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+      // Move to next player would be handled by the actual game logic
       
       return newState;
     };
@@ -220,7 +227,9 @@ describe('Game Loop Tests', () => {
     // Process player 2's move
     const processPlayer2Move = (state: GameState) => {
       const newState = { ...state };
-      const currentPlayer = newState.players[newState.currentPlayerIndex];
+      // Player 2's turn
+      const currentPlayerIndex = 2;
+      const currentPlayer = newState.players[currentPlayerIndex];
       
       // Play the Queen of Hearts
       const move = [createCard(Suit.Hearts, Rank.Queen, 'hearts_q_1')];
@@ -236,8 +245,7 @@ describe('Game Loop Tests', () => {
         card => !move.some(played => played.id === card.id)
       );
       
-      // Move to next player
-      newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+      // Move to next player would be handled by the actual game logic
       
       return newState;
     };
@@ -245,7 +253,9 @@ describe('Game Loop Tests', () => {
     // Process player 3's move (completes the trick)
     const processPlayer3Move = (state: GameState) => {
       const newState = { ...state };
-      const currentPlayer = newState.players[newState.currentPlayerIndex];
+      // Player 3's turn
+      const currentPlayerIndex = 3;
+      const currentPlayer = newState.players[currentPlayerIndex];
       
       // Play the Jack of Hearts
       const move = [createCard(Suit.Hearts, Rank.Jack, 'hearts_j_1')];
@@ -285,8 +295,7 @@ describe('Game Loop Tests', () => {
       // Start a new trick
       newState.currentTrick = null;
       
-      // Set next player to winner
-      newState.currentPlayerIndex = newState.players.findIndex(p => p.id === winningPlayerId);
+      // Winner becomes the next player (stored in trick for reference)
       
       return newState;
     };
@@ -307,7 +316,7 @@ describe('Game Loop Tests', () => {
     expect(finalState.tricks[0].points).toBe(10);
     expect(finalState.teams[0].points).toBe(10); // Team A won and got 10 points
     
-    // Next player should be the winner
-    expect(finalState.currentPlayerIndex).toBe(0);
+    // Winner stored in completed trick
+    expect(finalState.tricks[0].winningPlayerId).toBe('player');
   });
 });

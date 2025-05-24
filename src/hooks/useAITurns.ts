@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState, Card } from '../types/game';
+import { PlayerStateManager } from '../types/playerState';
 import { getAIMoveWithErrorHandling } from '../utils/gamePlayManager';
 import { 
   AI_MOVE_DELAY
@@ -13,6 +14,8 @@ type ProcessPlayFn = (cards: Card[]) => void;
  * @param processPlay Function to process a play
  * @param showTrickResult Whether trick result is being shown
  * @param lastCompletedTrick Completed trick that might be showing
+ * @param showRoundComplete Optional parameter for round completion
+ * @param playerStateManager Player state manager for unified state access
  * @returns Waiting status and handlers for AI actions
  */
 export function useAITurns(
@@ -20,24 +23,30 @@ export function useAITurns(
   processPlay: ProcessPlayFn,
   showTrickResult: boolean,
   lastCompletedTrick: any | null,  // Using any to match original implementation
-  showRoundComplete: boolean = false  // Optional parameter for round completion
+  showRoundComplete: boolean = false,  // Optional parameter for round completion
+  playerStateManager: PlayerStateManager | null = null
 ) {
-  const [waitingForAI, setWaitingForAI] = useState(false);
-  // Track which AI we're waiting for
-  const [waitingPlayerId, setWaitingPlayerId] = useState<string>('');
+  // Internal state for tracking AI processing - keep for duplicate prevention
+  const [processingAI, setProcessingAI] = useState(false);
+  const [processingPlayerId, setProcessingPlayerId] = useState<string>('');
   
   const lastProcessedTurnRef = useRef<{ playerIndex: number; timestamp: number } | null>(null);
+  
+  // Derive waiting state from playerStateManager
+  const waitingForAI = playerStateManager?.getCurrentPlayerState()?.isThinking ?? false;
+  const waitingPlayerId = waitingForAI ? (playerStateManager?.getCurrentPlayerState()?.player.id ?? '') : '';
 
   // Handle AI move logic - using useCallback to prevent dependency cycle
   const handleAIMove = useCallback(() => {
-    if (!gameState) {
-      console.error("handleAIMove: gameState is null");
-      setWaitingForAI(false);
-      setWaitingPlayerId('');
+    if (!gameState || !playerStateManager) {
+      console.error("handleAIMove: gameState or playerStateManager is null");
+      setProcessingAI(false);
+      setProcessingPlayerId('');
       return;
     }
 
-    const playerIndex = gameState.currentPlayerIndex;
+    const currentPlayerState = playerStateManager.getCurrentPlayerState();
+    const playerIndex = playerStateManager.getPlayerIndex(currentPlayerState.player.id);
     
     // Make sure we haven't just processed this same player turn
     // This prevents potential duplicate moves if called multiple times
@@ -45,8 +54,8 @@ export function useAITurns(
         lastProcessedTurnRef.current.playerIndex === playerIndex &&
         Date.now() - lastProcessedTurnRef.current.timestamp < 500) {
       // Duplicate AI move detected, ignoring
-      setWaitingForAI(false);
-      setWaitingPlayerId('');
+      setProcessingAI(false);
+      setProcessingPlayerId('');
       return;
     }
     
@@ -58,17 +67,17 @@ export function useAITurns(
     // This helps prevent "thinking of next trick round is showing before trick result disappears"
     if (showTrickResult || lastCompletedTrick || showRoundComplete || currentTrickComplete) {
       // AI move blocked while trick result is showing, trick complete, or round complete
-      setWaitingForAI(false);
-      setWaitingPlayerId('');
+      setProcessingAI(false);
+      setProcessingPlayerId('');
       return;
     }
     
-    const currentPlayer = gameState.players[playerIndex];
+    const currentPlayer = currentPlayerState.player;
     
     // Safety check to ensure the current player is an AI
     if (currentPlayer.isHuman) {
       console.warn(`ERROR: handleAIMove called for human player ${currentPlayer.name}`);
-      setWaitingForAI(false);
+      setProcessingAI(false);
       return;
     }
 
@@ -85,22 +94,22 @@ export function useAITurns(
     if (!botReady) {
       console.warn(`${currentPlayer.name} move attempted during invalid game state: phase=${gameState.gamePhase}, showResult=${showTrickResult}, roundComplete=${showRoundComplete}, trickComplete=${trickComplete}`);
       
-      setWaitingForAI(false);
-      setWaitingPlayerId('');
+      setProcessingAI(false);
+      setProcessingPlayerId('');
       return;
     }
 
     try {
       // Get AI move with error handling - pass the actual game state
       // The AI logic should not mutate the state, just read from it
-      const { cards, error } = getAIMoveWithErrorHandling(gameState);
+      const { cards, error } = getAIMoveWithErrorHandling(gameState, currentPlayer.id);
 
       if (error) {
         console.error(`Error in AI move logic for ${currentPlayer.name}:`, error);
         
-        // Reset waiting state
-        setWaitingForAI(false);
-        setWaitingPlayerId('');
+        // Reset processing state
+        setProcessingAI(false);
+        setProcessingPlayerId('');
         
         // Throw error immediately without delay
         throw new Error(`Fatal game error: AI ${currentPlayer.name} could not make a valid move (${error}). In Tractor, invalid moves are not allowed.`);
@@ -114,16 +123,19 @@ export function useAITurns(
         // This should trigger the actual game state update
         processPlay(cards);
         
-        // Immediately reset the thinking indicator after processing the play
+        // Immediately reset the processing state after processing the play
         // The player will change, so we don't need to wait
-        setWaitingForAI(false);
-        setWaitingPlayerId('');
+        setProcessingAI(false);
+        setProcessingPlayerId('');
+        
+        // Clear thinking indicator
+        playerStateManager?.setThinkingPlayer(undefined);
       } else {
         console.warn(`AI ${currentPlayer.name} returned empty move`);
         
-        // Reset waiting state
-        setWaitingForAI(false);
-        setWaitingPlayerId('');
+        // Reset processing state
+        setProcessingAI(false);
+        setProcessingPlayerId('');
         
         // Throw error immediately without delay
         throw new Error(`Fatal game error: AI ${currentPlayer.name} could not determine a valid move. Empty moves are not allowed in Tractor.`);
@@ -131,18 +143,18 @@ export function useAITurns(
     } catch (error) {
       console.error(`Unexpected error in AI move handling: ${error instanceof Error ? error.message : String(error)}`);
       
-      // Reset waiting state
-      setWaitingForAI(false);
-      setWaitingPlayerId('');
+      // Reset processing state
+      setProcessingAI(false);
+      setProcessingPlayerId('');
       
       // Throw error immediately without delay
       throw new Error(`Fatal game error: Unexpected error in AI move handling for ${currentPlayer.name}: ${error instanceof Error ? error.message : String(error)}`);
     }
-  }, [gameState, processPlay, showTrickResult, lastCompletedTrick, showRoundComplete]);
+  }, [gameState, processPlay, showTrickResult, lastCompletedTrick, showRoundComplete, playerStateManager]);
   
   // Main effect for AI turn detection
   useEffect(() => {
-    if (!gameState) return;
+    if (!gameState || !playerStateManager) return;
     
     // Check if the current trick is complete but not cleared
     const currentTrickComplete = gameState.currentTrick && 
@@ -154,22 +166,26 @@ export function useAITurns(
       return;
     }
     
-    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    const currentPlayerState = playerStateManager.getCurrentPlayerState();
+    const currentPlayer = currentPlayerState.player;
     
-    // If it's a human player's turn, clear any lingering thinking indicators
+    // If it's a human player's turn, clear any lingering processing state
     if (currentPlayer.isHuman) {
-      if (waitingForAI) {
-        setWaitingForAI(false);
-        setWaitingPlayerId('');
+      if (processingAI) {
+        setProcessingAI(false);
+        setProcessingPlayerId('');
       }
       return;
     }
     
-    // It's an AI player's turn - check if we need to show thinking indicator
-    if (!waitingForAI || waitingPlayerId !== currentPlayer.id) {
-      // Show thinking indicator for this AI player
-      setWaitingForAI(true);
-      setWaitingPlayerId(currentPlayer.id);
+    // It's an AI player's turn - check if we need to start processing
+    if (!processingAI || processingPlayerId !== currentPlayer.id) {
+      // Start processing for this AI player
+      setProcessingAI(true);
+      setProcessingPlayerId(currentPlayer.id);
+      
+      // Set thinking indicator via playerStateManager
+      playerStateManager?.setThinkingPlayer(currentPlayer.id);
       
       // Schedule the AI move
       setTimeout(() => {
@@ -177,33 +193,34 @@ export function useAITurns(
       }, AI_MOVE_DELAY);
     }
   }, [
-    gameState?.currentPlayerIndex,
+    playerStateManager?.currentPlayerId,
     gameState?.gamePhase,
     showTrickResult,
     lastCompletedTrick,
     showRoundComplete,
-    waitingForAI,
-    waitingPlayerId,
+    processingAI,
+    processingPlayerId,
     handleAIMove,
-    gameState
+    gameState,
+    playerStateManager
   ]);
   
   // Clear thinking indicator when game phase changes
   useEffect(() => {
     if (!gameState) return;
     
-    // If game is not in playing phase, clear any thinking indicators
-    if (gameState.gamePhase !== 'playing' && waitingForAI) {
-      setWaitingForAI(false);
-      setWaitingPlayerId('');
+    // If game is not in playing phase, clear any processing state
+    if (gameState.gamePhase !== 'playing' && processingAI) {
+      setProcessingAI(false);
+      setProcessingPlayerId('');
     }
-  }, [gameState, gameState?.gamePhase, waitingForAI]);
+  }, [gameState, gameState?.gamePhase, processingAI]);
   
-  // Clear thinking indicator on unmount
+  // Clear processing state on unmount
   useEffect(() => {
     return () => {
-      setWaitingForAI(false);
-      setWaitingPlayerId('');
+      setProcessingAI(false);
+      setProcessingPlayerId('');
     };
   }, []);
 

@@ -22,7 +22,10 @@ describe('Human Wins and Leads Bug', () => {
     
     // Play first trick
     for (let play = 0; play < 4; play++) {
-      const currentPlayer = state.players[state.currentPlayerIndex];
+      const currentPlayerIndex = (state.currentTrick ? 
+        state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
+        : 0) % 4;
+      const currentPlayer = state.players[currentPlayerIndex];
       const cardsBefore = state.players.map(p => p.hand.length);
       
       let cardsToPlay: Card[] = [];
@@ -31,23 +34,23 @@ describe('Human Wins and Leads Bug', () => {
         const ace = currentPlayer.hand.find(c => c.rank === Rank.Ace);
         cardsToPlay = [ace || currentPlayer.hand[0]];
       } else {
-        const aiMove = getAIMoveWithErrorHandling(state);
+        const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
         cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
       }
       
-      console.log(`\n${currentPlayer.name} (index ${state.currentPlayerIndex}) plays ${cardsToPlay.length} cards`);
+      console.log(`\n${currentPlayer.name} (index ${currentPlayerIndex}) plays ${cardsToPlay.length} cards`);
       console.log(`Before: ${cardsBefore.join(', ')}`);
       
-      const result = processPlay(state, cardsToPlay);
+      const result = processPlay(state, cardsToPlay, currentPlayer.id);
       const cardsAfter = result.newState.players.map(p => p.hand.length);
       
       console.log(`After: ${cardsAfter.join(', ')}`);
-      console.log(`Next player index: ${result.newState.currentPlayerIndex}`);
+      // Remove reference to newState.currentPlayerIndex as it may not exist
       
       // Check for card loss anomalies
       for (let i = 0; i < 4; i++) {
         const loss = cardsBefore[i] - cardsAfter[i];
-        if (loss > 0 && i !== state.currentPlayerIndex) {
+        if (loss > 0 && i !== currentPlayerIndex) {
           console.error(`ERROR: Player ${i} (${state.players[i].name}) lost ${loss} cards but wasn't playing!`);
         }
       }
@@ -56,7 +59,7 @@ describe('Human Wins and Leads Bug', () => {
       
       if (result.trickComplete) {
         console.log(`\nTrick complete! Winner: ${result.trickWinner}`);
-        console.log(`Winning player index: ${state.winningPlayerIndex}`);
+        // Remove reference to state.winningPlayerIndex as it was deleted
       }
     }
     
@@ -65,7 +68,7 @@ describe('Human Wins and Leads Bug', () => {
     
     // Now the human should be leading the second trick
     console.log('\n=== Second Trick (Human leads) ===');
-    console.log(`Current player: ${state.players[state.currentPlayerIndex].name} (index ${state.currentPlayerIndex})`);
+    // Remove reference to state.currentPlayerIndex as it was deleted
     
     // First play of second trick - HUMAN SHOULD BE PLAYING
     const humanIndex = 0;
@@ -102,12 +105,12 @@ describe('Human Wins and Leads Bug', () => {
     const beforeProcessing = JSON.parse(JSON.stringify(state));
     
     // Process the human's play
-    const result = processPlay(state, humanCards);
+    const result = processPlay(state, humanCards, humanPlayer.id);
     
     console.log(`\nAfter processing human's play:`);
     const allAfter = result.newState.players.map(p => p.hand.length);
     console.log(`All counts: ${allAfter.join(', ')}`);
-    console.log(`Next player index: ${result.newState.currentPlayerIndex}`);
+    // Process completed
     
     // Detailed analysis
     for (let i = 0; i < 4; i++) {
@@ -147,18 +150,23 @@ describe('Human Wins and Leads Bug', () => {
     
     console.log('\nContinuing second trick...');
     for (let play = 1; play < 4; play++) {
-      const currentPlayer = state.players[state.currentPlayerIndex];
+      const currentPlayerIndex = (state.currentTrick ? 
+        state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId) + state.currentTrick.plays.length + 1 
+        : 0) % 4;
+      const currentPlayer = state.players[currentPlayerIndex];
       
       let cardsToPlay: Card[] = [];
       if (currentPlayer.isHuman) {
         cardsToPlay = [currentPlayer.hand[0]];
       } else {
-        const aiMove = getAIMoveWithErrorHandling(state);
+        const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
         cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
       }
       
-      const result = processPlay(state, cardsToPlay);
-      console.log(`${currentPlayer.name}: ${state.players[state.currentPlayerIndex].hand.length} -> ${result.newState.players[state.currentPlayerIndex].hand.length}`);
+      const beforeHandLength = currentPlayer.hand.length;
+      const result = processPlay(state, cardsToPlay, currentPlayer.id);
+      const afterHandLength = result.newState.players[currentPlayerIndex].hand.length;
+      console.log(`${currentPlayer.name}: ${beforeHandLength} -> ${afterHandLength}`);
       
       state = result.newState;
     }

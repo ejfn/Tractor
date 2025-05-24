@@ -33,11 +33,25 @@ describe('Bot 3 Trick Winner Issue', () => {
     // Play 3 complete tricks
     for (let trickNum = 0; trickNum < 3; trickNum++) {
       console.log(`\n=== TRICK ${trickNum + 1} ===`);
-      console.log(`Starting player: ${state.currentPlayerIndex} (${state.players[state.currentPlayerIndex].name})`);
+      // Determine starting player for this trick
+      let startingPlayerIndex = 0;
+      if (state.tricks.length > 0) {
+        const lastTrick = state.tricks[state.tricks.length - 1];
+        startingPlayerIndex = state.players.findIndex(p => p.id === lastTrick.winningPlayerId) || 0;
+      }
+      console.log(`Starting player: ${startingPlayerIndex} (${state.players[startingPlayerIndex].name})`);
       
       for (let playNum = 0; playNum < 4; playNum++) {
         const cardsBefore = state.players.map(p => p.hand.length);
-        const currentPlayerIndex = state.currentPlayerIndex;
+        let currentPlayerIndex;
+        if (playNum === 0) {
+          // First play of the trick - use starting player
+          currentPlayerIndex = startingPlayerIndex;
+        } else {
+          // Subsequent plays - calculate based on trick state
+          const leadPlayerIndex = state.players.findIndex(p => p.id === state.currentTrick!.leadingPlayerId);
+          currentPlayerIndex = (leadPlayerIndex + playNum) % state.players.length;
+        }
         const currentPlayer = state.players[currentPlayerIndex];
         
         console.log(`\nPlay ${playNum + 1}: Player ${currentPlayerIndex} (${currentPlayer.name})`);
@@ -48,17 +62,17 @@ describe('Bot 3 Trick Winner Issue', () => {
         if (currentPlayer.isHuman) {
           cardsToPlay = [currentPlayer.hand[0]];
         } else {
-          const aiMove = getAIMoveWithErrorHandling(state);
+          const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
           cardsToPlay = aiMove.error ? [currentPlayer.hand[0]] : aiMove.cards;
         }
         
         // Process the play
-        const result = processPlay(state, cardsToPlay);
+        const result = processPlay(state, cardsToPlay, currentPlayer.id);
         state = result.newState;
         
         const cardsAfter = state.players.map(p => p.hand.length);
         console.log(`Cards after: ${cardsAfter.join(', ')}`);
-        console.log(`Next player index: ${state.currentPlayerIndex}`);
+        console.log(`Current player index: ${currentPlayerIndex}`);
         
         // Record history
         playHistory.push({
@@ -74,15 +88,12 @@ describe('Bot 3 Trick Winner Issue', () => {
         
         if (result.trickComplete) {
           console.log(`Trick complete! Winner: ${result.trickWinner}`);
-          console.log(`winningPlayerIndex in state: ${state.winningPlayerIndex}`);
+          // winningPlayerIndex property was removed from GameState
           
           // Debug: Check who should be the next player
           const expectedNextPlayer = state.players.findIndex(p => p.name === result.trickWinner);
-          console.log(`Expected next player: ${expectedNextPlayer}, Actual: ${state.currentPlayerIndex}`);
-          
-          if (expectedNextPlayer !== state.currentPlayerIndex) {
-            console.error(`ERROR: Next player mismatch! Expected ${expectedNextPlayer}, got ${state.currentPlayerIndex}`);
-          }
+          console.log(`Expected next player: ${expectedNextPlayer}`);
+          // Can't verify current player index since it was removed from GameState
         }
         
         // Check for discrepancies

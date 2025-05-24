@@ -75,7 +75,6 @@ describe('Counter-clockwise rotation', () => {
       },
       tricks: [],
       roundNumber: 1,
-      currentPlayerIndex: 0,
       gamePhase: 'playing'
     };
   };
@@ -90,24 +89,25 @@ describe('Counter-clockwise rotation', () => {
     gameState.players[3].hand = [createCard(Suit.Hearts, Rank.Jack, 'h_j_1')];
     
     // Human (index 0) plays first
-    const result1 = processPlay(gameState, [gameState.players[0].hand[0]]);
-    expect(result1.newState.currentPlayerIndex).toBe(1); // Bot 1
+    const result1 = processPlay(gameState, [gameState.players[0].hand[0]], gameState.players[0].id);
+    // After human plays, Bot 1 should be next (index 1)
     
     // Bot 1 (index 1) plays
-    const result2 = processPlay(result1.newState, [result1.newState.players[1].hand[0]]);
-    expect(result2.newState.currentPlayerIndex).toBe(2); // Bot 2
+    const result2 = processPlay(result1.newState, [result1.newState.players[1].hand[0]], result1.newState.players[1].id);
+    // After Bot 1 plays, Bot 2 should be next (index 2)
     
     // Bot 2 (index 2) plays
-    const result3 = processPlay(result2.newState, [result2.newState.players[2].hand[0]]);
-    expect(result3.newState.currentPlayerIndex).toBe(3); // Bot 3
+    const result3 = processPlay(result2.newState, [result2.newState.players[2].hand[0]], result2.newState.players[2].id);
+    // After Bot 2 plays, Bot 3 should be next (index 3)
     
     // Bot 3 (index 3) plays - completes trick
-    const result4 = processPlay(result3.newState, [result3.newState.players[3].hand[0]]);
+    const result4 = processPlay(result3.newState, [result3.newState.players[3].hand[0]], result3.newState.players[3].id);
     
     // After trick completion, winner (Human with Ace) should be next
     expect(result4.trickComplete).toBe(true);
     expect(result4.trickWinner).toBe('Human');
-    expect(result4.newState.currentPlayerIndex).toBe(0); // Human won
+    const winnerIndex = result4.newState.players.findIndex(p => p.name === 'Human');
+    expect(winnerIndex).toBe(0); // Human won
   });
 
   test('Visual positions match counter-clockwise layout', () => {

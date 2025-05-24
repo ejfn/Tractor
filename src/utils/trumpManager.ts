@@ -5,9 +5,10 @@ import { shouldAIDeclare } from './aiLogic';
  * Handles the declaration of a trump suit
  * @param state Current game state
  * @param suit The suit being declared as trump, or null if skipping
+ * @param currentPlayerId ID of the player declaring trump
  * @returns Updated game state with trump information
  */
-export function declareTrumpSuit(state: GameState, suit: Suit | null): GameState {
+export function declareTrumpSuit(state: GameState, suit: Suit | null, currentPlayerId: string): GameState {
   const newState = { ...state };
   
   if (suit) {
@@ -15,8 +16,7 @@ export function declareTrumpSuit(state: GameState, suit: Suit | null): GameState
     newState.trumpInfo.declared = true;
     
     // Record the player who declared trump
-    const currentPlayer = newState.players[newState.currentPlayerIndex];
-    newState.trumpInfo.declarerPlayerId = currentPlayer.id;
+    newState.trumpInfo.declarerPlayerId = currentPlayerId;
   }
   
   newState.gamePhase = 'playing';

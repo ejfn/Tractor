@@ -14,6 +14,29 @@ import {
 import * as gameLogic from '../../src/utils/gameLogic';
 import * as aiLogic from '../../src/utils/aiLogic';
 
+// Helper function to get current player ID from game state
+function getCurrentPlayerId(gameState: GameState): string {
+  if (gameState.gamePhase === 'playing' && gameState.currentTrick) {
+    // During play, determine next player based on trick state
+    const trickPlayCount = gameState.currentTrick.plays.length;
+    const leadPlayerIndex = gameState.players.findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId);
+    const currentPlayerIndex = (leadPlayerIndex + trickPlayCount + 1) % gameState.players.length;
+    return gameState.players[currentPlayerIndex].id;
+  } else if (gameState.gamePhase === 'playing' && !gameState.currentTrick) {
+    // No active trick - check if there's a completed trick to find the winner
+    if (gameState.tricks.length > 0) {
+      const lastTrick = gameState.tricks[gameState.tricks.length - 1];
+      return lastTrick.winningPlayerId || gameState.players[0].id;
+    } else {
+      // First trick of the round - use first player
+      return gameState.players[0].id;
+    }
+  } else {
+    // Not in playing phase - use first player as default
+    return gameState.players[0].id;
+  }
+}
+
 // Mock dependencies
 jest.mock('../../src/utils/gameLogic', () => ({
   identifyCombos: jest.fn(),
@@ -113,7 +136,6 @@ const createMockGameState = (): GameState => {
     },
     gamePhase: 'playing',
     roundNumber: 1,
-    currentPlayerIndex: 0,
     currentTrick: null,
     tricks: [],
     deck: [],
@@ -132,7 +154,7 @@ describe('gamePlayManager', () => {
       const cardsToPlay = [mockState.players[0].hand[0]]; // Spades 5
       
       // Initial play - should create a new trick
-      const result = processPlay(mockState, cardsToPlay);
+      const result = processPlay(mockState, cardsToPlay, 'human');
       
       // Verify the state was updated correctly
       expect(result.newState.currentTrick).toBeTruthy();
@@ -151,8 +173,9 @@ describe('gamePlayManager', () => {
       expect(result.newState.players[0].hand).toHaveLength(1);
       expect(result.newState.players[0].hand[0].id).toBe('hearts_k_1');
       
-      // Verify the current player was advanced
-      expect(result.newState.currentPlayerIndex).toBe(1);
+      // Verify the trick was created and play setup correctly
+      // The next player would be determined by the trick state
+      expect(result.newState.currentTrick?.plays).toHaveLength(0); // Human leads, so no plays yet
       
       // Verify the trick is not complete yet
       expect(result.trickComplete).toBe(false);
@@ -182,8 +205,6 @@ describe('gamePlayManager', () => {
         points: 5 // 5 points from the Spades 5
       };
       
-      // Setup the current player to be the last player in the trick
-      mockState.currentPlayerIndex = 2; // ai2
       
       // Mock determineTrickWinner to return ai1
       (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('ai1');
@@ -211,15 +232,13 @@ describe('gamePlayManager', () => {
         points: 5 // 5 points from the Spades 5
       };
       
-      // Setup the current player to be the last player in the trick (Bot 3)
-      freshState.currentPlayerIndex = 3; // ai3
       
       // Mock determineTrickWinner to return ai1
       (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('ai1');
       
       // Process the play for the last player in the trick (Bot 3)
       const cardsToPlay = [freshState.players[3].hand[0]]; // Clubs 4 
-      const result = processPlay(freshState, cardsToPlay);
+      const result = processPlay(freshState, cardsToPlay, 'ai3');
       
       // Verify the trick is complete
       expect(result.trickComplete).toBe(true);
@@ -233,9 +252,9 @@ describe('gamePlayManager', () => {
       // as per our new trick result display logic
       expect(result.newState.currentTrick).not.toBeNull();
       
-      // With our new implementation, we set winningPlayerIndex but don't change currentPlayerIndex yet
-      // That happens in handleTrickResultComplete
-      expect(result.newState.winningPlayerIndex).toBe(1); // ai1
+      // Verify the trick was completed with proper winner
+      expect(result.newState.tricks).toHaveLength(1);
+      expect(result.newState.tricks[0].winningPlayerId).toBe('ai1');
       
       // Verify points were awarded to the winning team
       expect(result.newState.teams[1].points).toBe(5); // Team B (ai1's team)
@@ -257,7 +276,7 @@ describe('gamePlayManager', () => {
         { type: 'Single', cards: cardsToPlay }
       ]);
       
-      const result = validatePlay(mockState, cardsToPlay);
+      const result = validatePlay(mockState, cardsToPlay, 'human');
       
       // Verify identifyCombos was called with the player's hand
       expect(gameLogic.identifyCombos).toHaveBeenCalledWith(
@@ -289,7 +308,7 @@ describe('gamePlayManager', () => {
       // Mock isValidPlay to return true
       (gameLogic.isValidPlay as jest.Mock).mockReturnValue(true);
       
-      const result = validatePlay(mockState, cardsToPlay);
+      const result = validatePlay(mockState, cardsToPlay, 'human');
       
       // Verify isValidPlay was called with the correct parameters
       expect(gameLogic.isValidPlay).toHaveBeenCalledWith(
@@ -306,24 +325,23 @@ describe('gamePlayManager', () => {
       const mockState = createMockGameState();
       
       // Return false for invalid plays
-      expect(validatePlay(mockState, [])).toBe(false);
+      expect(validatePlay(mockState, [], 'human')).toBe(false);
       
       // Setup state to be null
-      expect(validatePlay(null as unknown as GameState, [createMockCard('spades_5_1', Suit.Spades, Rank.Five)])).toBe(false);
+      expect(validatePlay(null as unknown as GameState, [createMockCard('spades_5_1', Suit.Spades, Rank.Five)], 'human')).toBe(false);
     });
   });
 
   describe('getAIMoveWithErrorHandling', () => {
     test('should return AI move when successful', () => {
       const mockState = createMockGameState();
-      mockState.currentPlayerIndex = 1; // ai1
       
       const aiMove = [mockState.players[1].hand[0]]; // Diamonds 3
       
       // Mock getAIMove to return a valid move
       (aiLogic.getAIMove as jest.Mock).mockReturnValue(aiMove);
       
-      const result = getAIMoveWithErrorHandling(mockState);
+      const result = getAIMoveWithErrorHandling(mockState, 'ai1');
       
       // Verify getAIMove was called with the correct parameters
       expect(aiLogic.getAIMove).toHaveBeenCalledWith(mockState, 'ai1');
@@ -337,9 +355,8 @@ describe('gamePlayManager', () => {
       // NOTE: This test intentionally triggers a console warning to verify error handling
       // The warning "getAIMoveWithErrorHandling called for human player" is expected
       const mockState = createMockGameState();
-      mockState.currentPlayerIndex = 0; // human
       
-      const result = getAIMoveWithErrorHandling(mockState);
+      const result = getAIMoveWithErrorHandling(mockState, 'human');
       
       expect(result).toEqual({
         cards: [],
@@ -351,12 +368,11 @@ describe('gamePlayManager', () => {
       // NOTE: This test intentionally triggers a console warning to verify fallback behavior
       // The warning "AI player ai1 returned an empty move" is expected
       const mockState = createMockGameState();
-      mockState.currentPlayerIndex = 1; // ai1
       
       // Mock getAIMove to return an empty move
       (aiLogic.getAIMove as jest.Mock).mockReturnValue([]);
       
-      const result = getAIMoveWithErrorHandling(mockState);
+      const result = getAIMoveWithErrorHandling(mockState, 'ai1');
       
       expect(result).toEqual({
         cards: [mockState.players[1].hand[0]] // First card in hand as fallback
@@ -367,14 +383,13 @@ describe('gamePlayManager', () => {
       // NOTE: This test intentionally triggers a console error to verify error handling
       // The error "Error in AI move logic: Error: AI error" is expected
       const mockState = createMockGameState();
-      mockState.currentPlayerIndex = 1; // ai1
       
       // Mock getAIMove to throw an error
       (aiLogic.getAIMove as jest.Mock).mockImplementation(() => {
         throw new Error('AI error');
       });
       
-      const result = getAIMoveWithErrorHandling(mockState);
+      const result = getAIMoveWithErrorHandling(mockState, 'ai1');
       
       expect(result.cards).toEqual([]);
       expect(result.error).toContain('Error generating AI move');
@@ -389,7 +404,7 @@ describe('gamePlayManager', () => {
       const cardsToPlay = [originalState.players[0].hand[0]];
 
       // Process the play
-      const result = processPlay(originalState, cardsToPlay);
+      const result = processPlay(originalState, cardsToPlay, 'human');
 
       // Verify original state was not mutated
       expect(originalState.players[0].hand.length).toBe(2);
@@ -404,7 +419,7 @@ describe('gamePlayManager', () => {
       const originalState = createMockGameState();
       const cardsToPlay = [originalState.players[0].hand[0]];
 
-      const result = processPlay(originalState, cardsToPlay);
+      const result = processPlay(originalState, cardsToPlay, 'human');
 
       // Verify all players are different references
       originalState.players.forEach((player, index) => {
@@ -417,7 +432,7 @@ describe('gamePlayManager', () => {
       const originalState = createMockGameState();
       const cardsToPlay = [originalState.players[0].hand[0]];
 
-      const result = processPlay(originalState, cardsToPlay);
+      const result = processPlay(originalState, cardsToPlay, 'human');
 
       // Verify teams are different references
       originalState.teams.forEach((team, index) => {
@@ -447,10 +462,14 @@ describe('gamePlayManager', () => {
       for (let trickNum = 0; trickNum < 2; trickNum++) {
         // Play 4 cards (one complete trick)
         for (let playNum = 0; playNum < 4; playNum++) {
-          const currentPlayer = state.players[state.currentPlayerIndex];
+          const currentPlayerId = getCurrentPlayerId(state);
+          const currentPlayer = state.players.find(p => p.id === currentPlayerId);
+          if (!currentPlayer) {
+            throw new Error(`No current player found with ID ${currentPlayerId}`);
+          }
           const cardsToPlay = [currentPlayer.hand[0]];
           
-          const result = processPlay(state, cardsToPlay);
+          const result = processPlay(state, cardsToPlay, currentPlayer.id);
           state = result.newState;
 
           // After each play, verify card counts are consistent
@@ -462,6 +481,7 @@ describe('gamePlayManager', () => {
           } else {
             // Mid-trick: verify no cards were lost or duplicated
             const totalCards = state.players.reduce((sum, player) => sum + player.hand.length, 0);
+            const currentPlayerIndex = state.players.findIndex(p => p.id === currentPlayer.id);
             const expectedTotalCards = initialCardCount * 4 - ((trickNum * 4) + (playNum + 1));
             expect(totalCards).toBe(expectedTotalCards);
           }
@@ -478,11 +498,10 @@ describe('gamePlayManager', () => {
       const state2 = { ...state1 }; // Shallow copy to simulate concurrent access
       
       // Player 1 plays from state1
-      const result1 = processPlay(state1, [state1.players[0].hand[0]]);
+      const result1 = processPlay(state1, [state1.players[0].hand[0]], state1.players[0].id);
       
       // Player 2 plays from state2 (simulating a race condition)
-      state2.currentPlayerIndex = 1;
-      const result2 = processPlay(state2, [state2.players[1].hand[0]]);
+      const result2 = processPlay(state2, [state2.players[1].hand[0]], state2.players[1].id);
       
       // Both results should have correct card counts
       expect(result1.newState.players[0].hand.length).toBe(1);
@@ -500,12 +519,12 @@ describe('gamePlayManager', () => {
       const cardToPlay = playerHand[0];
       
       // First play should succeed
-      const result1 = processPlay(state, [cardToPlay]);
+      const result1 = processPlay(state, [cardToPlay], 'human');
       expect(result1.newState.players[0].hand.length).toBe(1);
       
       // Second play with the same card from original state should also work
       // because processPlay should not mutate the original state
-      const result2 = processPlay(state, [cardToPlay]);
+      const result2 = processPlay(state, [cardToPlay], 'human');
       expect(result2.newState.players[0].hand.length).toBe(1);
       
       // Original state should still have 2 cards
@@ -515,15 +534,12 @@ describe('gamePlayManager', () => {
     test('should handle AI plays with proper card references', () => {
       const state = createMockGameState();
       
-      // Set the current player to AI (ai1)
-      state.currentPlayerIndex = 1;
-      
       // Simulate AI selecting cards from its hand
       const aiPlayer = state.players[1]; // ai1
       const aiCards = aiPlayer.hand; // The actual cards in the AI's hand
       
       // AI plays its first card
-      const result = processPlay(state, [aiCards[0]]);
+      const result = processPlay(state, [aiCards[0]], 'ai1');
       
       // Verify the AI's hand was properly updated
       expect(result.newState.players[1].hand.length).toBe(1);
@@ -545,19 +561,18 @@ describe('gamePlayManager', () => {
       
       // Play one complete trick
       for (let i = 0; i < 4; i++) {
-        const currentPlayer = state.players[state.currentPlayerIndex];
+        const currentPlayerId = getCurrentPlayerId(state);
+        const currentPlayer = state.players.find(p => p.id === currentPlayerId);
+        if (!currentPlayer) {
+          throw new Error(`No current player found with ID ${currentPlayerId}`);
+        }
         const cardToPlay = [currentPlayer.hand[0]];
         
-        const result = processPlay(state, cardToPlay);
+        const result = processPlay(state, cardToPlay, currentPlayer.id);
         state = result.newState;
         
         // Verify no player has lost more cards than they should
         state.players.forEach((player, idx) => {
-          let expectedCards = initialCounts[idx] - (idx <= i ? 1 : 0);
-          if (idx === state.currentPlayerIndex && i < 3) {
-            // For the newly current player who hasn't played yet
-            expectedCards++;
-          }
           expect(player.hand.length).toBeGreaterThanOrEqual(0);
         });
       }

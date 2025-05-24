@@ -3,6 +3,29 @@ import { initializeGame } from '../../src/utils/gameLogic';
 import { processPlay } from '../../src/utils/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
 
+// Helper function to get current player ID from game state
+function getCurrentPlayerId(gameState: GameState): string {
+  if (gameState.gamePhase === 'playing' && gameState.currentTrick) {
+    // During play, determine next player based on trick state
+    const trickPlayCount = gameState.currentTrick.plays.length;
+    const leadPlayerIndex = gameState.players.findIndex(p => p.id === gameState.currentTrick!.leadingPlayerId);
+    const currentPlayerIndex = (leadPlayerIndex + trickPlayCount + 1) % gameState.players.length;
+    return gameState.players[currentPlayerIndex].id;
+  } else if (gameState.gamePhase === 'playing' && !gameState.currentTrick) {
+    // No active trick - check if there's a completed trick to find the winner
+    if (gameState.tricks.length > 0) {
+      const lastTrick = gameState.tricks[gameState.tricks.length - 1];
+      return lastTrick.winningPlayerId || gameState.players[0].id;
+    } else {
+      // First trick of the round - use first player
+      return gameState.players[0].id;
+    }
+  } else {
+    // Not in playing phase - use first player as default
+    return gameState.players[0].id;
+  }
+}
+
 describe('Full Game Simulation', () => {
   test('Play complete game monitoring all card counts', () => {
     const gameState = initializeGame('Human', ['Team A', 'Team B'], Rank.Two);
@@ -39,7 +62,14 @@ describe('Full Game Simulation', () => {
         
         // Play one complete trick
         for (let playNum = 0; playNum < 4; playNum++) {
-          const currentPlayer = state.players[state.currentPlayerIndex];
+          // Use simple sequential player turns for testing
+          const currentPlayerIndex = playNum;
+          const currentPlayer = state.players[currentPlayerIndex];
+          if (!currentPlayer) {
+            console.error(`ERROR: No current player found at index ${currentPlayerIndex}`);
+            totalErrors++;
+            break;
+          }
           const cardsBefore = state.players.map(p => p.hand.length);
           
           // Get cards to play
@@ -55,7 +85,7 @@ describe('Full Game Simulation', () => {
             }
           } else {
             // AI plays
-            const aiMove = getAIMoveWithErrorHandling(state);
+            const aiMove = getAIMoveWithErrorHandling(state, currentPlayer.id);
             if (aiMove.error) {
               error = aiMove.error;
               // Fallback to first card
@@ -74,7 +104,7 @@ describe('Full Game Simulation', () => {
           }
           
           // Process the play
-          const result = processPlay(state, cardsToPlay);
+          const result = processPlay(state, cardsToPlay, currentPlayer.id);
           const cardsAfter = result.newState.players.map(p => p.hand.length);
           
           // Log the play
@@ -94,10 +124,11 @@ describe('Full Game Simulation', () => {
           let anomalies: string[] = [];
           
           // Check each player's card count
+          // currentPlayerIndex is already defined above
           for (let i = 0; i < 4; i++) {
             const before = cardsBefore[i];
             const after = cardsAfter[i];
-            const expected = i === state.currentPlayerIndex ? before - cardsToPlay.length : before;
+            const expected = i === currentPlayerIndex ? before - cardsToPlay.length : before;
             
             if (after !== expected) {
               anomalies.push(`Player ${i} (${state.players[i].name}): expected ${expected}, got ${after}`);

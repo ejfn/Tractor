@@ -19,7 +19,7 @@ import {
   CARD_SELECTION_DELAY,
   ROUND_COMPLETE_BUFFER 
 } from '../utils/gameTimings';
-
+import { usePlayerState } from './usePlayerState';
 
 /**
  * Configuration for the game setup
@@ -47,6 +47,9 @@ export function useGameState(config: GameConfig) {
   // Core game state
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
+  
+  // Unified player state management
+  const playerStateManager = usePlayerState(gameState, selectedCards, setSelectedCards);
   
   // Game flow control
   const [showSetupInternal, setShowSetupInternal] = useState(false);
@@ -78,6 +81,7 @@ export function useGameState(config: GameConfig) {
         config.teamNames,
         config.startingRank
       );
+      
       setGameState(newGameState);
 
       // Check if player has trump rank to declare
@@ -89,9 +93,10 @@ export function useGameState(config: GameConfig) {
 
   // Handle card selection
   const handleCardSelect = (card: Card) => {
-    if (!gameState) return;
+    if (!gameState || !playerStateManager) return;
     
-    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    const currentPlayerState = playerStateManager.getCurrentPlayerState();
+    const currentPlayer = currentPlayerState.player;
     
     // Handle trump declaration mode - select card but don't declare immediately
     if (showTrumpDeclaration) {
@@ -109,7 +114,7 @@ export function useGameState(config: GameConfig) {
     if (gameState.gamePhase !== 'playing') return;
     
     // Only allow current player to select cards
-    if (!currentPlayer.isHuman) return;
+    if (!currentPlayerState.isCurrentTurn || !currentPlayer.isHuman) return;
     
     // Toggle card selection
     if (selectedCards.some(c => c.id === card.id)) {
@@ -121,10 +126,12 @@ export function useGameState(config: GameConfig) {
 
   // Handle play button click
   const handlePlay = () => {
-    if (!gameState || selectedCards.length === 0) return;
+    if (!gameState || !playerStateManager || selectedCards.length === 0) return;
+    
+    const currentPlayerState = playerStateManager.getCurrentPlayerState();
     
     // Check if play is valid
-    const isValid = validatePlay(gameState, selectedCards);
+    const isValid = validatePlay(gameState, selectedCards, currentPlayerState.player.id);
     
     if (!isValid) {
       // In a real implementation, we'd show an alert or error message
@@ -147,9 +154,10 @@ export function useGameState(config: GameConfig) {
 
   // Process a play (wrapper around the utility function)
   const handleProcessPlay = (cards: Card[]) => {
-    if (!gameState) return;
+    if (!gameState || !playerStateManager) return;
     
-    const result = processPlay(gameState, cards);
+    const currentPlayerState = playerStateManager.getCurrentPlayerState();
+    const result = processPlay(gameState, cards, currentPlayerState.player.id);
     
     // For trick complete scenario, we need to handle things in a specific order
     if (result.trickComplete && result.trickWinner && result.completedTrick) {
@@ -177,6 +185,7 @@ export function useGameState(config: GameConfig) {
         // This ensures the trick structure is correct for display
       }
       
+      
       // Now update game state AFTER setting up the trick completion data
       setGameState(result.newState);
       
@@ -200,9 +209,11 @@ export function useGameState(config: GameConfig) {
 
   // Handle trump suit declaration
   const handleDeclareTrumpSuit = (suit: Suit | null) => {
-    if (!gameState) return;
+    if (!gameState || !playerStateManager) return;
     
-    const newState = declareTrumpSuit(gameState, suit);
+    const currentPlayerState = playerStateManager.getCurrentPlayerState();
+    const newState = declareTrumpSuit(gameState, suit, currentPlayerState.player.id);
+    
     setGameState(newState);
     setShowTrumpDeclaration(false);
     setSelectedCards([]);
@@ -298,21 +309,20 @@ export function useGameState(config: GameConfig) {
     if (gameState) {
       // Now safe to clear currentTrick from game state
       
-      // When a trick is completed, the winning player becomes the next player to lead
-      // winningPlayerIndex is set in gamePlayManager.ts when determining the trick winner
-      
-      // Create a new state copy with currentTrick set to null and player index set to the winner
+      // When a trick is completed, clear the current trick
+      // The winning player is already set as the current player in gamePlayManager
       const newState = {
         ...gameState,
-        currentTrick: null,
-        currentPlayerIndex: gameState.winningPlayerIndex ?? gameState.currentPlayerIndex, // Use the winner as next player
-        winningPlayerIndex: undefined // Clear the winning player index
+        currentTrick: null
       };
+      
+      // Set compatibility fields from PlayerStateManager
+      // Current player is tracked by PlayerStateManager
       
       // Update the state
       setGameState(newState);
       
-      // The useAITurns hook will detect the currentPlayerIndex change and trigger AI moves automatically
+      // The useAITurns hook will detect the player state change and trigger AI moves automatically
       
     }
   };
@@ -328,6 +338,9 @@ export function useGameState(config: GameConfig) {
     winner,
     showRoundComplete,
     roundCompleteMessage,
+    
+    // Player state management
+    playerStateManager,
     
     // Trick completion data ref (for communication with other hooks)
     trickCompletionDataRef,

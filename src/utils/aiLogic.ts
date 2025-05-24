@@ -19,7 +19,8 @@ interface AIStrategy {
   makePlay(
     gameState: GameState, 
     player: Player, 
-    validCombos: Combo[]
+    validCombos: Combo[],
+    currentPlayerIndex: number
   ): Card[];
   
   declareTrumpSuit(gameState: GameState, player: Player): boolean;
@@ -32,9 +33,10 @@ class AIStrategy implements AIStrategy {
   makePlay(
     gameState: GameState, 
     player: Player, 
-    validCombos: Combo[]
+    validCombos: Combo[],
+    currentPlayerIndex: number
   ): Card[] {
-    const { currentTrick, trumpInfo, players, currentPlayerIndex } = gameState;
+    const { currentTrick, trumpInfo, players } = gameState;
     
     // If leading, consider several factors
     if (!currentTrick || !currentTrick.leadingCombo) {
@@ -247,6 +249,8 @@ export const getAIMove = (
   if (!player) {
     throw new Error(`AI player with ID ${playerId} not found`);
   }
+  
+  const currentPlayerIndex = gameState.players.indexOf(player);
   
   // Get all possible card combinations from player's hand
   const allCombos = identifyCombos(player.hand, gameState.trumpInfo);
@@ -465,7 +469,7 @@ export const getAIMove = (
   
   // Use the AI strategy to select cards to play
   const strategy = createAIStrategy();
-  return strategy.makePlay(gameState, player, validCombos);
+  return strategy.makePlay(gameState, player, validCombos, currentPlayerIndex);
 };
 
 // AI trump declaration decision

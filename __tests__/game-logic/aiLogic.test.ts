@@ -75,7 +75,6 @@ const createMockGameState = (): GameState => {
     },
     tricks: [],
     roundNumber: 1,
-    currentPlayerIndex: 0,
     gamePhase: 'playing'
   };
 };
@@ -104,7 +103,7 @@ describe('AI Logic Tests', () => {
         createCard(Suit.Spades, Rank.Three, 'spades_3_1')
       ];
       
-      gameState.currentPlayerIndex = 1; // AI1's turn
+      // AI1's turn will be determined by trick state
       
       // AI is leading, so any valid combo is acceptable
       const move = getAIMove(gameState, 'ai1');
@@ -143,7 +142,7 @@ describe('AI Logic Tests', () => {
         createCard(Suit.Clubs, Rank.Three, 'clubs_3_1')
       ];
       
-      gameState.currentPlayerIndex = 1; // AI1's turn
+      // AI1's turn will be determined by trick state
       
       const move = getAIMove(gameState, 'ai1');
       
@@ -175,7 +174,7 @@ describe('AI Logic Tests', () => {
         createCard(Suit.Diamonds, Rank.Two, 'diamonds_2_1')
       ];
       
-      gameState.currentPlayerIndex = 1; // AI1's turn
+      // AI1's turn will be determined by trick state
       
       const move = getAIMove(gameState, 'ai1');
       
@@ -216,7 +215,7 @@ describe('AI Logic Tests', () => {
         createCard(Suit.Clubs, Rank.Three, 'clubs_3_1')
       ];
       
-      gameState.currentPlayerIndex = 1; // AI1's turn
+      // AI1's turn will be determined by trick state
       
       const move = getAIMove(gameState, 'ai1');
       
@@ -256,7 +255,7 @@ describe('AI Logic Tests', () => {
         createCard(Suit.Hearts, Rank.Six, 'hearts_6_1')
       ];
       
-      gameState.currentPlayerIndex = 1; // AI1's turn
+      // AI1's turn will be determined by trick state
       
       const move = getAIMove(gameState, 'ai1');
       
@@ -286,7 +285,7 @@ describe('AI Logic Tests', () => {
       // Give AI1 no cards (edge case)
       gameState.players[1].hand = [];
 
-      gameState.currentPlayerIndex = 1; // AI1's turn
+      // AI1's turn will be determined by trick state
 
       const move = getAIMove(gameState, 'ai1');
 
@@ -325,7 +324,7 @@ describe('AI Logic Tests', () => {
         createCard(Suit.Spades, Rank.Four, 'spades_4_1')
       ];
 
-      gameState.currentPlayerIndex = 1; // AI1's turn
+      // AI1's turn will be determined by trick state
 
       const move = getAIMove(gameState, 'ai1');
 
@@ -370,7 +369,7 @@ describe('AI Logic Tests', () => {
         createCard(Suit.Spades, Rank.Three, 'spades_3_1')
       ];
 
-      gameState.currentPlayerIndex = 1; // AI1's turn
+      // AI1's turn will be determined by trick state
 
       const move = getAIMove(gameState, 'ai1');
 
@@ -411,7 +410,7 @@ describe('AI Logic Tests', () => {
         }
       ];
 
-      const move = strategy.makePlay(gameState, gameState.players[1], validCombos);
+      const move = strategy.makePlay(gameState, gameState.players[1], validCombos, 1);
       
       // Move should exist and be valid
       expect(move).toBeDefined();
