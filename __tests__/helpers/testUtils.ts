@@ -1,67 +1,88 @@
-import { GameState, Player, Team, Card, Suit, Rank } from '../../src/types/game';
+import { GameState, Player, Team, Card, Suit, Rank, JokerType, PlayerPosition, TrumpInfo, Trick } from '../../src/types/game';
 import { GameStateUtils } from '../../src/utils/gameStateUtils';
 
-export function createTestCard(suit: Suit, rank: Rank): Card {
-  return { suit, rank };
+export function createTestCard(suit?: Suit, rank?: Rank, joker?: JokerType): Card {
+  const id = joker ? `joker-${joker}` : `${suit}-${rank}`;
+  let points = 0;
+  
+  if (rank === Rank.Five) points = 5;
+  if (rank === Rank.Ten || rank === Rank.King) points = 10;
+  
+  return { suit, rank, joker, id, points };
 }
 
 export function createTestPlayer(
   id: string,
   name: string,
-  cards: Card[] = [],
-  isHuman: boolean = false
+  hand: Card[] = [],
+  isHuman: boolean = false,
+  teamId: "A" | "B" = "A",
+  position: PlayerPosition = "bottom"
 ): Player {
   return {
     id,
     name,
-    cards,
+    hand,
     isHuman,
-    selectedCards: [],
-    hasPlayedCard: false
+    teamId,
+    position,
+    isThinking: false
   };
 }
 
 export function createTestTeam(
-  id: string,
-  name: string,
-  playerIds: string[],
-  score: number = 0
+  id: "A" | "B",
+  currentRank: Rank = Rank.Two,
+  points: number = 0,
+  isDefending: boolean = false
 ): Team {
   return {
     id,
-    name,
-    playerIds,
-    score,
-    isDefending: false
+    currentRank,
+    points,
+    isDefending
+  };
+}
+
+export function createTestTrumpInfo(
+  trumpRank: Rank = Rank.Two,
+  trumpSuit?: Suit,
+  declared: boolean = false,
+  declarerPlayerId?: string
+): TrumpInfo {
+  return {
+    trumpRank,
+    trumpSuit,
+    declared,
+    declarerPlayerId
   };
 }
 
 export function createTestGameState(overrides: Partial<GameState> = {}): GameState {
   const defaultPlayers = {
-    'player': createTestPlayer('player', 'Human', [], true),
-    'ai1': createTestPlayer('ai1', 'AI 1'),
-    'ai2': createTestPlayer('ai2', 'AI 2'),
-    'ai3': createTestPlayer('ai3', 'AI 3')
+    'player': createTestPlayer('player', 'Human', [], true, 'A', 'bottom'),
+    'ai1': createTestPlayer('ai1', 'AI 1', [], false, 'B', 'right'),
+    'ai2': createTestPlayer('ai2', 'AI 2', [], false, 'A', 'top'),
+    'ai3': createTestPlayer('ai3', 'AI 3', [], false, 'B', 'left')
   };
 
   const defaultTeams = {
-    'A': createTestTeam('A', 'Team A', ['player', 'ai2']),
-    'B': createTestTeam('B', 'Team B', ['ai1', 'ai3'])
+    'A': createTestTeam('A'),
+    'B': createTestTeam('B')
   };
 
   return {
     players: defaultPlayers,
     teams: defaultTeams,
-    playOrder: ['player', 'ai1', 'ai2', 'ai3'],
-    currentRank: 'TWO',
-    trump: null,
-    phase: 'dealing',
     deck: [],
+    kittyCards: [],
     currentTrick: null,
-    completedTricks: [],
-    roundComplete: false,
-    gameComplete: false,
-    winner: null,
+    trumpInfo: createTestTrumpInfo(),
+    tricks: [],
+    roundNumber: 1,
+    gamePhase: 'dealing',
+    currentPlayerId: 'player',
+    selectedCards: [],
     ...overrides
   };
 }
@@ -76,7 +97,7 @@ export function getTestPlayer(gameState: GameState, playerId: string): Player {
 }
 
 // Helper function to get a team by ID from test game state
-export function getTestTeam(gameState: GameState, teamId: string): Team {
+export function getTestTeam(gameState: GameState, teamId: "A" | "B"): Team {
   return GameStateUtils.getTeam(gameState, teamId);
 }
 
@@ -86,7 +107,7 @@ export function createGameStateWithCards(playerCards: Record<string, Card[]>): G
   
   Object.entries(playerCards).forEach(([playerId, cards]) => {
     if (gameState.players[playerId]) {
-      gameState.players[playerId].cards = cards;
+      gameState.players[playerId].hand = cards;
     }
   });
   
@@ -94,16 +115,15 @@ export function createGameStateWithCards(playerCards: Record<string, Card[]>): G
 }
 
 // Helper function to create cards quickly
-export function createCards(cardSpecs: Array<[Suit, Rank]>): Card[] {
-  return cardSpecs.map(([suit, rank]) => createTestCard(suit, rank));
+export function createCards(cardSpecs: Array<[Suit?, Rank?, JokerType?]>): Card[] {
+  return cardSpecs.map(([suit, rank, joker]) => createTestCard(suit, rank, joker));
 }
 
 // Helper function to set up a game state in playing phase
 export function createPlayingGameState(overrides: Partial<GameState> = {}): GameState {
   return createTestGameState({
-    phase: 'playing',
-    trump: 'HEARTS',
-    currentRank: 'TWO',
+    gamePhase: 'playing',
+    trumpInfo: createTestTrumpInfo(Rank.Two, Suit.Hearts, true),
     ...overrides
   });
 }
@@ -111,20 +131,23 @@ export function createPlayingGameState(overrides: Partial<GameState> = {}): Game
 // Helper function to create a trick in progress
 export function createGameStateWithTrick(
   leadingPlayerId: string,
-  leadingCards: Card[],
+  leadingCombo: Card[],
   plays: Array<{ playerId: string; cards: Card[] }> = [],
   overrides: Partial<GameState> = {}
 ): GameState {
+  const trick: Trick = {
+    leadingPlayerId,
+    leadingCombo,
+    plays: plays.map(play => ({
+      playerId: play.playerId,
+      cards: play.cards
+    })),
+    points: 0
+  };
+
   return createTestGameState({
-    phase: 'playing',
-    currentTrick: {
-      leadingPlayerId,
-      leadingCards,
-      plays: plays.map(play => ({
-        playerId: play.playerId,
-        cards: play.cards
-      }))
-    },
+    gamePhase: 'playing',
+    currentTrick: trick,
     ...overrides
   });
 }
@@ -134,8 +157,11 @@ export function dealCardsToPlayers(gameState: GameState, cardsPerPlayer: number 
   const allCards: Card[] = [];
   
   // Create a standard deck
-  const suits: Suit[] = ['SPADES', 'HEARTS', 'CLUBS', 'DIAMONDS'];
-  const ranks: Rank[] = ['TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'JACK', 'QUEEN', 'KING', 'ACE'];
+  const suits = [Suit.Spades, Suit.Hearts, Suit.Clubs, Suit.Diamonds];
+  const ranks = [
+    Rank.Two, Rank.Three, Rank.Four, Rank.Five, Rank.Six, Rank.Seven,
+    Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King, Rank.Ace
+  ];
   
   suits.forEach(suit => {
     ranks.forEach(rank => {
@@ -144,8 +170,8 @@ export function dealCardsToPlayers(gameState: GameState, cardsPerPlayer: number 
   });
   
   // Add jokers
-  allCards.push({ suit: 'JOKER', rank: 'SMALL_JOKER' });
-  allCards.push({ suit: 'JOKER', rank: 'BIG_JOKER' });
+  allCards.push(createTestCard(undefined, undefined, JokerType.Small));
+  allCards.push(createTestCard(undefined, undefined, JokerType.Big));
   
   // Shuffle and deal
   const shuffled = [...allCards].sort(() => Math.random() - 0.5);
@@ -157,7 +183,7 @@ export function dealCardsToPlayers(gameState: GameState, cardsPerPlayer: number 
     const endIndex = startIndex + cardsPerPlayer;
     updatedPlayers[playerId] = {
       ...updatedPlayers[playerId],
-      cards: shuffled.slice(startIndex, endIndex)
+      hand: shuffled.slice(startIndex, endIndex)
     };
   });
   
@@ -171,7 +197,7 @@ export function dealCardsToPlayers(gameState: GameState, cardsPerPlayer: number 
 // Helper function to count total cards across all players
 export function getTotalCardsInPlay(gameState: GameState): number {
   return Object.values(gameState.players).reduce((total, player) => {
-    return total + player.cards.length;
+    return total + player.hand.length;
   }, 0);
 }
 
@@ -189,36 +215,40 @@ export function verifyCardConservation(
 
 // Helper function to get cards by suit from a player
 export function getCardsBySuit(player: Player, suit: Suit): Card[] {
-  return player.cards.filter(card => card.suit === suit);
+  return player.hand.filter(card => card.suit === suit);
 }
 
 // Helper function to get cards by rank from a player
 export function getCardsByRank(player: Player, rank: Rank): Card[] {
-  return player.cards.filter(card => card.rank === rank);
+  return player.hand.filter(card => card.rank === rank);
 }
 
 // Helper function to create a minimal valid game state for testing
 export function createMinimalGameState(): GameState {
   return createTestGameState({
-    phase: 'playing',
-    trump: 'HEARTS',
-    currentRank: 'TWO'
+    gamePhase: 'playing',
+    trumpInfo: createTestTrumpInfo(Rank.Two, Suit.Hearts, true)
   });
 }
 
 // Helper function to advance game state to a specific phase
-export function advanceToPhase(gameState: GameState, phase: GameState['phase']): GameState {
+export function advanceToPhase(gameState: GameState, gamePhase: GameState['gamePhase']): GameState {
   return {
     ...gameState,
-    phase
+    gamePhase
   };
 }
 
 // Helper function to set trump for testing
-export function setTrump(gameState: GameState, trump: Suit | null): GameState {
+export function setTrump(gameState: GameState, trumpSuit: Suit | undefined, trumpRank: Rank = Rank.Two): GameState {
   return {
     ...gameState,
-    trump
+    trumpInfo: {
+      ...gameState.trumpInfo,
+      trumpSuit,
+      trumpRank,
+      declared: trumpSuit !== undefined
+    }
   };
 }
 
@@ -228,17 +258,18 @@ export function completeTrick(gameState: GameState, winningPlayerId: string): Ga
     throw new Error('No current trick to complete');
   }
   
-  const completedTrick = {
+  const completedTrick: Trick = {
     leadingPlayerId: gameState.currentTrick.leadingPlayerId,
-    leadingCards: gameState.currentTrick.leadingCards,
+    leadingCombo: gameState.currentTrick.leadingCombo,
     plays: gameState.currentTrick.plays,
-    winningPlayerId
+    winningPlayerId,
+    points: gameState.currentTrick.points
   };
   
   return {
     ...gameState,
     currentTrick: null,
-    completedTricks: [...gameState.completedTricks, completedTrick]
+    tricks: [...gameState.tricks, completedTrick]
   };
 }
 
@@ -246,22 +277,60 @@ export function completeTrick(gameState: GameState, winningPlayerId: string): Ga
 export function createGameStateWithCompletedTricks(
   tricks: Array<{
     leadingPlayerId: string;
-    leadingCards: Card[];
+    leadingCombo: Card[];
     plays: Array<{ playerId: string; cards: Card[] }>;
     winningPlayerId: string;
+    points?: number;
   }>,
   overrides: Partial<GameState> = {}
 ): GameState {
-  const completedTricks = tricks.map(trick => ({
+  const completedTricks: Trick[] = tricks.map(trick => ({
     leadingPlayerId: trick.leadingPlayerId,
-    leadingCards: trick.leadingCards,
+    leadingCombo: trick.leadingCombo,
     plays: trick.plays,
-    winningPlayerId: trick.winningPlayerId
+    winningPlayerId: trick.winningPlayerId,
+    points: trick.points || 0
   }));
   
   return createTestGameState({
-    phase: 'playing',
-    completedTricks,
+    gamePhase: 'playing',
+    tricks: completedTricks,
     ...overrides
   });
+}
+
+// Additional helper functions that some tests might expect
+export function findPlayerById(gameState: GameState, playerId: string): Player {
+  return GameStateUtils.getPlayerById(gameState, playerId);
+}
+
+export function getPlayOrder(gameState: GameState): Player[] {
+  return GameStateUtils.getPlayersInOrder(gameState);
+}
+
+export function createAITestGameState(overrides: Partial<GameState> = {}): GameState {
+  return createTestGameState(overrides);
+}
+
+export function setPlayerCards(gameState: GameState, playerId: string, cards: Card[]): GameState {
+  return GameStateUtils.updatePlayer(gameState, playerId, { hand: cards });
+}
+
+export function createSequentialCards(suit: Suit, startRank: Rank, count: number): Card[] {
+  const ranks = [
+    Rank.Two, Rank.Three, Rank.Four, Rank.Five, Rank.Six, Rank.Seven,
+    Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King, Rank.Ace
+  ];
+  
+  const startIndex = ranks.indexOf(startRank);
+  if (startIndex === -1) {
+    throw new Error(`Invalid start rank: ${startRank}`);
+  }
+  
+  const cards: Card[] = [];
+  for (let i = 0; i < count && startIndex + i < ranks.length; i++) {
+    cards.push(createTestCard(suit, ranks[startIndex + i]));
+  }
+  
+  return cards;
 }

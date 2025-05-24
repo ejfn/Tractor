@@ -10,19 +10,29 @@ export class GameStateUtils {
   }
 
   static getPlayerIndex(gameState: GameState, playerId: string): number {
-    const playersInOrder = this.getPlayersInOrder(gameState);
-    const index = playersInOrder.findIndex(p => p.id === playerId);
+    const playerIds = Object.keys(gameState.players);
+    const index = playerIds.findIndex(id => id === playerId);
     if (index === -1) {
-      throw new Error(`Player with id ${playerId} not found in play order`);
+      throw new Error(`Player with id ${playerId} not found`);
     }
     return index;
   }
 
   static getPlayersInOrder(gameState: GameState): Player[] {
-    return gameState.playOrder.map(playerId => this.getPlayerById(gameState, playerId));
+    // Return players in positional order: bottom, right, top, left
+    const positionOrder = ['bottom', 'right', 'top', 'left'];
+    const playersByPosition = new Map();
+    
+    Object.values(gameState.players).forEach(player => {
+      playersByPosition.set(player.position, player);
+    });
+    
+    return positionOrder
+      .map(position => playersByPosition.get(position))
+      .filter(player => player !== undefined);
   }
 
-  static getTeam(gameState: GameState, teamId: string): Team {
+  static getTeam(gameState: GameState, teamId: "A" | "B"): Team {
     const team = gameState.teams[teamId];
     if (!team) {
       throw new Error(`Team with id ${teamId} not found`);
@@ -30,29 +40,23 @@ export class GameStateUtils {
     return team;
   }
 
-  static findPlayersByTeam(gameState: GameState, teamId: string): Player[] {
-    const team = this.getTeam(gameState, teamId);
-    return team.playerIds.map(playerId => this.getPlayerById(gameState, playerId));
+  static findPlayersByTeam(gameState: GameState, teamId: "A" | "B"): Player[] {
+    return Object.values(gameState.players).filter(player => player.teamId === teamId);
   }
 
   static getCurrentPlayer(gameState: GameState): Player {
-    if (!gameState.currentTrick) {
-      throw new Error('No current trick in progress');
-    }
-    
-    const leadingPlayerIndex = this.getPlayerIndex(gameState, gameState.currentTrick.leadingPlayerId);
-    const currentPlayerIndex = (leadingPlayerIndex + gameState.currentTrick.plays.length) % gameState.playOrder.length;
-    const currentPlayerId = gameState.playOrder[currentPlayerIndex];
-    
-    return this.getPlayerById(gameState, currentPlayerId);
+    return this.getPlayerById(gameState, gameState.currentPlayerId);
   }
 
   static getNextPlayer(gameState: GameState, currentPlayerId: string): Player {
-    const currentIndex = this.getPlayerIndex(gameState, currentPlayerId);
-    const nextIndex = (currentIndex + 1) % gameState.playOrder.length;
-    const nextPlayerId = gameState.playOrder[nextIndex];
+    const playersInOrder = this.getPlayersInOrder(gameState);
+    const currentIndex = playersInOrder.findIndex(p => p.id === currentPlayerId);
+    if (currentIndex === -1) {
+      throw new Error(`Player ${currentPlayerId} not found in play order`);
+    }
     
-    return this.getPlayerById(gameState, nextPlayerId);
+    const nextIndex = (currentIndex + 1) % playersInOrder.length;
+    return playersInOrder[nextIndex];
   }
 
   static getAllPlayers(gameState: GameState): Player[] {
@@ -64,31 +68,24 @@ export class GameStateUtils {
   }
 
   static getPlayerTeam(gameState: GameState, playerId: string): Team {
-    const teams = this.getAllTeams(gameState);
-    const team = teams.find(t => t.playerIds.includes(playerId));
-    if (!team) {
-      throw new Error(`No team found for player ${playerId}`);
-    }
-    return team;
+    const player = this.getPlayerById(gameState, playerId);
+    return this.getTeam(gameState, player.teamId);
   }
 
   static isPlayerTurn(gameState: GameState, playerId: string): boolean {
-    if (!gameState.currentTrick) return false;
-    
-    try {
-      const currentPlayer = this.getCurrentPlayer(gameState);
-      return currentPlayer.id === playerId;
-    } catch {
-      return false;
-    }
+    return gameState.currentPlayerId === playerId;
   }
 
   static getTrickWinner(gameState: GameState, trickIndex: number): Player | null {
-    if (trickIndex >= gameState.completedTricks.length) {
+    if (trickIndex >= gameState.tricks.length) {
       return null;
     }
     
-    const trick = gameState.completedTricks[trickIndex];
+    const trick = gameState.tricks[trickIndex];
+    if (!trick.winningPlayerId) {
+      return null;
+    }
+    
     return this.getPlayerById(gameState, trick.winningPlayerId);
   }
 
@@ -115,7 +112,7 @@ export class GameStateUtils {
     };
   }
 
-  static updateTeam(gameState: GameState, teamId: string, updates: Partial<Team>): GameState {
+  static updateTeam(gameState: GameState, teamId: "A" | "B", updates: Partial<Team>): GameState {
     const existingTeam = this.getTeam(gameState, teamId);
     
     return {
