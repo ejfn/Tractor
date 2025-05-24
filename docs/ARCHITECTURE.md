@@ -59,7 +59,8 @@ graph TD
 
 - **Game Types** (`src/types/game.ts`): Core type definitions for game entities
   - Card, Player, Combo, and GameState interfaces
-  - Enum definitions for Suit, Rank, and GamePhase
+  - Enum definitions for Suit, Rank, GamePhase, PlayerId, and PlayerName
+  - Type-safe constants eliminating magic strings throughout the codebase
 
 ## Data Flow
 
@@ -111,6 +112,44 @@ The View handles:
 - Animation coordination
 - User interaction capture
 - Layout organization
+
+### Type Safety and Enum Usage
+
+The codebase enforces type safety through comprehensive enum usage:
+
+```typescript
+// Type-safe player identification
+enum PlayerId {
+  Human = 'human',
+  Bot1 = 'bot1',
+  Bot2 = 'bot2',
+  Bot3 = 'bot3'
+}
+
+// Type-safe player display names
+enum PlayerName {
+  Human = 'You',
+  Bot1 = 'Bot 1',
+  Bot2 = 'Bot 2', 
+  Bot3 = 'Bot 3'
+}
+
+// Type-safe game phases
+enum GamePhase {
+  Dealing = 'dealing',
+  Declaring = 'declaring',
+  Playing = 'playing',
+  Scoring = 'scoring',
+  RoundEnd = 'roundEnd',
+  GameOver = 'gameOver'
+}
+```
+
+Benefits:
+- **Compile-time error checking** prevents invalid string usage
+- **IntelliSense support** for better developer experience
+- **Refactoring safety** when changing game constants
+- **Consistent naming** across the entire codebase
 
 ### Custom Hook Composition
 

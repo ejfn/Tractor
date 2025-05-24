@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { PlayerName } from "../types/game";
 
 interface TrickResultDisplayProps {
   visible: boolean;
@@ -21,7 +22,7 @@ const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
   return (
     <View style={styles.container}>
       <Text style={styles.winnerText}>
-        {winnerName === "You" ? "You win!" : `${winnerName} wins!`}
+        {winnerName === PlayerName.Human ? "You win!" : `${winnerName} wins!`}
       </Text>
       {points > 0 && <Text style={styles.pointsText}>+{points} pts</Text>}
     </View>

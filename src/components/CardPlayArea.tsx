@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, Platform } from "react-native";
-import AnimatedCardComponent from "./AnimatedCard";
-import { Card as CardType, Player, Trick, TrumpInfo } from "../types/game"; // Using Card as CardType to avoid naming conflict
+import React, { useEffect, useState } from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import {
+  Card as CardType,
+  Player,
+  PlayerId,
+  Trick,
+  TrumpInfo,
+} from "../types/game"; // Using Card as CardType to avoid naming conflict
 import { isTrump } from "../utils/gameLogic";
 import {
-  CARD_ANIMATION_FALLBACK,
   ANIMATION_COMPLETION_DELAY,
+  CARD_ANIMATION_FALLBACK,
 } from "../utils/gameTimings";
+import AnimatedCardComponent from "./AnimatedCard";
 
 interface CardPlayAreaProps {
   currentTrick: Trick | null;
@@ -182,13 +188,13 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
     // This mapping assumes players are in a fixed order:
     // ai3 = left, ai2 = top, ai1 = right, human = bottom
     // This creates counter-clockwise rotation when viewed from human's perspective
-    if (playerId === "ai3") {
+    if (playerId === PlayerId.Bot3) {
       return "left";
     }
-    if (playerId === "ai2") {
+    if (playerId === PlayerId.Bot2) {
       return "top";
     }
-    if (playerId === "ai1") {
+    if (playerId === PlayerId.Bot1) {
       return "right";
     }
     return "bottom"; // human player or unknown
@@ -284,7 +290,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     }),
                   // Simple border for winning cards (works on Android)
                   ...(isWinning(
-                    players.find((p) => p.id === "ai2")?.id || "",
+                    players.find((p) => p.id === PlayerId.Bot2)?.id || "",
                   ) && {
                     borderWidth: 2,
                     borderColor: "#FFC107",
@@ -327,7 +333,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       }),
                     // Simple border for winning cards (works on Android)
                     ...(isWinning(
-                      players.find((p) => p.id === "ai3")?.id || "",
+                      players.find((p) => p.id === PlayerId.Bot3)?.id || "",
                     ) && {
                       borderWidth: 2,
                       borderColor: "#FFC107",
@@ -373,7 +379,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       }),
                     // Simple border for winning cards (works on Android)
                     ...(isWinning(
-                      players.find((p) => p.id === "ai1")?.id || "",
+                      players.find((p) => p.id === PlayerId.Bot1)?.id || "",
                     ) && {
                       borderWidth: 2,
                       borderColor: "#FFC107",

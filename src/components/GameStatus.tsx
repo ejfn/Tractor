@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { Suit, Team, TrumpInfo } from "../types/game";
+import { Suit, Team, TrumpInfo, GamePhase } from "../types/game";
 
 interface GameStatusProps {
   teams: [Team, Team];
   trumpInfo: TrumpInfo;
   roundNumber: number;
-  gamePhase: string;
+  gamePhase: GamePhase;
 }
 
 const GameStatus: React.FC<GameStatusProps> = ({

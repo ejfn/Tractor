@@ -3,13 +3,15 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { View, Text, Button } from 'react-native';
 import { useGameState } from '../../src/hooks/useGameState';
 import {
-  GameState,
   Card,
   Rank,
   Suit,
   JokerType,
-  Trick
+  Trick,
+  GamePhase,
+  PlayerId
 } from '../../src/types/game';
+import { createComponentTestGameState } from '../helpers/testUtils';
 
 // Mock dependencies
 jest.mock('../../src/utils/gameLogic', () => ({
@@ -88,69 +90,8 @@ const createMockJoker = (id: string, type: JokerType, points = 0): Card => ({
   rank: undefined
 });
 
-// Create a mock game state
-const createMockGameState = (): GameState => {
-  return {
-    players: [
-      {
-        id: 'human',
-        name: 'Test Player',
-        hand: [
-          createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
-          createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
-        ],
-        isHuman: true,
-        team: 'A',
-      },
-      {
-        id: 'ai1',
-        name: 'Bot 1',
-        hand: [
-          createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
-          createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
-        ],
-        isHuman: false,
-        team: 'B',
-      },
-      {
-        id: 'ai2',
-        name: 'Bot 2',
-        hand: [
-          createMockCard('spades_2_1', Suit.Spades, Rank.Two),
-          createMockCard('hearts_q_1', Suit.Hearts, Rank.Queen)
-        ],
-        isHuman: false,
-        team: 'A',
-      },
-      {
-        id: 'ai3',
-        name: 'Bot 3',
-        hand: [
-          createMockCard('clubs_4_1', Suit.Clubs, Rank.Four),
-          createMockCard('diamonds_6_1', Suit.Diamonds, Rank.Six)
-        ],
-        isHuman: false,
-        team: 'B',
-      }
-    ],
-    teams: [
-      { id: 'A', currentRank: Rank.Two, isDefending: true, points: 0 },
-      { id: 'B', currentRank: Rank.Two, isDefending: false, points: 0 }
-    ],
-    currentPlayerIndex: 0,
-    trumpInfo: {
-      trumpRank: Rank.Two,
-      declared: false,
-      trumpSuit: undefined
-    },
-    gamePhase: 'playing' as const,
-    deck: [],
-    currentTrick: null,
-    kittyCards: [],
-    tricks: [],
-    roundNumber: 1
-  };
-};
+// Use shared utility for component testing game state
+const createMockGameState = createComponentTestGameState;
 
 describe('Game State Management', () => {
   // Reset mocks before each test
@@ -162,24 +103,24 @@ describe('Game State Management', () => {
     // Setup mock game state
     const mockState = createMockGameState();
     mockState.currentTrick = {
-      leadingPlayerId: 'human',
+      leadingPlayerId: PlayerId.Human,
       leadingCombo: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)],
       plays: [
         {
-          playerId: 'ai1',
+          playerId: PlayerId.Bot1,
           cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)]
         },
         {
-          playerId: 'ai2',
+          playerId: PlayerId.Bot2,
           cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)]
         },
         {
-          playerId: 'ai3',
+          playerId: PlayerId.Bot3,
           cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)]
         }
       ],
       points: 5,
-      winningPlayerId: 'ai2' // ai2's Spades 2 wins because 2 is trump rank
+      winningPlayerId: PlayerId.Bot2 // bot2's Spades 2 wins because 2 is trump rank
     };
 
     // Mock initializeGame to return our mock state
@@ -226,7 +167,7 @@ describe('Game State Management', () => {
 
   test('handles card selection properly', async () => {
     const mockState = createMockGameState();
-    mockState.gamePhase = 'playing';
+    mockState.gamePhase = GamePhase.Playing;
     
     const mockInitializeGame = require('../../src/utils/gameLogic').initializeGame;
     mockInitializeGame.mockReturnValue(mockState);

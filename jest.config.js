@@ -13,5 +13,8 @@ module.exports = {
     '**/__tests__/**/*.ts?(x)',
     '**/?(*.)+(spec|test).ts?(x)'
   ],
+  testPathIgnorePatterns: [
+    '__tests__/helpers/'
+  ],
   silent: true // Suppress console output in tests
 };

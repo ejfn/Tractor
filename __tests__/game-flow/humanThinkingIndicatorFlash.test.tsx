@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
-import { Card, Suit, Rank, Player, TrumpInfo } from '../../src/types/game';
+import { Card, Suit, Rank, Player, TrumpInfo, PlayerId, PlayerName } from '../../src/types/game';
 import { Animated } from 'react-native';
 
 // Mock the ThinkingIndicator to easily check if it's rendered
@@ -21,8 +21,8 @@ jest.mock('../../src/components/HumanHandAnimated', () => ({
 }));
 
 const mockPlayer: Player = {
-  id: 'human',
-  name: 'Test Player',
+  id: PlayerId.Human,
+  name: PlayerName.Human,
   hand: [],
   isHuman: true,
   team: 'A',
@@ -41,22 +41,22 @@ const mockThinkingDots = {
 };
 
 const mockCurrentTrickHumanWon = { 
-  leadingPlayerId: 'ai1',
+  leadingPlayerId: PlayerId.Bot1,
   leadingCombo: [],
   plays: [
-    { playerId: 'ai2', cards: [] },
-    { playerId: 'ai3', cards: [] },
-    { playerId: 'human', cards: [] }
+    { playerId: PlayerId.Bot2, cards: [] },
+    { playerId: PlayerId.Bot3, cards: [] },
+    { playerId: PlayerId.Human, cards: [] }
   ],
   points: 10,
-  winningPlayerId: 'human' // Human won this trick
+  winningPlayerId: PlayerId.Human // Human won this trick
 };
 
 const mockCurrentTrickOngoing = { 
-  leadingPlayerId: 'ai1',
+  leadingPlayerId: PlayerId.Bot1,
   leadingCombo: [],
   plays: [
-    { playerId: 'ai2', cards: [] }
+    { playerId: PlayerId.Bot2, cards: [] }
   ],
   points: 5
   // No winningPlayerId yet - trick is still ongoing

@@ -1,18 +1,21 @@
 import {
-  processPlay,
-  validatePlay,
-  getAIMoveWithErrorHandling
-} from '../../src/utils/gamePlayManager';
-import { 
-  GameState, 
-  Card, 
-  Rank, 
-  Suit, 
-  JokerType, 
-  TrumpInfo 
+  GameState,
+  PlayerId,
+  Rank,
+  Suit
 } from '../../src/types/game';
-import * as gameLogic from '../../src/utils/gameLogic';
 import * as aiLogic from '../../src/utils/aiLogic';
+import * as gameLogic from '../../src/utils/gameLogic';
+import {
+  getAIMoveWithErrorHandling,
+  processPlay,
+  validatePlay
+} from '../../src/utils/gamePlayManager';
+import {
+  createCard,
+  createTestCardsGameState,
+  testData
+} from '../helpers/testUtils';
 
 // Mock dependencies
 jest.mock('../../src/utils/gameLogic', () => ({
@@ -25,94 +28,13 @@ jest.mock('../../src/utils/aiLogic', () => ({
   getAIMove: jest.fn()
 }));
 
-// Helper functions to create test data
-const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card => ({
-  id,
-  suit,
-  rank,
-  points,
-  joker: undefined
-});
-
-const createMockJoker = (id: string, type: JokerType, points = 0): Card => ({
-  id,
-  joker: type,
-  points,
-  suit: undefined,
-  rank: undefined
-});
-
-const createMockGameState = (): GameState => {
-  return {
-    players: [
-      {
-        id: 'human',
-        name: 'You',
-        isHuman: true,
-        hand: [
-          createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5),
-          createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)
-        ],
-        team: 'A',
-      },
-      {
-        id: 'ai1',
-        name: 'Bot 1',
-        isHuman: false,
-        hand: [
-          createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three),
-          createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)
-        ],
-        team: 'B',
-      },
-      {
-        id: 'ai2',
-        name: 'Bot 2',
-        isHuman: false,
-        hand: [
-          createMockCard('spades_2_1', Suit.Spades, Rank.Two),
-          createMockCard('hearts_a_1', Suit.Hearts, Rank.Ace)
-        ],
-        team: 'A',
-      },
-      {
-        id: 'ai3',
-        name: 'Bot 3',
-        isHuman: false,
-        hand: [
-          createMockCard('clubs_4_1', Suit.Clubs, Rank.Four),
-          createMockCard('diamonds_10_1', Suit.Diamonds, Rank.Ten, 10)
-        ],
-        team: 'B',
-      }
-    ],
-    teams: [
-      {
-        id: 'A',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: true
-      },
-      {
-        id: 'B',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: false
-      }
-    ],
-    trumpInfo: {
-      trumpRank: Rank.Two,
-      trumpSuit: Suit.Spades,
-      declared: true
-    },
-    gamePhase: 'playing',
-    roundNumber: 1,
-    currentPlayerIndex: 0,
-    currentTrick: null,
-    tricks: [],
-    deck: [],
-    kittyCards: []
-  };
+// Use shared utility for test cards, then modify trump to Spades as needed
+const createMockGameState = () => {
+  const state = createTestCardsGameState();
+  // Override trump to Spades for this test
+  state.trumpInfo.trumpSuit = Suit.Spades;
+  state.trumpInfo.declared = true;
+  return state;
 };
 
 describe('gamePlayManager', () => {
@@ -130,7 +52,7 @@ describe('gamePlayManager', () => {
       
       // Verify the state was updated correctly
       expect(result.newState.currentTrick).toBeTruthy();
-      expect(result.newState.currentTrick?.leadingPlayerId).toBe('human');
+      expect(result.newState.currentTrick?.leadingPlayerId).toBe(PlayerId.Human);
       expect(result.newState.currentTrick?.leadingCombo).toEqual(cardsToPlay);
       
       // UPDATED: First player's cards are stored in leadingCombo, not in plays array
@@ -143,7 +65,8 @@ describe('gamePlayManager', () => {
       
       // Verify the card was removed from the player's hand
       expect(result.newState.players[0].hand).toHaveLength(1);
-      expect(result.newState.players[0].hand[0].id).toBe('hearts_k_1');
+      expect(result.newState.players[0].hand[0].rank).toBe(Rank.King);
+      expect(result.newState.players[0].hand[0].suit).toBe(Suit.Clubs);
       
       // Verify the current player was advanced
       expect(result.newState.currentPlayerIndex).toBe(1);
@@ -157,20 +80,20 @@ describe('gamePlayManager', () => {
       
       // Setup a trick in progress with 3 players already having played
       mockState.currentTrick = {
-        leadingPlayerId: 'ai3',
-        leadingCombo: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)],
+        leadingPlayerId: PlayerId.Bot3,
+        leadingCombo: [createCard(Suit.Clubs, Rank.Four)],
         plays: [
           {
-            playerId: 'ai3',
-            cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)]
+            playerId: PlayerId.Bot3,
+            cards: [createCard(Suit.Clubs, Rank.Four)]
           },
           {
-            playerId: 'human',
-            cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
+            playerId: PlayerId.Human,
+            cards: [testData.cards.heartsFive]
           },
           {
-            playerId: 'ai1',
-            cards: [createMockCard('clubs_j_1', Suit.Clubs, Rank.Jack)]
+            playerId: PlayerId.Bot1,
+            cards: [createCard(Suit.Clubs, Rank.Jack)]
           }
         ],
         points: 5 // 5 points from the Spades 5
@@ -179,8 +102,8 @@ describe('gamePlayManager', () => {
       // Setup the current player to be the last player in the trick
       mockState.currentPlayerIndex = 2; // ai2
       
-      // Mock determineTrickWinner to return ai1
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('ai1');
+      // Mock determineTrickWinner to return bot1 player ID
+      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue(PlayerId.Bot1);
       
       // Start fresh with a clear game state for this test
       const freshState = createMockGameState();
@@ -189,17 +112,17 @@ describe('gamePlayManager', () => {
       // For a 4-player game, we need leader + 3 followers to complete a trick
       freshState.currentTrick = {
         leadingPlayerId: 'ai1',  // Bot 1 led
-        leadingCombo: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)],
+        leadingCombo: [createCard(Suit.Diamonds, Rank.Three)],
         plays: [
           // Human has played 
           {
-            playerId: 'human',
-            cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
+            playerId: PlayerId.Human,
+            cards: [testData.cards.heartsFive]
           },
           // Bot 2 has played
           {
             playerId: 'ai2',
-            cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)]
+            cards: [createCard(Suit.Spades, Rank.Two)]
           }
         ],
         points: 5 // 5 points from the Spades 5
@@ -208,8 +131,8 @@ describe('gamePlayManager', () => {
       // Setup the current player to be the last player in the trick (Bot 3)
       freshState.currentPlayerIndex = 3; // ai3
       
-      // Mock determineTrickWinner to return ai1
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('ai1');
+      // Mock determineTrickWinner to return bot1 player ID
+      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue(PlayerId.Bot1);
       
       // Process the play for the last player in the trick (Bot 3)
       const cardsToPlay = [freshState.players[3].hand[0]]; // Clubs 4 
@@ -265,12 +188,12 @@ describe('gamePlayManager', () => {
       
       // Setup a trick in progress
       mockState.currentTrick = {
-        leadingPlayerId: 'ai3',
-        leadingCombo: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)],
+        leadingPlayerId: PlayerId.Bot3,
+        leadingCombo: [createCard(Suit.Clubs, Rank.Four)],
         plays: [
           {
-            playerId: 'ai3',
-            cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)]
+            playerId: PlayerId.Bot3,
+            cards: [createCard(Suit.Clubs, Rank.Four)]
           }
         ],
         points: 0
@@ -301,7 +224,7 @@ describe('gamePlayManager', () => {
       expect(validatePlay(mockState, [])).toBe(false);
       
       // Setup state to be null
-      expect(validatePlay(null as unknown as GameState, [createMockCard('spades_5_1', Suit.Spades, Rank.Five)])).toBe(false);
+      expect(validatePlay(null as unknown as GameState, [createCard(Suit.Spades, Rank.Five)])).toBe(false);
     });
   });
 
@@ -318,7 +241,7 @@ describe('gamePlayManager', () => {
       const result = getAIMoveWithErrorHandling(mockState);
       
       // Verify getAIMove was called with the correct parameters
-      expect(aiLogic.getAIMove).toHaveBeenCalledWith(mockState, 'ai1');
+      expect(aiLogic.getAIMove).toHaveBeenCalledWith(mockState, PlayerId.Bot1);
       
       expect(result).toEqual({
         cards: aiMove,

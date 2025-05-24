@@ -1,8 +1,13 @@
+import { fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
-import { Player, Card, Suit, Rank, TrumpInfo } from '../../src/types/game';
+import { PlayerId, PlayerName } from '../../src/types/game';
+import {
+  createPlayer,
+  createTrumpScenarios,
+  testData
+} from '../helpers/testUtils';
 
 // Mock dependencies
 jest.mock('../../src/components/ThinkingIndicator', () => {
@@ -28,41 +33,24 @@ jest.mock('../../src/components/PlayerHandAnimated', () => {
 });
 
 describe('HumanPlayerView', () => {
-  // Mock animation values
+  // Mock animation values using shared utility pattern
   const createAnimatedValues = () => ({
     dot1: new Animated.Value(0),
     dot2: new Animated.Value(0),
     dot3: new Animated.Value(0)
   });
 
-  // Create mock player
-  const createMockPlayer = (): Player => ({
-    id: 'human',
-    name: 'You',
-    isHuman: true,
-    hand: [
-      {
-        id: 'spades_a_1',
-        suit: Suit.Spades,
-        rank: Rank.Ace,
-        points: 0
-      },
-      {
-        id: 'hearts_k_1',
-        suit: Suit.Hearts,
-        rank: Rank.King,
-        points: 10
-      }
-    ],
-    team: 'A',
-  });
+  // Create mock player using shared utility
+  const createMockPlayer = () => createPlayer(
+    PlayerId.Human,
+    PlayerName.Human,
+    true,
+    'A',
+    [testData.cards.spadesAce, testData.cards.clubsKing]
+  );
 
-  // Create mock trump info
-  const createMockTrumpInfo = (): TrumpInfo => ({
-    trumpRank: Rank.Two,
-    trumpSuit: Suit.Spades,
-    declared: true
-  });
+  // Create mock trump info using shared utility
+  const createMockTrumpInfo = () => createTrumpScenarios.spadesTrump();
 
   test('renders correctly for current player without trick result', () => {
     const thinkingDots = createAnimatedValues();

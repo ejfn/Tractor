@@ -1,78 +1,19 @@
 import {
-  getAIMove,
-  shouldAIDeclare,
-  createAIStrategy
-} from '../../src/utils/aiLogic';
-import {
   Card,
-  GameState,
-  Rank,
-  Suit,
+  ComboType,
   JokerType,
-  Trick,
-  ComboType
+  PlayerId,
+  Rank,
+  Suit
 } from '../../src/types/game';
+import {
+  createAIStrategy,
+  getAIMove
+} from '../../src/utils/aiLogic';
+import { createBasicGameState } from '../helpers/testUtils';
 
-// Create a mock game state for testing
-const createMockGameState = (): GameState => {
-  return {
-    players: [
-      {
-        id: 'player',
-        name: 'Human',
-        isHuman: true,
-        hand: [],
-        team: 'A'
-      },
-      {
-        id: 'ai1',
-        name: 'Bot 1',
-        isHuman: false,
-        hand: [],
-        team: 'B'
-      },
-      {
-        id: 'ai2',
-        name: 'Bot 2',
-        isHuman: false,
-        hand: [],
-        team: 'A'
-      },
-      {
-        id: 'ai3',
-        name: 'Bot 3',
-        isHuman: false,
-        hand: [],
-        team: 'B'
-      }
-    ],
-    teams: [
-      {
-        id: 'A',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: true
-      },
-      {
-        id: 'B',
-        currentRank: Rank.Two,
-        points: 0,
-        isDefending: false
-      }
-    ],
-    deck: [],
-    kittyCards: [],
-    currentTrick: null,
-    trumpInfo: {
-      trumpRank: Rank.Two,
-      declared: false
-    },
-    tricks: [],
-    roundNumber: 1,
-    currentPlayerIndex: 0,
-    gamePhase: 'playing'
-  };
-};
+// Use shared utility for basic AI testing game state
+const createMockGameState = createBasicGameState;
 
 // Helper function to create cards
 const createCard = (suit: Suit, rank: Rank, id: string): Card => {
@@ -101,7 +42,7 @@ describe('AI Logic Tests', () => {
       gameState.currentPlayerIndex = 1; // AI1's turn
       
       // AI is leading, so any valid combo is acceptable
-      const move = getAIMove(gameState, 'ai1');
+      const move = getAIMove(gameState, PlayerId.Bot1);
       
       // AI should return a valid move
       expect(move).toBeDefined();
@@ -119,11 +60,11 @@ describe('AI Logic Tests', () => {
       
       // Create a trick with Hearts as the leading suit
       gameState.currentTrick = {
-        leadingPlayerId: 'player',
+        leadingPlayerId: PlayerId.Human,
         leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
         plays: [
           {
-            playerId: 'player',
+            playerId: PlayerId.Human,
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
@@ -139,7 +80,7 @@ describe('AI Logic Tests', () => {
       
       gameState.currentPlayerIndex = 1; // AI1's turn
       
-      const move = getAIMove(gameState, 'ai1');
+      const move = getAIMove(gameState, PlayerId.Bot1);
       
       // AI should play the heart card since it must follow suit
       expect(move.length).toBe(1);
@@ -151,11 +92,11 @@ describe('AI Logic Tests', () => {
       
       // Create a trick with Hearts as the leading suit
       gameState.currentTrick = {
-        leadingPlayerId: 'player',
+        leadingPlayerId: PlayerId.Human,
         leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
         plays: [
           {
-            playerId: 'player',
+            playerId: PlayerId.Human,
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
@@ -171,7 +112,7 @@ describe('AI Logic Tests', () => {
       
       gameState.currentPlayerIndex = 1; // AI1's turn
       
-      const move = getAIMove(gameState, 'ai1');
+      const move = getAIMove(gameState, PlayerId.Bot1);
       
       // AI should play one card as required
       expect(move.length).toBe(1);
@@ -185,14 +126,14 @@ describe('AI Logic Tests', () => {
       
       // Create a trick with a pair as the leading combo
       gameState.currentTrick = {
-        leadingPlayerId: 'player',
+        leadingPlayerId: PlayerId.Human,
         leadingCombo: [
           createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
           createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
         ],
         plays: [
           {
-            playerId: 'player',
+            playerId: PlayerId.Human,
             cards: [
               createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
               createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
@@ -212,7 +153,7 @@ describe('AI Logic Tests', () => {
       
       gameState.currentPlayerIndex = 1; // AI1's turn
       
-      const move = getAIMove(gameState, 'ai1');
+      const move = getAIMove(gameState, PlayerId.Bot1);
       
       // AI should play a pair of hearts
       expect(move.length).toBe(2);
@@ -226,14 +167,14 @@ describe('AI Logic Tests', () => {
       
       // Create a trick with a pair as leading combo
       gameState.currentTrick = {
-        leadingPlayerId: 'player',
+        leadingPlayerId: PlayerId.Human,
         leadingCombo: [
           createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
           createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
         ],
         plays: [
           {
-            playerId: 'player',
+            playerId: PlayerId.Human,
             cards: [
               createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
               createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
@@ -244,7 +185,7 @@ describe('AI Logic Tests', () => {
       };
       
       // NOTE: This test intentionally triggers a console warning
-      // The warning "AI player ai1 doesn't have enough cards" is expected
+      // The warning "AI player bot1 doesn't have enough cards" is expected
       // Give AI1 only one card (not enough to follow the pair)
       gameState.players[1].hand = [
         createCard(Suit.Hearts, Rank.Six, 'hearts_6_1')
@@ -252,7 +193,7 @@ describe('AI Logic Tests', () => {
       
       gameState.currentPlayerIndex = 1; // AI1's turn
       
-      const move = getAIMove(gameState, 'ai1');
+      const move = getAIMove(gameState, PlayerId.Bot1);
       
       // AI should return whatever card it has, even if not enough cards
       expect(move.length).toBe(1);
@@ -264,11 +205,11 @@ describe('AI Logic Tests', () => {
 
       // Create a trick
       gameState.currentTrick = {
-        leadingPlayerId: 'player',
+        leadingPlayerId: PlayerId.Human,
         leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
         plays: [
           {
-            playerId: 'player',
+            playerId: PlayerId.Human,
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
@@ -276,13 +217,13 @@ describe('AI Logic Tests', () => {
       };
 
       // NOTE: This test intentionally triggers a console warning
-      // The warning "AI player ai1 doesn't have enough cards" is expected
+      // The warning "AI player bot1 doesn't have enough cards" is expected
       // Give AI1 no cards (edge case)
       gameState.players[1].hand = [];
 
       gameState.currentPlayerIndex = 1; // AI1's turn
 
-      const move = getAIMove(gameState, 'ai1');
+      const move = getAIMove(gameState, PlayerId.Bot1);
 
       // AI should return empty array
       expect(move).toBeDefined();
@@ -294,14 +235,14 @@ describe('AI Logic Tests', () => {
 
       // Create a trick with a pair as the leading combo
       gameState.currentTrick = {
-        leadingPlayerId: 'player',
+        leadingPlayerId: PlayerId.Human,
         leadingCombo: [
           createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
           createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
         ],
         plays: [
           {
-            playerId: 'player',
+            playerId: PlayerId.Human,
             cards: [
               createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
               createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
@@ -321,7 +262,7 @@ describe('AI Logic Tests', () => {
 
       gameState.currentPlayerIndex = 1; // AI1's turn
 
-      const move = getAIMove(gameState, 'ai1');
+      const move = getAIMove(gameState, PlayerId.Bot1);
 
       // AI must play the one diamond it has plus one other card
       expect(move.length).toBe(2);
@@ -339,14 +280,14 @@ describe('AI Logic Tests', () => {
 
       // Create a trick with a pair as the leading combo
       gameState.currentTrick = {
-        leadingPlayerId: 'player',
+        leadingPlayerId: PlayerId.Human,
         leadingCombo: [
           createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
           createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
         ],
         plays: [
           {
-            playerId: 'player',
+            playerId: PlayerId.Human,
             cards: [
               createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
               createCard(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
@@ -366,7 +307,7 @@ describe('AI Logic Tests', () => {
 
       gameState.currentPlayerIndex = 1; // AI1's turn
 
-      const move = getAIMove(gameState, 'ai1');
+      const move = getAIMove(gameState, PlayerId.Bot1);
 
       // AI must play the pair of diamonds
       expect(move.length).toBe(2);
