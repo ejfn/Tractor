@@ -8,6 +8,7 @@ import {
   humanHasTrumpRank,
 } from "../utils/trumpManager";
 import { processPlay, validatePlay } from "../utils/gamePlayManager";
+import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import {
   TRICK_RESULT_DISPLAY_TIME,
   CARD_SELECTION_DELAY,
@@ -90,12 +91,24 @@ export function useGameState() {
     // Only allow current player to select cards
     if (!currentPlayer.isHuman) return;
 
-    // Toggle card selection
-    if (selectedCards.some((c) => c.id === card.id)) {
-      setSelectedCards(selectedCards.filter((c) => c.id !== card.id));
-    } else {
-      setSelectedCards([...selectedCards, card]);
-    }
+    // Determine if player is leading this trick
+    const isLeading =
+      !gameState.currentTrick || gameState.currentTrick.plays.length === 0;
+
+    // Get leading combo if following
+    const leadingCombo = gameState.currentTrick?.leadingCombo;
+
+    // Use smart auto-selection logic
+    const newSelection = getAutoSelectedCards(
+      card,
+      currentPlayer.hand,
+      selectedCards,
+      isLeading,
+      leadingCombo,
+      gameState.trumpInfo,
+    );
+
+    setSelectedCards(newSelection);
   };
 
   // Handle play button click
