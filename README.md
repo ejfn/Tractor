@@ -5,12 +5,12 @@ A React Native implementation of the Chinese card game Shengji (升级), also kn
 ![Mobile Only](https://img.shields.io/badge/Platform-Mobile%20Only-red)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![Tests](https://img.shields.io/badge/Tests-192%20Passing-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-299%20Passing-brightgreen)
 
 ## ✨ Game Features
 
 ### Core Gameplay
-- **Single-player** against 3 AI opponents with advanced strategy
+- **Single-player** against 3 AI opponents with master-level strategic intelligence
 - **2 teams**: Team A (Human + Bot 2) vs Team B (Bot 1 + Bot 3)
 - **Trick-taking gameplay** with complex trump card mechanics
 - **Rank advancement** from 2 through Ace with team role switching
@@ -26,7 +26,7 @@ A React Native implementation of the Chinese card game Shengji (升级), also kn
 ### Advanced Game Mechanics
 - **Complex trump hierarchy** with proper "first played wins" rules
 - **Multiple card combinations**: Singles, Pairs, Tractors
-- **Strategic AI** with suit-following and trump logic
+- **Strategic AI** with 4-phase intelligence system
 - **Accurate scoring** system with 5s, 10s, and Kings
 - **Round-by-round progression** with defending team rotation
 
@@ -45,7 +45,7 @@ npm run android      # Direct Android launch
 npm run ios         # Direct iOS launch
 
 # Quality assurance
-npm run qualitycheck # Runs typecheck + lint + test (192 tests)
+npm run qualitycheck # Runs typecheck + lint + test (299 tests)
 npm run lint         # ESLint with Prettier
 npm run typecheck    # TypeScript strict checking
 npm test            # Jest test suite
@@ -99,267 +99,54 @@ Trump cards beat non-trump cards. Within trumps, the hierarchy is:
 - **Rank advancement**: Successful teams advance 1-3 ranks based on performance
 - **Game end**: First team to reach Ace wins
 
-## 🧠 AI Strategy & Intelligence
+## 🧠 AI Strategic Intelligence
 
-### Current AI Implementation
-The bot players use strategic logic rather than random play, with several layers of decision-making:
+The game features a **4-phase AI intelligence system** providing master-level strategic play:
 
-**Basic Strategy Features:**
-- **Partner awareness**: Avoids competing when partner is winning a trick
-- **Point threshold logic**: Fights harder for tricks with 15+ points (5s, 10s, Kings)
-- **Trump leading decisions**: Considers hand strength and round timing
-- **Card conservation**: Avoids wasting point cards when leading
+### ✅ Phase 1: Team Role Awareness
+**Strategic Intelligence**: AI distinguishes between attacking vs defending team roles with sophisticated context awareness.
 
-**Strategic Decision Tree:**
-1. **Leading a trick**: Balances between probing with moderate cards and avoiding easy points for opponents
-2. **Following in trick**: Uses partner status, trick points, and card strength to decide
-3. **Trump declaration**: Considers suit distribution and trump rank cards
+**Key Features:**
+- **Dynamic Point Collection**: Attacking teams adapt strategy based on current score (LOW/MEDIUM/HIGH pressure)
+- **Strategic Point Denial**: Defending teams conserve trumps and block strategically
+- **Late-Round Urgency**: Increased aggression when approaching critical thresholds
+- **Partner Coordination**: Teams work together to maximize effectiveness
 
-### Enhanced AI Implementation (Issue #20) ✅
-
-#### ✅ Phase 1: Team Role Awareness (IMPLEMENTED)
-**Strategic Intelligence**: AI now distinguishes between attacking vs defending team roles with sophisticated context awareness.
-
-**Current Implementation:**
-```typescript
-interface GameContext {
-  isAttackingTeam: boolean;
-  currentPoints: number;     // Points collected by attacking team
-  pointsNeeded: number;      // Usually 80 to advance level  
-  cardsRemaining: number;    // Cards left in round
-  trickPosition: TrickPosition;  // Position in current trick
-  pointPressure: PointPressure;  // LOW/MEDIUM/HIGH urgency
-  playStyle: PlayStyle;          // Conservative/Balanced/Aggressive/Desperate
-}
-```
-
-**✅ Attacking Strategy Implementation:**
-- ✅ Dynamic point collection based on current progress (LOW: 24pts, MEDIUM: 24-56pts, HIGH: 56+pts)
-- ✅ Risk/reward calculation with point pressure adaptation
-- ✅ Late-round urgency when approaching failure threshold
-- ✅ Aggressive leading when desperate for points
-
-**✅ Defending Strategy Implementation:**
-- ✅ Strategic point denial with trump conservation
-- ✅ Active disruption when attacking team approaches 80 points
-- ✅ Partner coordination to maximize defensive effectiveness
-- ✅ Conservative early play, aggressive blocking when necessary
-
-#### ✅ Phase 2: Position-Based Adaptive Play (IMPLEMENTED)
+### ✅ Phase 2: Position-Based Adaptive Play
 **Advanced Intelligence**: AI adapts strategy based on trick position with sophisticated information usage.
 
-**Current Implementation:**
-```typescript
-enum TrickPosition {
-  First = "first",    // Leading - probe opponents, set trick tone
-  Second = "second",  // Early follower - some info, balanced approach
-  Third = "third",    // Late follower - good info, calculated risks
-  Fourth = "fourth"   // Last player - perfect info, optimal decisions
-}
+**Position Strategies:**
+- **First (Leading)**: Probe opponents, control trick direction, gather information
+- **Second**: Balanced approach, moderate risk-taking, consider partner possibilities
+- **Third**: Informed decisions based on first two plays, higher partner coordination
+- **Fourth**: Perfect information optimization, maximum risk tolerance
 
-interface PositionStrategy {
-  informationGathering: number;  // 0.8 (First) → 0.2 (Fourth)
-  riskTaking: number;           // 0.4 (First) → 0.8 (Fourth)  
-  partnerCoordination: number;  // 0.2 (First) → 0.9 (Fourth)
-  disruptionFocus: number;      // 0.6 (First) → 0.3 (Fourth)
-}
-```
+**Advanced Features:**
+- **Play Style Evolution**: Conservative → Balanced → Aggressive → Desperate
+- **Combo Strength Analysis**: Weak/Medium/Strong/Critical classification
+- **Dynamic Strategy Matrices**: Information gathering, risk taking, partner coordination
 
-**✅ Position Strategy Implementation:**
-- **✅ First (Leading)**: Probe with strategic combos, control trick direction, gather opponent info
-- **✅ Second**: Balanced approach, moderate risk-taking, consider partner possibilities
-- **✅ Third**: Informed decisions based on first two plays, higher partner coordination
-- **✅ Fourth**: Perfect information optimization, maximum risk tolerance, full partner visibility
+### ✅ Phase 3: Card Memory & Counting System
+**Expert Intelligence**: Sophisticated card tracking and probability-based decision making for near-human-level play.
 
-**✅ Advanced Combo Intelligence:**
-```typescript
-interface ComboAnalysis {
-  strength: ComboStrength;        // Weak/Medium/Strong/Critical
-  isTrump: boolean;
-  hasPoints: boolean;
-  pointValue: number;
-  disruptionPotential: number;    // Strategic disruption value
-  conservationValue: number;      // Value of keeping this combo
-}
-```
-
-**✅ Strategic Decision Matrix:**
-- **✅ Combo Selection**: Strength-based filtering with trump prioritization
-- **✅ Trick Analysis**: Partner status detection and contest evaluation
-- **✅ Play Style Evolution**: Dynamic adaptation from Conservative → Desperate
-- **✅ Resource Management**: Smart trump and point card conservation
-
-#### ✅ Integrated: Dynamic Point Pressure System (IMPLEMENTED IN PHASES 1 & 2)
-**Enhanced Intelligence**: AI dynamically adjusts aggression based on score progression with sophisticated pressure adaptation.
-
-**✅ Current Implementation:**
-```typescript
-enum PointPressure {
-  LOW = "low",        // < 30% of points needed (< 24 points)
-  MEDIUM = "medium",  // 30-70% of points needed (24-56 points)
-  HIGH = "high"       // 70%+ of points needed (56+ points)
-}
-
-function determinePlayStyle(
-  isAttackingTeam: boolean,
-  pointPressure: PointPressure,
-  cardsRemaining: number
-): PlayStyle {
-  // Dynamic style evolution based on pressure and endgame
-}
-```
-
-**✅ Pressure-Based Strategic Adaptations:**
-- **✅ LOW**: Conservative information gathering, long-term positioning, resource conservation
-- **✅ MEDIUM**: Balanced aggression with selective point targeting and moderate risks
-- **✅ HIGH**: Maximum aggression/defense, short-term focus, desperate measures
-- **✅ ENDGAME**: Automatic escalation to Aggressive/Desperate with ≤3 cards remaining
-
-#### ✅ Phase 3: Card Memory & Counting System (COMPLETED)
-**Advanced Intelligence**: AI now features sophisticated card tracking and probability-based decision making for near-human-level play.
-
-**✅ Current Implementation:**  
-```typescript
-interface CardMemory {
-  playedCards: Card[];                    // All cards seen this round
-  trumpCardsPlayed: number;               // Trump tracking
-  pointCardsPlayed: number;               // Point card tracking  
-  suitDistribution: Record<string, number>; // Suit exhaustion tracking
-  playerMemories: Record<string, PlayerMemory>; // Individual player tracking
-  cardProbabilities: CardProbability[];   // Probability distribution for unseen cards
-}
-
-interface PlayerMemory {
-  playerId: string;
-  knownCards: Card[];                     // Cards we've seen this player play
-  estimatedHandSize: number;              // Estimated cards remaining
-  suitVoids: Set<Suit>;                  // Suits this player has shown to be out of
-  trumpCount: number;                     // Estimated trump cards remaining
-  pointCardsProbability: number;          // Likelihood of having point cards
-  playPatterns: PlayPattern[];            // Historical play behavior
-}
-
-interface MemoryBasedStrategy {
-  shouldPlayTrump: boolean;               // Based on trump card tracking
-  riskLevel: number;                      // 0.0-1.0 based on remaining card knowledge
-  expectedOpponentStrength: number;       // Estimated opponent hand strength
-  suitExhaustionAdvantage: boolean;      // Can we exploit suit voids
-  endgameOptimal: boolean;               // Perfect information available
-}
-```
-
-**✅ Memory-Enhanced Decision Intelligence:**
-- ✅ **Trump Exhaustion Analysis**: Tracks remaining trump cards for optimal trump timing
-- ✅ **Opponent Hand Estimation**: Calculates probability each player has specific cards
-- ✅ **Play Pattern Recognition**: Records and analyzes behavioral patterns per player
-- ✅ **Suit Void Exploitation**: Detects and leverages when opponents are out of suits
-- ✅ **Point Card Probability**: Bayesian updates based on observed point card play
-- ✅ **Perfect Information Endgame**: Optimal decisions when uncertainty is eliminated
-- ✅ **Memory-Informed Risk Assessment**: Adjusts aggression based on information certainty
-- ✅ **Strategic Card Counting**: Comprehensive tracking of all played cards by player
-- ✅ **20 comprehensive tests** with 98.7% code coverage for memory module
-
-#### 📋 Phase 4: Advanced Combination Logic (PLANNED)
-**Future Enhancement**: Further optimization of tractor/pair play timing and combination strategy.
-
-**Planned Advanced Features:**
-- **Dynamic Tractor Management**: Optimal timing for breaking up vs preserving tractors
-- **Defensive Pair Strategy**: Strategic pair conservation for critical blocking moments
-- **Combination Threat Assessment**: Reading and countering opponent combination potential
-- **Trump Sequence Optimization**: Advanced trump tractor and pair coordination
-- **Multi-trick Planning**: Strategic planning across multiple tricks
-- **Perfect Endgame Play**: Optimal play with complete information in final tricks
-
-### Implementation Status
-
-**✅ Phase 1: Team Role Awareness** (COMPLETED)
-- ✅ Attacking/defending team detection with role-specific strategies
-- ✅ Point progression tracking with dynamic pressure system (LOW/MEDIUM/HIGH)
-- ✅ Strategic decision making based on team objectives
-- ✅ Comprehensive test coverage (91.3% for AI context module)
-
-**✅ Phase 2: Position-Based Intelligence** (COMPLETED)  
-- ✅ Trick position detection (First/Second/Third/Fourth) with position-aware strategy
-- ✅ Dynamic play styles (Conservative/Balanced/Aggressive/Desperate)
-- ✅ Advanced combo analysis with strength classification and disruption potential
-- ✅ Sophisticated trick analysis with partner coordination
-- ✅ Position-based strategy matrices optimizing information usage
-- ✅ Enhanced decision making for leading vs following plays
-- ✅ 24 comprehensive tests covering all Phase 2 functionality
-
-**✅ Phase 3: Card Memory & Counting System** (COMPLETED)
-- ✅ Comprehensive played card tracking with probability calculations
-- ✅ Trump exhaustion analysis and suit void detection
-- ✅ Memory-enhanced strategic decisions with opponent modeling
-- ✅ Perfect information endgame optimization
-- ✅ Bayesian probability updates based on play patterns
-- ✅ Strategic card counting with 98.7% test coverage
-- ✅ 20 comprehensive tests covering all memory functionality
-
-**📋 Phase 4: Advanced Strategies** (PLANNED)
-- Sophisticated combination play optimization
-- End-game specialization and perfect information usage
-- Advanced tractor/pair timing strategies
-
-### Current AI Capabilities
-
-The AI now features **sophisticated strategic intelligence** with:
-
-**🎯 Dynamic Strategic Adaptation:**
-- **Team Role Awareness**: Attacking teams play aggressively for points, defending teams block strategically
-- **Point Pressure System**: Strategy intensifies as teams approach the 80-point threshold
-- **Position Intelligence**: Different strategies for leading (probe opponents) vs following (optimize decisions)
-- **Play Style Evolution**: Conservative → Balanced → Aggressive → Desperate based on game context
-
-**🧠 Advanced Decision Making:**
-- **Combo Analysis**: Evaluates card strength (Weak/Medium/Strong/Critical) with trump and point awareness
-- **Partner Coordination**: Detects partner status and coordinates team play accordingly
-- **Trick Evaluation**: Smart decisions on when tricks are worth contesting
-- **Strategic Disposal**: Intelligent card disposal when not contesting tricks
-- **Memory-Based Predictions**: Uses card tracking to predict opponent hands and optimize play
-- **Probability Assessment**: Calculates likelihood of opponent card holdings for strategic advantage
-
-**📊 Strategic Matrices:**
-- **Information Gathering**: Higher priority when leading to probe opponent hands
-- **Risk Taking**: Calculated risks based on position and available information
-- **Disruption Focus**: Strategic timing for disrupting opponent plans
-- **Conservation Logic**: Preserve valuable trump and tractor combinations
-- **Memory Integration**: All strategies enhanced with comprehensive card memory
-- **Uncertainty Management**: Strategy adaptation based on information completeness
-
-**💡 Context-Aware Intelligence:**
-- **Endgame Recognition**: Increased urgency with fewer cards remaining
-- **Trump Management**: Smart trump usage based on game phase and pressure
-- **Point Card Strategy**: Dynamic point collection vs denial based on team role
-- **Combination Optimization**: Strategic use of pairs and tractors for maximum impact
-- **Trump Exhaustion Tracking**: Optimal trump timing based on remaining trump analysis
-- **Suit Void Exploitation**: Leverages known suit exhaustions for strategic advantage
-- **Perfect Information Play**: Optimal decisions when card uncertainty is eliminated
-
-**🧠 Phase 3: Memory Intelligence:**
+**Memory Capabilities:**
 - **Comprehensive Card Tracking**: Monitors every card played with player attribution
-- **Play Pattern Analysis**: Records and analyzes behavioral patterns for each player
+- **Play Pattern Analysis**: Records and analyzes behavioral patterns per player
 - **Opponent Hand Modeling**: Estimates remaining cards and hand strength per player
 - **Bayesian Probability Updates**: Dynamic probability calculations based on observed play
-- **Strategic Card Counting**: Professional-level card memory with 98.7% accuracy
-- **Memory-Enhanced Risk Assessment**: Adjusts strategy based on information certainty
+- **Suit Void Exploitation**: Leverages known suit exhaustions for strategic advantage
+- **Perfect Information Endgame**: Optimal decisions when uncertainty is eliminated
 
-**🧪 Testing & Quality Assurance:**
-- ✅ **280 total tests** passing with comprehensive AI coverage
-- ✅ **98.7% code coverage** for Phase 3 memory module
-- ✅ **94.4% code coverage** for enhanced AI context system
-- ✅ **Type-safe implementation** with TypeScript enums and interfaces
-- ✅ **Performance optimized** with efficient probability calculations and memory management
-- ✅ **Backwards compatible** - all existing functionality preserved
-- ✅ **20 new Phase 3 tests** covering card memory and probability systems
+### ✅ Phase 4: Advanced Combination Logic
+**Master Intelligence**: Sophisticated combination pattern recognition with dynamic strategy adaptation.
 
-**🎮 User Experience Improvements:**
-- **Expert-level AI opponents** with near-human card memory and strategic depth
-- **Adaptive intelligence** that learns and responds to play patterns
-- **Realistic gameplay** - AI makes human-like decisions based on card counting
-- **Strategic unpredictability** - each game feels unique with different AI approaches
-- **Enhanced team coordination** - bots work together with shared memory insights
-- **Progressive difficulty** - AI becomes more challenging as games progress with better information
+**Combination Mastery:**
+- **Dynamic Pattern Recognition**: Identifies optimal combination patterns based on game context
+- **Adaptive Strategy Selection**: Real-time strategy adjustment based on hand profile and position
+- **Memory-Enhanced Combinations**: Integrates card memory for optimal timing decisions
+- **Risk/Reward Optimization**: Sophisticated risk assessment with reward calculation
+- **Multi-Dimensional Analysis**: Considers effectiveness, timing, risk, reward, and alternatives
+- **Trump Combination Coordination**: Advanced trump tractor and pair timing optimization
 
 ## 🏗️ Architecture
 
@@ -372,49 +159,48 @@ The AI now features **sophisticated strategic intelligence** with:
 │   ├── gamePlayManager.ts # Turn validation and trick processing
 │   ├── gameRoundManager.ts # Round transitions and scoring
 │   ├── trumpManager.ts    # Trump declaration handling
-│   ├── aiLogic.ts         # AI decision making
+│   ├── aiLogic.ts         # AI decision making (4-phase system)
+│   ├── aiAdvancedCombinations.ts # Phase 4: Advanced combination logic
+│   ├── aiCardMemory.ts    # Phase 3: Card memory & counting
+│   ├── aiGameContext.ts   # Phase 1-2: Context & position intelligence
 │   └── gameTimings.ts     # Animation timing constants
 ├── hooks/                 # Custom React hooks
 │   ├── useGameState.ts    # Core game state management
 │   ├── useAITurns.ts      # AI turn coordination
 │   └── useTrickResults.ts # Trick completion handling
 ├── components/            # UI components
-│   ├── *PlayerView.tsx    # Player area components
-│   ├── CardPlayArea.tsx   # Central play area
-│   └── GameTable.tsx      # Main table layout
-├── screens/               # Screen-level components
-└── __tests__/             # Comprehensive test suite (280 tests)
-    ├── components/        # Component tests
-    ├── game-logic/        # Game mechanics tests  
-    ├── game-flow/         # Game flow integration tests
-    ├── utils/             # AI intelligence tests (Phase 1-3)
-    │   ├── aiGameContext.test.ts     # Phase 1 team role tests
-    │   ├── aiGameContextPhase2.test.ts # Phase 2 position tests
-    │   └── aiCardMemory.test.ts      # Phase 3 memory tests
-    ├── card-tracking/     # Card counting verification
-    ├── game-state/        # State management tests
+└── __tests__/             # Comprehensive test suite (299 tests)
+    ├── utils/             # AI intelligence tests (69 tests across 4 phases)
+    │   ├── aiGameContext.test.ts         # Phase 1: Team role tests
+    │   ├── aiGameContextPhase2.test.ts   # Phase 2: Position tests  
+    │   ├── aiCardMemory.test.ts          # Phase 3: Memory tests
+    │   └── aiAdvancedCombinations.test.ts # Phase 4: Combination tests
+    ├── game-logic/        # Game mechanics tests (62 tests)
+    ├── game-flow/         # Game flow integration tests (65 tests)
+    ├── card-tracking/     # Card counting verification tests (25 tests)
+    ├── components/        # Component tests (18 tests)
+    ├── game-state/        # State management tests (15 tests)
     └── helpers/           # Test utilities
 ```
 
-### Key Technical Features
+### Technical Features
 - **Type-safe enums** eliminate magic strings throughout codebase
+- **4-phase AI system** with 91.4% test coverage across intelligence modules
+- **Comprehensive card memory** with 98.7% test coverage
 - **Immutable state updates** ensure predictable game flow
-- **Centralized timing** constants for smooth animations
-- **Comprehensive test coverage** with 280 passing tests
-- **Trump strength rules** with proper "first played wins" implementation
-- **Player rotation logic** correctly handles round transitions
-- **Advanced AI system** with 3 phases of strategic intelligence
-- **Memory-based probability** calculations for expert-level play
-- **Sophisticated card tracking** with 98.7% accuracy
+- **299 passing tests** with extensive AI and game logic coverage
+- **Advanced combination analysis** with effectiveness scoring
+- **Memory-enhanced decision making** with uncertainty management
 
 ## 🧪 Quality & Testing
 
 ### Test Coverage
-- **280 tests passing** across all game mechanics and AI systems
+- **299 total tests** passing across all systems
+- **69 AI intelligence tests** covering all 4 phases
 - **Component testing** with React Testing Library
 - **Game logic testing** for all card combinations and rules
 - **Integration testing** for complete game flows
-- **Trump mechanics testing** including edge cases
+- **Memory system testing** with 98.7% coverage
 
 ### Code Quality
 - **TypeScript strict mode** with full type coverage
@@ -433,7 +219,7 @@ npm run qualitycheck     # All checks: typecheck + lint + test
 # Individual checks  
 npm run typecheck        # TypeScript compilation check
 npm run lint            # Code style and best practices
-npm test               # Full test suite (192 tests)
+npm test               # Full test suite (299 tests)
 
 # Development
 npx expo start          # Start development server
@@ -455,14 +241,6 @@ git push origin {branch-name} -u
 # 4. Create pull request
 gh pr create --title "Title" --body "Description"
 ```
-
-## 📝 Development Notes
-
-### Known Issues
-- Some npm warnings from sub-dependencies (inflight, glob, rimraf) - these are harmless and will be resolved when main dependencies update
-- Web platform disabled - this is a mobile-only application
-
-For detailed project guidance, see [CLAUDE.md](./CLAUDE.md).
 
 ## 🏗️ Technology Stack
 
@@ -497,6 +275,8 @@ For detailed project guidance, see [CLAUDE.md](./CLAUDE.md).
 - Follow existing naming conventions
 - Update documentation for significant changes
 
+For detailed project guidance, see [CLAUDE.md](./CLAUDE.md).
+
 ## 📄 License
 
 [MIT License](LICENSE) - Feel free to use this project for learning and development.
@@ -506,7 +286,6 @@ For detailed project guidance, see [CLAUDE.md](./CLAUDE.md).
 - **Shengji/Tractor** - Traditional Chinese card game
 - **React Native & Expo** - Amazing mobile development tools
 - **Open source community** - For excellent libraries and tools
-- **Contributors** - Thank you for improvements and bug reports!
 
 ---
 
