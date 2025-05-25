@@ -5,6 +5,9 @@ on:
     branches: [ main ]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'  # Semver tags like v1.2.3
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
   workflow_dispatch:
     inputs:
       branch_name:
@@ -47,35 +50,71 @@ jobs:
     - name: Set deployment variables
       id: vars
       run: |
-        # Debug information
-        echo "GITHUB_REF: $GITHUB_REF"
-        echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
+        # Get git info
+        GIT_COMMIT=$(git rev-parse HEAD)
+        echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
         
-        # Determine the deployment branch and message based on the trigger
+        # Helper function to get base version and commit count
+        get_version_info() {
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [[ -n "$LAST_TAG" ]]; then
+            BASE_VERSION=${LAST_TAG#v}
+            COMMIT_COUNT=$(git rev-list --count ${LAST_TAG}..HEAD)
+          else
+            BASE_VERSION="1.0.0"
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+          fi
+        }
+        
+        # Determine deployment based on trigger
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
-          # For semver tags (v1.2.3) deploy to production
-          echo "EAS_BRANCH=production" >> $GITHUB_OUTPUT
-          echo "EAS_MESSAGE=Release ${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          echo "Deploying to production branch from tag: ${GITHUB_REF#refs/tags/}"
+          # Production release from tag
+          VERSION="${GITHUB_REF#refs/tags/}"
+          EAS_BRANCH="production"
+          MESSAGE="Release $VERSION"
+          
         elif [[ $GITHUB_REF == refs/heads/main ]]; then
-          # For main branch deploy to preview
-          echo "EAS_BRANCH=preview" >> $GITHUB_OUTPUT
-          echo "EAS_MESSAGE=Update from main branch" >> $GITHUB_OUTPUT
-          echo "Deploying to preview branch from main"
+          # Beta release from main
+          get_version_info
+          VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
+          EAS_BRANCH="beta"
+          MESSAGE="Beta release $VERSION"
+          
+        elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+          # Alpha build from PR
+          get_version_info
+          BRANCH_NAME="${{ github.head_ref }}"
+          ALPHA_ID=${BRANCH_NAME//\//.}
+          VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}"
+          EAS_BRANCH="alpha"
+          MESSAGE="Alpha build from $BRANCH_NAME branch (PR #${{ github.event.number }})"
+          
         else
-          # For other branches use the branch name or manual input
+          # Alpha build from other branch
+          get_version_info
           BRANCH_NAME="${{ inputs.branch_name }}"
           if [[ -z "$BRANCH_NAME" ]]; then
-            # Extract branch name from GITHUB_REF if not provided as input
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
           fi
-          # Clean up branch name for use as EAS branch (replace slashes)
-          CLEAN_BRANCH=${BRANCH_NAME//\//-}
-          echo "EAS_BRANCH=$CLEAN_BRANCH" >> $GITHUB_OUTPUT
-          echo "EAS_MESSAGE=Development build from $BRANCH_NAME branch" >> $GITHUB_OUTPUT
-          echo "Deploying to branch: $CLEAN_BRANCH from $BRANCH_NAME"
+          ALPHA_ID=${BRANCH_NAME//\//.}
+          VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}"
+          EAS_BRANCH="alpha"
+          MESSAGE="Alpha build from $BRANCH_NAME branch"
         fi
+        
+        # Output variables
+        echo "EAS_BRANCH=$EAS_BRANCH" >> $GITHUB_OUTPUT
+        echo "EAS_MESSAGE=$MESSAGE" >> $GITHUB_OUTPUT
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Deploying to $EAS_BRANCH with version: $VERSION"
 
+    - name: Inject version into app.json
+      run: |
+        # Use jq to inject version and git commit into app.json extra field
+        jq '.expo.extra.version = "${{ steps.vars.outputs.VERSION }}" | .expo.extra.gitCommit = "${{ steps.vars.outputs.GIT_COMMIT }}"' app.json > app.json.tmp
+        mv app.json.tmp app.json
+        echo "Injected version ${{ steps.vars.outputs.VERSION }} into app.json"
+        
     - name: EAS Update
       run: npx eas update --branch ${{ steps.vars.outputs.EAS_BRANCH }} --message "${{ steps.vars.outputs.EAS_MESSAGE }}"
       env:

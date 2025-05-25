@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginRight: 10,
     marginTop: 5,
-    marginBottom: 0,
+    marginBottom: 10, // Add bottom margin for version display
     flexDirection: "column",
     justifyContent: "space-between",
     padding: 10,
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   topArea: {
     width: "100%",
     height: 120,
-    marginTop: 15,
+    marginTop: 10,
     alignItems: "center",
     justifyContent: "center",
   },
