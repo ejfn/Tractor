@@ -109,29 +109,32 @@ export const AnimatedCard: React.FC<CardProps> = ({
   // Selection animation - improved with higher pop-up for better visibility
   useEffect(() => {
     if (selected) {
-      // More pronounced upward movement for better visibility
-      translateY.value = withTiming(-20 * cardScale, {
-        // Increased from -10 to -20 for higher pop
-        duration: 60, // Keep snappy response
-        easing: Easing.out(Easing.cubic), // Smooth easing for upward movement
-      });
-      scale.value = withTiming(cardScale * 1.05, {
-        // Slightly larger scale for better visibility
-        duration: 60, // Keep snappy response
-        easing: Easing.out(Easing.cubic), // Smooth easing for scale
-      });
-      opacity.value = 1; // Ensure the card stays fully opaque when selected
+      // Use a tiny delay to ensure all cards start animating at the same time
+      // This helps when multiple cards are selected simultaneously via auto-selection
+      setTimeout(() => {
+        translateY.value = withTiming(-20 * cardScale, {
+          duration: 120, // Slightly longer duration for smoother animation
+          easing: Easing.out(Easing.cubic),
+        });
+        scale.value = withTiming(cardScale * 1.05, {
+          duration: 120, // Match duration for consistency
+          easing: Easing.out(Easing.cubic),
+        });
+        opacity.value = 1;
+      }, 0); // Use setTimeout with 0ms to synchronize animations
     } else {
-      // Quick deselection with slightly different timing to feel natural
-      translateY.value = withTiming(0, {
-        duration: 70, // Slightly longer for deselection (feels more natural)
-        easing: Easing.inOut(Easing.cubic), // Smoother return to normal position
-      });
-      scale.value = withTiming(cardScale, {
-        duration: 70, // Slightly longer for deselection
-        easing: Easing.inOut(Easing.cubic),
-      });
-      opacity.value = 1; // Ensure the card stays fully opaque when deselected
+      // Quick deselection with consistent timing
+      setTimeout(() => {
+        translateY.value = withTiming(0, {
+          duration: 120,
+          easing: Easing.inOut(Easing.cubic),
+        });
+        scale.value = withTiming(cardScale, {
+          duration: 120,
+          easing: Easing.inOut(Easing.cubic),
+        });
+        opacity.value = 1;
+      }, 0);
     }
   }, [selected, translateY, scale, opacity, cardScale]);
 

@@ -246,16 +246,70 @@ describe('Card Auto-Selection Utils', () => {
       expect(result).toContain(hand[0]);
     });
 
-    test('should handle trump declaration mode with single selection', () => {
+    test('should handle trump declaration mode by appending to selection', () => {
       const hand = [createCard(Suit.Hearts, Rank.Two)];
       const trumpInfoUndeclared = createTrumpInfo(Rank.Two, undefined, false);
+      const existingSelection = [createCard(Suit.Spades, Rank.King)];
       
       const result = getAutoSelectedCards(
-        hand[0], hand, [], true, undefined, trumpInfoUndeclared
+        hand[0], hand, existingSelection, true, undefined, trumpInfoUndeclared
       );
       
-      expect(result).toHaveLength(1);
+      expect(result).toHaveLength(2);
       expect(result).toContain(hand[0]);
+      expect(result).toContain(existingSelection[0]);
+    });
+
+    test('should append auto-selected pair to existing selection', () => {
+      const hand = [
+        ...createPair(Suit.Hearts, Rank.King),
+        createCard(Suit.Spades, Rank.Ace),
+      ];
+      const existingSelection = [createCard(Suit.Clubs, Rank.Queen)];
+      
+      const result = getAutoSelectedCards(
+        hand[0], hand, existingSelection, true, undefined, trumpInfo
+      );
+      
+      expect(result).toHaveLength(3); // existing + pair
+      expect(result).toContain(existingSelection[0]); // Keep existing
+      expect(result).toContain(hand[0]); // Add pair
+      expect(result).toContain(hand[1]);
+    });
+
+    test('should append auto-selected tractor to existing selection', () => {
+      const hand = [
+        ...createPair(Suit.Hearts, Rank.Seven),
+        ...createPair(Suit.Hearts, Rank.Eight),
+        createCard(Suit.Spades, Rank.Ace),
+      ];
+      const existingSelection = [createCard(Suit.Clubs, Rank.Queen)];
+      
+      const result = getAutoSelectedCards(
+        hand[0], hand, existingSelection, true, undefined, trumpInfo
+      );
+      
+      expect(result).toHaveLength(5); // existing + tractor
+      expect(result).toContain(existingSelection[0]); // Keep existing
+      // Should contain all tractor cards
+      expect(result).toContain(hand[0]);
+      expect(result).toContain(hand[1]);
+      expect(result).toContain(hand[2]);
+      expect(result).toContain(hand[3]);
+    });
+
+    test('should not add duplicate cards when appending', () => {
+      const pairCards = createPair(Suit.Hearts, Rank.King);
+      const hand = [...pairCards, createCard(Suit.Spades, Rank.Ace)];
+      const existingSelection = [pairCards[1]]; // Already have second card of pair
+      
+      const result = getAutoSelectedCards(
+        pairCards[0], hand, existingSelection, true, undefined, trumpInfo
+      );
+      
+      expect(result).toHaveLength(2); // Should not duplicate
+      expect(result).toContain(pairCards[0]);
+      expect(result).toContain(pairCards[1]);
     });
 
     test('should fall back to single selection when following pair but clicked card cannot form pair', () => {

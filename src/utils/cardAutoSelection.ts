@@ -138,8 +138,19 @@ export const getAutoSelectedCards = (
 
   // Special handling during trump declaration - single selection only
   if (!trumpInfo?.declared) {
-    return [clickedCard];
+    return [...currentSelection, clickedCard];
   }
+
+  // Helper function to add new cards to current selection (avoiding duplicates)
+  const addToSelection = (newCards: Card[]): Card[] => {
+    const newSelection = [...currentSelection];
+    newCards.forEach((card) => {
+      if (!newSelection.some((c) => c.id === card.id)) {
+        newSelection.push(card);
+      }
+    });
+    return newSelection;
+  };
 
   // If following a specific combo type, try to match that type ONLY if the clicked card can form it
   if (!isLeading && leadingCombo && leadingCombo.length > 1) {
@@ -149,7 +160,7 @@ export const getAutoSelectedCards = (
     if (leadingComboType === ComboType.Pair && leadingCombo.length === 2) {
       const pairCards = findPairCards(clickedCard, hand);
       if (pairCards.length === 2) {
-        return pairCards;
+        return addToSelection(pairCards);
       }
       // If clicked card can't form a pair, fall through to single selection
     }
@@ -162,7 +173,7 @@ export const getAutoSelectedCards = (
     ) {
       const tractorCards = findTractorCards(clickedCard, hand, trumpInfo);
       if (tractorCards.length === 4) {
-        return tractorCards;
+        return addToSelection(tractorCards);
       }
       // If clicked card can't form a tractor, fall through to single selection
     }
@@ -173,16 +184,16 @@ export const getAutoSelectedCards = (
     // Try tractor first (more valuable combination)
     const tractorCards = findTractorCards(clickedCard, hand, trumpInfo);
     if (tractorCards.length >= 4) {
-      return tractorCards;
+      return addToSelection(tractorCards);
     }
 
     // Fall back to pair
     const pairCards = findPairCards(clickedCard, hand);
     if (pairCards.length === 2) {
-      return pairCards;
+      return addToSelection(pairCards);
     }
   }
 
-  // Default: single card selection
-  return [clickedCard];
+  // Default: add single card to selection
+  return addToSelection([clickedCard]);
 };
