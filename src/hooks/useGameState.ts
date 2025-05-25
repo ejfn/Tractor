@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { GameState, Card, Suit, GamePhase } from "../types/game";
-import { initializeGame } from "../utils/gameLogic";
-import { prepareNextRound, endRound } from "../utils/gameRoundManager";
+import { GameState, Card, Suit, GamePhase } from "../types";
+import { initializeGame } from "../game/gameLogic";
+import { prepareNextRound, endRound } from "../game/gameRoundManager";
 import {
   declareTrumpSuit,
   checkAITrumpDeclaration,
   humanHasTrumpRank,
-} from "../utils/trumpManager";
-import { processPlay, validatePlay } from "../utils/gamePlayManager";
+} from "../game/trumpManager";
+import { processPlay, validatePlay } from "../game/gamePlayManager";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import {
   TRICK_RESULT_DISPLAY_TIME,

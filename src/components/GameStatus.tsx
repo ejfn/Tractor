@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { Suit, Team, TrumpInfo, GamePhase } from "../types/game";
+import { Suit, Team, TrumpInfo, GamePhase } from "../types";
 
 interface GameStatusProps {
   teams: [Team, Team];

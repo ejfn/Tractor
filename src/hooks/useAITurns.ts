@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { GameState, Card, GamePhase } from "../types/game";
-import { getAIMoveWithErrorHandling } from "../utils/gamePlayManager";
+import { GameState, Card, GamePhase } from "../types";
+import { getAIMoveWithErrorHandling } from "../game/gamePlayManager";
 import { AI_MOVE_DELAY } from "../utils/gameTimings";
 
 type ProcessPlayFn = (cards: Card[]) => void;

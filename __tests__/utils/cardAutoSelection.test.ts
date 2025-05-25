@@ -3,8 +3,8 @@ import {
   findTractorCards,
   getAutoSelectedCards
 } from '../../src/utils/cardAutoSelection';
-import { Card, Suit, Rank, TrumpInfo, JokerType, ComboType } from '../../src/types/game';
-import { createCard, createJoker, createPair, createTrumpInfo } from '../helpers/testUtils';
+import { Card, Suit, Rank, TrumpInfo, JokerType, ComboType } from "../../src/types";
+import { createCard, createJoker, createPair, createTrumpInfo } from "../helpers";
 
 describe('Card Auto-Selection Utils', () => {
   describe('findPairCards', () => {

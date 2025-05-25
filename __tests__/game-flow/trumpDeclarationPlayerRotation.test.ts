@@ -1,7 +1,7 @@
-import { GameState, Rank, Suit, GamePhase, PlayerId } from '../../src/types/game';
-import { initializeGame } from '../../src/utils/gameLogic';
-import { prepareNextRound, endRound } from '../../src/utils/gameRoundManager';
-import { declareTrumpSuit } from '../../src/utils/trumpManager';
+import { GameState, Rank, Suit, GamePhase, PlayerId } from "../../src/types";
+import { initializeGame } from '../../src/game/gameLogic';
+import { prepareNextRound, endRound } from '../../src/game/gameRoundManager';
+import { declareTrumpSuit } from '../../src/game/trumpManager';
 
 describe('Trump Declaration Player Rotation (Issue #22)', () => {
   test('Human trump declaration does not affect next round starting player', () => {

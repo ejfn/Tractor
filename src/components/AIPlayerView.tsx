@@ -1,7 +1,7 @@
 import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { sharedStyles } from "../styles/sharedStyles";
-import { Player, Trick } from "../types/game";
+import { Player, Trick } from "../types";
 import CardBack from "./CardBack";
 import ThinkingIndicator from "./ThinkingIndicator";
 

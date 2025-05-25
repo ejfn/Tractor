@@ -2,7 +2,7 @@ import { render } from '@testing-library/react-native';
 import React from 'react';
 import { Animated } from 'react-native';
 import AIPlayerView from '../../src/components/AIPlayerView';
-import { Player, PlayerId, PlayerName, Rank, Suit } from '../../src/types/game';
+import { Player, PlayerId, PlayerName, Rank, Suit } from "../../src/types";
 
 // Mock dependencies
 jest.mock('../../src/components/ThinkingIndicator', () => {

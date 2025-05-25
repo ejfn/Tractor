@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { View } from 'react-native';
 import CardPlayArea from '../../src/components/CardPlayArea';
-import { Card, Player, Suit, Rank, Trick, TrumpInfo, PlayerId } from '../../src/types/game';
+import { Card, Player, Suit, Rank, Trick, TrumpInfo, PlayerId } from "../../src/types";
 
 // Mock AnimatedCard component for testing
 jest.mock('../../src/components/AnimatedCard', () => {

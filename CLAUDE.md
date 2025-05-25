@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Tractor is a React Native Expo app implementing a single-player version of the Chinese card game Shengji (升级), also known as Tractor. It's a trick-taking card game where players work in teams to advance through card ranks from 2 to Ace.
 
+**Platform Support:** Mobile-only (iOS and Android). Currently tested on Android only.
+
 ## Quick Start
 
 ```bash
@@ -30,13 +32,26 @@ npm test              # Run tests
 
 ```
 /src/
-├── types/game.ts          # Core game type definitions with enums
-├── utils/                 # Game logic utilities
+├── types/                 # Type definitions (modular organization)
+│   ├── index.ts           # Main types re-export file
+│   ├── core.ts            # Core game types and enums
+│   ├── ai.ts              # AI strategy and intelligence types
+│   ├── combinations.ts    # Advanced combination types
+│   └── pointFocused.ts    # Point-focused strategy types
+├── ai/                    # AI modules and strategy logic
+│   ├── aiLogic.ts         # Core AI decision making
+│   ├── aiGameContext.ts   # Game context analysis
+│   ├── aiAdvancedCombinations.ts # Advanced combination analysis
+│   ├── aiCardMemory.ts    # Card memory system (Phase 3)
+│   └── aiPointFocusedStrategy.ts # Point-focused strategy
+├── game/                  # Core game logic and management
 │   ├── gameLogic.ts       # Core mechanics and rules
 │   ├── gamePlayManager.ts # Card play validation and tricks
-│   ├── gameTimings.ts     # Animation timing constants
-│   ├── aiLogic.ts         # AI decision making
+│   ├── gameRoundManager.ts # Round management and scoring
 │   └── trumpManager.ts    # Trump card management
+├── utils/                 # True utility functions
+│   ├── cardAutoSelection.ts # Smart card selection logic
+│   └── gameTimings.ts     # Animation timing constants
 ├── hooks/                 # Custom React hooks
 │   ├── useGameState.ts    # Core game state management
 │   ├── useAITurns.ts      # AI turn handling
@@ -44,10 +59,70 @@ npm test              # Run tests
 │   └── useAnimations.ts   # Card animations
 ├── components/            # UI components
 ├── screens/               # Screen components
-└── __tests__/             # Test files with type-safe utilities
+└── styles/                # Shared styling
+```
+
+```
+/__tests__/
+├── ai/                    # AI module tests
+├── game/                  # Game logic tests
+├── components/            # UI component tests
+├── utils/                 # Utility function tests
+├── card-tracking/         # Card counting integration tests
+├── game-flow/             # Game flow and interaction tests
+├── game-state/            # Game state management tests
+└── helpers/               # Test utilities (modular organization)
+    ├── index.ts           # Main helpers re-export file
+    ├── cards.ts           # Card creation utilities
+    ├── players.ts         # Player and team utilities
+    ├── gameStates.ts      # Game state scenarios
+    ├── trump.ts           # Trump utilities
+    ├── tricks.ts          # Trick utilities
+    ├── ai.ts              # AI testing utilities
+    └── mocks.ts           # Mock setup and assertions
+```
+
+```
+/docs/
+├── AI_SYSTEM.md           # Comprehensive AI intelligence documentation
+├── GAME_RULES.md          # Complete game rules and strategy guide
+└── README.md              # Project overview (main entry point)
 ```
 
 ## Development Guidelines
+
+### File Organization Philosophy
+
+The codebase is organized by **logical domain** rather than just file type:
+
+- **`src/ai/`** - All AI-related modules for strategic decision-making
+- **`src/game/`** - Core game logic, rules, and management systems  
+- **`src/types/`** - Modular type definitions with clean re-exports
+- **`src/utils/`** - True utilities that don't belong to specific domains
+- **`__tests__/`** - Test structure mirrors source code organization
+
+This structure makes it easy to:
+- Find related functionality quickly
+- Understand dependencies between modules
+- Add new features in the right place
+- Maintain clean separation of concerns
+
+### Documentation Philosophy
+
+The project uses a modular documentation approach:
+- **README.md** - Concise project overview and quick reference
+- **CLAUDE.md** - Comprehensive development guidelines (this file)
+- **docs/AI_SYSTEM.md** - Detailed AI intelligence system documentation
+- **docs/GAME_RULES.md** - Complete game rules and strategy guide
+
+This keeps the main README clean while providing comprehensive documentation for developers and users.
+
+**Documentation Guidelines:**
+- **README.md** should be scannable and focus on what the project is and key features
+- **CLAUDE.md** contains all development standards, architecture details, and coding guidelines
+- **docs/AI_SYSTEM.md** for detailed AI system documentation and technical implementation
+- **docs/GAME_RULES.md** for comprehensive game rules, strategy, and player guidance
+- Never duplicate content between files - use cross-references instead
 
 ### Code Quality
 
@@ -179,7 +254,7 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 - React Native rendering flags enabled
 - Minimal shadows
 - Single AI strategy (no difficulty settings)
-- Web platform disabled
+- Mobile-only platform (web support completely removed)
 - Centralized timing for predictable animations
 
 ## Type Safety and Code Quality
@@ -275,23 +350,23 @@ enum ComboStrength {
 
 **✅ Correct Test Enum Usage:**
 ```typescript
-import { PlayerId, GamePhase, TrickPosition, PointPressure } from '../../src/types/game';
+import { PlayerId, GamePhase, TrickPosition, PointPressure } from '../../src/types';
 
 // Good
 expect(gameState.currentPlayer).toBe(PlayerId.Human);
 expect(context.trickPosition).toBe(TrickPosition.First);
-expected(strategy.pointPressure).toBe(PointPressure.HIGH);
+expect(strategy.pointPressure).toBe(PointPressure.HIGH);
 
 // Bad
-expected(gameState.currentPlayer).toBe('human');
-expected(context.trickPosition).toBe('first');
-expected(strategy.pointPressure).toBe('HIGH');
+expect(gameState.currentPlayer).toBe('human');
+expect(context.trickPosition).toBe('first');
+expect(strategy.pointPressure).toBe('HIGH');
 ```
 
 ```typescript
 // Good: Use real initialization + targeted mocking
-jest.mock('../../src/utils/gameLogic', () => ({
-  ...jest.requireActual('../../src/utils/gameLogic'),
+jest.mock('../../src/game/gameLogic', () => ({
+  ...jest.requireActual('../../src/game/gameLogic'),
   determineTrickWinner: jest.fn() // Only mock what you need to control
 }));
 
@@ -383,9 +458,13 @@ if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
 ## Best Practices
 
 - ⚠️ **CRITICAL**: Always import and use enums instead of magic strings
-- Use Batch tool for multiple operations
+- Use modular imports from `src/types` index file for clean code
 - Read file references with `file_path:line_number` format
 - Prefer general solutions over special cases
 - Maintain consistent player transitions
 - Follow existing code conventions
 - Import all relevant enums at the top of every file
+- Use shared test utilities from `__tests__/helpers` for consistent testing
+- Organize files by logical domain (ai/, game/, utils/) not just file type
+- Keep README.md concise and direct detailed information to docs/ files
+- Update documentation when adding new features or changing architecture

@@ -1,6 +1,6 @@
 import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { Card, Player, TrumpInfo } from "../types/game";
+import { Card, Player, TrumpInfo } from "../types";
 import HumanHandAnimated from "./HumanHandAnimated";
 import ThinkingIndicator from "./ThinkingIndicator";
 import { sharedStyles } from "../styles/sharedStyles";

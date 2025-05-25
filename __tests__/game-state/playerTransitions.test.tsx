@@ -3,9 +3,9 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { View, Text, Button } from 'react-native';
 import { useGameState } from '../../src/hooks/useGameState';
 import { useAITurns } from '../../src/hooks/useAITurns';
-import { processPlay } from '../../src/utils/gamePlayManager';
-import { determineTrickWinner } from '../../src/utils/gameLogic';
-import { createComponentTestGameState } from '../helpers/testUtils';
+import { processPlay } from '../../src/game/gamePlayManager';
+import { determineTrickWinner } from '../../src/game/gameLogic';
+import { createComponentTestGameState } from "../helpers";
 import { 
   GameState, 
   Card, 
@@ -15,10 +15,10 @@ import {
   PlayerId,
   PlayerName,
   GamePhase
-} from '../../src/types/game';
+} from "../../src/types";
 
 // Mock dependencies
-jest.mock('../../src/utils/gamePlayManager', () => ({
+jest.mock('../../src/game/gamePlayManager', () => ({
   processPlay: jest.fn(),
   getAIMoveWithErrorHandling: jest.fn().mockReturnValue({
     cards: [{
@@ -30,8 +30,8 @@ jest.mock('../../src/utils/gamePlayManager', () => ({
   }),
   validatePlay: jest.fn().mockReturnValue(true)
 }));
-jest.mock('../../src/utils/gameLogic', () => ({
-  ...jest.requireActual('../../src/utils/gameLogic'),
+jest.mock('../../src/game/gameLogic', () => ({
+  ...jest.requireActual('../../src/game/gameLogic'),
   determineTrickWinner: jest.fn(),
   identifyCombos: jest.fn(),
   isValidPlay: jest.fn().mockReturnValue(true),
@@ -39,13 +39,13 @@ jest.mock('../../src/utils/gameLogic', () => ({
   humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
-jest.mock('../../src/utils/trumpManager', () => ({
+jest.mock('../../src/game/trumpManager', () => ({
   declareTrumpSuit: jest.fn(),
   checkAITrumpDeclaration: jest.fn().mockReturnValue({ shouldDeclare: false }),
   humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
-jest.mock('../../src/utils/aiLogic', () => ({
+jest.mock('../../src/ai/aiLogic', () => ({
   getAIMove: jest.fn().mockReturnValue([{
     id: 'ai_card',
     suit: 1,
@@ -54,7 +54,7 @@ jest.mock('../../src/utils/aiLogic', () => ({
   }])
 }));
 
-jest.mock('../../src/utils/gameRoundManager', () => ({
+jest.mock('../../src/game/gameRoundManager', () => ({
   prepareNextRound: jest.fn(),
   endRound: jest.fn()
 }));

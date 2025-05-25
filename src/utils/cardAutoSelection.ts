@@ -1,5 +1,5 @@
-import { Card, TrumpInfo, Rank, JokerType, ComboType } from "../types/game";
-import { getComboType } from "./gameLogic";
+import { Card, TrumpInfo, Rank, JokerType, ComboType } from "../types";
+import { getComboType } from "../game/gameLogic";
 
 /**
  * Utility functions for smart card auto-selection

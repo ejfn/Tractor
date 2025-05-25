@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Trick } from "../types/game";
+import { Trick } from "../types";
 import {
   TRICK_RESULT_DISPLAY_TIME,
   STATE_UPDATE_SYNC_DELAY,

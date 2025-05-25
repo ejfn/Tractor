@@ -3,9 +3,9 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { View, Text, Button } from 'react-native';
 import { useTrickResults } from '../../src/hooks/useTrickResults';
 import { useGameState } from '../../src/hooks/useGameState';
-import { processPlay } from '../../src/utils/gamePlayManager';
-import { determineTrickWinner } from '../../src/utils/gameLogic';
-import { createComponentTestGameState } from '../helpers/testUtils';
+import { processPlay } from '../../src/game/gamePlayManager';
+import { determineTrickWinner } from '../../src/game/gameLogic';
+import { createComponentTestGameState } from "../helpers";
 import { 
   GameState, 
   Card, 
@@ -13,11 +13,11 @@ import {
   Suit,
   PlayerId,
   PlayerName
-} from '../../src/types/game';
+} from "../../src/types";
 
 // Mock dependencies
-jest.mock('../../src/utils/gameLogic', () => ({
-  ...jest.requireActual('../../src/utils/gameLogic'),
+jest.mock('../../src/game/gameLogic', () => ({
+  ...jest.requireActual('../../src/game/gameLogic'),
   determineTrickWinner: jest.fn(),
   isTrump: jest.fn(),
   identifyCombos: jest.fn(),
@@ -25,15 +25,15 @@ jest.mock('../../src/utils/gameLogic', () => ({
   humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
-jest.mock('../../src/utils/gamePlayManager');
+jest.mock('../../src/game/gamePlayManager');
 
-jest.mock('../../src/utils/trumpManager', () => ({
+jest.mock('../../src/game/trumpManager', () => ({
   declareTrumpSuit: jest.fn(),
   checkAITrumpDeclaration: jest.fn().mockReturnValue({ shouldDeclare: false }),
   humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
-jest.mock('../../src/utils/gameRoundManager', () => ({
+jest.mock('../../src/game/gameRoundManager', () => ({
   prepareNextRound: jest.fn(),
   endRound: jest.fn()
 }));
