@@ -47,7 +47,7 @@ const GameScreenController: React.FC = () => {
   // Trick results management
   const {
     showTrickResult,
-    lastTrickWinner,
+    lastTrickWinnerId,
     lastTrickPoints,
     lastCompletedTrick,
     isTransitioningTricks,
@@ -115,7 +115,7 @@ const GameScreenController: React.FC = () => {
       trickCompletionDataRef.current.timestamp >
       lastProcessedTrickTimestampRef.current
     ) {
-      const { winnerName, points, completedTrick, timestamp } =
+      const { winnerId, points, completedTrick, timestamp } =
         trickCompletionDataRef.current;
       // Detected completed trick
 
@@ -134,7 +134,7 @@ const GameScreenController: React.FC = () => {
         setLastCompletedTrick(completedTrick);
 
         // 2. Now show the trick result
-        handleTrickCompletion(winnerName, points, completedTrick);
+        handleTrickCompletion(winnerId, points, completedTrick);
 
         // No extra defensive timers needed anymore - keeping it simple
       }
@@ -168,7 +168,7 @@ const GameScreenController: React.FC = () => {
       waitingForAI={waitingForAI}
       waitingPlayerId={waitingPlayerId}
       showTrickResult={showTrickResult}
-      lastTrickWinner={lastTrickWinner}
+      lastTrickWinnerId={lastTrickWinnerId}
       lastTrickPoints={lastTrickPoints}
       lastCompletedTrick={lastCompletedTrick}
       showRoundComplete={showRoundComplete}

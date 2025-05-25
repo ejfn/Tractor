@@ -38,7 +38,7 @@ describe('Counter-clockwise rotation', () => {
     
     // After trick completion, winner (Human with Ace) should be next
     expect(result4.trickComplete).toBe(true);
-    expect(result4.trickWinner).toBe('You');
+    expect(result4.trickWinnerId).toBe('human');
     expect(result4.newState.currentPlayerIndex).toBe(0); // Human won
   });
 

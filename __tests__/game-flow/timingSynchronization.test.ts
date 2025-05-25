@@ -45,7 +45,7 @@ describe('Timing Synchronization Tests', () => {
       logState(`After play ${play + 1}`, state);
       
       if (result.trickComplete) {
-        console.log(`Trick complete! Winner: ${result.trickWinner}`);
+        console.log(`Trick complete! Winner: ${result.trickWinnerId}`);
         logState('Trick complete', state);
         
         // Simulate what happens in the real game:

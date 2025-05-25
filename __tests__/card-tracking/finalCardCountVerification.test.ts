@@ -47,7 +47,7 @@ describe('Final Card Count Verification', () => {
         }
         
         if (result.trickComplete) {
-          console.log(`  Trick won by ${result.trickWinner}`);
+          console.log(`  Trick won by ${result.trickWinnerId}`);
         }
       }
       
@@ -122,13 +122,13 @@ describe('Final Card Count Verification', () => {
       state = result.newState;
       
       if (result.trickComplete) {
-        winners.push(result.trickWinner!);
-        console.log(`Trick winner: ${result.trickWinner}`);
-        console.log(`Next player should be: ${result.trickWinner}`);
+        winners.push(result.trickWinnerId!);
+        console.log(`Trick winner: ${result.trickWinnerId}`);
+        console.log(`Next player should be: ${result.trickWinnerId}`);
         console.log(`Next player is: ${state.players[state.currentPlayerIndex].name}`);
         
         // Verify winner is the next player
-        expect(state.players[state.currentPlayerIndex].name).toBe(result.trickWinner);
+        expect(state.players[state.currentPlayerIndex].id).toBe(result.trickWinnerId);
       }
     }
     

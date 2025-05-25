@@ -72,24 +72,46 @@ const TestComponent: React.FC<{
   }, [gameStateHook.handleTrickResultComplete, trickResultsHook]);
   
   // Monitor trick completion data
+  // Add a ref to track last processed timestamp (like the real implementation)
+  const lastProcessedTrickTimestampRef = React.useRef(0);
+
   React.useEffect(() => {
-    if (gameStateHook.trickCompletionDataRef.current) {
+    if (!gameStateHook.trickCompletionDataRef.current) return;
+
+    // Only process if this is a new trick completion (check timestamp)
+    if (
+      gameStateHook.trickCompletionDataRef.current.timestamp >
+      lastProcessedTrickTimestampRef.current
+    ) {
       const data = gameStateHook.trickCompletionDataRef.current;
+      
+      // Update the last processed timestamp
+      lastProcessedTrickTimestampRef.current = data.timestamp;
+      
+      // Set completed trick first
+      trickResultsHook.setLastCompletedTrick(data.completedTrick);
+      
+      // Then trigger trick completion handling
       trickResultsHook.handleTrickCompletion(
-        data.winnerName,
+        data.winnerId,
         data.points,
         data.completedTrick
       );
-      trickResultsHook.setLastCompletedTrick(data.completedTrick);
     }
-  }, [gameStateHook.gameState, gameStateHook.trickCompletionDataRef, trickResultsHook]);
+  }, [
+    gameStateHook.gameState?.currentPlayerIndex,
+    gameStateHook.trickCompletionDataRef,
+    trickResultsHook.handleTrickCompletion,
+    trickResultsHook.setLastCompletedTrick,
+    gameStateHook.gameState?.currentTrick,
+  ]);
 
   return (
     <View>
       <Text testID="phase">{gameStateHook.gameState?.gamePhase}</Text>
       <Text testID="current-player-index">{gameStateHook.gameState?.currentPlayerIndex}</Text>
       <Text testID="show-trick-result">{trickResultsHook.showTrickResult ? 'true' : 'false'}</Text>
-      <Text testID="last-trick-winner">{trickResultsHook.lastTrickWinner}</Text>
+      <Text testID="last-trick-winner">{trickResultsHook.lastTrickWinnerId}</Text>
       <Text testID="last-trick-points">{trickResultsHook.lastTrickPoints}</Text>
       <Text testID="last-completed-trick">{trickResultsHook.lastCompletedTrick ? 'exists' : 'null'}</Text>
       <Button
@@ -116,7 +138,7 @@ const TestComponent: React.FC<{
             points: 10
           };
           
-          trickResultsHook.handleTrickCompletion('Test Winner', 10, mockCompletedTrick);
+          trickResultsHook.handleTrickCompletion('test-winner-id', 10, mockCompletedTrick);
           trickResultsHook.setLastCompletedTrick(mockCompletedTrick);
         }}
       />
@@ -179,7 +201,7 @@ describe('Trick Completion Flow', () => {
         currentTrick: null // Trick should be null after completion
       },
       trickComplete: true,
-      trickWinner: 'You',
+      trickWinnerId: 'human',
       trickPoints: 5,
       completedTrick: mockTrick
     });
@@ -190,7 +212,7 @@ describe('Trick Completion Flow', () => {
     // Verify trick is complete and result is shown
     await waitFor(() => {
       expect(stateHistory[stateHistory.length - 1].trickResults.showTrickResult).toBe(true);
-      expect(stateHistory[stateHistory.length - 1].trickResults.lastTrickWinner).toBe('You');
+      expect(stateHistory[stateHistory.length - 1].trickResults.lastTrickWinnerId).toBe('human');
     });
   });
 
@@ -219,7 +241,7 @@ describe('Trick Completion Flow', () => {
     await waitFor(() => {
       const latestState = stateHistory[stateHistory.length - 1];
       expect(latestState.trickResults.showTrickResult).toBe(true);
-      expect(latestState.trickResults.lastTrickWinner).toBe('Test Winner');
+      expect(latestState.trickResults.lastTrickWinnerId).toBe('test-winner-id');
       expect(latestState.trickResults.lastTrickPoints).toBe(10);
       expect(latestState.trickResults.lastCompletedTrick).toBeTruthy();
     });

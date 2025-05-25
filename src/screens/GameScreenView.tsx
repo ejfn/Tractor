@@ -33,7 +33,7 @@ interface GameScreenViewProps {
   waitingForAI: boolean;
   waitingPlayerId: string;
   showTrickResult: boolean;
-  lastTrickWinner: string;
+  lastTrickWinnerId: string;
   lastTrickPoints: number;
   lastCompletedTrick: (Trick & { winningPlayerId?: string }) | null;
   showRoundComplete: boolean;
@@ -78,7 +78,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   waitingForAI,
   waitingPlayerId,
   showTrickResult,
-  lastTrickWinner,
+  lastTrickWinnerId,
   lastTrickPoints,
   lastCompletedTrick,
   showRoundComplete,
@@ -321,8 +321,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
             trickResult={
               <TrickResultDisplay
                 visible={showTrickResult}
-                winnerName={lastTrickWinner}
+                winnerId={lastTrickWinnerId}
                 points={lastTrickPoints}
+                gameState={gameState}
               />
             }
           />

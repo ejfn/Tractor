@@ -26,7 +26,7 @@ describe('Human Multi-Card Loss Bug', () => {
       state = result.newState;
       
       if (result.trickComplete) {
-        console.log(`Winner: ${result.trickWinner}`);
+        console.log(`Winner: ${result.trickWinnerId}`);
       }
     }
     

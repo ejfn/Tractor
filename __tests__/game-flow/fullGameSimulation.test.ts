@@ -86,7 +86,7 @@ describe('Full Game Simulation', () => {
             cardsBefore,
             cardsAfter,
             cardsPlayed: cardsToPlay.length,
-            winner: result.trickWinner,
+            winner: result.trickWinnerId,
             error
           });
           
@@ -120,7 +120,7 @@ describe('Full Game Simulation', () => {
           state = result.newState;
           
           if (result.trickComplete) {
-            trickWinner = result.trickWinner;
+            trickWinner = result.trickWinnerId;
           }
         }
         

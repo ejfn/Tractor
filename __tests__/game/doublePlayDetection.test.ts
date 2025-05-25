@@ -101,7 +101,7 @@ describe('Double Play Detection Tests', () => {
         trickPlays++;
         
         if (result.trickComplete) {
-          console.log(`\nTrick complete! Winner: ${result.trickWinner}`);
+          console.log(`\nTrick complete! Winner: ${result.trickWinnerId}`);
           
           // Verify we played exactly 4 times
           if (trickPlays !== 4) {

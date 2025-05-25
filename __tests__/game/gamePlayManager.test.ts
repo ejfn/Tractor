@@ -140,7 +140,7 @@ describe('gamePlayManager', () => {
       
       // Verify the trick is complete
       expect(result.trickComplete).toBe(true);
-      expect(result.trickWinner).toBe('Bot 1'); // ai1
+      expect(result.trickWinnerId).toBe(PlayerId.Bot1); // ai1
       expect(result.trickPoints).toBe(5); // 5 points from the Spades 5
       
       // Verify the trick was added to the tricks array

@@ -55,7 +55,7 @@ describe('Human Wins and Leads Bug', () => {
       state = result.newState;
       
       if (result.trickComplete) {
-        console.log(`\nTrick complete! Winner: ${result.trickWinner}`);
+        console.log(`\nTrick complete! Winner: ${result.trickWinnerId}`);
       }
     }
     

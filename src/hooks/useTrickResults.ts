@@ -11,7 +11,7 @@ import {
  */
 export function useTrickResults() {
   const [showTrickResult, setShowTrickResult] = useState(false);
-  const [lastTrickWinner, setLastTrickWinner] = useState("");
+  const [lastTrickWinnerId, setLastTrickWinnerId] = useState("");
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
   const [lastCompletedTrick, setLastCompletedTrick] = useState<
     (Trick & { winningPlayerId?: string }) | null
@@ -78,19 +78,19 @@ export function useTrickResults() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [showTrickResult, lastTrickWinner, lastTrickPoints]);
+  }, [showTrickResult, lastTrickWinnerId, lastTrickPoints]);
 
   // Safety timers have been removed as they might hide underlying issues
   // instead of fixing the root causes
 
   // Handle a completed trick - simplified to just show result
   const handleTrickCompletion = (
-    winnerName: string,
+    winnerId: string,
     points: number,
     trick: Trick & { winningPlayerId?: string },
   ) => {
     // Store values for the trick result
-    setLastTrickWinner(winnerName);
+    setLastTrickWinnerId(winnerId);
     setLastTrickPoints(points);
 
     // Mark that we're transitioning between tricks
@@ -107,7 +107,7 @@ export function useTrickResults() {
 
   return {
     showTrickResult,
-    lastTrickWinner,
+    lastTrickWinnerId,
     lastTrickPoints,
     lastCompletedTrick,
     isTransitioningTricks,

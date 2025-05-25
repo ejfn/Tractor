@@ -80,7 +80,7 @@ describe('Comprehensive Card Tracking Tests', () => {
         state = result.newState;
         
         if (result.trickComplete) {
-          console.log(`  Winner: ${result.trickWinner}`);
+          console.log(`  Winner: ${result.trickWinnerId}`);
           
           // Verify equal counts after trick
           if (!verifyCardCounts(state)) {
@@ -132,7 +132,7 @@ describe('Comprehensive Card Tracking Tests', () => {
           state = result.newState;
           
           if (result.trickComplete) {
-            console.log(`  Trick ${trickNum + 1} won by ${result.trickWinner}`);
+            console.log(`  Trick ${trickNum + 1} won by ${result.trickWinnerId}`);
           }
         }
         
