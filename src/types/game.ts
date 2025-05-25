@@ -49,6 +49,19 @@ export enum GamePhase {
   GameOver = "gameOver",
 }
 
+export enum TrickPosition {
+  First = "first", // Leading the trick
+  Second = "second", // Early follower
+  Third = "third", // Late follower
+  Fourth = "fourth", // Last player
+}
+
+export enum PointPressure {
+  LOW = "low", // < 30% of points needed
+  MEDIUM = "medium", // 30-70% of points needed
+  HIGH = "high", // 70%+ of points needed
+}
+
 export type Card = {
   suit?: Suit;
   rank?: Rank;
@@ -117,4 +130,62 @@ export type Combo = {
   value: number; // Relative hand strength for comparison
 };
 
+// Position-based strategy matrices
+export interface PositionStrategy {
+  informationGathering: number; // How much to prioritize learning opponent hands
+  riskTaking: number; // Willingness to use strong cards
+  partnerCoordination: number; // How much to consider partner status
+  disruptionFocus: number; // How much to focus on disrupting opponents
+}
+
 // AI now always runs at Hard difficulty
+
+// AI Strategy Enhancement Types
+export enum ComboStrength {
+  Weak = "weak", // Low-value cards, safe to play
+  Medium = "medium", // Moderate value, strategic choice
+  Strong = "strong", // High value, precious resource
+  Critical = "critical", // Highest trump/tractor, game-changing
+}
+
+export enum PlayStyle {
+  Conservative = "conservative", // Minimize risks, save resources
+  Balanced = "balanced", // Moderate risk-taking
+  Aggressive = "aggressive", // High risk, high reward
+  Desperate = "desperate", // All-out attack/defense
+}
+
+export interface GameContext {
+  isAttackingTeam: boolean; // Is this AI on the attacking team?
+  currentPoints: number; // Points collected by attacking team so far
+  pointsNeeded: number; // Points needed to win (usually 80)
+  cardsRemaining: number; // Cards left in round
+  trickPosition: TrickPosition; // Position in current trick
+  pointPressure: PointPressure; // Urgency level based on point progress
+  playStyle: PlayStyle; // Current strategic approach
+}
+
+export interface ComboAnalysis {
+  strength: ComboStrength;
+  isTrump: boolean;
+  hasPoints: boolean;
+  pointValue: number;
+  disruptionPotential: number; // How much this combo can disrupt opponents
+  conservationValue: number; // How valuable this combo is to keep
+}
+
+export interface TrickAnalysis {
+  currentWinner: string | null;
+  winningCombo: Card[] | null;
+  totalPoints: number;
+  canWin: boolean; // Can this AI win with available combos
+  shouldContest: boolean; // Is it strategically worth contesting
+  partnerStatus: "winning" | "losing" | "not_played";
+}
+
+export interface CardMemory {
+  playedCards: Card[]; // All cards seen this round
+  trumpCardsPlayed: number; // Count of trump cards played
+  pointCardsPlayed: number; // Count of point cards played
+  suitDistribution: Record<string, number>; // Cards played by suit
+}

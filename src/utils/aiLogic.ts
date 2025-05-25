@@ -5,6 +5,12 @@ import {
   Combo,
   TrumpInfo,
   ComboType,
+  GameContext,
+  PlayStyle,
+  ComboStrength,
+  ComboAnalysis,
+  TrickAnalysis,
+  PositionStrategy,
 } from "../types/game";
 import {
   identifyCombos,
@@ -13,6 +19,12 @@ import {
   compareCards,
   getLeadingSuit,
 } from "./gameLogic";
+import {
+  createGameContext,
+  analyzeCombo,
+  analyzeTrick,
+  getPositionStrategy,
+} from "./aiGameContext";
 
 // Base AI strategy interface
 interface AIStrategy {
@@ -26,62 +38,18 @@ interface AIStrategy {
 // AI strategy implementation
 class AIStrategy implements AIStrategy {
   makePlay(gameState: GameState, player: Player, validCombos: Combo[]): Card[] {
-    const { currentTrick, trumpInfo, players, currentPlayerIndex } = gameState;
+    const { currentTrick, trumpInfo } = gameState;
 
-    // If leading, consider several factors
+    // Create strategic context for this AI player
+    const context = createGameContext(gameState, player.id);
+
+    // If leading, use strategic leading logic
     if (!currentTrick || !currentTrick.leadingCombo) {
-      // Check if we should lead with trump
-      const shouldLeadTrump = this.shouldLeadWithTrump(gameState, player);
-
-      if (shouldLeadTrump) {
-        // Find the strongest trump combo
-        const trumpCombos = validCombos.filter((combo) =>
-          combo.cards.some((card) => isTrump(card, trumpInfo)),
-        );
-
-        if (trumpCombos.length > 0) {
-          const sortedTrumpCombos = [...trumpCombos].sort(
-            (a, b) => b.value - a.value,
-          );
-          return sortedTrumpCombos[0].cards;
-        }
-      }
-
-      // Otherwise, lead with a good non-trump combo
-      return this.selectLeadingCombo(validCombos, trumpInfo);
+      return this.selectLeadingPlay(validCombos, trumpInfo, context);
     }
 
-    // If following, use more complex logic
-    // Check if partner is winning the trick
-    const partnerIndex = (currentPlayerIndex + 2) % 4;
-    const partnerInTrick = currentTrick.plays.some(
-      (play) => play.playerId === players[partnerIndex].id,
-    );
-
-    const currentWinner = this.getCurrentTrickWinner(gameState);
-    const partnerWinning =
-      partnerInTrick && currentWinner === players[partnerIndex].id;
-
-    // Check if trick has significant points
-    const trickPoints = currentTrick.plays.reduce(
-      (sum, play) =>
-        sum + play.cards.reduce((cardSum, card) => cardSum + card.points, 0),
-      0,
-    );
-
-    // Strategy based on trick state
-    if (partnerWinning) {
-      // Partner is winning, play our lowest cards
-      const sortedCombos = [...validCombos].sort((a, b) => a.value - b.value);
-      return sortedCombos[0].cards;
-    } else if (trickPoints >= 15) {
-      // High points at stake, try to win with strongest combo
-      const sortedCombos = [...validCombos].sort((a, b) => b.value - a.value);
-      return sortedCombos[0].cards;
-    } else {
-      // Balance between conserving strong cards and winning modest points
-      return this.selectBalancedFollowCombo(validCombos, trickPoints);
-    }
+    // If following, use strategic following logic
+    return this.selectFollowingPlay(gameState, validCombos, context);
   }
 
   declareTrumpSuit(gameState: GameState, player: Player): boolean {
@@ -246,6 +214,444 @@ class AIStrategy implements AIStrategy {
 
     // Otherwise use our weakest combo
     return sortedCombos[0].cards;
+  }
+
+  // New strategic methods using GameContext
+
+  private selectLeadingPlay(
+    combos: Combo[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+  ): Card[] {
+    // Enhanced Phase 2: Position-aware strategy with combo analysis
+    const positionStrategy = getPositionStrategy(
+      context.trickPosition,
+      context.playStyle,
+    );
+    const comboAnalyses = combos.map((combo) => ({
+      combo,
+      analysis: analyzeCombo(combo, trumpInfo, context),
+    }));
+
+    // Strategy depends on team role, position, and play style
+    if (context.isAttackingTeam) {
+      return this.selectAttackingLeadPlay(
+        comboAnalyses,
+        trumpInfo,
+        context,
+        positionStrategy,
+      );
+    } else {
+      return this.selectDefendingLeadPlay(
+        comboAnalyses,
+        trumpInfo,
+        context,
+        positionStrategy,
+      );
+    }
+  }
+
+  private selectFollowingPlay(
+    gameState: GameState,
+    combos: Combo[],
+    context: GameContext,
+  ): Card[] {
+    // Enhanced Phase 2: Comprehensive trick and position analysis
+    const positionStrategy = getPositionStrategy(
+      context.trickPosition,
+      context.playStyle,
+    );
+    const trickAnalysis = analyzeTrick(
+      gameState,
+      gameState.players[gameState.currentPlayerIndex].id,
+      combos,
+    );
+    const comboAnalyses = combos.map((combo) => ({
+      combo,
+      analysis: analyzeCombo(combo, gameState.trumpInfo, context),
+    }));
+
+    // Enhanced strategic decision making
+    return this.selectOptimalFollowPlay(
+      comboAnalyses,
+      trickAnalysis,
+      context,
+      positionStrategy,
+      gameState.trumpInfo,
+    );
+  }
+
+  private selectAttackingLeadPlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+    positionStrategy: PositionStrategy,
+  ): Card[] {
+    // Enhanced attacking lead strategy with combo analysis
+    switch (context.playStyle) {
+      case PlayStyle.Desperate:
+        // Use strongest available combo, prioritize trump
+        return this.selectByStrength(
+          comboAnalyses,
+          [ComboStrength.Critical, ComboStrength.Strong],
+          true,
+        );
+
+      case PlayStyle.Aggressive:
+        // Balance between probing and strength, favor disruption
+        if (positionStrategy.disruptionFocus > 0.6) {
+          return this.selectDisruptiveCombo(comboAnalyses, trumpInfo);
+        }
+        return this.selectByStrength(
+          comboAnalyses,
+          [ComboStrength.Strong, ComboStrength.Medium],
+          false,
+        );
+
+      case PlayStyle.Balanced:
+        // Information gathering with measured risk
+        if (positionStrategy.informationGathering > 0.6) {
+          return this.selectProbingCombo(comboAnalyses, trumpInfo);
+        }
+        return this.selectByStrength(
+          comboAnalyses,
+          [ComboStrength.Medium, ComboStrength.Weak],
+          false,
+        );
+
+      case PlayStyle.Conservative:
+      default:
+        // Safe probing, avoid waste
+        return this.selectSafeLeadCombo(comboAnalyses, trumpInfo);
+    }
+  }
+
+  private selectDefendingLeadPlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+    positionStrategy: PositionStrategy,
+  ): Card[] {
+    // Enhanced defending lead strategy
+    switch (context.playStyle) {
+      case PlayStyle.Desperate:
+        // Maximum disruption - use trump to break opponent rhythm
+        return this.selectMaxDisruptionCombo(comboAnalyses, trumpInfo);
+
+      case PlayStyle.Aggressive:
+        // Active defense with calculated risks
+        if (positionStrategy.disruptionFocus > 0.5) {
+          return this.selectDisruptiveCombo(comboAnalyses, trumpInfo);
+        }
+        return this.selectByStrength(
+          comboAnalyses,
+          [ComboStrength.Medium, ComboStrength.Strong],
+          false,
+        );
+
+      case PlayStyle.Balanced:
+        // Moderate defense, gather information
+        return this.selectBalancedDefenseCombo(
+          comboAnalyses,
+          trumpInfo,
+          positionStrategy,
+        );
+
+      case PlayStyle.Conservative:
+      default:
+        // Patient defense, minimum risk
+        return this.selectSafeLeadCombo(comboAnalyses, trumpInfo);
+    }
+  }
+
+  private selectOptimalFollowPlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trickAnalysis: TrickAnalysis,
+    context: GameContext,
+    positionStrategy: PositionStrategy,
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Enhanced following strategy based on comprehensive analysis
+
+    // Partner coordination takes priority
+    if (
+      trickAnalysis.partnerStatus === "winning" &&
+      positionStrategy.partnerCoordination > 0.6
+    ) {
+      // Partner winning - conserve strength
+      return this.selectConservativePlay(comboAnalyses);
+    }
+
+    // Can we win this trick?
+    if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
+      // Worth contesting - select optimal winning combo
+      return this.selectOptimalWinningCombo(
+        comboAnalyses,
+        trickAnalysis,
+        context,
+        positionStrategy,
+      );
+    }
+
+    // Can't or shouldn't win - strategic disposal
+    return this.selectStrategicDisposal(
+      comboAnalyses,
+      trickAnalysis,
+      context,
+      positionStrategy,
+    );
+  }
+
+  // Enhanced helper methods for Phase 2 strategy
+
+  private selectByStrength(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    preferredStrengths: ComboStrength[],
+    preferTrump: boolean,
+  ): Card[] {
+    // Filter by preferred strengths
+    const preferred = comboAnalyses.filter((ca) =>
+      preferredStrengths.includes(ca.analysis.strength),
+    );
+
+    if (preferred.length > 0) {
+      // Sort by trump preference and value
+      const sorted = preferred.sort((a, b) => {
+        if (preferTrump && a.analysis.isTrump !== b.analysis.isTrump) {
+          return a.analysis.isTrump ? -1 : 1;
+        }
+        return b.combo.value - a.combo.value;
+      });
+      return sorted[0].combo.cards;
+    }
+
+    // Fallback to any available combo
+    const fallback = comboAnalyses.sort(
+      (a, b) => a.combo.value - b.combo.value,
+    );
+    return fallback[0].combo.cards;
+  }
+
+  private selectProbingCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Select combo that maximizes information gathering
+    const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
+    if (nonTrump.length > 0) {
+      // Prefer medium-strength non-trump to probe opponent hands
+      const medium = nonTrump.filter(
+        (ca) => ca.analysis.strength === ComboStrength.Medium,
+      );
+      if (medium.length > 0) {
+        return medium[0].combo.cards;
+      }
+      // Fallback to weakest non-trump
+      const sorted = nonTrump.sort((a, b) => a.combo.value - b.combo.value);
+      return sorted[0].combo.cards;
+    }
+    // Only trump available - use weakest
+    const sorted = comboAnalyses.sort((a, b) => a.combo.value - b.combo.value);
+    return sorted[0].combo.cards;
+  }
+
+  private selectSafeLeadCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Safe leading - avoid giving away points or strong cards
+    const safe = comboAnalyses.filter(
+      (ca) =>
+        !ca.analysis.hasPoints && ca.analysis.strength === ComboStrength.Weak,
+    );
+
+    if (safe.length > 0) {
+      // Prefer non-trump safe cards
+      const nonTrumpSafe = safe.filter((ca) => !ca.analysis.isTrump);
+      if (nonTrumpSafe.length > 0) {
+        return nonTrumpSafe[0].combo.cards;
+      }
+      return safe[0].combo.cards;
+    }
+
+    // No safe options - pick least risky
+    const sorted = comboAnalyses.sort((a, b) => {
+      if (a.analysis.hasPoints !== b.analysis.hasPoints) {
+        return a.analysis.hasPoints ? 1 : -1;
+      }
+      return a.combo.value - b.combo.value;
+    });
+    return sorted[0].combo.cards;
+  }
+
+  private selectDisruptiveCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Select combo with highest disruption potential
+    const sorted = comboAnalyses.sort(
+      (a, b) => b.analysis.disruptionPotential - a.analysis.disruptionPotential,
+    );
+    return sorted[0].combo.cards;
+  }
+
+  private selectMaxDisruptionCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Maximum disruption - prefer trump tractors/pairs
+    const trump = comboAnalyses.filter((ca) => ca.analysis.isTrump);
+    if (trump.length > 0) {
+      const tractors = trump.filter(
+        (ca) => ca.combo.type === ComboType.Tractor,
+      );
+      if (tractors.length > 0) {
+        return tractors.sort((a, b) => b.combo.value - a.combo.value)[0].combo
+          .cards;
+      }
+      const pairs = trump.filter((ca) => ca.combo.type === ComboType.Pair);
+      if (pairs.length > 0) {
+        return pairs.sort((a, b) => b.combo.value - a.combo.value)[0].combo
+          .cards;
+      }
+      return trump.sort((a, b) => b.combo.value - a.combo.value)[0].combo.cards;
+    }
+
+    // No trump - use highest disruption potential
+    return this.selectDisruptiveCombo(comboAnalyses, trumpInfo);
+  }
+
+  private selectBalancedDefenseCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+    positionStrategy: PositionStrategy,
+  ): Card[] {
+    // Balanced defense considers information gathering vs disruption
+    if (
+      positionStrategy.informationGathering > positionStrategy.disruptionFocus
+    ) {
+      return this.selectProbingCombo(comboAnalyses, trumpInfo);
+    } else {
+      return this.selectDisruptiveCombo(comboAnalyses, trumpInfo);
+    }
+  }
+
+  private selectOptimalWinningCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trickAnalysis: TrickAnalysis,
+    context: GameContext,
+    positionStrategy: PositionStrategy,
+  ): Card[] {
+    // Find combos that can win the trick
+    const winningCombos = comboAnalyses.filter((ca) => {
+      // This would need actual comparison logic with trick winner
+      return ca.combo.value > 50; // Simplified for now
+    });
+
+    if (winningCombos.length === 0) {
+      return comboAnalyses[0].combo.cards; // Fallback
+    }
+
+    // Choose winning combo based on strategy
+    if (positionStrategy.riskTaking > 0.7) {
+      // High risk tolerance - use minimal winning combo
+      return winningCombos.sort((a, b) => a.combo.value - b.combo.value)[0]
+        .combo.cards;
+    } else {
+      // Conservative - ensure win with stronger combo
+      return winningCombos.sort((a, b) => b.combo.value - a.combo.value)[0]
+        .combo.cards;
+    }
+  }
+
+  private selectStrategicDisposal(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trickAnalysis: TrickAnalysis,
+    context: GameContext,
+    positionStrategy: PositionStrategy,
+  ): Card[] {
+    // Strategic disposal when not contesting trick
+    if (context.cardsRemaining <= 3) {
+      // Endgame - dispose of least valuable
+      const sorted = comboAnalyses.sort(
+        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    // Mid-game strategic disposal
+    if (positionStrategy.informationGathering > 0.6) {
+      // Use disposal to gather information
+      return this.selectProbingCombo(comboAnalyses, { trumpRank: "A" } as any);
+    }
+
+    // Standard disposal - weakest non-trump
+    const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
+    if (nonTrump.length > 0) {
+      const sorted = nonTrump.sort((a, b) => a.combo.value - b.combo.value);
+      return sorted[0].combo.cards;
+    }
+
+    // Only trump left - use weakest
+    const sorted = comboAnalyses.sort((a, b) => a.combo.value - b.combo.value);
+    return sorted[0].combo.cards;
+  }
+
+  // Updated helper methods
+
+  private selectConservativePlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  ): Card[] {
+    // Play combo with lowest conservation value
+    const sorted = comboAnalyses.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    );
+    return sorted[0].combo.cards;
+  }
+
+  private selectStrongestCombo(combos: Combo[]): Card[] {
+    // Play strongest combo available
+    const sorted = [...combos].sort((a, b) => b.value - a.value);
+    return sorted[0].cards;
+  }
+
+  private selectMediumCombo(combos: Combo[], trumpInfo?: TrumpInfo): Card[] {
+    // Play medium-strength combo
+    if (trumpInfo) {
+      // Prefer non-trump if available
+      const nonTrumpCombos = combos.filter(
+        (combo) => !combo.cards.some((card) => isTrump(card, trumpInfo)),
+      );
+      if (nonTrumpCombos.length > 0) {
+        const sorted = [...nonTrumpCombos].sort((a, b) => a.value - b.value);
+        const midIndex = Math.floor(sorted.length / 2);
+        return sorted[midIndex].cards;
+      }
+    }
+
+    const sorted = [...combos].sort((a, b) => a.value - b.value);
+    const midIndex = Math.floor(sorted.length / 2);
+    return sorted[midIndex].cards;
+  }
+
+  private selectLegacyDisruptiveCombo(
+    combos: Combo[],
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Lead with trump to disrupt opponent plans (legacy method)
+    const trumpCombos = combos.filter((combo) =>
+      combo.cards.some((card) => isTrump(card, trumpInfo)),
+    );
+
+    if (trumpCombos.length > 0) {
+      // Use medium-strength trump to probe
+      const sorted = [...trumpCombos].sort((a, b) => a.value - b.value);
+      const midIndex = Math.floor(sorted.length / 2);
+      return sorted[midIndex].cards;
+    }
+
+    // No trump available - use regular leading logic
+    return this.selectLeadingCombo(combos, trumpInfo);
   }
 }
 
