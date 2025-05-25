@@ -99,6 +99,139 @@ Trump cards beat non-trump cards. Within trumps, the hierarchy is:
 - **Rank advancement**: Successful teams advance 1-3 ranks based on performance
 - **Game end**: First team to reach Ace wins
 
+## 🧠 AI Strategy & Intelligence
+
+### Current AI Implementation
+The bot players use strategic logic rather than random play, with several layers of decision-making:
+
+**Basic Strategy Features:**
+- **Partner awareness**: Avoids competing when partner is winning a trick
+- **Point threshold logic**: Fights harder for tricks with 15+ points (5s, 10s, Kings)
+- **Trump leading decisions**: Considers hand strength and round timing
+- **Card conservation**: Avoids wasting point cards when leading
+
+**Strategic Decision Tree:**
+1. **Leading a trick**: Balances between probing with moderate cards and avoiding easy points for opponents
+2. **Following in trick**: Uses partner status, trick points, and card strength to decide
+3. **Trump declaration**: Considers suit distribution and trump rank cards
+
+### Planned AI Improvements (Issue #20)
+
+#### 1. Team Role Awareness
+**Current Gap**: AI doesn't distinguish between attacking (trying to get 80 points) vs defending (preventing 80 points) team roles.
+
+**Implementation Plan:**
+```typescript
+interface GameContext {
+  isAttackingTeam: boolean;
+  currentPoints: number;     // Points collected by attacking team
+  pointsNeeded: number;      // Usually 80 to advance level  
+  cardsRemaining: number;    // Cards left in round
+}
+```
+
+**Attacking Strategy:**
+- Aggressive point collection when behind on points
+- Risk/reward calculation for point-bearing tricks
+- Late-round urgency when approaching failure threshold
+
+**Defending Strategy:**
+- Block point collection aggressively  
+- Sacrifice non-point cards to prevent big point hauls
+- Conservative play when attacking team nears 80 points
+
+#### 2. Position-Based Adaptive Play
+**Current Gap**: AI doesn't adjust strategy based on play order within each trick.
+
+**Implementation Plan:**
+```typescript
+enum TrickPosition {
+  First,    // Leading the trick - least information
+  Second,   // Early follower - some information
+  Third,    // Late follower - substantial information  
+  Fourth    // Last player - perfect information
+}
+```
+
+**Position Strategies:**
+- **First (Leading)**: Probe with medium cards, control trick direction
+- **Second**: Conservative unless partner led, gather information
+- **Third**: Informed decisions based on first two plays
+- **Fourth**: Optimize based on complete trick state
+
+#### 3. Dynamic Point Pressure System  
+**Current Gap**: AI doesn't adjust aggression based on score progression.
+
+**Implementation Plan:**
+```typescript
+function getPointPressure(context: GameContext): 'LOW' | 'MEDIUM' | 'HIGH' {
+  const ratio = context.currentPoints / context.pointsNeeded;
+  if (ratio < 0.3) return 'LOW';      // < 24 points - build information
+  if (ratio < 0.7) return 'MEDIUM';   // 24-56 points - balanced play
+  return 'HIGH';                      // 56+ points - all-out mode
+}
+```
+
+**Pressure-Based Adjustments:**
+- **LOW**: Conservative, information gathering, long-term positioning
+- **MEDIUM**: Balanced aggression, selective point targeting
+- **HIGH**: Maximum aggression/defense, short-term focus
+
+#### 4. Card Memory & Counting System
+**Current Gap**: AI doesn't track played cards or estimate remaining distributions.
+
+**Implementation Plan:**  
+```typescript
+interface CardMemory {
+  playedCards: Card[];                    // All cards seen
+  trumpCardsPlayed: number;               // Trump tracking
+  pointCardsPlayed: number;               // Point card tracking  
+  suitDistribution: Record<string, number>; // Suit exhaustion tracking
+}
+```
+
+**Memory-Enhanced Decisions:**
+- Estimate remaining trump cards in other hands
+- Calculate point card probabilities  
+- Adjust play based on suit exhaustion
+- End-game optimization with perfect information
+
+#### 5. Advanced Combination Logic
+**Current Gap**: AI doesn't optimize tractor/pair play strategically.
+
+**Planned Improvements:**
+- **Tractor timing**: When to break up vs preserve tractors
+- **Pair conservation**: Saving pairs for defensive blocks
+- **Combination threats**: Reading opponent combination potential
+- **Trump combination priority**: Optimizing trump tractor usage
+
+### Implementation Roadmap
+
+**Phase 1: Team Role Awareness** (Highest Impact)
+- Add attacking/defending team detection
+- Implement role-specific strategies  
+- Add point progression tracking
+
+**Phase 2: Position-Based Intelligence**  
+- Add trick position detection
+- Implement position-specific logic
+- Optimize information usage by position
+
+**Phase 3: Card Memory System**
+- Add played card tracking
+- Implement probability calculations
+- Add suit/trump exhaustion logic
+
+**Phase 4: Advanced Strategies**
+- Dynamic difficulty levels
+- Sophisticated combination play
+- End-game specialization
+
+**Testing Strategy:**
+- A/B testing against current AI
+- Performance metrics (win rates, point efficiency)
+- User experience testing for appropriate difficulty
+
 ## 🏗️ Architecture
 
 ### Project Structure

@@ -49,6 +49,19 @@ export enum GamePhase {
   GameOver = "gameOver",
 }
 
+export enum TrickPosition {
+  First = "first", // Leading the trick
+  Second = "second", // Early follower
+  Third = "third", // Late follower
+  Fourth = "fourth", // Last player
+}
+
+export enum PointPressure {
+  LOW = "low", // < 30% of points needed
+  MEDIUM = "medium", // 30-70% of points needed
+  HIGH = "high", // 70%+ of points needed
+}
+
 export type Card = {
   suit?: Suit;
   rank?: Rank;
@@ -118,3 +131,20 @@ export type Combo = {
 };
 
 // AI now always runs at Hard difficulty
+
+// AI Strategy Enhancement Types
+export interface GameContext {
+  isAttackingTeam: boolean; // Is this AI on the attacking team?
+  currentPoints: number; // Points collected by attacking team so far
+  pointsNeeded: number; // Points needed to win (usually 80)
+  cardsRemaining: number; // Cards left in round
+  trickPosition: TrickPosition; // Position in current trick
+  pointPressure: PointPressure; // Urgency level based on point progress
+}
+
+export interface CardMemory {
+  playedCards: Card[]; // All cards seen this round
+  trumpCardsPlayed: number; // Count of trump cards played
+  pointCardsPlayed: number; // Count of point cards played
+  suitDistribution: Record<string, number>; // Cards played by suit
+}

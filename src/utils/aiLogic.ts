@@ -5,6 +5,8 @@ import {
   Combo,
   TrumpInfo,
   ComboType,
+  GameContext,
+  PointPressure,
 } from "../types/game";
 import {
   identifyCombos,
@@ -13,6 +15,7 @@ import {
   compareCards,
   getLeadingSuit,
 } from "./gameLogic";
+import { createGameContext, isTrickWorthFighting } from "./aiGameContext";
 
 // Base AI strategy interface
 interface AIStrategy {
@@ -26,62 +29,18 @@ interface AIStrategy {
 // AI strategy implementation
 class AIStrategy implements AIStrategy {
   makePlay(gameState: GameState, player: Player, validCombos: Combo[]): Card[] {
-    const { currentTrick, trumpInfo, players, currentPlayerIndex } = gameState;
+    const { currentTrick, trumpInfo } = gameState;
 
-    // If leading, consider several factors
+    // Create strategic context for this AI player
+    const context = createGameContext(gameState, player.id);
+
+    // If leading, use strategic leading logic
     if (!currentTrick || !currentTrick.leadingCombo) {
-      // Check if we should lead with trump
-      const shouldLeadTrump = this.shouldLeadWithTrump(gameState, player);
-
-      if (shouldLeadTrump) {
-        // Find the strongest trump combo
-        const trumpCombos = validCombos.filter((combo) =>
-          combo.cards.some((card) => isTrump(card, trumpInfo)),
-        );
-
-        if (trumpCombos.length > 0) {
-          const sortedTrumpCombos = [...trumpCombos].sort(
-            (a, b) => b.value - a.value,
-          );
-          return sortedTrumpCombos[0].cards;
-        }
-      }
-
-      // Otherwise, lead with a good non-trump combo
-      return this.selectLeadingCombo(validCombos, trumpInfo);
+      return this.selectLeadingPlay(validCombos, trumpInfo, context);
     }
 
-    // If following, use more complex logic
-    // Check if partner is winning the trick
-    const partnerIndex = (currentPlayerIndex + 2) % 4;
-    const partnerInTrick = currentTrick.plays.some(
-      (play) => play.playerId === players[partnerIndex].id,
-    );
-
-    const currentWinner = this.getCurrentTrickWinner(gameState);
-    const partnerWinning =
-      partnerInTrick && currentWinner === players[partnerIndex].id;
-
-    // Check if trick has significant points
-    const trickPoints = currentTrick.plays.reduce(
-      (sum, play) =>
-        sum + play.cards.reduce((cardSum, card) => cardSum + card.points, 0),
-      0,
-    );
-
-    // Strategy based on trick state
-    if (partnerWinning) {
-      // Partner is winning, play our lowest cards
-      const sortedCombos = [...validCombos].sort((a, b) => a.value - b.value);
-      return sortedCombos[0].cards;
-    } else if (trickPoints >= 15) {
-      // High points at stake, try to win with strongest combo
-      const sortedCombos = [...validCombos].sort((a, b) => b.value - a.value);
-      return sortedCombos[0].cards;
-    } else {
-      // Balance between conserving strong cards and winning modest points
-      return this.selectBalancedFollowCombo(validCombos, trickPoints);
-    }
+    // If following, use strategic following logic
+    return this.selectFollowingPlay(gameState, validCombos, context);
   }
 
   declareTrumpSuit(gameState: GameState, player: Player): boolean {
@@ -246,6 +205,180 @@ class AIStrategy implements AIStrategy {
 
     // Otherwise use our weakest combo
     return sortedCombos[0].cards;
+  }
+
+  // New strategic methods using GameContext
+
+  private selectLeadingPlay(
+    combos: Combo[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+  ): Card[] {
+    // Strategy depends on team role and point pressure
+    if (context.isAttackingTeam) {
+      return this.selectAttackingLeadPlay(combos, trumpInfo, context);
+    } else {
+      return this.selectDefendingLeadPlay(combos, trumpInfo, context);
+    }
+  }
+
+  private selectFollowingPlay(
+    gameState: GameState,
+    combos: Combo[],
+    context: GameContext,
+  ): Card[] {
+    const { currentTrick, players, currentPlayerIndex } = gameState;
+
+    // Check partner status
+    const partnerIndex = (currentPlayerIndex + 2) % 4;
+    const partnerInTrick = currentTrick!.plays.some(
+      (play) => play.playerId === players[partnerIndex].id,
+    );
+
+    const currentWinner = this.getCurrentTrickWinner(gameState);
+    const partnerWinning =
+      partnerInTrick && currentWinner === players[partnerIndex].id;
+
+    // Check if trick is worth fighting for
+    const worthFighting = isTrickWorthFighting(gameState, context);
+
+    // Strategy based on team role, partner status, and trick value
+    if (partnerWinning) {
+      // Partner is winning - play conservatively
+      return this.selectConservativePlay(combos);
+    } else if (worthFighting) {
+      // Worth fighting for based on team role and points
+      if (context.isAttackingTeam) {
+        return this.selectAttackingFollowPlay(combos, context);
+      } else {
+        return this.selectDefendingFollowPlay(combos, context);
+      }
+    } else {
+      // Not worth fighting - play moderately
+      return this.selectBalancedFollowCombo(combos, 0);
+    }
+  }
+
+  private selectAttackingLeadPlay(
+    combos: Combo[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+  ): Card[] {
+    // Attacking team wants to collect points
+    switch (context.pointPressure) {
+      case PointPressure.HIGH:
+        // Desperate - lead with strongest to try to win tricks
+        return this.selectStrongestCombo(combos);
+
+      case PointPressure.MEDIUM:
+        // Balanced - probe with medium strength, avoid giving easy points
+        return this.selectMediumCombo(combos, trumpInfo);
+
+      case PointPressure.LOW:
+      default:
+        // Conservative - build information, avoid point wastage
+        return this.selectLeadingCombo(combos, trumpInfo);
+    }
+  }
+
+  private selectDefendingLeadPlay(
+    combos: Combo[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+  ): Card[] {
+    // Defending team wants to prevent point collection
+    switch (context.pointPressure) {
+      case PointPressure.HIGH:
+        // Attacking team is close - lead aggressively to disrupt
+        return this.selectDisruptiveCombo(combos, trumpInfo);
+
+      case PointPressure.MEDIUM:
+        // Moderate pressure - balance disruption with conservation
+        return this.selectMediumCombo(combos, trumpInfo);
+
+      case PointPressure.LOW:
+      default:
+        // Low pressure - conservative play, gather information
+        return this.selectLeadingCombo(combos, trumpInfo);
+    }
+  }
+
+  private selectAttackingFollowPlay(
+    combos: Combo[],
+    context: GameContext,
+  ): Card[] {
+    // Attacking team following - try to win trick for points
+    if (context.pointPressure === PointPressure.HIGH) {
+      // Desperate for points - use strongest combo
+      return this.selectStrongestCombo(combos);
+    } else {
+      // Balanced approach - use medium strength
+      return this.selectMediumCombo(combos);
+    }
+  }
+
+  private selectDefendingFollowPlay(
+    combos: Combo[],
+    context: GameContext,
+  ): Card[] {
+    // Defending team following - prevent opponent from winning
+    if (context.pointPressure === PointPressure.HIGH) {
+      // Attacking team close to winning - block aggressively
+      return this.selectStrongestCombo(combos);
+    } else {
+      // Use moderate strength to contest
+      return this.selectMediumCombo(combos);
+    }
+  }
+
+  // Helper methods for new strategy
+
+  private selectConservativePlay(combos: Combo[]): Card[] {
+    // Play weakest combo to conserve strength
+    const sorted = [...combos].sort((a, b) => a.value - b.value);
+    return sorted[0].cards;
+  }
+
+  private selectStrongestCombo(combos: Combo[]): Card[] {
+    // Play strongest combo available
+    const sorted = [...combos].sort((a, b) => b.value - a.value);
+    return sorted[0].cards;
+  }
+
+  private selectMediumCombo(combos: Combo[], trumpInfo?: TrumpInfo): Card[] {
+    // Play medium-strength combo
+    if (trumpInfo) {
+      // Prefer non-trump if available
+      const nonTrumpCombos = combos.filter(
+        (combo) => !combo.cards.some((card) => isTrump(card, trumpInfo)),
+      );
+      if (nonTrumpCombos.length > 0) {
+        const sorted = [...nonTrumpCombos].sort((a, b) => a.value - b.value);
+        const midIndex = Math.floor(sorted.length / 2);
+        return sorted[midIndex].cards;
+      }
+    }
+
+    const sorted = [...combos].sort((a, b) => a.value - b.value);
+    const midIndex = Math.floor(sorted.length / 2);
+    return sorted[midIndex].cards;
+  }
+
+  private selectDisruptiveCombo(combos: Combo[], trumpInfo: TrumpInfo): Card[] {
+    // Lead with trump to disrupt opponent plans
+    const trumpCombos = combos.filter((combo) =>
+      combo.cards.some((card) => isTrump(card, trumpInfo)),
+    );
+
+    if (trumpCombos.length > 0) {
+      // Use medium-strength trump to probe
+      const sorted = [...trumpCombos].sort((a, b) => a.value - b.value);
+      const midIndex = Math.floor(sorted.length / 2);
+      return sorted[midIndex].cards;
+    }
+
+    // No trump available - use regular leading logic
+    return this.selectLeadingCombo(combos, trumpInfo);
   }
 }
 
