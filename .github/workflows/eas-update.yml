@@ -54,17 +54,15 @@ jobs:
         GIT_COMMIT=$(git rev-parse HEAD)
         echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
         
-        # Helper function to get base version and commit count
-        get_version_info() {
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [[ -n "$LAST_TAG" ]]; then
-            BASE_VERSION=${LAST_TAG#v}
-            COMMIT_COUNT=$(git rev-list --count ${LAST_TAG}..HEAD)
-          else
-            BASE_VERSION="1.0.0"
-            COMMIT_COUNT=$(git rev-list --count HEAD)
-          fi
-        }
+        # Get base version and commit count
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [[ -n "$LAST_TAG" ]]; then
+          BASE_VERSION=${LAST_TAG#v}
+          COMMIT_COUNT=$(git rev-list --count ${LAST_TAG}..HEAD)
+        else
+          BASE_VERSION="1.0.0"
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+        fi
         
         # Determine deployment based on trigger
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
@@ -75,14 +73,12 @@ jobs:
           
         elif [[ $GITHUB_REF == refs/heads/main ]]; then
           # Beta release from main
-          get_version_info
           VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
           EAS_BRANCH="beta"
           MESSAGE="Beta release $VERSION"
           
         elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
           # Alpha build from PR
-          get_version_info
           BRANCH_NAME="${{ github.head_ref }}"
           ALPHA_ID=${BRANCH_NAME//\//.}
           VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}"
@@ -91,7 +87,6 @@ jobs:
           
         else
           # Alpha build from other branch
-          get_version_info
           BRANCH_NAME="${{ inputs.branch_name }}"
           if [[ -z "$BRANCH_NAME" ]]; then
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
