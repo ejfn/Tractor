@@ -184,9 +184,9 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 
 ## Type Safety and Code Quality
 
-### Enum Usage
+### Enum Usage ⚠️ CRITICAL
 
-The codebase uses TypeScript enums to eliminate magic strings and ensure type safety:
+**ALWAYS USE ENUMS INSTEAD OF MAGIC STRINGS!** The codebase uses TypeScript enums extensively to eliminate magic strings and ensure type safety:
 
 ```typescript
 // Player identification - use instead of magic strings
@@ -214,19 +214,79 @@ enum GamePhase {
   RoundEnd = 'roundEnd',
   GameOver = 'gameOver'
 }
+
+// AI Strategy Enums (Phases 1-3)
+enum TrickPosition {
+  First = 'first',
+  Second = 'second', 
+  Third = 'third',
+  Fourth = 'fourth'
+}
+
+enum PointPressure {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high'
+}
+
+enum PlayStyle {
+  Conservative = 'conservative',
+  Balanced = 'balanced',
+  Aggressive = 'aggressive', 
+  Desperate = 'desperate'
+}
+
+enum ComboStrength {
+  Weak = 'weak',
+  Medium = 'medium',
+  Strong = 'strong',
+  Critical = 'critical'
+}
 ```
 
-**Always use enums instead of magic strings:**
+**⚠️ ALWAYS use enums instead of magic strings:**
 - ✅ `PlayerId.Human` instead of `'human'`
 - ✅ `GamePhase.Playing` instead of `'playing'`  
 - ✅ `PlayerName.Bot1` instead of `'Bot 1'`
+- ✅ `TrickPosition.First` instead of `'first'`
+- ✅ `PointPressure.HIGH` instead of `'high'` or `'HIGH'`
+- ✅ `PlayStyle.Aggressive` instead of `'aggressive'`
+- ✅ `ComboStrength.Critical` instead of `'critical'`
+
+**❌ NEVER use magic strings:**
+- ❌ `'human'`, `'bot1'`, `'playing'`, `'high'`, `'aggressive'`
+- ❌ String literals in conditional checks
+- ❌ Hardcoded strings in function parameters
+- ❌ String comparisons without enum references
+
+**🔍 Common Enum Mistakes to Avoid:**
+- Using `player.id === 'human'` instead of `player.id === PlayerId.Human`
+- Returning `'aggressive'` instead of `PlayStyle.Aggressive` from functions
+- Comparing with `pointPressure === 'HIGH'` instead of `pointPressure === PointPressure.HIGH`
+- Hardcoding position strings like `'first'` instead of `TrickPosition.First`
 
 ### Testing Best Practices
 
 - **Avoid unnecessary mocks**: Since Shengji has deterministic initialization, prefer using real `initializeGame` over mocking
-- **Use type-safe test utilities**: Import enums in test files and use them consistently
+- **⚠️ CRITICAL: Always import and use enums in tests**: Import all relevant enums at the top of test files
+- **Use type-safe test utilities**: Never use magic strings in test assertions
 - **Jest mock limitations**: Only mock what needs to be controlled for the specific test
 - **Test realism**: Use actual game logic when possible for more realistic test coverage
+
+**✅ Correct Test Enum Usage:**
+```typescript
+import { PlayerId, GamePhase, TrickPosition, PointPressure } from '../../src/types/game';
+
+// Good
+expect(gameState.currentPlayer).toBe(PlayerId.Human);
+expect(context.trickPosition).toBe(TrickPosition.First);
+expected(strategy.pointPressure).toBe(PointPressure.HIGH);
+
+// Bad
+expected(gameState.currentPlayer).toBe('human');
+expected(context.trickPosition).toBe('first');
+expected(strategy.pointPressure).toBe('HIGH');
+```
 
 ```typescript
 // Good: Use real initialization + targeted mocking
@@ -266,10 +326,66 @@ Trump suit rotates to first position while maintaining alternating black-red pat
 - Trick plays array contains (players.length - 1) plays
 - Always block AI moves during trick result display
 
+## AI Implementation Guidelines (Phases 1-3)
+
+### AI Enum Usage ⚠️ MANDATORY
+
+When working with AI systems, **ALWAYS use the following enums**:
+
+```typescript
+// Context and Strategy
+const context = createGameContext(gameState, playerId);
+if (context.playStyle === PlayStyle.Aggressive) {  // ✅ CORRECT
+  // AI logic here
+}
+
+// Position-based decisions
+if (context.trickPosition === TrickPosition.First) {  // ✅ CORRECT
+  return selectLeadingPlay(combos, trumpInfo, context);
+}
+
+// Point pressure checks
+if (context.pointPressure === PointPressure.HIGH) {  // ✅ CORRECT
+  return selectDesperatePlay(combos);
+}
+
+// Combo strength evaluation
+if (analysis.strength === ComboStrength.Critical) {  // ✅ CORRECT
+  preserveForEndgame = true;
+}
+```
+
+**❌ NEVER do this in AI code:**
+```typescript
+// Wrong - magic strings
+if (context.playStyle === 'aggressive') { }          // ❌ BAD
+if (context.trickPosition === 'first') { }           // ❌ BAD  
+if (context.pointPressure === 'HIGH') { }            // ❌ BAD
+if (analysis.strength === 'critical') { }            // ❌ BAD
+```
+
+### AI Memory System Usage
+
+When working with Phase 3 memory features:
+
+```typescript
+// Correct memory pattern usage
+if (pattern.cardType === 'trump') {                   // ✅ String literal OK here
+  pattern.situation = `leading_${pattern.cardType}`;  // ✅ Template literal OK
+}
+
+// Memory strategy checks
+if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
+  return selectEndgameOptimalPlay(combos, context, trumpInfo);
+}
+```
+
 ## Best Practices
 
+- ⚠️ **CRITICAL**: Always import and use enums instead of magic strings
 - Use Batch tool for multiple operations
 - Read file references with `file_path:line_number` format
 - Prefer general solutions over special cases
 - Maintain consistent player transitions
 - Follow existing code conventions
+- Import all relevant enums at the top of every file
