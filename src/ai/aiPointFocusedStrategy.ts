@@ -192,6 +192,58 @@ export function selectEarlyGameLeadingPlay(
 }
 
 /**
+ * Enhanced following strategy with aggressive point collection
+ */
+export function selectAggressivePointCollection(
+  validCombos: Combo[],
+  trumpInfo: TrumpInfo,
+  pointContext: PointFocusedContext,
+  gameState: GameState,
+  leadingCombo: Card[],
+): Combo | null {
+  const currentTrick = gameState.currentTrick;
+  if (!currentTrick) return null;
+
+  // Calculate points currently on the table
+  const tablePoints = calculateTrickPoints(currentTrick);
+
+  // Check if opponent is currently winning with point cards
+  const currentWinner = getCurrentTrickWinner(gameState, currentTrick);
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const isOpponentWinning =
+    currentWinner && currentWinner.team !== currentPlayer.team;
+
+  // Only use aggressive collection if opponent is winning AND there are points to collect
+  if (!isOpponentWinning || tablePoints === 0) {
+    return null;
+  }
+
+  // Look for combos that can beat the current winning play
+  const winningCombos = validCombos.filter((combo) =>
+    canBeatCurrentWinner(combo, currentTrick, trumpInfo),
+  );
+
+  if (winningCombos.length === 0) {
+    return null; // Can't win the trick
+  }
+
+  // Sort by strength - use the minimum strength needed to win
+  const sortedWinningCombos = winningCombos.sort((a, b) => {
+    // Prefer non-trump over trump if both can win
+    const aIsTrump = a.cards.some((card) => isTrump(card, trumpInfo));
+    const bIsTrump = b.cards.some((card) => isTrump(card, trumpInfo));
+
+    if (aIsTrump !== bIsTrump) {
+      return aIsTrump ? 1 : -1; // Prefer non-trump
+    }
+
+    return a.value - b.value; // Use minimal strength
+  });
+
+  return sortedWinningCombos[0];
+}
+
+/**
  * Enhanced partner coordination for point card following
  */
 export function selectPartnerCoordinatedPlay(
@@ -237,6 +289,140 @@ export function selectPartnerCoordinatedPlay(
   );
 
   return matchingCombos.length > 0 ? matchingCombos[0] : sortedByPoints[0];
+}
+
+/**
+ * Conservative play against unbeatable cards
+ */
+export function selectConservativeUnbeatablePlay(
+  validCombos: Combo[],
+  trumpInfo: TrumpInfo,
+  pointContext: PointFocusedContext,
+  gameState: GameState,
+  leadingCombo: Card[],
+): Combo | null {
+  const currentTrick = gameState.currentTrick;
+  if (!currentTrick) return null;
+
+  // Check if the leading combo is unbeatable (like non-trump Ace)
+  const isUnbeatable = isUnbeatableCombo(leadingCombo, trumpInfo, gameState);
+  if (!isUnbeatable) return null;
+
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const leader = gameState.players.find(
+    (p) => p.id === currentTrick.leadingPlayerId,
+  );
+  const isOpponentTeam = leader && leader.team !== currentPlayer.team;
+
+  if (!isOpponentTeam) return null; // Don't apply against partner
+
+  // Calculate points on table to decide if trump is worth using
+  const tablePoints = calculateTrickPoints(currentTrick);
+
+  // Option 1: Use trump combo if table points justify the investment
+  const trumpCombos = validCombos.filter((combo) =>
+    combo.cards.some((card) => isTrump(card, trumpInfo)),
+  );
+
+  if (
+    trumpCombos.length > 0 &&
+    shouldUseTrumpForPoints(tablePoints, trumpCombos, pointContext)
+  ) {
+    // Use the minimal trump combo that can win
+    const winningTrumpCombos = trumpCombos.filter((combo) =>
+      canBeatCurrentWinner(combo, currentTrick, trumpInfo),
+    );
+
+    if (winningTrumpCombos.length > 0) {
+      return winningTrumpCombos.sort((a, b) => a.value - b.value)[0];
+    }
+  }
+
+  // Option 2: Play smallest cards, avoid points
+  const nonPointCombos = validCombos.filter(
+    (combo) => !combo.cards.some((card) => isPointCard(card)),
+  );
+
+  if (nonPointCombos.length > 0) {
+    // Play the smallest non-point combo
+    return nonPointCombos.sort((a, b) => a.value - b.value)[0];
+  }
+
+  // Option 3: If all combos have points, play the smallest point combo
+  return validCombos.sort((a, b) => {
+    const aPoints = calculateComboPoints(a.cards);
+    const bPoints = calculateComboPoints(b.cards);
+    if (aPoints !== bPoints) return aPoints - bPoints;
+    return a.value - b.value;
+  })[0];
+}
+
+/**
+ * Flexible following when out of suit
+ */
+export function selectFlexibleOutOfSuitPlay(
+  validCombos: Combo[],
+  trumpInfo: TrumpInfo,
+  pointContext: PointFocusedContext,
+  gameState: GameState,
+  leadingCombo: Card[],
+): Combo | null {
+  const currentTrick = gameState.currentTrick;
+  if (!currentTrick) return null;
+
+  // Check if we're out of the leading suit for pairs/tractors
+  const leadingType = getComboType(leadingCombo);
+  const leadingSuit = getLeadingSuit(leadingCombo);
+
+  if (leadingType === ComboType.Single || !leadingSuit) {
+    return null; // This logic only applies to pairs/tractors
+  }
+
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const suitCards = currentPlayer.hand.filter(
+    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+  );
+
+  // Only apply if we're actually out of the leading suit
+  if (suitCards.length >= leadingCombo.length) {
+    return null; // We have enough cards of the suit
+  }
+
+  // Check if partner is likely to win
+  const partner = getPartnerTeam(gameState, currentPlayer.id);
+  const isPartnerWinning =
+    partner &&
+    getCurrentTrickWinner(gameState, currentTrick)?.id === partner.id;
+
+  if (isPartnerWinning) {
+    // Partner winning: add points from any suits
+    const pointCombos = validCombos.filter((combo) =>
+      combo.cards.some((card) => isPointCard(card)),
+    );
+
+    if (pointCombos.length > 0) {
+      // Add highest point combo available
+      return pointCombos.sort((a, b) => {
+        const aPoints = calculateComboPoints(a.cards);
+        const bPoints = calculateComboPoints(b.cards);
+        return bPoints - aPoints;
+      })[0];
+    }
+  }
+
+  // Standard case: play any small singles when out of suit
+  const singleCombos = validCombos.filter(
+    (combo) =>
+      combo.type === ComboType.Single ||
+      combo.cards.length === leadingCombo.length,
+  );
+
+  if (singleCombos.length > 0) {
+    // Play smallest available combo
+    return singleCombos.sort((a, b) => a.value - b.value)[0];
+  }
+
+  return null;
 }
 
 /**
@@ -483,4 +669,116 @@ function getLowestTrumpCombo(combos: Combo[], trumpInfo: TrumpInfo): Combo {
     const comboCard = getHighestCard(combo.cards, trumpInfo);
     return compareCards(lowestCard, comboCard, trumpInfo) < 0 ? lowest : combo;
   });
+}
+
+// Helper functions for enhanced strategy
+
+function calculateTrickPoints(trick: any): number {
+  let totalPoints = 0;
+
+  // Add points from leading combo
+  if (trick.leadingCombo) {
+    totalPoints += calculateComboPoints(trick.leadingCombo);
+  }
+
+  // Add points from all plays
+  if (trick.plays) {
+    trick.plays.forEach((play: any) => {
+      totalPoints += calculateComboPoints(play.cards);
+    });
+  }
+
+  return totalPoints;
+}
+
+function getCurrentTrickWinner(gameState: GameState, trick: any): any {
+  if (!trick || !trick.plays || trick.plays.length === 0) {
+    // If no plays yet, leader is winning
+    return gameState.players.find((p) => p.id === trick.leadingPlayerId);
+  }
+
+  // Simplified - would need actual trick winner determination logic
+  // For now, assume the last player to play a trump combo is winning
+  let winner = gameState.players.find((p) => p.id === trick.leadingPlayerId);
+  let winningCards = trick.leadingCombo;
+
+  trick.plays.forEach((play: any) => {
+    const playHasTrump = play.cards.some((card: Card) =>
+      isTrump(card, gameState.trumpInfo),
+    );
+    const winnerHasTrump = winningCards.some((card: Card) =>
+      isTrump(card, gameState.trumpInfo),
+    );
+
+    if (playHasTrump && !winnerHasTrump) {
+      winner = gameState.players.find((p) => p.id === play.playerId);
+      winningCards = play.cards;
+    }
+  });
+
+  return winner;
+}
+
+function canBeatCurrentWinner(
+  combo: Combo,
+  trick: any,
+  trumpInfo: TrumpInfo,
+): boolean {
+  // Simplified logic - would need proper card comparison
+  const comboHasTrump = combo.cards.some((card) => isTrump(card, trumpInfo));
+
+  if (!trick.plays || trick.plays.length === 0) {
+    // Beating the lead
+    const leadHasTrump = trick.leadingCombo.some((card: Card) =>
+      isTrump(card, trumpInfo),
+    );
+    return comboHasTrump || !leadHasTrump;
+  }
+
+  // Check if we can beat the current winner
+  // This is simplified - real implementation would need proper card comparison
+  return comboHasTrump;
+}
+
+function isUnbeatableCombo(
+  leadingCombo: Card[],
+  trumpInfo: TrumpInfo,
+  gameState: GameState,
+): boolean {
+  // Check if it's a non-trump Ace or other high card that's likely unbeatable
+  const isNonTrump = !leadingCombo.some((card) => isTrump(card, trumpInfo));
+
+  if (!isNonTrump) return false;
+
+  // Check if it contains Aces or other high cards
+  const hasAce = leadingCombo.some((card) => card.rank === "A");
+  const hasKing = leadingCombo.some((card) => card.rank === "K");
+
+  // Simple heuristic - Aces are often unbeatable unless trumped
+  return hasAce || (hasKing && leadingCombo.length > 1);
+}
+
+function shouldUseTrumpForPoints(
+  tablePoints: number,
+  trumpCombos: Combo[],
+  pointContext: PointFocusedContext,
+): boolean {
+  // Decide if the points on the table justify using trump
+  const minPointsForTrump =
+    pointContext.gamePhase === GamePhaseStrategy.EarlyGame
+      ? 15
+      : pointContext.gamePhase === GamePhaseStrategy.MidGame
+        ? 10
+        : 5;
+
+  // Also consider if we have weak trump combos that are safe to use
+  const hasWeakTrump = trumpCombos.some((combo) => combo.value < 100);
+
+  return tablePoints >= minPointsForTrump || (tablePoints >= 5 && hasWeakTrump);
+}
+
+function getLeadingSuit(cards: Card[]): string | null {
+  // Get the suit of the leading cards (first non-joker card)
+  const nonJokerCard = cards.find((card) => !card.joker);
+  return nonJokerCard?.suit || null;
 }

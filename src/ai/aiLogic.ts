@@ -43,6 +43,9 @@ import {
   selectEarlyGameLeadingPlay,
   selectPartnerCoordinatedPlay,
   selectIntelligentTrumpFollow,
+  selectAggressivePointCollection,
+  selectConservativeUnbeatablePlay,
+  selectFlexibleOutOfSuitPlay,
 } from "./aiPointFocusedStrategy";
 
 // Base AI strategy interface
@@ -1195,7 +1198,7 @@ class AIStrategy implements AIStrategy {
   }
 
   /**
-   * Point-focused following play selection
+   * Point-focused following play selection with enhanced strategies
    */
   private selectPointFocusedFollowingPlay(
     validCombos: Combo[],
@@ -1208,7 +1211,43 @@ class AIStrategy implements AIStrategy {
     const currentTrick = gameState.currentTrick;
     if (!currentTrick?.leadingCombo) return null;
 
-    // Partner coordination: Follow with point cards when partner is winning
+    // Priority 1: Aggressive point collection when opponent is winning with points
+    const aggressivePlay = selectAggressivePointCollection(
+      validCombos,
+      trumpInfo,
+      pointContext,
+      gameState,
+      currentTrick.leadingCombo,
+    );
+    if (aggressivePlay) {
+      return aggressivePlay.cards;
+    }
+
+    // Priority 2: Conservative play against unbeatable cards
+    const conservativePlay = selectConservativeUnbeatablePlay(
+      validCombos,
+      trumpInfo,
+      pointContext,
+      gameState,
+      currentTrick.leadingCombo,
+    );
+    if (conservativePlay) {
+      return conservativePlay.cards;
+    }
+
+    // Priority 3: Flexible following when out of suit
+    const flexiblePlay = selectFlexibleOutOfSuitPlay(
+      validCombos,
+      trumpInfo,
+      pointContext,
+      gameState,
+      currentTrick.leadingCombo,
+    );
+    if (flexiblePlay) {
+      return flexiblePlay.cards;
+    }
+
+    // Priority 4: Partner coordination: Follow with point cards when partner is winning
     const partnerCoordinatedPlay = selectPartnerCoordinatedPlay(
       validCombos,
       trumpInfo,
@@ -1220,7 +1259,7 @@ class AIStrategy implements AIStrategy {
       return partnerCoordinatedPlay.cards;
     }
 
-    // Intelligent trump following to avoid waste
+    // Priority 5: Intelligent trump following to avoid waste
     const intelligentTrumpPlay = selectIntelligentTrumpFollow(
       validCombos,
       trumpInfo,
