@@ -1,21 +1,36 @@
 # Tractor Card Game
 
-A React Native implementation of the Chinese card game Shengji (升级), also known as Tractor. This is a trick-taking card game where players work in teams to advance through card ranks.
+A React Native implementation of the Chinese card game Shengji (升级), also known as Tractor. This is a trick-taking card game where players work in teams to advance through card ranks from 2 to Ace.
 
 ![Mobile Only](https://img.shields.io/badge/Platform-Mobile%20Only-red)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
+![Tests](https://img.shields.io/badge/Tests-192%20Passing-brightgreen)
 
-## Game Features
+## ✨ Game Features
 
-- Single-player game against 3 AI opponents with advanced strategy
-- 2 teams: Team A (you + Bot 2) vs Team B (Bot 1 + Bot 3)
-- Trick-taking gameplay with trump cards
-- Visual card animations and modern UI
-- Special handling for jokers and trump cards
-- Optimized for mobile (especially Android) experience
+### Core Gameplay
+- **Single-player** against 3 AI opponents with advanced strategy
+- **2 teams**: Team A (Human + Bot 2) vs Team B (Bot 1 + Bot 3)
+- **Trick-taking gameplay** with complex trump card mechanics
+- **Rank advancement** from 2 through Ace with team role switching
 
-## Quick Start
+### Visual & UX Features
+- 🎴 **Smooth card animations** with React Native Animated API
+- 👑 **Round starting player indicator** for clear game flow
+- 🎯 **Current player highlighting** with thinking indicators
+- 🃏 **Intuitive card selection** with validation feedback
+- 📱 **Mobile-optimized UI** designed for touch interaction
+- 🎨 **Team color coding** (Green for Team A, Red for Team B)
+
+### Advanced Game Mechanics
+- **Complex trump hierarchy** with proper "first played wins" rules
+- **Multiple card combinations**: Singles, Pairs, Tractors
+- **Strategic AI** with suit-following and trump logic
+- **Accurate scoring** system with 5s, 10s, and Kings
+- **Round-by-round progression** with defending team rotation
+
+## 📱 Quick Start
 
 > ⚠️ **IMPORTANT: This is a mobile-only application!**  
 > Tractor is designed exclusively for Android and iOS devices. It will not work in web browsers.
@@ -24,128 +39,197 @@ A React Native implementation of the Chinese card game Shengji (升级), also kn
 # Install dependencies
 npm install
 
-# Start on Android
-npm run android
+# Development
+npx expo start       # Choose platform in terminal
+npm run android      # Direct Android launch
+npm run ios         # Direct iOS launch
 
-# Start on iOS
-npm run ios
-
-# Or use Expo CLI
-npx expo start  # Press 'a' for Android or 'i' for iOS
+# Quality assurance
+npm run qualitycheck # Runs typecheck + lint + test (192 tests)
+npm run lint         # ESLint with Prettier
+npm run typecheck    # TypeScript strict checking
+npm test            # Jest test suite
 ```
 
-## Game Rules
+## 🎯 Game Rules
 
-### Basic Gameplay
+### Basic Setup
+- **4 players**: Human + 3 AI bots in 2 teams
+- **Counter-clockwise play**: Human → Bot1 → Bot2 → Bot3
+- **Team composition**: 
+  - Team A (Green): Human + Bot2
+  - Team B (Red): Bot1 + Bot3
 
-- 4 players divided into 2 teams (A and B)
-- One team defends while the other attacks
-- Trump cards determined by rank and optionally suit
-- Points scored by capturing 5s (5 points), 10s and Kings (10 points)
-- Objective: capture cards and advance through ranks (2 to Ace)
+### Trump Card Hierarchy
+Trump cards beat non-trump cards. Within trumps, the hierarchy is:
 
-### Trump Hierarchy
-
-From highest to lowest:
-
-1. **Big Jokers**
-2. **Small Jokers**
-3. **Trump rank in trump suit** (e.g., 2♥ when 2 is trump and Hearts is trump suit)
-4. **Trump rank in other suits** (e.g., 2♦, 2♣, 2♠)
-5. **Trump suit cards** (all other Hearts when Hearts is trump)
+1. **Big Joker** (🃿) - Highest trump
+2. **Small Joker** (🃏) - Second highest
+3. **Trump rank in trump suit** (e.g., 2♠ when rank=2, suit=Spades)
+4. **Trump rank in other suits** (e.g., 2♥, 2♣, 2♦) - *Equal strength, first played wins*
+5. **Trump suit cards** (all other Spades when Spades is trump)
 
 ### Card Combinations
 
-#### Singles
+#### 🃏 Singles
 - Any single card
-- Trump cards beat non-trump singles
+- Must follow suit if possible
+- Trump cards beat non-trump
 
-#### Pairs
-- Two identical cards (same rank AND same suit)
-- Valid: 8♥-8♥, SJ-SJ, BJ-BJ
-- Invalid: 8♥-8♦ (different suits), SJ-BJ (different jokers)
+#### 🃟🃟 Pairs  
+- **Two identical cards** (same rank AND same suit)
+- ✅ Valid: 8♥-8♥, Small Joker pair, Big Joker pair
+- ❌ Invalid: 8♥-8♦ (different suits), Small-Big Joker mix
 
-#### Tractors
-- Consecutive pairs of the same suit
-- Valid: 7♥-7♥-8♥-8♥
-- Special: SJ-SJ-BJ-BJ (highest tractor)
-- Invalid: 
-  - Different suits (7♥-7♥-8♠-8♠)
-  - Non-consecutive (A-A-2-2)
-  - Trump ranks when one is trump (2♥-2♥-3♥-3♥ when 2 is trump)
+#### 🚂 Tractors
+- **Consecutive pairs** of the same suit
+- ✅ Valid: 7♥7♥-8♥8♥ or Small Joker pair + Big Joker pair
+- ❌ Invalid: Different suits, non-consecutive ranks, mixed trump/non-trump
 
-## Development
+### Scoring & Advancement
+- **Points**: 5s = 5pts, 10s & Kings = 10pts
+- **Win condition**: Attacking team needs 80+ points
+- **Rank advancement**: Successful teams advance 1-3 ranks based on performance
+- **Game end**: First team to reach Ace wins
 
-### Commands
-
-```bash
-npm run lint          # Run ESLint
-npm run typecheck     # TypeScript checks
-npm run test          # Run tests
-npm run qualitycheck  # Run all checks (typecheck + lint + test)
-```
+## 🏗️ Architecture
 
 ### Project Structure
-
 ```
 /src/
-├── types/            # Type definitions
-├── utils/            # Game logic
-├── hooks/            # Custom React hooks
-├── components/       # UI components
-├── screens/          # Screen components
-└── __tests__/        # Test files
-
-/app/                 # Expo Router configuration
-/docs/                # Additional documentation
+├── types/game.ts          # Core game types with TypeScript enums
+├── utils/                 # Game logic utilities
+│   ├── gameLogic.ts       # Core mechanics and card comparisons
+│   ├── gamePlayManager.ts # Turn validation and trick processing
+│   ├── gameRoundManager.ts # Round transitions and scoring
+│   ├── trumpManager.ts    # Trump declaration handling
+│   ├── aiLogic.ts         # AI decision making
+│   └── gameTimings.ts     # Animation timing constants
+├── hooks/                 # Custom React hooks
+│   ├── useGameState.ts    # Core game state management
+│   ├── useAITurns.ts      # AI turn coordination
+│   └── useTrickResults.ts # Trick completion handling
+├── components/            # UI components
+│   ├── *PlayerView.tsx    # Player area components
+│   ├── CardPlayArea.tsx   # Central play area
+│   └── GameTable.tsx      # Main table layout
+├── screens/               # Screen-level components
+└── __tests__/             # Comprehensive test suite (192 tests)
+    ├── components/        # Component tests
+    ├── game-logic/        # Game mechanics tests  
+    ├── game-flow/         # Game flow integration tests
+    └── helpers/           # Test utilities
 ```
 
-### Key Files
+### Key Technical Features
+- **Type-safe enums** eliminate magic strings throughout codebase
+- **Immutable state updates** ensure predictable game flow
+- **Centralized timing** constants for smooth animations
+- **Comprehensive test coverage** with 192 passing tests
+- **Trump strength rules** with proper "first played wins" implementation
+- **Player rotation logic** correctly handles round transitions
 
-- `src/types/game.ts` - Core game types
-- `src/utils/gameLogic.ts` - Game mechanics
-- `src/utils/aiLogic.ts` - AI strategy
-- `src/hooks/useGameState.ts` - State management
-- `src/screens/GameScreenController.tsx` - Main game controller
+## 🧪 Quality & Testing
 
-## Documentation
+### Test Coverage
+- **192 tests passing** across all game mechanics
+- **Component testing** with React Testing Library
+- **Game logic testing** for all card combinations and rules
+- **Integration testing** for complete game flows
+- **Trump mechanics testing** including edge cases
 
-For detailed information, see the [docs folder](./docs/):
+### Code Quality
+- **TypeScript strict mode** with full type coverage
+- **ESLint + Prettier** for consistent code style
+- **Zero magic strings** - all game values use typed enums
+- **Immutable patterns** for predictable state management
+- **Performance optimized** with minimal re-renders
 
-- [Architecture](./docs/ARCHITECTURE.md) - Component structure
-- [Testing](./docs/TESTING.md) - Test coverage
-- [Mobile Only](./docs/MOBILE_ONLY.md) - Platform details
-- [Known Issues](./docs/KNOWN_ISSUES.md) - Current bugs
+## 🛠️ Development
 
-## Technology Stack
+### Essential Commands
+```bash
+# Quality assurance (run before commits)
+npm run qualitycheck     # All checks: typecheck + lint + test
 
-- **React Native** with Expo
-- **TypeScript** with strict checking
-- **Animated API** for card animations
-- **Expo Router** for navigation
-- **Jest** & React Testing Library
-- **EAS** for builds and updates
+# Individual checks  
+npm run typecheck        # TypeScript compilation check
+npm run lint            # Code style and best practices
+npm test               # Full test suite (192 tests)
 
-## Requirements
+# Development
+npx expo start          # Start development server
+```
 
-- Node.js 18+ 
-- npm 9+
-- iOS Simulator (Mac) or Android Emulator
-- Expo CLI (`npx expo`)
+### Git Workflow
+```bash
+# 1. Create feature branch
+git checkout -b {user}/{feature-name}
 
-## Contributing
+# 2. Make changes and test
+npm run qualitycheck
 
-1. Create a feature branch: `{user}/{feature-name}`
-2. Make changes and test thoroughly
-3. Run `npm run qualitycheck`
-4. Submit a pull request
+# 3. Commit and push  
+git add .
+git commit -m "Description"
+git push origin {branch-name} -u
 
-## License
+# 4. Create pull request
+gh pr create --title "Title" --body "Description"
+```
 
-[Add your license here]
+## 📝 Development Notes
 
-## Acknowledgments
+### Known Issues
+- Some npm warnings from sub-dependencies (inflight, glob, rimraf) - these are harmless and will be resolved when main dependencies update
+- Web platform disabled - this is a mobile-only application
 
-- Original Shengji/Tractor card game
-- React Native and Expo teams
-- Contributors and testers
+For detailed project guidance, see [CLAUDE.md](./CLAUDE.md).
+
+## 🏗️ Technology Stack
+
+- **[React Native](https://reactnative.dev/)** - Mobile app framework
+- **[Expo](https://expo.dev/)** - Development platform and build system
+- **[TypeScript](https://www.typescriptlang.org/)** - Type safety with strict checking
+- **[Expo Router](https://expo.github.io/router/)** - File-based navigation
+- **[Jest](https://jestjs.io/)** & **[React Testing Library](https://testing-library.com/docs/react-native-testing-library/intro/)** - Testing framework
+- **[EAS](https://expo.dev/eas)** - Build and deployment service
+
+## ⚙️ Requirements
+
+- **Node.js** 18+ 
+- **npm** 9+
+- **Mobile device/emulator**:
+  - iOS Simulator (Mac required)
+  - Android Emulator (Android Studio)
+  - Physical device with Expo Go app
+
+## 🤝 Contributing
+
+1. **Create feature branch**: `{username}/{feature-description}`
+2. **Implement changes** following existing patterns
+3. **Run quality checks**: `npm run qualitycheck` 
+4. **Submit pull request** with clear description
+5. **All PRs require review** - main branch is protected
+
+### Development Guidelines
+- Use TypeScript enums instead of magic strings
+- Maintain immutable state patterns  
+- Add tests for new functionality
+- Follow existing naming conventions
+- Update documentation for significant changes
+
+## 📄 License
+
+[MIT License](LICENSE) - Feel free to use this project for learning and development.
+
+## 🙏 Acknowledgments
+
+- **Shengji/Tractor** - Traditional Chinese card game
+- **React Native & Expo** - Amazing mobile development tools
+- **Open source community** - For excellent libraries and tools
+- **Contributors** - Thank you for improvements and bug reports!
+
+---
+
+*Built with ❤️ using React Native and TypeScript*

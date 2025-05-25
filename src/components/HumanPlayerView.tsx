@@ -27,6 +27,7 @@ interface HumanPlayerViewProps {
   onConfirmTrumpDeclaration?: () => void;
   currentPlayerIndex?: number;
   currentTrick?: any;
+  isRoundStartingPlayer?: boolean;
 }
 
 /**
@@ -50,6 +51,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   onConfirmTrumpDeclaration,
   currentPlayerIndex,
   currentTrick,
+  isRoundStartingPlayer = false,
 }) => {
   return (
     <View style={styles.container}>
@@ -59,7 +61,12 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
           isDefending ? sharedStyles.teamALabel : sharedStyles.teamBLabel,
         ]}
       >
-        <Text style={sharedStyles.playerLabel}>You</Text>
+        <View style={styles.labelContent}>
+          {isRoundStartingPlayer && (
+            <Text style={styles.startingPlayerIcon}>👑</Text>
+          )}
+          <Text style={sharedStyles.playerLabel}>You</Text>
+        </View>
         {isCurrentPlayer &&
           !showTrickResult &&
           !lastCompletedTrick &&
@@ -92,6 +99,17 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     paddingTop: 8,
+  },
+  labelContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  startingPlayerIcon: {
+    fontSize: 12,
+    marginRight: 4,
+    textShadowColor: "rgba(0,0,0,0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
 });
 

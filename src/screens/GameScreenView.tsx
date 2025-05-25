@@ -161,6 +161,44 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   const ai3Team = getPlayerTeam(PlayerId.Bot3);
   const humanTeam = getPlayerTeam(humanPlayer.id);
 
+  // Determine which player is the round starting player
+  const getRoundStartingPlayerIndex = () => {
+    // For round 1, the trump declarer starts (stored in trumpInfo.declarerPlayerId)
+    if (gameState.roundNumber === 1 && gameState.trumpInfo.declarerPlayerId) {
+      return gameState.players.findIndex(
+        (p) => p.id === gameState.trumpInfo.declarerPlayerId,
+      );
+    }
+    // For subsequent rounds:
+    // - During declaration phase, use currentPlayerIndex (who will start)
+    // - After trump is declared, use lastRoundStartingPlayerIndex
+    if (gameState.roundNumber > 1) {
+      if (gameState.gamePhase === GamePhase.Declaring) {
+        return gameState.currentPlayerIndex;
+      }
+      return gameState.lastRoundStartingPlayerIndex ?? 0;
+    }
+
+    return 0; // Fallback
+  };
+
+  const roundStartingPlayerIndex = getRoundStartingPlayerIndex();
+
+  const isHumanRoundStartingPlayer =
+    roundStartingPlayerIndex === humanPlayerIndex;
+  const isAI1RoundStartingPlayer =
+    ai1 &&
+    roundStartingPlayerIndex ===
+      gameState.players.findIndex((p) => p.id === ai1.id);
+  const isAI2RoundStartingPlayer =
+    ai2 &&
+    roundStartingPlayerIndex ===
+      gameState.players.findIndex((p) => p.id === ai2.id);
+  const isAI3RoundStartingPlayer =
+    ai3 &&
+    roundStartingPlayerIndex ===
+      gameState.players.findIndex((p) => p.id === ai3.id);
+
   return (
     <View style={styles.container}>
       <Animated.View
@@ -199,6 +237,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
+                  isRoundStartingPlayer={isAI2RoundStartingPlayer}
                 />
               ) : null
             }
@@ -218,6 +257,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
+                  isRoundStartingPlayer={isAI3RoundStartingPlayer}
                 />
               ) : null
             }
@@ -237,6 +277,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
+                  isRoundStartingPlayer={isAI1RoundStartingPlayer}
                 />
               ) : null
             }
@@ -260,6 +301,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
                   currentPlayerIndex={gameState.currentPlayerIndex}
                   currentTrick={gameState.currentTrick}
+                  isRoundStartingPlayer={isHumanRoundStartingPlayer}
                 />
               ) : null
             }
