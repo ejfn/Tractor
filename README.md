@@ -19,7 +19,7 @@ A React Native implementation of the Chinese card game Shengji (升级), also kn
 - 🎴 **Smooth card animations** with React Native Animated API
 - 👑 **Round starting player indicator** for clear game flow
 - 🎯 **Current player highlighting** with thinking indicators
-- 🃏 **Intuitive card selection** with validation feedback
+- 🃏 **Smart card auto-selection** for pairs and tractors
 - 📱 **Mobile-optimized UI** designed for touch interaction
 - 🎨 **Team color coding** (Green for Team A, Red for Team B)
 
@@ -85,6 +85,13 @@ Trump cards beat non-trump cards. Within trumps, the hierarchy is:
 - **Consecutive pairs** of the same suit
 - ✅ Valid: 7♥7♥-8♥8♥ or Small Joker pair + Big Joker pair
 - ❌ Invalid: Different suits, non-consecutive ranks, mixed trump/non-trump
+
+### Smart Card Selection
+- **Auto-selection**: Tap any card in a pair → both cards selected automatically
+- **Tractor priority**: When leading, prioritizes tractors over pairs for optimal play
+- **Following combinations**: Auto-selects matching combination type when possible
+- **Toggle control**: Tap selected card again to deselect and choose manually
+- **Fallback**: Single card selection when no combinations available
 
 ### Scoring & Advancement
 - **Points**: 5s = 5pts, 10s & Kings = 10pts
