@@ -11,6 +11,12 @@ import {
   ComboAnalysis,
   TrickAnalysis,
   PositionStrategy,
+  CombinationStrategy,
+  HandCombinationProfile,
+  CombinationAnalysis,
+  CombinationContext,
+  TrickPosition,
+  PointPressure,
 } from "../types/game";
 import {
   identifyCombos,
@@ -25,6 +31,12 @@ import {
   analyzeTrick,
   getPositionStrategy,
 } from "./aiGameContext";
+import {
+  analyzeHandCombinations,
+  performAdvancedCombinationAnalysis,
+  createCombinationStrategy,
+  selectOptimalCombination,
+} from "./aiAdvancedCombinations";
 
 // Base AI strategy interface
 interface AIStrategy {
@@ -43,6 +55,28 @@ class AIStrategy implements AIStrategy {
     // Create strategic context for this AI player
     const context = createGameContext(gameState, player.id);
 
+    // Phase 4: Use advanced combination logic when appropriate
+    if (this.shouldUseAdvancedCombinations(context)) {
+      // If leading, use advanced leading logic
+      if (!currentTrick || !currentTrick.leadingCombo) {
+        return this.selectAdvancedLeadingPlay(
+          validCombos,
+          trumpInfo,
+          context,
+          gameState,
+        );
+      }
+
+      // If following, use advanced following logic
+      return this.selectAdvancedFollowingPlay(
+        validCombos,
+        trumpInfo,
+        context,
+        gameState,
+      );
+    }
+
+    // Fallback to Phase 2/3 logic
     // If leading, use strategic leading logic
     if (!currentTrick || !currentTrick.leadingCombo) {
       return this.selectLeadingPlay(validCombos, trumpInfo, context);
@@ -835,6 +869,239 @@ class AIStrategy implements AIStrategy {
 
     // No trump available - use regular leading logic
     return this.selectLeadingCombo(combos, trumpInfo);
+  }
+
+  // Phase 4: Advanced Combination Logic Methods
+
+  /**
+   * Enhanced leading play selection with advanced combination analysis
+   */
+  private selectAdvancedLeadingPlay(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+    gameState: GameState,
+  ): Card[] {
+    // Find current player based on game state
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (!currentPlayer)
+      return this.selectLeadingPlay(validCombos, trumpInfo, context);
+
+    // Analyze hand combination profile
+    const handProfile = analyzeHandCombinations(
+      currentPlayer.hand,
+      trumpInfo,
+      gameState,
+      context,
+    );
+
+    // Create advanced combination strategy
+    const strategy = createCombinationStrategy(context, handProfile);
+
+    // Select optimal combination using Phase 4 logic
+    const optimalCombo = selectOptimalCombination(
+      validCombos,
+      strategy,
+      trumpInfo,
+      gameState,
+      context,
+    );
+
+    if (optimalCombo) {
+      return optimalCombo.cards;
+    }
+
+    // Fallback to Phase 2/3 logic
+    return this.selectLeadingPlay(validCombos, trumpInfo, context);
+  }
+
+  /**
+   * Enhanced following play with advanced combination analysis
+   */
+  private selectAdvancedFollowingPlay(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+    gameState: GameState,
+  ): Card[] {
+    // Find current player based on game state
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (!currentPlayer)
+      return this.selectFollowingPlay(gameState, validCombos, context);
+
+    // Analyze current combination options with advanced logic
+    const combinationAnalyses = validCombos.map((combo) =>
+      performAdvancedCombinationAnalysis(combo, trumpInfo, gameState, context),
+    );
+
+    // Filter by timing and context
+    let candidates = combinationAnalyses;
+
+    // Priority 1: Endgame optimization
+    if (context.cardsRemaining <= 6 && context.memoryStrategy?.endgameOptimal) {
+      const endgameCandidates = candidates.filter(
+        (analysis) => analysis.timing === "endgame",
+      );
+      if (endgameCandidates.length > 0) {
+        candidates = endgameCandidates;
+      }
+    }
+
+    // Priority 2: Memory-informed decisions
+    if (context.memoryStrategy && context.memoryContext) {
+      const memoryInformed = this.selectMemoryInformedCombo(
+        candidates,
+        context,
+      );
+      if (memoryInformed) {
+        return memoryInformed.cards;
+      }
+    }
+
+    // Priority 3: Adaptive strategy based on position
+    const selected = this.selectAdaptiveCombo(candidates, context);
+    if (selected) {
+      return selected.cards;
+    }
+
+    // Fallback to existing logic
+    return this.selectFollowingPlay(gameState, validCombos, context);
+  }
+
+  /**
+   * Memory-informed combination selection
+   */
+  private selectMemoryInformedCombo(
+    analyses: CombinationAnalysis[],
+    context: GameContext,
+  ): CombinationAnalysis | null {
+    if (!context.memoryContext || !context.memoryStrategy) return null;
+
+    // Filter combinations based on memory insights
+    const memoryFiltered = analyses.filter((analysis) => {
+      // Prefer immediate plays when we have good information
+      if (context.memoryContext!.uncertaintyLevel < 0.3) {
+        return analysis.timing === "immediate";
+      }
+
+      // Conservative approach when uncertainty is high
+      if (context.memoryContext!.uncertaintyLevel > 0.7) {
+        return analysis.risk < 0.5;
+      }
+
+      return true;
+    });
+
+    if (memoryFiltered.length === 0) return null;
+
+    // Sort by effectiveness with memory influence
+    memoryFiltered.sort((a, b) => {
+      const aScore =
+        a.effectiveness +
+        a.reward * (1 - context.memoryContext!.uncertaintyLevel);
+      const bScore =
+        b.effectiveness +
+        b.reward * (1 - context.memoryContext!.uncertaintyLevel);
+      return bScore - aScore;
+    });
+
+    return memoryFiltered[0];
+  }
+
+  /**
+   * Position-adaptive combination selection
+   */
+  private selectAdaptiveCombo(
+    analyses: CombinationAnalysis[],
+    context: GameContext,
+  ): CombinationAnalysis | null {
+    if (analyses.length === 0) return null;
+
+    let candidates = [...analyses];
+
+    // Position-specific filtering
+    switch (context.trickPosition) {
+      case TrickPosition.First:
+        // Leading: prefer combinations with high opponent disruption
+        candidates = candidates.filter(
+          (a) => a.pattern.opponentDisruption > 0.6,
+        );
+        break;
+
+      case TrickPosition.Second:
+        // Early follower: balance risk and information gathering
+        candidates = candidates.filter(
+          (a) => a.risk < 0.7 && a.alternativeCount > 1,
+        );
+        break;
+
+      case TrickPosition.Third:
+        // Late follower: tactical decisions based on current trick state
+        candidates = candidates.filter(
+          (a) =>
+            a.pattern.partnerSupport > 0.5 ||
+            a.pattern.opponentDisruption > 0.7,
+        );
+        break;
+
+      case TrickPosition.Fourth:
+        // Last player: optimize based on winning/losing position
+        candidates = candidates.filter(
+          (a) => a.timing === "immediate" || a.effectiveness > 0.8,
+        );
+        break;
+    }
+
+    // If filtering removed all candidates, use original list
+    if (candidates.length === 0) {
+      candidates = analyses;
+    }
+
+    // Sort by composite score
+    candidates.sort((a, b) => {
+      const aScore =
+        a.effectiveness * 0.5 + a.reward * 0.3 + (1 - a.risk) * 0.2;
+      const bScore =
+        b.effectiveness * 0.5 + b.reward * 0.3 + (1 - b.risk) * 0.2;
+      return bScore - aScore;
+    });
+
+    return candidates[0];
+  }
+
+  /**
+   * Enhanced combo analysis with Phase 4 insights
+   */
+  private analyzeComboWithAdvancedInsights(
+    combo: Combo,
+    trumpInfo: TrumpInfo,
+    gameState: GameState,
+    context: GameContext,
+  ): CombinationAnalysis {
+    return performAdvancedCombinationAnalysis(
+      combo,
+      trumpInfo,
+      gameState,
+      context,
+    );
+  }
+
+  /**
+   * Determines if Phase 4 logic should be used based on game state
+   */
+  private shouldUseAdvancedCombinations(context: GameContext): boolean {
+    // Use advanced logic when:
+    // 1. We have memory context (Phase 3 integration)
+    // 2. Game is in critical stages (high pressure or endgame)
+    // 3. Hand has significant combination potential
+
+    return (
+      context.memoryContext !== undefined ||
+      context.pointPressure === PointPressure.HIGH ||
+      context.cardsRemaining <= 8 ||
+      context.playStyle === PlayStyle.Aggressive ||
+      context.playStyle === PlayStyle.Desperate
+    );
   }
 }
 
