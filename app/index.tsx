@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 
 // Import game screen controller directly
 import GameScreenController from "../src/screens/GameScreenController";
+import { VersionDisplay } from "../src/components/VersionDisplay";
 
 export default function Index() {
   const [hasError, setHasError] = useState(false);
@@ -52,7 +53,10 @@ export default function Index() {
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.gameContainer}>{renderGameScreen()}</View>
+        <View style={styles.gameContainer}>
+          {renderGameScreen()}
+          <VersionDisplay />
+        </View>
       )}
     </SafeAreaView>
   );
