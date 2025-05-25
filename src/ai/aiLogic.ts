@@ -46,6 +46,9 @@ import {
   selectAggressivePointCollection,
   selectConservativeUnbeatablePlay,
   selectFlexibleOutOfSuitPlay,
+  selectAcePriorityLeadingPlay,
+  selectAceAggressiveFollowing,
+  selectOptimizedTrumpFollow,
 } from "./aiPointFocusedStrategy";
 
 // Base AI strategy interface
@@ -1154,7 +1157,7 @@ class AIStrategy implements AIStrategy {
   // Enhanced Point-Focused Strategy Methods (Issue #61)
 
   /**
-   * Point-focused leading play selection
+   * Point-focused leading play selection with Ace priority
    */
   private selectPointFocusedLeadingPlay(
     validCombos: Combo[],
@@ -1164,7 +1167,18 @@ class AIStrategy implements AIStrategy {
     trumpConservation: TrumpConservationStrategy,
     gameState: GameState,
   ): Card[] | null {
-    // Early game strategy: Lead high non-trump to help partner escape points
+    // Priority 1: Ace priority leading - prioritize non-trump Aces and Ace pairs
+    const acePriorityPlay = selectAcePriorityLeadingPlay(
+      validCombos,
+      trumpInfo,
+      pointContext,
+      gameState,
+    );
+    if (acePriorityPlay) {
+      return acePriorityPlay.cards;
+    }
+
+    // Priority 2: Early game strategy - Lead high non-trump to help partner escape points
     if (pointContext.gamePhase === GamePhaseStrategy.EarlyGame) {
       const earlyGamePlay = selectEarlyGameLeadingPlay(
         validCombos,
@@ -1177,7 +1191,7 @@ class AIStrategy implements AIStrategy {
       }
     }
 
-    // Check trump conservation constraints
+    // Priority 3: Check trump conservation constraints
     const conservationFilteredCombos = this.filterByTrumpConservation(
       validCombos,
       trumpConservation,
@@ -1211,7 +1225,19 @@ class AIStrategy implements AIStrategy {
     const currentTrick = gameState.currentTrick;
     if (!currentTrick?.leadingCombo) return null;
 
-    // Priority 1: Aggressive point collection when opponent is winning with points
+    // Priority 1: Ace aggressive following - use Aces when points are on the table
+    const aceAggressivePlay = selectAceAggressiveFollowing(
+      validCombos,
+      trumpInfo,
+      pointContext,
+      gameState,
+      currentTrick.leadingCombo,
+    );
+    if (aceAggressivePlay) {
+      return aceAggressivePlay.cards;
+    }
+
+    // Priority 2: Aggressive point collection when opponent is winning with points
     const aggressivePlay = selectAggressivePointCollection(
       validCombos,
       trumpInfo,
@@ -1223,7 +1249,7 @@ class AIStrategy implements AIStrategy {
       return aggressivePlay.cards;
     }
 
-    // Priority 2: Conservative play against unbeatable cards
+    // Priority 3: Conservative play against unbeatable cards
     const conservativePlay = selectConservativeUnbeatablePlay(
       validCombos,
       trumpInfo,
@@ -1235,7 +1261,20 @@ class AIStrategy implements AIStrategy {
       return conservativePlay.cards;
     }
 
-    // Priority 3: Flexible following when out of suit
+    // Priority 4: Optimized trump following - use smallest trump when not planning to beat
+    const optimizedTrumpPlay = selectOptimizedTrumpFollow(
+      validCombos,
+      trumpInfo,
+      trumpConservation,
+      pointContext,
+      gameState,
+      currentTrick.leadingCombo,
+    );
+    if (optimizedTrumpPlay) {
+      return optimizedTrumpPlay.cards;
+    }
+
+    // Priority 5: Flexible following when out of suit
     const flexiblePlay = selectFlexibleOutOfSuitPlay(
       validCombos,
       trumpInfo,
@@ -1247,7 +1286,7 @@ class AIStrategy implements AIStrategy {
       return flexiblePlay.cards;
     }
 
-    // Priority 4: Partner coordination: Follow with point cards when partner is winning
+    // Priority 6: Partner coordination: Follow with point cards when partner is winning
     const partnerCoordinatedPlay = selectPartnerCoordinatedPlay(
       validCombos,
       trumpInfo,
@@ -1259,7 +1298,7 @@ class AIStrategy implements AIStrategy {
       return partnerCoordinatedPlay.cards;
     }
 
-    // Priority 5: Intelligent trump following to avoid waste
+    // Priority 7: Intelligent trump following to avoid waste (legacy fallback)
     const intelligentTrumpPlay = selectIntelligentTrumpFollow(
       validCombos,
       trumpInfo,
