@@ -109,13 +109,21 @@ npx eas --version
    - Points: 5s = 5pts, 10s and Kings = 10pts
    - Trump hierarchy: Big Joker > Small Joker > Trump rank in trump suit > Trump rank in other suits > Trump suit cards
 
-3. **Combination Rules**
+3. **Smart Card Selection**
+   - **Auto-selection**: Tapping a card automatically selects related cards to form optimal combinations
+   - **When leading**: Prioritizes tractors over pairs for better play
+   - **When following**: Auto-selects matching combination type if possible
+   - **Toggle behavior**: Tap selected card again to deselect
+   - **Fallback**: Single card selection when no combinations available
+   - **Implementation**: `cardAutoSelection.ts` utility with combination detection logic
+
+4. **Combination Rules**
    - **Singles**: Any card
    - **Pairs**: Two identical cards (same rank AND suit)
    - **Tractors**: Consecutive pairs of same suit
    - Special: SJ-SJ-BJ-BJ forms highest tractor
 
-4. **Game Flow**
+5. **Game Flow**
    - Phases: dealing → declaring → playing → scoring → gameOver
    - Teams alternate between defending and attacking
    - Trick winner leads next trick
