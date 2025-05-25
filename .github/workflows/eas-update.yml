@@ -56,8 +56,8 @@ jobs:
         GIT_COMMIT=$(git rev-parse HEAD)
         echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
         
-        # Get base version and commit count
-        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        # Get base version and commit count (only look for version tags)
+        LAST_TAG=$(git tag -l "v*.*.*" --sort=-version:refname | head -n1 || echo "")
         echo "DEBUG: LAST_TAG='$LAST_TAG'"
         if [[ -n "$LAST_TAG" ]]; then
           BASE_VERSION=${LAST_TAG#v}
