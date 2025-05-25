@@ -4,7 +4,16 @@ import {
   TrickPosition,
   PointPressure,
   PlayerId,
+  PlayStyle,
+  ComboStrength,
+  ComboAnalysis,
+  TrickAnalysis,
+  PositionStrategy,
+  Combo,
+  Card,
+  TrumpInfo,
 } from "../types/game";
+import { isTrump, compareCards } from "./gameLogic";
 
 /**
  * Analyzes the current game state to provide strategic context for AI decision making
@@ -20,6 +29,11 @@ export function createGameContext(
   const cardsRemaining = calculateCardsRemaining(gameState);
   const trickPosition = getTrickPosition(gameState, playerId);
   const pointPressure = calculatePointPressure(currentPoints, pointsNeeded);
+  const playStyle = determinePlayStyle(
+    isAttackingTeam,
+    pointPressure,
+    cardsRemaining,
+  );
 
   return {
     isAttackingTeam,
@@ -28,6 +42,7 @@ export function createGameContext(
     cardsRemaining,
     trickPosition,
     pointPressure,
+    playStyle,
   };
 }
 
@@ -130,6 +145,291 @@ export function calculatePointPressure(
     return PointPressure.MEDIUM; // 24-56 points
   } else {
     return PointPressure.HIGH; // 56+ points
+  }
+}
+
+/**
+ * Determines the optimal play style based on game context
+ */
+export function determinePlayStyle(
+  isAttackingTeam: boolean,
+  pointPressure: PointPressure,
+  cardsRemaining: number,
+): PlayStyle {
+  // End-game urgency
+  if (cardsRemaining <= 3) {
+    return pointPressure === PointPressure.HIGH
+      ? PlayStyle.Desperate
+      : PlayStyle.Aggressive;
+  }
+
+  // Team role and pressure-based strategy
+  if (isAttackingTeam) {
+    switch (pointPressure) {
+      case PointPressure.HIGH:
+        return PlayStyle.Desperate; // Need points urgently
+      case PointPressure.MEDIUM:
+        return PlayStyle.Aggressive; // Push for points
+      case PointPressure.LOW:
+      default:
+        return PlayStyle.Balanced; // Build position
+    }
+  } else {
+    // Defending team
+    switch (pointPressure) {
+      case PointPressure.HIGH:
+        return PlayStyle.Desperate; // Block everything
+      case PointPressure.MEDIUM:
+        return PlayStyle.Aggressive; // Active defense
+      case PointPressure.LOW:
+      default:
+        return PlayStyle.Conservative; // Patient defense
+    }
+  }
+}
+
+/**
+ * Analyzes a combo's strategic value
+ */
+export function analyzeCombo(
+  combo: Combo,
+  trumpInfo: TrumpInfo,
+  context: GameContext,
+): ComboAnalysis {
+  const isTrumpCombo = combo.cards.some((card) => isTrump(card, trumpInfo));
+  const pointValue = combo.cards.reduce((sum, card) => sum + card.points, 0);
+  const hasPoints = pointValue > 0;
+
+  // Determine strength based on card values and trump status
+  let strength: ComboStrength;
+  if (isTrumpCombo && combo.value > 80) {
+    strength = ComboStrength.Critical;
+  } else if (combo.value > 60 || (isTrumpCombo && combo.value > 40)) {
+    strength = ComboStrength.Strong;
+  } else if (combo.value > 30) {
+    strength = ComboStrength.Medium;
+  } else {
+    strength = ComboStrength.Weak;
+  }
+
+  // Calculate disruption potential (how much this can mess up opponents)
+  let disruptionPotential = 0;
+  if (isTrumpCombo) disruptionPotential += 30;
+  if (combo.type === "Tractor") disruptionPotential += 20;
+  if (combo.type === "Pair") disruptionPotential += 10;
+
+  // Calculate conservation value (how valuable it is to keep)
+  let conservationValue = combo.value;
+  if (isTrumpCombo) conservationValue += 20;
+  if (hasPoints) conservationValue += pointValue;
+  if (context.cardsRemaining <= 5) conservationValue *= 1.5; // More valuable in endgame
+
+  return {
+    strength,
+    isTrump: isTrumpCombo,
+    hasPoints,
+    pointValue,
+    disruptionPotential,
+    conservationValue,
+  };
+}
+
+/**
+ * Analyzes the current trick state for strategic decisions
+ */
+export function analyzeTrick(
+  gameState: GameState,
+  playerId: string,
+  validCombos: Combo[],
+): TrickAnalysis {
+  const { currentTrick, players, trumpInfo } = gameState;
+
+  if (!currentTrick) {
+    return {
+      currentWinner: null,
+      winningCombo: null,
+      totalPoints: 0,
+      canWin: validCombos.length > 0,
+      shouldContest: false,
+      partnerStatus: "not_played",
+    };
+  }
+
+  // Calculate total points in trick
+  const totalPoints =
+    currentTrick.plays.reduce(
+      (sum, play) =>
+        sum + play.cards.reduce((cardSum, card) => cardSum + card.points, 0),
+      0,
+    ) +
+    (currentTrick.leadingCombo?.reduce((sum, card) => sum + card.points, 0) ||
+      0);
+
+  // Find current winner
+  let currentWinner = currentTrick.leadingPlayerId;
+  let winningCombo = currentTrick.leadingCombo || [];
+
+  for (const play of currentTrick.plays) {
+    if (isStrongerCombo(play.cards, winningCombo, trumpInfo)) {
+      currentWinner = play.playerId;
+      winningCombo = play.cards;
+    }
+  }
+
+  // Check partner status
+  const currentPlayerIndex = players.findIndex((p) => p.id === playerId);
+  const partnerIndex = (currentPlayerIndex + 2) % 4;
+  const partnerId = players[partnerIndex].id;
+
+  let partnerStatus: "winning" | "losing" | "not_played" = "not_played";
+  const partnerPlayed =
+    currentTrick.plays.some((play) => play.playerId === partnerId) ||
+    currentTrick.leadingPlayerId === partnerId;
+
+  if (partnerPlayed) {
+    partnerStatus = currentWinner === partnerId ? "winning" : "losing";
+  }
+
+  // Determine if this AI can win
+  const canWin = validCombos.some((combo) =>
+    isStrongerCombo(combo.cards, winningCombo, trumpInfo),
+  );
+
+  // Strategic decision on whether to contest
+  const shouldContest = determineShouldContest(
+    totalPoints,
+    partnerStatus,
+    canWin,
+    gameState,
+    playerId,
+  );
+
+  return {
+    currentWinner,
+    winningCombo,
+    totalPoints,
+    canWin,
+    shouldContest,
+    partnerStatus,
+  };
+}
+
+/**
+ * Gets position-based strategy matrix
+ */
+export function getPositionStrategy(
+  position: TrickPosition,
+  playStyle: PlayStyle,
+): PositionStrategy {
+  const baseStrategies: Record<TrickPosition, PositionStrategy> = {
+    [TrickPosition.First]: {
+      informationGathering: 0.8, // Leading - probe opponent hands
+      riskTaking: 0.4, // Moderate risk when leading
+      partnerCoordination: 0.2, // Partner hasn't played yet
+      disruptionFocus: 0.6, // Can set the tone
+    },
+    [TrickPosition.Second]: {
+      informationGathering: 0.6, // Some info from leader
+      riskTaking: 0.5, // Balanced approach
+      partnerCoordination: 0.4, // Partner might be 3rd or 4th
+      disruptionFocus: 0.5, // Can still influence trick
+    },
+    [TrickPosition.Third]: {
+      informationGathering: 0.4, // Good info from first two
+      riskTaking: 0.6, // More info allows calculated risks
+      partnerCoordination: 0.7, // Partner likely visible
+      disruptionFocus: 0.4, // Limited disruption options
+    },
+    [TrickPosition.Fourth]: {
+      informationGathering: 0.2, // Perfect information
+      riskTaking: 0.8, // Can make optimal decisions
+      partnerCoordination: 0.9, // Full partner visibility
+      disruptionFocus: 0.3, // Just win or conserve
+    },
+  };
+
+  const baseStrategy = baseStrategies[position];
+
+  // Adjust based on play style
+  const styleMultipliers: Record<
+    PlayStyle,
+    { risk: number; disruption: number; coordination: number }
+  > = {
+    [PlayStyle.Conservative]: { risk: 0.7, disruption: 0.8, coordination: 1.2 },
+    [PlayStyle.Balanced]: { risk: 1.0, disruption: 1.0, coordination: 1.0 },
+    [PlayStyle.Aggressive]: { risk: 1.4, disruption: 1.3, coordination: 0.9 },
+    [PlayStyle.Desperate]: { risk: 1.8, disruption: 1.5, coordination: 0.7 },
+  };
+
+  const multiplier = styleMultipliers[playStyle];
+
+  return {
+    informationGathering: baseStrategy.informationGathering,
+    riskTaking: Math.min(1.0, baseStrategy.riskTaking * multiplier.risk),
+    partnerCoordination: Math.min(
+      1.0,
+      baseStrategy.partnerCoordination * multiplier.coordination,
+    ),
+    disruptionFocus: Math.min(
+      1.0,
+      baseStrategy.disruptionFocus * multiplier.disruption,
+    ),
+  };
+}
+
+// Helper functions
+
+function isStrongerCombo(
+  combo1: Card[],
+  combo2: Card[],
+  trumpInfo: TrumpInfo,
+): boolean {
+  if (combo1.length !== combo2.length) return false;
+
+  const combo1HasTrump = combo1.some((card) => isTrump(card, trumpInfo));
+  const combo2HasTrump = combo2.some((card) => isTrump(card, trumpInfo));
+
+  if (combo1HasTrump && !combo2HasTrump) return true;
+  if (!combo1HasTrump && combo2HasTrump) return false;
+
+  // Compare highest cards
+  const highest1 = combo1.reduce((highest, card) =>
+    compareCards(highest, card, trumpInfo) > 0 ? highest : card,
+  );
+  const highest2 = combo2.reduce((highest, card) =>
+    compareCards(highest, card, trumpInfo) > 0 ? highest : card,
+  );
+
+  return compareCards(highest1, highest2, trumpInfo) > 0;
+}
+
+function determineShouldContest(
+  totalPoints: number,
+  partnerStatus: "winning" | "losing" | "not_played",
+  canWin: boolean,
+  gameState: GameState,
+  playerId: string,
+): boolean {
+  const context = createGameContext(gameState, playerId);
+
+  // Don't contest if partner is winning
+  if (partnerStatus === "winning") return false;
+
+  // Can't contest if we can't win
+  if (!canWin) return false;
+
+  // Contest based on points and strategy
+  switch (context.playStyle) {
+    case PlayStyle.Desperate:
+      return totalPoints >= 5; // Fight for any points
+    case PlayStyle.Aggressive:
+      return totalPoints >= 10;
+    case PlayStyle.Balanced:
+      return totalPoints >= 15;
+    case PlayStyle.Conservative:
+      return totalPoints >= 20; // Only big point tricks
+    default:
+      return totalPoints >= 15;
   }
 }
 
