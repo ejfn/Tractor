@@ -56,12 +56,15 @@ jobs:
         
         # Get base version and commit count
         LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        echo "DEBUG: LAST_TAG='$LAST_TAG'"
         if [[ -n "$LAST_TAG" ]]; then
           BASE_VERSION=${LAST_TAG#v}
           COMMIT_COUNT=$(git rev-list --count ${LAST_TAG}..HEAD)
+          echo "DEBUG: Found tag $LAST_TAG, BASE_VERSION=$BASE_VERSION, COMMIT_COUNT=$COMMIT_COUNT"
         else
           BASE_VERSION="1.0.0"
           COMMIT_COUNT=$(git rev-list --count HEAD)
+          echo "DEBUG: No tags found, BASE_VERSION=$BASE_VERSION, COMMIT_COUNT=$COMMIT_COUNT"
         fi
         
         # Determine deployment based on trigger
