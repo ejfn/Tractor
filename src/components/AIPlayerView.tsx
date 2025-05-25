@@ -18,6 +18,7 @@ interface AIPlayerViewProps {
     dot2: Animated.Value;
     dot3: Animated.Value;
   };
+  isRoundStartingPlayer?: boolean;
 }
 
 /**
@@ -32,6 +33,7 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   showTrickResult,
   lastCompletedTrick,
   thinkingDots,
+  isRoundStartingPlayer = false,
 }) => {
   // GameTable provides the container sizing/positioning,
   // so we don't need wrapper styles
@@ -86,7 +88,12 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   return (
     <View style={styles.container}>
       <View style={labelStyle}>
-        <Text style={sharedStyles.playerLabel}>{playerLabel}</Text>
+        <View style={styles.labelContent}>
+          {isRoundStartingPlayer && (
+            <Text style={styles.startingPlayerIcon}>👑</Text>
+          )}
+          <Text style={sharedStyles.playerLabel}>{playerLabel}</Text>
+        </View>
         <ThinkingIndicator visible={showThinking} dots={thinkingDots} />
       </View>
       <View style={[getCardContainerStyle()]}>
@@ -107,6 +114,17 @@ const styles = StyleSheet.create({
   container: sharedStyles.playerViewContainer,
   aiLabelSpacing: {
     marginBottom: 25, // AI players need more margin bottom than human
+  },
+  labelContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  startingPlayerIcon: {
+    fontSize: 12,
+    marginRight: 4,
+    textShadowColor: "rgba(0,0,0,0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   topCardStackContainer: {
     width: 125,
