@@ -24,16 +24,16 @@ describe('Trick Winner Determination', () => {
       
       if (result.trickComplete) {
         // Verify that the trick winner is properly determined
-        expect(result.trickWinner).toBeTruthy();
+        expect(result.trickWinnerId).toBeTruthy();
         
         // Verify that the current player index points to the winner
-        const expectedWinnerIndex = result.newState.players.findIndex(p => p.name === result.trickWinner);
+        const expectedWinnerIndex = result.newState.players.findIndex(p => p.id === result.trickWinnerId);
         expect(result.newState.currentPlayerIndex).toBe(expectedWinnerIndex);
         
         // Verify that currentTrick.winningPlayerId is set correctly
         expect(result.newState.currentTrick?.winningPlayerId).toBeTruthy();
         const winnerPlayer = result.newState.players.find(p => p.id === result.newState.currentTrick?.winningPlayerId);
-        expect(winnerPlayer?.name).toBe(result.trickWinner);
+        expect(winnerPlayer?.id).toBe(result.trickWinnerId);
       }
       
       state = result.newState;
@@ -61,12 +61,12 @@ describe('Trick Winner Determination', () => {
         
         if (result.trickComplete) {
           // The winner should be consistently identified
-          const winnerByName = result.newState.players.find(p => p.name === result.trickWinner);
-          const winnerById = result.newState.players.find(p => p.id === result.newState.currentTrick?.winningPlayerId);
+          const winnerById = result.newState.players.find(p => p.id === result.trickWinnerId);
+          const winnerByCurrentTrick = result.newState.players.find(p => p.id === result.newState.currentTrick?.winningPlayerId);
           
-          expect(winnerByName).toBeTruthy();
           expect(winnerById).toBeTruthy();
-          expect(winnerByName?.id).toBe(winnerById?.id);
+          expect(winnerByCurrentTrick).toBeTruthy();
+          expect(winnerById?.id).toBe(winnerByCurrentTrick?.id);
         }
         
         state = result.newState;

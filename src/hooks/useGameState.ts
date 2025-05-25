@@ -17,7 +17,7 @@ import {
 
 // Interface for trick completion data
 interface TrickCompletionData {
-  winnerName: string;
+  winnerId: string;
   points: number;
   completedTrick: any; // Using any to avoid circular dependencies
   timestamp: number;
@@ -147,7 +147,7 @@ export function useGameState() {
     const result = processPlay(gameState, cards);
 
     // For trick complete scenario, we need to handle things in a specific order
-    if (result.trickComplete && result.trickWinner && result.completedTrick) {
+    if (result.trickComplete && result.trickWinnerId && result.completedTrick) {
       // Trick completed - winner and points recorded
 
       // IMPORTANT: Store trick data in ref BEFORE updating state
@@ -157,7 +157,7 @@ export function useGameState() {
         // IMPORTANT: A completed trick has leadingCombo (first play) + plays (follow plays)
         // For a 4-player game, the plays array should have exactly 3 entries when complete
         trickCompletionDataRef.current = {
-          winnerName: result.trickWinner,
+          winnerId: result.trickWinnerId,
           points: result.trickPoints || 0,
           completedTrick: {
             ...result.completedTrick,

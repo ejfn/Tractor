@@ -109,7 +109,7 @@ describe('Card Count Equality', () => {
     
     // Human should have won
     expect(trickResult.trickComplete).toBe(true);
-    expect(trickResult.trickWinner).toBe('You');
+    expect(trickResult.trickWinnerId).toBe('human');
     expect(state.currentPlayerIndex).toBe(0); // Human should be next
     
     const countsAfterTrick1 = state.players.map(p => p.hand.length);

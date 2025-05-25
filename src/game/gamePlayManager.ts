@@ -14,7 +14,7 @@ export function processPlay(
 ): {
   newState: GameState;
   trickComplete: boolean;
-  trickWinner?: string;
+  trickWinnerId?: string;
   trickPoints?: number;
   completedTrick?: Trick;
 } {
@@ -147,16 +147,13 @@ export function processPlay(
     // Only then will we use the saved completedTrick for displaying the result
     // newState.currentTrick = null; -- REMOVED THIS LINE
 
-    // Return trick completion info with winning player name
-    const resultWinningPlayer = newState.players[winningPlayerIndex];
-
     // Use the completed trick with winner ID for result display
     const trickWithWinner = completedTrick;
 
     return {
       newState,
       trickComplete: true,
-      trickWinner: resultWinningPlayer?.name || "Unknown Player",
+      trickWinnerId: winningPlayerId,
       trickPoints: completedTrick.points,
       completedTrick: trickWithWinner,
     };

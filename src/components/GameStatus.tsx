@@ -9,6 +9,47 @@ interface GameStatusProps {
   gamePhase: GamePhase;
 }
 
+// Animated progress bar component
+const AnimatedProgressBar: React.FC<{
+  points: number;
+  maxPoints: number;
+}> = ({ points, maxPoints }) => {
+  const progressWidth = useRef(new Animated.Value(0)).current;
+  const previousPoints = useRef(0);
+
+  useEffect(() => {
+    const targetWidth = Math.min(100, (points / maxPoints) * 100);
+
+    // Calculate duration using the same logic as rolling number animation
+    const pointsDiff = Math.abs(points - previousPoints.current);
+    const duration = Math.min(1000, pointsDiff * 50); // Max 1 second, same as rolling number
+
+    Animated.timing(progressWidth, {
+      toValue: targetWidth,
+      duration: duration,
+      useNativeDriver: false, // Width animations require useNativeDriver: false
+    }).start();
+
+    previousPoints.current = points;
+  }, [points, maxPoints, progressWidth]);
+
+  const animatedStyle = {
+    width: progressWidth.interpolate({
+      inputRange: [0, 100],
+      outputRange: ["0%", "100%"],
+      extrapolate: "clamp",
+    }),
+  };
+
+  return (
+    <View style={styles.progressContainer}>
+      <Animated.View
+        style={[styles.progressBar, styles.attackingProgress, animatedStyle]}
+      />
+    </View>
+  );
+};
+
 // Rolling number animation component
 const RollingNumber: React.FC<{
   value: number;
@@ -203,17 +244,9 @@ const GameStatus: React.FC<GameStatusProps> = ({
               )}
             </View>
 
-            {/* Progress bar for points - only for attacking team */}
+            {/* Animated progress bar for points - only for attacking team */}
             {!team.isDefending && (
-              <View style={styles.progressContainer}>
-                <View
-                  style={[
-                    styles.progressBar,
-                    styles.attackingProgress,
-                    { width: `${Math.min(100, (team.points / 80) * 100)}%` },
-                  ]}
-                />
-              </View>
+              <AnimatedProgressBar points={team.points} maxPoints={80} />
             )}
           </View>
         ))}

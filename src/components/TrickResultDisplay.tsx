@@ -1,11 +1,12 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { PlayerName } from "../types";
+import { PlayerName, GameState } from "../types";
 
 interface TrickResultDisplayProps {
   visible: boolean;
-  winnerName: string;
+  winnerId: string;
   points: number;
+  gameState: GameState;
 }
 
 /**
@@ -13,18 +14,30 @@ interface TrickResultDisplayProps {
  */
 const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
   visible,
-  winnerName,
+  winnerId,
   points,
+  gameState,
 }) => {
   // Just use the visible prop directly - simpler code
   if (!visible) return null;
+
+  // Find the winning player and determine team info
+  const winningPlayer = gameState.players.find((p) => p.id === winnerId);
+  if (!winningPlayer) return null;
+
+  const winningTeam = gameState.teams.find((t) => t.id === winningPlayer.team);
+  const isAttackingTeamWin = winningTeam ? !winningTeam.isDefending : false;
+
+  const winnerName = winningPlayer.name;
 
   return (
     <View style={styles.container}>
       <Text style={styles.winnerText}>
         {winnerName === PlayerName.Human ? "You win!" : `${winnerName} wins!`}
       </Text>
-      {points > 0 && <Text style={styles.pointsText}>+{points} pts</Text>}
+      {points > 0 && isAttackingTeamWin && (
+        <Text style={styles.pointsText}>+{points} pts</Text>
+      )}
     </View>
   );
 };

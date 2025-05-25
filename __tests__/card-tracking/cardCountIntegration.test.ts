@@ -61,7 +61,7 @@ describe('Card Count Integration Test', () => {
       });
       
       if (result.trickComplete) {
-        console.log(`Trick complete! Winner: ${result.trickWinner}`);
+        console.log(`Trick complete! Winner: ${result.trickWinnerId}`);
       }
     }
     
