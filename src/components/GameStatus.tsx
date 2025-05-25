@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { GamePhase, Suit, Team, TrumpInfo } from "../types";
 
@@ -8,6 +8,50 @@ interface GameStatusProps {
   roundNumber: number;
   gamePhase: GamePhase;
 }
+
+// Rolling number animation component
+const RollingNumber: React.FC<{
+  value: number;
+  isAttackingTeam: boolean;
+  style?: any;
+}> = ({ value, isAttackingTeam, style }) => {
+  const [displayValue, setDisplayValue] = useState(value);
+  const [previousValue, setPreviousValue] = useState(value);
+
+  useEffect(() => {
+    if (!isAttackingTeam || value === previousValue) {
+      setDisplayValue(value);
+      return;
+    }
+
+    // Only animate when attacking team gains points
+    if (value > previousValue) {
+      let currentValue = previousValue;
+      const increment =
+        value > previousValue + 10
+          ? Math.ceil((value - previousValue) / 20)
+          : 1;
+      const duration = Math.min(1000, (value - previousValue) * 50); // Max 1 second
+      const stepTime = duration / (value - previousValue);
+
+      const animateValue = () => {
+        if (currentValue < value) {
+          currentValue = Math.min(currentValue + increment, value);
+          setDisplayValue(currentValue);
+          setTimeout(animateValue, stepTime);
+        }
+      };
+
+      animateValue();
+    } else {
+      setDisplayValue(value);
+    }
+
+    setPreviousValue(value);
+  }, [value, isAttackingTeam, previousValue]);
+
+  return <Text style={style}>{displayValue}/80</Text>;
+};
 
 const GameStatus: React.FC<GameStatusProps> = ({
   teams,
@@ -146,15 +190,15 @@ const GameStatus: React.FC<GameStatusProps> = ({
               {!team.isDefending && (
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Points:</Text>
-                  <Text
+                  <RollingNumber
+                    value={team.points}
+                    isAttackingTeam={!team.isDefending}
                     style={[
                       styles.statValue,
                       styles.pointsValue,
                       team.points >= 80 ? styles.winningPoints : null,
                     ]}
-                  >
-                    {team.points}/80
-                  </Text>
+                  />
                 </View>
               )}
             </View>
