@@ -114,7 +114,7 @@ jobs:
         jq '.expo.extra.version = "${{ steps.vars.outputs.VERSION }}" | .expo.extra.gitCommit = "${{ steps.vars.outputs.GIT_COMMIT }}"' app.json > app.json.tmp
         mv app.json.tmp app.json
         echo "Injected version ${{ steps.vars.outputs.VERSION }} into app.json"
-        
+
     - name: EAS Update
       run: npx eas update --branch ${{ steps.vars.outputs.EAS_BRANCH }} --message "${{ steps.vars.outputs.EAS_MESSAGE }}"
       env:
