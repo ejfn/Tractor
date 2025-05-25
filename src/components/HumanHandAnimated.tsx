@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card as CardType, Player, TrumpInfo } from "../types/game";
-import { isTrump } from "../utils/gameLogic";
+import { Card as CardType, Player, TrumpInfo } from "../types";
+import { isTrump } from "../game/gameLogic";
 import AnimatedCardComponent from "./AnimatedCard";
 
 interface HumanHandAnimatedProps {

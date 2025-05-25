@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { Card as CardType, Suit, JokerType } from "../types/game";
+import { Card as CardType, Suit, JokerType } from "../types";
 
 interface CardProps {
   card: CardType;

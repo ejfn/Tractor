@@ -1,7 +1,7 @@
-import { GameState, Rank, Suit } from '../../src/types/game';
-import { initializeGame } from '../../src/utils/gameLogic';
-import { prepareNextRound, endRound } from '../../src/utils/gameRoundManager';
-import { declareTrumpSuit } from '../../src/utils/trumpManager';
+import { GameState, Rank, Suit } from "../../src/types";
+import { initializeGame } from '../../src/game/gameLogic';
+import { prepareNextRound, endRound } from '../../src/game/gameRoundManager';
+import { declareTrumpSuit } from '../../src/game/trumpManager';
 
 describe('Next round starting player selection', () => {
   // Test utilities

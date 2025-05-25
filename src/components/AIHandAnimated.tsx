@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Player, TrumpInfo } from "../types/game";
-import { isTrump } from "../utils/gameLogic";
+import { Player, TrumpInfo } from "../types";
+import { isTrump } from "../game/gameLogic";
 import AnimatedCardComponent from "./AnimatedCard";
 
 interface AIHandAnimatedProps {

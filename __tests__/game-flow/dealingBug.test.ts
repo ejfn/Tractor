@@ -1,5 +1,5 @@
-import { Rank } from '../../src/types/game';
-import { initializeGame, createDeck } from '../../src/utils/gameLogic';
+import { Rank } from "../../src/types";
+import { initializeGame, createDeck } from '../../src/game/gameLogic';
 
 describe('Card Dealing Bug Test', () => {
   test('Check initial card distribution', () => {

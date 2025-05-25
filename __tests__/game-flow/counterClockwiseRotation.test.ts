@@ -1,6 +1,6 @@
-import { processPlay } from '../../src/utils/gamePlayManager';
-import { GameState, Player, Rank, Suit, Card, Team } from '../../src/types/game';
-import { createRotationTestGameState } from '../helpers/testUtils';
+import { processPlay } from '../../src/game/gamePlayManager';
+import { GameState, Player, Rank, Suit, Card, Team } from "../../src/types";
+import { createRotationTestGameState } from "../helpers";
 
 describe('Counter-clockwise rotation', () => {
   const createCard = (suit: Suit, rank: Rank, id: string): Card => ({

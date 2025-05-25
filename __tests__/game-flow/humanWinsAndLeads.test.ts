@@ -1,7 +1,7 @@
-import { GameState, Rank, Card } from '../../src/types/game';
-import { initializeGame } from '../../src/utils/gameLogic';
-import { processPlay } from '../../src/utils/gamePlayManager';
-import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
+import { GameState, Rank, Card } from "../../src/types";
+import { initializeGame } from '../../src/game/gameLogic';
+import { processPlay } from '../../src/game/gamePlayManager';
+import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
 import { describe, test, expect } from '@jest/globals';
 
 describe('Human Wins and Leads Bug', () => {

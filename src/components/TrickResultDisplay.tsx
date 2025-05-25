@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { PlayerName } from "../types/game";
+import { PlayerName } from "../types";
 
 interface TrickResultDisplayProps {
   visible: boolean;

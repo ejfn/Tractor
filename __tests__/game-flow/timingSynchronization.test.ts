@@ -1,7 +1,7 @@
-import { GameState, Rank } from '../../src/types/game';
-import { initializeGame } from '../../src/utils/gameLogic';
-import { processPlay } from '../../src/utils/gamePlayManager';
-import { getAIMoveWithErrorHandling } from '../../src/utils/gamePlayManager';
+import { GameState, Rank } from "../../src/types";
+import { initializeGame } from '../../src/game/gameLogic';
+import { processPlay } from '../../src/game/gamePlayManager';
+import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
 import { TRICK_RESULT_DISPLAY_TIME } from '../../src/utils/gameTimings';
 
 // Helper to simulate async timing

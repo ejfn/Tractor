@@ -14,10 +14,10 @@ import RoundCompleteModal from "../components/RoundCompleteModal";
 import TrickResultDisplay from "../components/TrickResultDisplay";
 
 // Types
-import { Card, GameState, PlayerId, Trick, GamePhase } from "../types/game";
+import { Card, GameState, PlayerId, Trick, GamePhase } from "../types";
 
 // Utils
-import { validatePlay } from "../utils/gamePlayManager";
+import { validatePlay } from "../game/gamePlayManager";
 
 interface GameScreenViewProps {
   // Game state

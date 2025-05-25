@@ -2,12 +2,12 @@ import { fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
 import { Animated } from 'react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
-import { PlayerId, PlayerName } from '../../src/types/game';
+import { PlayerId, PlayerName } from "../../src/types";
 import {
   createPlayer,
   createTrumpScenarios,
   testData
-} from '../helpers/testUtils';
+} from "../helpers";
 
 // Mock dependencies
 jest.mock('../../src/components/ThinkingIndicator', () => {
@@ -20,17 +20,6 @@ jest.mock('../../src/components/ThinkingIndicator', () => {
   };
 });
 
-jest.mock('../../src/components/PlayerHandAnimated', () => {
-  const React = require('react');
-  return function MockPlayerHandAnimated(props: any) {
-    return React.createElement('PlayerHandAnimated', {
-      ...props,
-      testID: 'player-hand-animated',
-      onCardSelect: () => props.onCardSelect && props.onCardSelect(props.player.hand[0]),
-      onPlayCards: () => props.onPlayCards && props.onPlayCards()
-    });
-  };
-});
 
 describe('HumanPlayerView', () => {
   // Mock animation values using shared utility pattern

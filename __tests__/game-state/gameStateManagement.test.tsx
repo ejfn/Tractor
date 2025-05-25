@@ -10,11 +10,11 @@ import {
   Trick,
   GamePhase,
   PlayerId
-} from '../../src/types/game';
-import { createComponentTestGameState } from '../helpers/testUtils';
+} from "../../src/types";
+import { createComponentTestGameState } from "../helpers";
 
 // Mock dependencies
-jest.mock('../../src/utils/gameLogic', () => ({
+jest.mock('../../src/game/gameLogic', () => ({
   initializeGame: jest.fn(),
   identifyCombos: jest.fn(),
   isValidPlay: jest.fn(),
@@ -23,20 +23,20 @@ jest.mock('../../src/utils/gameLogic', () => ({
   humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
-const mockInitializeGame = require('../../src/utils/gameLogic').initializeGame;
+const mockInitializeGame = require('../../src/game/gameLogic').initializeGame;
 
-jest.mock('../../src/utils/gamePlayManager', () => ({
+jest.mock('../../src/game/gamePlayManager', () => ({
   processPlay: jest.fn(),
   validatePlay: jest.fn()
 }));
 
-jest.mock('../../src/utils/trumpManager', () => ({
+jest.mock('../../src/game/trumpManager', () => ({
   declareTrumpSuit: jest.fn(),
   checkAITrumpDeclaration: jest.fn().mockReturnValue({ shouldDeclare: false }),
   humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
-jest.mock('../../src/utils/gameRoundManager', () => ({
+jest.mock('../../src/game/gameRoundManager', () => ({
   prepareNextRound: jest.fn(),
   endRound: jest.fn()
 }));
@@ -154,7 +154,7 @@ describe('Game State Management', () => {
 
   test('initializes game state correctly', async () => {
     const mockState = createMockGameState();
-    const mockInitializeGame = require('../../src/utils/gameLogic').initializeGame;
+    const mockInitializeGame = require('../../src/game/gameLogic').initializeGame;
     mockInitializeGame.mockReturnValue(mockState);
 
     const { getByTestId } = render(<TestComponent />);
@@ -169,7 +169,7 @@ describe('Game State Management', () => {
     const mockState = createMockGameState();
     mockState.gamePhase = GamePhase.Playing;
     
-    const mockInitializeGame = require('../../src/utils/gameLogic').initializeGame;
+    const mockInitializeGame = require('../../src/game/gameLogic').initializeGame;
     mockInitializeGame.mockReturnValue(mockState);
 
     let currentHookState: any = null;

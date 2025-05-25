@@ -3,16 +3,16 @@ import {
   PlayerId,
   Rank,
   Suit
-} from '../../src/types/game';
-import { getAIMove } from '../../src/utils/aiLogic';
+} from "../../src/types";
+import { getAIMove } from '../../src/ai/aiLogic';
 import {
   calculateTrickPoints,
   determineTrickWinner
-} from '../../src/utils/gameLogic';
-import { createCard, createTestCardsGameState } from '../helpers/testUtils';
+} from '../../src/game/gameLogic';
+import { createCard, createTestCardsGameState } from "../helpers";
 
 // Mock dependencies
-jest.mock('../../src/utils/aiLogic', () => ({
+jest.mock('../../src/ai/aiLogic', () => ({
   getAIMove: jest.fn(),
 }));
 
