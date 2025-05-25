@@ -146,6 +146,48 @@ export function createTrumpConservationStrategy(
 }
 
 /**
+ * Ace-priority leading strategy - prioritizes non-trump Aces and Ace pairs
+ */
+export function selectAcePriorityLeadingPlay(
+  validCombos: Combo[],
+  trumpInfo: TrumpInfo,
+  pointContext: PointFocusedContext,
+  gameState: GameState,
+): Combo | null {
+  // Strategy: Non-trump Aces are guaranteed biggest unless someone has run out
+  const nonTrumpCombos = validCombos.filter(
+    (combo) => !combo.cards.some((card) => isTrump(card, trumpInfo)),
+  );
+
+  if (nonTrumpCombos.length === 0) {
+    return null; // No non-trump options available
+  }
+
+  // Prioritize Ace combos over other combos
+  const aceCombos = nonTrumpCombos.filter((combo) =>
+    combo.cards.every((card) => card.rank === "A"),
+  );
+
+  if (aceCombos.length > 0) {
+    // Sort Ace combos by type preference: pairs > singles
+    const acePairs = aceCombos.filter((combo) => combo.type === ComboType.Pair);
+    const aceSingles = aceCombos.filter(
+      (combo) => combo.type === ComboType.Single,
+    );
+
+    // Prefer Ace pairs over Ace singles - they're harder to beat
+    if (acePairs.length > 0) {
+      return acePairs[0];
+    }
+    if (aceSingles.length > 0) {
+      return aceSingles[0];
+    }
+  }
+
+  return null; // No Ace combos available, use fallback strategy
+}
+
+/**
  * Enhanced early-game non-trump leading strategy for point escape
  */
 export function selectEarlyGameLeadingPlay(
@@ -241,6 +283,55 @@ export function selectAggressivePointCollection(
   });
 
   return sortedWinningCombos[0];
+}
+
+/**
+ * Ace-aggressive following strategy - uses Aces when points are on the table
+ */
+export function selectAceAggressiveFollowing(
+  validCombos: Combo[],
+  trumpInfo: TrumpInfo,
+  pointContext: PointFocusedContext,
+  gameState: GameState,
+  leadingCombo: Card[],
+): Combo | null {
+  const currentTrick = gameState.currentTrick;
+  if (!currentTrick) return null;
+
+  // Calculate points currently on the table
+  const tablePoints = calculateTrickPoints(currentTrick);
+
+  // Only use this strategy if there are points worth collecting
+  if (tablePoints === 0) {
+    return null;
+  }
+
+  // Look for Ace combos that can potentially win or compete for the trick
+  const aceCombos = validCombos.filter((combo) =>
+    combo.cards.every((card) => card.rank === "A" && !isTrump(card, trumpInfo)),
+  );
+
+  if (aceCombos.length === 0) {
+    return null; // No Ace combos available
+  }
+
+  // Check if we can beat the current winner with an Ace
+  const winningAceCombos = aceCombos.filter((combo) =>
+    canBeatCurrentWinner(combo, currentTrick, trumpInfo),
+  );
+
+  if (winningAceCombos.length > 0) {
+    // Use the Ace combo that can win
+    return winningAceCombos[0];
+  }
+
+  // Even if we can't win, use Aces when there are significant points
+  // This forces opponents to use trump or higher cards
+  if (tablePoints >= 10) {
+    return aceCombos[0];
+  }
+
+  return null;
 }
 
 /**
@@ -426,7 +517,87 @@ export function selectFlexibleOutOfSuitPlay(
 }
 
 /**
- * Intelligent trump following to avoid waste
+ * Optimized trump following - uses smallest trump when not planning to beat
+ */
+export function selectOptimizedTrumpFollow(
+  validCombos: Combo[],
+  trumpInfo: TrumpInfo,
+  conservationStrategy: TrumpConservationStrategy,
+  pointContext: PointFocusedContext,
+  gameState: GameState,
+  leadingCombo: Card[],
+): Combo | null {
+  // Only apply when following trump leads
+  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+  if (!isLeadingTrump) return null;
+
+  const currentTrick = gameState.currentTrick;
+  if (!currentTrick) return null;
+
+  const trumpCombos = validCombos.filter((combo) =>
+    combo.cards.some((card) => isTrump(card, trumpInfo)),
+  );
+
+  if (trumpCombos.length === 0) return null;
+
+  // Calculate points on table and evaluate if worth competing
+  const tablePoints = calculateTrickPoints(currentTrick);
+  const worthCompeting = shouldUseTrumpForPoints(
+    tablePoints,
+    trumpCombos,
+    pointContext,
+  );
+
+  if (!worthCompeting) {
+    // Not worth competing - use smallest trump to conserve strength
+    const nonPreservedTrumps = trumpCombos.filter(
+      (combo) =>
+        !shouldPreserveCombo(
+          combo,
+          conservationStrategy,
+          pointContext,
+          trumpInfo,
+        ),
+    );
+
+    if (nonPreservedTrumps.length > 0) {
+      return getLowestTrumpCombo(nonPreservedTrumps, trumpInfo);
+    }
+
+    // If all are preservation-worthy but we must play, use smallest
+    return getLowestTrumpCombo(trumpCombos, trumpInfo);
+  }
+
+  // Worth competing - try to win with appropriate trump strength
+  const winningTrumpCombos = trumpCombos.filter((combo) =>
+    canBeatCurrentWinner(combo, currentTrick, trumpInfo),
+  );
+
+  if (winningTrumpCombos.length > 0) {
+    // Use minimal trump strength to win
+    return getLowestTrumpCombo(winningTrumpCombos, trumpInfo);
+  }
+
+  // Can't win even with trump - use smallest trump
+  const nonPreservedTrumps = trumpCombos.filter(
+    (combo) =>
+      !shouldPreserveCombo(
+        combo,
+        conservationStrategy,
+        pointContext,
+        trumpInfo,
+      ),
+  );
+
+  if (nonPreservedTrumps.length > 0) {
+    return getLowestTrumpCombo(nonPreservedTrumps, trumpInfo);
+  }
+
+  return getLowestTrumpCombo(trumpCombos, trumpInfo);
+}
+
+/**
+ * Intelligent trump following to avoid waste (legacy)
  */
 export function selectIntelligentTrumpFollow(
   validCombos: Combo[],
