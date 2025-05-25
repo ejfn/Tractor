@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { Suit, Team, TrumpInfo, GamePhase } from "../types";
+import { GamePhase, Suit, Team, TrumpInfo } from "../types";
 
 interface GameStatusProps {
   teams: [Team, Team];
@@ -17,7 +17,6 @@ const GameStatus: React.FC<GameStatusProps> = ({
 }) => {
   // Animation values
   const phaseAnimation = useRef(new Animated.Value(0)).current;
-  const trumpAnimation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
@@ -35,30 +34,8 @@ const GameStatus: React.FC<GameStatusProps> = ({
     ]).start();
   }, [gamePhase, phaseAnimation]);
 
-  // Trigger animation when trump info changes
-  useEffect(() => {
-    Animated.sequence([
-      Animated.timing(trumpAnimation, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(trumpAnimation, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-        delay: 1500,
-      }),
-    ]).start();
-  }, [trumpInfo, trumpAnimation]);
-
-  // Animations for phase and trump
+  // Shared scale animation for both phase and trump
   const phaseScale = phaseAnimation.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.1, 1],
-  });
-
-  const trumpScale = trumpAnimation.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: [1, 1.1, 1],
   });
@@ -85,7 +62,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
           <Animated.View
             style={[
               styles.trumpDisplay,
-              { transform: [{ scale: trumpScale }] },
+              { transform: [{ scale: phaseScale }] },
             ]}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -123,7 +100,12 @@ const GameStatus: React.FC<GameStatusProps> = ({
                   </Text>
                 </>
               ) : (
-                <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
+                <>
+                  <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
+                  {gamePhase !== GamePhase.Declaring && (
+                    <Text style={styles.suitSymbol}>🚫</Text>
+                  )}
+                </>
               )}
             </View>
           </Animated.View>
