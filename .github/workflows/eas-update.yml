@@ -27,6 +27,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full git history for accurate commit counting
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
