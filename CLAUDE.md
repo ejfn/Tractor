@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Tractor is a React Native Expo app implementing a single-player version of the Chinese card game Shengji (升级), also known as Tractor. It's a trick-taking card game where players work in teams to advance through card ranks from 2 to Ace.
 
-**Platform Support**: Built with Expo for cross-platform deployment on Android, iOS, and Web. Currently tested on Android only.
+**Platform Support:** Mobile-only (iOS and Android). Currently tested on Android only.
 
 ## Quick Start
 
@@ -20,7 +20,6 @@ npx expo start
 # Run on specific platforms
 npm run android    # Start on Android
 npm run ios        # Start on iOS
-npm run web        # Start on Web
 
 # Quality checks
 npm run qualitycheck  # Runs typecheck, lint, and test
@@ -255,7 +254,7 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 - React Native rendering flags enabled
 - Minimal shadows
 - Single AI strategy (no difficulty settings)
-- Web platform disabled
+- Mobile-only platform (web support completely removed)
 - Centralized timing for predictable animations
 
 ## Type Safety and Code Quality

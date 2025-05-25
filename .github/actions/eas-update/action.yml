@@ -1,53 +1,22 @@
-name: EAS Update
-
-on:
-  push:
-    branches: [ main ]
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'  # Semver tags like v1.2.3
-  pull_request:
-    branches: [ main ]
-    types: [ opened, synchronize, reopened ]
-  workflow_dispatch:
-    inputs:
-      branch_name:
-        description: 'Branch name to deploy (defaults to GitHub ref)'
-        required: false
-        type: string
-
-# Prevent concurrent deployments due to rate limits
-concurrency:
-  group: eas-update
-  cancel-in-progress: false  # Queue deployments instead of canceling
-
-jobs:
-  eas-update:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Fetch full git history for accurate commit counting
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
+name: 'EAS Update'
+description: 'Deploy app updates using Expo EAS'
+inputs:
+  expo-token:
+    description: 'Expo authentication token'
+    required: true
+runs:
+  using: 'composite'
+  steps:
     - name: Install EAS CLI globally
       run: npm install -g eas-cli
+      shell: bash
 
     - name: Setup Expo
       uses: expo/expo-github-action@v8
       with:
         expo-version: latest
         eas-version: latest
-        token: ${{ secrets.EXPO_TOKEN }}
+        token: ${{ inputs.expo-token }}
 
     - name: Set deployment variables
       id: vars
@@ -91,8 +60,8 @@ jobs:
           MESSAGE="Alpha build from $BRANCH_NAME branch (PR #${{ github.event.number }})"
           
         else
-          # Alpha build from other branch
-          BRANCH_NAME="${{ inputs.branch_name }}"
+          # Alpha build from other branch (manual trigger)
+          BRANCH_NAME="${{ github.event.inputs.branch_name }}"
           if [[ -z "$BRANCH_NAME" ]]; then
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
           fi
@@ -107,6 +76,7 @@ jobs:
         echo "EAS_MESSAGE=$MESSAGE" >> $GITHUB_OUTPUT
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Deploying to $EAS_BRANCH with version: $VERSION"
+      shell: bash
 
     - name: Inject version into app.json
       run: |
@@ -114,8 +84,10 @@ jobs:
         jq '.expo.extra.version = "${{ steps.vars.outputs.VERSION }}" | .expo.extra.gitCommit = "${{ steps.vars.outputs.GIT_COMMIT }}"' app.json > app.json.tmp
         mv app.json.tmp app.json
         echo "Injected version ${{ steps.vars.outputs.VERSION }} into app.json"
+      shell: bash
 
     - name: EAS Update
       run: npx eas update --branch ${{ steps.vars.outputs.EAS_BRANCH }} --message "${{ steps.vars.outputs.EAS_MESSAGE }}"
       env:
-        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        EXPO_TOKEN: ${{ inputs.expo-token }}
+      shell: bash

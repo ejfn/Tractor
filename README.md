@@ -2,7 +2,7 @@
 
 A React Native implementation of the classic Chinese card game **Tractor** (also known as Shengji/升级), featuring intelligent AI opponents and authentic gameplay mechanics.
 
-![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Web-blue)
+![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
 ![Tests](https://img.shields.io/badge/Tests-315%20Passing-brightgreen)
@@ -29,7 +29,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 ## Technology
 
-Built with **React Native + Expo** for cross-platform support:
+Built with **React Native + Expo** for mobile platforms:
 - **React Native 0.76+** - Cross-platform mobile development
 - **Expo SDK 52** - Development tools and native API access
 - **TypeScript 5.7+** - Type safety and developer experience
@@ -37,7 +37,7 @@ Built with **React Native + Expo** for cross-platform support:
 - **ESLint** - Code linting with React Native specific rules
 - **React Native Reanimated** - High-performance animations
 
-*Cross-platform support for Android, iOS, and Web via Expo. Currently tested on Android only.*
+*Mobile-only support for Android and iOS. Currently tested on Android only.*
 
 ## AI Intelligence
 
@@ -66,7 +66,7 @@ This project is fully developed using [Claude Code](https://claude.ai/code), Ant
 - **Multi-game Learning** - Cross-game strategy improvement
 - **Difficulty Scaling** - Adaptive challenge based on player skill
 - **Advanced Psychology** - Deep behavioral modeling
-- **Enhanced Web Experience** - Optimized browser compatibility
+- **iOS Testing** - Comprehensive iOS platform validation
 
 ## License
 
