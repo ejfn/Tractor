@@ -777,7 +777,11 @@ export const compareCardCombos = (
       ) {
         return compareRanks(comboA[0].rank, comboB[0].rank);
       } else {
-        // Different suits and both are pairs - in Shengji, the leading combo (comboA) wins
+        // Different suits and both are pairs - if both are trump pairs, compare by trump level
+        if (aIsTrump && bIsTrump) {
+          return compareCards(comboA[0], comboB[0], trumpInfo);
+        }
+        // Otherwise, in Shengji rules, the leading combo (comboA) wins
         return 1;
       }
     }
