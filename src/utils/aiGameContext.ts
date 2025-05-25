@@ -14,6 +14,7 @@ import {
   TrumpInfo,
 } from "../types/game";
 import { isTrump, compareCards } from "./gameLogic";
+import { createCardMemory, enhanceGameContextWithMemory } from "./aiCardMemory";
 
 /**
  * Analyzes the current game state to provide strategic context for AI decision making
@@ -35,7 +36,8 @@ export function createGameContext(
     cardsRemaining,
   );
 
-  return {
+  // Phase 3: Enhanced context with memory-based intelligence
+  const baseContext = {
     isAttackingTeam,
     currentPoints,
     pointsNeeded,
@@ -44,6 +46,13 @@ export function createGameContext(
     pointPressure,
     playStyle,
   };
+
+  // Integrate card memory for enhanced strategic intelligence
+  return enhanceGameContextWithMemory(
+    baseContext,
+    createCardMemory(gameState),
+    gameState,
+  );
 }
 
 /**

@@ -287,19 +287,38 @@ class AIStrategy implements AIStrategy {
     context: GameContext,
     positionStrategy: PositionStrategy,
   ): Card[] {
-    // Enhanced attacking lead strategy with combo analysis
+    // Phase 3: Memory-enhanced attacking lead strategy
+    const memoryStrategy = context.memoryStrategy;
+    const memoryContext = context.memoryContext;
+
+    // Use memory insights to adjust base strategy
+    if (memoryStrategy?.endgameOptimal && memoryContext) {
+      // Perfect information available - make optimal decisions
+      return this.selectEndgameOptimalPlay(comboAnalyses, context, trumpInfo);
+    }
+
+    if (memoryStrategy?.suitExhaustionAdvantage) {
+      // Exploit known suit voids
+      return this.selectSuitExploitationPlay(comboAnalyses, trumpInfo);
+    }
+
+    // Enhanced strategy with memory-based adjustments
     switch (context.playStyle) {
       case PlayStyle.Desperate:
-        // Use strongest available combo, prioritize trump
+        // Use strongest available combo, prioritize trump based on memory
+        const trumpPriority =
+          memoryStrategy?.shouldPlayTrump ||
+          (memoryContext?.trumpExhaustion ?? 0) > 0.7;
         return this.selectByStrength(
           comboAnalyses,
           [ComboStrength.Critical, ComboStrength.Strong],
-          true,
+          trumpPriority,
         );
 
       case PlayStyle.Aggressive:
-        // Balance between probing and strength, favor disruption
-        if (positionStrategy.disruptionFocus > 0.6) {
+        // Balance between probing and strength, adjust based on opponent strength
+        const riskAdjustment = memoryStrategy?.riskLevel || 0.5;
+        if (positionStrategy.disruptionFocus > 0.6 || riskAdjustment > 0.7) {
           return this.selectDisruptiveCombo(comboAnalyses, trumpInfo);
         }
         return this.selectByStrength(
@@ -309,8 +328,11 @@ class AIStrategy implements AIStrategy {
         );
 
       case PlayStyle.Balanced:
-        // Information gathering with measured risk
-        if (positionStrategy.informationGathering > 0.6) {
+        // Information gathering with memory-enhanced risk assessment
+        if (
+          positionStrategy.informationGathering > 0.6 &&
+          (memoryContext?.uncertaintyLevel ?? 1) > 0.5
+        ) {
           return this.selectProbingCombo(comboAnalyses, trumpInfo);
         }
         return this.selectByStrength(
@@ -321,7 +343,7 @@ class AIStrategy implements AIStrategy {
 
       case PlayStyle.Conservative:
       default:
-        // Safe probing, avoid waste
+        // Safe probing with memory-based safety assessment
         return this.selectSafeLeadCombo(comboAnalyses, trumpInfo);
     }
   }
@@ -332,15 +354,30 @@ class AIStrategy implements AIStrategy {
     context: GameContext,
     positionStrategy: PositionStrategy,
   ): Card[] {
-    // Enhanced defending lead strategy
+    // Phase 3: Memory-enhanced defending lead strategy
+    const memoryStrategy = context.memoryStrategy;
+    const memoryContext = context.memoryContext;
+
+    // Use memory insights for defensive strategy
+    if (memoryStrategy?.endgameOptimal && memoryContext) {
+      // Perfect information - block optimally
+      return this.selectEndgameDefensePlay(comboAnalyses, context, trumpInfo);
+    }
+
+    // Adjust strategy based on estimated opponent strength
+    const opponentThreat = memoryStrategy?.expectedOpponentStrength || 0.5;
+
     switch (context.playStyle) {
       case PlayStyle.Desperate:
-        // Maximum disruption - use trump to break opponent rhythm
-        return this.selectMaxDisruptionCombo(comboAnalyses, trumpInfo);
+        // Maximum disruption with memory-enhanced targeting
+        if (memoryStrategy?.shouldPlayTrump || opponentThreat > 0.7) {
+          return this.selectMaxDisruptionCombo(comboAnalyses, trumpInfo);
+        }
+        return this.selectDisruptiveCombo(comboAnalyses, trumpInfo);
 
       case PlayStyle.Aggressive:
-        // Active defense with calculated risks
-        if (positionStrategy.disruptionFocus > 0.5) {
+        // Active defense with opponent strength assessment
+        if (positionStrategy.disruptionFocus > 0.5 || opponentThreat > 0.6) {
           return this.selectDisruptiveCombo(comboAnalyses, trumpInfo);
         }
         return this.selectByStrength(
@@ -350,16 +387,25 @@ class AIStrategy implements AIStrategy {
         );
 
       case PlayStyle.Balanced:
-        // Moderate defense, gather information
-        return this.selectBalancedDefenseCombo(
+        // Moderate defense with information optimization
+        if ((memoryContext?.uncertaintyLevel ?? 1) > 0.6) {
+          // Still need information
+          return this.selectBalancedDefenseCombo(
+            comboAnalyses,
+            trumpInfo,
+            positionStrategy,
+          );
+        }
+        // Have good information - play more strategically
+        return this.selectMemoryInformedDefense(
           comboAnalyses,
+          context,
           trumpInfo,
-          positionStrategy,
         );
 
       case PlayStyle.Conservative:
       default:
-        // Patient defense, minimum risk
+        // Patient defense with memory-based safety
         return this.selectSafeLeadCombo(comboAnalyses, trumpInfo);
     }
   }
@@ -632,6 +678,143 @@ class AIStrategy implements AIStrategy {
     const sorted = [...combos].sort((a, b) => a.value - b.value);
     const midIndex = Math.floor(sorted.length / 2);
     return sorted[midIndex].cards;
+  }
+
+  // Phase 3: Memory-enhanced strategic methods
+
+  private selectEndgameOptimalPlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Perfect information available - calculate optimal play
+    const memoryContext = context.memoryContext;
+    if (!memoryContext) {
+      return this.selectByStrength(comboAnalyses, [ComboStrength.Strong], true);
+    }
+
+    // In endgame with perfect info, play optimally based on opponent hands
+    const strongestOpponent = Math.max(
+      ...Object.values(memoryContext.opponentHandStrength),
+    );
+
+    if (strongestOpponent > 0.7) {
+      // Strong opponent - use critical cards to ensure wins
+      return this.selectByStrength(
+        comboAnalyses,
+        [ComboStrength.Critical, ComboStrength.Strong],
+        true,
+      );
+    } else {
+      // Weak opponents - use minimal strength to win
+      return this.selectByStrength(
+        comboAnalyses,
+        [ComboStrength.Medium, ComboStrength.Weak],
+        false,
+      );
+    }
+  }
+
+  private selectSuitExploitationPlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Find combos that exploit known suit voids
+    // Prefer non-trump suits where opponents have voids
+    const nonTrumpCombos = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
+
+    if (nonTrumpCombos.length > 0) {
+      // Sort by strength and select medium strength to probe
+      const sorted = nonTrumpCombos.sort(
+        (a, b) => b.combo.value - a.combo.value,
+      );
+      const midIndex = Math.floor(sorted.length / 2);
+      return sorted[midIndex].combo.cards;
+    }
+
+    // Fallback to trump if no non-trump available
+    return this.selectByStrength(comboAnalyses, [ComboStrength.Medium], true);
+  }
+
+  private selectEndgameDefensePlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Perfect information defense - block optimally
+    const memoryContext = context.memoryContext;
+    if (!memoryContext) {
+      return this.selectMaxDisruptionCombo(comboAnalyses, trumpInfo);
+    }
+
+    // Calculate minimum strength needed to disrupt
+    const averageOpponentStrength =
+      Object.values(memoryContext.opponentHandStrength).reduce(
+        (sum, strength) => sum + strength,
+        0,
+      ) / 4;
+
+    if (averageOpponentStrength > 0.6) {
+      // Strong opponents - use maximum strength
+      return this.selectByStrength(
+        comboAnalyses,
+        [ComboStrength.Critical, ComboStrength.Strong],
+        true,
+      );
+    } else {
+      // Weak opponents - moderate disruption sufficient
+      return this.selectByStrength(
+        comboAnalyses,
+        [ComboStrength.Medium, ComboStrength.Strong],
+        false,
+      );
+    }
+  }
+
+  private selectMemoryInformedDefense(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Use memory insights for informed defense
+    const memoryStrategy = context.memoryStrategy;
+    const memoryContext = context.memoryContext;
+
+    if (!memoryStrategy || !memoryContext) {
+      return this.selectBalancedDefenseCombo(comboAnalyses, trumpInfo, {
+        informationGathering: 0.5,
+        riskTaking: 0.5,
+        partnerCoordination: 0.5,
+        disruptionFocus: 0.5,
+      });
+    }
+
+    // Adjust defense based on trump exhaustion
+    if (memoryContext.trumpExhaustion > 0.8) {
+      // Few trumps left - safe to play strong non-trump
+      const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
+      if (nonTrump.length > 0) {
+        return this.selectByStrength(nonTrump, [ComboStrength.Strong], false);
+      }
+    }
+
+    // Standard memory-informed defense
+    const riskLevel = memoryStrategy.riskLevel;
+    if (riskLevel > 0.7) {
+      // High confidence - play more aggressively
+      return this.selectByStrength(
+        comboAnalyses,
+        [ComboStrength.Strong, ComboStrength.Medium],
+        memoryStrategy.shouldPlayTrump,
+      );
+    } else {
+      // Lower confidence - conservative defense
+      return this.selectByStrength(
+        comboAnalyses,
+        [ComboStrength.Medium, ComboStrength.Weak],
+        false,
+      );
+    }
   }
 
   private selectLegacyDisruptiveCombo(

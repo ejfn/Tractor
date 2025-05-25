@@ -130,6 +130,15 @@ export type Combo = {
   value: number; // Relative hand strength for comparison
 };
 
+// Memory-enhanced decision context
+export interface MemoryContext {
+  cardsRemaining: number;
+  knownCards: number; // Cards we have information about
+  uncertaintyLevel: number; // 0.0 (perfect info) to 1.0 (no info)
+  trumpExhaustion: number; // 0.0 (many trumps left) to 1.0 (few trumps)
+  opponentHandStrength: Record<string, number>; // Estimated strength per player
+}
+
 // Position-based strategy matrices
 export interface PositionStrategy {
   informationGathering: number; // How much to prioritize learning opponent hands
@@ -163,6 +172,8 @@ export interface GameContext {
   trickPosition: TrickPosition; // Position in current trick
   pointPressure: PointPressure; // Urgency level based on point progress
   playStyle: PlayStyle; // Current strategic approach
+  memoryContext?: MemoryContext; // Phase 3: Memory-based decision context
+  memoryStrategy?: MemoryBasedStrategy; // Phase 3: Memory-enhanced strategy
 }
 
 export interface ComboAnalysis {
@@ -183,9 +194,43 @@ export interface TrickAnalysis {
   partnerStatus: "winning" | "losing" | "not_played";
 }
 
+// Phase 3: Enhanced Card Memory & Probability System
+export interface PlayerMemory {
+  playerId: string;
+  knownCards: Card[]; // Cards we've seen this player play
+  estimatedHandSize: number; // Estimated cards remaining
+  suitVoids: Set<Suit>; // Suits this player has shown to be out of
+  trumpCount: number; // Estimated trump cards remaining
+  pointCardsProbability: number; // Likelihood of having point cards
+  playPatterns: PlayPattern[]; // Historical play behavior
+}
+
+export interface PlayPattern {
+  situation: string; // "leading_low_pressure", "following_partner_winning", etc.
+  cardType: "trump" | "point" | "safe" | "discard";
+  frequency: number; // How often this pattern occurs
+}
+
+export interface CardProbability {
+  card: Card;
+  players: Record<string, number>; // Probability each player has this card
+}
+
 export interface CardMemory {
   playedCards: Card[]; // All cards seen this round
   trumpCardsPlayed: number; // Count of trump cards played
   pointCardsPlayed: number; // Count of point cards played
   suitDistribution: Record<string, number>; // Cards played by suit
+  playerMemories: Record<string, PlayerMemory>; // Memory for each player
+  cardProbabilities: CardProbability[]; // Probability distribution for unseen cards
+  roundStartCards: number; // Cards each player started with this round
+  tricksAnalyzed: number; // Number of tricks processed for memory
+}
+
+export interface MemoryBasedStrategy {
+  shouldPlayTrump: boolean; // Based on trump card tracking
+  riskLevel: number; // 0.0-1.0 based on remaining card knowledge
+  expectedOpponentStrength: number; // Estimated opponent hand strength
+  suitExhaustionAdvantage: boolean; // Can we exploit suit voids
+  endgameOptimal: boolean; // Perfect information available
 }
