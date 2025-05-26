@@ -7,20 +7,40 @@
 The AI system operates in **4 distinct phases**, each building upon the previous to create increasingly sophisticated gameplay:
 
 ```mermaid
-timeline
-    title AI Intelligence Evolution
+graph LR
+    subgraph "Phase 1: Foundation"
+        A1[Basic Combination Detection]
+        A2[Trump Management]
+        A3[Rule Compliance]
+    end
     
-    section Phase 1 : Foundation
-        Basic Combination Detection : Trump Management : Rule Compliance
+    subgraph "Phase 2: Strategy"
+        B1[Point-Focused Gameplay]
+        B2[Positional Awareness]
+        B3[Team Dynamics]
+    end
     
-    section Phase 2 : Strategy  
-        Point-Focused Gameplay : Positional Awareness : Team Dynamics
+    subgraph "Phase 3: Memory"
+        C1[Card Tracking]
+        C2[Pattern Recognition]
+        C3[Adaptive Responses]
+    end
     
-    section Phase 3 : Memory
-        Card Tracking : Pattern Recognition : Adaptive Responses
-        
-    section Phase 4 : Mastery
-        Advanced Analysis : Strategic Optimization : Perfect Execution
+    subgraph "Phase 4: Mastery"
+        D1[Advanced Analysis]
+        D2[Strategic Optimization]
+        D3[Perfect Execution]
+    end
+    
+    A1 --> B1
+    A2 --> B2
+    A3 --> B3
+    B1 --> C1
+    B2 --> C2
+    B3 --> C3
+    C1 --> D1
+    C2 --> D2
+    C3 --> D3
 ```
 
 ### **Phase 1**: Foundation Intelligence
