@@ -848,6 +848,11 @@ export const compareCardCombos = (
         comboB[0].suit &&
         comboA[0].suit === comboB[0].suit
       ) {
+        // If both pairs are trump cards, use trump hierarchy instead of rank comparison
+        if (aIsTrump && bIsTrump) {
+          return compareCards(comboA[0], comboB[0], trumpInfo);
+        }
+        // For non-trump pairs from same suit, use rank comparison
         return compareRanks(comboA[0].rank, comboB[0].rank);
       } else {
         // Different suits and both are pairs - if both are trump pairs, compare by trump level
