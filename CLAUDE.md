@@ -347,6 +347,7 @@ enum ComboStrength {
 - **Use type-safe test utilities**: Never use magic strings in test assertions
 - **Jest mock limitations**: Only mock what needs to be controlled for the specific test
 - **Test realism**: Use actual game logic when possible for more realistic test coverage
+- **Jest debugging**: Use `silent: true|false` in `jest.config.js` to control console output during test debugging
 
 **✅ Correct Test Enum Usage:**
 ```typescript

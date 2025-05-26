@@ -494,12 +494,85 @@ export const isValidPlay = (
 
   // 1. If leading with trumps, must play trumps if you have them
   if (isLeadingTrump) {
-    if (trumpCards.length >= leadingCombo.length) {
-      // Must play trump cards
-      const allTrumps = playedCards.every((card) => isTrump(card, trumpInfo));
-      return allTrumps;
+    if (trumpCards.length > 0) {
+      // Must play ALL trump cards when following trump lead
+
+      if (trumpCards.length >= leadingCombo.length) {
+        // Player has enough trumps to potentially match the leading combo
+        const allTrumps = playedCards.every((card) => isTrump(card, trumpInfo));
+        if (!allTrumps) {
+          return false; // Must play all trumps when following trump lead
+        }
+
+        // Enhanced validation: When following trump tractors/pairs, must respect hierarchy
+        // If player can form matching trump combo type, they must use it
+        if (canFormMatchingCombo()) {
+          const playerTrumpCombos = identifyCombos(trumpCards, trumpInfo);
+
+          // Check if played cards form the required combo type
+          const matchingTrumpCombos = playerTrumpCombos.filter(
+            (combo) =>
+              combo.type === leadingType &&
+              combo.cards.length === leadingCombo.length,
+          );
+
+          if (matchingTrumpCombos.length > 0) {
+            // Player has matching trump combos available, verify they used one
+            const usedMatchingCombo = matchingTrumpCombos.some((combo) =>
+              combo.cards.every((card) =>
+                playedCards.some((played) => played.id === card.id),
+              ),
+            );
+
+            if (!usedMatchingCombo) {
+              return false; // Must use proper trump combo when available
+            }
+          }
+        }
+
+        return true;
+      } else {
+        // Player doesn't have enough trumps to match leading combo length
+        // Check if they're using trump pairs when available (must prioritize trump pairs)
+        if (
+          leadingType === ComboType.Pair ||
+          leadingType === ComboType.Tractor
+        ) {
+          // Check if player has any trump pairs available
+          const playerTrumpCombos = identifyCombos(trumpCards, trumpInfo);
+          const trumpPairs = playerTrumpCombos.filter(
+            (combo) => combo.type === ComboType.Pair,
+          );
+
+          if (trumpPairs.length > 0) {
+            // Player has trump pairs available
+            // Check if any trump pairs were used in the played cards
+            const usedTrumpPairs = trumpPairs.some((pair) =>
+              pair.cards.every((card) =>
+                playedCards.some((played) => played.id === card.id),
+              ),
+            );
+
+            if (!usedTrumpPairs) {
+              // Player has trump pairs but didn't use any
+              // Check if they played any pairs at all (including non-trump pairs)
+              const playedCombos = identifyCombos(playedCards, trumpInfo);
+              const playedPairs = playedCombos.filter(
+                (combo) => combo.type === ComboType.Pair,
+              );
+
+              if (playedPairs.length > 0) {
+                // Played non-trump pairs when trump pairs were available - invalid
+                return false;
+              }
+            }
+          }
+        }
+
+        return true;
+      }
     } else {
-      // Not enough trumps, can play anything
+      // No trump cards, can play anything
       return true;
     }
   }
