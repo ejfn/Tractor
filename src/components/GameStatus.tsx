@@ -188,7 +188,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
                 <>
                   <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
                   {gamePhase !== GamePhase.Declaring && (
-                    <Text style={styles.suitSymbol}>🃏</Text>
+                    <Text style={styles.suitSymbol}>🤡</Text>
                   )}
                 </>
               )}
