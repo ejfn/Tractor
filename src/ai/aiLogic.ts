@@ -1476,13 +1476,50 @@ export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
 
           // Check if we have enough trump cards to match the leading length
           if (trumpCards.length >= leadingLength) {
-            // If we do, construct a combo of the right length using trump cards
-            const trumpCombo = {
-              type: ComboType.Single, // Might not be a real pair/combo, but we're using singles
-              cards: trumpCards.slice(0, leadingLength),
-              value: 200,
-            };
-            validCombos = [trumpCombo];
+            // First, try to find proper trump combos that match the leading length
+            const trumpCombos = allCombos.filter((combo) => {
+              // Check if this combo is made entirely of trump cards
+              const isAllTrump = combo.cards.every((card) =>
+                isTrump(card, gameState.trumpInfo),
+              );
+
+              return (
+                isAllTrump &&
+                combo.cards.length === leadingLength &&
+                isValidPlay(
+                  combo.cards,
+                  leadingCombo,
+                  player.hand,
+                  gameState.trumpInfo,
+                )
+              );
+            });
+
+            if (trumpCombos.length > 0) {
+              // Use proper trump combos (tractors, pairs) if available
+              validCombos = trumpCombos;
+            } else {
+              // Fallback: construct singles combo only if no proper combos exist
+              const trumpCombo = {
+                type: ComboType.Single,
+                cards: trumpCards.slice(0, leadingLength),
+                value: 200,
+              };
+
+              // Only use this fallback if it would be valid
+              if (
+                isValidPlay(
+                  trumpCombo.cards,
+                  leadingCombo,
+                  player.hand,
+                  gameState.trumpInfo,
+                )
+              ) {
+                validCombos = [trumpCombo];
+              } else {
+                validCombos = [];
+              }
+            }
           } else {
             // For other lengths, just check general valid plays
             validCombos = allCombos.filter(
