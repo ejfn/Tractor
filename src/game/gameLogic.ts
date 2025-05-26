@@ -15,6 +15,7 @@ import {
   Trick,
   TrumpInfo,
 } from "../types";
+import { initializeTrumpDeclarationState } from "./trumpDeclarationManager";
 // No UUID used in this project
 
 // Create a new deck of cards (2 decks for Shengji)
@@ -1670,6 +1671,7 @@ export const initializeGame = (): GameState => {
       trumpRank: Rank.Two,
       declared: false,
     },
+    trumpDeclarationState: initializeTrumpDeclarationState(),
     tricks: [],
     roundNumber: 1,
     currentPlayerIndex: 0,
