@@ -53,22 +53,13 @@ runs:
           EAS_BRANCH="beta"
           MESSAGE="Beta release $VERSION"
           
-        elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-          # Alpha build from PR
-          BRANCH_NAME="${{ github.head_ref }}"
-          ALPHA_ID=${BRANCH_NAME//\//.}
-          VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          EAS_BRANCH="alpha"
-          MESSAGE="Alpha build from $BRANCH_NAME branch (PR #${{ github.event.number }})"
-          
         else
           # Alpha build from other branch (manual trigger)
           BRANCH_NAME="${{ github.event.inputs.branch_name }}"
           if [[ -z "$BRANCH_NAME" ]]; then
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
           fi
-          ALPHA_ID=${BRANCH_NAME//\//.}
-          VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
+          VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="alpha"
           MESSAGE="Alpha build from $BRANCH_NAME branch"
         fi

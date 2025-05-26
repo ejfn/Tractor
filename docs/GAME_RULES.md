@@ -44,10 +44,10 @@ Cards are ranked from highest to lowest trump strength:
 ### Trump Cards (Beat all non-trump)
 1. **Big Joker** (🃏) - Highest trump card
 2. **Small Joker** (🃏) - Second highest trump
-3. **Trump rank in trump suit** (e.g., 2♠ when Spades trump, rank 2)
-4. **Trump rank in other suits** (e.g., 2♥, 2♣, 2♦ when Spades trump)
+3. **Trump rank** (e.g., 2♠ when Spades trump, rank 2)
+4. **Off-suit rank** (e.g., 2♥, 2♣, 2♦ when Spades trump)
    - *Equal strength - first played wins*
-5. **Trump suit cards** (A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3 of trump suit)
+5. **Trump suit** (A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3 of trump suit)
 
 ### Non-Trump Cards
 - Ranked by suit within each suit: A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3
