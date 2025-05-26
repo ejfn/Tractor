@@ -52,16 +52,12 @@ export function prepareNextRound(state: GameState): GameState {
   //   - If defending team successfully defended, the OTHER player on the defending team goes first
   //   - If attacking team won, the next player counter-clockwise (from the attacking team) goes first
 
-  // Get the defending and attacking teams
+  // Get the defending team
   const defendingTeam = newDefendingTeam;
-  const attackingTeam = newState.teams.find((t) => !t.isDefending);
 
   // Get the player IDs from each team
   const defendingPlayers = newState.players.filter(
     (p) => p.team === defendingTeam?.id,
-  );
-  const attackingPlayers = newState.players.filter(
-    (p) => p.team === attackingTeam?.id,
   );
 
   // Handle first round when we have a trump declarer
@@ -82,68 +78,75 @@ export function prepareNextRound(state: GameState): GameState {
   }
   // For subsequent rounds
   else if (newState.roundNumber > 1) {
-    const didAttackingTeamWin = attackingTeam?.isDefending === true;
+    // Need to pass information about whether attacking team won from endRound
+    // Since teams switch roles after winning, we need to track this differently
+    // For now, use a simpler approach: if we have lastRoundStartingPlayerIndex,
+    // check if the current defending team has a different ID than expected
 
-    if (didAttackingTeamWin) {
-      // Attacking team won and becomes the new defending team
-      // Next player counter-clockwise from attacking team goes first
+    // The rule is:
+    // - If defending team successfully defended, the OTHER player on defending team goes first
+    // - If attacking team won, next player counter-clockwise goes first
 
-      // Find which player on the attacking team played first last round
-      const attackingTeamLastRoundStarter = attackingPlayers.find(
-        (p) =>
-          newState.players.indexOf(p) === newState.lastRoundStartingPlayerIndex,
-      );
+    // We can determine this by checking if we have enough information
+    if (
+      newState.lastRoundStartingPlayerIndex !== undefined &&
+      newState.lastRoundStartingPlayerIndex >= 0
+    ) {
+      // Get the player who started last round
+      const lastRoundStarter =
+        newState.players[newState.lastRoundStartingPlayerIndex];
 
-      if (attackingTeamLastRoundStarter) {
-        // The other player on the attacking team goes first
-        const otherPlayer = attackingPlayers.find(
-          (p) => p.id !== attackingTeamLastRoundStarter.id,
-        );
+      // Check if this player is on the current defending team
+      const isLastStarterOnCurrentDefendingTeam =
+        lastRoundStarter.team === defendingTeam?.id;
 
-        if (otherPlayer) {
-          newState.currentPlayerIndex = newState.players.indexOf(otherPlayer);
-        } else {
-          // Fallback
-          newState.currentPlayerIndex = newState.players.indexOf(
-            attackingPlayers[0],
-          );
-        }
+      // If the last starter is NOT on the current defending team, it means teams switched
+      // This happens when the attacking team wins
+      const didAttackingTeamWin = !isLastStarterOnCurrentDefendingTeam;
+
+      if (didAttackingTeamWin) {
+        // Attacking team won (teams switched roles)
+        // Next player counter-clockwise from the last round starter goes first
+        const nextPlayerIndex =
+          (newState.lastRoundStartingPlayerIndex + 1) % newState.players.length;
+        newState.currentPlayerIndex = nextPlayerIndex;
       } else {
-        // If we can't determine who played first last round
-        newState.currentPlayerIndex = newState.players.indexOf(
-          attackingPlayers[0],
-        );
-      }
-    } else {
-      // Defending team successfully defended
-      // The other player on defending team should start
+        // Defending team successfully defended
+        // The other player on defending team should start
 
-      // Find which player on the defending team played first last round
-      const defendingTeamLastRoundStarter = defendingPlayers.find(
-        (p) =>
-          newState.players.indexOf(p) === newState.lastRoundStartingPlayerIndex,
-      );
-
-      if (defendingTeamLastRoundStarter) {
-        // The other player on the defending team goes first
-        const otherPlayer = defendingPlayers.find(
-          (p) => p.id !== defendingTeamLastRoundStarter.id,
+        // Find which player on the defending team played first last round
+        const defendingTeamLastRoundStarter = defendingPlayers.find(
+          (p) =>
+            newState.players.indexOf(p) ===
+            newState.lastRoundStartingPlayerIndex,
         );
 
-        if (otherPlayer) {
-          newState.currentPlayerIndex = newState.players.indexOf(otherPlayer);
+        if (defendingTeamLastRoundStarter) {
+          // The other player on the defending team goes first
+          const otherPlayer = defendingPlayers.find(
+            (p) => p.id !== defendingTeamLastRoundStarter.id,
+          );
+
+          if (otherPlayer) {
+            newState.currentPlayerIndex = newState.players.indexOf(otherPlayer);
+          } else {
+            // Fallback
+            newState.currentPlayerIndex = newState.players.indexOf(
+              defendingPlayers[0],
+            );
+          }
         } else {
-          // Fallback
+          // If we can't determine who played first last round
           newState.currentPlayerIndex = newState.players.indexOf(
             defendingPlayers[0],
           );
         }
-      } else {
-        // If we can't determine who played first last round
-        newState.currentPlayerIndex = newState.players.indexOf(
-          defendingPlayers[0],
-        );
       }
+    } else {
+      // Fallback if lastRoundStartingPlayerIndex is not available
+      newState.currentPlayerIndex = newState.players.indexOf(
+        defendingPlayers[0],
+      );
     }
   }
   // Fallback for any other case
