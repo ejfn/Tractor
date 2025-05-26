@@ -1,15 +1,129 @@
 # AI Strategic Intelligence System
 
-This document details Tractor's 4-phase AI intelligence system that creates engaging and strategic gameplay through sophisticated decision-making algorithms.
+> *Advanced 4-phase AI intelligence that creates engaging and strategic gameplay through sophisticated decision-making algorithms*
 
 ## AI System Overview
 
-The AI system operates in 4 distinct phases, each building upon the previous to create increasingly sophisticated gameplay:
+The AI system operates in **4 distinct phases**, each building upon the previous to create increasingly sophisticated gameplay:
 
-- **Phase 1**: Basic combination detection and trump management
-- **Phase 2**: Strategic context awareness and point-focused gameplay  
-- **Phase 3**: Advanced memory systems and pattern recognition
-- **Phase 4**: Advanced combination analysis and strategic optimization
+```mermaid
+timeline
+    title AI Intelligence Evolution
+    
+    section Phase 1 : Foundation
+        Basic Combination Detection : Trump Management : Rule Compliance
+    
+    section Phase 2 : Strategy  
+        Point-Focused Gameplay : Positional Awareness : Team Dynamics
+    
+    section Phase 3 : Memory
+        Card Tracking : Pattern Recognition : Adaptive Responses
+        
+    section Phase 4 : Mastery
+        Advanced Analysis : Strategic Optimization : Perfect Execution
+```
+
+### **Phase 1**: Foundation Intelligence
+- Basic combination detection and trump management
+- Rule compliance and legal move validation
+- Simple heuristics for card selection
+
+### **Phase 2**: Strategic Context Awareness  
+- Point-focused gameplay and pressure systems
+- Positional awareness and trick dynamics
+- Team coordination and role understanding
+
+### **Phase 3**: Advanced Memory Systems
+- Comprehensive card tracking and history
+- Pattern recognition and opponent modeling
+- Probability calculations and predictions
+
+### **Phase 4**: Strategic Optimization
+- Advanced combination analysis and timing
+- Multi-dimensional risk/reward evaluation
+- Perfect information utilization and endgame mastery
+
+## AI Strategy Decision Flow
+
+```mermaid
+flowchart TD
+    Start([AI TURN BEGINS<br/>• aiLogic.ts:getAIMove]) --> Context[CONTEXT ANALYSIS<br/>• aiGameContext.ts:createGameContext<br/>• Determine team role<br/>• Calculate point pressure<br/>• Identify trick position<br/>• Assess play style<br/>• Analyze trump status]
+    
+    Context --> Memory[MEMORY INTEGRATION<br/>• aiCardMemory.ts:enhanceContext<br/>• Track played cards<br/>• Update probabilities<br/>• Analyze opponent patterns<br/>• Calculate card estimates]
+    
+    Memory --> Combos[COMBINATION ANALYSIS<br/>• aiAdvancedCombinations.ts:analyzeCombos<br/>• Identify possible combinations<br/>• Calculate strength ratings<br/>• Evaluate timing factors<br/>• Assess risk/reward ratios]
+    
+    Combos --> Position{Trick Position<br/>Determination}
+    
+    Position -->|FIRST| Leader[LEADING STRATEGY<br/>• Position: FIRST<br/>• Control trick with strong combos<br/>• Deploy tractors strategically<br/>• Lead with point cards safely<br/>• Set tempo for team]
+    
+    Position -->|SECOND| FirstFollower[1ST FOLLOWER STRATEGY<br/>• Position: SECOND<br/>• React to leader's strength<br/>• Consider beating vs conserving<br/>• Support teammate if leading<br/>• Block opponent if leading]
+    
+    Position -->|THIRD| SecondFollower[2ND FOLLOWER STRATEGY<br/>• Position: THIRD<br/>• Assess current winner<br/>• Team coordination crucial<br/>• Point collection opportunity<br/>• Prepare for final player]
+    
+    Position -->|FOURTH| ThirdFollower[3RD FOLLOWER STRATEGY<br/>• Position: FOURTH<br/>• Final decision maker<br/>• Maximize/minimize points<br/>• Consider trick winner<br/>• Clean up or conserve]
+    
+    Leader --> Validation[DECISION VALIDATION<br/>• Verify legal play<br/>• Check combination validity<br/>• Ensure optimal selection<br/>• Apply final refinements]
+    
+    FirstFollower --> Validation
+    SecondFollower --> Validation
+    ThirdFollower --> Validation
+    
+    Validation --> Execute[MOVE EXECUTION<br/>• Return selected cards<br/>• Update memory systems<br/>• Log decision patterns<br/>• Prepare for next turn]
+    
+    Execute --> End([Turn Complete])
+```
+
+### Position-Based Strategy Details
+
+#### LEADING STRATEGY (Position: FIRST)
+
+**Objective**: Control the trick and set favorable conditions for team
+
+| Priority | Strategy | Description |
+|----------|----------|-------------|
+| 1 | **Strong Combination Deployment** | Lead with tractors and powerful pairs to dominate |
+| 2 | **Strategic Point Collection** | Play point cards when confident of winning trick |
+| 3 | **Trump Management** | Decide when to deploy vs preserve trump combinations |
+| 4 | **Tempo Setting** | Establish rhythm that benefits team strategy |
+| 5 | **Defensive Initiative** | Lead low cards to block opponent point collection |
+
+#### 1ST FOLLOWER STRATEGY (Position: SECOND)
+
+**Objective**: React strategically to leader while considering remaining players
+
+| Priority | Strategy | Description |
+|----------|----------|-------------|
+| 1 | **Leader Assessment** | Evaluate if leader's play is beatable and worth beating |
+| 2 | **Team Support** | Support teammate leader by playing low, challenge opponent leader |
+| 3 | **Point Opportunity** | Take winnable points while considering future plays |
+| 4 | **Conservation Decision** | Preserve high cards if leader is unbeatable *(Issue #61 Fix)* |
+| 5 | **Combination Matching** | Follow suit optimally while maintaining strategy |
+
+#### 2ND FOLLOWER STRATEGY (Position: THIRD)
+
+**Objective**: Maximize team benefit with two players remaining
+
+| Priority | Strategy | Description |
+|----------|----------|-------------|
+| 1 | **Current Winner Analysis** | Assess who's winning and point value on table |
+| 2 | **Team Coordination** | Critical position for team point collection |
+| 3 | **Point Maximization** | Best position to capture significant points |
+| 4 | **Strategic Positioning** | Set up advantageous situation for final player |
+| 5 | **Risk Assessment** | Balance aggressive play vs conservative preservation |
+
+#### 3RD FOLLOWER STRATEGY (Position: FOURTH)
+
+**Objective**: Final decision maker with complete information
+
+| Priority | Strategy | Description |
+|----------|----------|-------------|
+| 1 | **Complete Information** | All other plays visible, optimal decision possible |
+| 2 | **Point Optimization** | Maximize points if winning, minimize if losing |
+| 3 | **Trick Winner Consideration** | Take trick only if beneficial to team |
+| 4 | **Conservative Cleanup** | Play minimal cards when trick is lost |
+| 5 | **Endgame Planning** | Consider impact on remaining hand strength |
+
 
 ## Phase 1: Foundation Intelligence
 

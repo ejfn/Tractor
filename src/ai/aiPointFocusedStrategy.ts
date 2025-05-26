@@ -13,7 +13,12 @@ import {
   PointCardStrategy,
   TrumpTiming,
 } from "../types";
-import { isTrump, compareCards, isPointCard } from "../game/gameLogic";
+import {
+  isTrump,
+  compareCards,
+  compareCardCombos,
+  isPointCard,
+} from "../game/gameLogic";
 
 /**
  * Enhanced Point-Focused AI Strategy Implementation
@@ -325,11 +330,8 @@ export function selectAceAggressiveFollowing(
     return winningAceCombos[0];
   }
 
-  // Even if we can't win, use Aces when there are significant points
-  // This forces opponents to use trump or higher cards
-  if (tablePoints >= 10) {
-    return aceCombos[0];
-  }
+  // Don't waste Aces if we can't win the trick
+  // Let other strategies handle this case
 
   return null;
 }
@@ -895,20 +897,36 @@ function canBeatCurrentWinner(
   trick: any,
   trumpInfo: TrumpInfo,
 ): boolean {
-  // Simplified logic - would need proper card comparison
-  const comboHasTrump = combo.cards.some((card) => isTrump(card, trumpInfo));
+  // Determine who is currently winning the trick
+  let currentWinningCards = trick.leadingCombo;
 
-  if (!trick.plays || trick.plays.length === 0) {
-    // Beating the lead
-    const leadHasTrump = trick.leadingCombo.some((card: Card) =>
-      isTrump(card, trumpInfo),
-    );
-    return comboHasTrump || !leadHasTrump;
+  // Check all plays to find the current winner
+  if (trick.plays && trick.plays.length > 0) {
+    trick.plays.forEach((play: any) => {
+      // Use proper card comparison to determine if this play beats the current winner
+      const comparison = compareCardCombos(
+        play.cards,
+        currentWinningCards,
+        trumpInfo,
+      );
+      if (comparison > 0) {
+        currentWinningCards = play.cards;
+      }
+    });
   }
 
-  // Check if we can beat the current winner
-  // This is simplified - real implementation would need proper card comparison
-  return comboHasTrump;
+  // Now check if our combo can beat the current winning cards
+  try {
+    const comparison = compareCardCombos(
+      combo.cards,
+      currentWinningCards,
+      trumpInfo,
+    );
+    return comparison > 0;
+  } catch {
+    // If comparison fails (e.g., different lengths), assume we can't beat it
+    return false;
+  }
 }
 
 function isUnbeatableCombo(
