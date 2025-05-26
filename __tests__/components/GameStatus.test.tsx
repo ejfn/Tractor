@@ -126,6 +126,6 @@ describe('GameStatus', () => {
     );
 
     expect(getByText('A')).toBeTruthy();
-    expect(getByText('🚫')).toBeTruthy();
+    expect(getByText('🃏')).toBeTruthy();
   });
 });

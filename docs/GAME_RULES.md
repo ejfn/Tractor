@@ -42,7 +42,7 @@ Work with your AI teammate to collect points (5s, 10s, Kings) and advance throug
 Cards are ranked from highest to lowest trump strength:
 
 ### Trump Cards (Beat all non-trump)
-1. **Big Joker** (🃿) - Highest trump card
+1. **Big Joker** (🃏) - Highest trump card
 2. **Small Joker** (🃏) - Second highest trump
 3. **Trump rank in trump suit** (e.g., 2♠ when Spades trump, rank 2)
 4. **Trump rank in other suits** (e.g., 2♥, 2♣, 2♦ when Spades trump)
