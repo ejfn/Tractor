@@ -23,7 +23,9 @@ runs:
       run: |
         # Get git info
         GIT_COMMIT=$(git rev-parse HEAD)
+        GIT_HASH_SHORT=$(git rev-parse --short HEAD)
         echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
+        echo "GIT_HASH_SHORT=$GIT_HASH_SHORT" >> $GITHUB_OUTPUT
         
         # Get base version and commit count (only look for version tags)
         LAST_TAG=$(git tag -l "v*.*.*" --sort=-version:refname | head -n1 || echo "")
@@ -41,13 +43,13 @@ runs:
         # Determine deployment based on trigger
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
           # Production release from tag
-          VERSION="${GITHUB_REF#refs/tags/}"
+          VERSION="${GITHUB_REF#refs/tags/}+${GIT_HASH_SHORT}"
           EAS_BRANCH="production"
           MESSAGE="Release $VERSION"
           
         elif [[ $GITHUB_REF == refs/heads/main ]]; then
           # Beta release from main
-          VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
+          VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="beta"
           MESSAGE="Beta release $VERSION"
           
@@ -55,7 +57,7 @@ runs:
           # Alpha build from PR
           BRANCH_NAME="${{ github.head_ref }}"
           ALPHA_ID=${BRANCH_NAME//\//.}
-          VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}"
+          VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="alpha"
           MESSAGE="Alpha build from $BRANCH_NAME branch (PR #${{ github.event.number }})"
           
@@ -66,7 +68,7 @@ runs:
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
           fi
           ALPHA_ID=${BRANCH_NAME//\//.}
-          VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}"
+          VERSION="v${BASE_VERSION}-alpha.${ALPHA_ID}.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="alpha"
           MESSAGE="Alpha build from $BRANCH_NAME branch"
         fi
