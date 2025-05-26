@@ -1,12 +1,12 @@
-import { GameState, PlayerId, Rank } from '../types';
+import { GameState, PlayerId, Rank } from "../types";
 import {
   TrumpDeclaration,
   TrumpDeclarationState,
   DeclarationType,
   canOverrideDeclaration,
   validateDeclarationCards,
-  detectPossibleDeclarations
-} from '../types/trumpDeclaration';
+  detectPossibleDeclarations,
+} from "../types/trumpDeclaration";
 
 /**
  * Initialize trump declaration state for a new round
@@ -15,7 +15,7 @@ export function initializeTrumpDeclarationState(): TrumpDeclarationState {
   return {
     currentDeclaration: undefined,
     declarationHistory: [],
-    declarationWindow: true // Start with declarations allowed
+    declarationWindow: true, // Start with declarations allowed
   };
 }
 
@@ -25,10 +25,10 @@ export function initializeTrumpDeclarationState(): TrumpDeclarationState {
 export function makeTrumpDeclaration(
   gameState: GameState,
   playerId: PlayerId,
-  declaration: Omit<TrumpDeclaration, 'playerId' | 'timestamp'>
+  declaration: Omit<TrumpDeclaration, "playerId" | "timestamp">,
 ): GameState {
   const newState = { ...gameState };
-  
+
   // Ensure trump declaration state exists
   if (!newState.trumpDeclarationState) {
     newState.trumpDeclarationState = initializeTrumpDeclarationState();
@@ -38,24 +38,28 @@ export function makeTrumpDeclaration(
   const fullDeclaration: TrumpDeclaration = {
     ...declaration,
     playerId,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 
   // Validate the declaration cards
-  if (!validateDeclarationCards(
-    fullDeclaration.cards,
-    fullDeclaration.type,
-    gameState.trumpInfo.trumpRank
-  )) {
+  if (
+    !validateDeclarationCards(
+      fullDeclaration.cards,
+      fullDeclaration.type,
+      gameState.trumpInfo.trumpRank,
+    )
+  ) {
     throw new Error(`Invalid declaration cards for ${fullDeclaration.type}`);
   }
 
   // Check if this declaration can override the current one
-  if (!canOverrideDeclaration(
-    newState.trumpDeclarationState.currentDeclaration,
-    fullDeclaration
-  )) {
-    throw new Error('Declaration cannot override current declaration');
+  if (
+    !canOverrideDeclaration(
+      newState.trumpDeclarationState.currentDeclaration,
+      fullDeclaration,
+    )
+  ) {
+    throw new Error("Declaration cannot override current declaration");
   }
 
   // Update the declaration state
@@ -75,9 +79,9 @@ export function makeTrumpDeclaration(
  */
 export function getPlayerDeclarationOptions(
   gameState: GameState,
-  playerId: PlayerId
+  playerId: PlayerId,
 ): { type: DeclarationType; cards: any[]; suit: any }[] {
-  const player = gameState.players.find(p => p.id === playerId);
+  const player = gameState.players.find((p) => p.id === playerId);
   if (!player) {
     return [];
   }
@@ -85,22 +89,23 @@ export function getPlayerDeclarationOptions(
   // Get all possible declarations from the player's hand
   const possibleDeclarations = detectPossibleDeclarations(
     player.hand,
-    gameState.trumpInfo.trumpRank
+    gameState.trumpInfo.trumpRank,
   );
 
   // Filter out declarations that cannot override the current one
-  const currentDeclaration = gameState.trumpDeclarationState?.currentDeclaration;
-  
-  return possibleDeclarations.filter(declaration => {
+  const currentDeclaration =
+    gameState.trumpDeclarationState?.currentDeclaration;
+
+  return possibleDeclarations.filter((declaration) => {
     const mockDeclaration: TrumpDeclaration = {
       playerId,
       rank: gameState.trumpInfo.trumpRank,
       suit: declaration.suit,
       type: declaration.type,
       cards: declaration.cards,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    
+
     return canOverrideDeclaration(currentDeclaration, mockDeclaration);
   });
 }
@@ -110,7 +115,7 @@ export function getPlayerDeclarationOptions(
  */
 export function closeDeclarationWindow(gameState: GameState): GameState {
   const newState = { ...gameState };
-  
+
   if (newState.trumpDeclarationState) {
     newState.trumpDeclarationState.declarationWindow = false;
   }
@@ -124,10 +129,10 @@ export function closeDeclarationWindow(gameState: GameState): GameState {
  */
 export function finalizeTrumpDeclaration(gameState: GameState): GameState {
   const newState = { ...gameState };
-  
+
   if (newState.trumpDeclarationState?.currentDeclaration) {
     const finalDeclaration = newState.trumpDeclarationState.currentDeclaration;
-    
+
     // Apply the final trump declaration to trumpInfo
     newState.trumpInfo.trumpSuit = finalDeclaration.suit;
     newState.trumpInfo.declared = true;
@@ -153,11 +158,11 @@ export function getTrumpDeclarationStatus(gameState: GameState): {
   declarationCount: number;
 } {
   const declarationState = gameState.trumpDeclarationState;
-  
+
   if (!declarationState?.currentDeclaration) {
     return {
       hasDeclaration: false,
-      declarationCount: declarationState?.declarationHistory.length || 0
+      declarationCount: declarationState?.declarationHistory.length || 0,
     };
   }
 
@@ -167,7 +172,7 @@ export function getTrumpDeclarationStatus(gameState: GameState): {
     declarer: current.playerId,
     type: current.type,
     suit: current.suit,
-    declarationCount: declarationState.declarationHistory.length
+    declarationCount: declarationState.declarationHistory.length,
   };
 }
 

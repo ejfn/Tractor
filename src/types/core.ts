@@ -1,5 +1,6 @@
 // Core game enums and basic types
-import { TrumpDeclarationState } from './trumpDeclaration';
+import { TrumpDeclarationState } from "./trumpDeclaration";
+import { DealingState } from "./dealing";
 
 export enum Suit {
   Hearts = "Hearts",
@@ -106,6 +107,7 @@ export type GameState = {
   currentTrick: Trick | null; // The trick currently being played (null when no trick in progress)
   trumpInfo: TrumpInfo;
   trumpDeclarationState?: TrumpDeclarationState; // Trump declarations during dealing phase (optional for backward compatibility)
+  dealingState?: DealingState; // Progressive dealing state (optional for backward compatibility)
   tricks: Trick[]; // History of all completed tricks in the current round
   roundNumber: number;
   currentPlayerIndex: number;
