@@ -15,5 +15,6 @@ module.exports = {
   ],
   testPathIgnorePatterns: [
     '__tests__/helpers/'
-  ]
+  ],
+  silent: true
 };
