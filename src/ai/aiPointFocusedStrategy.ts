@@ -18,6 +18,7 @@ import {
   compareCards,
   compareCardCombos,
   isPointCard,
+  determineTrickWinner,
 } from "../game/gameLogic";
 
 /**
@@ -864,32 +865,16 @@ function calculateTrickPoints(trick: any): number {
   return totalPoints;
 }
 
-function getCurrentTrickWinner(gameState: GameState, trick: any): any {
+export function getCurrentTrickWinner(gameState: GameState, trick: any): any {
   if (!trick || !trick.plays || trick.plays.length === 0) {
     // If no plays yet, leader is winning
     return gameState.players.find((p) => p.id === trick.leadingPlayerId);
   }
 
-  // Simplified - would need actual trick winner determination logic
-  // For now, assume the last player to play a trump combo is winning
-  let winner = gameState.players.find((p) => p.id === trick.leadingPlayerId);
-  let winningCards = trick.leadingCombo;
+  // Use proper trick winner determination logic
+  const winningPlayerId = determineTrickWinner(trick, gameState.trumpInfo);
 
-  trick.plays.forEach((play: any) => {
-    const playHasTrump = play.cards.some((card: Card) =>
-      isTrump(card, gameState.trumpInfo),
-    );
-    const winnerHasTrump = winningCards.some((card: Card) =>
-      isTrump(card, gameState.trumpInfo),
-    );
-
-    if (playHasTrump && !winnerHasTrump) {
-      winner = gameState.players.find((p) => p.id === play.playerId);
-      winningCards = play.cards;
-    }
-  });
-
-  return winner;
+  return gameState.players.find((p) => p.id === winningPlayerId);
 }
 
 function canBeatCurrentWinner(

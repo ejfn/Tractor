@@ -17,6 +17,7 @@ import {
   PointFocusedContext,
   TrumpConservationStrategy,
   GamePhaseStrategy,
+  Rank,
 } from "../types";
 import {
   identifyCombos,
@@ -24,6 +25,7 @@ import {
   isTrump,
   compareCards,
   getLeadingSuit,
+  isPointCard,
 } from "../game/gameLogic";
 import {
   createGameContext,
@@ -48,6 +50,7 @@ import {
   selectFlexibleOutOfSuitPlay,
   selectAcePriorityLeadingPlay,
   selectAceAggressiveFollowing,
+  getCurrentTrickWinner,
   selectOptimizedTrumpFollow,
 } from "./aiPointFocusedStrategy";
 
@@ -350,6 +353,7 @@ class AIStrategy implements AIStrategy {
       gameState.players[gameState.currentPlayerIndex].id,
       combos,
     );
+
     const comboAnalyses = combos.map((combo) => ({
       combo,
       analysis: analyzeCombo(combo, gameState.trumpInfo, context),
@@ -502,15 +506,7 @@ class AIStrategy implements AIStrategy {
     trumpInfo: TrumpInfo,
   ): Card[] {
     // Enhanced following strategy based on comprehensive analysis
-
-    // Partner coordination takes priority
-    if (
-      trickAnalysis.partnerStatus === "winning" &&
-      positionStrategy.partnerCoordination > 0.6
-    ) {
-      // Partner winning - conserve strength
-      return this.selectConservativePlay(comboAnalyses);
-    }
+    // Note: Partner winning case is handled by selectAdvancedFollowingPlay in Phase 4
 
     // Can we win this trick?
     if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
@@ -732,11 +728,62 @@ class AIStrategy implements AIStrategy {
   private selectConservativePlay(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   ): Card[] {
-    // Play combo with lowest conservation value
-    const sorted = comboAnalyses.sort(
+    // Enhanced strategy for when partner is winning:
+    // 1. Prioritize point cards (5s, 10s, Kings)
+    // 2. Then select smallest non-point cards
+    // 3. Avoid beating partner unless necessary
+
+    // Separate combos with point cards vs non-point cards
+    const pointCardCombos = comboAnalyses.filter((ca) =>
+      ca.combo.cards.some((card) => isPointCard(card)),
+    );
+
+    const nonPointCardCombos = comboAnalyses.filter(
+      (ca) => !ca.combo.cards.some((card) => isPointCard(card)),
+    );
+
+    // If we have point card combos, prioritize: 10s -> Kings -> 5s
+    if (pointCardCombos.length > 0) {
+      // Helper function to determine card priority
+      const getCardPriority = (cards: Card[]): number => {
+        // Check if combo contains 10s (highest priority for 10-point cards)
+        if (cards.some((card) => card.rank === Rank.Ten)) return 3;
+        // Check if combo contains Kings (second priority for 10-point cards)
+        if (cards.some((card) => card.rank === Rank.King)) return 2;
+        // Check if combo contains 5s (lowest priority)
+        if (cards.some((card) => card.rank === Rank.Five)) return 1;
+        return 0;
+      };
+
+      const sortedByPoints = pointCardCombos.sort((a, b) => {
+        const pointsA = a.combo.cards.reduce(
+          (sum, card) => sum + (card.points || 0),
+          0,
+        );
+        const pointsB = b.combo.cards.reduce(
+          (sum, card) => sum + (card.points || 0),
+          0,
+        );
+
+        // First sort by total points (higher points first)
+        if (pointsB !== pointsA) {
+          return pointsB - pointsA;
+        }
+
+        // If equal points, prioritize 10s > Kings > 5s
+        return getCardPriority(b.combo.cards) - getCardPriority(a.combo.cards);
+      });
+      return sortedByPoints[0].combo.cards;
+    }
+
+    // Otherwise, play smallest non-point cards (lowest conservation value)
+    const sorted = nonPointCardCombos.sort(
       (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
     );
-    return sorted[0].combo.cards;
+
+    return sorted.length > 0
+      ? sorted[0].combo.cards
+      : comboAnalyses[0].combo.cards;
   }
 
   private selectStrongestCombo(combos: Combo[]): Card[] {
@@ -978,6 +1025,21 @@ class AIStrategy implements AIStrategy {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (!currentPlayer)
       return this.selectFollowingPlay(gameState, validCombos, context);
+
+    // Priority 0: Check if partner is winning - use enhanced point card strategy
+    const currentTrick = gameState.currentTrick;
+    if (currentTrick?.leadingCombo) {
+      const currentWinner = getCurrentTrickWinner(gameState, currentTrick);
+      if (currentWinner && currentWinner.team === currentPlayer.team) {
+        // Convert advanced analyses to simple combo analyses for compatibility
+        const comboAnalyses = validCombos.map((combo) => ({
+          combo,
+          analysis: analyzeCombo(combo, trumpInfo, context),
+        }));
+
+        return this.selectConservativePlay(comboAnalyses);
+      }
+    }
 
     // Analyze current combination options with advanced logic
     const combinationAnalyses = validCombos.map((combo) =>
@@ -1224,6 +1286,13 @@ class AIStrategy implements AIStrategy {
   ): Card[] | null {
     const currentTrick = gameState.currentTrick;
     if (!currentTrick?.leadingCombo) return null;
+
+    // Check if partner is winning - if so, defer to enhanced conservative logic
+    const currentWinner = getCurrentTrickWinner(gameState, currentTrick);
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (currentWinner && currentWinner.team === currentPlayer.team) {
+      return null; // Let enhanced conservative logic handle this
+    }
 
     // Priority 1: Ace aggressive following - use Aces when points are on the table
     const aceAggressivePlay = selectAceAggressiveFollowing(
