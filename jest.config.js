@@ -16,5 +16,5 @@ module.exports = {
   testPathIgnorePatterns: [
     '__tests__/helpers/'
   ],
-  silent: true // Suppress console output in tests
+  silent: true
 };
