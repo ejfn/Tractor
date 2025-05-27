@@ -34,15 +34,15 @@ describe('trumpManager', () => {
       expect(result.gamePhase).toBe('playing');
     });
 
-    test('should update game phase without setting trump suit when skipping declaration', () => {
+    test('should update game phase and mark declaration complete when skipping declaration', () => {
       const mockState = createMockGameState();
       const result = declareTrumpSuit(mockState, null);
       
       // Verify trump suit remains undefined
       expect(result.trumpInfo.trumpSuit).toBeUndefined();
       
-      // Verify declared flag was not set
-      expect(result.trumpInfo.declared).toBe(false);
+      // Verify declared flag was set to complete the declaration phase
+      expect(result.trumpInfo.declared).toBe(true);
       
       // Verify game phase was updated
       expect(result.gamePhase).toBe('playing');
