@@ -704,9 +704,10 @@ export const getComboType = (cards: Card[]): ComboType => {
     ) {
       return ComboType.Pair;
     }
-  } else if (cards.length === 4) {
+  } else if (cards.length >= 4 && cards.length % 2 === 0) {
     // Check if it's a joker tractor (SJ-SJ-BJ-BJ)
     if (
+      cards.length === 4 &&
       cards.filter((c) => c.joker === JokerType.Small).length === 2 &&
       cards.filter((c) => c.joker === JokerType.Big).length === 2
     ) {
@@ -727,18 +728,28 @@ export const getComboType = (cards: Card[]): ComboType => {
         }
       });
 
-      // Check if we have exactly 2 pairs
+      // Check if all cards form pairs (each rank appears exactly twice)
       const pairs = Array.from(rankCounts.entries()).filter(
         ([_, count]) => count === 2,
       );
 
-      if (pairs.length === 2) {
+      // Must have exactly cards.length / 2 pairs
+      const expectedPairs = cards.length / 2;
+      if (pairs.length === expectedPairs) {
         // Get the rank values of the pairs
         const pairRanks = pairs.map(([rank, _]) => getRankValue(rank));
         pairRanks.sort((a, b) => a - b);
 
         // Check if the pairs are consecutive
-        if (Math.abs(pairRanks[0] - pairRanks[1]) === 1) {
+        let isConsecutive = true;
+        for (let i = 0; i < pairRanks.length - 1; i++) {
+          if (pairRanks[i + 1] - pairRanks[i] !== 1) {
+            isConsecutive = false;
+            break;
+          }
+        }
+
+        if (isConsecutive) {
           return ComboType.Tractor;
         }
       }

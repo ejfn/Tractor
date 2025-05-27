@@ -349,6 +349,199 @@ describe('Card Auto-Selection Utils', () => {
       expect(result).toHaveLength(1);
       expect(result).toContain(hand[0]);
     });
+
+    test('should auto-select 6-card tractor when following 6-card tractor', () => {
+      // Hand with A(S)-A(S)-K(S)-K(S)-Q(S)-Q(S) tractor
+      const hand = [
+        ...createPair(Suit.Spades, Rank.Ace),
+        ...createPair(Suit.Spades, Rank.King),
+        ...createPair(Suit.Spades, Rank.Queen),
+        createCard(Suit.Hearts, Rank.Two),
+      ];
+      
+      // Leading combo is a 6-card tractor (3 consecutive pairs)
+      const leadingCombo = [
+        ...createPair(Suit.Hearts, Rank.Ten),
+        ...createPair(Suit.Hearts, Rank.Jack),
+        ...createPair(Suit.Hearts, Rank.Queen)
+      ];
+      
+      // Click on Ace of Spades - should auto-select the full 6-card tractor
+      const result = getAutoSelectedCards(
+        hand[0], hand, [], false, leadingCombo, trumpInfo
+      );
+      
+      expect(result).toHaveLength(6);
+      const ranks = result.map(c => c.rank);
+      expect(ranks.filter(r => r === Rank.Ace)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.King)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Queen)).toHaveLength(2);
+    });
+
+    test('should auto-select 6-card tractor when leading with 6-card tractor available', () => {
+      // Hand with A(S)-A(S)-K(S)-K(S)-Q(S)-Q(S) tractor  
+      const hand = [
+        ...createPair(Suit.Spades, Rank.Ace),
+        ...createPair(Suit.Spades, Rank.King),
+        ...createPair(Suit.Spades, Rank.Queen),
+        createCard(Suit.Hearts, Rank.Two),
+      ];
+      
+      // When leading, click on any card in the tractor - should auto-select all 6 cards
+      const result = getAutoSelectedCards(
+        hand[2], hand, [], true, undefined, trumpInfo // Click on King of Spades
+      );
+      
+      expect(result).toHaveLength(6);
+      const ranks = result.map(c => c.rank);
+      expect(ranks.filter(r => r === Rank.Ace)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.King)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Queen)).toHaveLength(2);
+    });
+
+    test('should auto-select 8-card tractor when following 8-card tractor', () => {
+      // Hand with 5-5-6-6-7-7-8-8 of Hearts tractor
+      const hand = [
+        ...createPair(Suit.Hearts, Rank.Five),
+        ...createPair(Suit.Hearts, Rank.Six),
+        ...createPair(Suit.Hearts, Rank.Seven),
+        ...createPair(Suit.Hearts, Rank.Eight),
+        createCard(Suit.Spades, Rank.Ace),
+      ];
+      
+      // Leading combo is an 8-card tractor (4 consecutive pairs)
+      const leadingCombo = [
+        ...createPair(Suit.Clubs, Rank.Nine),
+        ...createPair(Suit.Clubs, Rank.Ten),
+        ...createPair(Suit.Clubs, Rank.Jack),
+        ...createPair(Suit.Clubs, Rank.Queen)
+      ];
+      
+      // Click on Five of Hearts - should auto-select the full 8-card tractor
+      const result = getAutoSelectedCards(
+        hand[0], hand, [], false, leadingCombo, trumpInfo
+      );
+      
+      expect(result).toHaveLength(8);
+      const ranks = result.map(c => c.rank);
+      expect(ranks.filter(r => r === Rank.Five)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Six)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Seven)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Eight)).toHaveLength(2);
+    });
+
+    test('should NOT auto-select when hand tractor length does not match leading combo', () => {
+      // Hand with only 4-card tractor (7-7-8-8)
+      const hand = [
+        ...createPair(Suit.Hearts, Rank.Seven),
+        ...createPair(Suit.Hearts, Rank.Eight),
+        createCard(Suit.Spades, Rank.Ace),
+      ];
+      
+      // Leading combo is a 6-card tractor (3 consecutive pairs)
+      const leadingCombo = [
+        ...createPair(Suit.Clubs, Rank.Nine),
+        ...createPair(Suit.Clubs, Rank.Ten),
+        ...createPair(Suit.Clubs, Rank.Jack)
+      ];
+      
+      // Click on Seven of Hearts - cannot match 6-card tractor with 4-card tractor
+      const result = getAutoSelectedCards(
+        hand[0], hand, [], false, leadingCombo, trumpInfo
+      );
+      
+      // Should fall back to single selection
+      expect(result).toHaveLength(1);
+      expect(result).toContain(hand[0]);
+    });
+
+    test('should auto-select longest available tractor when leading', () => {
+      // Hand with 3-3-4-4-5-5-6-6-7-7 (10-card tractor)
+      const hand = [
+        ...createPair(Suit.Diamonds, Rank.Three),
+        ...createPair(Suit.Diamonds, Rank.Four),
+        ...createPair(Suit.Diamonds, Rank.Five),
+        ...createPair(Suit.Diamonds, Rank.Six),
+        ...createPair(Suit.Diamonds, Rank.Seven),
+        createCard(Suit.Hearts, Rank.King),
+      ];
+      
+      // When leading, click on any card in the tractor - should auto-select all 10 cards
+      const result = getAutoSelectedCards(
+        hand[4], hand, [], true, undefined, trumpInfo // Click on Five of Diamonds
+      );
+      
+      expect(result).toHaveLength(10);
+      const ranks = result.map(c => c.rank);
+      expect(ranks.filter(r => r === Rank.Three)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Four)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Five)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Six)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Seven)).toHaveLength(2);
+    });
+
+    test('should append longer tractor to existing selection', () => {
+      // Hand with 6-card tractor
+      const hand = [
+        ...createPair(Suit.Spades, Rank.Ace),
+        ...createPair(Suit.Spades, Rank.King),
+        ...createPair(Suit.Spades, Rank.Queen),
+        createCard(Suit.Hearts, Rank.Two),
+      ];
+      const existingSelection = [createCard(Suit.Clubs, Rank.Nine)];
+      
+      // When leading, click on tractor card with existing selection
+      const result = getAutoSelectedCards(
+        hand[0], hand, existingSelection, true, undefined, trumpInfo
+      );
+      
+      expect(result).toHaveLength(7); // existing + 6-card tractor
+      expect(result).toContain(existingSelection[0]); // Keep existing
+      
+      // Should contain all tractor cards
+      const tractorCards = result.filter(c => c.id !== existingSelection[0].id);
+      expect(tractorCards).toHaveLength(6);
+      const ranks = tractorCards.map(c => c.rank);
+      expect(ranks.filter(r => r === Rank.Ace)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.King)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Queen)).toHaveLength(2);
+    });
+
+    test('should handle mixed trump and non-trump in longer tractor correctly', () => {
+      // Create trump scenario where Hearts is trump suit
+      const trumpInfoHearts = createTrumpInfo(Rank.Two, Suit.Hearts, true);
+      
+      // Hand with A♥-A♥-K♥-K♥-Q♥-Q♥ (trump suit tractor)
+      const hand = [
+        ...createPair(Suit.Hearts, Rank.Ace),
+        ...createPair(Suit.Hearts, Rank.King),
+        ...createPair(Suit.Hearts, Rank.Queen),
+        createCard(Suit.Spades, Rank.Jack),
+      ];
+      
+      // Leading combo is a 6-card non-trump tractor
+      const leadingCombo = [
+        ...createPair(Suit.Clubs, Rank.Nine),
+        ...createPair(Suit.Clubs, Rank.Ten),
+        ...createPair(Suit.Clubs, Rank.Jack)
+      ];
+      
+      // Click on Ace of Hearts - should auto-select the trump tractor
+      const result = getAutoSelectedCards(
+        hand[0], hand, [], false, leadingCombo, trumpInfoHearts
+      );
+      
+      expect(result).toHaveLength(6);
+      const ranks = result.map(c => c.rank);
+      expect(ranks.filter(r => r === Rank.Ace)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.King)).toHaveLength(2);
+      expect(ranks.filter(r => r === Rank.Queen)).toHaveLength(2);
+      
+      // All should be trump cards
+      result.forEach(card => {
+        expect(card.suit).toBe(Suit.Hearts);
+      });
+    });
   });
 
 });
