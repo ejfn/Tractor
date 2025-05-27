@@ -12,6 +12,7 @@ import {
   GamePhaseStrategy,
   PointCardStrategy,
   TrumpTiming,
+  Rank,
 } from "../types";
 import {
   isTrump,
@@ -171,7 +172,7 @@ export function selectAcePriorityLeadingPlay(
 
   // Prioritize Ace combos over other combos
   const aceCombos = nonTrumpCombos.filter((combo) =>
-    combo.cards.every((card) => card.rank === "A"),
+    combo.cards.every((card) => card.rank === Rank.Ace),
   );
 
   if (aceCombos.length > 0) {
@@ -207,12 +208,30 @@ export function selectEarlyGameLeadingPlay(
   }
 
   // Strategy: Lead with high non-trump cards to let partner escape point cards
+  // Avoid leading with trump cards early unless absolutely necessary
   const nonTrumpCombos = validCombos.filter(
     (combo) => !combo.cards.some((card) => isTrump(card, trumpInfo)),
   );
 
   if (nonTrumpCombos.length === 0) {
-    return null; // No non-trump options available
+    // Only consider trump if no non-trump options AND it's strategically sound
+    const trumpCombos = validCombos.filter((combo) =>
+      combo.cards.some((card) => isTrump(card, trumpInfo)),
+    );
+
+    // In early game, avoid leading with high trumps (jokers, trump rank)
+    const lowTrumpCombos = trumpCombos.filter(
+      (combo) =>
+        !combo.cards.some(
+          (card) => card.joker || card.rank === trumpInfo.trumpRank,
+        ),
+    );
+
+    if (lowTrumpCombos.length > 0) {
+      return lowTrumpCombos.sort((a, b) => a.value - b.value)[0]; // Use smallest trump
+    }
+
+    return null; // Avoid leading high trumps early
   }
 
   // Prioritize high cards in different suits to probe opponent hands
@@ -275,7 +294,7 @@ export function selectAggressivePointCollection(
     return null; // Can't win the trick
   }
 
-  // Sort by strength - use the minimum strength needed to win
+  // Sort by strength - prioritize Aces when there are significant points
   const sortedWinningCombos = winningCombos.sort((a, b) => {
     // Prefer non-trump over trump if both can win
     const aIsTrump = a.cards.some((card) => isTrump(card, trumpInfo));
@@ -283,6 +302,16 @@ export function selectAggressivePointCollection(
 
     if (aIsTrump !== bIsTrump) {
       return aIsTrump ? 1 : -1; // Prefer non-trump
+    }
+
+    // When there are significant points (10+), prioritize Aces
+    if (tablePoints >= 10) {
+      const aHasAce = a.cards.some((card) => card.rank === Rank.Ace);
+      const bHasAce = b.cards.some((card) => card.rank === Rank.Ace);
+
+      if (aHasAce !== bHasAce) {
+        return aHasAce ? -1 : 1; // Prefer Ace combos
+      }
     }
 
     return a.value - b.value; // Use minimal strength
@@ -504,16 +533,88 @@ export function selectFlexibleOutOfSuitPlay(
     }
   }
 
-  // Standard case: play any small singles when out of suit
-  const singleCombos = validCombos.filter(
-    (combo) =>
-      combo.type === ComboType.Single ||
-      combo.cards.length === leadingCombo.length,
+  // Standard case: when out of suit, prefer non-point singles over valuable pairs
+  // Priority: 1) Non-point singles (small first), 2) Trump pairs/tractors (if trying to win), 3) Other pairs as last resort
+
+  const requiredLength = leadingCombo.length;
+  const availableCombos = validCombos.filter(
+    (combo) => combo.cards.length === requiredLength,
   );
 
-  if (singleCombos.length > 0) {
-    // Play smallest available combo
-    return singleCombos.sort((a, b) => a.value - b.value)[0];
+  if (availableCombos.length === 0) return null;
+
+  // Separate combos by type and trump status
+  const singleCombos = availableCombos.filter(
+    (combo) => combo.type === ComboType.Single,
+  );
+  const trumpCombos = availableCombos.filter((combo) =>
+    combo.cards.some((card) => isTrump(card, trumpInfo)),
+  );
+  const nonTrumpPairs = availableCombos.filter(
+    (combo) =>
+      combo.type !== ComboType.Single &&
+      !combo.cards.some((card) => isTrump(card, trumpInfo)),
+  );
+
+  // For pairs/tractors when out of suit, prioritize non-point singles
+  if (requiredLength > 1) {
+    if (singleCombos.length >= requiredLength) {
+      // Separate non-point and point singles
+      const nonPointSingles = singleCombos.filter((combo) =>
+        combo.cards.every((card) => !isPointCard(card)),
+      );
+      const pointSingles = singleCombos.filter((combo) =>
+        combo.cards.some((card) => isPointCard(card)),
+      );
+
+      // Prefer non-point singles, starting from smallest
+      const prioritizedSingles = [
+        ...nonPointSingles.sort((a, b) => a.value - b.value),
+        ...pointSingles.sort((a, b) => a.value - b.value),
+      ];
+
+      if (prioritizedSingles.length >= requiredLength) {
+        const selectedCards = prioritizedSingles
+          .slice(0, requiredLength)
+          .flatMap((combo) => combo.cards);
+        return {
+          type: ComboType.Single, // Mark as singles when combining
+          cards: selectedCards,
+          value: selectedCards.reduce(
+            (sum, card) => sum + (card.points || 0),
+            0,
+          ),
+        };
+      }
+    }
+
+    // If we don't have enough singles, check if we should use trump to win
+    if (trumpCombos.length > 0) {
+      // Only use trump if there are significant points on the table or strategic need
+      const tricksPoints =
+        currentTrick.leadingCombo.reduce((sum, card) => sum + card.points, 0) +
+        currentTrick.plays.reduce(
+          (sum, play) =>
+            sum +
+            play.cards.reduce((cardSum, card) => cardSum + card.points, 0),
+          0,
+        );
+
+      if (tricksPoints >= 10) {
+        // Worth using trump for 10+ points
+        return trumpCombos.sort((a, b) => a.value - b.value)[0]; // Use smallest trump combo
+      }
+    }
+
+    // Last resort: use non-trump pairs, but pick the smallest ones
+    if (nonTrumpPairs.length > 0) {
+      return nonTrumpPairs.sort((a, b) => a.value - b.value)[0];
+    }
+  }
+
+  // For singles, just play the smallest available
+  if (availableCombos.length > 0) {
+    return availableCombos.sort((a, b) => a.value - b.value)[0];
   }
 
   return null;
