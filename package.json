@@ -9,8 +9,9 @@
     "ios": "node scripts/inject-dev-version.js && expo start --ios",
     "lint": "expo lint",
     "test": "jest",
+    "test:silent": "jest --silent",
     "typecheck": "tsc --noEmit",
-    "qualitycheck": "npm-run-all typecheck lint test"
+    "qualitycheck": "npm-run-all typecheck lint test:silent"
   },
   "expo": {
     "doctor": {
