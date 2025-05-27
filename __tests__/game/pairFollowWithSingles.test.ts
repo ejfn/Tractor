@@ -61,6 +61,7 @@ describe('Pair Follow With Singles', () => {
       leadingCombo: leadingPair,
       plays: [],
       leadingPlayerId: 'ai1',
+      winningPlayerId: 'ai1',
       points: 20  // Two kings = 20 points
     };
     
@@ -97,6 +98,7 @@ describe('Pair Follow With Singles', () => {
       leadingCombo: leadingPair,
       plays: [],
       leadingPlayerId: 'ai1',
+      winningPlayerId: 'ai1',
       points: 20  // Two kings = 20 points
     };
     

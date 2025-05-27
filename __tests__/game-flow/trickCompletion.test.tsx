@@ -135,6 +135,7 @@ const TestComponent: React.FC<{
             leadingPlayerId: 'human',
             leadingCombo: [],
             plays: [],
+            winningPlayerId: 'human',
             points: 10
           };
           

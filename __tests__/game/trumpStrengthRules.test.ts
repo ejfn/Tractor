@@ -77,6 +77,7 @@ describe('Trump Strength Rules (Issue #37)', () => {
             cards: [{ id: '9S1', rank: Rank.Nine, suit: Suit.Spades, points: 0 }],
           },
         ],
+        winningPlayerId: PlayerId.Bot3,
         points: 5,
       };
 
@@ -104,6 +105,7 @@ describe('Trump Strength Rules (Issue #37)', () => {
             cards: [{ id: '3H1', rank: Rank.Three, suit: Suit.Hearts, points: 0 }],
           },
         ],
+        winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
 
@@ -131,6 +133,7 @@ describe('Trump Strength Rules (Issue #37)', () => {
             cards: [{ id: '5H1', rank: Rank.Five, suit: Suit.Hearts, points: 5 }], // Non-trump
           },
         ],
+        winningPlayerId: PlayerId.Bot2,
         points: 5,
       };
 

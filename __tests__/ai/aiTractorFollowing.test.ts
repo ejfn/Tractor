@@ -46,6 +46,7 @@ describe('Issue #71: AI Tractor Following Rules', () => {
       leadingCombo: leadingTractor,
       plays: [],
       leadingPlayerId: PlayerId.Human,
+      winningPlayerId: PlayerId.Human,
       points: 10
     };
     gameState.currentPlayerIndex = 1; // Bot1 is at index 1
@@ -125,6 +126,7 @@ describe('Issue #71: AI Tractor Following Rules', () => {
       leadingCombo: leadingTractor,
       plays: [],
       leadingPlayerId: PlayerId.Human,
+      winningPlayerId: PlayerId.Human,
       points: 10
     };
     gameState.currentPlayerIndex = 1; // Bot1 is at index 1

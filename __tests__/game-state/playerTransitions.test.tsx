@@ -163,6 +163,7 @@ describe('Player Transitions', () => {
           cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)]
         }
       ],
+      winningPlayerId: PlayerId.Bot2,
       points: 5
     };
 
@@ -245,6 +246,7 @@ describe('Player Transitions', () => {
           cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)]
         }
       ],
+      winningPlayerId: PlayerId.Bot2,
       points: 15
     };
 

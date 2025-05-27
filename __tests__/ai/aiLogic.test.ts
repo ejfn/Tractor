@@ -68,6 +68,7 @@ describe('AI Logic Tests', () => {
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
       
@@ -100,6 +101,7 @@ describe('AI Logic Tests', () => {
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
       
@@ -140,6 +142,7 @@ describe('AI Logic Tests', () => {
             ]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
       
@@ -181,6 +184,7 @@ describe('AI Logic Tests', () => {
             ]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
       
@@ -213,6 +217,7 @@ describe('AI Logic Tests', () => {
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
 
@@ -249,6 +254,7 @@ describe('AI Logic Tests', () => {
             ]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
 
@@ -294,6 +300,7 @@ describe('AI Logic Tests', () => {
             ]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
 

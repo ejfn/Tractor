@@ -39,6 +39,7 @@ describe('Game Loop Tests', () => {
           cards: [createCard(Suit.Hearts, Rank.Ace)]
         }
       ],
+      winningPlayerId: PlayerId.Human,
       points: 0
     };
     
@@ -114,6 +115,7 @@ describe('Game Loop Tests', () => {
           cards: [createCard(Suit.Hearts, Rank.Ace)]
         }
       ],
+      winningPlayerId: PlayerId.Human,
       points: 0
     };
     

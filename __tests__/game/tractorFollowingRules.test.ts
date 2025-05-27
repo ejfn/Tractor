@@ -77,6 +77,7 @@ describe('Tractor Following Rules (Issue #71)', () => {
         leadingCombo: leadingTractor,
         plays: [],
         leadingPlayerId: 'ai1',
+        winningPlayerId: 'ai1',
         points: 20
       };
       
@@ -116,6 +117,7 @@ describe('Tractor Following Rules (Issue #71)', () => {
         leadingCombo: leadingTractor,
         plays: [],
         leadingPlayerId: 'ai1',
+        winningPlayerId: 'ai1',
         points: 20
       };
       
@@ -155,6 +157,7 @@ describe('Tractor Following Rules (Issue #71)', () => {
         leadingCombo: leadingTractor,
         plays: [],
         leadingPlayerId: 'ai1',
+        winningPlayerId: 'ai1',
         points: 20
       };
       
@@ -198,6 +201,7 @@ describe('Tractor Following Rules (Issue #71)', () => {
         leadingCombo: leadingTractor,
         plays: [],
         leadingPlayerId: 'ai1',
+        winningPlayerId: 'ai1',
         points: 20
       };
       
@@ -236,6 +240,7 @@ describe('Tractor Following Rules (Issue #71)', () => {
         leadingCombo: leadingTractor,
         plays: [],
         leadingPlayerId: 'ai1',
+        winningPlayerId: 'ai1',
         points: 20
       };
       
@@ -273,6 +278,7 @@ describe('Tractor Following Rules (Issue #71)', () => {
         leadingCombo: leadingTrumpTractor,
         plays: [],
         leadingPlayerId: 'ai1',
+        winningPlayerId: 'ai1',
         points: 0
       };
       mockState.trumpInfo = trumpInfo;
@@ -311,6 +317,7 @@ describe('Tractor Following Rules (Issue #71)', () => {
         leadingCombo: leadingTractor,
         plays: [],
         leadingPlayerId: 'ai1',
+        winningPlayerId: 'ai1',
         points: 20
       };
       

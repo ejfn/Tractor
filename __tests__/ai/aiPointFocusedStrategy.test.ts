@@ -410,6 +410,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           leadingPlayerId: PlayerId.Bot2, // Partner of Human (both Team A)
           leadingCombo: [createTestCard(Suit.Hearts, Rank.Ace)],
           plays: [],
+          winningPlayerId: PlayerId.Bot2,
           points: 0,
         },
         currentPlayerIndex: 0, // Human's turn
@@ -455,6 +456,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           leadingPlayerId: PlayerId.Bot1, // Opponent, not partner
           leadingCombo: [createTestCard(Suit.Hearts, Rank.Ace)],
           plays: [],
+          winningPlayerId: PlayerId.Bot1,
           points: 0,
         },
         currentPlayerIndex: 0, // Human's turn

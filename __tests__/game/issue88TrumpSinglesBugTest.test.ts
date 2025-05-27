@@ -169,6 +169,7 @@ describe('Issue #88: Non-trump pair vs single trumps bug', () => {
           { playerId: 'bot2', cards: [spadeTwo1, spadeFive] }, // Two single trumps (invalid follow) 
           { playerId: 'bot3', cards: [spadeSix, spadeTwo2] } // Two single trumps (invalid follow)
         ],
+        winningPlayerId: 'human',
         points: 20
       };
 

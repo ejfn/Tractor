@@ -52,6 +52,7 @@ graph LR
 - Point-focused gameplay and pressure systems
 - Positional awareness and trick dynamics
 - Team coordination and role understanding
+- Real-time trick winner analysis and response
 
 ### **Phase 3**: Advanced Memory Systems
 - Comprehensive card tracking and history
@@ -71,7 +72,9 @@ flowchart TD
     
     Context --> Memory[MEMORY INTEGRATION<br/>• aiCardMemory.ts:enhanceContext<br/>• Track played cards<br/>• Update probabilities<br/>• Analyze opponent patterns<br/>• Calculate card estimates]
     
-    Memory --> Combos[COMBINATION ANALYSIS<br/>• aiAdvancedCombinations.ts:analyzeCombos<br/>• Identify possible combinations<br/>• Calculate strength ratings<br/>• Evaluate timing factors<br/>• Assess risk/reward ratios]
+    Memory --> TrickWinner[TRICK WINNER ANALYSIS<br/>• aiGameContext.ts:analyzeTrickWinner<br/>• Identify current trick winner<br/>• Assess team dynamics<br/>• Evaluate point collection opportunity<br/>• Determine conservative vs aggressive play]
+    
+    TrickWinner --> Combos[COMBINATION ANALYSIS<br/>• aiAdvancedCombinations.ts:analyzeCombos<br/>• Identify possible combinations<br/>• Calculate strength ratings<br/>• Evaluate timing factors<br/>• Assess risk/reward ratios]
     
     Combos --> Position{Trick Position<br/>Determination}
     
@@ -165,6 +168,7 @@ flowchart TD
 - **Positional Awareness**: Adapts strategy based on trick position
 - **Team Dynamics**: Understands attacking vs defending team roles
 - **Pressure Response**: Adjusts aggression based on point requirements
+- **Real-time Trick Winner Analysis**: Uses `winningPlayerId` to make sophisticated decisions about conservative vs aggressive play
 
 ### Strategic Algorithms
 
@@ -193,10 +197,31 @@ enum PlayStyle {
 ```
 
 ### Implementation Details
-- **Context Creation**: `src/ai/aiGameContext.ts` analyzes current game state
+- **Context Creation**: `src/ai/aiGameContext.ts` analyzes current game state and trick winner status
+- **Trick Winner Analysis**: `analyzeTrickWinner()` function provides real-time analysis of current trick state
 - **Strategy Selection**: `src/ai/aiPointFocusedStrategy.ts` implements point-driven decisions
-- **Combo Analysis**: `src/ai/aiAdvancedCombinations.ts` evaluates combination strength
+- **Combo Analysis**: `src/ai/aiAdvancedCombinations.ts` evaluates combination strength  
 - **Decision Engine**: `src/ai/aiLogic.ts` coordinates all strategic components
+
+#### Trick Winner Analysis System
+```typescript
+export interface TrickWinnerAnalysis {
+  currentWinner: string | null;
+  isTeammateWinning: boolean;
+  isOpponentWinning: boolean;
+  isSelfWinning: boolean;
+  trickPoints: number;
+  canBeatCurrentWinner: boolean;
+  shouldTryToBeat: boolean;
+  shouldPlayConservatively: boolean;
+}
+```
+
+The AI uses this analysis to:
+- **Support teammates**: Play point cards when teammate is winning
+- **Block opponents**: Use high cards to prevent opponent point collection
+- **Conserve resources**: Avoid wasteful play when trick is unwinnable *(Issue #61 Fix)*
+- **Maximize points**: Collect maximum points when in winning position
 
 ## Phase 3: Memory & Pattern Recognition (Implemented)
 
@@ -246,13 +271,16 @@ The `createGameContext()` function analyzes:
 - Point collection status and requirements
 - Remaining cards and game progression
 - Trick position and strategic opportunities
+- **Real-time trick winner status** via `analyzeTrickWinner()`
+- Team dynamics and point collection opportunities
 
 ### Context-Driven Decisions
 All AI decisions are made through context analysis:
-1. **Situation Assessment**: Analyze current game state
-2. **Strategy Selection**: Choose appropriate play style
-3. **Combination Evaluation**: Rank available plays
-4. **Optimal Selection**: Execute best strategic choice
+1. **Situation Assessment**: Analyze current game state and trick winner status
+2. **Trick Winner Evaluation**: Determine teammate/opponent/self winning dynamics
+3. **Strategy Selection**: Choose appropriate play style based on trick situation
+4. **Combination Evaluation**: Rank available plays considering trick winner analysis
+5. **Optimal Selection**: Execute best strategic choice with conservative vs aggressive play
 
 ## Strategic Principles
 
@@ -271,8 +299,10 @@ All AI decisions are made through context analysis:
 ### Team Coordination
 - **Role Awareness**: Understand attacking vs defending responsibilities  
 - **Point Distribution**: Coordinate point collection across team
-- **Support Plays**: Make moves that benefit team strategy
-- **Blocking Tactics**: Prevent opponent point collection
+- **Support Plays**: Make moves that benefit team strategy using trick winner analysis
+- **Blocking Tactics**: Prevent opponent point collection with intelligent card usage
+- **Real-time Adaptation**: Adjust strategy based on current trick winner status
+- **Conservative Resource Management**: Avoid wasteful high card usage when appropriate *(Issue #61 Fix)*
 
 ## Performance Characteristics
 
@@ -301,7 +331,10 @@ The AI system consists of 5 specialized modules in `src/ai/`:
 
 ### Current Implementation Status
 - ✅ **All 4 phases fully implemented** and working together seamlessly
-- ✅ **Comprehensive test coverage** with 315 passing tests
+- ✅ **Real-time trick winner analysis** with `winningPlayerId` integration
+- ✅ **Enhanced AI strategic decision-making** using current trick status
+- ✅ **Issue #61 fix**: Conservative play to avoid wasteful high card usage
+- ✅ **Comprehensive test coverage** with 411 passing tests
 - ✅ **Production ready** with sophisticated strategic decision-making
 - ✅ **Real-time performance** maintaining smooth gameplay experience
 
@@ -314,7 +347,9 @@ The AI system consists of 5 specialized modules in `src/ai/`:
 - **Balance Verification**: Ensures fair and engaging gameplay with challenging AI
 
 ### Test Coverage
-- **69 AI intelligence tests** covering all 4 phases comprehensively
+- **73+ AI intelligence tests** covering all 4 phases comprehensively
+- **Trick winner analysis testing** with comprehensive scenarios for teammate/opponent/self winning
 - **Memory system testing** with extensive card tracking scenarios
 - **Integration testing** ensuring seamless phase coordination
 - **Performance testing** validating real-time decision speeds
+- **Conservative play validation** testing Issue #61 fix implementation
