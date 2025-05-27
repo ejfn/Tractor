@@ -40,6 +40,7 @@ describe('Issue #61: AI Bad Ace Following', () => {
       leadingCombo: [leadingAce],
       plays: [],
       leadingPlayerId: PlayerId.Human,
+      winningPlayerId: PlayerId.Human,
       points: 0  // No points on table
     };
     gameState.currentPlayerIndex = 1; // Bot1 is next to play
@@ -101,6 +102,7 @@ describe('Issue #61: AI Bad Ace Following', () => {
       leadingCombo: [leadingKing],
       plays: [],
       leadingPlayerId: PlayerId.Human,
+      winningPlayerId: PlayerId.Human,
       points: 10  // King has 10 points - worth collecting!
     };
     gameState.currentPlayerIndex = 1; // Bot1 is next to play
@@ -151,6 +153,7 @@ describe('Issue #61: AI Bad Ace Following', () => {
       leadingCombo: leadingAcePair,
       plays: [],
       leadingPlayerId: PlayerId.Human,
+      winningPlayerId: PlayerId.Human,
       points: 0  // No points on table
     };
     gameState.currentPlayerIndex = 1; // Bot1 is next to play
@@ -213,6 +216,7 @@ describe('Issue #61: AI Bad Ace Following', () => {
         { playerId: PlayerId.Bot2, cards: [bot2Play] }
       ],
       leadingPlayerId: PlayerId.Human,
+      winningPlayerId: PlayerId.Human, // Human's Ace is still winning
       points: 20  // King + Queen = 20 points, but Human's Ace is winning
     };
     gameState.currentPlayerIndex = 3; // Bot3 is next (last to play)

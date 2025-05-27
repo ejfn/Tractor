@@ -21,7 +21,7 @@ export const createTrick = (
   leadingCombo: [...leadingCombo], // Deep copy
   plays: plays.map(play => ({ ...play, cards: [...play.cards] })), // Deep copy
   points,
-  winningPlayerId
+  winningPlayerId: winningPlayerId ?? leadingPlayerId // Default to leading player if not specified
 });
 
 /**

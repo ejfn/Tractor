@@ -81,7 +81,7 @@ export type Trick = {
     playerId: string;
     cards: Card[];
   }[];
-  winningPlayerId?: string;
+  winningPlayerId: string; // Current winner of the trick (starts with leadingPlayerId, updates as stronger plays are made)
   points: number; // Total points in this trick
 };
 
