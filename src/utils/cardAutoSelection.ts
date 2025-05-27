@@ -96,21 +96,39 @@ export const findTractorCards = (
   const targetRankIndex = rankOrder.indexOf(targetCard.rank);
   if (targetRankIndex === -1) return [];
 
-  // Look for consecutive pairs in the same suit
+  // Look for consecutive pairs in the same suit, checking both directions
   const tractorCards: Card[] = [];
-  let currentRankIndex = targetRankIndex;
+  const ranksInTractor: Rank[] = [];
 
   // Add the starting pair
   tractorCards.push(...availablePairs.get(targetKey)!);
+  ranksInTractor.push(targetCard.rank);
 
   // Look for consecutive pairs going up
+  let currentRankIndex = targetRankIndex;
   while (currentRankIndex + 1 < rankOrder.length) {
     const nextRank = rankOrder[currentRankIndex + 1];
     const nextKey = `${nextRank}-${targetCard.suit}`;
 
     if (availablePairs.has(nextKey)) {
       tractorCards.push(...availablePairs.get(nextKey)!);
+      ranksInTractor.push(nextRank);
       currentRankIndex++;
+    } else {
+      break;
+    }
+  }
+
+  // Look for consecutive pairs going down
+  currentRankIndex = targetRankIndex;
+  while (currentRankIndex - 1 >= 0) {
+    const prevRank = rankOrder[currentRankIndex - 1];
+    const prevKey = `${prevRank}-${targetCard.suit}`;
+
+    if (availablePairs.has(prevKey)) {
+      tractorCards.push(...availablePairs.get(prevKey)!);
+      ranksInTractor.push(prevRank);
+      currentRankIndex--;
     } else {
       break;
     }
@@ -168,11 +186,15 @@ export const getAutoSelectedCards = (
     // Following a tractor - auto-select tractor only if clicked card can form a tractor
     if (
       leadingComboType === ComboType.Tractor &&
-      leadingCombo.length === 4 &&
+      leadingCombo.length >= 4 &&
+      leadingCombo.length % 2 === 0 &&
       trumpInfo
     ) {
       const tractorCards = findTractorCards(clickedCard, hand, trumpInfo);
-      if (tractorCards.length === 4) {
+      if (
+        tractorCards.length >= 4 &&
+        tractorCards.length === leadingCombo.length
+      ) {
         return addToSelection(tractorCards);
       }
       // If clicked card can't form a tractor, fall through to single selection
