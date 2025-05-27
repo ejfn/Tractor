@@ -829,23 +829,32 @@ export const compareCardCombos = (
     return compareCards(comboA[0], comboB[0], trumpInfo);
   }
 
-  // Check if any combo contains trumps
-  const aIsTrump = comboA.some((card) => isTrump(card, trumpInfo));
-  const bIsTrump = comboB.some((card) => isTrump(card, trumpInfo));
+  // CRITICAL FIX: Check combination type compatibility FIRST before trump status
+  // This ensures game rule: combination type takes precedence over trump status
+  // For tractors vs non-tractors
+  if (typeA === ComboType.Tractor && typeB !== ComboType.Tractor) {
+    return 1; // Tractor beats non-tractor
+  }
+  if (typeA !== ComboType.Tractor && typeB === ComboType.Tractor) {
+    return -1; // Non-tractor loses to tractor
+  }
 
-  // If one is trump and the other isn't, trump wins
-  if (aIsTrump && !bIsTrump) return 1;
-  if (!aIsTrump && bIsTrump) return -1;
-
-  // If both are trump or both non-trump, compare based on combo type rules
-
-  // CRITICAL: Pairs always beat singles of the same length
+  // Pairs always beat singles of the same length (regardless of trump status)
   if (typeA === ComboType.Pair && typeB !== ComboType.Pair) {
     return 1; // Pair beats non-pair
   }
   if (typeA !== ComboType.Pair && typeB === ComboType.Pair) {
     return -1; // Non-pair loses to pair
   }
+
+  // Now that combination types are compatible, check trump status
+  // Check if any combo contains trumps
+  const aIsTrump = comboA.some((card) => isTrump(card, trumpInfo));
+  const bIsTrump = comboB.some((card) => isTrump(card, trumpInfo));
+
+  // If one is trump and the other isn't, trump wins (within same combination type)
+  if (aIsTrump && !bIsTrump) return 1;
+  if (!aIsTrump && bIsTrump) return -1;
 
   // For pairs (matching ranks)
   if (typeA === ComboType.Pair && typeB === ComboType.Pair) {
@@ -874,14 +883,6 @@ export const compareCardCombos = (
         return 1;
       }
     }
-  }
-
-  // For tractors vs non-tractors
-  if (typeA === ComboType.Tractor && typeB !== ComboType.Tractor) {
-    return 1; // Tractor beats non-tractor
-  }
-  if (typeA !== ComboType.Tractor && typeB === ComboType.Tractor) {
-    return -1; // Non-tractor loses to tractor
   }
 
   // For tractors, compare the highest card in the tractor
