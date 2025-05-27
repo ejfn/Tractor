@@ -505,9 +505,36 @@ class AIStrategy implements AIStrategy {
     positionStrategy: PositionStrategy,
     trumpInfo: TrumpInfo,
   ): Card[] {
-    // Enhanced following strategy based on comprehensive analysis
-    // Note: Partner winning case is handled by selectAdvancedFollowingPlay in Phase 4
+    // Enhanced following strategy with real-time trick winner analysis
+    const trickWinner = context.trickWinnerAnalysis;
 
+    // NEW: Enhanced decision logic using real-time trick winner information
+    if (trickWinner) {
+      // If teammate is winning, play conservatively
+      if (trickWinner.isTeammateWinning && trickWinner.shouldPlayConservatively) {
+        return this.selectConservativePlay(comboAnalyses, context);
+      }
+
+      // If opponent is winning and we should try to beat them
+      if (trickWinner.isOpponentWinning && trickWinner.shouldTryToBeat && trickWinner.canBeatCurrentWinner) {
+        return this.selectAggressiveBeatPlay(comboAnalyses, trickAnalysis, context);
+      }
+
+      // If there are significant points and opponent is winning
+      if (trickWinner.isOpponentWinning && trickWinner.trickPoints >= 10) {
+        // Try to contest if we can
+        if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
+          return this.selectOptimalWinningCombo(
+            comboAnalyses,
+            trickAnalysis,
+            context,
+            positionStrategy,
+          );
+        }
+      }
+    }
+
+    // Fallback to original logic
     // Can we win this trick?
     if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
       // Worth contesting - select optimal winning combo
@@ -724,67 +751,6 @@ class AIStrategy implements AIStrategy {
   }
 
   // Updated helper methods
-
-  private selectConservativePlay(
-    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-  ): Card[] {
-    // Enhanced strategy for when partner is winning:
-    // 1. Prioritize point cards (5s, 10s, Kings)
-    // 2. Then select smallest non-point cards
-    // 3. Avoid beating partner unless necessary
-
-    // Separate combos with point cards vs non-point cards
-    const pointCardCombos = comboAnalyses.filter((ca) =>
-      ca.combo.cards.some((card) => isPointCard(card)),
-    );
-
-    const nonPointCardCombos = comboAnalyses.filter(
-      (ca) => !ca.combo.cards.some((card) => isPointCard(card)),
-    );
-
-    // If we have point card combos, prioritize: 10s -> Kings -> 5s
-    if (pointCardCombos.length > 0) {
-      // Helper function to determine card priority
-      const getCardPriority = (cards: Card[]): number => {
-        // Check if combo contains 10s (highest priority for 10-point cards)
-        if (cards.some((card) => card.rank === Rank.Ten)) return 3;
-        // Check if combo contains Kings (second priority for 10-point cards)
-        if (cards.some((card) => card.rank === Rank.King)) return 2;
-        // Check if combo contains 5s (lowest priority)
-        if (cards.some((card) => card.rank === Rank.Five)) return 1;
-        return 0;
-      };
-
-      const sortedByPoints = pointCardCombos.sort((a, b) => {
-        const pointsA = a.combo.cards.reduce(
-          (sum, card) => sum + (card.points || 0),
-          0,
-        );
-        const pointsB = b.combo.cards.reduce(
-          (sum, card) => sum + (card.points || 0),
-          0,
-        );
-
-        // First sort by total points (higher points first)
-        if (pointsB !== pointsA) {
-          return pointsB - pointsA;
-        }
-
-        // If equal points, prioritize 10s > Kings > 5s
-        return getCardPriority(b.combo.cards) - getCardPriority(a.combo.cards);
-      });
-      return sortedByPoints[0].combo.cards;
-    }
-
-    // Otherwise, play smallest non-point cards (lowest conservation value)
-    const sorted = nonPointCardCombos.sort(
-      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
-    );
-
-    return sorted.length > 0
-      ? sorted[0].combo.cards
-      : comboAnalyses[0].combo.cards;
-  }
 
   private selectStrongestCombo(combos: Combo[]): Card[] {
     // Play strongest combo available
@@ -1037,7 +1003,7 @@ class AIStrategy implements AIStrategy {
           analysis: analyzeCombo(combo, trumpInfo, context),
         }));
 
-        return this.selectConservativePlay(comboAnalyses);
+        return this.selectConservativePlay(comboAnalyses, context);
       }
     }
 
@@ -1214,6 +1180,61 @@ class AIStrategy implements AIStrategy {
       context.playStyle === PlayStyle.Aggressive ||
       context.playStyle === PlayStyle.Desperate
     );
+  }
+
+  /**
+   * NEW: Select conservative play when teammate is winning
+   */
+  private selectConservativePlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+  ): Card[] {
+    // When teammate is winning, play the lowest value cards possible
+    const sorted = comboAnalyses.sort((a, b) => {
+      // Prioritize non-trump, non-point cards
+      if (a.analysis.isTrump !== b.analysis.isTrump) {
+        return a.analysis.isTrump ? 1 : -1; // Non-trump preferred
+      }
+      if (a.analysis.hasPoints !== b.analysis.hasPoints) {
+        return a.analysis.hasPoints ? 1 : -1; // Non-point preferred
+      }
+      // Then by lowest value
+      return a.combo.value - b.combo.value;
+    });
+
+    return sorted[0].combo.cards;
+  }
+
+  /**
+   * NEW: Select aggressive play to beat current winner
+   */
+  private selectAggressiveBeatPlay(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trickAnalysis: TrickAnalysis,
+    context: GameContext,
+  ): Card[] {
+    // Filter for combinations that can win
+    const winningCombos = comboAnalyses.filter((ca) => {
+      // This is a simplified check - could be enhanced with more sophisticated logic
+      return ca.analysis.strength >= ComboStrength.Medium;
+    });
+
+    if (winningCombos.length === 0) {
+      // Fallback to conservative play if we can't beat
+      return this.selectConservativePlay(comboAnalyses, context);
+    }
+
+    // Select the most efficient winning combo (minimal overkill)
+    const sorted = winningCombos.sort((a, b) => {
+      // Prefer trump combos if opponent is playing non-trump
+      if (a.analysis.isTrump !== b.analysis.isTrump) {
+        return a.analysis.isTrump ? -1 : 1; // Trump preferred when beating
+      }
+      // Among similar trump status, prefer lower value (minimal overkill)
+      return a.combo.value - b.combo.value;
+    });
+
+    return sorted[0].combo.cards;
   }
 
   // Enhanced Point-Focused Strategy Methods (Issue #61)

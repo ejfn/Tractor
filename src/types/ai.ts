@@ -57,6 +57,7 @@ export interface GameContext {
   playStyle: PlayStyle; // Current strategic approach
   memoryContext?: MemoryContext; // Phase 3: Memory-based decision context
   memoryStrategy?: MemoryBasedStrategy; // Phase 3: Memory-enhanced strategy
+  trickWinnerAnalysis?: TrickWinnerAnalysis; // Real-time trick winner analysis
 }
 
 export interface ComboAnalysis {
@@ -116,4 +117,16 @@ export interface MemoryBasedStrategy {
   expectedOpponentStrength: number; // Estimated opponent hand strength
   suitExhaustionAdvantage: boolean; // Can we exploit suit voids
   endgameOptimal: boolean; // Perfect information available
+}
+
+// Enhanced types for real-time trick winner analysis
+export interface TrickWinnerAnalysis {
+  currentWinner: string | null; // Player ID of current trick winner
+  isTeammateWinning: boolean; // Is AI's teammate currently winning
+  isOpponentWinning: boolean; // Is an opponent currently winning
+  isSelfWinning: boolean; // Is this AI currently winning
+  trickPoints: number; // Total points in current trick
+  canBeatCurrentWinner: boolean; // Can this AI beat current winner
+  shouldTryToBeat: boolean; // Strategic decision to try beating
+  shouldPlayConservatively: boolean; // Strategic decision for conservative play
 }
