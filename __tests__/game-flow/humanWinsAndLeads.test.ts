@@ -1,12 +1,12 @@
 import { GameState, Rank, Card } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
 import { processPlay } from '../../src/game/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
 import { describe, test, expect } from '@jest/globals';
+import { createIsolatedGameState, withIsolatedState } from '../helpers/testIsolation';
 
 describe('Human Wins and Leads Bug', () => {
-  test('Human wins first trick and leads second', () => {
-    const gameState = initializeGame();
+  test('Human wins first trick and leads second', withIsolatedState(() => {
+    const gameState = createIsolatedGameState();
     let state = gameState;
     
     // Give human high cards to ensure they win
@@ -187,5 +187,5 @@ describe('Human Wins and Leads Bug', () => {
     state.players.forEach((player, idx) => {
       expect(player.hand.length).toBe(expectedCount);
     });
-  });
+  }));
 });
