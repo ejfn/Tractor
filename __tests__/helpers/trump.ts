@@ -2,6 +2,7 @@ import {
   Rank,
   Suit,
   TrumpInfo,
+  PlayerId,
 } from '../../src/types';
 
 // ============================================================================
@@ -15,7 +16,7 @@ export const createTrumpInfo = (
   trumpRank: Rank = Rank.Two,
   trumpSuit?: Suit,
   declared: boolean = false,
-  declarerPlayerId?: string
+  declarerPlayerId?: PlayerId
 ): TrumpInfo => ({
   trumpRank,
   trumpSuit,

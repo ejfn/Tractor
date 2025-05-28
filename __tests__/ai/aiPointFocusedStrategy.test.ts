@@ -23,6 +23,7 @@ import {
   TrickPosition,
   PointPressure,
   PlayStyle,
+  TeamId,
 } from "../../src/types";
 
 // Test utilities
@@ -63,33 +64,33 @@ const createTestGameState = (overrides: Partial<GameState> = {}): GameState => (
       name: PlayerName.Human,
       isHuman: true,
       hand: [],
-      team: 'A',
+      team: TeamId.A,
     },
     {
       id: PlayerId.Bot1,
       name: PlayerName.Bot1,
       isHuman: false,
       hand: [],
-      team: 'B',
+      team: TeamId.B,
     },
     {
       id: PlayerId.Bot2,
       name: PlayerName.Bot2,
       isHuman: false,
       hand: [],
-      team: 'A',
+      team: TeamId.A,
     },
     {
       id: PlayerId.Bot3,
       name: PlayerName.Bot3,
       isHuman: false,
       hand: [],
-      team: 'B',
+      team: TeamId.B,
     },
   ],
   teams: [
-    { id: 'A', currentRank: Rank.Two, points: 0, isDefending: false },
-    { id: 'B', currentRank: Rank.Two, points: 0, isDefending: true },
+    { id: TeamId.A, currentRank: Rank.Two, points: 0, isDefending: false },
+    { id: TeamId.B, currentRank: Rank.Two, points: 0, isDefending: true },
   ],
   deck: [],
   kittyCards: [],
@@ -410,6 +411,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           leadingPlayerId: PlayerId.Bot2, // Partner of Human (both Team A)
           leadingCombo: [createTestCard(Suit.Hearts, Rank.Ace)],
           plays: [],
+          winningPlayerId: PlayerId.Bot2,
           points: 0,
         },
         currentPlayerIndex: 0, // Human's turn
@@ -455,6 +457,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           leadingPlayerId: PlayerId.Bot1, // Opponent, not partner
           leadingCombo: [createTestCard(Suit.Hearts, Rank.Ace)],
           plays: [],
+          winningPlayerId: PlayerId.Bot1,
           points: 0,
         },
         currentPlayerIndex: 0, // Human's turn
@@ -481,6 +484,117 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         leadingCombo
       );
       
+      expect(selected).toBeNull();
+    });
+
+    it('should contribute point cards when Human teammate leads with Ace', () => {
+      const validCombos = [
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Clubs, Rank.Ten, 10)], // 10 points
+          value: 10,
+        },
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Clubs, Rank.Five, 5)], // 5 points
+          value: 5,
+        },
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Clubs, Rank.King, 10)], // 10 points
+          value: 13,
+        },
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Clubs, Rank.Eight)], // 0 points
+          value: 8,
+        },
+      ];
+      
+      const gameState = createTestGameState({
+        currentTrick: {
+          leadingPlayerId: PlayerId.Human, // HUMAN leads with Ace
+          leadingCombo: [createTestCard(Suit.Clubs, Rank.Ace)],
+          plays: [],
+          winningPlayerId: PlayerId.Human, // Human is winning
+          points: 0,
+        },
+        currentPlayerIndex: 2, // Bot2's turn (teammate following Human's lead)
+      });
+      
+      const trumpInfo = createTestTrumpInfo();
+      const pointContext = {
+        gamePhase: GamePhaseStrategy.MidGame,
+        pointCardStrategy: PointCardStrategy.Aggressive,
+        trumpTiming: TrumpTiming.Control,
+        teamPointsCollected: 30,
+        opponentPointsCollected: 40,
+        pointCardDensity: 0.2,
+        partnerNeedsPointEscape: false,
+        canWinWithoutPoints: false,
+      };
+      const leadingCombo = [createTestCard(Suit.Clubs, Rank.Ace)];
+      
+      const selected = selectPartnerCoordinatedPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+        leadingCombo
+      );
+      
+      expect(selected).toBeTruthy();
+      expect(selected!.cards[0].points).toBe(10); // Should select one of the 10-point cards
+      expect([Rank.Ten, Rank.King]).toContain(selected!.cards[0].rank);
+    });
+
+    it('should avoid contributing point cards to opponent when opponent leads with strong card', () => {
+      const validCombos = [
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Diamonds, Rank.Ten, 10)], // Point card
+          value: 10,
+        },
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Diamonds, Rank.Three)], // Low card
+          value: 3,
+        },
+      ];
+      
+      const gameState = createTestGameState({
+        currentTrick: {
+          leadingPlayerId: PlayerId.Bot3, // Opponent (Team B)
+          leadingCombo: [createTestCard(Suit.Diamonds, Rank.Ace)],
+          plays: [],
+          winningPlayerId: PlayerId.Bot3,
+          points: 0,
+        },
+        currentPlayerIndex: 0, // Human's turn
+      });
+      
+      const trumpInfo = createTestTrumpInfo();
+      const pointContext = {
+        gamePhase: GamePhaseStrategy.MidGame,
+        pointCardStrategy: PointCardStrategy.Aggressive,
+        trumpTiming: TrumpTiming.Control,
+        teamPointsCollected: 30,
+        opponentPointsCollected: 40,
+        pointCardDensity: 0.2,
+        partnerNeedsPointEscape: false,
+        canWinWithoutPoints: false,
+      };
+      const leadingCombo = [createTestCard(Suit.Diamonds, Rank.Ace)];
+      
+      const selected = selectPartnerCoordinatedPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+        leadingCombo
+      );
+      
+      // Should return null since opponent is leading, not partner
       expect(selected).toBeNull();
     });
   });

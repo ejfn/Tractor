@@ -41,7 +41,7 @@ Built with **React Native + Expo** for mobile platforms:
 
 ## AI Intelligence
 
-Sophisticated **4-phase AI system** with point-focused strategy, positional awareness, team dynamics, and memory-enhanced decision-making.
+Sophisticated **4-phase AI system** with restructured priority chain, real-time trick analysis, enhanced opponent blocking, and intelligent Ace conservation.
 
 *For complete AI system documentation, see **[AI System Guide](docs/AI_SYSTEM.md)***
 
@@ -55,6 +55,7 @@ Sophisticated **4-phase AI system** with point-focused strategy, positional awar
 
 - **[Game Rules](docs/GAME_RULES.md)** - Complete rules and strategy guide
 - **[AI System](docs/AI_SYSTEM.md)** - Detailed AI intelligence documentation
+- **[AI Decision Trees](docs/AI_DECISION_TREE.md)** - Comprehensive AI decision logic and strategic flowcharts
 - **[CLAUDE.md](CLAUDE.md)** - Development guidelines and project architecture
 
 ## Built with Claude Code

@@ -3,14 +3,14 @@ import { render } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
 import AIPlayerView from '../../src/components/AIPlayerView';
-import { Suit, Rank, PlayerId, Player, TrumpInfo, PlayerName } from "../../src/types";
+import { Suit, Rank, PlayerId, Player, TrumpInfo, PlayerName, TeamId } from "../../src/types";
 
 describe('Player Starting Indicator', () => {
   const createMockPlayer = (id: PlayerId, name: PlayerName): Player => ({
     id,
     name,
     hand: [],
-    team: 'A',
+    team: TeamId.A,
     isHuman: id === PlayerId.Human,
   });
 

@@ -1,5 +1,5 @@
 import { compareCardCombos } from '../../src/game/gameLogic';
-import { Card, Suit, Rank, TrumpInfo, JokerType } from "../../src/types";
+import { Card, Suit, Rank, TrumpInfo, JokerType, PlayerId } from "../../src/types";
 import { createCard, createJoker, createPair } from "../helpers";
 
 describe('Trump Pair Hierarchy Tests', () => {
@@ -9,7 +9,7 @@ describe('Trump Pair Hierarchy Tests', () => {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
       declared: true,
-      declarerPlayerId: 'test',
+      declarerPlayerId: PlayerId.Human,
     };
 
     test('2♣-2♣ pair should beat Q♠-Q♠ pair (trump rank vs trump suit)', () => {
@@ -43,7 +43,7 @@ describe('Trump Pair Hierarchy Tests', () => {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
       declared: true,
-      declarerPlayerId: 'test',
+      declarerPlayerId: PlayerId.Human,
     };
 
     test('2♠-2♠ pair should beat 2♣-2♣ pair (trump rank in trump suit vs other suits)', () => {
@@ -86,7 +86,7 @@ describe('Trump Pair Hierarchy Tests', () => {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
       declared: true,
-      declarerPlayerId: 'test',
+      declarerPlayerId: PlayerId.Human,
     };
 
     test('Non-trump pairs comparison should remain unchanged', () => {

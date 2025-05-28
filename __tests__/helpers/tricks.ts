@@ -1,6 +1,7 @@
 import {
   Card,
   Trick,
+  PlayerId,
 } from '../../src/types';
 
 // ============================================================================
@@ -11,27 +12,27 @@ import {
  * Creates a trick with specified properties
  */
 export const createTrick = (
-  leadingPlayerId: string,
+  leadingPlayerId: PlayerId,
   leadingCombo: Card[],
-  plays: Array<{ playerId: string; cards: Card[] }> = [],
+  plays: Array<{ playerId: PlayerId; cards: Card[] }> = [],
   points: number = 0,
-  winningPlayerId?: string
+  winningPlayerId?: PlayerId
 ): Trick => ({
   leadingPlayerId,
   leadingCombo: [...leadingCombo], // Deep copy
   plays: plays.map(play => ({ ...play, cards: [...play.cards] })), // Deep copy
   points,
-  winningPlayerId
+  winningPlayerId: winningPlayerId ?? leadingPlayerId // Default to leading player if not specified
 });
 
 /**
  * Creates a completed trick with all 4 players having played
  */
 export const createCompletedTrick = (
-  leadingPlayerId: string,
+  leadingPlayerId: PlayerId,
   leadingCards: Card[],
-  otherPlays: Array<{ playerId: string; cards: Card[] }>,
-  winningPlayerId: string
+  otherPlays: Array<{ playerId: PlayerId; cards: Card[] }>,
+  winningPlayerId: PlayerId
 ): Trick => {
   const totalPoints = [...leadingCards, ...otherPlays.flatMap(p => p.cards)]
     .reduce((sum, card) => sum + card.points, 0);

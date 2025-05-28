@@ -48,6 +48,7 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
         { playerId: PlayerId.Bot1, cards: [bot1Card] },
         { playerId: PlayerId.Bot2, cards: [bot2WinningCard] }
       ],
+      winningPlayerId: PlayerId.Bot2,
       points: 0
     };
     
@@ -79,7 +80,8 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
         { playerId: PlayerId.Bot1, cards: [bot1WinningCard] }, // Bot1 (Bot3's partner) wins
         { playerId: PlayerId.Bot2, cards: [bot2Card] }         // Bot2 plays lower card
       ],
-      points: 0
+      points: 0,
+      winningPlayerId: PlayerId.Bot1 // Bot1 is currently winning with Ace
     };
     
     // Test case 1: 10 should be prioritized over King and 5
@@ -187,6 +189,7 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
         { playerId: PlayerId.Bot1, cards: [bot1Card] },
         { playerId: PlayerId.Bot2, cards: [bot2WinningCard] }
       ],
+      winningPlayerId: PlayerId.Bot2,
       points: 0
     };
     
@@ -319,6 +322,7 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
           }]
         }
       ],
+      winningPlayerId: PlayerId.Bot2,
       points: 0
     };
     
@@ -398,7 +402,8 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
       plays: [
         { playerId: PlayerId.Bot1, cards: [bot1Card] } // Bot1 plays lower card
       ],
-      points: 0
+      points: 0,
+      winningPlayerId: PlayerId.Human // Human is currently winning with Ace
     };
     
     // Set current player to Bot 2 (3rd player, partner of human)

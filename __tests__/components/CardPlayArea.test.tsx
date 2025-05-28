@@ -90,6 +90,7 @@ describe('CardPlayArea', () => {
         { playerId: PlayerId.Human, cards: [humanCard] },
         { playerId: PlayerId.Bot1, cards: [ai1Card] },
       ],
+      winningPlayerId: PlayerId.Bot3,
       points: 0
     };
 
@@ -140,6 +141,7 @@ describe('CardPlayArea', () => {
         { playerId: PlayerId.Human, cards: [humanCard] },
         { playerId: PlayerId.Bot1, cards: [ai1Card] },
       ],
+      winningPlayerId: PlayerId.Bot3,
       points: 0
     };
 
@@ -188,6 +190,7 @@ describe('CardPlayArea', () => {
         { playerId: PlayerId.Bot2, cards: [ai2Card] },
         { playerId: PlayerId.Bot3, cards: [ai3Card] },
       ],
+      winningPlayerId: PlayerId.Human,
       points: 0
     };
 
@@ -233,6 +236,7 @@ describe('CardPlayArea', () => {
         { playerId: PlayerId.Human, cards: [humanCard1, humanCard2] },
         { playerId: PlayerId.Bot1, cards: [ai1Card1, ai1Card2] },
       ],
+      winningPlayerId: PlayerId.Human,
       points: 0
     };
 

@@ -40,6 +40,7 @@ describe('Trump Suit Following Rule Violation (Comment from Issue #61)', () => {
       leadingPlayerId: PlayerId.Human,
       leadingCombo: leadingTrumpPair,
       plays: [],
+      winningPlayerId: PlayerId.Human,
       points: 0
     };
     

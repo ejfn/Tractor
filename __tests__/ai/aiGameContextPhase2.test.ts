@@ -212,6 +212,7 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
         leadingPlayerId: PlayerId.Bot3,
         leadingCombo: [{ rank: Rank.Ace, suit: Suit.Spades, id: 'ace_spades', points: 0 }],
         plays: [],
+        winningPlayerId: PlayerId.Bot3,
         points: 0,
       };
 
@@ -237,6 +238,7 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
             cards: [{ rank: Rank.King, suit: Suit.Hearts, id: 'king_hearts', points: 10 }],
           },
         ],
+        winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
 
@@ -250,6 +252,7 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
         leadingPlayerId: PlayerId.Human,
         leadingCombo: [{ rank: Rank.Seven, suit: Suit.Diamonds, id: 'seven_diamonds', points: 0 }],
         plays: [],
+        winningPlayerId: PlayerId.Human,
         points: 0,
       };
 

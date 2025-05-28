@@ -35,6 +35,11 @@ export enum PlayerId {
   Bot3 = "bot3",
 }
 
+export enum TeamId {
+  A = "A",
+  B = "B",
+}
+
 export enum PlayerName {
   Human = "You",
   Bot1 = "Bot 1",
@@ -64,24 +69,24 @@ export type Player = {
   name: PlayerName;
   isHuman: boolean;
   hand: Card[];
-  team: "A" | "B"; // Team identifier
+  team: TeamId; // Team identifier
 };
 
 export type Team = {
-  id: "A" | "B";
+  id: TeamId;
   currentRank: Rank;
   points: number;
   isDefending: boolean; // Whether this team is defending in the current round
 };
 
 export type Trick = {
-  leadingPlayerId: string;
+  leadingPlayerId: PlayerId;
   leadingCombo: Card[]; // Cards that started the trick
   plays: {
-    playerId: string;
+    playerId: PlayerId;
     cards: Card[];
   }[];
-  winningPlayerId?: string;
+  winningPlayerId: PlayerId; // Current winner of the trick (starts with leadingPlayerId, updates as stronger plays are made)
   points: number; // Total points in this trick
 };
 
@@ -89,7 +94,7 @@ export type TrumpInfo = {
   trumpRank: Rank;
   trumpSuit?: Suit;
   declared: boolean;
-  declarerPlayerId?: string; // ID of the player who declared trump
+  declarerPlayerId?: PlayerId; // ID of the player who declared trump
 };
 
 export type GameState = {

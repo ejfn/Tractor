@@ -2,7 +2,7 @@ import { render } from '@testing-library/react-native';
 import React from 'react';
 import { Animated } from 'react-native';
 import AIPlayerView from '../../src/components/AIPlayerView';
-import { Player, PlayerId, PlayerName, Rank, Suit } from "../../src/types";
+import { Player, PlayerId, PlayerName, Rank, Suit, TeamId } from "../../src/types";
 
 // Mock dependencies
 jest.mock('../../src/components/ThinkingIndicator', () => {
@@ -43,7 +43,7 @@ describe('AIPlayerView', () => {
       rank: Rank.Ace,
       points: 0
     })),
-    team: 'A',
+    team: TeamId.A,
   });
 
   test('renders top player correctly', () => {

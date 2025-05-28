@@ -4,7 +4,6 @@ import { View, Text, Button } from 'react-native';
 import { useGameState } from '../../src/hooks/useGameState';
 import { useAITurns } from '../../src/hooks/useAITurns';
 import { processPlay } from '../../src/game/gamePlayManager';
-import { determineTrickWinner } from '../../src/game/gameLogic';
 import { createComponentTestGameState } from "../helpers";
 import { 
   GameState, 
@@ -32,7 +31,6 @@ jest.mock('../../src/game/gamePlayManager', () => ({
 }));
 jest.mock('../../src/game/gameLogic', () => ({
   ...jest.requireActual('../../src/game/gameLogic'),
-  determineTrickWinner: jest.fn(),
   identifyCombos: jest.fn(),
   isValidPlay: jest.fn().mockReturnValue(true),
   isTrump: jest.fn(),
@@ -163,6 +161,7 @@ describe('Player Transitions', () => {
           cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)]
         }
       ],
+      winningPlayerId: PlayerId.Bot2,
       points: 5
     };
 
@@ -196,7 +195,6 @@ describe('Player Transitions', () => {
       };
     });
 
-    (determineTrickWinner as jest.Mock).mockReturnValue(PlayerId.Human);
 
     let stateChanges: any[] = [];
     
@@ -245,6 +243,7 @@ describe('Player Transitions', () => {
           cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)]
         }
       ],
+      winningPlayerId: PlayerId.Bot2,
       points: 15
     };
 

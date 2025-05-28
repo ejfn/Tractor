@@ -17,6 +17,7 @@ import {
   AdvancedComboPattern,
   CombinationAnalysis,
   CombinationContext,
+  TrickWinnerAnalysis,
 } from '../../src/types';
 import { createCard, createPair, createTractor } from './cards';
 
@@ -34,7 +35,8 @@ export const createAIGameContext = (
   cardsRemaining: number = 25,
   trickPosition: TrickPosition = TrickPosition.First,
   pointPressure: PointPressure = PointPressure.LOW,
-  playStyle: PlayStyle = PlayStyle.Balanced
+  playStyle: PlayStyle = PlayStyle.Balanced,
+  trickWinnerAnalysis?: TrickWinnerAnalysis
 ): GameContext => ({
   isAttackingTeam,
   currentPoints,
@@ -42,7 +44,17 @@ export const createAIGameContext = (
   cardsRemaining,
   trickPosition,
   pointPressure,
-  playStyle
+  playStyle,
+  trickWinnerAnalysis: trickWinnerAnalysis ?? {
+    currentWinner: null,
+    isTeammateWinning: false,
+    isOpponentWinning: false,
+    isSelfWinning: false,
+    trickPoints: 0,
+    canBeatCurrentWinner: false,
+    shouldTryToBeat: false,
+    shouldPlayConservatively: false,
+  }
 });
 
 /**

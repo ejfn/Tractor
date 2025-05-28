@@ -47,9 +47,9 @@ describe('AI Card Memory System - Phase 3', () => {
   });
 
   const createTestTrick = (
-    leadingPlayerId: string,
+    leadingPlayerId: PlayerId,
     leadingCards: Card[],
-    plays: Array<{ playerId: string; cards: Card[] }>,
+    plays: Array<{ playerId: PlayerId; cards: Card[] }>,
   ): Trick => ({
     leadingPlayerId,
     leadingCombo: leadingCards,
@@ -125,6 +125,7 @@ describe('AI Card Memory System - Phase 3', () => {
         plays: [
           { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Jack, Suit.Spades)] },
         ],
+        winningPlayerId: PlayerId.Human, // Human's Queen beats Bot1's Jack
         points: 0,
       };
 

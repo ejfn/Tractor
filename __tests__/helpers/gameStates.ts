@@ -90,7 +90,7 @@ export const createGameScenarios = {
   trickInProgress: (leadingCards: Card[], currentPlayer: number = 1) => createGameState({
     gamePhase: GamePhase.Playing,
     currentPlayerIndex: currentPlayer,
-    currentTrick: createTrick('human', leadingCards)
+    currentTrick: createTrick(PlayerId.Human, leadingCards)
   }),
 
   // End of round

@@ -6,10 +6,8 @@ import {
   Rank,
   Suit
 } from "../../src/types";
-import {
-  createAIStrategy,
-  getAIMove
-} from '../../src/ai/aiLogic';
+import { getAIMove } from '../../src/ai/aiLogic';
+import { createAIStrategy } from '../../src/ai/aiStrategy';
 import { createBasicGameState } from "../helpers";
 
 // Use shared utility for basic AI testing game state
@@ -68,6 +66,7 @@ describe('AI Logic Tests', () => {
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
       
@@ -100,6 +99,7 @@ describe('AI Logic Tests', () => {
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
       
@@ -140,6 +140,7 @@ describe('AI Logic Tests', () => {
             ]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
       
@@ -181,6 +182,7 @@ describe('AI Logic Tests', () => {
             ]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
       
@@ -213,6 +215,7 @@ describe('AI Logic Tests', () => {
             cards: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
 
@@ -249,6 +252,7 @@ describe('AI Logic Tests', () => {
             ]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
 
@@ -294,6 +298,7 @@ describe('AI Logic Tests', () => {
             ]
           }
         ],
+        winningPlayerId: PlayerId.Human,
         points: 0
       };
 
@@ -352,6 +357,44 @@ describe('AI Logic Tests', () => {
       expect(move).toBeDefined();
       expect(move.length).toBe(1);
       expect(validCombos.some(combo => combo.cards[0].id === move[0].id)).toBe(true);
+    });
+
+    it('should contribute point cards when Human teammate leads with Ace', () => {
+      // Create game state where Human has led with Ace and Bot2 (teammate) is following
+      const gameState = createMockGameState();
+      
+      // Set up the trick: Human leads with Ace
+      gameState.currentTrick = {
+        leadingPlayerId: PlayerId.Human,
+        leadingCombo: [createCard(Suit.Clubs, Rank.Ace, 'clubs_ace_1')],
+        plays: [
+          // Bot1 (opponent) has played
+          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Clubs, Rank.Three, 'clubs_3_1')] }
+        ],
+        winningPlayerId: PlayerId.Human, // Human is winning with Ace
+        points: 0,
+      };
+
+      // It's Bot2's turn (Human's teammate)
+      gameState.currentPlayerIndex = 2;
+      
+      // Bot2 has point cards available
+      gameState.players[2].hand = [
+        createCard(Suit.Clubs, Rank.King, 'clubs_king_1'), // 10 points
+        createCard(Suit.Clubs, Rank.Ten, 'clubs_ten_1'),  // 10 points
+        createCard(Suit.Clubs, Rank.Four, 'clubs_4_1'),   // 0 points
+      ];
+
+      // Get AI move for Bot2
+      const move = getAIMove(gameState, PlayerId.Bot2);
+      
+      // Bot2 should contribute point cards (King or Ten, not Four)
+      expect(move).toBeDefined();
+      expect(move.length).toBe(1);
+      
+      const playedCard = move[0];
+      expect(playedCard.points).toBeGreaterThan(0); // Should be a point card
+      expect([Rank.King, Rank.Ten]).toContain(playedCard.rank); // Should be King or Ten
     });
   });
 });

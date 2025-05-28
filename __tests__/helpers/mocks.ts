@@ -23,7 +23,6 @@ export const mockConfigs = {
     initializeGame: jest.fn(),
     identifyCombos: jest.fn(),
     isValidPlay: jest.fn(),
-    determineTrickWinner: jest.fn(),
     isTrump: jest.fn(),
     humanHasTrumpRank: jest.fn().mockReturnValue(false)
   },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
-import { Card, Suit, Rank, Player, TrumpInfo, PlayerId, PlayerName } from "../../src/types";
+import { Card, Suit, Rank, Player, TrumpInfo, PlayerId, PlayerName, TeamId } from "../../src/types";
 import { Animated } from 'react-native';
 
 // Mock the ThinkingIndicator to easily check if it's rendered
@@ -25,7 +25,7 @@ const mockPlayer: Player = {
   name: PlayerName.Human,
   hand: [],
   isHuman: true,
-  team: 'A',
+  team: TeamId.A,
 };
 
 const mockTrumpInfo: TrumpInfo = {

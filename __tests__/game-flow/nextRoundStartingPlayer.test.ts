@@ -1,4 +1,4 @@
-import { GameState, Rank, Suit } from "../../src/types";
+import { GameState, PlayerId, TeamId, Rank, Suit } from "../../src/types";
 import { initializeGame } from '../../src/game/gameLogic';
 import { prepareNextRound, endRound } from '../../src/game/gameRoundManager';
 import { declareTrumpSuit } from '../../src/game/trumpManager';
@@ -70,19 +70,19 @@ describe('Next round starting player selection', () => {
     state.roundNumber = 1;
     
     // Set up defending team (Team A with Human and Bot2)
-    state.players[0].team = 'A'; // Human
-    state.players[1].team = 'B'; // Bot1
-    state.players[2].team = 'A'; // Bot2
-    state.players[3].team = 'B'; // Bot3
+    state.players[0].team = TeamId.A; // Human
+    state.players[1].team = TeamId.B; // Bot1
+    state.players[2].team = TeamId.A; // Bot2
+    state.players[3].team = TeamId.B; // Bot3
     
     // Human (player 0) started the last round
     state.currentPlayerIndex = 0;
     state.lastRoundStartingPlayerIndex = 0;
     
     // Set Team A as defending
-    state.teams[0].id = 'A';
+    state.teams[0].id = TeamId.A;
     state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
+    state.teams[1].id = TeamId.B;
     state.teams[1].isDefending = false;
     
     // Complete the round with defending team winning
@@ -101,19 +101,19 @@ describe('Next round starting player selection', () => {
     state.roundNumber = 1;
     
     // Set up teams
-    state.players[0].team = 'A'; // Human
-    state.players[1].team = 'B'; // Bot1
-    state.players[2].team = 'A'; // Bot2
-    state.players[3].team = 'B'; // Bot3
+    state.players[0].team = TeamId.A; // Human
+    state.players[1].team = TeamId.B; // Bot1
+    state.players[2].team = TeamId.A; // Bot2
+    state.players[3].team = TeamId.B; // Bot3
     
     // Bot1 (player 1) started the last round
     state.currentPlayerIndex = 1;
     state.lastRoundStartingPlayerIndex = 1;
     
     // Set Team B as attacking
-    state.teams[0].id = 'A';
+    state.teams[0].id = TeamId.A;
     state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
+    state.teams[1].id = TeamId.B;
     state.teams[1].isDefending = false;
     
     // Complete the round with attacking team winning
@@ -132,19 +132,19 @@ describe('Next round starting player selection', () => {
     state.roundNumber = 2;
     
     // Set up teams
-    state.players[0].team = 'A'; // Human
-    state.players[1].team = 'B'; // Bot1
-    state.players[2].team = 'A'; // Bot2
-    state.players[3].team = 'B'; // Bot3
+    state.players[0].team = TeamId.A; // Human
+    state.players[1].team = TeamId.B; // Bot1
+    state.players[2].team = TeamId.A; // Bot2
+    state.players[3].team = TeamId.B; // Bot3
     
     // Bot2 (player 2) started the last round
     state.currentPlayerIndex = 2;
     state.lastRoundStartingPlayerIndex = 2;
     
     // Set Team A as defending
-    state.teams[0].id = 'A';
+    state.teams[0].id = TeamId.A;
     state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
+    state.teams[1].id = TeamId.B;
     state.teams[1].isDefending = false;
     
     // Simulate trump declaration to save the starting player index

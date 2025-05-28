@@ -43,13 +43,14 @@ npm test              # Run tests
 │   ├── combinations.ts    # Advanced combination types
 │   └── pointFocused.ts    # Point-focused strategy types
 ├── ai/                    # AI modules and strategy logic
-│   ├── aiLogic.ts         # Core AI decision making
+│   ├── aiLogic.ts         # Public AI API and game rule compliance
+│   ├── aiStrategy.ts      # Core AI decision making and strategy implementation
 │   ├── aiGameContext.ts   # Game context analysis
 │   ├── aiAdvancedCombinations.ts # Advanced combination analysis
 │   ├── aiCardMemory.ts    # Card memory system (Phase 3)
 │   └── aiPointFocusedStrategy.ts # Point-focused strategy
 ├── game/                  # Core game logic and management
-│   ├── gameLogic.ts       # Core mechanics and rules
+│   ├── gameLogic.ts       # Core mechanics, rules, and valid combination detection
 │   ├── gamePlayManager.ts # Card play validation and tricks
 │   ├── gameRoundManager.ts # Round management and scoring
 │   └── trumpManager.ts    # Trump card management
@@ -89,6 +90,7 @@ npm test              # Run tests
 ```
 /docs/
 ├── AI_SYSTEM.md           # Comprehensive AI intelligence documentation
+├── AI_DECISION_TREE.md    # Detailed AI decision logic and strategic flowcharts
 ├── GAME_RULES.md          # Complete game rules and strategy guide
 └── README.md              # Project overview (main entry point)
 ```
@@ -117,6 +119,7 @@ The project uses a modular documentation approach:
 - **README.md** - Concise project overview and quick reference
 - **CLAUDE.md** - Comprehensive development guidelines (this file)
 - **docs/AI_SYSTEM.md** - Detailed AI intelligence system documentation
+- **docs/AI_DECISION_TREE.md** - Visual decision flowcharts and strategic logic trees
 - **docs/GAME_RULES.md** - Complete game rules and strategy guide
 
 This keeps the main README clean while providing comprehensive documentation for developers and users.
@@ -125,6 +128,7 @@ This keeps the main README clean while providing comprehensive documentation for
 - **README.md** should be scannable and focus on what the project is and key features
 - **CLAUDE.md** contains all development standards, architecture details, and coding guidelines
 - **docs/AI_SYSTEM.md** for detailed AI system documentation and technical implementation
+- **docs/AI_DECISION_TREE.md** for visual flowcharts and decision logic for each AI strategy
 - **docs/GAME_RULES.md** for comprehensive game rules, strategy, and player guidance
 - Never duplicate content between files - use cross-references instead
 
@@ -372,7 +376,7 @@ expect(strategy.pointPressure).toBe('HIGH');
 // Good: Use real initialization + targeted mocking
 jest.mock('../../src/game/gameLogic', () => ({
   ...jest.requireActual('../../src/game/gameLogic'),
-  determineTrickWinner: jest.fn() // Only mock what you need to control
+  compareCards: jest.fn() // Only mock what you need to control for tests
 }));
 
 // Avoid: Large mock objects that duplicate real code
@@ -382,11 +386,10 @@ jest.mock('../../src/game/gameLogic', () => ({
 
 ### Trick Completion Flow
 
-1. All 4 players play cards
-2. Determine winner, store in `winningPlayerIndex`
-3. Display trick result for 2 seconds
-4. Clear table
-5. Winner leads next trick
+1. All 4 players play cards (with real-time `winningPlayerId` tracking)
+2. Display trick result for 2 seconds using stored `winningPlayerId`
+3. Clear table
+4. Winner leads next trick (determined from `winningPlayerId`)
 
 ### Card Suit Ordering
 
@@ -404,9 +407,10 @@ Trump suit rotates to first position while maintaining alternating black-red pat
 - Trump combos beat non-trump combos of same type
 - Leading player's cards stored in `trick.leadingCombo`
 - Trick plays array contains (players.length - 1) plays
+- Real-time `winningPlayerId` field tracks current trick winner
 - Always block AI moves during trick result display
 
-## AI Implementation Guidelines (Phases 1-3)
+## AI Implementation Guidelines (All 4 Phases)
 
 ### AI Enum Usage ⚠️ MANDATORY
 
@@ -460,6 +464,38 @@ if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
 }
 ```
 
+### AI Priority Chain Architecture
+
+The AI strategy follows a clean 4-priority decision chain in `selectOptimalFollowPlay()`:
+
+```typescript
+// === PRIORITY 1: TEAM COORDINATION ===
+if (trickWinner?.isTeammateWinning) {
+  return this.handleTeammateWinning(comboAnalyses, context, trumpInfo);
+}
+
+// === PRIORITY 2: OPPONENT BLOCKING ===
+if (trickWinner?.isOpponentWinning) {
+  const response = this.handleOpponentWinning(/* ... */);
+  if (response) return response;
+}
+
+// === PRIORITY 3: TRICK CONTENTION ===
+if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
+  return this.selectOptimalWinningCombo(/* ... */);
+}
+
+// === PRIORITY 4: STRATEGIC DISPOSAL ===
+return this.selectStrategicDisposal(/* ... */);
+```
+
+**Key Guidelines:**
+- **Never skip priorities** - each builds on the previous
+- **Use real-time trick winner analysis** via `context.trickWinnerAnalysis`
+- **Opponent blocking thresholds**: High-value (≥10pts), moderate (5-9pts), low-value (0-4pts)
+- **Only contest tricks ≥5 points** to avoid wasting high cards
+- **Strategic disposal conserves Aces** when tricks can't be won
+
 ## Best Practices
 
 - ⚠️ **CRITICAL**: Always import and use enums instead of magic strings
@@ -473,3 +509,7 @@ if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
 - Organize files by logical domain (ai/, game/, utils/) not just file type
 - Keep README.md concise and direct detailed information to docs/ files
 - Update documentation when adding new features or changing architecture
+- Use real-time `winningPlayerId` tracking instead of calculating trick winners
+- Avoid redundant winner determination functions
+- **AI Strategy**: Use restructured 4-priority decision chain to avoid conflicts and rabbit holes
+- **Debugging**: When AI behavior changes, check the priority chain order and handler logic

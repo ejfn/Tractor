@@ -6,9 +6,9 @@ import {
 } from "../../src/types";
 import { getAIMove } from '../../src/ai/aiLogic';
 import {
-  calculateTrickPoints,
-  determineTrickWinner
+  calculateTrickPoints
 } from '../../src/game/gameLogic';
+import { processPlay } from '../../src/game/gamePlayManager';
 import { createCard, createTestCardsGameState } from "../helpers";
 
 // Mock dependencies
@@ -39,6 +39,7 @@ describe('Game Loop Tests', () => {
           cards: [createCard(Suit.Hearts, Rank.Ace)]
         }
       ],
+      winningPlayerId: PlayerId.Human,
       points: 0
     };
     
@@ -114,6 +115,7 @@ describe('Game Loop Tests', () => {
           cards: [createCard(Suit.Hearts, Rank.Ace)]
         }
       ],
+      winningPlayerId: PlayerId.Human,
       points: 0
     };
     
@@ -178,22 +180,14 @@ describe('Game Loop Tests', () => {
       const newState = { ...state };
       const currentPlayer = newState.players[newState.currentPlayerIndex];
       
-      // Play the Jack of Hearts
+      // Play the Jack of Hearts using real game logic
       const move = [createCard(Suit.Hearts, Rank.Jack)];
       
-      // Add to trick
-      newState.currentTrick!.plays.push({
-        playerId: currentPlayer.id,
-        cards: [...move]
-      });
+      // Use real game logic to process the play (this will update winningPlayerId automatically)
+      const playResult = processPlay(newState, move);
       
-      // Remove played cards from hand
-      currentPlayer.hand = currentPlayer.hand.filter(
-        card => !move.some(played => played.id === card.id)
-      );
-      
-      // Determine trick winner
-      const winningPlayerId = determineTrickWinner(newState.currentTrick!, newState.trumpInfo);
+      // Get winner from the real-time tracking
+      const winningPlayerId = newState.currentTrick!.winningPlayerId;
       
       // Calculate points
       const trickPoints = calculateTrickPoints(newState.currentTrick!);

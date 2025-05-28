@@ -11,6 +11,7 @@ import {
   Rank,
   Suit,
   Team,
+  TeamId,
   Trick,
   TrumpInfo,
 } from "../types";
@@ -780,31 +781,6 @@ const getRankValue = (rank: Rank): number => {
   return rankOrder.indexOf(rank);
 };
 
-// Determine the winner of a trick
-export const determineTrickWinner = (
-  trick: Trick,
-  trumpInfo: TrumpInfo,
-): string => {
-  let winningPlayerId = trick.leadingPlayerId;
-  let winningCards = trick.leadingCombo;
-
-  trick.plays.forEach((play) => {
-    // Skip the leading play since it's already set as winning by default
-    if (play.playerId === trick.leadingPlayerId) return;
-
-    // Compare the played cards to the current winning cards
-    const comparison = compareCardCombos(winningCards, play.cards, trumpInfo);
-
-    // If the current play is stronger, update the winner
-    if (comparison < 0) {
-      winningPlayerId = play.playerId;
-      winningCards = play.cards;
-    }
-  });
-
-  return winningPlayerId;
-};
-
 // Compare two card combinations
 export const compareCardCombos = (
   comboA: Card[],
@@ -982,6 +958,177 @@ export const isPointCard = (card: Card): boolean => {
   return card.points > 0;
 };
 
+/**
+ * Get all valid card combinations for a player given the current game state
+ *
+ * This function consolidates all the game rule validation logic that was previously
+ * scattered in the AI layer. It uses the existing isValidPlay function as the
+ * foundation to ensure single source of truth for validation rules.
+ *
+ * @param playerHand Cards in the player's hand
+ * @param gameState Current game state
+ * @returns Array of valid combinations the player can play
+ */
+export const getValidCombinations = (
+  playerHand: Card[],
+  gameState: GameState,
+): Combo[] => {
+  const { currentTrick, trumpInfo } = gameState;
+
+  // If no current trick, player is leading - all combinations are valid
+  if (!currentTrick || !currentTrick.leadingCombo) {
+    return identifyCombos(playerHand, trumpInfo);
+  }
+
+  // Get all possible combinations from player's hand
+  const allCombos = identifyCombos(playerHand, trumpInfo);
+  const leadingCombo = currentTrick.leadingCombo;
+  const leadingLength = leadingCombo.length;
+
+  // Filter combinations that match the leading combo length and pass validation
+  const validCombos = allCombos.filter((combo) => {
+    return (
+      combo.cards.length === leadingLength &&
+      isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo)
+    );
+  });
+
+  // If we have valid combinations, return them
+  if (validCombos.length > 0) {
+    return validCombos;
+  }
+
+  // Emergency fallback: Handle edge cases where no standard combinations work
+  // This covers scenarios like partial suit following that isValidPlay handles
+  // but identifyCombos might not generate as standard combinations
+  return getEmergencyValidCombinations(playerHand, gameState);
+};
+
+/**
+ * Emergency fallback to generate valid card plays when no standard combinations work
+ *
+ * This handles edge cases like:
+ * - Player has some but not enough cards of the leading suit
+ * - Player must play trump cards when trump is led but can't form proper combos
+ * - Other complex rule scenarios that require manual card selection
+ *
+ * @param playerHand Cards in the player's hand
+ * @param gameState Current game state
+ * @returns Array of emergency valid combinations
+ */
+const getEmergencyValidCombinations = (
+  playerHand: Card[],
+  gameState: GameState,
+): Combo[] => {
+  const { currentTrick, trumpInfo } = gameState;
+
+  if (!currentTrick?.leadingCombo) {
+    // Should not happen, but fallback to all single cards
+    return playerHand.map((card) => ({
+      type: ComboType.Single,
+      cards: [card],
+      value: 10,
+    }));
+  }
+
+  const leadingCombo = currentTrick.leadingCombo;
+  const leadingLength = leadingCombo.length;
+  const leadingSuit = getLeadingSuit(leadingCombo);
+  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+
+  const emergencyCombos: Combo[] = [];
+
+  // Case 1: Trump is led, player has trump cards but not enough for proper combos
+  if (isLeadingTrump) {
+    const trumpCards = playerHand.filter((card) => isTrump(card, trumpInfo));
+
+    if (trumpCards.length > 0 && trumpCards.length >= leadingLength) {
+      // Try to construct a trump combination by taking the lowest trump cards
+      const sortedTrumpCards = [...trumpCards].sort((a, b) =>
+        compareCards(a, b, trumpInfo),
+      );
+
+      const emergencyTrumpCombo: Combo = {
+        type: ComboType.Single, // May not be a proper combo type, but valid play
+        cards: sortedTrumpCards.slice(0, leadingLength),
+        value: 200,
+      };
+
+      // Validate this emergency combination
+      if (
+        isValidPlay(
+          emergencyTrumpCombo.cards,
+          leadingCombo,
+          playerHand,
+          trumpInfo,
+        )
+      ) {
+        emergencyCombos.push(emergencyTrumpCombo);
+      }
+    }
+  }
+
+  // Case 2: Suit is led, player has some but not enough cards of that suit
+  if (leadingSuit) {
+    const leadingSuitCards = playerHand.filter(
+      (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+    );
+
+    if (
+      leadingSuitCards.length > 0 &&
+      leadingSuitCards.length < leadingLength
+    ) {
+      // Must play all leading suit cards plus other cards to make up the length
+      const otherCards = playerHand
+        .filter((card) => card.suit !== leadingSuit || isTrump(card, trumpInfo))
+        .sort((a, b) => compareCards(a, b, trumpInfo));
+
+      const remainingNeeded = leadingLength - leadingSuitCards.length;
+
+      if (otherCards.length >= remainingNeeded) {
+        const emergencyMixedCombo: Combo = {
+          type: ComboType.Single, // Mixed cards don't form a proper combo type
+          cards: [...leadingSuitCards, ...otherCards.slice(0, remainingNeeded)],
+          value: 5,
+        };
+
+        // Validate this emergency combination
+        if (
+          isValidPlay(
+            emergencyMixedCombo.cards,
+            leadingCombo,
+            playerHand,
+            trumpInfo,
+          )
+        ) {
+          emergencyCombos.push(emergencyMixedCombo);
+        }
+      }
+    }
+  }
+
+  // Case 3: Last resort - try any combination of cards of the right length
+  if (emergencyCombos.length === 0) {
+    const sortedCards = [...playerHand].sort((a, b) =>
+      compareCards(a, b, trumpInfo),
+    );
+
+    if (sortedCards.length >= leadingLength) {
+      const lastResortCombo: Combo = {
+        type: ComboType.Single,
+        cards: sortedCards.slice(0, leadingLength),
+        value: 1,
+      };
+
+      // Always add this as absolute fallback, even if it might not be valid
+      // The AI can decide whether to use it
+      emergencyCombos.push(lastResortCombo);
+    }
+  }
+
+  return emergencyCombos;
+};
+
 // Initialize a new game
 export const initializeGame = (): GameState => {
   // Create players (1 human, 3 AI)
@@ -991,41 +1138,41 @@ export const initializeGame = (): GameState => {
       name: PlayerName.Human,
       isHuman: true,
       hand: [],
-      team: "A",
+      team: TeamId.A,
     },
     {
       id: PlayerId.Bot1,
       name: PlayerName.Bot1,
       isHuman: false,
       hand: [],
-      team: "B",
+      team: TeamId.B,
     },
     {
       id: PlayerId.Bot2,
       name: PlayerName.Bot2,
       isHuman: false,
       hand: [],
-      team: "A",
+      team: TeamId.A,
     },
     {
       id: PlayerId.Bot3,
       name: PlayerName.Bot3,
       isHuman: false,
       hand: [],
-      team: "B",
+      team: TeamId.B,
     },
   ];
 
   // Create teams
   const teams: [Team, Team] = [
     {
-      id: "A",
+      id: TeamId.A,
       currentRank: Rank.Two,
       points: 0,
       isDefending: true, // Team A defends first
     },
     {
-      id: "B",
+      id: TeamId.B,
       currentRank: Rank.Two,
       points: 0,
       isDefending: false,

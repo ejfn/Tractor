@@ -21,7 +21,7 @@ import {
 jest.mock('../../src/game/gameLogic', () => ({
   identifyCombos: jest.fn(),
   isValidPlay: jest.fn(),
-  determineTrickWinner: jest.fn()
+  compareCardCombos: jest.fn()
 }));
 
 jest.mock('../../src/ai/aiLogic', () => ({
@@ -96,14 +96,13 @@ describe('gamePlayManager', () => {
             cards: [createCard(Suit.Clubs, Rank.Jack)]
           }
         ],
+        winningPlayerId: PlayerId.Bot3,
         points: 5 // 5 points from the Spades 5
       };
       
       // Setup the current player to be the last player in the trick
       mockState.currentPlayerIndex = 2; // ai2
       
-      // Mock determineTrickWinner to return bot1 player ID
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue(PlayerId.Bot1);
       
       // Start fresh with a clear game state for this test
       const freshState = createMockGameState();
@@ -111,7 +110,7 @@ describe('gamePlayManager', () => {
       // Setup a trick in progress with 3 players having played
       // For a 4-player game, we need leader + 3 followers to complete a trick
       freshState.currentTrick = {
-        leadingPlayerId: 'ai1',  // Bot 1 led
+        leadingPlayerId: PlayerId.Bot1,  // Bot 1 led
         leadingCombo: [createCard(Suit.Diamonds, Rank.Three)],
         plays: [
           // Human has played 
@@ -121,18 +120,17 @@ describe('gamePlayManager', () => {
           },
           // Bot 2 has played
           {
-            playerId: 'ai2',
+            playerId: PlayerId.Bot2,
             cards: [createCard(Suit.Spades, Rank.Two)]
           }
         ],
-        points: 5 // 5 points from the Spades 5
+        points: 5, // 5 points from the Spades 5
+        winningPlayerId: PlayerId.Bot1 // Required field
       };
       
       // Setup the current player to be the last player in the trick (Bot 3)
       freshState.currentPlayerIndex = 3; // ai3
       
-      // Mock determineTrickWinner to return bot1 player ID
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue(PlayerId.Bot1);
       
       // Process the play for the last player in the trick (Bot 3)
       const cardsToPlay = [freshState.players[3].hand[0]]; // Clubs 4 
@@ -196,6 +194,7 @@ describe('gamePlayManager', () => {
             cards: [createCard(Suit.Clubs, Rank.Four)]
           }
         ],
+        winningPlayerId: PlayerId.Bot3,
         points: 0
       };
       
@@ -345,12 +344,6 @@ describe('gamePlayManager', () => {
     test('should maintain equal card counts for all players throughout a full game', () => {
       let state = createMockGameState();
       
-      // Mock determineTrickWinner to return different winners for variety
-      const winners = ['human', 'ai1', 'ai2', 'ai3'];
-      let winnerIndex = 0;
-      (gameLogic.determineTrickWinner as jest.Mock).mockImplementation(() => {
-        return winners[winnerIndex++ % 4];
-      });
 
       // Initial state - verify all players have same card count
       const initialCardCount = state.players[0].hand.length;
@@ -451,8 +444,6 @@ describe('gamePlayManager', () => {
     test('should handle complete game with all AI players', () => {
       let state = createMockGameState();
       
-      // Mock determineTrickWinner
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('human');
       
       // Track card counts throughout
       const initialCounts = state.players.map(p => p.hand.length);

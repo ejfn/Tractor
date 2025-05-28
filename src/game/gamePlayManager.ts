@@ -1,5 +1,5 @@
 import { GameState, Card, Trick, Team } from "../types";
-import { identifyCombos, isValidPlay, determineTrickWinner } from "./gameLogic";
+import { identifyCombos, isValidPlay, compareCardCombos } from "./gameLogic";
 import { getAIMove } from "../ai/aiLogic";
 
 /**
@@ -39,10 +39,12 @@ export function processPlay(
     newState.currentTrick.plays.length === newState.players.length - 1;
 
   // Check if current player is the winner of the last completed trick
+  const currentWinner =
+    newState.currentTrick?.winningPlayerId ||
+    newState.currentTrick?.leadingPlayerId;
   const isWinner =
-    newState.currentTrick?.winningPlayerId &&
-    newState.players[newState.currentPlayerIndex]?.id ===
-      newState.currentTrick.winningPlayerId;
+    currentWinner &&
+    newState.players[newState.currentPlayerIndex]?.id === currentWinner;
 
   if (!newState.currentTrick || (isTrickComplete && isWinner)) {
     // For the first player, create new trick and don't add to plays array
@@ -50,6 +52,7 @@ export function processPlay(
       leadingPlayerId: currentPlayer.id,
       leadingCombo: [...cards],
       plays: [],
+      winningPlayerId: currentPlayer.id, // Initially, the leading player is winning
       points: 0,
     };
 
@@ -71,7 +74,42 @@ export function processPlay(
         cards: [...cards],
       });
 
-      // Add player's follow cards to the trick
+      // Check if this play beats the current winner and update winningPlayerId
+      if (newState.currentTrick) {
+        const currentWinningPlayerId =
+          newState.currentTrick.winningPlayerId ||
+          newState.currentTrick.leadingPlayerId;
+        const currentWinningPlayer = newState.players.find(
+          (p) => p.id === currentWinningPlayerId,
+        );
+        if (currentWinningPlayer) {
+          // Get the current winner's cards
+          let currentWinningCards: Card[];
+          if (
+            currentWinningPlayerId === newState.currentTrick.leadingPlayerId
+          ) {
+            currentWinningCards = newState.currentTrick.leadingCombo;
+          } else {
+            const winningPlay = newState.currentTrick.plays.find(
+              (play) => play.playerId === currentWinningPlayerId,
+            );
+            currentWinningCards = winningPlay
+              ? winningPlay.cards
+              : newState.currentTrick.leadingCombo;
+          }
+
+          // Compare current play with current winner
+          const comparison = compareCardCombos(
+            cards,
+            currentWinningCards,
+            newState.trumpInfo,
+          );
+          if (comparison > 0) {
+            // Current play beats the current winner
+            newState.currentTrick.winningPlayerId = currentPlayer.id;
+          }
+        }
+      }
     }
   } else {
     // This should never happen - no current trick but not starting new one
@@ -107,11 +145,10 @@ export function processPlay(
   // Check if this completes a trick - should be plays.length = players.length-1
   // Since the leading player's cards are in leadingCombo, not in the plays array
   if (newState.currentTrick.plays.length === newState.players.length - 1) {
-    // Find the winner
-    const winningPlayerId = determineTrickWinner(
-      newState.currentTrick,
-      newState.trumpInfo,
-    );
+    // winningPlayerId is already being tracked throughout the trick, so we can use it directly
+    const winningPlayerId =
+      newState.currentTrick.winningPlayerId ||
+      newState.currentTrick.leadingPlayerId;
 
     // Add points to the winning team
     const trickWinningPlayer = newState.players.find(
@@ -125,9 +162,6 @@ export function processPlay(
         winningTeam.points += newState.currentTrick.points;
       }
     }
-
-    // Set the winningPlayerId on the current trick
-    newState.currentTrick.winningPlayerId = winningPlayerId;
 
     // Save this completed trick
     const completedTrick = {

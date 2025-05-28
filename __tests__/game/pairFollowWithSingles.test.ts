@@ -1,4 +1,4 @@
-import { Card, GameState, Player, Rank, Suit, Team, Trick, PlayerId, PlayerName, GamePhase } from "../../src/types";
+import { Card, GameState, Player, Rank, Suit, Team, Trick, PlayerId, PlayerName, GamePhase, TeamId } from "../../src/types";
 import { isValidPlay, identifyCombos } from '../../src/game/gameLogic';
 
 describe('Pair Follow With Singles', () => {
@@ -22,7 +22,7 @@ describe('Pair Follow With Singles', () => {
       name: PlayerName.Human,
       hand: [],
       isHuman: true,
-      team: 'A',
+      team: TeamId.A,
     };
     
     const ai1: Player = {
@@ -30,14 +30,14 @@ describe('Pair Follow With Singles', () => {
       name: PlayerName.Bot1,
       hand: [],
       isHuman: false,
-      team: 'B',
+      team: TeamId.B,
     };
     
     mockState = {
       players: [humanPlayer, ai1],
       teams: [
-        { id: 'A', currentRank: Rank.Two, points: 0, isDefending: true },
-        { id: 'B', currentRank: Rank.Two, points: 0, isDefending: false }
+        { id: TeamId.A, currentRank: Rank.Two, points: 0, isDefending: true },
+        { id: TeamId.B, currentRank: Rank.Two, points: 0, isDefending: false }
       ],
       deck: [],
       kittyCards: [],
@@ -60,7 +60,8 @@ describe('Pair Follow With Singles', () => {
     mockState.currentTrick = {
       leadingCombo: leadingPair,
       plays: [],
-      leadingPlayerId: 'ai1',
+      leadingPlayerId: PlayerId.Bot1,
+      winningPlayerId: PlayerId.Bot1,
       points: 20  // Two kings = 20 points
     };
     
@@ -96,7 +97,8 @@ describe('Pair Follow With Singles', () => {
     mockState.currentTrick = {
       leadingCombo: leadingPair,
       plays: [],
-      leadingPlayerId: 'ai1',
+      leadingPlayerId: PlayerId.Bot1,
+      winningPlayerId: PlayerId.Bot1,
       points: 20  // Two kings = 20 points
     };
     
