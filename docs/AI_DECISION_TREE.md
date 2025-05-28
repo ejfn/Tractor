@@ -96,7 +96,69 @@ flowchart TD
 | **Late** | Medium | Weak | Point Maximization | Endgame Efficiency |
 | **Late** | High | Any | Desperate Points | All Resources |
 
-## Following Player Decision Tree
+## Restructured Following Player Decision Tree
+
+The AI uses a clean 4-priority decision chain that eliminates conflicts and ensures predictable strategic behavior:
+
+```mermaid
+flowchart TD
+    FollowStart([Following Player Turn]) --> Analysis[Real-time Trick Winner Analysis]
+    
+    Analysis --> P1{Priority 1:<br/>TEAM COORDINATION}
+    P1 -->|trickWinner.isTeammateWinning| TeamLogic[Team Coordination Handler]
+    
+    P1 -->|Not Teammate| P2{Priority 2:<br/>OPPONENT BLOCKING}
+    P2 -->|trickWinner.isOpponentWinning| OpponentLogic[Opponent Blocking Handler]
+    
+    P2 -->|Not Opponent| P3{Priority 3:<br/>TRICK CONTENTION}
+    P3 -->|canWin && shouldContest| ContestLogic[Trick Contention Handler]
+    
+    P3 -->|Not Worth Contesting| P4[Priority 4:<br/>STRATEGIC DISPOSAL]
+    
+    %% Team Coordination Details
+    TeamLogic --> HumanAce{Human Leads Ace?}
+    HumanAce -->|Yes| PointHierarchy[Contribute Points:<br/>10 > King > 5]
+    HumanAce -->|No| ConservativeTeam[Conservative Support]
+    
+    %% Opponent Blocking Details  
+    OpponentLogic --> PointValue{Trick Point Value?}
+    PointValue -->|≥10 Points| AlwaysBeat[Always Attempt Beat]
+    PointValue -->|5-9 Points| ReasonableBeat[Beat if Reasonable]
+    PointValue -->|0-4 Points| ConserveCards[Conserve High Cards]
+    
+    %% Trick Contention Details
+    ContestLogic --> WorthyTrick{Trick ≥5 Points?}
+    WorthyTrick -->|Yes| OptimalWin[Optimal Winning Combo]
+    WorthyTrick -->|No| FallThrough[Fall to Disposal]
+    
+    %% Strategic Disposal Details
+    P4 --> CanWinCheck{Can Win Trick?}
+    CanWinCheck -->|No| AvoidAces[Prefer Non-Aces]
+    CanWinCheck -->|Yes| WeakestPlay[Weakest Combo]
+    
+    %% Final Results
+    PointHierarchy --> Return[Return Selected Cards]
+    ConservativeTeam --> Return
+    AlwaysBeat --> Return
+    ReasonableBeat --> Return
+    ConserveCards --> Return
+    OptimalWin --> Return
+    FallThrough --> Return
+    AvoidAces --> Return
+    WeakestPlay --> Return
+```
+
+### Priority Chain Benefits
+
+1. **Eliminates Logic Conflicts**: Clear priority order prevents contradictory decisions
+2. **Predictable Behavior**: Consistent AI responses across all scenarios
+3. **Enhanced Ace Conservation**: Smart high-card preservation
+4. **Sophisticated Opponent Response**: Strategic blocking based on trick value
+5. **Team Coordination**: Improved cooperation with human teammates
+
+## Legacy Following Player Decision Tree
+
+The previous complex decision tree (shown below) has been replaced by the above priority chain for better maintainability:
 
 When following, the AI uses position-aware strategy with real-time trick winner tracking:
 
@@ -375,15 +437,40 @@ The AI system traverses these decision trees in real-time during gameplay:
 - **Adaptive Complexity**: Decision tree depth adapts based on game importance and available processing time
 - **Fallback Systems**: Multiple fallback strategies ensure robust decision-making under all conditions
 - **Real-time Winner Tracking**: Direct access to `trick.winningPlayerId` eliminates redundant calculations
+- **Restructured Priority Chain**: Clean 4-priority system eliminates conflicts and improves maintainability
 
-### Strategic Evolution
+### Priority Chain Restructure
+
+The AI decision system was restructured to eliminate overlapping logic and rabbit holes:
+
+```
+OLD SYSTEM: 7+ conflicting priorities with early exits and bypasses
+NEW SYSTEM: 4 clear priorities with dedicated handlers
+
+PRIORITY 1: Team Coordination (handleTeammateWinning)
+PRIORITY 2: Opponent Blocking (handleOpponentWinning)  
+PRIORITY 3: Trick Contention (selectOptimalWinningCombo)
+PRIORITY 4: Strategic Disposal (selectStrategicDisposal)
+```
+
+This restructure ensures that partner coordination (playing point cards when teammate leads Ace) works reliably without breaking other AI behaviors.
+
+### Current Implementation Status
+
+- ✅ **Fully Implemented**: All 4 phases of AI intelligence are complete and operational
+- ✅ **Priority Chain**: Restructured decision chain eliminates conflicts and ensures predictable behavior  
+- ✅ **Real-time Analysis**: Trick winner tracking provides immediate strategic responses
+- ✅ **Comprehensive Testing**: 315+ tests validate AI behavior across all scenarios
+- ✅ **Production Ready**: Sophisticated strategic decision-making with smooth gameplay
+
+### Future Strategic Evolution
 
 The decision trees represent the current implementation and will evolve as the AI system advances:
 
-- **Phase 4+ Enhancements**: Advanced pattern recognition and opponent modeling
-- **Machine Learning Integration**: Decision trees may incorporate learned strategic patterns
+- **Enhanced Pattern Recognition**: Deeper opponent modeling and prediction
 - **Meta-Strategy Adaptation**: Long-term strategic adaptation based on gameplay outcomes
 - **Difficulty Scaling**: Decision tree complexity can be adjusted for different skill levels
+- **Performance Optimization**: Further refinements to decision-making efficiency
 
 ---
 

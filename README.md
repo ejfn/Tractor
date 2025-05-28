@@ -41,7 +41,7 @@ Built with **React Native + Expo** for mobile platforms:
 
 ## AI Intelligence
 
-Sophisticated **4-phase AI system** with point-focused strategy, positional awareness, team dynamics, and memory-enhanced decision-making.
+Sophisticated **4-phase AI system** with restructured priority chain, real-time trick analysis, enhanced opponent blocking, and intelligent Ace conservation.
 
 *For complete AI system documentation, see **[AI System Guide](docs/AI_SYSTEM.md)***
 

@@ -487,7 +487,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       expect(selected).toBeNull();
     });
 
-    it('should prioritize highest point cards when multiple point card options available', () => {
+    it('should contribute point cards when Human teammate leads with Ace', () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -513,13 +513,13 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       
       const gameState = createTestGameState({
         currentTrick: {
-          leadingPlayerId: PlayerId.Bot2, // Partner of Human (both Team A)
+          leadingPlayerId: PlayerId.Human, // HUMAN leads with Ace
           leadingCombo: [createTestCard(Suit.Clubs, Rank.Ace)],
           plays: [],
-          winningPlayerId: PlayerId.Bot2,
+          winningPlayerId: PlayerId.Human, // Human is winning
           points: 0,
         },
-        currentPlayerIndex: 0, // Human's turn
+        currentPlayerIndex: 2, // Bot2's turn (teammate following Human's lead)
       });
       
       const trumpInfo = createTestTrumpInfo();

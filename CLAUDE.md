@@ -43,13 +43,14 @@ npm test              # Run tests
 │   ├── combinations.ts    # Advanced combination types
 │   └── pointFocused.ts    # Point-focused strategy types
 ├── ai/                    # AI modules and strategy logic
-│   ├── aiLogic.ts         # Core AI decision making
+│   ├── aiLogic.ts         # Public AI API and game rule compliance
+│   ├── aiStrategy.ts      # Core AI decision making and strategy implementation
 │   ├── aiGameContext.ts   # Game context analysis
 │   ├── aiAdvancedCombinations.ts # Advanced combination analysis
 │   ├── aiCardMemory.ts    # Card memory system (Phase 3)
 │   └── aiPointFocusedStrategy.ts # Point-focused strategy
 ├── game/                  # Core game logic and management
-│   ├── gameLogic.ts       # Core mechanics and rules
+│   ├── gameLogic.ts       # Core mechanics, rules, and valid combination detection
 │   ├── gamePlayManager.ts # Card play validation and tricks
 │   ├── gameRoundManager.ts # Round management and scoring
 │   └── trumpManager.ts    # Trump card management
@@ -409,7 +410,7 @@ Trump suit rotates to first position while maintaining alternating black-red pat
 - Real-time `winningPlayerId` field tracks current trick winner
 - Always block AI moves during trick result display
 
-## AI Implementation Guidelines (Phases 1-3)
+## AI Implementation Guidelines (All 4 Phases)
 
 ### AI Enum Usage ⚠️ MANDATORY
 
@@ -463,6 +464,38 @@ if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
 }
 ```
 
+### AI Priority Chain Architecture
+
+The AI strategy follows a clean 4-priority decision chain in `selectOptimalFollowPlay()`:
+
+```typescript
+// === PRIORITY 1: TEAM COORDINATION ===
+if (trickWinner?.isTeammateWinning) {
+  return this.handleTeammateWinning(comboAnalyses, context, trumpInfo);
+}
+
+// === PRIORITY 2: OPPONENT BLOCKING ===
+if (trickWinner?.isOpponentWinning) {
+  const response = this.handleOpponentWinning(/* ... */);
+  if (response) return response;
+}
+
+// === PRIORITY 3: TRICK CONTENTION ===
+if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
+  return this.selectOptimalWinningCombo(/* ... */);
+}
+
+// === PRIORITY 4: STRATEGIC DISPOSAL ===
+return this.selectStrategicDisposal(/* ... */);
+```
+
+**Key Guidelines:**
+- **Never skip priorities** - each builds on the previous
+- **Use real-time trick winner analysis** via `context.trickWinnerAnalysis`
+- **Opponent blocking thresholds**: High-value (≥10pts), moderate (5-9pts), low-value (0-4pts)
+- **Only contest tricks ≥5 points** to avoid wasting high cards
+- **Strategic disposal conserves Aces** when tricks can't be won
+
 ## Best Practices
 
 - ⚠️ **CRITICAL**: Always import and use enums instead of magic strings
@@ -478,3 +511,5 @@ if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
 - Update documentation when adding new features or changing architecture
 - Use real-time `winningPlayerId` tracking instead of calculating trick winners
 - Avoid redundant winner determination functions
+- **AI Strategy**: Use restructured 4-priority decision chain to avoid conflicts and rabbit holes
+- **Debugging**: When AI behavior changes, check the priority chain order and handler logic
