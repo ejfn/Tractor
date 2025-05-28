@@ -98,13 +98,13 @@ flowchart TD
 
 ## Following Player Decision Tree
 
-When following, the AI uses position-aware strategy with enhanced trick winner analysis:
+When following, the AI uses position-aware strategy with real-time trick winner tracking:
 
 ```mermaid
 flowchart TD
-    FollowStart([Following Player Turn]) --> TrickWinner[Analyze Current Trick Winner]
+    FollowStart([Following Player Turn]) --> TrickWinner[Check Real-Time Trick Winner]
     
-    TrickWinner --> WinnerType{Who's Winning?}
+    TrickWinner --> WinnerType{Current winningPlayerId?}
     
     WinnerType -->|Teammate| TeammateWinning[Teammate Winning Strategy]
     WinnerType -->|Opponent| OpponentWinning[Opponent Winning Strategy]
@@ -178,7 +178,7 @@ flowchart LR
 #### **Second Follower (Third Position)**
 ```mermaid
 flowchart LR
-    Third([Third Position]) --> CurrentWin{Current Winner?}
+    Third([Third Position]) --> CurrentWin{Check winningPlayerId}
     CurrentWin -->|Teammate| MaxPoints[Maximize Point Contribution]
     CurrentWin -->|Opponent| Block[Block or Contest]
     CurrentWin -->|Unknown| Strategic[Strategic Positioning]
@@ -374,6 +374,7 @@ The AI system traverses these decision trees in real-time during gameplay:
 - **Memory Integration**: Card tracking and pattern recognition enhance decision quality without performance impact
 - **Adaptive Complexity**: Decision tree depth adapts based on game importance and available processing time
 - **Fallback Systems**: Multiple fallback strategies ensure robust decision-making under all conditions
+- **Real-time Winner Tracking**: Direct access to `trick.winningPlayerId` eliminates redundant calculations
 
 ### Strategic Evolution
 

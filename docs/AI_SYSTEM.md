@@ -201,31 +201,27 @@ enum PlayStyle {
 ```
 
 ### Implementation Details
-- **Context Creation**: `src/ai/aiGameContext.ts` analyzes current game state and trick winner status
-- **Trick Winner Analysis**: `analyzeTrickWinner()` function provides real-time analysis of current trick state
+- **Context Creation**: `src/ai/aiGameContext.ts` analyzes current game state using real-time trick winner tracking
+- **Real-Time Tracking**: Uses `trick.winningPlayerId` for immediate winner identification without calculations
 - **Strategy Selection**: `src/ai/aiPointFocusedStrategy.ts` implements point-driven decisions
 - **Combo Analysis**: `src/ai/aiAdvancedCombinations.ts` evaluates combination strength  
 - **Decision Engine**: `src/ai/aiLogic.ts` coordinates all strategic components
 
-#### Trick Winner Analysis System
+#### Real-Time Trick Winner System
 ```typescript
-export interface TrickWinnerAnalysis {
-  currentWinner: string | null;
-  isTeammateWinning: boolean;
-  isOpponentWinning: boolean;
-  isSelfWinning: boolean;
-  trickPoints: number;
-  canBeatCurrentWinner: boolean;
-  shouldTryToBeat: boolean;
-  shouldPlayConservatively: boolean;
-}
+// Direct access to current trick winner via real-time tracking
+const currentWinner = gameState.players.find(p => p.id === currentTrick.winningPlayerId);
+const isTeammateWinning = currentWinner && currentPlayer && 
+  currentWinner.team === currentPlayer.team && 
+  currentWinner.id !== currentPlayer.id;
 ```
 
-The AI uses this analysis to:
-- **Support teammates**: Play point cards when teammate is winning
+The AI uses real-time tracking to:
+- **Support teammates**: Play point cards when `winningPlayerId` matches teammate
 - **Block opponents**: Use high cards to prevent opponent point collection
 - **Conserve resources**: Avoid wasteful play when trick is unwinnable *(Issue #61 Fix)*
 - **Maximize points**: Collect maximum points when in winning position
+- **Performance**: Eliminates redundant winner calculations via direct field access
 
 ## Phase 3: Memory & Pattern Recognition (Implemented)
 

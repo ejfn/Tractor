@@ -375,7 +375,7 @@ expect(strategy.pointPressure).toBe('HIGH');
 // Good: Use real initialization + targeted mocking
 jest.mock('../../src/game/gameLogic', () => ({
   ...jest.requireActual('../../src/game/gameLogic'),
-  determineTrickWinner: jest.fn() // Only mock what you need to control
+  compareCards: jest.fn() // Only mock what you need to control for tests
 }));
 
 // Avoid: Large mock objects that duplicate real code
@@ -385,11 +385,10 @@ jest.mock('../../src/game/gameLogic', () => ({
 
 ### Trick Completion Flow
 
-1. All 4 players play cards
-2. Determine winner, store in `winningPlayerIndex`
-3. Display trick result for 2 seconds
-4. Clear table
-5. Winner leads next trick
+1. All 4 players play cards (with real-time `winningPlayerId` tracking)
+2. Display trick result for 2 seconds using stored `winningPlayerId`
+3. Clear table
+4. Winner leads next trick (determined from `winningPlayerId`)
 
 ### Card Suit Ordering
 
@@ -407,6 +406,7 @@ Trump suit rotates to first position while maintaining alternating black-red pat
 - Trump combos beat non-trump combos of same type
 - Leading player's cards stored in `trick.leadingCombo`
 - Trick plays array contains (players.length - 1) plays
+- Real-time `winningPlayerId` field tracks current trick winner
 - Always block AI moves during trick result display
 
 ## AI Implementation Guidelines (Phases 1-3)
@@ -476,3 +476,5 @@ if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
 - Organize files by logical domain (ai/, game/, utils/) not just file type
 - Keep README.md concise and direct detailed information to docs/ files
 - Update documentation when adding new features or changing architecture
+- Use real-time `winningPlayerId` tracking instead of calculating trick winners
+- Avoid redundant winner determination functions
