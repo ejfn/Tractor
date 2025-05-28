@@ -1,5 +1,5 @@
 import { Card, TrumpInfo, Rank, JokerType, ComboType } from "../types";
-import { getComboType } from "../game/gameLogic";
+import { getComboType, isTrump } from "../game/gameLogic";
 
 /**
  * Utility functions for smart card auto-selection
@@ -53,11 +53,23 @@ export const findTractorCards = (
 
   if (!targetCard.rank || !targetCard.suit) return [];
 
-  // Group cards by rank and suit to find pairs
+  // Group cards by rank and suit, but use trump-aware grouping to match validation logic
   const cardsByRankSuit = new Map<string, Card[]>();
   hand.forEach((card) => {
     if (card.rank && card.suit) {
-      const key = `${card.rank}-${card.suit}`;
+      // Use the same trump-aware grouping logic as validation system
+      let suitKey = card.suit;
+      
+      if (card.rank === trumpInfo.trumpRank) {
+        // For trump rank cards, use a compound key with both trump indicator and suit
+        // This separates trump rank cards from regular cards of the same suit
+        suitKey = `trump_${card.suit}`;
+      } else if (isTrump(card, trumpInfo)) {
+        // If card is trump suit but not trump rank, group it with trumps
+        suitKey = "trump_suit";
+      }
+      
+      const key = `${card.rank}-${suitKey}`;
       if (!cardsByRankSuit.has(key)) {
         cardsByRankSuit.set(key, []);
       }
@@ -65,7 +77,7 @@ export const findTractorCards = (
     }
   });
 
-  // Find pairs only (need exactly 2 cards of same rank/suit)
+  // Find pairs only (need exactly 2 cards of same rank/suit group)
   const availablePairs = new Map<string, Card[]>();
   cardsByRankSuit.forEach((cards, key) => {
     if (cards.length >= 2) {
@@ -73,7 +85,15 @@ export const findTractorCards = (
     }
   });
 
-  const targetKey = `${targetCard.rank}-${targetCard.suit}`;
+  // Calculate target key using the same trump-aware logic
+  let targetSuitKey = targetCard.suit;
+  if (targetCard.rank === trumpInfo.trumpRank) {
+    targetSuitKey = `trump_${targetCard.suit}`;
+  } else if (isTrump(targetCard, trumpInfo)) {
+    targetSuitKey = "trump_suit";
+  }
+  
+  const targetKey = `${targetCard.rank}-${targetSuitKey}`;
   if (!availablePairs.has(targetKey)) return [];
 
   // Get rank order for consecutive checking
@@ -104,13 +124,23 @@ export const findTractorCards = (
   tractorCards.push(...availablePairs.get(targetKey)!);
   ranksInTractor.push(targetCard.rank);
 
-  // Look for consecutive pairs going up
+  // Look for consecutive pairs going up (within same trump group)
   let currentRankIndex = targetRankIndex;
   while (currentRankIndex + 1 < rankOrder.length) {
     const nextRank = rankOrder[currentRankIndex + 1];
-    const nextKey = `${nextRank}-${targetCard.suit}`;
+    
+    // Calculate the key for the next rank using the same trump-aware logic
+    let nextSuitKey = targetCard.suit;
+    if (nextRank === trumpInfo.trumpRank) {
+      nextSuitKey = `trump_${targetCard.suit}`;
+    } else if (targetCard.suit === trumpInfo.trumpSuit && trumpInfo.declared) {
+      nextSuitKey = "trump_suit";
+    }
+    
+    const nextKey = `${nextRank}-${nextSuitKey}`;
 
-    if (availablePairs.has(nextKey)) {
+    // Only continue if the next rank is in the same trump category as target
+    if (availablePairs.has(nextKey) && nextSuitKey === targetSuitKey) {
       tractorCards.push(...availablePairs.get(nextKey)!);
       ranksInTractor.push(nextRank);
       currentRankIndex++;
@@ -119,13 +149,23 @@ export const findTractorCards = (
     }
   }
 
-  // Look for consecutive pairs going down
+  // Look for consecutive pairs going down (within same trump group)
   currentRankIndex = targetRankIndex;
   while (currentRankIndex - 1 >= 0) {
     const prevRank = rankOrder[currentRankIndex - 1];
-    const prevKey = `${prevRank}-${targetCard.suit}`;
+    
+    // Calculate the key for the previous rank using the same trump-aware logic
+    let prevSuitKey = targetCard.suit;
+    if (prevRank === trumpInfo.trumpRank) {
+      prevSuitKey = `trump_${targetCard.suit}`;
+    } else if (targetCard.suit === trumpInfo.trumpSuit && trumpInfo.declared) {
+      prevSuitKey = "trump_suit";
+    }
+    
+    const prevKey = `${prevRank}-${prevSuitKey}`;
 
-    if (availablePairs.has(prevKey)) {
+    // Only continue if the previous rank is in the same trump category as target
+    if (availablePairs.has(prevKey) && prevSuitKey === targetSuitKey) {
       tractorCards.push(...availablePairs.get(prevKey)!);
       ranksInTractor.push(prevRank);
       currentRankIndex--;
