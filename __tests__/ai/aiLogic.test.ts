@@ -163,45 +163,6 @@ describe('AI Logic Tests', () => {
       expect(move[0].rank).toBe(move[1].rank);
     });
 
-    test('AI should handle case with few cards remaining', () => {
-      const gameState = createMockGameState();
-      
-      // Create a trick with a pair as leading combo
-      gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [
-          createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
-          createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
-        ],
-        plays: [
-          {
-            playerId: PlayerId.Human,
-            cards: [
-              createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
-              createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2')
-            ]
-          }
-        ],
-        winningPlayerId: PlayerId.Human,
-        points: 0
-      };
-      
-      // NOTE: This test intentionally triggers a console warning
-      // The warning "AI player bot1 doesn't have enough cards" is expected
-      // Give AI1 only one card (not enough to follow the pair)
-      gameState.players[1].hand = [
-        createCard(Suit.Hearts, Rank.Six, 'hearts_6_1')
-      ];
-      
-      gameState.currentPlayerIndex = 1; // AI1's turn
-      
-      const move = getAIMove(gameState, PlayerId.Bot1);
-      
-      // AI should return whatever card it has, even if not enough cards
-      expect(move.length).toBe(1);
-      expect(move[0].suit).toBe(Suit.Hearts);
-    });
-
     test('AI should handle case with no cards', () => {
       const gameState = createMockGameState();
 

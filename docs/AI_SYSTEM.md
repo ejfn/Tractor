@@ -432,6 +432,24 @@ All AI decisions are made through context analysis:
 - **Following Efficiency**: Match combinations when beneficial
 - **Tractor Preservation**: Save tractors for maximum impact
 - **Single Card Timing**: Use singles strategically
+- **Trump Group Conservation**: Preserve valuable trump cards using proper hierarchy
+
+### Trump Group Management
+
+The AI understands the complete trump hierarchy and conserves valuable trump cards:
+
+**Trump Group Hierarchy (highest to lowest conservation value):**
+1. **Big Joker** (100) - Most valuable, never waste
+2. **Small Joker** (90) - Second most valuable
+3. **Trump rank in trump suit** (80) - Highly valuable
+4. **Trump rank in off-suits** (70) - Very valuable
+5. **Trump suit cards**: A♠(60) > K♠(55) > Q♠(50) > J♠(45) > 10♠(40) > 9♠(35) > 8♠(30) > 7♠(25) > 6♠(20) > 5♠(15) > 4♠(10) > **3♠(5)** - Least valuable trump
+
+**Strategic Application:**
+- When forced to follow trump, AI plays the weakest available trump (3♠, 4♠, etc.)
+- Avoids wasting valuable trump rank cards or high trump suit cards
+- Point cards (5s, 10s, Kings) get additional conservation value if they're also trump
+- **Example**: When opponent leads rank 2, AI plays 3♠ instead of another rank 2
 
 ### Team Coordination
 

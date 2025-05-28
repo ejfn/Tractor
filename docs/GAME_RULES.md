@@ -41,18 +41,21 @@ Work with your AI teammate to collect points (5s, 10s, Kings) and advance throug
 
 Cards are ranked from highest to lowest trump strength:
 
-### Trump Cards (Beat all non-trump)
+### Trump Group (All trump cards beat non-trump cards)
 1. **Big Joker** (🃏) - Highest trump card
 2. **Small Joker** (🃏) - Second highest trump
-3. **Trump rank** (e.g., 2♠ when Spades trump, rank 2)
-4. **Off-suit rank** (e.g., 2♥, 2♣, 2♦ when Spades trump)
+3. **Trump rank in trump suit** (e.g., 2♠ when Spades trump, rank 2)
+4. **Trump rank in off-suits** (e.g., 2♥, 2♣, 2♦ when Spades trump)
    - *Equal strength - first played wins*
-5. **Trump suit** (A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3 of trump suit)
+5. **Trump suit cards** (A♠, K♠, Q♠, J♠, 10♠, 9♠, 8♠, 7♠, 6♠, 5♠, 4♠, 3♠ when Spades trump)
+
+**Complete Trump Group Example (when rank 2, trump suit Spades):**
+- **BJ** > **SJ** > **2♠** > **2♥, 2♣, 2♦** > **A♠** > **K♠** > **Q♠** > **J♠** > **10♠** > **9♠** > **8♠** > **7♠** > **6♠** > **5♠** > **4♠** > **3♠**
 
 ### Non-Trump Cards
-- Ranked by suit within each suit: A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3
-- Cannot beat trump cards
-- Higher suit cards beat lower suit cards of same suit
+- Ranked within each suit: A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3
+- Cannot beat any trump group cards
+- Higher cards beat lower cards of same suit only
 
 ## Combination Types
 

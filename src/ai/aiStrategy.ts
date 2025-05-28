@@ -111,17 +111,10 @@ export class AIStrategyImplementation implements AIStrategy {
       if (pointFocusedPlay) return pointFocusedPlay;
     } else {
       // Following play with RESTRUCTURED priority chain
-      // Convert validCombos to comboAnalyses format
+      // Convert validCombos to comboAnalyses format using proper analysis
       const comboAnalyses = validCombos.map((combo) => ({
         combo,
-        analysis: {
-          strength: ComboStrength.Medium,
-          isTrump: combo.cards.some((card) => isTrump(card, trumpInfo)),
-          hasPoints: combo.cards.some((card) => card.points > 0),
-          pointValue: combo.cards.reduce((sum, card) => sum + card.points, 0),
-          disruptionPotential: 0.5, // Simplified
-          conservationValue: combo.value || 0,
-        },
+        analysis: analyzeCombo(combo, trumpInfo, context),
       }));
 
       // Create proper trick analysis instead of simplified
@@ -279,7 +272,6 @@ export class AIStrategyImplementation implements AIStrategy {
         trumpInfo,
       );
     }
-
     // === PRIORITY 4: STRATEGIC DISPOSAL ===
     // Can't/shouldn't win - play optimally for future tricks
     return this.selectStrategicDisposal(
@@ -310,7 +302,7 @@ export class AIStrategyImplementation implements AIStrategy {
       return this.selectPointContribution(comboAnalyses, trumpInfo);
     } else {
       // PLAY_CONSERVATIVE: Teammate winning strong - play low
-      return this.selectConservativePlay(comboAnalyses, context);
+      return this.selectLowestValueCombo(comboAnalyses);
     }
   }
 
@@ -394,7 +386,8 @@ export class AIStrategyImplementation implements AIStrategy {
   ): Card[] | null {
     // Check if we can beat the opponent at all
     if (!trickAnalysis.canWin) {
-      return null; // Can't beat, will handle in strategic disposal
+      // Can't beat opponent - play lowest value card to minimize points given
+      return this.selectLowestValueCombo(comboAnalyses);
     }
 
     // High-value tricks (>=10 points): definitely try to beat if we can
@@ -437,16 +430,30 @@ export class AIStrategyImplementation implements AIStrategy {
       return sorted[0].combo.cards;
     }
 
-    // When we can't win the trick, prefer non-Aces to conserve high cards
+    // When we can't win the trick, conserve valuable cards (trump + Aces)
     if (!trickAnalysis.canWin) {
-      const nonAces = comboAnalyses.filter(
-        (ca) => !ca.combo.cards.some((card) => card.rank === Rank.Ace),
+      // First priority: prefer non-trump, non-Ace cards
+      const nonValuable = comboAnalyses.filter(
+        (ca) =>
+          !ca.analysis.isTrump &&
+          !ca.combo.cards.some((card) => card.rank === Rank.Ace),
       );
 
-      if (nonAces.length > 0) {
-        const sorted = nonAces.sort((a, b) => a.combo.value - b.combo.value);
+      if (nonValuable.length > 0) {
+        const sorted = nonValuable.sort(
+          (a, b) => a.combo.value - b.combo.value,
+        );
         return sorted[0].combo.cards;
       }
+
+      // Second priority: prefer non-trump (even if Aces)
+      const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
+      if (nonTrump.length > 0) {
+        const sorted = nonTrump.sort((a, b) => a.combo.value - b.combo.value);
+        return sorted[0].combo.cards;
+      }
+
+      // Last resort: use trump cards (only if no non-trump available)
     }
 
     // Standard disposal - use weakest combo
@@ -456,23 +463,13 @@ export class AIStrategyImplementation implements AIStrategy {
 
   // === HELPER METHODS ===
 
-  private selectConservativePlay(
-    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    context: GameContext,
-  ): Card[] {
-    // Play the lowest value combination available
-    const sortedCombos = comboAnalyses.sort(
-      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
-    );
-    return sortedCombos[0].combo.cards;
-  }
-
   private selectLowestValueCombo(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   ): Card[] {
     const sorted = comboAnalyses.sort(
       (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
     );
+
     return sorted[0].combo.cards;
   }
 
@@ -515,7 +512,7 @@ export class AIStrategyImplementation implements AIStrategy {
 
     if (winningCombos.length === 0) {
       // Fallback to conservative play if we can't beat
-      return this.selectConservativePlay(comboAnalyses, context);
+      return this.selectLowestValueCombo(comboAnalyses);
     }
 
     // Select the most efficient winning combo (minimal overkill)
