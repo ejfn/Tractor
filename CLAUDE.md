@@ -89,6 +89,7 @@ npm test              # Run tests
 ```
 /docs/
 ├── AI_SYSTEM.md           # Comprehensive AI intelligence documentation
+├── AI_DECISION_TREE.md    # Detailed AI decision logic and strategic flowcharts
 ├── GAME_RULES.md          # Complete game rules and strategy guide
 └── README.md              # Project overview (main entry point)
 ```
@@ -117,6 +118,7 @@ The project uses a modular documentation approach:
 - **README.md** - Concise project overview and quick reference
 - **CLAUDE.md** - Comprehensive development guidelines (this file)
 - **docs/AI_SYSTEM.md** - Detailed AI intelligence system documentation
+- **docs/AI_DECISION_TREE.md** - Visual decision flowcharts and strategic logic trees
 - **docs/GAME_RULES.md** - Complete game rules and strategy guide
 
 This keeps the main README clean while providing comprehensive documentation for developers and users.
@@ -125,6 +127,7 @@ This keeps the main README clean while providing comprehensive documentation for
 - **README.md** should be scannable and focus on what the project is and key features
 - **CLAUDE.md** contains all development standards, architecture details, and coding guidelines
 - **docs/AI_SYSTEM.md** for detailed AI system documentation and technical implementation
+- **docs/AI_DECISION_TREE.md** for visual flowcharts and decision logic for each AI strategy
 - **docs/GAME_RULES.md** for comprehensive game rules, strategy, and player guidance
 - Never duplicate content between files - use cross-references instead
 

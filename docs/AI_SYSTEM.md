@@ -2,6 +2,10 @@
 
 > *Advanced 4-phase AI intelligence that creates engaging and strategic gameplay through sophisticated decision-making algorithms*
 
+**Related Documentation:**
+- **[AI Decision Trees](AI_DECISION_TREE.md)** - Detailed decision flowcharts and strategic logic trees
+- **[Game Rules](GAME_RULES.md)** - Complete game rules and strategy guide
+
 ## AI System Overview
 
 The AI system operates in **4 distinct phases**, each building upon the previous to create increasingly sophisticated gameplay:
@@ -353,3 +357,10 @@ The AI system consists of 5 specialized modules in `src/ai/`:
 - **Integration testing** ensuring seamless phase coordination
 - **Performance testing** validating real-time decision speeds
 - **Conservative play validation** testing Issue #61 fix implementation
+
+---
+
+**See Also:**
+- **[AI Decision Trees](AI_DECISION_TREE.md)** - Detailed flowcharts and decision logic for each AI strategy
+- **[Game Rules](GAME_RULES.md)** - Complete game rules and strategic concepts
+- **[CLAUDE.md](../CLAUDE.md)** - Development guidelines and implementation details
