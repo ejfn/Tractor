@@ -58,8 +58,8 @@ export const findTractorCards = (
   hand.forEach((card) => {
     if (card.rank && card.suit) {
       // Use the same trump-aware grouping logic as validation system
-      let suitKey = card.suit;
-      
+      let suitKey: string = card.suit;
+
       if (card.rank === trumpInfo.trumpRank) {
         // For trump rank cards, use a compound key with both trump indicator and suit
         // This separates trump rank cards from regular cards of the same suit
@@ -68,7 +68,7 @@ export const findTractorCards = (
         // If card is trump suit but not trump rank, group it with trumps
         suitKey = "trump_suit";
       }
-      
+
       const key = `${card.rank}-${suitKey}`;
       if (!cardsByRankSuit.has(key)) {
         cardsByRankSuit.set(key, []);
@@ -86,13 +86,13 @@ export const findTractorCards = (
   });
 
   // Calculate target key using the same trump-aware logic
-  let targetSuitKey = targetCard.suit;
+  let targetSuitKey: string = targetCard.suit;
   if (targetCard.rank === trumpInfo.trumpRank) {
     targetSuitKey = `trump_${targetCard.suit}`;
   } else if (isTrump(targetCard, trumpInfo)) {
     targetSuitKey = "trump_suit";
   }
-  
+
   const targetKey = `${targetCard.rank}-${targetSuitKey}`;
   if (!availablePairs.has(targetKey)) return [];
 
@@ -128,15 +128,15 @@ export const findTractorCards = (
   let currentRankIndex = targetRankIndex;
   while (currentRankIndex + 1 < rankOrder.length) {
     const nextRank = rankOrder[currentRankIndex + 1];
-    
+
     // Calculate the key for the next rank using the same trump-aware logic
-    let nextSuitKey = targetCard.suit;
+    let nextSuitKey: string = targetCard.suit;
     if (nextRank === trumpInfo.trumpRank) {
       nextSuitKey = `trump_${targetCard.suit}`;
     } else if (targetCard.suit === trumpInfo.trumpSuit && trumpInfo.declared) {
       nextSuitKey = "trump_suit";
     }
-    
+
     const nextKey = `${nextRank}-${nextSuitKey}`;
 
     // Only continue if the next rank is in the same trump category as target
@@ -153,15 +153,15 @@ export const findTractorCards = (
   currentRankIndex = targetRankIndex;
   while (currentRankIndex - 1 >= 0) {
     const prevRank = rankOrder[currentRankIndex - 1];
-    
+
     // Calculate the key for the previous rank using the same trump-aware logic
-    let prevSuitKey = targetCard.suit;
+    let prevSuitKey: string = targetCard.suit;
     if (prevRank === trumpInfo.trumpRank) {
       prevSuitKey = `trump_${targetCard.suit}`;
     } else if (targetCard.suit === trumpInfo.trumpSuit && trumpInfo.declared) {
       prevSuitKey = "trump_suit";
     }
-    
+
     const prevKey = `${prevRank}-${prevSuitKey}`;
 
     // Only continue if the previous rank is in the same trump category as target

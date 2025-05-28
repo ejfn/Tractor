@@ -26,7 +26,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     expect(tractorCards).toHaveLength(0);
 
     // Test validation - should also NOT identify as tractor  
-    const comboType = getComboType(hand);
+    const comboType = getComboType(hand, trumpInfo);
     expect(comboType).not.toBe(ComboType.Tractor);
 
     // Both systems should now be aligned
@@ -56,7 +56,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     expect(tractorCards).toHaveLength(4);
 
     // Test validation - should also identify as tractor
-    const comboType = getComboType(hand);
+    const comboType = getComboType(hand, trumpInfo);
     expect(comboType).toBe(ComboType.Tractor);
 
     // Both systems should be aligned
@@ -86,7 +86,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     expect(tractorCards).toHaveLength(4);
 
     // Test validation - should also identify as tractor
-    const comboType = getComboType(hand);
+    const comboType = getComboType(hand, trumpInfo);
     expect(comboType).toBe(ComboType.Tractor);
 
     // Both systems should be aligned
@@ -116,7 +116,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     expect(tractorCards).toHaveLength(0);
 
     // Test validation - should also NOT identify as tractor
-    const comboType = getComboType(hand);
+    const comboType = getComboType(hand, trumpInfo);
     expect(comboType).not.toBe(ComboType.Tractor);
 
     // Both systems should be aligned
@@ -146,7 +146,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     expect(tractorCards).toHaveLength(0);
 
     // Test validation - should also NOT identify as tractor
-    const comboType = getComboType(hand);
+    const comboType = getComboType(hand, trumpInfo);
     expect(comboType).not.toBe(ComboType.Tractor);
 
     // Both systems should be aligned

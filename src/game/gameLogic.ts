@@ -687,7 +687,10 @@ export const getLeadingSuit = (combo: Card[]): Suit | undefined => {
 };
 
 // Get the combo type (single, pair, etc.) based on the cards
-export const getComboType = (cards: Card[]): ComboType => {
+export const getComboType = (
+  cards: Card[],
+  trumpInfo?: TrumpInfo,
+): ComboType => {
   if (cards.length === 1) {
     return ComboType.Single;
   } else if (cards.length === 2) {
@@ -716,42 +719,107 @@ export const getComboType = (cards: Card[]): ComboType => {
     }
 
     // Check if it's a regular tractor (consecutive pairs)
-    // First check if all cards are the same suit
-    const sameSuit =
-      cards[0].suit && cards.every((card) => card.suit === cards[0].suit);
-
-    if (sameSuit) {
-      // Group cards by rank to find pairs
-      const rankCounts = new Map<Rank, number>();
+    // Use trump-aware grouping similar to auto-selection logic
+    if (trumpInfo) {
+      // Group cards by rank and trump-aware suit categories
+      const cardsByRankSuit = new Map<string, Card[]>();
       cards.forEach((card) => {
-        if (card.rank) {
-          rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1);
+        if (card.rank && card.suit) {
+          let suitKey: string = card.suit;
+
+          if (card.rank === trumpInfo.trumpRank) {
+            // Trump rank cards get compound key with trump indicator and suit
+            suitKey = `trump_${card.suit}`;
+          } else if (isTrump(card, trumpInfo)) {
+            // Trump suit (non-trump rank) cards grouped separately
+            suitKey = "trump_suit";
+          }
+
+          const key = `${card.rank}-${suitKey}`;
+          if (!cardsByRankSuit.has(key)) {
+            cardsByRankSuit.set(key, []);
+          }
+          cardsByRankSuit.get(key)!.push(card);
         }
       });
 
-      // Check if all cards form pairs (each rank appears exactly twice)
-      const pairs = Array.from(rankCounts.entries()).filter(
-        ([_, count]) => count === 2,
+      // Check if all cards form pairs within trump-aware groups
+      const pairs = Array.from(cardsByRankSuit.entries()).filter(
+        ([_, groupCards]) => groupCards.length === 2,
       );
 
       // Must have exactly cards.length / 2 pairs
       const expectedPairs = cards.length / 2;
       if (pairs.length === expectedPairs) {
-        // Get the rank values of the pairs
-        const pairRanks = pairs.map(([rank, _]) => getRankValue(rank));
-        pairRanks.sort((a, b) => a - b);
+        // Extract ranks and check if they're from the same trump category
+        const pairData = pairs.map(([key, groupCards]) => {
+          const [rank, suitKey] = key.split("-");
+          return { rank: rank as Rank, suitKey, groupCards };
+        });
 
-        // Check if the pairs are consecutive
-        let isConsecutive = true;
-        for (let i = 0; i < pairRanks.length - 1; i++) {
-          if (pairRanks[i + 1] - pairRanks[i] !== 1) {
-            isConsecutive = false;
-            break;
+        // All pairs must be in the same trump category (same suitKey pattern)
+        const firstSuitKey = pairData[0].suitKey;
+        const sameTrumpCategory = pairData.every(
+          (pair) => pair.suitKey === firstSuitKey,
+        );
+
+        if (sameTrumpCategory) {
+          // Get the rank values of the pairs
+          const pairRanks = pairData.map((pair) => getRankValue(pair.rank));
+          pairRanks.sort((a, b) => a - b);
+
+          // Check if the pairs are consecutive
+          let isConsecutive = true;
+          for (let i = 0; i < pairRanks.length - 1; i++) {
+            if (pairRanks[i + 1] - pairRanks[i] !== 1) {
+              isConsecutive = false;
+              break;
+            }
+          }
+
+          if (isConsecutive) {
+            return ComboType.Tractor;
           }
         }
+      }
+    } else {
+      // Fallback to simple suit checking when no trump info provided
+      const sameSuit =
+        cards[0].suit && cards.every((card) => card.suit === cards[0].suit);
 
-        if (isConsecutive) {
-          return ComboType.Tractor;
+      if (sameSuit) {
+        // Group cards by rank to find pairs
+        const rankCounts = new Map<Rank, number>();
+        cards.forEach((card) => {
+          if (card.rank) {
+            rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1);
+          }
+        });
+
+        // Check if all cards form pairs (each rank appears exactly twice)
+        const pairs = Array.from(rankCounts.entries()).filter(
+          ([_, count]) => count === 2,
+        );
+
+        // Must have exactly cards.length / 2 pairs
+        const expectedPairs = cards.length / 2;
+        if (pairs.length === expectedPairs) {
+          // Get the rank values of the pairs
+          const pairRanks = pairs.map(([rank, _]) => getRankValue(rank));
+          pairRanks.sort((a, b) => a - b);
+
+          // Check if the pairs are consecutive
+          let isConsecutive = true;
+          for (let i = 0; i < pairRanks.length - 1; i++) {
+            if (pairRanks[i + 1] - pairRanks[i] !== 1) {
+              isConsecutive = false;
+              break;
+            }
+          }
+
+          if (isConsecutive) {
+            return ComboType.Tractor;
+          }
         }
       }
     }
