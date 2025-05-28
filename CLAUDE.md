@@ -108,6 +108,7 @@ The codebase is organized by **logical domain** rather than just file type:
 - **`__tests__/`** - Test structure mirrors source code organization
 
 This structure makes it easy to:
+
 - Find related functionality quickly
 - Understand dependencies between modules
 - Add new features in the right place
@@ -116,6 +117,7 @@ This structure makes it easy to:
 ### Documentation Philosophy
 
 The project uses a modular documentation approach:
+
 - **README.md** - Concise project overview and quick reference
 - **CLAUDE.md** - Comprehensive development guidelines (this file)
 - **docs/AI_SYSTEM.md** - Detailed AI intelligence system documentation
@@ -125,6 +127,7 @@ The project uses a modular documentation approach:
 This keeps the main README clean while providing comprehensive documentation for developers and users.
 
 **Documentation Guidelines:**
+
 - **README.md** should be scannable and focus on what the project is and key features
 - **CLAUDE.md** contains all development standards, architecture details, and coding guidelines
 - **docs/AI_SYSTEM.md** for detailed AI system documentation and technical implementation
@@ -328,6 +331,7 @@ enum ComboStrength {
 ```
 
 **⚠️ ALWAYS use enums instead of magic strings:**
+
 - ✅ `PlayerId.Human` instead of `'human'`
 - ✅ `GamePhase.Playing` instead of `'playing'`  
 - ✅ `PlayerName.Bot1` instead of `'Bot 1'`
@@ -337,12 +341,14 @@ enum ComboStrength {
 - ✅ `ComboStrength.Critical` instead of `'critical'`
 
 **❌ NEVER use magic strings:**
+
 - ❌ `'human'`, `'bot1'`, `'playing'`, `'high'`, `'aggressive'`
 - ❌ String literals in conditional checks
 - ❌ Hardcoded strings in function parameters
 - ❌ String comparisons without enum references
 
 **🔍 Common Enum Mistakes to Avoid:**
+
 - Using `player.id === 'human'` instead of `player.id === PlayerId.Human`
 - Returning `'aggressive'` instead of `PlayStyle.Aggressive` from functions
 - Comparing with `pointPressure === 'HIGH'` instead of `pointPressure === PointPressure.HIGH`
@@ -355,9 +361,9 @@ enum ComboStrength {
 - **Use type-safe test utilities**: Never use magic strings in test assertions
 - **Jest mock limitations**: Only mock what needs to be controlled for the specific test
 - **Test realism**: Use actual game logic when possible for more realistic test coverage
-- **Jest debugging**: Use `silent: true|false` in `jest.config.js` to control console output during test debugging
 
 **✅ Correct Test Enum Usage:**
+
 ```typescript
 import { PlayerId, GamePhase, TrickPosition, PointPressure } from '../../src/types';
 
@@ -401,6 +407,21 @@ Trump suit rotates to first position while maintaining alternating black-red pat
 - Diamonds trump: ♦ ♠ ♥ ♣
 - Spades trump: ♠ ♥ ♣ ♦
 
+### Trump Group Hierarchy
+
+**Complete trump hierarchy (using rank 2, trump suit Spades as example):**
+
+1. **Big Joker** - Highest trump
+2. **Small Joker** - Second highest
+3. **2♠** - Trump rank in trump suit
+4. **2♥, 2♣, 2♦** - Trump rank in off-suits (equal strength)
+5. **A♠, K♠, Q♠, J♠, 10♠, 9♠, 8♠, 7♠, 6♠, 5♠, 4♠, 3♠** - Trump suit cards
+
+**AI Conservation Values:**
+- BJ(100) > SJ(90) > 2♠(80) > 2♥,2♣,2♦(70) > A♠(60) > K♠(55) > Q♠(50) > J♠(45) > 10♠(40) > 9♠(35) > 8♠(30) > 7♠(25) > 6♠(20) > 5♠(15) > 4♠(10) > **3♠(5)**
+
+**Key Principle:** When forced to follow trump, AI plays weakest available trump (3♠, 4♠) instead of wasting valuable trump rank cards.
+
 ### Important Rules
 
 - Different suits never form pairs/tractors
@@ -440,6 +461,7 @@ if (analysis.strength === ComboStrength.Critical) {  // ✅ CORRECT
 ```
 
 **❌ NEVER do this in AI code:**
+
 ```typescript
 // Wrong - magic strings
 if (context.playStyle === 'aggressive') { }          // ❌ BAD
@@ -490,6 +512,7 @@ return this.selectStrategicDisposal(/* ... */);
 ```
 
 **Key Guidelines:**
+
 - **Never skip priorities** - each builds on the previous
 - **Use real-time trick winner analysis** via `context.trickWinnerAnalysis`
 - **Opponent blocking thresholds**: High-value (≥10pts), moderate (5-9pts), low-value (0-4pts)

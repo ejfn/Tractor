@@ -14,6 +14,7 @@ import {
   TrumpInfo,
   TrickWinnerAnalysis,
   Rank,
+  JokerType,
 } from "../types";
 import { isTrump, compareCards } from "../game/gameLogic";
 import { createCardMemory, enhanceGameContextWithMemory } from "./aiCardMemory";
@@ -443,6 +444,91 @@ export function determinePlayStyle(
 }
 
 /**
+ * Calculate trump conservation value based on trump hierarchy
+ *
+ * Trump Hierarchy (highest to lowest):
+ * 1. Big Joker (100)
+ * 2. Small Joker (90)
+ * 3. Trump rank in trump suit (80)
+ * 4. Trump rank in off-suits (70)
+ * 5. Trump suit: A(60), K(55), Q(50), J(45), 10(40), 9(35), 8(30), 7(25), 6(20), 5(15), 4(10), 3(5)
+ */
+function calculateTrumpConservationValue(
+  cards: Card[],
+  trumpInfo: TrumpInfo,
+): number {
+  let maxValue = 0;
+
+  for (const card of cards) {
+    let cardValue = 0;
+
+    // Big Joker - highest value
+    if (card.joker === JokerType.Big) {
+      cardValue = 100;
+    }
+    // Small Joker - second highest
+    else if (card.joker === JokerType.Small) {
+      cardValue = 90;
+    }
+    // Trump rank cards
+    else if (card.rank === trumpInfo.trumpRank) {
+      if (card.suit === trumpInfo.trumpSuit) {
+        cardValue = 80; // Trump rank in trump suit
+      } else {
+        cardValue = 70; // Trump rank in off-suits
+      }
+    }
+    // Trump suit cards (non-rank)
+    else if (card.suit === trumpInfo.trumpSuit) {
+      switch (card.rank) {
+        case Rank.Ace:
+          cardValue = 60;
+          break;
+        case Rank.King:
+          cardValue = 55;
+          break;
+        case Rank.Queen:
+          cardValue = 50;
+          break;
+        case Rank.Jack:
+          cardValue = 45;
+          break;
+        case Rank.Ten:
+          cardValue = 40;
+          break;
+        case Rank.Nine:
+          cardValue = 35;
+          break;
+        case Rank.Eight:
+          cardValue = 30;
+          break;
+        case Rank.Seven:
+          cardValue = 25;
+          break;
+        case Rank.Six:
+          cardValue = 20;
+          break;
+        case Rank.Five:
+          cardValue = 15;
+          break;
+        case Rank.Four:
+          cardValue = 10;
+          break;
+        case Rank.Three:
+          cardValue = 5;
+          break;
+        default:
+          cardValue = 0;
+      }
+    }
+
+    maxValue = Math.max(maxValue, cardValue);
+  }
+
+  return maxValue;
+}
+
+/**
  * Analyzes a combo's strategic value
  */
 export function analyzeCombo(
@@ -451,6 +537,7 @@ export function analyzeCombo(
   context: GameContext,
 ): ComboAnalysis {
   const isTrumpCombo = combo.cards.some((card) => isTrump(card, trumpInfo));
+
   const pointValue = combo.cards.reduce((sum, card) => sum + card.points, 0);
   const hasPoints = pointValue > 0;
 
@@ -473,8 +560,18 @@ export function analyzeCombo(
   if (combo.type === "Pair") disruptionPotential += 10;
 
   // Calculate conservation value (how valuable it is to keep)
-  let conservationValue = combo.value;
-  if (isTrumpCombo) conservationValue += 20;
+  // For trump cards, ignore base combo.value and use proper trump hierarchy
+  let conservationValue: number;
+
+  if (isTrumpCombo) {
+    // Use proper trump hierarchy value - ignore misleading base combo.value
+    conservationValue = calculateTrumpConservationValue(combo.cards, trumpInfo);
+  } else {
+    // For non-trump cards, use base combo.value
+    conservationValue = combo.value;
+  }
+
+  // Add point value for any point cards
   if (hasPoints) conservationValue += pointValue;
   if (context.cardsRemaining <= 5) conservationValue *= 1.5; // More valuable in endgame
 

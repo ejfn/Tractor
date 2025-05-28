@@ -20,26 +20,43 @@ export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
     throw new Error(`AI player with ID ${playerId} not found`);
   }
 
+  // Handle empty hand case (should never happen - indicates game flow bug)
+  if (player.hand.length === 0) {
+    console.warn("AI asked to play with empty hand - game flow bug", {
+      playerId,
+      gamePhase: gameState.gamePhase,
+      currentPlayerIndex: gameState.currentPlayerIndex,
+    });
+    return []; // Safety fallback
+  }
+
   // Get all valid combinations using the centralized game logic
   const validCombos = getValidCombinations(player.hand, gameState);
 
-  // Handle edge cases gracefully (empty hand, insufficient cards, etc.)
+  // Handle bug case: player has cards but no valid combinations found
   if (validCombos.length === 0) {
-    // Fallback for edge cases: return what cards we have (may be empty)
-    if (player.hand.length === 0) {
-      return []; // No cards to play
-    }
+    const errorInfo = {
+      message:
+        "Game bug detected: AI cannot make a valid move. Please restart and report this issue.",
+      debugInfo: `Player ${playerId} has ${player.hand.length} cards but no valid combinations found`,
+      playerHand: player.hand.map((c) => `${c.rank}${c.suit}`),
+      leadingCombo: gameState.currentTrick?.leadingCombo?.map(
+        (c) => `${c.rank}${c.suit}`,
+      ),
+      trumpInfo: gameState.trumpInfo,
+      gamePhase: gameState.gamePhase,
+    };
 
-    // If we have cards but no valid combos, there might be an issue with our logic
-    // For now, return single cards as emergency fallback
-    console.warn(
-      `No valid combinations found for AI player ${playerId}, falling back to emergency play`,
+    console.error(
+      "GAME BUG: No valid combinations found for AI with cards",
+      errorInfo,
     );
 
-    // Return up to the required number of cards, or all cards if fewer available
-    const requiredLength = gameState.currentTrick?.leadingCombo?.length || 1;
-    const cardsToPlay = Math.min(requiredLength, player.hand.length);
-    return player.hand.slice(0, cardsToPlay);
+    const error = new Error(errorInfo.message);
+    (error as any).isUserFriendly = true;
+    (error as any).canReport = true;
+    (error as any).debugInfo = errorInfo;
+    throw error;
   }
 
   // Delegate all strategic decisions to the AI strategy layer
