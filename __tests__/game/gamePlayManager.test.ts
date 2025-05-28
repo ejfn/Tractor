@@ -21,7 +21,6 @@ import {
 jest.mock('../../src/game/gameLogic', () => ({
   identifyCombos: jest.fn(),
   isValidPlay: jest.fn(),
-  determineTrickWinner: jest.fn(),
   compareCardCombos: jest.fn()
 }));
 
@@ -104,8 +103,6 @@ describe('gamePlayManager', () => {
       // Setup the current player to be the last player in the trick
       mockState.currentPlayerIndex = 2; // ai2
       
-      // Mock determineTrickWinner to return bot1 player ID
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue(PlayerId.Bot1);
       
       // Start fresh with a clear game state for this test
       const freshState = createMockGameState();
@@ -134,8 +131,6 @@ describe('gamePlayManager', () => {
       // Setup the current player to be the last player in the trick (Bot 3)
       freshState.currentPlayerIndex = 3; // ai3
       
-      // Mock determineTrickWinner to return bot1 player ID
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue(PlayerId.Bot1);
       
       // Process the play for the last player in the trick (Bot 3)
       const cardsToPlay = [freshState.players[3].hand[0]]; // Clubs 4 
@@ -349,12 +344,6 @@ describe('gamePlayManager', () => {
     test('should maintain equal card counts for all players throughout a full game', () => {
       let state = createMockGameState();
       
-      // Mock determineTrickWinner to return different winners for variety
-      const winners = ['human', 'ai1', 'ai2', 'ai3'];
-      let winnerIndex = 0;
-      (gameLogic.determineTrickWinner as jest.Mock).mockImplementation(() => {
-        return winners[winnerIndex++ % 4];
-      });
 
       // Initial state - verify all players have same card count
       const initialCardCount = state.players[0].hand.length;
@@ -455,8 +444,6 @@ describe('gamePlayManager', () => {
     test('should handle complete game with all AI players', () => {
       let state = createMockGameState();
       
-      // Mock determineTrickWinner
-      (gameLogic.determineTrickWinner as jest.Mock).mockReturnValue('human');
       
       // Track card counts throughout
       const initialCounts = state.players.map(p => p.hand.length);

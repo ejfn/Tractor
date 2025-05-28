@@ -50,7 +50,6 @@ import {
   selectFlexibleOutOfSuitPlay,
   selectAcePriorityLeadingPlay,
   selectAceAggressiveFollowing,
-  getCurrentTrickWinner,
   selectOptimizedTrumpFollow,
 } from "./aiPointFocusedStrategy";
 
@@ -227,35 +226,6 @@ class AIStrategy implements AIStrategy {
     // If we only have trump combos, play the lowest
     const sortedCombos = [...combos].sort((a, b) => a.value - b.value);
     return sortedCombos[0].cards;
-  }
-
-  private getCurrentTrickWinner(gameState: GameState): string {
-    const { currentTrick, trumpInfo } = gameState;
-    if (!currentTrick || currentTrick.plays.length === 0) {
-      return "";
-    }
-
-    let winningPlayerId = currentTrick.leadingPlayerId;
-    let winningCards = currentTrick.leadingCombo;
-
-    currentTrick.plays.forEach((play) => {
-      // Skip the leading play
-      if (play.playerId === currentTrick.leadingPlayerId) return;
-
-      // Compare played cards to current winner
-      const isStronger = this.isStrongerCombo(
-        play.cards,
-        winningCards,
-        trumpInfo,
-      );
-
-      if (isStronger) {
-        winningPlayerId = play.playerId;
-        winningCards = play.cards;
-      }
-    });
-
-    return winningPlayerId;
   }
 
   private isStrongerCombo(
@@ -1024,7 +994,9 @@ class AIStrategy implements AIStrategy {
         // Continue to Priority 6 logic below
       } else {
         // Fallback to legacy partner winning logic when trick winner analysis not available
-        const currentWinner = getCurrentTrickWinner(gameState, currentTrick);
+        const currentWinner = gameState.players.find(
+          (p) => p.id === currentTrick.winningPlayerId,
+        );
         if (currentWinner && currentWinner.team === currentPlayer.team) {
           // Convert advanced analyses to simple combo analyses for compatibility
           const comboAnalyses = validCombos.map((combo) => ({
@@ -1472,8 +1444,10 @@ class AIStrategy implements AIStrategy {
     if (!currentTrick?.leadingCombo) return null;
 
     // Check if partner is winning - if so, defer to enhanced conservative logic
-    const currentWinner = getCurrentTrickWinner(gameState, currentTrick);
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    const currentWinner = gameState.players.find(
+      (p) => p.id === currentTrick.winningPlayerId,
+    );
     if (currentWinner && currentWinner.team === currentPlayer.team) {
       return null; // Let enhanced conservative logic handle this
     }

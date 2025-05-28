@@ -1,6 +1,5 @@
 import {
   compareCardCombos,
-  determineTrickWinner,
   getComboType
 } from '../../src/game/gameLogic';
 import {
@@ -9,7 +8,8 @@ import {
   ComboType,
   TrumpInfo,
   Trick,
-  JokerType
+  JokerType,
+  PlayerId
 } from "../../src/types";
 import { describe, test, expect } from '@jest/globals';
 import {
@@ -147,36 +147,22 @@ describe('Issue #88: Non-trump pair vs single trumps bug', () => {
     });
   });
 
-  describe('Trick winner integration test', () => {
-    test('Trick led by non-trump pair should win against invalid follows with two single trumps', () => {
-      // Create a trick where human leads with non-trump pair
+  describe('Combination comparison logic', () => {
+    test('Non-trump pair should be recognized as stronger than individual trump cards when follows are invalid', () => {
+      // Create a non-trump pair (hearts kings)
       const heartKing1 = createCard(Suit.Hearts, Rank.King, 'hearts_k_1');
       const heartKing2 = createCard(Suit.Hearts, Rank.King, 'hearts_k_2');
+      const nonTrumpPair = [heartKing1, heartKing2];
       
-      // Other players play two single trump cards each (invalid follows - should be pairs to match leading combo)
+      // Create individual trump cards (these would be invalid follows in real game)
       const spadeThree = createCard(Suit.Spades, Rank.Three, 'spades_3_1');
       const spadeFour = createCard(Suit.Spades, Rank.Four, 'spades_4_1');
-      const spadeTwo1 = createCard(Suit.Spades, Rank.Two, 'spades_2_1');
-      const spadeTwo2 = createCard(Suit.Spades, Rank.Two, 'spades_2_2');
-      const spadeFive = createCard(Suit.Spades, Rank.Five, 'spades_5_1');
-      const spadeSix = createCard(Suit.Spades, Rank.Six, 'spades_6_1');
+      const twoSingleTrumps = [spadeThree, spadeFour];
 
-      const trick: Trick = {
-        leadingPlayerId: 'human',
-        leadingCombo: [heartKing1, heartKing2], // Leading with non-trump pair
-        plays: [
-          { playerId: 'bot1', cards: [spadeThree, spadeFour] }, // Two single trumps (invalid follow)
-          { playerId: 'bot2', cards: [spadeTwo1, spadeFive] }, // Two single trumps (invalid follow) 
-          { playerId: 'bot3', cards: [spadeSix, spadeTwo2] } // Two single trumps (invalid follow)
-        ],
-        winningPlayerId: 'human',
-        points: 20
-      };
-
-      // The leading player with the pair should win because all follows are invalid combination types
-      // In real game, this wouldn't happen due to validation, but testing the comparison logic
-      const winner = determineTrickWinner(trick, trumpInfo);
-      expect(winner).toBe('human');
+      // The non-trump pair should be treated as stronger than two unrelated trump cards
+      // because proper combinations have precedence over invalid follows
+      const result = compareCardCombos(nonTrumpPair, twoSingleTrumps, trumpInfo);
+      expect(result).toBeGreaterThan(0);
     });
   });
 

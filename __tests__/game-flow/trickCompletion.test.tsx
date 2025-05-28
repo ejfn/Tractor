@@ -4,7 +4,6 @@ import { View, Text, Button } from 'react-native';
 import { useTrickResults } from '../../src/hooks/useTrickResults';
 import { useGameState } from '../../src/hooks/useGameState';
 import { processPlay } from '../../src/game/gamePlayManager';
-import { determineTrickWinner } from '../../src/game/gameLogic';
 import { createComponentTestGameState } from "../helpers";
 import { 
   GameState, 
@@ -18,7 +17,6 @@ import {
 // Mock dependencies
 jest.mock('../../src/game/gameLogic', () => ({
   ...jest.requireActual('../../src/game/gameLogic'),
-  determineTrickWinner: jest.fn(),
   isTrump: jest.fn(),
   identifyCombos: jest.fn(),
   isValidPlay: jest.fn(),
@@ -132,10 +130,10 @@ const TestComponent: React.FC<{
         title="Complete Trick"
         onPress={() => {
           const mockCompletedTrick = {
-            leadingPlayerId: 'human',
+            leadingPlayerId: PlayerId.Human,
             leadingCombo: [],
             plays: [],
-            winningPlayerId: 'human',
+            winningPlayerId: PlayerId.Human,
             points: 10
           };
           

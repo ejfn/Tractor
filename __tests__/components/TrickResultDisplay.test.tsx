@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import TrickResultDisplay from '../../src/components/TrickResultDisplay';
-import { PlayerId, PlayerName } from '../../src/types';
+import { PlayerId, PlayerName, TeamId } from '../../src/types';
 import { createGameState } from '../helpers';
 
 describe('TrickResultDisplay', () => {
@@ -9,7 +9,7 @@ describe('TrickResultDisplay', () => {
     const gameState = createGameState();
     // Set up attacking team (Team B) as non-defending
     gameState.teams[1].isDefending = false;
-    gameState.players[1].team = 'B'; // Bot1 is on attacking team
+    gameState.players[1].team = TeamId.B; // Bot1 is on attacking team
     
     const { getByText } = render(
       <TrickResultDisplay
@@ -28,7 +28,7 @@ describe('TrickResultDisplay', () => {
     const gameState = createGameState();
     // Set up defending team (Team A) as defending
     gameState.teams[0].isDefending = true;
-    gameState.players[0].team = 'A'; // Human is on defending team
+    gameState.players[0].team = TeamId.A; // Human is on defending team
     
     const { getByText, queryByText } = render(
       <TrickResultDisplay
@@ -47,7 +47,7 @@ describe('TrickResultDisplay', () => {
     const gameState = createGameState();
     // Set up attacking team (Team B) as non-defending
     gameState.teams[1].isDefending = false;
-    gameState.players[2].team = 'B'; // Bot2 is on attacking team
+    gameState.players[2].team = TeamId.B; // Bot2 is on attacking team
     
     const { getByText, queryByText } = render(
       <TrickResultDisplay

@@ -1,4 +1,4 @@
-import { GameState, Rank, Suit, GamePhase, PlayerId } from "../../src/types";
+import { GameState, Rank, Suit, GamePhase, PlayerId, TeamId } from "../../src/types";
 import { initializeGame } from '../../src/game/gameLogic';
 import { prepareNextRound, endRound } from '../../src/game/gameRoundManager';
 import { declareTrumpSuit } from '../../src/game/trumpManager';
@@ -10,19 +10,19 @@ describe('Trump Declaration Player Rotation (Issue #22)', () => {
     state.roundNumber = 1;
     
     // Set up teams like in the issue: Human and Bot2 are Team A, Bot1 and Bot3 are Team B
-    state.players[0].team = 'A'; // Human
+    state.players[0].team = TeamId.A; // Human
     state.players[0].id = PlayerId.Human;
-    state.players[1].team = 'B'; // Bot1
+    state.players[1].team = TeamId.B; // Bot1
     state.players[1].id = PlayerId.Bot1;
-    state.players[2].team = 'A'; // Bot2
+    state.players[2].team = TeamId.A; // Bot2
     state.players[2].id = PlayerId.Bot2;
-    state.players[3].team = 'B'; // Bot3
+    state.players[3].team = TeamId.B; // Bot3
     state.players[3].id = PlayerId.Bot3;
     
     // Set Team A as defending (Human's team)
-    state.teams[0].id = 'A';
+    state.teams[0].id = TeamId.A;
     state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
+    state.teams[1].id = TeamId.B;
     state.teams[1].isDefending = false;
     
     // Human (player 0) is the first player of round 1
@@ -61,19 +61,19 @@ describe('Trump Declaration Player Rotation (Issue #22)', () => {
     state.roundNumber = 1;
     
     // Set up teams
-    state.players[0].team = 'A'; // Human
+    state.players[0].team = TeamId.A; // Human
     state.players[0].id = PlayerId.Human;
-    state.players[1].team = 'B'; // Bot1
+    state.players[1].team = TeamId.B; // Bot1
     state.players[1].id = PlayerId.Bot1;
-    state.players[2].team = 'A'; // Bot2
+    state.players[2].team = TeamId.A; // Bot2
     state.players[2].id = PlayerId.Bot2;
-    state.players[3].team = 'B'; // Bot3
+    state.players[3].team = TeamId.B; // Bot3
     state.players[3].id = PlayerId.Bot3;
     
     // Set Team A as defending
-    state.teams[0].id = 'A';
+    state.teams[0].id = TeamId.A;
     state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
+    state.teams[1].id = TeamId.B;
     state.teams[1].isDefending = false;
     
     // Human (player 0) is the first player of round 1
@@ -108,19 +108,19 @@ describe('Trump Declaration Player Rotation (Issue #22)', () => {
     state.roundNumber = 1;
     
     // Set up teams
-    state.players[0].team = 'A'; // Human
+    state.players[0].team = TeamId.A; // Human
     state.players[0].id = PlayerId.Human;
-    state.players[1].team = 'B'; // Bot1 
+    state.players[1].team = TeamId.B; // Bot1 
     state.players[1].id = PlayerId.Bot1;
-    state.players[2].team = 'A'; // Bot2
+    state.players[2].team = TeamId.A; // Bot2
     state.players[2].id = PlayerId.Bot2;
-    state.players[3].team = 'B'; // Bot3
+    state.players[3].team = TeamId.B; // Bot3
     state.players[3].id = PlayerId.Bot3;
     
     // Set Team A as defending
-    state.teams[0].id = 'A';
+    state.teams[0].id = TeamId.A;
     state.teams[0].isDefending = true;
-    state.teams[1].id = 'B';
+    state.teams[1].id = TeamId.B;
     state.teams[1].isDefending = false;
     
     // Human (player 0) is the first player of round 1

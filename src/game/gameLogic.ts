@@ -11,6 +11,7 @@ import {
   Rank,
   Suit,
   Team,
+  TeamId,
   Trick,
   TrumpInfo,
 } from "../types";
@@ -780,31 +781,6 @@ const getRankValue = (rank: Rank): number => {
   return rankOrder.indexOf(rank);
 };
 
-// Determine the winner of a trick
-export const determineTrickWinner = (
-  trick: Trick,
-  trumpInfo: TrumpInfo,
-): string => {
-  let winningPlayerId = trick.leadingPlayerId;
-  let winningCards = trick.leadingCombo;
-
-  trick.plays.forEach((play) => {
-    // Skip the leading play since it's already set as winning by default
-    if (play.playerId === trick.leadingPlayerId) return;
-
-    // Compare the played cards to the current winning cards
-    const comparison = compareCardCombos(winningCards, play.cards, trumpInfo);
-
-    // If the current play is stronger, update the winner
-    if (comparison < 0) {
-      winningPlayerId = play.playerId;
-      winningCards = play.cards;
-    }
-  });
-
-  return winningPlayerId;
-};
-
 // Compare two card combinations
 export const compareCardCombos = (
   comboA: Card[],
@@ -991,41 +967,41 @@ export const initializeGame = (): GameState => {
       name: PlayerName.Human,
       isHuman: true,
       hand: [],
-      team: "A",
+      team: TeamId.A,
     },
     {
       id: PlayerId.Bot1,
       name: PlayerName.Bot1,
       isHuman: false,
       hand: [],
-      team: "B",
+      team: TeamId.B,
     },
     {
       id: PlayerId.Bot2,
       name: PlayerName.Bot2,
       isHuman: false,
       hand: [],
-      team: "A",
+      team: TeamId.A,
     },
     {
       id: PlayerId.Bot3,
       name: PlayerName.Bot3,
       isHuman: false,
       hand: [],
-      team: "B",
+      team: TeamId.B,
     },
   ];
 
   // Create teams
   const teams: [Team, Team] = [
     {
-      id: "A",
+      id: TeamId.A,
       currentRank: Rank.Two,
       points: 0,
       isDefending: true, // Team A defends first
     },
     {
-      id: "B",
+      id: TeamId.B,
       currentRank: Rank.Two,
       points: 0,
       isDefending: false,

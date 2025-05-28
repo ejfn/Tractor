@@ -1,4 +1,4 @@
-import { Card, GameState, Player, Rank, Suit, Team, Trick, PlayerId, PlayerName, GamePhase, ComboType, TrumpInfo, JokerType } from "../../src/types";
+import { Card, GameState, Player, Rank, Suit, Team, Trick, PlayerId, PlayerName, GamePhase, ComboType, TrumpInfo, JokerType, TeamId } from "../../src/types";
 import { isValidPlay, identifyCombos, isTrump } from '../../src/game/gameLogic';
 
 /**
@@ -34,7 +34,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       name: PlayerName.Human,
       hand: [],
       isHuman: true,
-      team: 'A',
+      team: TeamId.A,
     };
     
     const ai1: Player = {
@@ -42,14 +42,14 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       name: PlayerName.Bot1,
       hand: [],
       isHuman: false,
-      team: 'B',
+      team: TeamId.B,
     };
     
     mockState = {
       players: [humanPlayer, ai1],
       teams: [
-        { id: 'A', currentRank: Rank.Two, points: 0, isDefending: true },
-        { id: 'B', currentRank: Rank.Two, points: 0, isDefending: false }
+        { id: TeamId.A, currentRank: Rank.Two, points: 0, isDefending: true },
+        { id: TeamId.B, currentRank: Rank.Two, points: 0, isDefending: false }
       ],
       deck: [],
       kittyCards: [],
@@ -78,8 +78,8 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       mockState.currentTrick = {
         leadingCombo: leadingTrumpTractor,
         plays: [],
-        leadingPlayerId: 'ai1',
-        winningPlayerId: 'ai1',
+        leadingPlayerId: PlayerId.Bot1,
+        winningPlayerId: PlayerId.Bot1,
         points: 0
       };
       mockState.trumpInfo = trumpInfo;
@@ -118,8 +118,8 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       mockState.currentTrick = {
         leadingCombo: leadingTrumpTractor,
         plays: [],
-        leadingPlayerId: 'ai1',
-        winningPlayerId: 'ai1',
+        leadingPlayerId: PlayerId.Bot1,
+        winningPlayerId: PlayerId.Bot1,
         points: 0
       };
       mockState.trumpInfo = trumpInfo;
@@ -164,8 +164,8 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       mockState.currentTrick = {
         leadingCombo: leadingTrumpTractor,
         plays: [],
-        leadingPlayerId: 'ai1',
-        winningPlayerId: 'ai1',
+        leadingPlayerId: PlayerId.Bot1,
+        winningPlayerId: PlayerId.Bot1,
         points: 0
       };
       mockState.trumpInfo = trumpInfo;
@@ -210,8 +210,8 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       mockState.currentTrick = {
         leadingCombo: leadingBigTrumpTractor,
         plays: [],
-        leadingPlayerId: 'ai1',
-        winningPlayerId: 'ai1',
+        leadingPlayerId: PlayerId.Bot1,
+        winningPlayerId: PlayerId.Bot1,
         points: 0
       };
       mockState.trumpInfo = trumpInfo;
@@ -252,8 +252,8 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       mockState.currentTrick = {
         leadingCombo: leadingTrumpTractor,
         plays: [],
-        leadingPlayerId: 'ai1',
-        winningPlayerId: 'ai1',
+        leadingPlayerId: PlayerId.Bot1,
+        winningPlayerId: PlayerId.Bot1,
         points: 0
       };
       mockState.trumpInfo = trumpInfo;
@@ -299,8 +299,8 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       mockState.currentTrick = {
         leadingCombo: leadingJokerTractor,
         plays: [],
-        leadingPlayerId: 'ai1',
-        winningPlayerId: 'ai1',
+        leadingPlayerId: PlayerId.Bot1,
+        winningPlayerId: PlayerId.Bot1,
         points: 0
       };
       mockState.trumpInfo = trumpInfo;

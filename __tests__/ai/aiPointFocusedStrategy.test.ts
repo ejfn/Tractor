@@ -23,6 +23,7 @@ import {
   TrickPosition,
   PointPressure,
   PlayStyle,
+  TeamId,
 } from "../../src/types";
 
 // Test utilities
@@ -63,33 +64,33 @@ const createTestGameState = (overrides: Partial<GameState> = {}): GameState => (
       name: PlayerName.Human,
       isHuman: true,
       hand: [],
-      team: 'A',
+      team: TeamId.A,
     },
     {
       id: PlayerId.Bot1,
       name: PlayerName.Bot1,
       isHuman: false,
       hand: [],
-      team: 'B',
+      team: TeamId.B,
     },
     {
       id: PlayerId.Bot2,
       name: PlayerName.Bot2,
       isHuman: false,
       hand: [],
-      team: 'A',
+      team: TeamId.A,
     },
     {
       id: PlayerId.Bot3,
       name: PlayerName.Bot3,
       isHuman: false,
       hand: [],
-      team: 'B',
+      team: TeamId.B,
     },
   ],
   teams: [
-    { id: 'A', currentRank: Rank.Two, points: 0, isDefending: false },
-    { id: 'B', currentRank: Rank.Two, points: 0, isDefending: true },
+    { id: TeamId.A, currentRank: Rank.Two, points: 0, isDefending: false },
+    { id: TeamId.B, currentRank: Rank.Two, points: 0, isDefending: true },
   ],
   deck: [],
   kittyCards: [],

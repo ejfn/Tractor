@@ -2,7 +2,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
 import { Animated } from 'react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
-import { PlayerId, PlayerName } from "../../src/types";
+import { PlayerId, PlayerName, TeamId } from "../../src/types";
 import {
   createPlayer,
   createTrumpScenarios,
@@ -34,7 +34,7 @@ describe('HumanPlayerView', () => {
     PlayerId.Human,
     PlayerName.Human,
     true,
-    'A',
+    TeamId.A,
     [testData.cards.spadesAce, testData.cards.clubsKing]
   );
 

@@ -1,18 +1,18 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import GameStatus from '../../src/components/GameStatus';
-import { GamePhase, Suit, Rank, Team } from '../../src/types';
+import { GamePhase, Suit, Rank, Team, TeamId, PlayerId } from '../../src/types';
 
 describe('GameStatus', () => {
   const mockTeams: [Team, Team] = [
     {
-      id: 'A',
+      id: TeamId.A,
       currentRank: Rank.Two,
       points: 0,
       isDefending: true,
     },
     {
-      id: 'B',
+      id: TeamId.B,
       currentRank: Rank.Two,
       points: 25,
       isDefending: false,
@@ -23,7 +23,7 @@ describe('GameStatus', () => {
     trumpRank: Rank.Two,
     trumpSuit: Suit.Hearts,
     declared: true,
-    declarerPlayerId: 'human',
+    declarerPlayerId: PlayerId.Human,
   };
 
   it('should render team information correctly', () => {
@@ -65,13 +65,13 @@ describe('GameStatus', () => {
   it('should handle teams with different point values', () => {
     const teamsWithHighPoints: [Team, Team] = [
       {
-        id: 'A',
+        id: TeamId.A,
         currentRank: Rank.Three,
         points: 0,
         isDefending: true,
       },
       {
-        id: 'B',
+        id: TeamId.B,
         currentRank: Rank.Three,
         points: 65,
         isDefending: false,
@@ -113,7 +113,7 @@ describe('GameStatus', () => {
       trumpRank: Rank.Ace,
       trumpSuit: undefined,
       declared: true,
-      declarerPlayerId: 'human',
+      declarerPlayerId: PlayerId.Human,
     };
 
     const { getByText } = render(

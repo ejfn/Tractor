@@ -47,9 +47,9 @@ describe('AI Card Memory System - Phase 3', () => {
   });
 
   const createTestTrick = (
-    leadingPlayerId: string,
+    leadingPlayerId: PlayerId,
     leadingCards: Card[],
-    plays: Array<{ playerId: string; cards: Card[] }>,
+    plays: Array<{ playerId: PlayerId; cards: Card[] }>,
   ): Trick => ({
     leadingPlayerId,
     leadingCombo: leadingCards,

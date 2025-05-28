@@ -3,8 +3,7 @@ import {
   identifyCombos,
   isTrump,
   compareCards,
-  compareCardCombos,
-  determineTrickWinner
+  compareCardCombos
 } from '../../src/game/gameLogic';
 import {
   Card,

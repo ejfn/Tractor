@@ -19,7 +19,6 @@ import {
   compareCards,
   compareCardCombos,
   isPointCard,
-  determineTrickWinner,
 } from "../game/gameLogic";
 
 /**
@@ -275,8 +274,10 @@ export function selectAggressivePointCollection(
   const tablePoints = calculateTrickPoints(currentTrick);
 
   // Check if opponent is currently winning with point cards
-  const currentWinner = getCurrentTrickWinner(gameState, currentTrick);
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const currentWinner = gameState.players.find(
+    (p) => p.id === currentTrick.winningPlayerId,
+  );
   const isOpponentWinning =
     currentWinner && currentWinner.team !== currentPlayer.team;
 
@@ -379,17 +380,25 @@ export function selectPartnerCoordinatedPlay(
   const currentTrick = gameState.currentTrick;
   if (!currentTrick) return null;
 
-  // Check if partner is leading and likely to win
-  const partnerTeam = getPartnerTeam(gameState, getCurrentPlayerId(gameState));
-  const isPartnerLeading =
-    partnerTeam && currentTrick.leadingPlayerId === partnerTeam.id;
-  const isPartnerLikelyWinning = isPartnerLeading; // Simplified for now
+  // Check if teammate is currently winning the trick
+  const currentPlayer = gameState.players.find(
+    (p) => p.id === getCurrentPlayerId(gameState),
+  );
+  const winningPlayer = gameState.players.find(
+    (p) => p.id === currentTrick.winningPlayerId,
+  );
 
-  if (!isPartnerLikelyWinning) {
+  const isTeammateWinning =
+    winningPlayer &&
+    currentPlayer &&
+    winningPlayer.team === currentPlayer.team &&
+    winningPlayer.id !== currentPlayer.id;
+
+  if (!isTeammateWinning) {
     return null; // Use regular strategy
   }
 
-  // Partner is winning, so help them by following with point cards
+  // Teammate is winning, so help them by following with point cards
   const pointCardCombos = validCombos.filter((combo) =>
     combo.cards.some((card) => isPointCard(card)),
   );
@@ -514,8 +523,7 @@ export function selectFlexibleOutOfSuitPlay(
   // Check if partner is likely to win
   const partner = getPartnerTeam(gameState, currentPlayer.id);
   const isPartnerWinning =
-    partner &&
-    getCurrentTrickWinner(gameState, currentTrick)?.id === partner.id;
+    partner && currentTrick.winningPlayerId === partner.id;
 
   if (isPartnerWinning) {
     // Partner winning: add points from any suits
@@ -964,18 +972,6 @@ function calculateTrickPoints(trick: any): number {
   }
 
   return totalPoints;
-}
-
-export function getCurrentTrickWinner(gameState: GameState, trick: any): any {
-  if (!trick || !trick.plays || trick.plays.length === 0) {
-    // If no plays yet, leader is winning
-    return gameState.players.find((p) => p.id === trick.leadingPlayerId);
-  }
-
-  // Use proper trick winner determination logic
-  const winningPlayerId = determineTrickWinner(trick, gameState.trumpInfo);
-
-  return gameState.players.find((p) => p.id === winningPlayerId);
 }
 
 function canBeatCurrentWinner(
