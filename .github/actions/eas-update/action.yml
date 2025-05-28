@@ -73,7 +73,7 @@ runs:
       shell: bash
 
     - name: EAS Update
-      run: npx eas update --branch ${{ steps.vars.outputs.EAS_BRANCH }} --message "${{ steps.vars.outputs.EAS_MESSAGE }}"
+      run: eas update --branch ${{ steps.vars.outputs.EAS_BRANCH }} --message "${{ steps.vars.outputs.EAS_MESSAGE }}"
       env:
         EXPO_TOKEN: ${{ inputs.expo-token }}
       shell: bash
