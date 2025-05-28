@@ -510,12 +510,22 @@ class AIStrategy implements AIStrategy {
 
     // NEW: Enhanced decision logic using real-time trick winner information
     if (trickWinner) {
-      // General conservative strategy when teammate is winning
+      // When teammate is winning, check if we should play conservatively
+      // BUT don't be conservative if we can contribute point cards to help teammate
       if (
         trickWinner.isTeammateWinning &&
         trickWinner.shouldPlayConservatively
       ) {
-        return this.selectConservativePlay(comboAnalyses, context);
+        // Check if we have point cards that could help teammate
+        const hasPointCards = comboAnalyses.some((ca) =>
+          ca.combo.cards.some((card) => card.points > 0),
+        );
+
+        // Only be conservative if we don't have point cards to contribute
+        if (!hasPointCards) {
+          return this.selectConservativePlay(comboAnalyses, context);
+        }
+        // Otherwise, continue to partner coordination logic later in priority chain
       }
 
       // If opponent is winning and we should try to beat them
@@ -1008,8 +1018,10 @@ class AIStrategy implements AIStrategy {
     if (currentTrick?.leadingCombo) {
       // Defer to new trick winner analysis logic if available
       if (context.trickWinnerAnalysis) {
-        // Let the enhanced selectOptimalFollowPlay logic handle this case
-        // Fall through to the advanced combination analysis below
+        // The enhanced selectOptimalFollowPlay logic will handle trick winner analysis,
+        // but we still need to check Priority 6 partner coordination here since
+        // selectOptimalFollowPlay doesn't have access to all the required parameters
+        // Continue to Priority 6 logic below
       } else {
         // Fallback to legacy partner winning logic when trick winner analysis not available
         const currentWinner = getCurrentTrickWinner(gameState, currentTrick);
