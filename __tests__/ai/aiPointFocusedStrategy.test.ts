@@ -420,24 +420,24 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       expect(selected).toBeNull();
     });
 
-    it('should return null when trump suit is declared to avoid trump strategy interference', () => {
+    it('should select non-trump Aces even when trump suit is declared', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+          cards: [createTestCard(Suit.Hearts, Rank.Ace)], // Non-trump Ace
           value: 14,
         },
         {
           type: ComboType.Pair,
           cards: [
-            createTestCard(Suit.Spades, Rank.Ace),
-            createTestCard(Suit.Spades, Rank.Ace),
+            createTestCard(Suit.Clubs, Rank.King), // Trump suit King pair - should be filtered out
+            createTestCard(Suit.Clubs, Rank.King),
           ],
-          value: 28,
+          value: 26,
         },
       ];
       
-      // Trump suit is declared - strategy should not apply
+      // Trump suit is declared as Clubs, so Spades Ace pair becomes trump suit, Hearts Ace is not trump
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Clubs);
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
@@ -453,7 +453,93 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       
       const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
       
-      expect(selected).toBeNull(); // Should not interfere with trump strategies
+      // Should select Hearts Ace since it's non-trump (Spades Ace pair filtered out as trump)
+      expect(selected).toEqual({
+        type: ComboType.Single,
+        cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+        value: 14,
+      });
+    });
+
+    it('should avoid trump suit Aces/Kings when trump is declared', () => {
+      const validCombos = [
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Spades, Rank.Ace)], // Trump suit Ace - should be avoided
+          value: 14,
+        },
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Hearts, Rank.Ace)], // Non-trump Ace - should be preferred
+          value: 14,
+        },
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Spades, Rank.King)], // Trump suit King - should be avoided
+          value: 13,
+        },
+      ];
+      
+      // Trump suit is declared as Spades - strategy should avoid trump suit cards
+      const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
+      const pointContext = {
+        gamePhase: GamePhaseStrategy.EarlyGame,
+        pointCardStrategy: PointCardStrategy.Escape,
+        trumpTiming: TrumpTiming.Preserve,
+        teamPointsCollected: 0,
+        opponentPointsCollected: 0,
+        pointCardDensity: 0.3,
+        partnerNeedsPointEscape: false,
+        canWinWithoutPoints: false,
+      };
+      const gameState = createTestGameState();
+      
+      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
+      
+      // Should select Hearts Ace since it's non-trump (Spades cards filtered out as trump)
+      expect(selected).toEqual({
+        type: ComboType.Single,
+        cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+        value: 14,
+      });
+    });
+
+    it('should select non-trump Aces when only non-trump combos available', () => {
+      const validCombos = [
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Hearts, Rank.Ace)], // Non-trump Ace - should be selected
+          value: 14,
+        },
+        {
+          type: ComboType.Single,
+          cards: [createTestCard(Suit.Diamonds, Rank.King)], // Non-trump King
+          value: 13,
+        },
+      ];
+      
+      // Trump suit is declared as Spades - only non-trump combos present
+      const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
+      const pointContext = {
+        gamePhase: GamePhaseStrategy.EarlyGame,
+        pointCardStrategy: PointCardStrategy.Escape,
+        trumpTiming: TrumpTiming.Preserve,
+        teamPointsCollected: 0,
+        opponentPointsCollected: 0,
+        pointCardDensity: 0.3,
+        partnerNeedsPointEscape: false,
+        canWinWithoutPoints: false,
+      };
+      const gameState = createTestGameState();
+      
+      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
+      
+      // Should select Hearts Ace since it's non-trump and highest priority
+      expect(selected).toEqual({
+        type: ComboType.Single,
+        cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+        value: 14,
+      });
     });
 
     it('should prioritize Aces when no trump suit is declared', () => {
