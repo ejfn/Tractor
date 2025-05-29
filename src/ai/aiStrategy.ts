@@ -368,7 +368,7 @@ export class AIStrategyImplementation implements AIStrategy {
         "DEBUG Bot 3: Cannot beat opponent, playing lowest value combo",
       );
       // Can't beat opponent - play lowest value card to minimize points given
-      return this.selectLowestValueCombo(comboAnalyses);
+      return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
 
     // High-value tricks (>=10 points): definitely try to beat if we can
@@ -448,6 +448,26 @@ export class AIStrategyImplementation implements AIStrategy {
     );
 
     return sorted[0].combo.cards;
+  }
+
+  private selectLowestValueNonPointCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  ): Card[] {
+    // First priority: non-point cards
+    const nonPointCombos = comboAnalyses.filter(
+      (ca) => !ca.combo.cards.some((card) => (card.points || 0) > 0),
+    );
+
+    if (nonPointCombos.length > 0) {
+      // Sort by trump conservation value (lower = less valuable to preserve)
+      const sorted = nonPointCombos.sort(
+        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    // Fallback: if only point cards available, use lowest conservation value
+    return this.selectLowestValueCombo(comboAnalyses);
   }
 
   private selectOptimalWinningCombo(
