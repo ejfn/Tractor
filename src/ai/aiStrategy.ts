@@ -790,6 +790,7 @@ export class AIStrategyImplementation implements AIStrategy {
           comboAnalyses,
           [ComboStrength.Critical, ComboStrength.Strong],
           trumpPriority,
+          trumpInfo,
         );
 
       case PlayStyle.Aggressive:
@@ -802,6 +803,7 @@ export class AIStrategyImplementation implements AIStrategy {
           comboAnalyses,
           [ComboStrength.Strong, ComboStrength.Medium],
           false,
+          trumpInfo,
         );
 
       case PlayStyle.Balanced:
@@ -816,6 +818,7 @@ export class AIStrategyImplementation implements AIStrategy {
           comboAnalyses,
           [ComboStrength.Medium, ComboStrength.Weak],
           false,
+          trumpInfo,
         );
 
       case PlayStyle.Conservative:
@@ -861,6 +864,7 @@ export class AIStrategyImplementation implements AIStrategy {
           comboAnalyses,
           [ComboStrength.Medium, ComboStrength.Strong],
           false,
+          trumpInfo,
         );
 
       case PlayStyle.Balanced:
@@ -892,6 +896,7 @@ export class AIStrategyImplementation implements AIStrategy {
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
     preferredStrengths: ComboStrength[],
     preferTrump: boolean,
+    trumpInfo?: TrumpInfo,
   ): Card[] {
     // Filter by preferred strengths
     const preferred = comboAnalyses.filter((ca) =>
@@ -899,8 +904,65 @@ export class AIStrategyImplementation implements AIStrategy {
     );
 
     if (preferred.length > 0) {
+      // TRUMP LEADING PROTECTION: Avoid trump suit high cards (A, K, 10) when leading
+      // This prevents wasteful leading with valuable trump cards that opponents might beat
+      let safePreferred = preferred;
+
+      if (trumpInfo?.declared && trumpInfo.trumpSuit) {
+        safePreferred = preferred.filter((ca) => {
+          const combo = ca.combo;
+
+          // Check if this combo contains trump suit high cards (Ace, King, or 10)
+          const hasTrumpSuitHighCard = combo.cards.some((card) => {
+            if (!card.suit || card.joker) return false; // Skip jokers
+
+            // Check if card is trump suit AND high-value (A, K, 10)
+            const isTrumpSuit = card.suit === trumpInfo.trumpSuit;
+            const isHighCard =
+              card.rank === Rank.Ace ||
+              card.rank === Rank.King ||
+              card.rank === Rank.Ten;
+
+            return isTrumpSuit && isHighCard;
+          });
+
+          return !hasTrumpSuitHighCard; // Exclude combos with trump suit high cards
+        });
+      }
+
+      // Use safe options if available, otherwise prioritize non-trump over trump suit high cards
+      let filteredOptions =
+        safePreferred.length > 0 ? safePreferred : preferred;
+
+      // If no safe preferred options and trump protection is needed, expand to all combos and avoid trump suit high cards
+      if (
+        safePreferred.length === 0 &&
+        trumpInfo?.declared &&
+        trumpInfo.trumpSuit
+      ) {
+        // Filter ALL combos to avoid trump suit high cards, regardless of strength
+        const allSafeOptions = comboAnalyses.filter((ca) => {
+          const combo = ca.combo;
+          const hasTrumpSuitHighCard = combo.cards.some((card) => {
+            if (!card.suit || card.joker) return false;
+            const isTrumpSuit = card.suit === trumpInfo.trumpSuit;
+            const isHighCard =
+              card.rank === Rank.Ace ||
+              card.rank === Rank.King ||
+              card.rank === Rank.Ten;
+            return isTrumpSuit && isHighCard;
+          });
+          return !hasTrumpSuitHighCard;
+        });
+
+        // Use non-trump suit high card alternatives if available
+        if (allSafeOptions.length > 0) {
+          filteredOptions = allSafeOptions;
+        }
+      }
+
       // Sort by trump preference and value
-      const sorted = preferred.sort((a, b) => {
+      const sorted = filteredOptions.sort((a, b) => {
         if (preferTrump && a.analysis.isTrump !== b.analysis.isTrump) {
           return a.analysis.isTrump ? -1 : 1;
         }
@@ -1029,7 +1091,12 @@ export class AIStrategyImplementation implements AIStrategy {
     // Perfect information available - calculate optimal play
     const memoryContext = context.memoryContext;
     if (!memoryContext) {
-      return this.selectByStrength(comboAnalyses, [ComboStrength.Strong], true);
+      return this.selectByStrength(
+        comboAnalyses,
+        [ComboStrength.Strong],
+        true,
+        trumpInfo,
+      );
     }
 
     // In endgame with perfect info, play optimally based on opponent hands
@@ -1043,6 +1110,7 @@ export class AIStrategyImplementation implements AIStrategy {
         comboAnalyses,
         [ComboStrength.Critical, ComboStrength.Strong],
         true,
+        trumpInfo,
       );
     } else {
       // Weak opponents - use minimal strength to win
@@ -1050,6 +1118,7 @@ export class AIStrategyImplementation implements AIStrategy {
         comboAnalyses,
         [ComboStrength.Medium, ComboStrength.Weak],
         false,
+        trumpInfo,
       );
     }
   }
@@ -1072,7 +1141,12 @@ export class AIStrategyImplementation implements AIStrategy {
     }
 
     // Fallback to trump if no non-trump available
-    return this.selectByStrength(comboAnalyses, [ComboStrength.Medium], true);
+    return this.selectByStrength(
+      comboAnalyses,
+      [ComboStrength.Medium],
+      true,
+      trumpInfo,
+    );
   }
 
   private selectEndgameDefensePlay(
@@ -1099,6 +1173,7 @@ export class AIStrategyImplementation implements AIStrategy {
         comboAnalyses,
         [ComboStrength.Critical, ComboStrength.Strong],
         true,
+        trumpInfo,
       );
     } else {
       // Weak opponents - moderate disruption sufficient
@@ -1106,6 +1181,7 @@ export class AIStrategyImplementation implements AIStrategy {
         comboAnalyses,
         [ComboStrength.Medium, ComboStrength.Strong],
         false,
+        trumpInfo,
       );
     }
   }
@@ -1133,7 +1209,12 @@ export class AIStrategyImplementation implements AIStrategy {
       // Few trumps left - safe to play strong non-trump
       const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
       if (nonTrump.length > 0) {
-        return this.selectByStrength(nonTrump, [ComboStrength.Strong], false);
+        return this.selectByStrength(
+          nonTrump,
+          [ComboStrength.Strong],
+          false,
+          trumpInfo,
+        );
       }
     }
 
@@ -1145,6 +1226,7 @@ export class AIStrategyImplementation implements AIStrategy {
         comboAnalyses,
         [ComboStrength.Strong, ComboStrength.Medium],
         memoryStrategy.shouldPlayTrump,
+        trumpInfo,
       );
     } else {
       // Lower confidence - conservative defense
@@ -1152,6 +1234,7 @@ export class AIStrategyImplementation implements AIStrategy {
         comboAnalyses,
         [ComboStrength.Medium, ComboStrength.Weak],
         false,
+        trumpInfo,
       );
     }
   }
@@ -1434,8 +1517,30 @@ export class AIStrategyImplementation implements AIStrategy {
       throw new Error("Cannot select from empty combo list");
     }
 
+    // TRUMP LEADING PROTECTION: Filter out trump suit high cards when leading
+    let safeCombos = combos;
+    if (trumpInfo?.declared && trumpInfo.trumpSuit) {
+      const safeOptions = combos.filter((combo) => {
+        const hasTrumpSuitHighCard = combo.cards.some((card) => {
+          if (!card.suit || card.joker) return false;
+          const isTrumpSuit = card.suit === trumpInfo.trumpSuit;
+          const isHighCard =
+            card.rank === Rank.Ace ||
+            card.rank === Rank.King ||
+            card.rank === Rank.Ten;
+          return isTrumpSuit && isHighCard;
+        });
+        return !hasTrumpSuitHighCard;
+      });
+
+      // Use safe options if available, otherwise use all combos (emergency fallback)
+      if (safeOptions.length > 0) {
+        safeCombos = safeOptions;
+      }
+    }
+
     // Sort by combo strength and strategic value
-    const sortedCombos = combos.sort((a, b) => {
+    const sortedCombos = safeCombos.sort((a, b) => {
       const aAnalysis = analyzeCombo(a, trumpInfo, context);
       const bAnalysis = analyzeCombo(b, trumpInfo, context);
 
