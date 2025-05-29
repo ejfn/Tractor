@@ -25,7 +25,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **Smooth card animations** with React Native Reanimated
 - **Smart card auto-selection** for pairs and tractors
 - **Touch-optimized UI** with team color coding
-- **Comprehensive testing** with 315 tests across 42 test suites
+- **Comprehensive testing** with 427 tests across 60 test suites
 
 ## Technology
 
@@ -41,7 +41,12 @@ Built with **React Native + Expo** for mobile platforms:
 
 ## AI Intelligence
 
-Sophisticated **4-phase AI system** with restructured priority chain, real-time trick analysis, enhanced opponent blocking, and intelligent Ace conservation.
+Sophisticated **4-phase AI system** with restructured priority chain, real-time trick analysis, enhanced opponent blocking, strategic point card management, and intelligent trump conservation.
+
+**Latest Enhancements:**
+- **Strategic Point Management**: AI avoids wasting point cards when opponent is winning
+- **Trump Hierarchy Conservation**: Proper selection of weak trump cards over valuable ones
+- **Enhanced Opponent Blocking**: Sophisticated response based on trick value and card conservation
 
 *For complete AI system documentation, see **[AI System Guide](docs/AI_SYSTEM.md)***
 
