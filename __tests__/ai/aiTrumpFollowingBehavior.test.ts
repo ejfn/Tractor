@@ -1,11 +1,115 @@
 import { getAIMove } from '../../src/ai/aiLogic';
 import { isValidPlay } from '../../src/game/gameLogic';
 import { createIsolatedGameState } from '../helpers/testIsolation';
-import { Card, Suit, Rank, ComboType, TrumpInfo, PlayerId } from '../../src/types';
+import { Card, Suit, Rank, ComboType, TrumpInfo, PlayerId, JokerType } from '../../src/types';
 
-describe('Trump Suit Following Rule Violation (Comment from Issue #61)', () => {
-  it('should NOT allow bot to play non-trump pair when following trump suit pair with trump cards available', () => {
-    // Create test scenario
+describe('AI Trump Following Behavior', () => {
+  it('should show AI correctly choosing trump singles when trump pairs are led', () => {
+    const gameState = createIsolatedGameState();
+    
+    // Set up trump info: Spades trump, rank 2
+    const trumpInfo: TrumpInfo = {
+      trumpRank: Rank.Two,
+      trumpSuit: Suit.Spades,
+      declared: true,
+      declarerPlayerId: PlayerId.Human
+    };
+    gameState.trumpInfo = trumpInfo;
+    
+    // Leading trump pair (6♠-6♠)
+    const leadingTrumpPair: Card[] = [
+      {
+        id: 'spades-6-1',
+        suit: Suit.Spades,
+        rank: Rank.Six,
+        joker: undefined,
+        points: 0
+      },
+      {
+        id: 'spades-6-2', 
+        suit: Suit.Spades,
+        rank: Rank.Six,
+        joker: undefined,
+        points: 0
+      }
+    ];
+    
+    // Set up leading combo
+    gameState.currentTrick = {
+      leadingPlayerId: PlayerId.Human,
+      leadingCombo: leadingTrumpPair,
+      plays: [],
+      winningPlayerId: PlayerId.Human,
+      points: 0
+    };
+    
+    // Bot 1 hand: trump singles + attractive non-trump pair
+    const bot1Index = 1;
+    gameState.currentPlayerIndex = bot1Index;
+    
+    const bot1Hand: Card[] = [
+      // Trump singles (Spades) - cannot form pairs
+      {
+        id: 'spades-3-1',
+        suit: Suit.Spades,
+        rank: Rank.Three,
+        joker: undefined,
+        points: 0
+      },
+      {
+        id: 'spades-4-1',
+        suit: Suit.Spades,
+        rank: Rank.Four,
+        joker: undefined,
+        points: 0
+      },
+      // Attractive non-trump pair (Aces)
+      {
+        id: 'hearts-ace-1',
+        suit: Suit.Hearts,
+        rank: Rank.Ace,
+        joker: undefined,
+        points: 0
+      },
+      {
+        id: 'hearts-ace-2',
+        suit: Suit.Hearts,
+        rank: Rank.Ace,
+        joker: undefined,
+        points: 0
+      },
+      // Other cards
+      {
+        id: 'clubs-7-1',
+        suit: Suit.Clubs,
+        rank: Rank.Seven,
+        joker: undefined,
+        points: 0
+      },
+      {
+        id: 'diamonds-8-1',
+        suit: Suit.Diamonds,
+        rank: Rank.Eight,
+        joker: undefined,
+        points: 0
+      }
+    ];
+    
+    gameState.players[bot1Index].hand = bot1Hand;
+    
+    // Get AI move
+    const aiMove = getAIMove(gameState, PlayerId.Bot1);
+    
+    // Check what AI chose
+    const aiChoseTrumpSingles = aiMove.every(card => card.suit === Suit.Spades);
+    const aiChoseNonTrumpPair = aiMove.length === 2 && 
+      aiMove.every(card => card.suit === Suit.Hearts && card.rank === Rank.Ace);
+    
+    expect(aiChoseTrumpSingles).toBe(true); // AI should choose trump singles
+    expect(aiChoseNonTrumpPair).toBe(false); // AI should NOT choose non-trump pair
+  });
+
+  it('should handle trump pairs when AI has sufficient trump cards', () => {
     const gameState = createIsolatedGameState();
     
     // Set up trump info: Hearts trump, rank 2
@@ -17,7 +121,7 @@ describe('Trump Suit Following Rule Violation (Comment from Issue #61)', () => {
     };
     gameState.trumpInfo = trumpInfo;
     
-    // Create leading trump suit pair (3♥-3♥)
+    // Leading trump pair (3♥-3♥)
     const leadingTrumpPair: Card[] = [
       {
         id: 'hearts-3-1',
@@ -50,7 +154,7 @@ describe('Trump Suit Following Rule Violation (Comment from Issue #61)', () => {
     gameState.currentPlayerIndex = aiPlayerIndex;
     
     const aiHand: Card[] = [
-      // Trump cards (Hearts)
+      // Trump cards (Hearts) - has trump pairs available
       {
         id: 'hearts-4-1',
         suit: Suit.Hearts,
@@ -72,7 +176,7 @@ describe('Trump Suit Following Rule Violation (Comment from Issue #61)', () => {
         joker: undefined,
         points: 5
       },
-      // Non-trump pair (Spades)
+      // Non-trump pair (Spades) 
       {
         id: 'spades-6-1',
         suit: Suit.Spades,

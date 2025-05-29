@@ -764,6 +764,22 @@ export const isValidPlay = (
           }
         }
 
+        // CRITICAL FIX: When trump is led and player cannot form proper trump combinations,
+        // they MUST use ALL available trump cards (cannot play pure non-trump combinations)
+        const playedNonTrumpCards = playedCards.filter(
+          (card) => !isTrump(card, trumpInfo),
+        );
+
+        // Only apply strict rule when: playing pure non-trump combinations while having trump available
+        if (
+          playedNonTrumpCards.length === playedCards.length &&
+          trumpCards.length > 0
+        ) {
+          // Player played pure non-trump while having trump available
+          // This violates the rule: must use trump when trump is led
+          return false;
+        }
+
         return true;
       }
     } else {
@@ -1361,7 +1377,10 @@ const generateMixedCombinations = (
     // Step 2: Fill remaining slots with any available cards
     const remaining = requiredLength - combo.length;
     if (remaining > 0) {
-      const otherCards = [...sortedOtherCards, ...trumpCards];
+      // CRITICAL FIX: When trump is led, MUST use all trump cards first
+      const otherCards = isLeadingTrump
+        ? [...trumpCards.slice(availablePreferred)] // Only remaining trump cards when trump is led
+        : [...sortedOtherCards, ...trumpCards]; // Normal priority when non-trump is led
       const availableOther = Math.min(otherCards.length, remaining);
       combo.push(...otherCards.slice(0, availableOther));
     }
@@ -1394,6 +1413,48 @@ const generateMixedCombinations = (
         value: 1,
       });
       if (validMixedCombos.length >= 5) break; // Give AI more strategic options
+    }
+  }
+
+  // CRITICAL BUG FIX: NEVER return empty array - there must always be a valid play
+  // In Tractor, game rules guarantee that every player can always make some valid move
+  if (validMixedCombos.length === 0) {
+    // Emergency fallback: generate ALL possible combinations and find the first valid one
+    // This should never happen in a properly working game, but prevents crashes
+    const allCombinations = generateAllCombinations(playerHand, leadingLength);
+
+    for (const cards of allCombinations) {
+      if (isValidPlay(cards, leadingCombo, playerHand, trumpInfo)) {
+        validMixedCombos.push({
+          type: ComboType.Single,
+          cards,
+          value: 1,
+        });
+        break; // Just need one valid combination to prevent crash
+      }
+    }
+
+    // If STILL no valid combinations found, this is a critical game logic error
+    // But we must provide a fallback to prevent crashes
+    if (validMixedCombos.length === 0) {
+      // Ultimate fallback: take first N cards (this shouldn't happen but prevents crash)
+      const emergencyCombo = playerHand.slice(0, leadingLength);
+      validMixedCombos.push({
+        type: ComboType.Single,
+        cards: emergencyCombo,
+        value: 1,
+      });
+
+      // Log this as a critical error for debugging
+      console.error(
+        "CRITICAL: Emergency fallback used in generateMixedCombinations",
+        {
+          playerHand: playerHand.map((c) => `${c.rank}${c.suit}`),
+          leadingCombo: leadingCombo.map((c) => `${c.rank}${c.suit}`),
+          trumpInfo,
+          emergencyCombo: emergencyCombo.map((c) => `${c.rank}${c.suit}`),
+        },
+      );
     }
   }
 
