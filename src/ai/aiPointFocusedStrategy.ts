@@ -160,13 +160,8 @@ export function selectEarlyGameLeadingPlay(
     return null; // Use this only in early game
   }
 
-  // CRITICAL: Do not apply when trump suit is declared - let trump strategies handle trump scenarios
-  if (trumpInfo.declared && trumpInfo.trumpSuit) {
-    return null; // Let trump-specific strategies handle trump suit scenarios
-  }
-
   // Strategy: Lead with high non-trump cards to let partner escape point cards
-  // Avoid leading with trump cards early unless absolutely necessary
+  // ALWAYS avoid leading with trump cards in early game, regardless of declaration status
   const nonTrumpCombos = validCombos.filter(
     (combo) => !combo.cards.some((card) => isTrump(card, trumpInfo)),
   );
