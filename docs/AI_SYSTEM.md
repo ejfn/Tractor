@@ -208,7 +208,8 @@ flowchart TD
 - When AI cannot beat opponent, prioritizes non-point cards over point cards
 - Uses trump conservation hierarchy to select weakest available cards
 - Preserves valuable trump rank cards over weak trump suit cards
-- **Example**: Plays 3♦ (weak trump suit) instead of 2♣ (valuable trump rank)
+- Low-value tricks (0-4 points) use conservation logic for optimal card selection
+- **Example**: Plays 3♠ (conservation: 5) instead of 2♥ (conservation: 70) when opponent leads trump rank
 
 **Implementation**: `handleOpponentWinning()` and `selectLowestValueNonPointCombo()` in `aiStrategy.ts`
 

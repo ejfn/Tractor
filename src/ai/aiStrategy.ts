@@ -17,7 +17,6 @@ import {
   TrumpConservationStrategy,
   GamePhaseStrategy,
   Rank,
-  PlayerId,
 } from "../types";
 import { isTrump, evaluateTrickPlay } from "../game/gameLogic";
 import {
@@ -225,7 +224,12 @@ export class AIStrategyImplementation implements AIStrategy {
     // === PRIORITY 1: TEAM COORDINATION ===
     if (trickWinner?.isTeammateWinning) {
       // Teammate is winning - help collect points or play conservatively
-      return this.handleTeammateWinning(comboAnalyses, context, trumpInfo);
+      return this.handleTeammateWinning(
+        comboAnalyses,
+        context,
+        trumpInfo,
+        gameState,
+      );
     }
 
     // === PRIORITY 2: OPPONENT BLOCKING ===
@@ -268,6 +272,7 @@ export class AIStrategyImplementation implements AIStrategy {
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
     context: GameContext,
     trumpInfo: TrumpInfo,
+    gameState?: GameState,
   ): Card[] {
     const trickWinner = context.trickWinnerAnalysis!;
 
@@ -276,6 +281,8 @@ export class AIStrategyImplementation implements AIStrategy {
       trickWinner,
       comboAnalyses,
       context,
+      gameState,
+      trumpInfo,
     );
 
     if (shouldContributePoints) {
@@ -292,6 +299,8 @@ export class AIStrategyImplementation implements AIStrategy {
     trickWinner: any,
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
     context: GameContext,
+    gameState?: GameState,
+    trumpInfo?: TrumpInfo,
   ): boolean {
     // Check if we have point cards available
     const hasPointCards = comboAnalyses.some((ca) =>
@@ -333,9 +342,38 @@ export class AIStrategyImplementation implements AIStrategy {
       }
     }
 
-    // If Human is the current winner, always contribute points (key fix)
-    if (trickWinner.currentWinner === PlayerId.Human) {
-      return true;
+    // If teammate is the current winner, consider point contribution
+    if (trickWinner.isTeammateWinning) {
+      // If teammate is winning with very strong trump, contribute aggressively
+      // (e.g., trump rank in trump suit, Big Joker, etc.)
+      if (gameState?.currentTrick && trumpInfo) {
+        // Find the winning player's card, not the leading card
+        const winningPlayerId = trickWinner.currentWinner;
+        const winningPlay = gameState.currentTrick.plays.find(
+          (play) => play.playerId === winningPlayerId,
+        );
+        const winningCard = winningPlay
+          ? winningPlay.cards[0]
+          : gameState.currentTrick.leadingCombo[0];
+
+        // If teammate is winning with very strong cards, contribute points aggressively
+        // TODO: Future enhancement - integrate memory system to determine card strength based on:
+        // - Cards already played in this suit
+        // - Remaining cards in opponents' hands
+        // - Probability that teammate's card will be beaten
+        // This will make "strong card" detection more intelligent and context-aware
+        const isVeryStrongCard =
+          winningCard.joker || // Any joker
+          (winningCard.rank === trumpInfo.trumpRank &&
+            winningCard.suit === trumpInfo.trumpSuit) || // Trump rank in trump suit
+          (winningCard.rank === Rank.Ace && !isTrump(winningCard, trumpInfo)); // Non-trump Ace
+
+        if (isVeryStrongCard) {
+          return true; // Contribute points aggressively when teammate has very strong cards
+        }
+      }
+
+      return false; // Otherwise be conservative - teammate might lose the trick
     }
 
     // If trick has low points, worth contributing
@@ -475,7 +513,8 @@ export class AIStrategyImplementation implements AIStrategy {
     }
 
     // Low value tricks (0-4 points): don't waste high cards on pointless tricks
-    return null;
+    // Use conservation logic to play weakest cards instead of null
+    return this.selectLowestValueNonPointCombo(comboAnalyses);
   }
 
   // === STRATEGIC DISPOSAL ===
