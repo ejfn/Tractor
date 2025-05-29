@@ -37,6 +37,7 @@ export interface MemoryContext {
   uncertaintyLevel: number; // 0.0 (perfect info) to 1.0 (no info)
   trumpExhaustion: number; // 0.0 (many trumps left) to 1.0 (few trumps)
   opponentHandStrength: Record<string, number>; // Estimated strength per player
+  cardMemory?: CardMemory; // Enhanced: Direct access to card memory for biggest remaining detection
 }
 
 // Position-based strategy matrices
@@ -58,6 +59,7 @@ export interface GameContext {
   memoryContext?: MemoryContext; // Phase 3: Memory-based decision context
   memoryStrategy?: MemoryBasedStrategy; // Phase 3: Memory-enhanced strategy
   trickWinnerAnalysis?: TrickWinnerAnalysis; // Real-time trick winner analysis
+  trumpInfo?: import("./core").TrumpInfo; // Enhanced: Trump information for card analysis
 }
 
 export interface ComboAnalysis {

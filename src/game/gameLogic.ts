@@ -131,14 +131,31 @@ export const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
 };
 
 // Compare two cards based on trump rules
+// WARNING: This function should only be used when cards are from the same suit
+// or when comparing trump cards. For cross-suit comparisons in trick context,
+// use evaluateTrickPlay() instead.
 export const compareCards = (
   cardA: Card,
   cardB: Card,
   trumpInfo: TrumpInfo,
 ): number => {
-  // First compare by trump status
+  // Validation: Ensure this function is used correctly
   const aIsTrump = isTrump(cardA, trumpInfo);
   const bIsTrump = isTrump(cardB, trumpInfo);
+
+  // Allow comparison if: same suit, or both trump, or one is trump (trump beats non-trump)
+  const sameSuit = cardA.suit === cardB.suit;
+  const validComparison = sameSuit || aIsTrump || bIsTrump;
+
+  if (!validComparison) {
+    throw new Error(
+      `compareCards: Invalid comparison between different non-trump suits: ` +
+        `${cardA.rank}${cardA.suit} vs ${cardB.rank}${cardB.suit}. ` +
+        `Use evaluateTrickPlay() for cross-suit trick comparisons.`,
+    );
+  }
+
+  // First compare by trump status
 
   // If only one is trump, it wins
   if (aIsTrump && !bIsTrump) return 1;
@@ -177,6 +194,183 @@ export const compareCards = (
   // Different suits, and not trumps - equal strength (first played wins)
   return 0;
 };
+
+/**
+ * Evaluates whether a proposed play can beat the current winning combo in a trick
+ * This replaces the context-less compareCards for proper trick-taking game logic
+ */
+export interface TrickPlayResult {
+  canBeat: boolean; // Can this play beat the current winner?
+  isLegal: boolean; // Is this a legal play given hand and trick context?
+  strength: number; // Relative strength (for AI decision making)
+  reason?: string; // Why it can/can't beat (for debugging)
+}
+
+export function evaluateTrickPlay(
+  proposedPlay: Card[],
+  currentTrick: Trick,
+  trumpInfo: TrumpInfo,
+  playerHand: Card[],
+): TrickPlayResult {
+  // Extract trick context
+  const leadingCombo = currentTrick.leadingCombo;
+  const leadingSuit = leadingCombo[0]?.suit;
+  const leadingComboType = getComboType(leadingCombo);
+  const proposedComboType = getComboType(proposedPlay);
+
+  // Get current winning combo
+  const currentWinningCombo = getCurrentWinningCombo(currentTrick);
+
+  // Step 1: Validate combo type matching
+  if (leadingComboType !== proposedComboType) {
+    return {
+      canBeat: false,
+      isLegal: false,
+      strength: -1,
+      reason: `Must match combo type: ${leadingComboType} was led`,
+    };
+  }
+
+  // Step 2: Check if player must follow suit
+  const hasLedSuit = playerHand.some((card) => card.suit === leadingSuit);
+  const proposedSuit = proposedPlay[0]?.suit;
+
+  if (hasLedSuit && proposedSuit !== leadingSuit) {
+    // Player has led suit but playing different suit
+    const proposedIsTrump = proposedPlay.every((card) =>
+      isTrump(card, trumpInfo),
+    );
+
+    if (!proposedIsTrump) {
+      return {
+        canBeat: false,
+        isLegal: false,
+        strength: -1,
+        reason: `Must follow suit: have ${leadingSuit} but playing ${proposedSuit}`,
+      };
+    }
+  }
+
+  // Step 3: Determine if play can beat current winner
+  const canBeat = canComboBeaten(
+    proposedPlay,
+    currentWinningCombo,
+    leadingSuit,
+    trumpInfo,
+  );
+  const strength = calculateComboStrength(
+    proposedPlay,
+    currentWinningCombo,
+    trumpInfo,
+  );
+
+  return {
+    canBeat,
+    isLegal: true,
+    strength,
+    reason: canBeat ? "Can beat current winner" : "Cannot beat current winner",
+  };
+}
+
+/**
+ * Helper function to get the current winning combo from a trick
+ */
+function getCurrentWinningCombo(trick: Trick): Card[] {
+  if (!trick.winningPlayerId) {
+    return trick.leadingCombo; // Leader is winning by default
+  }
+
+  // Find the winning play
+  const winningPlay = trick.plays.find(
+    (play) => play.playerId === trick.winningPlayerId,
+  );
+  return winningPlay ? winningPlay.cards : trick.leadingCombo;
+}
+
+// Note: Using existing getComboType function defined later in file
+
+/**
+ * Core logic: Can proposedCombo beat currentWinningCombo?
+ */
+function canComboBeaten(
+  proposedCombo: Card[],
+  currentWinningCombo: Card[],
+  leadingSuit: Suit | undefined,
+  trumpInfo: TrumpInfo,
+): boolean {
+  const proposedSuit = proposedCombo[0]?.suit;
+  const winningSuit = currentWinningCombo[0]?.suit;
+
+  const proposedIsTrump = proposedCombo.every((card) =>
+    isTrump(card, trumpInfo),
+  );
+  const winningIsTrump = currentWinningCombo.every((card) =>
+    isTrump(card, trumpInfo),
+  );
+
+  // Trump beats non-trump
+  if (proposedIsTrump && !winningIsTrump) {
+    return true;
+  }
+
+  // Non-trump cannot beat trump
+  if (!proposedIsTrump && winningIsTrump) {
+    return false;
+  }
+
+  // Different suits (both non-trump) - cannot beat
+  if (proposedSuit !== winningSuit && !proposedIsTrump && !winningIsTrump) {
+    return false;
+  }
+
+  // Same suit or both trump - compare by rank/strength
+  if (proposedSuit === winningSuit || (proposedIsTrump && winningIsTrump)) {
+    // Use existing compareCards for same-suit/trump comparison
+    return (
+      compareCards(proposedCombo[0], currentWinningCombo[0], trumpInfo) > 0
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Calculate relative strength for AI decision making
+ * This function handles cross-suit comparisons safely for trick context
+ */
+function calculateComboStrength(
+  proposedCombo: Card[],
+  currentWinningCombo: Card[],
+  trumpInfo: TrumpInfo,
+): number {
+  const proposedSuit = proposedCombo[0]?.suit;
+  const winningSuit = currentWinningCombo[0]?.suit;
+
+  const proposedIsTrump = proposedCombo.every((card) =>
+    isTrump(card, trumpInfo),
+  );
+  const winningIsTrump = currentWinningCombo.every((card) =>
+    isTrump(card, trumpInfo),
+  );
+
+  // For cross-suit trick comparisons, use trump-aware strength calculation
+  if (proposedSuit !== winningSuit && !proposedIsTrump && !winningIsTrump) {
+    // Different non-trump suits - cannot beat, assign low strength
+    return 25;
+  }
+
+  // Same suit or trump involved - safe to use compareCards
+  const comparison = compareCards(
+    proposedCombo[0],
+    currentWinningCombo[0],
+    trumpInfo,
+  );
+
+  // Normalize to 0-100 scale for AI use
+  if (comparison > 0) return 75 + Math.min(comparison * 5, 25); // 75-100 for winning
+  if (comparison === 0) return 50; // 50 for equal
+  return Math.max(25 + comparison * 5, 0); // 0-25 for losing
+}
 
 // Compare ranks
 const compareRanks = (rankA: Rank, rankB: Rank): number => {
@@ -586,10 +780,15 @@ export const isValidPlay = (
 
   if (matchingCombos.length > 0) {
     // Must play a matching combo in the same suit
-    const isMatchingCombo = matchingCombos.some((combo) =>
-      combo.cards.every((card) =>
-        playedCards.some((played) => played.id === card.id),
-      ),
+    const isMatchingCombo = matchingCombos.some(
+      (combo) =>
+        combo.cards.length === playedCards.length &&
+        combo.cards.every((card) =>
+          playedCards.some((played) => played.id === card.id),
+        ) &&
+        playedCards.every((played) =>
+          combo.cards.some((card) => card.id === played.id),
+        ),
     );
     return isMatchingCombo;
   }

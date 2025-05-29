@@ -19,7 +19,7 @@ import {
   Rank,
   PlayerId,
 } from "../types";
-import { isTrump, compareCards } from "../game/gameLogic";
+import { isTrump, evaluateTrickPlay } from "../game/gameLogic";
 import {
   createGameContext,
   analyzeCombo,
@@ -35,8 +35,8 @@ import {
   createPointFocusedContext,
   createTrumpConservationStrategy,
   selectEarlyGameLeadingPlay,
-  selectAcePriorityLeadingPlay,
 } from "./aiPointFocusedStrategy";
+import { isBiggestRemainingInSuit, createCardMemory } from "./aiCardMemory";
 
 /**
  * Base AI strategy interface defining the core capabilities
@@ -82,6 +82,12 @@ export class AIStrategyImplementation implements AIStrategy {
 
     // Create strategic context for this AI player
     const context = createGameContext(gameState, player.id);
+
+    // Create memory context for biggest remaining detection
+    const cardMemory = createCardMemory(gameState);
+    if (context.memoryContext) {
+      context.memoryContext.cardMemory = cardMemory;
+    }
 
     // Enhanced Point-Focused Strategy (Issue #61)
     const pointContext = createPointFocusedContext(
@@ -273,8 +279,8 @@ export class AIStrategyImplementation implements AIStrategy {
     );
 
     if (shouldContributePoints) {
-      // CONTRIBUTE_POINTS: Use point card hierarchy (10 > King > 5)
-      return this.selectPointContribution(comboAnalyses, trumpInfo);
+      // CONTRIBUTE_POINTS: Use memory-enhanced point card hierarchy
+      return this.selectPointContribution(comboAnalyses, trumpInfo, context);
     } else {
       // PLAY_CONSERVATIVE: Teammate winning strong - play low, avoid point cards
       return this.selectLowestValueNonPointCombo(comboAnalyses);
@@ -296,6 +302,37 @@ export class AIStrategyImplementation implements AIStrategy {
       return false; // Can't contribute what we don't have
     }
 
+    // Memory-enhanced decision: Check if our point cards are biggest remaining
+    if (context.memoryContext?.cardMemory) {
+      const guaranteedWinningPointCards = comboAnalyses.some((ca) => {
+        const firstCard = ca.combo.cards[0];
+        if (!firstCard.suit || !firstCard.points || firstCard.points <= 0) {
+          return false;
+        }
+
+        // Skip trump cards (different dynamics)
+        if (isTrump(firstCard, context.trumpInfo || ({} as TrumpInfo))) {
+          return false;
+        }
+
+        const comboType = ca.combo.type === ComboType.Pair ? "pair" : "single";
+        return (
+          context.memoryContext!.cardMemory &&
+          isBiggestRemainingInSuit(
+            context.memoryContext!.cardMemory,
+            firstCard.suit,
+            firstCard.rank!,
+            comboType,
+          )
+        );
+      });
+
+      // If we have guaranteed winning point cards, definitely contribute
+      if (guaranteedWinningPointCards) {
+        return true;
+      }
+    }
+
     // If Human is the current winner, always contribute points (key fix)
     if (trickWinner.currentWinner === PlayerId.Human) {
       return true;
@@ -314,6 +351,7 @@ export class AIStrategyImplementation implements AIStrategy {
   private selectPointContribution(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
     trumpInfo: TrumpInfo,
+    context?: GameContext,
   ): Card[] {
     const pointCardCombos = comboAnalyses.filter((ca) =>
       ca.combo.cards.some((card) => card.points > 0),
@@ -324,7 +362,62 @@ export class AIStrategyImplementation implements AIStrategy {
       return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
 
-    // Sort by point card hierarchy: 10 > King > 5
+    // Memory-enhanced selection: Prioritize biggest remaining point cards
+    if (context?.memoryContext?.cardMemory) {
+      const guaranteedWinningPointCards: {
+        combo: { combo: Combo; analysis: ComboAnalysis };
+        priority: number;
+      }[] = [];
+
+      pointCardCombos.forEach((comboAnalysis) => {
+        const firstCard = comboAnalysis.combo.cards[0];
+        if (!firstCard.suit || isTrump(firstCard, trumpInfo)) {
+          return; // Skip trump or invalid cards
+        }
+
+        const comboType =
+          comboAnalysis.combo.type === ComboType.Pair ? "pair" : "single";
+        const isBiggestRemaining =
+          context.memoryContext!.cardMemory &&
+          isBiggestRemainingInSuit(
+            context.memoryContext!.cardMemory,
+            firstCard.suit,
+            firstCard.rank!,
+            comboType,
+          );
+
+        if (isBiggestRemaining) {
+          let priority = 0;
+
+          // Use same priority system as leading strategy
+          if (firstCard.rank === Rank.King) {
+            priority += 5; // Kings get highest priority for point contribution
+          } else if (firstCard.rank === Rank.Ten) {
+            priority += 4; // 10s get high priority
+          } else if (firstCard.rank === Rank.Five) {
+            priority += 3; // 5s get medium priority
+          }
+
+          // Bonus for pairs vs singles
+          if (comboAnalysis.combo.type === ComboType.Pair) {
+            priority += 1;
+          }
+
+          guaranteedWinningPointCards.push({
+            combo: comboAnalysis,
+            priority,
+          });
+        }
+      });
+
+      // If we have guaranteed winning point cards, use them
+      if (guaranteedWinningPointCards.length > 0) {
+        guaranteedWinningPointCards.sort((a, b) => b.priority - a.priority);
+        return guaranteedWinningPointCards[0].combo.combo.cards;
+      }
+    }
+
+    // Fallback: Sort by traditional point card hierarchy: 10 > King > 5
     const sortedPointCombos = pointCardCombos.sort((a, b) => {
       const aCard = a.combo.cards[0]; // Assume single card for simplicity
       const bCard = b.combo.cards[0];
@@ -478,28 +571,28 @@ export class AIStrategyImplementation implements AIStrategy {
     trumpInfo: TrumpInfo,
     gameState: GameState,
   ): Card[] {
-    // Find combos that can actually beat the current strongest combo in the trick
+    // Find combos that can actually beat the current trick using proper trick evaluation
     const currentTrick = gameState.currentTrick;
     const winningCombos = comboAnalyses.filter((ca) => {
       if (!currentTrick) return true; // No trick in progress
 
-      // Get the current strongest combo (either leading combo or a stronger play)
-      let currentStrongestCombo = currentTrick.leadingCombo || [];
-      const winningPlay = currentTrick.plays.find(
-        (play) => play.playerId === currentTrick.winningPlayerId,
-      );
-      if (winningPlay && winningPlay.cards.length > 0) {
-        currentStrongestCombo = winningPlay.cards;
+      // Use evaluateTrickPlay for proper trick-context evaluation
+      try {
+        const player = gameState.players[gameState.currentPlayerIndex];
+        if (!player) return false;
+
+        const evaluation = evaluateTrickPlay(
+          ca.combo.cards,
+          currentTrick,
+          trumpInfo,
+          player.hand,
+        );
+
+        return evaluation.canBeat && evaluation.isLegal;
+      } catch {
+        // If evaluation fails, assume this combo cannot win
+        return false;
       }
-
-      // If no cards have been played yet, any combo can "win"
-      if (currentStrongestCombo.length === 0) return true;
-
-      return this.isStrongerCombo(
-        ca.combo.cards,
-        currentStrongestCombo,
-        trumpInfo,
-      );
     });
 
     if (winningCombos.length === 0) {
@@ -537,37 +630,6 @@ export class AIStrategyImplementation implements AIStrategy {
     });
 
     return sorted[0].combo.cards;
-  }
-
-  private isStrongerCombo(
-    combo1: Card[],
-    combo2: Card[],
-    trumpInfo: TrumpInfo,
-  ): boolean {
-    // Null/undefined safety
-    if (!combo1 || !combo2 || !combo1.length || !combo2.length) return false;
-
-    // Simple comparison for now - would need more complex logic for actual game
-    // In general, a combo with a trump beats a non-trump combo
-    const combo1HasTrump = combo1.some((card) => isTrump(card, trumpInfo));
-    const combo2HasTrump = combo2.some((card) => isTrump(card, trumpInfo));
-
-    if (combo1HasTrump && !combo2HasTrump) return true;
-    if (!combo1HasTrump && combo2HasTrump) return false;
-
-    // If both have trump or neither has trump, compare highest cards
-    const highCard1 = this.getHighestCard(combo1, trumpInfo);
-    const highCard2 = this.getHighestCard(combo2, trumpInfo);
-
-    return compareCards(highCard1, highCard2, trumpInfo) > 0;
-  }
-
-  private getHighestCard(cards: Card[], trumpInfo: TrumpInfo): Card {
-    return cards.reduce(
-      (highest, card) =>
-        compareCards(highest, card, trumpInfo) > 0 ? highest : card,
-      cards[0],
-    );
   }
 
   // === PHASE 2/3/4 STRATEGY METHODS ===
@@ -650,6 +712,18 @@ export class AIStrategyImplementation implements AIStrategy {
     if (memoryStrategy?.suitExhaustionAdvantage) {
       // Exploit known suit voids
       return this.selectSuitExploitationPlay(comboAnalyses, trumpInfo);
+    }
+
+    // Memory-enhanced biggest remaining strategy: Lead with guaranteed winners
+    if (memoryContext) {
+      const guaranteedWinnerPlay = this.selectBiggestRemainingCombo(
+        comboAnalyses,
+        memoryContext,
+        trumpInfo,
+      );
+      if (guaranteedWinnerPlay) {
+        return guaranteedWinnerPlay;
+      }
     }
 
     // Enhanced strategy with memory-based adjustments
@@ -1238,18 +1312,7 @@ export class AIStrategyImplementation implements AIStrategy {
     trumpConservation: TrumpConservationStrategy,
     gameState: GameState,
   ): Card[] | null {
-    // Priority 1: Ace priority leading - prioritize non-trump Aces and Ace pairs
-    const acePriorityPlay = selectAcePriorityLeadingPlay(
-      validCombos,
-      trumpInfo,
-      pointContext,
-      gameState,
-    );
-    if (acePriorityPlay) {
-      return acePriorityPlay.cards;
-    }
-
-    // Priority 2: Early game strategy - Lead high non-trump to help partner escape points
+    // Priority 1: Early game strategy - Lead high non-trump (includes integrated Ace priority)
     if (pointContext.gamePhase === GamePhaseStrategy.EarlyGame) {
       const earlyGamePlay = selectEarlyGameLeadingPlay(
         validCombos,
@@ -1361,6 +1424,137 @@ export class AIStrategyImplementation implements AIStrategy {
     score += analysis.conservationValue * 0.2;
 
     return score;
+  }
+
+  /**
+   * Selects combinations that are guaranteed winners using biggest remaining logic
+   * Prioritizes point cards and pairs over singles when they're unbeatable
+   */
+  private selectBiggestRemainingCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    memoryContext: any,
+    trumpInfo: TrumpInfo,
+  ): Card[] | null {
+    // Only consider non-trump combos (trump cards have different dynamics)
+    const nonTrumpCombos = comboAnalyses.filter((ca) => {
+      const combo = ca.combo;
+      const firstCard = combo.cards[0];
+
+      // Must be non-trump and have a suit
+      return firstCard.suit && !isTrump(firstCard, trumpInfo);
+    });
+
+    if (nonTrumpCombos.length === 0) return null;
+
+    // Find combos that are biggest remaining in their suit
+    const guaranteedWinners: {
+      combo: { combo: Combo; analysis: ComboAnalysis };
+      priority: number;
+    }[] = [];
+
+    nonTrumpCombos.forEach((comboAnalysis) => {
+      const firstCard = comboAnalysis.combo.cards[0];
+      const suit = firstCard.suit!;
+      const rank = firstCard.rank!;
+      const comboType = comboAnalysis.combo.type;
+
+      let priority = 0;
+      let isGuaranteedWin = false;
+
+      // Handle different combo types with strategic priority
+      if (comboType === ComboType.Tractor) {
+        // For tractors, check if the lowest pair in the tractor is biggest remaining
+        // If lowest pair wins, the whole tractor wins
+        const tractorCards = comboAnalysis.combo.cards.sort(
+          (a, b) => this.getRankValue(a.rank!) - this.getRankValue(b.rank!),
+        );
+        const lowestRank = tractorCards[0].rank!;
+
+        if (
+          isBiggestRemainingInSuit(
+            memoryContext.cardMemory,
+            suit,
+            lowestRank,
+            "pair",
+          )
+        ) {
+          isGuaranteedWin = true;
+          priority += 3; // Tractors get medium-high priority
+        }
+      } else {
+        // For pairs and singles
+        const memoryComboType =
+          comboType === ComboType.Pair ? "pair" : "single";
+
+        if (
+          isBiggestRemainingInSuit(
+            memoryContext.cardMemory,
+            suit,
+            rank,
+            memoryComboType,
+          )
+        ) {
+          isGuaranteedWin = true;
+
+          // Strategic priority: Aces and guaranteed Kings first (collect points before opponent runs out)
+          if (rank === Rank.Ace) {
+            priority += 6; // Aces get highest priority - always safe and valuable
+          } else if (rank === Rank.King) {
+            priority += 5; // Guaranteed Kings second highest - point cards we must collect
+          } else if (comboType === ComboType.Pair) {
+            priority += 2; // Other pairs get lower priority
+          } else {
+            priority += 1; // Other singles get lowest priority
+          }
+        }
+      }
+
+      if (isGuaranteedWin) {
+        // Additional bonus for point cards (on top of rank priority)
+        if (firstCard.points && firstCard.points > 0) {
+          priority += 0.5; // Smaller bonus since rank priority already handles K/10/5
+        }
+
+        // Small bonus for higher ranks within same category
+        const rankValue = this.getRankValue(rank);
+        priority += rankValue * 0.05; // Reduced from 0.1 to make rank less dominant
+      }
+
+      if (isGuaranteedWin) {
+        guaranteedWinners.push({
+          combo: comboAnalysis,
+          priority,
+        });
+      }
+    });
+
+    if (guaranteedWinners.length === 0) return null;
+
+    // Sort by priority (highest first) and select the best
+    guaranteedWinners.sort((a, b) => b.priority - a.priority);
+    return guaranteedWinners[0].combo.combo.cards;
+  }
+
+  /**
+   * Helper to get numeric value for rank comparison
+   */
+  private getRankValue(rank: Rank): number {
+    const rankValues: Record<Rank, number> = {
+      [Rank.Ace]: 14,
+      [Rank.King]: 13,
+      [Rank.Queen]: 12,
+      [Rank.Jack]: 11,
+      [Rank.Ten]: 10,
+      [Rank.Nine]: 9,
+      [Rank.Eight]: 8,
+      [Rank.Seven]: 7,
+      [Rank.Six]: 6,
+      [Rank.Five]: 5,
+      [Rank.Four]: 4,
+      [Rank.Three]: 3,
+      [Rank.Two]: 2,
+    };
+    return rankValues[rank] || 0;
   }
 }
 

@@ -233,6 +233,77 @@ function recordPlayPattern(
 }
 
 /**
+ * Checks if a specific rank is the biggest remaining in a suit
+ * For singles: true if both copies of all higher ranks have been played
+ * For pairs: true if ANY single of any higher rank has been played (making higher pairs impossible)
+ */
+export function isBiggestRemainingInSuit(
+  memory: CardMemory,
+  suit: Suit,
+  rank: Rank,
+  comboType: "single" | "pair",
+): boolean {
+  // Define rank hierarchy (Ace highest to 3 lowest)
+  const rankHierarchy = [
+    Rank.Ace,
+    Rank.King,
+    Rank.Queen,
+    Rank.Jack,
+    Rank.Ten,
+    Rank.Nine,
+    Rank.Eight,
+    Rank.Seven,
+    Rank.Six,
+    Rank.Five,
+    Rank.Four,
+    Rank.Three,
+  ];
+
+  const rankIndex = rankHierarchy.indexOf(rank);
+  if (rankIndex === -1) return false; // Invalid rank
+
+  if (comboType === "pair") {
+    // For pairs: ANY higher rank played makes higher pairs impossible
+    // Example: Q♥-Q♥ wins if ANY A♥ OR K♥ has been played
+    for (let i = 0; i < rankIndex; i++) {
+      const higherRank = rankHierarchy[i];
+      if (hasRankBeenPlayed(memory, suit, higherRank)) {
+        return true; // Higher pair is impossible, our pair wins
+      }
+    }
+    return false;
+  } else {
+    // For singles: BOTH copies of ALL higher ranks must be played
+    // Example: K♥ wins if both A♥ cards have been played
+    for (let i = 0; i < rankIndex; i++) {
+      const higherRank = rankHierarchy[i];
+      const playedCount = memory.playedCards.filter(
+        (card) => card.rank === higherRank && card.suit === suit,
+      ).length;
+
+      if (playedCount < 2) {
+        return false; // This higher rank still has cards available
+      }
+    }
+    return true; // All higher ranks exhausted
+  }
+}
+
+/**
+ * Checks if a specific rank has any cards played in a suit
+ * Used internally by isBiggestRemainingInSuit
+ */
+function hasRankBeenPlayed(
+  memory: CardMemory,
+  suit: Suit,
+  rank: Rank,
+): boolean {
+  return memory.playedCards.some(
+    (card) => card.rank === rank && card.suit === suit,
+  );
+}
+
+/**
  * Calculates probability distribution for unseen cards
  */
 function calculateCardProbabilities(

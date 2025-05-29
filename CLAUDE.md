@@ -48,7 +48,7 @@ npm test              # Run tests
 │   ├── aiGameContext.ts   # Game context analysis
 │   ├── aiAdvancedCombinations.ts # Advanced combination analysis
 │   ├── aiCardMemory.ts    # Card memory system (Phase 3)
-│   └── aiPointFocusedStrategy.ts # Point-focused strategy
+│   └── aiPointFocusedStrategy.ts # Point-focused strategy and early game leading (with integrated Ace priority)
 ├── game/                  # Core game logic and management
 │   ├── gameLogic.ts       # Core mechanics, rules, and valid combination detection
 │   ├── gamePlayManager.ts # Card play validation and tricks
@@ -385,6 +385,15 @@ jest.mock('../../src/game/gameLogic', () => ({
   compareCards: jest.fn() // Only mock what you need to control for tests
 }));
 
+// Good: Test validation errors for invalid usage
+expect(() => {
+  compareCards(aceClubs, fourDiamonds, trumpInfo);
+}).toThrow('compareCards: Invalid comparison between different non-trump suits');
+
+// Good: Use evaluateTrickPlay for cross-suit trick testing
+const result = evaluateTrickPlay(proposedCards, currentTrick, trumpInfo, playerHand);
+expect(result.canBeat).toBe(true);
+
 // Avoid: Large mock objects that duplicate real code
 ```
 
@@ -430,6 +439,58 @@ Trump suit rotates to first position while maintaining alternating black-red pat
 - Trick plays array contains (players.length - 1) plays
 - Real-time `winningPlayerId` field tracks current trick winner
 - Always block AI moves during trick result display
+
+### Card Comparison Functions ⚠️ CRITICAL
+
+The codebase provides two distinct functions for card evaluation with strict usage requirements:
+
+#### `compareCards(cardA, cardB, trumpInfo)` - Direct Card Comparison
+
+**Purpose**: Compare two individual cards within the same suit or trump group
+
+**Valid Usage**:
+- ✅ Same suit cards: `compareCards(7♠, A♠, trumpInfo)`
+- ✅ Trump vs non-trump: `compareCards(BigJoker, A♠, trumpInfo)`
+- ✅ Both trump cards: `compareCards(2♠, SmallJoker, trumpInfo)`
+
+**Invalid Usage** (throws error):
+- ❌ Different non-trump suits: `compareCards(A♣, 4♦, trumpInfo)`
+- ❌ Cross-suit pair comparison without trick context
+
+**Protection**: Automatically validates and throws descriptive errors for invalid cross-suit non-trump comparisons.
+
+#### `evaluateTrickPlay(cards, trick, trumpInfo, hand)` - Trick Context Evaluation
+
+**Purpose**: Evaluate card plays within trick-taking game context
+
+**Usage**:
+- ✅ Trick winner determination across different suits
+- ✅ Legal play validation (follow suit, combo type matching)
+- ✅ Cross-suit play evaluation in trick context
+- ✅ AI strategy decisions for trick competition
+
+**Returns**: `{ canBeat: boolean, isLegal: boolean, strength: number, reason?: string }`
+
+#### Development Guidelines
+
+**When to use `compareCards`:**
+- Sorting cards within the same suit
+- Trump hierarchy evaluation
+- Card strength comparison for same-suit scenarios
+
+**When to use `evaluateTrickPlay`:**
+- AI strategy decisions ("Can I beat this trick?")
+- Cross-suit trick evaluation
+- Legal play validation
+- Any trick-taking game logic
+
+**Error Message Guidance:**
+```
+compareCards: Invalid comparison between different non-trump suits: A♣ vs 4♦. 
+Use evaluateTrickPlay() for cross-suit trick comparisons.
+```
+
+This protection ensures Shengji/Tractor game rule compliance and prevents invalid card comparisons that could lead to incorrect AI decisions or game logic bugs.
 
 ## AI Implementation Guidelines (All 4 Phases)
 
