@@ -202,9 +202,15 @@ flowchart TD
 **Strategic Thresholds**:
 - **High-Value (≥10 points)**: Always attempt to beat opponent if possible
 - **Moderate (5-9 points)**: Beat if strategically reasonable
-- **Low-Value (0-4 points)**: Conserve high cards, don't waste resources
+- **Low-Value (0-4 points)**: Conserve high cards, avoid wasting point cards
 
-**Implementation**: `handleOpponentWinning()` in `aiStrategy.ts`
+**Enhanced Point Card Management**:
+- When AI cannot beat opponent, prioritizes non-point cards over point cards
+- Uses trump conservation hierarchy to select weakest available cards
+- Preserves valuable trump rank cards over weak trump suit cards
+- **Example**: Plays 3♦ (weak trump suit) instead of 2♣ (valuable trump rank)
+
+**Implementation**: `handleOpponentWinning()` and `selectLowestValueNonPointCombo()` in `aiStrategy.ts`
 
 ### Priority 3: Trick Contention
 
@@ -233,8 +239,10 @@ flowchart TD
 1. **Eliminates Conflicts**: Clear priority order prevents logic contradictions
 2. **Predictable Behavior**: Consistent decision-making across all scenarios  
 3. **Enhanced Ace Conservation**: Smart preservation of high-value cards
-4. **Opponent Blocking**: Sophisticated response to opponent point collection
-5. **Team Coordination**: Improved cooperation with human teammates
+4. **Strategic Point Card Management**: Avoids wasting point cards when opponent winning
+5. **Trump Conservation**: Proper trump hierarchy usage preserving valuable cards
+6. **Opponent Blocking**: Sophisticated response to opponent point collection
+7. **Team Coordination**: Improved cooperation with human teammates
 
 ### Real-time Trick Winner Analysis
 
@@ -495,7 +503,9 @@ The AI system consists of 6 specialized modules in `src/ai/`:
 - ✅ **Real-time trick winner analysis** with `winningPlayerId` integration
 - ✅ **Enhanced AI strategic decision-making** using current trick status
 - ✅ **Issue #61 fix**: Conservative play to avoid wasteful high card usage
-- ✅ **Comprehensive test coverage** with 315+ passing tests
+- ✅ **Enhanced opponent blocking**: Strategic point card management and trump conservation
+- ✅ **Trump hierarchy logic**: Proper weak trump vs valuable trump selection
+- ✅ **Comprehensive test coverage** with 427+ passing tests
 - ✅ **Production ready** with sophisticated strategic decision-making
 - ✅ **Real-time performance** maintaining smooth gameplay experience
 
@@ -510,8 +520,10 @@ The AI system consists of 6 specialized modules in `src/ai/`:
 
 ### Test Coverage
 
-- **73+ AI intelligence tests** covering all 4 phases comprehensively
+- **75+ AI intelligence tests** covering all 4 phases comprehensively
 - **Trick winner analysis testing** with comprehensive scenarios for teammate/opponent/self winning
+- **Point card management testing** validating strategic disposal when opponent winning
+- **Trump conservation testing** ensuring proper trump hierarchy usage
 - **Memory system testing** with extensive card tracking scenarios
 - **Integration testing** ensuring seamless phase coordination
 - **Performance testing** validating real-time decision speeds

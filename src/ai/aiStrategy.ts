@@ -224,9 +224,6 @@ export class AIStrategyImplementation implements AIStrategy {
 
     // === PRIORITY 2: OPPONENT BLOCKING ===
     if (trickWinner?.isOpponentWinning) {
-      console.log(
-        `DEBUG Bot 3: Opponent winning, canWin=${trickWinner.canBeatCurrentWinner}, trickPoints=${trickWinner.trickPoints}`,
-      );
       // Opponent is winning - try to beat them or minimize damage
       const opponentResponse = this.handleOpponentWinning(
         comboAnalyses,
@@ -279,8 +276,8 @@ export class AIStrategyImplementation implements AIStrategy {
       // CONTRIBUTE_POINTS: Use point card hierarchy (10 > King > 5)
       return this.selectPointContribution(comboAnalyses, trumpInfo);
     } else {
-      // PLAY_CONSERVATIVE: Teammate winning strong - play low
-      return this.selectLowestValueCombo(comboAnalyses);
+      // PLAY_CONSERVATIVE: Teammate winning strong - play low, avoid point cards
+      return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
   }
 
@@ -323,8 +320,8 @@ export class AIStrategyImplementation implements AIStrategy {
     );
 
     if (pointCardCombos.length === 0) {
-      // No point cards - play lowest available
-      return this.selectLowestValueCombo(comboAnalyses);
+      // No point cards - play lowest available non-point cards
+      return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
 
     // Sort by point card hierarchy: 10 > King > 5
@@ -364,9 +361,6 @@ export class AIStrategyImplementation implements AIStrategy {
   ): Card[] | null {
     // Check if we can beat the opponent at all
     if (!trickWinner.canBeatCurrentWinner) {
-      console.log(
-        "DEBUG Bot 3: Cannot beat opponent, playing lowest value combo",
-      );
       // Can't beat opponent - play lowest value card to minimize points given
       return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
@@ -406,14 +400,15 @@ export class AIStrategyImplementation implements AIStrategy {
       return sorted[0].combo.cards;
     }
 
-    // When we can't win the trick, conserve valuable cards (trump + Aces)
+    // When we can't win the trick, conserve valuable cards (trump + Aces + point cards)
     const trickWinner = context.trickWinnerAnalysis;
     if (!trickWinner?.canBeatCurrentWinner) {
-      // First priority: prefer non-trump, non-Ace cards
+      // First priority: prefer non-trump, non-Ace, non-point cards
       const nonValuable = comboAnalyses.filter(
         (ca) =>
           !ca.analysis.isTrump &&
-          !ca.combo.cards.some((card) => card.rank === Rank.Ace),
+          !ca.combo.cards.some((card) => card.rank === Rank.Ace) &&
+          !ca.combo.cards.some((card) => (card.points || 0) > 0),
       );
 
       if (nonValuable.length > 0) {
@@ -423,7 +418,20 @@ export class AIStrategyImplementation implements AIStrategy {
         return sorted[0].combo.cards;
       }
 
-      // Second priority: prefer non-trump (even if Aces)
+      // Second priority: prefer non-trump, non-point cards (even if Aces)
+      const nonTrumpNonPoint = comboAnalyses.filter(
+        (ca) =>
+          !ca.analysis.isTrump &&
+          !ca.combo.cards.some((card) => (card.points || 0) > 0),
+      );
+      if (nonTrumpNonPoint.length > 0) {
+        const sorted = nonTrumpNonPoint.sort(
+          (a, b) => a.combo.value - b.combo.value,
+        );
+        return sorted[0].combo.cards;
+      }
+
+      // Third priority: prefer non-trump (even if point cards)
       const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
       if (nonTrump.length > 0) {
         const sorted = nonTrump.sort((a, b) => a.combo.value - b.combo.value);
@@ -439,16 +447,6 @@ export class AIStrategyImplementation implements AIStrategy {
   }
 
   // === HELPER METHODS ===
-
-  private selectLowestValueCombo(
-    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-  ): Card[] {
-    const sorted = comboAnalyses.sort(
-      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
-    );
-
-    return sorted[0].combo.cards;
-  }
 
   private selectLowestValueNonPointCombo(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
@@ -467,7 +465,10 @@ export class AIStrategyImplementation implements AIStrategy {
     }
 
     // Fallback: if only point cards available, use lowest conservation value
-    return this.selectLowestValueCombo(comboAnalyses);
+    const sorted = comboAnalyses.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    );
+    return sorted[0].combo.cards;
   }
 
   private selectOptimalWinningCombo(
@@ -521,8 +522,8 @@ export class AIStrategyImplementation implements AIStrategy {
     });
 
     if (winningCombos.length === 0) {
-      // Fallback to conservative play if we can't beat
-      return this.selectLowestValueCombo(comboAnalyses);
+      // Fallback to conservative play if we can't beat - avoid wasting point cards
+      return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
 
     // Select the most efficient winning combo (minimal overkill)
