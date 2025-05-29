@@ -605,3 +605,9 @@ return this.selectStrategicDisposal(/* ... */);
 - **Low-Value Trick Handling**: Always use conservation logic for 0-4 point tricks to avoid wasting valuable cards
 - **Debugging**: When AI behavior changes, check the priority chain order and handler logic
 - **Testing**: Always include point card management and trump conservation in AI tests
+
+## Development Memories
+
+- When fixing a bug, always try to reproduce it with existing test or a debug test
+- Do not add any player-specific hacks into AI strategy
+- Do not add any \special handling\ to solve a problem

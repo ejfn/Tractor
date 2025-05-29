@@ -531,43 +531,146 @@ const groupCardsByRank = (cards: Card[]): Record<string, Card[]> => {
   return cardsByRank;
 };
 
-// Get numerical value of a card for combo comparison
-const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
-  // Jokers have highest value
+// Rank values for consistent card evaluation across the codebase
+const RANK_VALUES: Record<Rank, number> = {
+  [Rank.Two]: 2,
+  [Rank.Three]: 3,
+  [Rank.Four]: 4,
+  [Rank.Five]: 5,
+  [Rank.Six]: 6,
+  [Rank.Seven]: 7,
+  [Rank.Eight]: 8,
+  [Rank.Nine]: 9,
+  [Rank.Ten]: 10,
+  [Rank.Jack]: 11,
+  [Rank.Queen]: 12,
+  [Rank.King]: 13,
+  [Rank.Ace]: 14,
+};
+
+/**
+ * Get trump hierarchy base value for trump suit cards
+ * Used consistently across conservation and strategic modes
+ */
+const getTrumpSuitBaseValue = (rank: Rank): number => {
+  switch (rank) {
+    case Rank.Ace:
+      return 60;
+    case Rank.King:
+      return 55;
+    case Rank.Queen:
+      return 50;
+    case Rank.Jack:
+      return 45;
+    case Rank.Ten:
+      return 40;
+    case Rank.Nine:
+      return 35;
+    case Rank.Eight:
+      return 30;
+    case Rank.Seven:
+      return 25;
+    case Rank.Six:
+      return 20;
+    case Rank.Five:
+      return 15;
+    case Rank.Four:
+      return 10;
+    case Rank.Three:
+      return 5;
+    default:
+      return 0;
+  }
+};
+
+/**
+ * Calculate strategic value of a card considering multiple factors
+ * Used for intelligent card selection, sorting, and AI decision-making
+ *
+ * @param card The card to evaluate
+ * @param trumpInfo Current trump information
+ * @param mode Evaluation mode: 'combo' (for combo comparison), 'conservation' (for AI conservation), 'strategic' (for mixed combinations)
+ * @returns Numerical value representing card's strategic importance
+ */
+export const calculateCardStrategicValue = (
+  card: Card,
+  trumpInfo: TrumpInfo,
+  mode: "combo" | "conservation" | "strategic" = "combo",
+): number => {
+  // Handle jokers first
   if (card.joker) {
-    return card.joker === JokerType.Big ? 1000 : 999;
+    if (mode === "combo") return card.joker === JokerType.Big ? 1000 : 999;
+    if (mode === "conservation") return card.joker === JokerType.Big ? 100 : 90;
+    if (mode === "strategic") return card.joker === JokerType.Big ? 1200 : 1190; // Trump bonus + conservation
   }
 
-  // Evaluate based on rank and whether it's trump
-  const rankValues: Record<Rank, number> = {
-    [Rank.Two]: 2,
-    [Rank.Three]: 3,
-    [Rank.Four]: 4,
-    [Rank.Five]: 5,
-    [Rank.Six]: 6,
-    [Rank.Seven]: 7,
-    [Rank.Eight]: 8,
-    [Rank.Nine]: 9,
-    [Rank.Ten]: 10,
-    [Rank.Jack]: 11,
-    [Rank.Queen]: 12,
-    [Rank.King]: 13,
-    [Rank.Ace]: 14,
-  };
+  let value = 0;
 
-  let value = rankValues[card.rank!];
+  // Mode-specific value calculation
+  if (mode === "strategic") {
+    // Strategic mode: Trump cards ALWAYS rank higher than non-trump cards for disposal
 
-  // Trump cards have higher value
-  if (isTrump(card, trumpInfo)) {
-    value += 100;
+    // Trump cards get minimum base value to ensure they rank above all non-trump cards
+    if (isTrump(card, trumpInfo)) {
+      value += 200; // Base trump value ensures trump > non-trump
 
-    // Trump suit is higher than trump rank of other suits
-    if (card.suit === trumpInfo.trumpSuit) {
-      value += 50;
+      // Use conservation hierarchy for trump cards to maintain proper trump priority
+      if (card.rank === trumpInfo.trumpRank) {
+        value += card.suit === trumpInfo.trumpSuit ? 80 : 70; // Trump rank priority
+      } else if (card.suit === trumpInfo.trumpSuit) {
+        // Trump suit cards get graduated bonuses based on conservation hierarchy
+        value += getTrumpSuitBaseValue(card.rank!);
+      }
+    } else {
+      // Non-trump cards: point cards and Aces are valuable but always < trump
+      if (card.points && card.points > 0) {
+        value += card.points * 10; // 5s = 50, 10s/Kings = 100
+      }
+
+      // Aces are valuable for non-trump cards
+      if (card.rank === Rank.Ace) {
+        value += 50;
+      }
+
+      // Base rank value for non-trump cards
+      value += RANK_VALUES[card.rank!] || 0;
+    }
+  } else if (mode === "conservation") {
+    // Conservation mode: Trump hierarchy for AI strategic decisions
+
+    // Trump rank cards
+    if (card.rank === trumpInfo.trumpRank) {
+      value = card.suit === trumpInfo.trumpSuit ? 80 : 70; // Trump rank in trump suit vs off-suits
+    }
+    // Trump suit cards (non-rank)
+    else if (card.suit === trumpInfo.trumpSuit) {
+      value = getTrumpSuitBaseValue(card.rank!);
+    }
+    // Non-trump cards
+    else {
+      value = RANK_VALUES[card.rank!] || 0;
+    }
+  } else {
+    // Combo mode: Basic trump hierarchy for combination comparison
+    value = RANK_VALUES[card.rank!] || 0;
+
+    // Trump cards have higher value
+    if (isTrump(card, trumpInfo)) {
+      value += 100;
+
+      // Trump suit is higher than trump rank of other suits
+      if (card.suit === trumpInfo.trumpSuit) {
+        value += 50;
+      }
     }
   }
 
   return value;
+};
+
+// Legacy function for backward compatibility
+const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
+  return calculateCardStrategicValue(card, trumpInfo, "combo");
 };
 
 // Find tractors (consecutive pairs) in a suit
@@ -1268,12 +1371,32 @@ export const getValidCombinations = (
   const leadingCombo = currentTrick.leadingCombo;
   const leadingLength = leadingCombo.length;
 
+  // ISSUE #104 PROPER FIX: Context-aware combo filtering
+  const leadingSuit = getLeadingSuit(leadingCombo);
+  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+  const leadingComboType = getComboType(leadingCombo);
+
+  // Check if player has cards of the led suit/trump
+  const playerHasMatchingCards = isLeadingTrump
+    ? playerHand.some((card) => isTrump(card, trumpInfo))
+    : playerHand.some(
+        (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+      );
+
   // Filter combinations that match the leading combo length and pass validation
   const validCombos = allCombos.filter((combo) => {
-    return (
-      combo.cards.length === leadingLength &&
-      isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo)
-    );
+    if (combo.cards.length !== leadingLength) {
+      return false;
+    }
+
+    // CRITICAL: When out of suit, reject same combo types from other suits
+    if (!playerHasMatchingCards && combo.type === leadingComboType) {
+      // Player is out of suit/trump and this is a "proper" combo of the same type
+      // This should not be considered valid - force mixed combinations instead
+      return false;
+    }
+
+    return isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo);
   });
 
   // If we have valid combinations, return them
@@ -1330,7 +1453,7 @@ const generateMixedCombinations = (
     return combinations;
   };
 
-  // Intelligently construct combinations prioritizing suit following + weak disposal
+  // ISSUE #104 PROPER FIX: Intelligently construct combinations avoiding breaking pairs
   const validMixedCombos: Combo[] = [];
   const leadingSuit = getLeadingSuit(leadingCombo);
   const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
@@ -1340,49 +1463,71 @@ const generateMixedCombinations = (
     (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
   );
   const trumpCards = playerHand.filter((card) => isTrump(card, trumpInfo));
-  const otherCards = playerHand.filter(
-    (card) => card.suit !== leadingSuit && !isTrump(card, trumpInfo),
+
+  // Identify existing pairs to avoid breaking them
+  const existingPairs = identifyCombos(playerHand, trumpInfo)
+    .filter((combo) => combo.type === ComboType.Pair)
+    .map((combo) => combo.cards);
+
+  // Create a set of card IDs that are part of pairs
+  const cardIdsInPairs = new Set(existingPairs.flat().map((card) => card.id));
+
+  // Separate cards into: in pairs vs singletons
+  const cardsInPairs = playerHand.filter((card) => cardIdsInPairs.has(card.id));
+  const singletonCards = playerHand.filter(
+    (card) => !cardIdsInPairs.has(card.id),
   );
 
-  // Sort cards by value (weakest first) for smart disposal
-  const sortedOtherCards = otherCards.sort((a, b) => {
-    const rankOrder = [
-      Rank.Three,
-      Rank.Four,
-      Rank.Five,
-      Rank.Six,
-      Rank.Seven,
-      Rank.Eight,
-      Rank.Nine,
-      Rank.Ten,
-      Rank.Jack,
-      Rank.Queen,
-      Rank.King,
-      Rank.Ace,
-    ];
-    return rankOrder.indexOf(a.rank!) - rankOrder.indexOf(b.rank!);
+  // Sort singletons by strategic value (weakest first) for smart disposal
+  const sortedSingletons = singletonCards.sort((a, b) => {
+    const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
+    const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
+    return valueA - valueB; // Lowest strategic value first
   });
 
-  // Try to construct intelligent combinations
+  // Try to construct intelligent combinations avoiding breaking pairs
   const constructCombination = (requiredLength: number): Card[] | null => {
-    // Simple combination construction - game logic should be neutral
-    // Let AI strategy handle trump conservation decisions
     const combo: Card[] = [];
 
-    // Step 1: Use available suit cards first
-    const preferredCards = isLeadingTrump ? trumpCards : suitCards;
-    const availablePreferred = Math.min(preferredCards.length, requiredLength);
-    combo.push(...preferredCards.slice(0, availablePreferred));
+    // Step 1: MANDATORY - Use ALL cards of leading suit/trump (Tractor rule)
+    // This is critical for fallback scenarios where player has some but not enough leading suit cards
+    const preferredSuitCards = isLeadingTrump ? trumpCards : suitCards;
+    if (preferredSuitCards.length > 0) {
+      // CRITICAL: Must use ALL cards of the leading suit, not just some
+      combo.push(...preferredSuitCards);
 
-    // Step 2: Fill remaining slots with any available cards
+      // If we already have enough cards, truncate to required length
+      if (combo.length >= requiredLength) {
+        return combo.slice(0, requiredLength);
+      }
+    }
+
+    // Step 2: Fill remaining slots, prioritizing singletons over breaking pairs
     const remaining = requiredLength - combo.length;
     if (remaining > 0) {
-      // CRITICAL FIX: When trump is led, MUST use all trump cards first
-      const otherCards = isLeadingTrump
-        ? [...trumpCards.slice(availablePreferred)] // Only remaining trump cards when trump is led
-        : [...sortedOtherCards, ...trumpCards]; // Normal priority when non-trump is led
-      const availableOther = Math.min(otherCards.length, remaining);
-      combo.push(...otherCards.slice(0, availableOther));
+      // PRIORITY 1: Use singletons first (avoid breaking pairs)
+      // Filter out cards already used (leading suit cards)
+      const availableSingletons = sortedSingletons.filter(
+        (card) => !combo.some((c) => c.id === card.id), // Not already in combo
+      );
+
+      const singletonsToUse = Math.min(availableSingletons.length, remaining);
+      combo.push(...availableSingletons.slice(0, singletonsToUse));
+
+      // PRIORITY 2: If still need more cards, break pairs as last resort
+      const stillRemaining = requiredLength - combo.length;
+      if (stillRemaining > 0) {
+        // Filter out cards already used (leading suit cards + singletons)
+        const availablePairCards = cardsInPairs.filter(
+          (card) => !combo.some((c) => c.id === card.id), // Not already in combo
+        );
+
+        const pairCardsToUse = Math.min(
+          availablePairCards.length,
+          stillRemaining,
+        );
+        combo.push(...availablePairCards.slice(0, pairCardsToUse));
+      }
     }
 
     return combo.length === requiredLength ? combo : null;

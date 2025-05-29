@@ -264,6 +264,7 @@ export class AIStrategyImplementation implements AIStrategy {
       comboAnalyses,
       context,
       positionStrategy,
+      gameState,
     );
   }
 
@@ -272,7 +273,7 @@ export class AIStrategyImplementation implements AIStrategy {
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
     context: GameContext,
     trumpInfo: TrumpInfo,
-    gameState?: GameState,
+    gameState: GameState,
   ): Card[] {
     const trickWinner = context.trickWinnerAnalysis!;
 
@@ -287,7 +288,12 @@ export class AIStrategyImplementation implements AIStrategy {
 
     if (shouldContributePoints) {
       // CONTRIBUTE_POINTS: Use memory-enhanced point card hierarchy
-      return this.selectPointContribution(comboAnalyses, trumpInfo, context);
+      return this.selectPointContribution(
+        comboAnalyses,
+        trumpInfo,
+        context,
+        gameState,
+      );
     } else {
       // PLAY_CONSERVATIVE: Teammate winning strong - play low, avoid point cards
       return this.selectLowestValueNonPointCombo(comboAnalyses);
@@ -390,6 +396,7 @@ export class AIStrategyImplementation implements AIStrategy {
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
     trumpInfo: TrumpInfo,
     context?: GameContext,
+    gameState?: GameState,
   ): Card[] {
     const pointCardCombos = comboAnalyses.filter((ca) =>
       ca.combo.cards.some((card) => card.points > 0),
@@ -522,7 +529,10 @@ export class AIStrategyImplementation implements AIStrategy {
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
     context: GameContext,
     positionStrategy: PositionStrategy,
+    gameState?: GameState,
   ): Card[] {
+    // REMOVED ISSUE #104 BAND-AID FIX - Game logic now properly handles mixed combinations
+
     // Strategic disposal when not contesting trick
     if (context.cardsRemaining <= 3) {
       // Endgame - dispose of least valuable
@@ -580,9 +590,13 @@ export class AIStrategyImplementation implements AIStrategy {
 
   // === HELPER METHODS ===
 
+  // REMOVED: tryCreateTwoSinglesInsteadOfPair method - no longer needed with proper game logic fix
+
   private selectLowestValueNonPointCombo(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   ): Card[] {
+    // REMOVED ISSUE #104 BAND-AID FIX - Game logic now properly handles mixed combinations
+
     // First priority: non-point cards
     const nonPointCombos = comboAnalyses.filter(
       (ca) => !ca.combo.cards.some((card) => (card.points || 0) > 0),
