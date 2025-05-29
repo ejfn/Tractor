@@ -7,7 +7,6 @@ import {
   PlayStyle,
   ComboStrength,
   ComboAnalysis,
-  TrickAnalysis,
   PositionStrategy,
   Combo,
   Card,
@@ -74,18 +73,9 @@ export function analyzeTrickWinner(
 ): TrickWinnerAnalysis {
   const currentTrick = gameState.currentTrick;
 
-  // No trick in progress
+  // This function should only be called when there's an active trick
   if (!currentTrick) {
-    return {
-      currentWinner: null,
-      isTeammateWinning: false,
-      isOpponentWinning: false,
-      isSelfWinning: false,
-      trickPoints: 0,
-      canBeatCurrentWinner: false,
-      shouldTryToBeat: false,
-      shouldPlayConservatively: false,
-    };
+    throw new Error("analyzeTrickWinner called with no active trick");
   }
 
   const currentWinner =
@@ -166,19 +156,13 @@ function canPlayerBeatCurrentWinner(
   const player = gameState.players.find((p) => p.id === playerId);
   if (!player || !currentTrick) return false;
 
-  // Get current winner's cards
-  let currentWinnerCards: Card[] = [];
-  const winningPlayerId =
-    currentTrick.winningPlayerId || currentTrick.leadingPlayerId;
-  if (winningPlayerId === currentTrick.leadingPlayerId) {
-    currentWinnerCards = currentTrick.leadingCombo;
-  } else {
-    const winningPlay = currentTrick.plays.find(
-      (play: { playerId: string; cards: Card[] }) =>
-        play.playerId === winningPlayerId,
-    );
-    currentWinnerCards = winningPlay?.cards || [];
-  }
+  // Get current winner's cards directly from the trick
+  const winningPlayerId = currentTrick.winningPlayerId;
+  const winningPlay = currentTrick.plays.find(
+    (play: any) => play.playerId === winningPlayerId,
+  );
+  const currentWinnerCards =
+    winningPlay?.cards || currentTrick.leadingCombo || [];
 
   if (currentWinnerCards.length === 0) return false;
 
@@ -192,7 +176,7 @@ function canPlayerBeatCurrentWinner(
   );
 
   // Simplified logic: if current winner played non-trump, check if we have trump or higher cards
-  const currentWinnerHasTrump = currentWinnerCards.some((card) =>
+  const currentWinnerHasTrump = currentWinnerCards.some((card: Card) =>
     isTrump(card, gameState.trumpInfo),
   );
 
@@ -201,18 +185,30 @@ function canPlayerBeatCurrentWinner(
     const hasTrump = player.hand.some((card) =>
       isTrump(card, gameState.trumpInfo),
     );
-    if (hasTrump) return true;
+
+    // Strategic heuristic: if we're out of leading suit and have trump, we might be able to beat it
+    // (Game validation will ensure only legal trump plays are actually allowed)
+    if (hasTrump && followingCards.length === 0) return true;
 
     // Check if we have higher same-suit cards
     const winnerCard = currentWinnerCards[0];
     const hasHigherCard = followingCards.some(
       (card) => compareCards(card, winnerCard, gameState.trumpInfo) > 0,
     );
+
     return hasHigherCard;
   }
 
-  // Current winner has trump - simplified: assume we can beat if we have trump
-  return player.hand.some((card) => isTrump(card, gameState.trumpInfo));
+  // Current winner has trump - check if we have higher trump
+  const winnerCard = currentWinnerCards[0];
+  const trumpCards = player.hand.filter((card) =>
+    isTrump(card, gameState.trumpInfo),
+  );
+  const result = trumpCards.some(
+    (card) => compareCards(card, winnerCard, gameState.trumpInfo) > 0,
+  );
+
+  return result;
 }
 
 /**
@@ -586,86 +582,6 @@ export function analyzeCombo(
 }
 
 /**
- * Analyzes the current trick state for strategic decisions
- */
-export function analyzeTrick(
-  gameState: GameState,
-  playerId: string,
-  validCombos: Combo[],
-): TrickAnalysis {
-  const { currentTrick, players, trumpInfo } = gameState;
-
-  if (!currentTrick) {
-    return {
-      currentWinner: null,
-      winningCombo: null,
-      totalPoints: 0,
-      canWin: validCombos.length > 0,
-      shouldContest: false,
-      partnerStatus: "not_played",
-    };
-  }
-
-  // Calculate total points in trick
-  const totalPoints =
-    currentTrick.plays.reduce(
-      (sum, play) =>
-        sum + play.cards.reduce((cardSum, card) => cardSum + card.points, 0),
-      0,
-    ) +
-    (currentTrick.leadingCombo?.reduce((sum, card) => sum + card.points, 0) ||
-      0);
-
-  // Find current winner
-  let currentWinner = currentTrick.leadingPlayerId;
-  let winningCombo = currentTrick.leadingCombo || [];
-
-  for (const play of currentTrick.plays) {
-    if (isStrongerCombo(play.cards, winningCombo, trumpInfo)) {
-      currentWinner = play.playerId;
-      winningCombo = play.cards;
-    }
-  }
-
-  // Check partner status
-  const currentPlayerIndex = players.findIndex((p) => p.id === playerId);
-  const partnerIndex = (currentPlayerIndex + 2) % 4;
-  const partnerId = players[partnerIndex].id;
-
-  let partnerStatus: "winning" | "losing" | "not_played" = "not_played";
-  const partnerPlayed =
-    currentTrick.plays.some((play) => play.playerId === partnerId) ||
-    currentTrick.leadingPlayerId === partnerId;
-
-  if (partnerPlayed) {
-    partnerStatus = currentWinner === partnerId ? "winning" : "losing";
-  }
-
-  // Determine if this AI can win
-  const canWin = validCombos.some((combo) =>
-    isStrongerCombo(combo.cards, winningCombo, trumpInfo),
-  );
-
-  // Strategic decision on whether to contest
-  const shouldContest = determineShouldContest(
-    totalPoints,
-    partnerStatus,
-    canWin,
-    gameState,
-    playerId,
-  );
-
-  return {
-    currentWinner,
-    winningCombo,
-    totalPoints,
-    canWin,
-    shouldContest,
-    partnerStatus,
-  };
-}
-
-/**
  * Gets position-based strategy matrix
  */
 export function getPositionStrategy(
@@ -726,62 +642,6 @@ export function getPositionStrategy(
       baseStrategy.disruptionFocus * multiplier.disruption,
     ),
   };
-}
-
-// Helper functions
-
-function isStrongerCombo(
-  combo1: Card[],
-  combo2: Card[],
-  trumpInfo: TrumpInfo,
-): boolean {
-  if (combo1.length !== combo2.length) return false;
-
-  const combo1HasTrump = combo1.some((card) => isTrump(card, trumpInfo));
-  const combo2HasTrump = combo2.some((card) => isTrump(card, trumpInfo));
-
-  if (combo1HasTrump && !combo2HasTrump) return true;
-  if (!combo1HasTrump && combo2HasTrump) return false;
-
-  // Compare highest cards
-  const highest1 = combo1.reduce((highest, card) =>
-    compareCards(highest, card, trumpInfo) > 0 ? highest : card,
-  );
-  const highest2 = combo2.reduce((highest, card) =>
-    compareCards(highest, card, trumpInfo) > 0 ? highest : card,
-  );
-
-  return compareCards(highest1, highest2, trumpInfo) > 0;
-}
-
-function determineShouldContest(
-  totalPoints: number,
-  partnerStatus: "winning" | "losing" | "not_played",
-  canWin: boolean,
-  gameState: GameState,
-  playerId: string,
-): boolean {
-  const context = createGameContext(gameState, playerId);
-
-  // Don't contest if partner is winning
-  if (partnerStatus === "winning") return false;
-
-  // Can't contest if we can't win
-  if (!canWin) return false;
-
-  // Contest based on points and strategy
-  switch (context.playStyle) {
-    case PlayStyle.Desperate:
-      return totalPoints >= 5; // Fight for any points
-    case PlayStyle.Aggressive:
-      return totalPoints >= 10;
-    case PlayStyle.Balanced:
-      return totalPoints >= 15;
-    case PlayStyle.Conservative:
-      return totalPoints >= 20; // Only big point tricks
-    default:
-      return totalPoints >= 15;
-  }
 }
 
 /**

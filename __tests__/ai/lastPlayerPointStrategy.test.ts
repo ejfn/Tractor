@@ -144,7 +144,7 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
     expect(aiMove[0].rank).toBe(Rank.King); // Should prioritize King over 5
   });
 
-  it('should prioritize point cards when partner is winning (4th player)', () => {
+  it('should play low-value cards when opponent is winning (4th player)', () => {
     const gameState = createIsolatedGameState();
     
     // Set up trump info
@@ -156,7 +156,7 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
     };
     gameState.trumpInfo = trumpInfo;
     
-    // Create trick scenario where partner (Bot 2) is winning
+    // Create trick scenario where opponent (Bot 2) is winning
     const leadingCard: Card = {
       id: 'spades-3-1',
       suit: Suit.Spades,
@@ -181,7 +181,7 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
       points: 0
     };
     
-    // Set up trick with partner (Bot 2) winning
+    // Set up trick with opponent (Bot 2) winning
     gameState.currentTrick = {
       leadingPlayerId: PlayerId.Human,
       leadingCombo: [leadingCard],
@@ -193,7 +193,7 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
       points: 0
     };
     
-    // Set current player to Bot 3 (4th player, partner of human)
+    // Set current player to Bot 3 (4th player, opponent of Bot 2)
     gameState.currentPlayerIndex = 3;
     const fourthPlayerId = PlayerId.Bot3;
     
@@ -249,33 +249,30 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
     gameState.players[3].hand = bot3Hand;
     
     console.log('=== Last Player Point Strategy Test ===');
-    console.log('Partner (Bot 2) is winning with Ace of Spades');
+    console.log('Opponent (Bot 2) is winning with Ace of Spades');
     console.log('Bot 3 (4th player) has point cards available:');
     console.log('- 5♠ (5 points)');
     console.log('- 10♠ (10 points)');  
     console.log('- K♠ (10 points)');
     console.log('Also has non-point cards: 6♠, 7♠');
+    console.log('Bot 3 should play lowest value card since opponent is winning');
     
     // Get AI move for 4th player
     const aiMove = getAIMove(gameState, fourthPlayerId);
     
     console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`));
     
-    // Verify AI selected a point card
+    // Verify AI selected a low-value card (not point cards)
     const selectedPointCard = aiMove.some(card => (card.points || 0) > 0);
-    expect(selectedPointCard).toBe(true);
-    
-    // Verify AI didn't select highest value card (should avoid beating partner)
-    const selectedAce = aiMove.some(card => card.rank === Rank.Ace);
-    expect(selectedAce).toBe(false);
+    expect(selectedPointCard).toBe(false);
     
     // Verify it's a single card (following leading single)
     expect(aiMove.length).toBe(1);
     
-    // The selected card should be one of the point cards
+    // The selected card should be one of the lowest available cards (6 or 7)
     const selectedCard = aiMove[0];
-    const isPointCard = (selectedCard.points || 0) > 0;
-    expect(isPointCard).toBe(true);
+    expect([Rank.Six, Rank.Seven]).toContain(selectedCard.rank);
+    expect(selectedCard.points).toBe(0);
   });
   
   it('should play small non-point cards when no point cards available and partner winning', () => {

@@ -9,7 +9,6 @@ import {
   PlayStyle,
   ComboStrength,
   ComboAnalysis,
-  TrickAnalysis,
   PositionStrategy,
   TrickPosition,
   PointPressure,
@@ -24,7 +23,6 @@ import { isTrump, compareCards } from "../game/gameLogic";
 import {
   createGameContext,
   analyzeCombo,
-  analyzeTrick,
   getPositionStrategy,
 } from "./aiGameContext";
 import {
@@ -117,35 +115,13 @@ export class AIStrategyImplementation implements AIStrategy {
         analysis: analyzeCombo(combo, trumpInfo, context),
       }));
 
-      // Create proper trick analysis instead of simplified
-      const currentWinner = currentTrick?.winningPlayerId || null;
-      const canActuallyWin = comboAnalyses.some((ca) => {
-        // Check if any available combo can beat the current leading combo
-        if (!currentTrick?.leadingCombo) return true;
-        // leadingCombo is Card[], not Combo, so pass it directly to isStrongerCombo
-        return this.isStrongerCombo(
-          ca.combo.cards,
-          currentTrick.leadingCombo,
-          trumpInfo,
-        );
-      });
-
-      const trickAnalysis = {
-        currentWinner,
-        winningCombo: currentTrick?.leadingCombo || null,
-        totalPoints: currentTrick?.points || 0,
-        canWin: canActuallyWin,
-        shouldContest: currentTrick?.points >= 5,
-        partnerStatus: "not_played" as const, // Simplified
-      };
-
       // Use new restructured follow logic
       const restructuredPlay = this.selectOptimalFollowPlay(
         comboAnalyses,
-        trickAnalysis,
         context,
         {} as PositionStrategy, // Simplified for now
         trumpInfo,
+        gameState,
       );
       return restructuredPlay;
     }
@@ -230,10 +206,10 @@ export class AIStrategyImplementation implements AIStrategy {
 
   private selectOptimalFollowPlay(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
     positionStrategy: PositionStrategy,
     trumpInfo: TrumpInfo,
+    gameState: GameState,
   ): Card[] {
     // RESTRUCTURED: Clear priority chain for following play decisions
     const trickWinner = context.trickWinnerAnalysis;
@@ -251,10 +227,10 @@ export class AIStrategyImplementation implements AIStrategy {
       // Opponent is winning - try to beat them or minimize damage
       const opponentResponse = this.handleOpponentWinning(
         comboAnalyses,
-        trickAnalysis,
         context,
         trickWinner,
         trumpInfo,
+        gameState,
       );
       if (opponentResponse) {
         return opponentResponse;
@@ -262,21 +238,20 @@ export class AIStrategyImplementation implements AIStrategy {
     }
 
     // === PRIORITY 3: TRICK CONTENTION ===
-    if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
+    if (trickWinner?.canBeatCurrentWinner && trickWinner?.shouldTryToBeat) {
       // Can win the trick and it's worth winning
       return this.selectOptimalWinningCombo(
         comboAnalyses,
-        trickAnalysis,
         context,
         positionStrategy,
         trumpInfo,
+        gameState,
       );
     }
     // === PRIORITY 4: STRATEGIC DISPOSAL ===
     // Can't/shouldn't win - play optimally for future tricks
     return this.selectStrategicDisposal(
       comboAnalyses,
-      trickAnalysis,
       context,
       positionStrategy,
     );
@@ -301,8 +276,8 @@ export class AIStrategyImplementation implements AIStrategy {
       // CONTRIBUTE_POINTS: Use point card hierarchy (10 > King > 5)
       return this.selectPointContribution(comboAnalyses, trumpInfo);
     } else {
-      // PLAY_CONSERVATIVE: Teammate winning strong - play low
-      return this.selectLowestValueCombo(comboAnalyses);
+      // PLAY_CONSERVATIVE: Teammate winning strong - play low, avoid point cards
+      return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
   }
 
@@ -345,8 +320,8 @@ export class AIStrategyImplementation implements AIStrategy {
     );
 
     if (pointCardCombos.length === 0) {
-      // No point cards - play lowest available
-      return this.selectLowestValueCombo(comboAnalyses);
+      // No point cards - play lowest available non-point cards
+      return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
 
     // Sort by point card hierarchy: 10 > King > 5
@@ -379,35 +354,31 @@ export class AIStrategyImplementation implements AIStrategy {
   // === OPPONENT BLOCKING HANDLER ===
   private handleOpponentWinning(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
     trickWinner: any,
     trumpInfo: TrumpInfo,
+    gameState: GameState,
   ): Card[] | null {
     // Check if we can beat the opponent at all
-    if (!trickAnalysis.canWin) {
+    if (!trickWinner.canBeatCurrentWinner) {
       // Can't beat opponent - play lowest value card to minimize points given
-      return this.selectLowestValueCombo(comboAnalyses);
+      return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
 
     // High-value tricks (>=10 points): definitely try to beat if we can
     if (trickWinner.trickPoints >= 10) {
       return this.selectOptimalWinningCombo(
         comboAnalyses,
-        trickAnalysis,
         context,
         {} as PositionStrategy,
         trumpInfo,
+        gameState,
       );
     }
 
     // Moderate points (5-9 points): beat if reasonable
-    if (trickWinner.trickPoints >= 5 && trickAnalysis.shouldContest) {
-      return this.selectAggressiveBeatPlay(
-        comboAnalyses,
-        trickAnalysis,
-        context,
-      );
+    if (trickWinner.trickPoints >= 5 && trickWinner.shouldTryToBeat) {
+      return this.selectAggressiveBeatPlay(comboAnalyses, context);
     }
 
     // Low value tricks (0-4 points): don't waste high cards on pointless tricks
@@ -417,7 +388,6 @@ export class AIStrategyImplementation implements AIStrategy {
   // === STRATEGIC DISPOSAL ===
   private selectStrategicDisposal(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
     positionStrategy: PositionStrategy,
   ): Card[] {
@@ -430,13 +400,15 @@ export class AIStrategyImplementation implements AIStrategy {
       return sorted[0].combo.cards;
     }
 
-    // When we can't win the trick, conserve valuable cards (trump + Aces)
-    if (!trickAnalysis.canWin) {
-      // First priority: prefer non-trump, non-Ace cards
+    // When we can't win the trick, conserve valuable cards (trump + Aces + point cards)
+    const trickWinner = context.trickWinnerAnalysis;
+    if (!trickWinner?.canBeatCurrentWinner) {
+      // First priority: prefer non-trump, non-Ace, non-point cards
       const nonValuable = comboAnalyses.filter(
         (ca) =>
           !ca.analysis.isTrump &&
-          !ca.combo.cards.some((card) => card.rank === Rank.Ace),
+          !ca.combo.cards.some((card) => card.rank === Rank.Ace) &&
+          !ca.combo.cards.some((card) => (card.points || 0) > 0),
       );
 
       if (nonValuable.length > 0) {
@@ -446,7 +418,20 @@ export class AIStrategyImplementation implements AIStrategy {
         return sorted[0].combo.cards;
       }
 
-      // Second priority: prefer non-trump (even if Aces)
+      // Second priority: prefer non-trump, non-point cards (even if Aces)
+      const nonTrumpNonPoint = comboAnalyses.filter(
+        (ca) =>
+          !ca.analysis.isTrump &&
+          !ca.combo.cards.some((card) => (card.points || 0) > 0),
+      );
+      if (nonTrumpNonPoint.length > 0) {
+        const sorted = nonTrumpNonPoint.sort(
+          (a, b) => a.combo.value - b.combo.value,
+        );
+        return sorted[0].combo.cards;
+      }
+
+      // Third priority: prefer non-trump (even if point cards)
       const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
       if (nonTrump.length > 0) {
         const sorted = nonTrump.sort((a, b) => a.combo.value - b.combo.value);
@@ -463,29 +448,56 @@ export class AIStrategyImplementation implements AIStrategy {
 
   // === HELPER METHODS ===
 
-  private selectLowestValueCombo(
+  private selectLowestValueNonPointCombo(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   ): Card[] {
+    // First priority: non-point cards
+    const nonPointCombos = comboAnalyses.filter(
+      (ca) => !ca.combo.cards.some((card) => (card.points || 0) > 0),
+    );
+
+    if (nonPointCombos.length > 0) {
+      // Sort by trump conservation value (lower = less valuable to preserve)
+      const sorted = nonPointCombos.sort(
+        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    // Fallback: if only point cards available, use lowest conservation value
     const sorted = comboAnalyses.sort(
       (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
     );
-
     return sorted[0].combo.cards;
   }
 
   private selectOptimalWinningCombo(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
     positionStrategy: PositionStrategy,
     trumpInfo: TrumpInfo,
+    gameState: GameState,
   ): Card[] {
-    // Find combos that can actually beat the current leading combo
+    // Find combos that can actually beat the current strongest combo in the trick
+    const currentTrick = gameState.currentTrick;
     const winningCombos = comboAnalyses.filter((ca) => {
-      if (!trickAnalysis.winningCombo) return true; // No leading combo to beat
+      if (!currentTrick) return true; // No trick in progress
+
+      // Get the current strongest combo (either leading combo or a stronger play)
+      let currentStrongestCombo = currentTrick.leadingCombo || [];
+      const winningPlay = currentTrick.plays.find(
+        (play) => play.playerId === currentTrick.winningPlayerId,
+      );
+      if (winningPlay && winningPlay.cards.length > 0) {
+        currentStrongestCombo = winningPlay.cards;
+      }
+
+      // If no cards have been played yet, any combo can "win"
+      if (currentStrongestCombo.length === 0) return true;
+
       return this.isStrongerCombo(
         ca.combo.cards,
-        trickAnalysis.winningCombo,
+        currentStrongestCombo,
         trumpInfo,
       );
     });
@@ -501,7 +513,6 @@ export class AIStrategyImplementation implements AIStrategy {
 
   private selectAggressiveBeatPlay(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
   ): Card[] {
     // Filter for combinations that can win
@@ -511,8 +522,8 @@ export class AIStrategyImplementation implements AIStrategy {
     });
 
     if (winningCombos.length === 0) {
-      // Fallback to conservative play if we can't beat
-      return this.selectLowestValueCombo(comboAnalyses);
+      // Fallback to conservative play if we can't beat - avoid wasting point cards
+      return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
 
     // Select the most efficient winning combo (minimal overkill)
@@ -604,11 +615,6 @@ export class AIStrategyImplementation implements AIStrategy {
       context.trickPosition,
       context.playStyle,
     );
-    const trickAnalysis = analyzeTrick(
-      gameState,
-      gameState.players[gameState.currentPlayerIndex].id,
-      combos,
-    );
 
     const comboAnalyses = combos.map((combo) => ({
       combo,
@@ -618,10 +624,10 @@ export class AIStrategyImplementation implements AIStrategy {
     // Enhanced strategic decision making
     return this.selectOptimalFollowPlay(
       comboAnalyses,
-      trickAnalysis,
       context,
       positionStrategy,
       gameState.trumpInfo,
+      gameState,
     );
   }
 

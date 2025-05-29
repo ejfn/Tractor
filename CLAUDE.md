@@ -515,6 +515,9 @@ return this.selectStrategicDisposal(/* ... */);
 
 - **Never skip priorities** - each builds on the previous
 - **Use real-time trick winner analysis** via `context.trickWinnerAnalysis`
+- **Enhanced opponent blocking**: Strategic point card management and trump conservation
+- **Point card preservation**: When can't beat opponent, avoid wasting point cards
+- **Trump hierarchy conservation**: Play weak trump suit cards over valuable trump rank cards
 - **Opponent blocking thresholds**: High-value (≥10pts), moderate (5-9pts), low-value (0-4pts)
 - **Only contest tricks ≥5 points** to avoid wasting high cards
 - **Strategic disposal conserves Aces** when tricks can't be won
@@ -535,4 +538,7 @@ return this.selectStrategicDisposal(/* ... */);
 - Use real-time `winningPlayerId` tracking instead of calculating trick winners
 - Avoid redundant winner determination functions
 - **AI Strategy**: Use restructured 4-priority decision chain to avoid conflicts and rabbit holes
+- **Point Card Strategy**: Implement strategic disposal avoiding point cards when opponent winning
+- **Trump Conservation**: Use proper trump hierarchy when AI cannot beat opponents
 - **Debugging**: When AI behavior changes, check the priority chain order and handler logic
+- **Testing**: Always include point card management and trump conservation in AI tests

@@ -1,7 +1,7 @@
 import {
   determinePlayStyle,
   analyzeCombo,
-  analyzeTrick,
+  analyzeTrickWinner,
   getPositionStrategy,
 } from '../../src/ai/aiGameContext';
 import {
@@ -195,18 +195,8 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
     });
   });
 
-  describe('analyzeTrick', () => {
-    it('should analyze empty trick correctly', () => {
-      const result = analyzeTrick(gameState, PlayerId.Bot1, []);
-
-      expect(result.currentWinner).toBeNull();
-      expect(result.winningCombo).toBeNull();
-      expect(result.totalPoints).toBe(0);
-      expect(result.canWin).toBe(false);
-      expect(result.partnerStatus).toBe('not_played');
-    });
-
-    it('should detect partner winning status', () => {
+  describe('analyzeTrickWinner', () => {
+    it('should detect teammate winning status', () => {
       // Set up trick with Bot3 winning (Bot1's partner)
       gameState.currentTrick = {
         leadingPlayerId: PlayerId.Bot3,
@@ -216,19 +206,51 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
         points: 0,
       };
 
-      const validCombos = [{
-        type: ComboType.Single,
-        cards: [{ rank: Rank.King, suit: Suit.Spades, id: 'king_spades', points: 10 }],
-        value: 50,
-      }];
+      const result = analyzeTrickWinner(gameState, PlayerId.Bot1);
 
-      const result = analyzeTrick(gameState, PlayerId.Bot1, validCombos);
-
-      expect(result.partnerStatus).toBe('winning');
+      expect(result.isTeammateWinning).toBe(true);
+      expect(result.isOpponentWinning).toBe(false);
+      expect(result.isSelfWinning).toBe(false);
       expect(result.currentWinner).toBe(PlayerId.Bot3);
     });
 
-    it('should calculate total trick points', () => {
+    it('should detect opponent winning status', () => {
+      // Set up trick with Human winning (Bot1's opponent)
+      gameState.currentTrick = {
+        leadingPlayerId: PlayerId.Human,
+        leadingCombo: [{ rank: Rank.King, suit: Suit.Hearts, id: 'king_hearts', points: 10 }],
+        plays: [],
+        winningPlayerId: PlayerId.Human,
+        points: 10,
+      };
+
+      const result = analyzeTrickWinner(gameState, PlayerId.Bot1);
+
+      expect(result.isTeammateWinning).toBe(false);
+      expect(result.isOpponentWinning).toBe(true);
+      expect(result.isSelfWinning).toBe(false);
+      expect(result.currentWinner).toBe(PlayerId.Human);
+    });
+
+    it('should detect self winning status', () => {
+      // Set up trick with Bot1 winning
+      gameState.currentTrick = {
+        leadingPlayerId: PlayerId.Bot1,
+        leadingCombo: [{ rank: Rank.Ace, suit: Suit.Hearts, id: 'ace_hearts', points: 0 }],
+        plays: [],
+        winningPlayerId: PlayerId.Bot1,
+        points: 0,
+      };
+
+      const result = analyzeTrickWinner(gameState, PlayerId.Bot1);
+
+      expect(result.isTeammateWinning).toBe(false);
+      expect(result.isOpponentWinning).toBe(false);
+      expect(result.isSelfWinning).toBe(true);
+      expect(result.currentWinner).toBe(PlayerId.Bot1);
+    });
+
+    it('should track trick points correctly', () => {
       gameState.currentTrick = {
         leadingPlayerId: PlayerId.Human,
         leadingCombo: [{ rank: Rank.Five, suit: Suit.Hearts, id: 'five_hearts', points: 5 }],
@@ -239,15 +261,16 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
           },
         ],
         winningPlayerId: PlayerId.Bot1,
-        points: 0,
+        points: 15, // 5 + 10
       };
 
-      const result = analyzeTrick(gameState, PlayerId.Bot2, []);
+      const result = analyzeTrickWinner(gameState, PlayerId.Bot2);
 
-      expect(result.totalPoints).toBe(15); // 5 + 10
+      expect(result.trickPoints).toBe(15);
+      expect(result.currentWinner).toBe(PlayerId.Bot1);
     });
 
-    it('should determine if AI can win', () => {
+    it('should determine strategic decisions', () => {
       gameState.currentTrick = {
         leadingPlayerId: PlayerId.Human,
         leadingCombo: [{ rank: Rank.Seven, suit: Suit.Diamonds, id: 'seven_diamonds', points: 0 }],
@@ -256,15 +279,11 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
         points: 0,
       };
 
-      const strongCombo = [{
-        type: ComboType.Single,
-        cards: [{ rank: Rank.Ace, suit: Suit.Diamonds, id: 'ace_diamonds', points: 0 }],
-        value: 80,
-      }];
+      const result = analyzeTrickWinner(gameState, PlayerId.Bot1);
 
-      const result = analyzeTrick(gameState, PlayerId.Bot1, strongCombo);
-
-      expect(result.canWin).toBe(true);
+      expect(result.canBeatCurrentWinner).toBeDefined();
+      expect(result.shouldTryToBeat).toBeDefined();
+      expect(result.shouldPlayConservatively).toBeDefined();
     });
   });
 

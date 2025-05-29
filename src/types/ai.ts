@@ -1,6 +1,6 @@
 // AI strategy and intelligence types
 
-import { Card } from "./core";
+import { Card, PlayerId } from "./core";
 
 // AI Strategy Enhancement Types
 export enum TrickPosition {
@@ -69,18 +69,9 @@ export interface ComboAnalysis {
   conservationValue: number; // How valuable this combo is to keep
 }
 
-export interface TrickAnalysis {
-  currentWinner: string | null;
-  winningCombo: Card[] | null;
-  totalPoints: number;
-  canWin: boolean; // Can this AI win with available combos
-  shouldContest: boolean; // Is it strategically worth contesting
-  partnerStatus: "winning" | "losing" | "not_played";
-}
-
 // Phase 3: Enhanced Card Memory & Probability System
 export interface PlayerMemory {
-  playerId: string;
+  playerId: PlayerId;
   knownCards: Card[]; // Cards we've seen this player play
   estimatedHandSize: number; // Estimated cards remaining
   suitVoids: Set<import("./core").Suit>; // Suits this player has shown to be out of
@@ -121,7 +112,7 @@ export interface MemoryBasedStrategy {
 
 // Enhanced types for real-time trick winner analysis
 export interface TrickWinnerAnalysis {
-  currentWinner: string | null; // Player ID of current trick winner
+  currentWinner: PlayerId; // Player ID of current trick winner
   isTeammateWinning: boolean; // Is AI's teammate currently winning
   isOpponentWinning: boolean; // Is an opponent currently winning
   isSelfWinning: boolean; // Is this AI currently winning
