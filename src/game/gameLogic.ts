@@ -531,43 +531,146 @@ const groupCardsByRank = (cards: Card[]): Record<string, Card[]> => {
   return cardsByRank;
 };
 
-// Get numerical value of a card for combo comparison
-const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
-  // Jokers have highest value
+// Rank values for consistent card evaluation across the codebase
+const RANK_VALUES: Record<Rank, number> = {
+  [Rank.Two]: 2,
+  [Rank.Three]: 3,
+  [Rank.Four]: 4,
+  [Rank.Five]: 5,
+  [Rank.Six]: 6,
+  [Rank.Seven]: 7,
+  [Rank.Eight]: 8,
+  [Rank.Nine]: 9,
+  [Rank.Ten]: 10,
+  [Rank.Jack]: 11,
+  [Rank.Queen]: 12,
+  [Rank.King]: 13,
+  [Rank.Ace]: 14,
+};
+
+/**
+ * Get trump hierarchy base value for trump suit cards
+ * Used consistently across conservation and strategic modes
+ */
+const getTrumpSuitBaseValue = (rank: Rank): number => {
+  switch (rank) {
+    case Rank.Ace:
+      return 60;
+    case Rank.King:
+      return 55;
+    case Rank.Queen:
+      return 50;
+    case Rank.Jack:
+      return 45;
+    case Rank.Ten:
+      return 40;
+    case Rank.Nine:
+      return 35;
+    case Rank.Eight:
+      return 30;
+    case Rank.Seven:
+      return 25;
+    case Rank.Six:
+      return 20;
+    case Rank.Five:
+      return 15;
+    case Rank.Four:
+      return 10;
+    case Rank.Three:
+      return 5;
+    default:
+      return 0;
+  }
+};
+
+/**
+ * Calculate strategic value of a card considering multiple factors
+ * Used for intelligent card selection, sorting, and AI decision-making
+ *
+ * @param card The card to evaluate
+ * @param trumpInfo Current trump information
+ * @param mode Evaluation mode: 'combo' (for combo comparison), 'conservation' (for AI conservation), 'strategic' (for mixed combinations)
+ * @returns Numerical value representing card's strategic importance
+ */
+export const calculateCardStrategicValue = (
+  card: Card,
+  trumpInfo: TrumpInfo,
+  mode: "combo" | "conservation" | "strategic" = "combo",
+): number => {
+  // Handle jokers first
   if (card.joker) {
-    return card.joker === JokerType.Big ? 1000 : 999;
+    if (mode === "combo") return card.joker === JokerType.Big ? 1000 : 999;
+    if (mode === "conservation") return card.joker === JokerType.Big ? 100 : 90;
+    if (mode === "strategic") return card.joker === JokerType.Big ? 1200 : 1190; // Trump bonus + conservation
   }
 
-  // Evaluate based on rank and whether it's trump
-  const rankValues: Record<Rank, number> = {
-    [Rank.Two]: 2,
-    [Rank.Three]: 3,
-    [Rank.Four]: 4,
-    [Rank.Five]: 5,
-    [Rank.Six]: 6,
-    [Rank.Seven]: 7,
-    [Rank.Eight]: 8,
-    [Rank.Nine]: 9,
-    [Rank.Ten]: 10,
-    [Rank.Jack]: 11,
-    [Rank.Queen]: 12,
-    [Rank.King]: 13,
-    [Rank.Ace]: 14,
-  };
+  let value = 0;
 
-  let value = rankValues[card.rank!];
+  // Mode-specific value calculation
+  if (mode === "strategic") {
+    // Strategic mode: Trump cards ALWAYS rank higher than non-trump cards for disposal
 
-  // Trump cards have higher value
-  if (isTrump(card, trumpInfo)) {
-    value += 100;
+    // Trump cards get minimum base value to ensure they rank above all non-trump cards
+    if (isTrump(card, trumpInfo)) {
+      value += 200; // Base trump value ensures trump > non-trump
 
-    // Trump suit is higher than trump rank of other suits
-    if (card.suit === trumpInfo.trumpSuit) {
-      value += 50;
+      // Use conservation hierarchy for trump cards to maintain proper trump priority
+      if (card.rank === trumpInfo.trumpRank) {
+        value += card.suit === trumpInfo.trumpSuit ? 80 : 70; // Trump rank priority
+      } else if (card.suit === trumpInfo.trumpSuit) {
+        // Trump suit cards get graduated bonuses based on conservation hierarchy
+        value += getTrumpSuitBaseValue(card.rank!);
+      }
+    } else {
+      // Non-trump cards: point cards and Aces are valuable but always < trump
+      if (card.points && card.points > 0) {
+        value += card.points * 10; // 5s = 50, 10s/Kings = 100
+      }
+
+      // Aces are valuable for non-trump cards
+      if (card.rank === Rank.Ace) {
+        value += 50;
+      }
+
+      // Base rank value for non-trump cards
+      value += RANK_VALUES[card.rank!] || 0;
+    }
+  } else if (mode === "conservation") {
+    // Conservation mode: Trump hierarchy for AI strategic decisions
+
+    // Trump rank cards
+    if (card.rank === trumpInfo.trumpRank) {
+      value = card.suit === trumpInfo.trumpSuit ? 80 : 70; // Trump rank in trump suit vs off-suits
+    }
+    // Trump suit cards (non-rank)
+    else if (card.suit === trumpInfo.trumpSuit) {
+      value = getTrumpSuitBaseValue(card.rank!);
+    }
+    // Non-trump cards
+    else {
+      value = RANK_VALUES[card.rank!] || 0;
+    }
+  } else {
+    // Combo mode: Basic trump hierarchy for combination comparison
+    value = RANK_VALUES[card.rank!] || 0;
+
+    // Trump cards have higher value
+    if (isTrump(card, trumpInfo)) {
+      value += 100;
+
+      // Trump suit is higher than trump rank of other suits
+      if (card.suit === trumpInfo.trumpSuit) {
+        value += 50;
+      }
     }
   }
 
   return value;
+};
+
+// Legacy function for backward compatibility
+const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
+  return calculateCardStrategicValue(card, trumpInfo, "combo");
 };
 
 // Find tractors (consecutive pairs) in a suit
@@ -1375,23 +1478,11 @@ const generateMixedCombinations = (
     (card) => !cardIdsInPairs.has(card.id),
   );
 
-  // Sort singletons by value (weakest first) for smart disposal
+  // Sort singletons by strategic value (weakest first) for smart disposal
   const sortedSingletons = singletonCards.sort((a, b) => {
-    const rankOrder = [
-      Rank.Three,
-      Rank.Four,
-      Rank.Five,
-      Rank.Six,
-      Rank.Seven,
-      Rank.Eight,
-      Rank.Nine,
-      Rank.Ten,
-      Rank.Jack,
-      Rank.Queen,
-      Rank.King,
-      Rank.Ace,
-    ];
-    return rankOrder.indexOf(a.rank!) - rankOrder.indexOf(b.rank!);
+    const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
+    const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
+    return valueA - valueB; // Lowest strategic value first
   });
 
   // Try to construct intelligent combinations avoiding breaking pairs
