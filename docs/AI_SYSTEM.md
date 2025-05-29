@@ -541,6 +541,53 @@ The AI system uses a robust card comparison framework with strict validation to 
 - **Phase 3-4**: Leverages `evaluateTrickPlay` for sophisticated trick analysis and memory-enhanced decisions
 - **All Phases**: Automatic validation ensures game rule compliance across all strategic levels
 
+## Game Logic Enhancements
+
+### Strategic Pair Conservation Enhancement
+
+**Problem**: AI was wastefully using valuable cross-suit pairs (e.g., A♣-A♣) instead of playing strategic singles when out of the led suit.
+
+**Root Cause**: The `identifyCombos` function was identifying cross-suit pairs as valid combinations when following pairs from different suits, leading to suboptimal AI decisions.
+
+**Solution**: Implemented context-aware combination filtering in `getValidCombinations` with enhanced mixed combination generation:
+
+#### Context-Aware Filtering
+```typescript
+// CRITICAL: When out of suit, reject same combo types from other suits
+if (!playerHasMatchingCards && combo.type === leadingComboType) {
+  // Player is out of suit/trump and this is a "proper" combo of the same type
+  // This should not be considered valid - force mixed combinations instead
+  return false;
+}
+```
+
+#### Enhanced Mixed Combination Generation
+- **Priority 1**: Use all cards of leading suit/trump (Tractor rule compliance)
+- **Priority 2**: Prefer singletons over breaking pairs when filling remaining slots
+- **Priority 3**: Break pairs only as last resort for required combination length
+
+#### Comprehensive Edge Case Coverage
+The enhancement handles all scenarios correctly:
+
+1. **Out of Suit**: Context filtering prevents wasteful cross-suit pairs
+2. **Has Suit Cards**: Traditional `isValidPlay` rules enforce proper suit-following
+3. **Trump Combinations**: Trump pairs/tractors remain valid regardless of led suit
+4. **Minimal Hands**: Works correctly even with very few cards
+
+#### Test Results
+```
+✅ AI selected: 3Diamonds, 4Spades  // Preserved valuable Ace pair
+✅ Valid combos: 5                  // Multiple strategic options
+✅ Cross-suit pairs filtered        // Proper pairs rejected when out of suit
+✅ Mixed options available          // Strategic alternatives provided
+```
+
+**Benefits**:
+- **Eliminates AI Wastefulness**: No more using A♣-A♣ pairs when out of Hearts
+- **Maintains Rule Compliance**: All Tractor/Shengji rules preserved
+- **Strategic Options**: Provides multiple mixed combinations for AI to choose from
+- **Clean Architecture**: Single source of truth in game logic, not scattered AI workarounds
+
 ## Testing and Validation
 
 ### AI Quality Assurance
@@ -561,6 +608,15 @@ The AI system uses a robust card comparison framework with strict validation to 
 - **Integration testing** ensuring seamless phase coordination
 - **Performance testing** validating real-time decision speeds
 - **Conservative play validation** testing Issue #61 fix implementation
+- **Strategic pair conservation testing** with 8 comprehensive test scenarios covering:
+  - Out of suit pair following behavior
+  - Strategic trump pair usage vs conservation
+  - Teammate winning conservation behavior
+  - Unbeatable opponent conservation
+  - Mixed combination availability
+  - Edge case: Has suit cards but cannot form pairs
+  - Edge case: Minimal hand composition
+  - Edge case: Trump pairs vs cross-suit pairs interaction
 
 ---
 

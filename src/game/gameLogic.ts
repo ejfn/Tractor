@@ -1268,12 +1268,32 @@ export const getValidCombinations = (
   const leadingCombo = currentTrick.leadingCombo;
   const leadingLength = leadingCombo.length;
 
+  // ISSUE #104 PROPER FIX: Context-aware combo filtering
+  const leadingSuit = getLeadingSuit(leadingCombo);
+  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+  const leadingComboType = getComboType(leadingCombo);
+
+  // Check if player has cards of the led suit/trump
+  const playerHasMatchingCards = isLeadingTrump
+    ? playerHand.some((card) => isTrump(card, trumpInfo))
+    : playerHand.some(
+        (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+      );
+
   // Filter combinations that match the leading combo length and pass validation
   const validCombos = allCombos.filter((combo) => {
-    return (
-      combo.cards.length === leadingLength &&
-      isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo)
-    );
+    if (combo.cards.length !== leadingLength) {
+      return false;
+    }
+
+    // CRITICAL: When out of suit, reject same combo types from other suits
+    if (!playerHasMatchingCards && combo.type === leadingComboType) {
+      // Player is out of suit/trump and this is a "proper" combo of the same type
+      // This should not be considered valid - force mixed combinations instead
+      return false;
+    }
+
+    return isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo);
   });
 
   // If we have valid combinations, return them
@@ -1330,7 +1350,7 @@ const generateMixedCombinations = (
     return combinations;
   };
 
-  // Intelligently construct combinations prioritizing suit following + weak disposal
+  // ISSUE #104 PROPER FIX: Intelligently construct combinations avoiding breaking pairs
   const validMixedCombos: Combo[] = [];
   const leadingSuit = getLeadingSuit(leadingCombo);
   const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
@@ -1340,12 +1360,23 @@ const generateMixedCombinations = (
     (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
   );
   const trumpCards = playerHand.filter((card) => isTrump(card, trumpInfo));
-  const otherCards = playerHand.filter(
-    (card) => card.suit !== leadingSuit && !isTrump(card, trumpInfo),
+
+  // Identify existing pairs to avoid breaking them
+  const existingPairs = identifyCombos(playerHand, trumpInfo)
+    .filter((combo) => combo.type === ComboType.Pair)
+    .map((combo) => combo.cards);
+
+  // Create a set of card IDs that are part of pairs
+  const cardIdsInPairs = new Set(existingPairs.flat().map((card) => card.id));
+
+  // Separate cards into: in pairs vs singletons
+  const cardsInPairs = playerHand.filter((card) => cardIdsInPairs.has(card.id));
+  const singletonCards = playerHand.filter(
+    (card) => !cardIdsInPairs.has(card.id),
   );
 
-  // Sort cards by value (weakest first) for smart disposal
-  const sortedOtherCards = otherCards.sort((a, b) => {
+  // Sort singletons by value (weakest first) for smart disposal
+  const sortedSingletons = singletonCards.sort((a, b) => {
     const rankOrder = [
       Rank.Three,
       Rank.Four,
@@ -1363,26 +1394,49 @@ const generateMixedCombinations = (
     return rankOrder.indexOf(a.rank!) - rankOrder.indexOf(b.rank!);
   });
 
-  // Try to construct intelligent combinations
+  // Try to construct intelligent combinations avoiding breaking pairs
   const constructCombination = (requiredLength: number): Card[] | null => {
-    // Simple combination construction - game logic should be neutral
-    // Let AI strategy handle trump conservation decisions
     const combo: Card[] = [];
 
-    // Step 1: Use available suit cards first
-    const preferredCards = isLeadingTrump ? trumpCards : suitCards;
-    const availablePreferred = Math.min(preferredCards.length, requiredLength);
-    combo.push(...preferredCards.slice(0, availablePreferred));
+    // Step 1: MANDATORY - Use ALL cards of leading suit/trump (Tractor rule)
+    // This is critical for fallback scenarios where player has some but not enough leading suit cards
+    const preferredSuitCards = isLeadingTrump ? trumpCards : suitCards;
+    if (preferredSuitCards.length > 0) {
+      // CRITICAL: Must use ALL cards of the leading suit, not just some
+      combo.push(...preferredSuitCards);
 
-    // Step 2: Fill remaining slots with any available cards
+      // If we already have enough cards, truncate to required length
+      if (combo.length >= requiredLength) {
+        return combo.slice(0, requiredLength);
+      }
+    }
+
+    // Step 2: Fill remaining slots, prioritizing singletons over breaking pairs
     const remaining = requiredLength - combo.length;
     if (remaining > 0) {
-      // CRITICAL FIX: When trump is led, MUST use all trump cards first
-      const otherCards = isLeadingTrump
-        ? [...trumpCards.slice(availablePreferred)] // Only remaining trump cards when trump is led
-        : [...sortedOtherCards, ...trumpCards]; // Normal priority when non-trump is led
-      const availableOther = Math.min(otherCards.length, remaining);
-      combo.push(...otherCards.slice(0, availableOther));
+      // PRIORITY 1: Use singletons first (avoid breaking pairs)
+      // Filter out cards already used (leading suit cards)
+      const availableSingletons = sortedSingletons.filter(
+        (card) => !combo.some((c) => c.id === card.id), // Not already in combo
+      );
+
+      const singletonsToUse = Math.min(availableSingletons.length, remaining);
+      combo.push(...availableSingletons.slice(0, singletonsToUse));
+
+      // PRIORITY 2: If still need more cards, break pairs as last resort
+      const stillRemaining = requiredLength - combo.length;
+      if (stillRemaining > 0) {
+        // Filter out cards already used (leading suit cards + singletons)
+        const availablePairCards = cardsInPairs.filter(
+          (card) => !combo.some((c) => c.id === card.id), // Not already in combo
+        );
+
+        const pairCardsToUse = Math.min(
+          availablePairCards.length,
+          stillRemaining,
+        );
+        combo.push(...availablePairCards.slice(0, pairCardsToUse));
+      }
     }
 
     return combo.length === requiredLength ? combo : null;
