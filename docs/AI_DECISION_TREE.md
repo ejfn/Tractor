@@ -24,35 +24,89 @@ When the AI is leading a trick, it follows this strategic decision process:
 
 ```mermaid
 flowchart LR
-    Start([🎯 AI Leading Turn]) --> Ace{Have Ace<br/>Combos?<br/>A♠-A♠, A♥}
-    Ace -->|Yes| AcePlay[🏆 ACE PRIORITY<br/>Lead Strong Aces<br/>Pairs > Singles]
-    Ace -->|No| Pressure{Point<br/>Pressure?}
+    Start([🎯 AI Leading Turn]) --> Memory{Memory-Enhanced<br/>Biggest Remaining?}
+    Memory -->|Yes| Guaranteed[🧠 GUARANTEED WINNERS<br/>Aces > Kings > Tractors<br/>Point Collection Priority]
+    Memory -->|No| Early{Early Game<br/>Phase?}
+    Early -->|Yes| EarlyGame[🌅 EARLY GAME STRATEGY<br/>Integrated Ace Priority<br/>High Non-Trump Leading]
+    Early -->|No| Pressure{Point<br/>Pressure?}
     Pressure -->|High| Aggressive[⚡ AGGRESSIVE<br/>Force Point Collection<br/>Strong Combos]
     Pressure -->|Medium| Balanced[⚖️ BALANCED<br/>Strategic Control<br/>Medium Combos]
     Pressure -->|Low| Safe[🛡️ SAFE<br/>Conservative Probes<br/>Low Non-Trump]
     
-    AcePlay --> Execute[✅ Execute Move]
+    Guaranteed --> Execute[✅ Execute Move]
+    EarlyGame --> Execute
     Aggressive --> Execute
     Balanced --> Execute
     Safe --> Execute
     
 ```
 
+### Memory-Enhanced Biggest Remaining Strategy
+
+The AI now uses sophisticated card memory to identify guaranteed winners:
+
+```mermaid
+flowchart LR
+    Start([🧠 Memory Analysis]) --> Singles{Singles Logic<br/>Both copies ALL<br/>higher ranks played?}
+    Singles -->|Yes| SingleWin[✅ Single Guaranteed<br/>K♥ wins if both A♥ played]
+    Singles -->|No| Pairs{Pairs Logic<br/>ANY higher rank<br/>card played?}
+    Pairs -->|Yes| PairWin[✅ Pair Guaranteed<br/>Q♥-Q♥ wins if ANY A♥ or K♥ played]
+    Pairs -->|No| NotGuaranteed[❌ Not Guaranteed<br/>Use regular strategy]
+    
+    SingleWin --> Priority[🎯 STRATEGIC PRIORITY<br/>Aces 6 Kings 5 Tractors 3<br/>Point Collection First]
+    PairWin --> Priority
+    NotGuaranteed --> Regular[⚖️ Regular Strategy]
+```
+
+**Key Strategic Insights:**
+- **Point Collection Priority**: Aces and Kings before tractors (opponent might run out)
+- **Memory Intelligence**: Uses card tracking to identify guaranteed winners
+- **Strategic Timing**: Collect points while opponent still has cards in suit
+
 ### Leading Strategy Types
 
 ```mermaid
 flowchart LR
     Strategy([🎲 Leading Strategy]) --> Type{Strategy Type?}
-    Type -->|Ace Priority| AceLogic[🏆 ACE LOGIC<br/>Non-Trump Aces<br/>Hard to Beat]
+    Type -->|Memory Enhanced| MemoryLogic[🧠 BIGGEST REMAINING<br/>Guaranteed Winners<br/>Strategic Priority]
+    Type -->|Early Game| EarlyLogic[🌅 EARLY GAME LOGIC<br/>Integrated Ace Priority<br/>High Non-Trump Leading]
     Type -->|Aggressive| ForceLogic[⚡ FORCE LOGIC<br/>Strong Combos<br/>Collect Points]
     Type -->|Balanced| OptimalLogic[⚖️ OPTIMAL LOGIC<br/>Medium Strength<br/>Gather Info]
     Type -->|Safe| ConservativeLogic[🛡️ CONSERVATIVE<br/>Low Cards<br/>Avoid Risk]
     
-    AceLogic --> Result[✅ Lead Selected Combo]
+    MemoryLogic --> Result[✅ Lead Selected Combo]
+    EarlyLogic --> Result
     ForceLogic --> Result
     OptimalLogic --> Result
     ConservativeLogic --> Result
 ```
+
+### Early Game Leading Strategy (Integrated Ace Priority)
+
+The early game strategy now includes integrated Ace priority logic in a single streamlined function:
+
+```mermaid
+flowchart LR
+    Start([🌅 Early Game Leading]) --> Trump{Trump Suit<br/>Declared?}
+    Trump -->|Yes| Defer[🚫 DEFER TO TRUMP<br/>Let trump strategies<br/>handle trump scenarios]
+    Trump -->|No| NonTrump[🎯 NON-TRUMP STRATEGY]
+    NonTrump --> Step1{🏆 STEP 1<br/>Have Ace Combos?}
+    Step1 -->|Yes| AcePairs{Ace Pairs<br/>Available?}
+    AcePairs -->|Yes| LeadAcePair[👑 LEAD ACE PAIR<br/>A♠-A♠ > A♥<br/>Harder to beat]
+    AcePairs -->|No| LeadAceSingle[👑 LEAD ACE SINGLE<br/>Guaranteed winner<br/>Early game safety]
+    Step1 -->|No| Step2[🎯 STEP 2: HIGH CARDS<br/>Tractors > Pairs > Singles<br/>Sorted by strength]
+    
+    Defer --> End[❌ Return null]
+    LeadAcePair --> End2[✅ Execute Ace Pair]
+    LeadAceSingle --> End2
+    Step2 --> End2
+```
+
+**Key Integration Benefits:**
+- **Single Function**: `selectEarlyGameLeadingPlay()` handles both Ace priority and general early game strategy
+- **Trump Protection**: Automatically defers to trump strategies when trump suit is declared
+- **Strategic Progression**: Ace priority first, then fallback to general high-card strategy
+- **Cleaner Architecture**: Eliminates redundant function calls and potential conflicts
 
 ## Restructured Following Player Decision Tree
 
@@ -61,14 +115,17 @@ The AI uses a clean 4-priority decision chain that eliminates conflicts and ensu
 ```mermaid
 flowchart LR
     Start([🎯 AI Following Turn]) --> P1{🤝 Teammate<br/>Winning?}
-    P1 -->|Yes| Contribute[🎁 CONTRIBUTE<br/>Give Point Cards<br/>10 > King > 5]
+    P1 -->|Yes| Memory{🧠 Have Guaranteed<br/>Point Cards?}
+    Memory -->|Yes| SmartContribute[🎁 SMART CONTRIBUTE<br/>Guaranteed Winners First<br/>K♥-K♥ if A♥ played]
+    Memory -->|No| Contribute[🎁 CONTRIBUTE<br/>Traditional Hierarchy<br/>10 > King > 5]
     P1 -->|No| P2{⚔️ Opponent<br/>Winning?}
     P2 -->|Yes| Block[🛡️ BLOCK/BEAT<br/>Stop Opponent<br/>or Avoid Points]
     P2 -->|No| P3{💰 Can Win<br/>5+ Points?}
     P3 -->|Yes| Contest[⚡ CONTEST<br/>Fight for Trick]
     P3 -->|No| Dispose[🗑️ DISPOSE<br/>Strategic Disposal]
     
-    Contribute --> Return[✅ Execute Move]
+    SmartContribute --> Return[✅ Execute Move]
+    Contribute --> Return
     Block --> Return
     Contest --> Return
     Dispose --> Return
@@ -105,6 +162,8 @@ flowchart LR
 6. **Enhanced Ace Conservation**: Smart high-card preservation
 7. **Sophisticated Opponent Response**: Strategic blocking based on trick value and card conservation
 8. **Team Coordination**: Improved cooperation with human teammates
+9. **🧠 Memory-Enhanced Intelligence**: Uses card tracking to identify guaranteed winners
+10. **🎯 Strategic Point Timing**: Prioritizes point collection before opponent runs out
 
 ## Enhanced Strategic Disposal Logic
 

@@ -1,5 +1,5 @@
 import { GameState, Card, Trick, Team } from "../types";
-import { identifyCombos, isValidPlay, compareCardCombos } from "./gameLogic";
+import { identifyCombos, isValidPlay, evaluateTrickPlay } from "./gameLogic";
 import { getAIMove } from "../ai/aiLogic";
 
 /**
@@ -76,38 +76,24 @@ export function processPlay(
 
       // Check if this play beats the current winner and update winningPlayerId
       if (newState.currentTrick) {
-        const currentWinningPlayerId =
-          newState.currentTrick.winningPlayerId ||
-          newState.currentTrick.leadingPlayerId;
-        const currentWinningPlayer = newState.players.find(
-          (p) => p.id === currentWinningPlayerId,
+        // Find player index for hand access
+        const currentPlayerIndex = newState.players.findIndex(
+          (p) => p.id === currentPlayer.id,
         );
-        if (currentWinningPlayer) {
-          // Get the current winner's cards
-          let currentWinningCards: Card[];
-          if (
-            currentWinningPlayerId === newState.currentTrick.leadingPlayerId
-          ) {
-            currentWinningCards = newState.currentTrick.leadingCombo;
-          } else {
-            const winningPlay = newState.currentTrick.plays.find(
-              (play) => play.playerId === currentWinningPlayerId,
-            );
-            currentWinningCards = winningPlay
-              ? winningPlay.cards
-              : newState.currentTrick.leadingCombo;
-          }
+        const currentPlayerHand =
+          newState.players[currentPlayerIndex]?.hand || [];
 
-          // Compare current play with current winner
-          const comparison = compareCardCombos(
-            cards,
-            currentWinningCards,
-            newState.trumpInfo,
-          );
-          if (comparison > 0) {
-            // Current play beats the current winner
-            newState.currentTrick.winningPlayerId = currentPlayer.id;
-          }
+        // Use the new context-aware evaluation function
+        const trickResult = evaluateTrickPlay(
+          cards,
+          newState.currentTrick,
+          newState.trumpInfo,
+          [...currentPlayerHand, ...cards], // Include played cards for validation
+        );
+
+        if (trickResult.canBeat) {
+          // Current play beats the current winner
+          newState.currentTrick.winningPlayerId = currentPlayer.id;
         }
       }
     }

@@ -21,7 +21,8 @@ import {
 jest.mock('../../src/game/gameLogic', () => ({
   identifyCombos: jest.fn(),
   isValidPlay: jest.fn(),
-  compareCardCombos: jest.fn()
+  compareCardCombos: jest.fn(),
+  evaluateTrickPlay: jest.fn()
 }));
 
 jest.mock('../../src/ai/aiLogic', () => ({
@@ -38,6 +39,16 @@ const createMockGameState = () => {
 };
 
 describe('gamePlayManager', () => {
+  beforeEach(() => {
+    // Setup default mocks
+    (gameLogic.evaluateTrickPlay as jest.Mock).mockReturnValue({
+      canBeat: false,
+      isLegal: true,
+      strength: 50,
+      reason: 'Mock evaluation'
+    });
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });

@@ -129,6 +129,7 @@ describe('Winning Player ID Tracking During Trick', () => {
     const gameState = createGameState();
     gameState.gamePhase = GamePhase.Playing;
     gameState.currentPlayerIndex = 0; // Human starts
+    gameState.trumpInfo = trumpInfo; // Apply trump info (Spades trump)
 
     // Human leads with pair of 5s
     const leadingPair = [

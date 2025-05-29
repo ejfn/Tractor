@@ -493,7 +493,7 @@ The AI system consists of 6 specialized modules in `src/ai/`:
 - **`aiLogic.ts`**: Public AI API and game rule compliance
 - **`aiStrategy.ts`**: Core AI decision making and strategy implementation
 - **`aiGameContext.ts`**: Context analysis and strategic awareness
-- **`aiPointFocusedStrategy.ts`**: Point collection and team coordination strategies
+- **`aiPointFocusedStrategy.ts`**: Point collection, early game leading (with integrated Ace priority), and team coordination strategies
 - **`aiCardMemory.ts`**: Comprehensive card tracking and probability systems
 - **`aiAdvancedCombinations.ts`**: Advanced combination analysis and optimization
 
@@ -509,6 +509,37 @@ The AI system consists of 6 specialized modules in `src/ai/`:
 - ✅ **Production ready** with sophisticated strategic decision-making
 - ✅ **Real-time performance** maintaining smooth gameplay experience
 
+## Card Comparison System
+
+### Enhanced Game Rule Validation
+
+The AI system uses a robust card comparison framework with strict validation to ensure game rule compliance:
+
+#### Core Functions
+
+**`compareCards(cardA, cardB, trumpInfo)`**
+- **Purpose**: Direct comparison of individual cards within same suit or trump group
+- **Validation**: Automatically prevents invalid cross-suit non-trump comparisons
+- **Usage**: Card sorting, trump hierarchy evaluation, same-suit strength comparison
+
+**`evaluateTrickPlay(cards, trick, trumpInfo, hand)`**
+- **Purpose**: Context-aware trick evaluation for strategic decision-making
+- **Features**: Cross-suit evaluation, legal play validation, trick winner determination
+- **Usage**: AI strategy decisions, trick competition analysis, opponent blocking
+
+#### AI Strategic Benefits
+
+- **Rule Compliance**: Prevents invalid card comparisons that violate Shengji rules
+- **Strategic Accuracy**: AI uses proper trick context for cross-suit evaluations
+- **Error Prevention**: Clear validation errors guide correct function usage
+- **Performance**: Context-appropriate functions optimize decision speed
+
+#### Implementation in AI Phases
+
+- **Phase 1-2**: Uses `compareCards` for basic trump hierarchy and same-suit sorting
+- **Phase 3-4**: Leverages `evaluateTrickPlay` for sophisticated trick analysis and memory-enhanced decisions
+- **All Phases**: Automatic validation ensures game rule compliance across all strategic levels
+
 ## Testing and Validation
 
 ### AI Quality Assurance
@@ -521,6 +552,7 @@ The AI system consists of 6 specialized modules in `src/ai/`:
 ### Test Coverage
 
 - **75+ AI intelligence tests** covering all 4 phases comprehensively
+- **Card comparison validation testing** ensuring proper function usage and error handling
 - **Trick winner analysis testing** with comprehensive scenarios for teammate/opponent/self winning
 - **Point card management testing** validating strategic disposal when opponent winning
 - **Trump conservation testing** ensuring proper trump hierarchy usage
