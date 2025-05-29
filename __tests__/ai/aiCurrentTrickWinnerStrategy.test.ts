@@ -270,19 +270,12 @@ describe("AI Current Trick Winner Strategy", () => {
   });
 
   describe("Edge Cases", () => {
-    it("should handle no current trick", () => {
+    it("should throw error when no current trick", () => {
       gameState.currentTrick = null;
 
-      const analysis = analyzeTrickWinner(gameState, PlayerId.Human);
-
-      expect(analysis.currentWinner).toBeNull();
-      expect(analysis.isTeammateWinning).toBe(false);
-      expect(analysis.isOpponentWinning).toBe(false);
-      expect(analysis.isSelfWinning).toBe(false);
-      expect(analysis.trickPoints).toBe(0);
-      expect(analysis.canBeatCurrentWinner).toBe(false);
-      expect(analysis.shouldTryToBeat).toBe(false);
-      expect(analysis.shouldPlayConservatively).toBe(false);
+      expect(() => {
+        analyzeTrickWinner(gameState, PlayerId.Human);
+      }).toThrow("analyzeTrickWinner called with no active trick");
     });
 
     it("should handle trick with only leader played", () => {

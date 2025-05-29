@@ -6,6 +6,7 @@ import {
   GamePhase,
   GamePhaseStrategy,
   MemoryContext,
+  PlayerId,
   PlayStyle,
   PointCardStrategy,
   PointFocusedContext,
@@ -46,7 +47,7 @@ export const createAIGameContext = (
   pointPressure,
   playStyle,
   trickWinnerAnalysis: trickWinnerAnalysis ?? {
-    currentWinner: null,
+    currentWinner: PlayerId.Human, // Default to human for test scenarios
     isTeammateWinning: false,
     isOpponentWinning: false,
     isSelfWinning: false,

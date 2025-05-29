@@ -9,7 +9,6 @@ import {
   PlayStyle,
   ComboStrength,
   ComboAnalysis,
-  TrickAnalysis,
   PositionStrategy,
   TrickPosition,
   PointPressure,
@@ -24,7 +23,6 @@ import { isTrump, compareCards } from "../game/gameLogic";
 import {
   createGameContext,
   analyzeCombo,
-  analyzeTrick,
   getPositionStrategy,
 } from "./aiGameContext";
 import {
@@ -117,35 +115,13 @@ export class AIStrategyImplementation implements AIStrategy {
         analysis: analyzeCombo(combo, trumpInfo, context),
       }));
 
-      // Create proper trick analysis instead of simplified
-      const currentWinner = currentTrick?.winningPlayerId || null;
-      const canActuallyWin = comboAnalyses.some((ca) => {
-        // Check if any available combo can beat the current leading combo
-        if (!currentTrick?.leadingCombo) return true;
-        // leadingCombo is Card[], not Combo, so pass it directly to isStrongerCombo
-        return this.isStrongerCombo(
-          ca.combo.cards,
-          currentTrick.leadingCombo,
-          trumpInfo,
-        );
-      });
-
-      const trickAnalysis = {
-        currentWinner,
-        winningCombo: currentTrick?.leadingCombo || null,
-        totalPoints: currentTrick?.points || 0,
-        canWin: canActuallyWin,
-        shouldContest: currentTrick?.points >= 5,
-        partnerStatus: "not_played" as const, // Simplified
-      };
-
       // Use new restructured follow logic
       const restructuredPlay = this.selectOptimalFollowPlay(
         comboAnalyses,
-        trickAnalysis,
         context,
         {} as PositionStrategy, // Simplified for now
         trumpInfo,
+        gameState,
       );
       return restructuredPlay;
     }
@@ -230,10 +206,10 @@ export class AIStrategyImplementation implements AIStrategy {
 
   private selectOptimalFollowPlay(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
     positionStrategy: PositionStrategy,
     trumpInfo: TrumpInfo,
+    gameState: GameState,
   ): Card[] {
     // RESTRUCTURED: Clear priority chain for following play decisions
     const trickWinner = context.trickWinnerAnalysis;
@@ -248,13 +224,16 @@ export class AIStrategyImplementation implements AIStrategy {
 
     // === PRIORITY 2: OPPONENT BLOCKING ===
     if (trickWinner?.isOpponentWinning) {
+      console.log(
+        `DEBUG Bot 3: Opponent winning, canWin=${trickWinner.canBeatCurrentWinner}, trickPoints=${trickWinner.trickPoints}`,
+      );
       // Opponent is winning - try to beat them or minimize damage
       const opponentResponse = this.handleOpponentWinning(
         comboAnalyses,
-        trickAnalysis,
         context,
         trickWinner,
         trumpInfo,
+        gameState,
       );
       if (opponentResponse) {
         return opponentResponse;
@@ -262,21 +241,20 @@ export class AIStrategyImplementation implements AIStrategy {
     }
 
     // === PRIORITY 3: TRICK CONTENTION ===
-    if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
+    if (trickWinner?.canBeatCurrentWinner && trickWinner?.shouldTryToBeat) {
       // Can win the trick and it's worth winning
       return this.selectOptimalWinningCombo(
         comboAnalyses,
-        trickAnalysis,
         context,
         positionStrategy,
         trumpInfo,
+        gameState,
       );
     }
     // === PRIORITY 4: STRATEGIC DISPOSAL ===
     // Can't/shouldn't win - play optimally for future tricks
     return this.selectStrategicDisposal(
       comboAnalyses,
-      trickAnalysis,
       context,
       positionStrategy,
     );
@@ -379,13 +357,16 @@ export class AIStrategyImplementation implements AIStrategy {
   // === OPPONENT BLOCKING HANDLER ===
   private handleOpponentWinning(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
     trickWinner: any,
     trumpInfo: TrumpInfo,
+    gameState: GameState,
   ): Card[] | null {
     // Check if we can beat the opponent at all
-    if (!trickAnalysis.canWin) {
+    if (!trickWinner.canBeatCurrentWinner) {
+      console.log(
+        "DEBUG Bot 3: Cannot beat opponent, playing lowest value combo",
+      );
       // Can't beat opponent - play lowest value card to minimize points given
       return this.selectLowestValueCombo(comboAnalyses);
     }
@@ -394,20 +375,16 @@ export class AIStrategyImplementation implements AIStrategy {
     if (trickWinner.trickPoints >= 10) {
       return this.selectOptimalWinningCombo(
         comboAnalyses,
-        trickAnalysis,
         context,
         {} as PositionStrategy,
         trumpInfo,
+        gameState,
       );
     }
 
     // Moderate points (5-9 points): beat if reasonable
-    if (trickWinner.trickPoints >= 5 && trickAnalysis.shouldContest) {
-      return this.selectAggressiveBeatPlay(
-        comboAnalyses,
-        trickAnalysis,
-        context,
-      );
+    if (trickWinner.trickPoints >= 5 && trickWinner.shouldTryToBeat) {
+      return this.selectAggressiveBeatPlay(comboAnalyses, context);
     }
 
     // Low value tricks (0-4 points): don't waste high cards on pointless tricks
@@ -417,7 +394,6 @@ export class AIStrategyImplementation implements AIStrategy {
   // === STRATEGIC DISPOSAL ===
   private selectStrategicDisposal(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
     positionStrategy: PositionStrategy,
   ): Card[] {
@@ -431,7 +407,8 @@ export class AIStrategyImplementation implements AIStrategy {
     }
 
     // When we can't win the trick, conserve valuable cards (trump + Aces)
-    if (!trickAnalysis.canWin) {
+    const trickWinner = context.trickWinnerAnalysis;
+    if (!trickWinner?.canBeatCurrentWinner) {
       // First priority: prefer non-trump, non-Ace cards
       const nonValuable = comboAnalyses.filter(
         (ca) =>
@@ -475,17 +452,31 @@ export class AIStrategyImplementation implements AIStrategy {
 
   private selectOptimalWinningCombo(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
     positionStrategy: PositionStrategy,
     trumpInfo: TrumpInfo,
+    gameState: GameState,
   ): Card[] {
-    // Find combos that can actually beat the current leading combo
+    // Find combos that can actually beat the current strongest combo in the trick
+    const currentTrick = gameState.currentTrick;
     const winningCombos = comboAnalyses.filter((ca) => {
-      if (!trickAnalysis.winningCombo) return true; // No leading combo to beat
+      if (!currentTrick) return true; // No trick in progress
+
+      // Get the current strongest combo (either leading combo or a stronger play)
+      let currentStrongestCombo = currentTrick.leadingCombo || [];
+      const winningPlay = currentTrick.plays.find(
+        (play) => play.playerId === currentTrick.winningPlayerId,
+      );
+      if (winningPlay && winningPlay.cards.length > 0) {
+        currentStrongestCombo = winningPlay.cards;
+      }
+
+      // If no cards have been played yet, any combo can "win"
+      if (currentStrongestCombo.length === 0) return true;
+
       return this.isStrongerCombo(
         ca.combo.cards,
-        trickAnalysis.winningCombo,
+        currentStrongestCombo,
         trumpInfo,
       );
     });
@@ -501,7 +492,6 @@ export class AIStrategyImplementation implements AIStrategy {
 
   private selectAggressiveBeatPlay(
     comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-    trickAnalysis: TrickAnalysis,
     context: GameContext,
   ): Card[] {
     // Filter for combinations that can win
@@ -604,11 +594,6 @@ export class AIStrategyImplementation implements AIStrategy {
       context.trickPosition,
       context.playStyle,
     );
-    const trickAnalysis = analyzeTrick(
-      gameState,
-      gameState.players[gameState.currentPlayerIndex].id,
-      combos,
-    );
 
     const comboAnalyses = combos.map((combo) => ({
       combo,
@@ -618,10 +603,10 @@ export class AIStrategyImplementation implements AIStrategy {
     // Enhanced strategic decision making
     return this.selectOptimalFollowPlay(
       comboAnalyses,
-      trickAnalysis,
       context,
       positionStrategy,
       gameState.trumpInfo,
+      gameState,
     );
   }
 
