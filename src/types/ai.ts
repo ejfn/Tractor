@@ -1,6 +1,6 @@
 // AI strategy and intelligence types
 
-import { Card, PlayerId } from "./core";
+import { Card, PlayerId, Suit, TrumpInfo } from "./core";
 
 // AI Strategy Enhancement Types
 export enum TrickPosition {
@@ -59,7 +59,7 @@ export interface GameContext {
   memoryContext?: MemoryContext; // Phase 3: Memory-based decision context
   memoryStrategy?: MemoryBasedStrategy; // Phase 3: Memory-enhanced strategy
   trickWinnerAnalysis?: TrickWinnerAnalysis; // Real-time trick winner analysis
-  trumpInfo?: import("./core").TrumpInfo; // Enhanced: Trump information for card analysis
+  trumpInfo?: TrumpInfo; // Enhanced: Trump information for card analysis
 }
 
 export interface ComboAnalysis {
@@ -76,7 +76,7 @@ export interface PlayerMemory {
   playerId: PlayerId;
   knownCards: Card[]; // Cards we've seen this player play
   estimatedHandSize: number; // Estimated cards remaining
-  suitVoids: Set<import("./core").Suit>; // Suits this player has shown to be out of
+  suitVoids: Set<Suit>; // Suits this player has shown to be out of
   trumpCount: number; // Estimated trump cards remaining
   pointCardsProbability: number; // Likelihood of having point cards
   playPatterns: PlayPattern[]; // Historical play behavior

@@ -43,10 +43,11 @@ Built with **React Native + Expo** for mobile platforms:
 
 Sophisticated **4-phase AI system** with restructured priority chain, real-time trick analysis, enhanced opponent blocking, strategic point card management, and intelligent trump conservation.
 
-**Latest Enhancements:**
+**Key Features:**
 - **Strategic Point Management**: AI avoids wasting point cards when opponent is winning
-- **Trump Hierarchy Conservation**: Proper selection of weak trump cards over valuable ones
+- **Trump Conservation Hierarchy**: Optimal selection using conservation values (Big Joker: 100 → Small Joker: 90 → Trump rank cards: 70-80 → Trump suit cards: 5-60)
 - **Enhanced Opponent Blocking**: Sophisticated response based on trick value and card conservation
+- **Low-Value Trick Optimization**: Conservation logic for 0-4 point tricks to preserve valuable cards
 
 *For complete AI system documentation, see **[AI System Guide](docs/AI_SYSTEM.md)***
 

@@ -158,10 +158,10 @@ describe("AI Current Trick Winner Strategy", () => {
 
       const aiMove = getAIMove(gameState, PlayerId.Human);
 
-      // Should play the lowest value card, not the King
+      // Should contribute points when teammate has strong card
       expect(aiMove).toHaveLength(1);
       expect(aiMove[0].suit).toBe(Suit.Hearts);
-      expect(aiMove[0].rank).toBe(Rank.Three);
+      expect(aiMove[0].rank).toBe(Rank.King);
     });
 
     it("should try to beat opponent when they're winning with points", () => {
