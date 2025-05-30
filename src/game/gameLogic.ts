@@ -2,7 +2,6 @@ import {
   Card,
   Combo,
   ComboType,
-  DealingState,
   GameState,
   GamePhase,
   JokerType,
@@ -90,8 +89,8 @@ export const dealCards = (state: GameState): GameState => {
   // Set kitty cards (bottom 8 cards)
   newState.kittyCards = deck.slice(deck.length - 8);
 
-  // Update game phase
-  newState.gamePhase = GamePhase.Declaring;
+  // Update game phase - start with dealing for progressive dealing system
+  newState.gamePhase = GamePhase.Dealing;
 
   return newState;
 };
@@ -156,13 +155,9 @@ export const dealNextCard = (state: GameState): GameState => {
         dealingState.kittyDealt = true;
       }
 
-      // Only transition to declaring phase if no trump was declared during dealing
-      if (!newState.trumpInfo.declared) {
-        newState.gamePhase = GamePhase.Declaring;
-      } else {
-        // Trump was declared during dealing, proceed to playing phase
-        newState.gamePhase = GamePhase.Playing;
-      }
+      // Dealing is complete, but don't immediately transition to playing phase
+      // Let useProgressiveDealing handle final trump declaration opportunities first
+      // The phase transition will happen after final opportunities are processed
     }
   }
 
@@ -242,7 +237,7 @@ export const getLastDealtCard = (
     return null;
   }
 
-  const { currentRound, currentPlayerIndex, totalRounds } = state.dealingState;
+  const { currentRound, currentPlayerIndex } = state.dealingState;
 
   // Calculate the previous card position
   let prevPlayerIndex = currentPlayerIndex - 1;

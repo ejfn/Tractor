@@ -1,5 +1,5 @@
 // Trump declaration types for dealing phase declarations
-import { PlayerId, Rank, Suit, Card } from "./core";
+import { PlayerId, Rank, Suit, Card, JokerType } from "./core";
 
 export enum DeclarationType {
   Single = "single", // One card of trump rank
@@ -103,11 +103,15 @@ export function validateDeclarationCards(
 
     case DeclarationType.SmallJokerPair:
       return (
-        cards.length === 2 && cards.every((card) => card.joker === "Small")
+        cards.length === 2 &&
+        cards.every((card) => card.joker === JokerType.Small)
       );
 
     case DeclarationType.BigJokerPair:
-      return cards.length === 2 && cards.every((card) => card.joker === "Big");
+      return (
+        cards.length === 2 &&
+        cards.every((card) => card.joker === JokerType.Big)
+      );
 
     default:
       return false;
@@ -162,7 +166,11 @@ export function detectPossibleDeclarations(
     [];
 
   // Check for strengthening opportunities if this player is the current declarer
-  if (currentDeclaration && playerId && currentDeclaration.playerId === playerId) {
+  if (
+    currentDeclaration &&
+    playerId &&
+    currentDeclaration.playerId === playerId
+  ) {
     const canStrengthen = checkStrengtheningOpportunities(
       hand,
       currentDeclaration,
@@ -174,8 +182,8 @@ export function detectPossibleDeclarations(
   }
 
   // Check for joker pairs first (strongest)
-  const bigJokers = hand.filter((card) => card.joker === "Big");
-  const smallJokers = hand.filter((card) => card.joker === "Small");
+  const bigJokers = hand.filter((card) => card.joker === JokerType.Big);
+  const smallJokers = hand.filter((card) => card.joker === JokerType.Small);
 
   // Big joker pair (strongest)
   if (bigJokers.length >= 2) {
@@ -211,19 +219,29 @@ export function detectPossibleDeclarations(
   // Check each suit for pairs and singles
   Object.entries(trumpBySuit).forEach(([suit, cards]) => {
     if (cards.length >= 2) {
-      // Pair available
-      declarations.push({
-        type: DeclarationType.Pair,
-        cards: cards.slice(0, 2),
-        suit: suit as Suit,
-      });
+      // Pair available - check if we already have this from strengthening
+      const alreadyHasPair = declarations.some(
+        (decl) => decl.type === DeclarationType.Pair && decl.suit === suit,
+      );
+      if (!alreadyHasPair) {
+        declarations.push({
+          type: DeclarationType.Pair,
+          cards: cards.slice(0, 2),
+          suit: suit as Suit,
+        });
+      }
     } else if (cards.length === 1) {
-      // Single available
-      declarations.push({
-        type: DeclarationType.Single,
-        cards: cards,
-        suit: suit as Suit,
-      });
+      // Single available - check if we already have this from strengthening
+      const alreadyHasSingle = declarations.some(
+        (decl) => decl.type === DeclarationType.Single && decl.suit === suit,
+      );
+      if (!alreadyHasSingle) {
+        declarations.push({
+          type: DeclarationType.Single,
+          cards: cards,
+          suit: suit as Suit,
+        });
+      }
     }
   });
 

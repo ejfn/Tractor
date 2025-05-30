@@ -1,4 +1,4 @@
-import { GameState, PlayerId, Rank } from "../types";
+import { GameState, PlayerId } from "../types";
 import {
   TrumpDeclaration,
   TrumpDeclarationState,
@@ -71,6 +71,24 @@ export function makeTrumpDeclaration(
   newState.trumpInfo.declared = true;
   newState.trumpInfo.declarerPlayerId = playerId;
 
+  // Real-time team role changes during dealing (first round only)
+  if (newState.roundNumber === 1) {
+    // Find the declarer player and their team
+    const declarerPlayer = newState.players.find((p) => p.id === playerId);
+    if (declarerPlayer) {
+      const declarerTeam = declarerPlayer.team;
+
+      // Set team roles based on current trump declarer
+      newState.teams.forEach((team) => {
+        if (team.id === declarerTeam) {
+          team.isDefending = true; // Declarer's team defends
+        } else {
+          team.isDefending = false; // Other team attacks
+        }
+      });
+    }
+  }
+
   return newState;
 }
 
@@ -137,7 +155,6 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
 
     // Apply the final trump declaration to trumpInfo
     newState.trumpInfo.trumpSuit = finalDeclaration.suit;
-    newState.trumpInfo.declared = true;
     newState.trumpInfo.declarerPlayerId = finalDeclaration.playerId;
 
     // Rule 2: In first round, trump declarer determines team roles and leads first trick
@@ -149,25 +166,16 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
       if (declarerIndex !== -1) {
         newState.currentPlayerIndex = declarerIndex;
 
-        // Kitty cards belong to the first trick leader (trump declarer in first round)
-        newState.players[declarerIndex].hand.push(...newState.kittyCards);
-        newState.kittyCards = []; // Clear kitty since it's been given to first trick leader
+        // TODO: Implement kitty card swapping mechanism
+        // For now, keep kitty cards separate until swapping is implemented
 
-        // First round only: Trump declarer's team becomes DEFENDING team
-        const declarerPlayer = newState.players[declarerIndex];
-        const declarerTeam = declarerPlayer.team;
-        
-        // Set team roles based on trump declarer
-        newState.teams.forEach(team => {
-          if (team.id === declarerTeam) {
-            team.isDefending = true;  // Declarer's team defends
-          } else {
-            team.isDefending = false; // Other team attacks
-          }
-        });
+        // Note: Team roles are already set in real-time during makeTrumpDeclaration
       }
     }
   }
+
+  // Always mark trump declaration as complete (whether someone declared or not)
+  newState.trumpInfo.declared = true;
 
   // Close the declaration window
   if (newState.trumpDeclarationState) {

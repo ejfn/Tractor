@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { GameState, PlayerId, DeclarationType } from "../types";
 import { getTrumpDeclarationStatus } from "../game/trumpDeclarationManager";
@@ -25,6 +25,49 @@ export function TrumpDeclarationNotification({
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(-100));
 
+  const hideNotification = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setNotification(null);
+      onAnimationComplete?.();
+    });
+  }, [fadeAnim, slideAnim, onAnimationComplete]);
+
+  const showNotification = useCallback(() => {
+    // Reset animations
+    fadeAnim.setValue(0);
+    slideAnim.setValue(-100);
+
+    // Animate in
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Hold for 2 seconds, then animate out
+      setTimeout(() => {
+        hideNotification();
+      }, 2000);
+    });
+  }, [fadeAnim, slideAnim, hideNotification]);
+
   // Monitor declaration status changes
   useEffect(() => {
     const declarationStatus = getTrumpDeclarationStatus(gameState);
@@ -49,50 +92,12 @@ export function TrumpDeclarationNotification({
         showNotification();
       }
     }
-  }, [gameState.trumpDeclarationState?.declarationHistory]);
-
-  const showNotification = () => {
-    // Reset animations
-    fadeAnim.setValue(0);
-    slideAnim.setValue(-100);
-
-    // Animate in
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Hold for 2 seconds, then animate out
-      setTimeout(() => {
-        hideNotification();
-      }, 2000);
-    });
-  };
-
-  const hideNotification = () => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 100,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setNotification(null);
-      onAnimationComplete?.();
-    });
-  };
+  }, [
+    gameState.trumpDeclarationState?.declarationHistory,
+    gameState,
+    notification,
+    showNotification,
+  ]);
 
   if (!notification) {
     return null;

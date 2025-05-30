@@ -64,7 +64,7 @@ export const createGameScenarios = {
 
   // Trump declaration phase
   trumpDeclaration: () => createGameState({
-    gamePhase: GamePhase.Declaring,
+    gamePhase: GamePhase.Dealing,
     trumpInfo: createTrumpInfo(Rank.Two, undefined, false)
   }),
 
@@ -181,7 +181,7 @@ export const createScoringGameState = (teamAPoints: number = 0, teamBPoints: num
  */
 export const createTrumpDeclarationGameState = (): GameState => {
   let state = createGameState({
-    gamePhase: GamePhase.Declaring,
+    gamePhase: GamePhase.Dealing,
     trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
     currentPlayerIndex: 0
   });

@@ -2,6 +2,13 @@ import { GameState, Suit, GamePhase } from "../types";
 import { shouldAIDeclare } from "../ai/aiLogic";
 
 /**
+ * @deprecated This file contains the old trump declaration system.
+ * The new system uses progressive dealing with trump declarations during dealing.
+ * See trumpDeclarationManager.ts and useProgressiveDealing.ts for the new implementation.
+ */
+
+/**
+ * @deprecated Use the new progressive dealing system instead
  * Handles the declaration of a trump suit
  * @param state Current game state
  * @param suit The suit being declared as trump, or null if skipping

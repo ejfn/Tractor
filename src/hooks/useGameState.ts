@@ -2,11 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { GameState, Card, Suit, GamePhase } from "../types";
 import { initializeGame } from "../game/gameLogic";
 import { prepareNextRound, endRound } from "../game/gameRoundManager";
-import {
-  declareTrumpSuit,
-  checkAITrumpDeclaration,
-  humanHasTrumpRank,
-} from "../game/trumpManager";
+import { declareTrumpSuit } from "../game/trumpManager";
 import { processPlay, validatePlay } from "../game/gamePlayManager";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import {
@@ -59,11 +55,6 @@ export function useGameState() {
     if (!showSetupInternal && !gameState) {
       const newGameState = initializeGame();
       setGameState(newGameState);
-
-      // Check if player has trump rank to declare
-      if (humanHasTrumpRank(newGameState)) {
-        setShowTrumpDeclaration(true);
-      }
     }
   };
 
@@ -218,33 +209,6 @@ export function useGameState() {
     }
   };
 
-  // Handle check for AI trump declaration
-  const handleCheckAITrumpDeclaration = () => {
-    if (
-      !gameState ||
-      gameState.gamePhase !== GamePhase.Declaring ||
-      showTrumpDeclaration
-    )
-      return;
-
-    // Find the human player
-    const humanPlayer = gameState.players.find((p) => p.isHuman);
-    if (humanPlayer) {
-      const hasTrumpRank = humanPlayer.hand.some(
-        (card) => card.rank === gameState.trumpInfo.trumpRank,
-      );
-
-      // If human doesn't have trump rank, let AI check
-      if (!hasTrumpRank) {
-        const { shouldDeclare, suit } = checkAITrumpDeclaration(gameState);
-
-        if (shouldDeclare && suit) {
-          handleDeclareTrumpSuit(suit);
-        }
-      }
-    }
-  };
-
   // Handle end of round
   const handleEndRound = (state: GameState) => {
     const result = endRound(state);
@@ -274,11 +238,6 @@ export function useGameState() {
 
       setGameState(nextRoundState);
       pendingStateRef.current = null;
-
-      // Check for trump declaration
-      if (humanHasTrumpRank(nextRoundState)) {
-        setShowTrumpDeclaration(true);
-      }
     }
   };
 
@@ -347,7 +306,6 @@ export function useGameState() {
     handleProcessPlay,
     handleDeclareTrumpSuit,
     handleConfirmTrumpDeclaration,
-    handleCheckAITrumpDeclaration,
     handleNextRound,
     startNewGame,
     handleTrickResultComplete,

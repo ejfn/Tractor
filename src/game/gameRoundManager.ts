@@ -154,8 +154,8 @@ export function prepareNextRound(state: GameState): GameState {
     newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
   }
 
-  // Set phase to declaring again
-  newState.gamePhase = GamePhase.Declaring;
+  // Set phase to dealing for progressive dealing system
+  newState.gamePhase = GamePhase.Dealing;
 
   return newState;
 }

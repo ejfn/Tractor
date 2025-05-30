@@ -6,7 +6,6 @@ import {
   Suit,
   Rank,
   getDeclarationStrength,
-  canOverrideDeclaration,
 } from "../types";
 import {
   getPlayerDeclarationOptions,
@@ -90,6 +89,7 @@ export function getAITrumpDeclarationDecision(
     Math.max(0.05, declarationProbability),
   );
 
+  // Make declaration decision based on calculated probability
   const shouldDeclare = Math.random() < declarationProbability;
 
   return {
@@ -147,13 +147,13 @@ export function shouldAIOverrideDeclaration(
 function getBaseDeclarationProbability(type: DeclarationType): number {
   switch (type) {
     case DeclarationType.Single:
-      return 0.05; // Extremely conservative for single cards (TEMP: reduced for testing)
+      return 0.3; // Conservative for single cards - only with good hand
     case DeclarationType.Pair:
-      return 0.1; // Very unlikely for pairs (TEMP: reduced for testing)
+      return 0.7; // Likely for pairs - strong declaration
     case DeclarationType.SmallJokerPair:
-      return 0.15; // Much reduced for small joker pairs (TEMP: reduced for testing)
+      return 0.85; // Very likely for small joker pairs - excellent declaration
     case DeclarationType.BigJokerPair:
-      return 0.2; // Even big joker pairs very reduced (TEMP: reduced for testing)
+      return 0.95; // Almost always declare big joker pairs - strongest possible
     default:
       return 0.1;
   }
@@ -165,17 +165,25 @@ function getDealingProgressMultiplier(progress: {
 }): number {
   const progressRatio = progress.current / progress.total;
 
-  // Early in dealing: higher chance to declare (establish trump early)
-  if (progressRatio < 0.3) {
+  // Early in dealing: moderate chance (wait to see more cards)
+  if (progressRatio < 0.2) {
+    return 0.8;
+  }
+  // Early-mid dealing: higher chance (good timing to establish trump)
+  else if (progressRatio < 0.4) {
+    return 1.4;
+  }
+  // Mid dealing: peak chance (optimal timing)
+  else if (progressRatio < 0.7) {
+    return 1.6;
+  }
+  // Late dealing: urgent chance (last opportunity)
+  else if (progressRatio < 0.9) {
     return 1.3;
   }
-  // Mid dealing: normal chance
-  else if (progressRatio < 0.7) {
-    return 1.0;
-  }
-  // Late in dealing: lower chance (less time to benefit)
+  // Very late: lower chance (very limited benefit)
   else {
-    return 0.7;
+    return 0.6;
   }
 }
 
@@ -184,7 +192,7 @@ function getCurrentDeclarationMultiplier(
   proposedDeclaration: { type: DeclarationType },
 ): number {
   if (!currentDeclaration.hasDeclaration) {
-    return 1.2; // Higher chance when no one has declared yet
+    return 1.5; // Strong bonus when no one has declared yet - establish early control
   }
 
   const currentStrength = getDeclarationStrength(currentDeclaration.type);
@@ -192,39 +200,109 @@ function getCurrentDeclarationMultiplier(
   const strengthDiff = proposedStrength - currentStrength;
 
   if (strengthDiff <= 0) {
-    return 0.1; // Very low chance if not stronger
+    return 0.05; // Almost never declare if not stronger
   } else if (strengthDiff === 1) {
-    return 0.5; // Moderate chance if slightly stronger
+    return 0.6; // Good chance if slightly stronger - competitive override
+  } else if (strengthDiff === 2) {
+    return 0.9; // Very high chance if significantly stronger
   } else {
-    return 0.8; // High chance if much stronger
+    return 1.0; // Always override if much stronger (e.g., big joker vs single)
   }
 }
 
 function getHandQualityMultiplier(hand: Card[], trumpRank: Rank): number {
-  let trumpCards = 0;
-  let pointCards = 0;
-  let totalPoints = 0;
+  // Analyze suit distribution and combinations - what actually matters for trump declaration
+  const suitCounts = new Map<Suit, number>();
+  const suitCards = new Map<Suit, Card[]>();
 
   hand.forEach((card) => {
-    if (card.rank === trumpRank || card.joker) {
-      trumpCards++;
+    // Skip jokers and trump rank cards - they're always trump regardless of suit
+    if (card.joker || card.rank === trumpRank) {
+      return;
     }
-    if (card.points > 0) {
-      pointCards++;
-      totalPoints += card.points;
+
+    // Group cards by suit (excluding trump rank cards)
+    if (card.suit) {
+      if (!suitCards.has(card.suit)) {
+        suitCards.set(card.suit, []);
+      }
+      suitCards.get(card.suit)!.push(card);
+      suitCounts.set(card.suit, (suitCounts.get(card.suit) || 0) + 1);
     }
   });
 
-  // Good trump holding encourages declaration
-  const trumpRatio = trumpCards / hand.length;
-  let multiplier = 1.0 + trumpRatio * 0.5;
+  // Start with baseline multiplier
+  let multiplier = 1.0;
 
-  // Many point cards might discourage early declaration (want to see more cards)
-  if (pointCards > 3) {
-    multiplier *= 0.9;
+  // Find best suit based on length and combinations
+  let bestSuitScore = 0;
+  let bestSuitLength = 0;
+  let bestCombinations = 0;
+
+  for (const [, cards] of suitCards.entries()) {
+    const length = cards.length;
+
+    // Count pairs in this suit (same rank, same suit)
+    const rankCounts = new Map<Rank, number>();
+    cards.forEach((card) => {
+      if (card.rank) {
+        rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1);
+      }
+    });
+
+    let pairs = 0;
+    for (const [, count] of rankCounts.entries()) {
+      if (count >= 2) {
+        pairs++;
+      }
+    }
+
+    // Score this suit: length is most important, then pairs
+    const score = length * 3 + pairs * 2;
+
+    if (score > bestSuitScore) {
+      bestSuitScore = score;
+      bestSuitLength = length;
+      bestCombinations = pairs;
+    }
   }
 
-  return Math.min(1.5, Math.max(0.7, multiplier));
+  // CRITICAL: Suit length evaluation (most important factor)
+  // Note: 24 trump suit cards ÷ 4 players = 6 average per player
+  if (bestSuitLength <= 2) {
+    multiplier *= 0.2; // Very bad - way below average
+  } else if (bestSuitLength <= 3) {
+    multiplier *= 0.4; // Bad - well below average
+  } else if (bestSuitLength <= 4) {
+    multiplier *= 0.7; // Poor - below average
+  } else if (bestSuitLength <= 5) {
+    multiplier *= 0.9; // Slightly below average
+  } else if (bestSuitLength === 6) {
+    multiplier *= 1.0; // Okay - average trump suit length
+  } else if (bestSuitLength <= 7) {
+    multiplier *= 1.2; // Decent - above average
+  } else if (bestSuitLength <= 8) {
+    multiplier *= 1.4; // Good - well above average
+  } else if (bestSuitLength >= 9) {
+    multiplier *= 1.6; // Excellent - significantly above average
+  }
+
+  // Pair bonus in the trump suit
+  if (bestCombinations >= 3) {
+    multiplier *= 1.4; // Excellent - multiple pairs
+  } else if (bestCombinations >= 2) {
+    multiplier *= 1.2; // Very good - two pairs
+  } else if (bestCombinations >= 1) {
+    multiplier *= 1.1; // Good - one pair
+  }
+  // No penalty for no pairs - length is more important
+
+  // Penalty if no decent suits at all
+  if (bestSuitLength === 0) {
+    multiplier *= 0.1; // No suits to declare - very bad
+  }
+
+  return Math.min(2.0, Math.max(0.05, multiplier));
 }
 
 function getTeamStrategyMultiplier(
@@ -234,16 +312,9 @@ function getTeamStrategyMultiplier(
   const player = gameState.players.find((p) => p.id === playerId);
   if (!player) return 1.0;
 
-  // Find team members
-  const teammates = gameState.players.filter(
-    (p) => p.team === player.team && p.id !== playerId,
-  );
-  const opponents = gameState.players.filter((p) => p.team !== player.team);
+  // Team strategy could be enhanced here - for now neutral
+  // Could consider: teammate positions in dealing order, team coordination, etc.
 
-  // If teammates are close to us in dealing order, might want to wait
-  // This is a simplified team strategy - could be more sophisticated
-
-  // For now, return neutral multiplier
   return 1.0;
 }
 

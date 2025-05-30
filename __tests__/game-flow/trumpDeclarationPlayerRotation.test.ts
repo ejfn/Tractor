@@ -27,7 +27,7 @@ describe('Trump Declaration Player Rotation (Issue #22)', () => {
     
     // Human (player 0) is the first player of round 1
     state.currentPlayerIndex = 0;
-    state.gamePhase = GamePhase.Declaring;
+    state.gamePhase = GamePhase.Dealing;
     
     // Simulate human declaring trump (this is where the issue occurs)
     const declaredState = declareTrumpSuit(state, Suit.Hearts);
@@ -78,7 +78,7 @@ describe('Trump Declaration Player Rotation (Issue #22)', () => {
     
     // Human (player 0) is the first player of round 1
     state.currentPlayerIndex = 0;
-    state.gamePhase = GamePhase.Declaring;
+    state.gamePhase = GamePhase.Dealing;
     
     // Simulate human skipping trump declaration (passing null)
     const declaredState = declareTrumpSuit(state, null);
@@ -125,7 +125,7 @@ describe('Trump Declaration Player Rotation (Issue #22)', () => {
     
     // Human (player 0) is the first player of round 1
     state.currentPlayerIndex = 0;
-    state.gamePhase = GamePhase.Declaring;
+    state.gamePhase = GamePhase.Dealing;
     
     // Simulate currentPlayerIndex changing during AI turns in declaring phase
     // (This simulates what might happen when AIs cycle through during declaration)

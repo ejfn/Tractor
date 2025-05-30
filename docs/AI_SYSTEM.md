@@ -188,7 +188,8 @@ flowchart TD
 
 **Triggers when**: `trickWinner?.isTeammateWinning === true`
 
-**Key Behaviors**:
+**Key Behaviors:**
+
 - **Human Leads Ace**: AI teammates contribute point cards with hierarchy (10 > King > 5)
 - **Teammate Winning Strong**: Play conservatively to preserve team resources
 - **Point Collection Support**: Coordinate with teammate for optimal point gathering
@@ -199,12 +200,14 @@ flowchart TD
 
 **Triggers when**: `trickWinner?.isOpponentWinning === true`
 
-**Strategic Thresholds**:
+**Strategic Thresholds:**
+
 - **High-Value (≥10 points)**: Always attempt to beat opponent if possible
 - **Moderate (5-9 points)**: Beat if strategically reasonable
 - **Low-Value (0-4 points)**: Conserve high cards, avoid wasting point cards
 
-**Enhanced Point Card Management**:
+**Enhanced Point Card Management:**
+
 - When AI cannot beat opponent, prioritizes non-point cards over point cards
 - Uses trump conservation hierarchy to select weakest available cards
 - Preserves valuable trump rank cards over weak trump suit cards
@@ -217,7 +220,8 @@ flowchart TD
 
 **Triggers when**: `trickAnalysis.canWin && trickAnalysis.shouldContest`
 
-**Contest Logic**:
+**Contest Logic:**
+
 - Only contests tricks worth ≥5 points (`shouldContest = currentTrick?.points >= 5`)
 - Uses `selectOptimalWinningCombo()` to choose most effective winning play
 - Balances immediate gains with long-term strategy
@@ -228,7 +232,8 @@ flowchart TD
 
 **Triggers when**: All higher priorities fail to return a move
 
-**Disposal Strategy**:
+**Disposal Strategy:**
+
 - Prefers non-Aces when trick can't be won
 - Plays weakest available combinations
 - Preserves high-value cards for future strategic opportunities
@@ -259,6 +264,7 @@ if (trickWinner?.isOpponentWinning && trickWinner.trickPoints >= 10) {
 ```
 
 This approach provides:
+
 - **Performance**: Direct property access vs complex calculations
 - **Accuracy**: Real-time game state reflection
 - **Responsiveness**: Immediate strategic adaptation
@@ -269,6 +275,7 @@ This approach provides:
 
 - **Combination Detection**: Identifies singles, pairs, and tractors from hand
 - **Trump Management**: Understands trump hierarchy and strength
+- **Trump Declaration**: Basic trump declaration during dealing phase
 - **Basic Strategy**: Follows suit requirements and plays valid combinations
 - **Rule Compliance**: Ensures all moves follow game rules
 
@@ -276,6 +283,7 @@ This approach provides:
 
 - Uses `createGameContext()` for basic game state analysis
 - Implements simple heuristics for card selection
+- Basic trump declaration probability calculations
 - Focuses on legal moves and basic game flow
 
 ## Phase 2: Strategic Context (Implemented)
@@ -283,6 +291,7 @@ This approach provides:
 ### Enhanced Features
 
 - **Point-Focused Strategy**: Prioritizes high-value cards (5s, 10s, Kings)
+- **Advanced Trump Declaration**: Sophisticated dealing phase strategy with hand quality analysis
 - **Positional Awareness**: Adapts strategy based on trick position
 - **Team Dynamics**: Understands attacking vs defending team roles
 - **Pressure Response**: Adjusts aggression based on point requirements
@@ -320,6 +329,7 @@ enum PlayStyle {
 ### Implementation Details
 
 - **Context Creation**: `src/ai/aiGameContext.ts` analyzes current game state using real-time trick winner tracking
+- **Trump Declaration Strategy**: `src/ai/aiTrumpDeclarationStrategy.ts` implements sophisticated dealing phase AI
 - **Real-Time Tracking**: Uses `trick.winningPlayerId` for immediate winner identification without calculations
 - **RESTRUCTURED Priority Chain**: `selectOptimalFollowPlay()` implements clean 4-priority decision system
 - **Strategy Selection**: `src/ai/aiPointFocusedStrategy.ts` provides specialized strategy functions  
@@ -356,6 +366,75 @@ The restructured system provides:
 - **Opponent Response**: Strategic blocking and competitive play
 - **Performance**: Direct `winningPlayerId` access eliminates redundant calculations
 - **Maintainability**: Single decision chain eliminates rabbit holes and conflicts
+
+## AI Trump Declaration System
+
+### Sophisticated Dealing Phase Strategy
+
+The AI includes a comprehensive trump declaration system that operates during the progressive dealing phase:
+
+#### Core Components
+
+- **Hand Quality Analysis**: Evaluates suit length, combinations, and trump potential
+- **Timing Optimization**: Dynamic probability adjustments based on dealing progress
+- **Override Strategy**: Intelligent decisions on when to challenge opponent declarations
+- **Team Coordination**: Strategic positioning and declaration timing
+
+#### Decision Algorithm
+
+```typescript
+// Base probability calculation
+let declarationProbability = getBaseDeclarationProbability(declarationType);
+
+// Adjust for dealing progress (peak at 60-70% dealt)
+declarationProbability *= getDealingProgressMultiplier(dealingProgress);
+
+// Adjust for current declarations (higher if none, strategic if overriding)
+declarationProbability *= getCurrentDeclarationMultiplier(currentDeclaration);
+
+// Adjust for hand quality (suit length and combinations)
+declarationProbability *= getHandQualityMultiplier(hand, trumpRank);
+
+// Add randomness for unpredictability
+declarationProbability *= (0.8 + Math.random() * 0.4);
+
+const shouldDeclare = Math.random() < declarationProbability;
+```
+
+#### Declaration Probability Factors
+
+**Base Probabilities by Type**:
+- **Big Joker Pair**: 95% (almost always declare)
+- **Small Joker Pair**: 85% (very likely)
+- **Regular Pair**: 70% (likely for strong declarations)
+- **Single**: 30% (conservative, only with good hand)
+
+**Hand Quality Multipliers**:
+- **Excellent (9+ suit cards)**: 1.6x multiplier
+- **Good (7-8 suit cards)**: 1.2-1.4x multiplier
+- **Average (6 suit cards)**: 1.0x multiplier
+- **Poor (3-4 suit cards)**: 0.4-0.7x multiplier
+- **Very Poor (≤2 suit cards)**: 0.2x multiplier
+
+**Timing Multipliers by Dealing Progress**:
+- **Early (0-20%)**: 0.8x (wait for more cards)
+- **Early-Mid (20-40%)**: 1.4x (good timing)
+- **Peak (40-70%)**: 1.6x (optimal window)
+- **Late (70-90%)**: 1.3x (urgency factor)
+- **Very Late (90%+)**: 0.6x (limited benefit)
+
+#### Strategic Benefits
+
+- **Realistic Behavior**: AI declares at natural timing with strategic reasoning
+- **Competitive Play**: Intelligent override decisions based on hand strength
+- **Team Awareness**: Considers team positioning and coordination
+- **Unpredictability**: Randomization prevents predictable AI patterns
+
+### Implementation Files
+
+- **`aiTrumpDeclarationStrategy.ts`**: Core declaration logic and probability calculations
+- **`trumpDeclarationManager.ts`**: Game rule enforcement and state management
+- **`useProgressiveDealing.ts`**: Integration with dealing system and UI
 
 ## Phase 3: Memory & Pattern Recognition (Implemented)
 
@@ -448,6 +527,7 @@ All AI decisions are made through context analysis:
 The AI understands the complete trump hierarchy and conserves valuable trump cards:
 
 **Trump Group Hierarchy (highest to lowest conservation value):**
+
 1. **Big Joker** (100) - Most valuable, never waste
 2. **Small Joker** (90) - Second most valuable
 3. **Trump rank in trump suit** (80) - Highly valuable
@@ -455,6 +535,7 @@ The AI understands the complete trump hierarchy and conserves valuable trump car
 5. **Trump suit cards**: A♠(60) > K♠(55) > Q♠(50) > J♠(45) > 10♠(40) > 9♠(35) > 8♠(30) > 7♠(25) > 6♠(20) > 5♠(15) > 4♠(10) > **3♠(5)** - Least valuable trump
 
 **Strategic Application:**
+
 - When forced to follow trump, AI plays the weakest available trump (3♠, 4♠, etc.)
 - Avoids wasting valuable trump rank cards or high trump suit cards
 - Point cards (5s, 10s, Kings) get additional conservation value if they're also trump
@@ -468,6 +549,111 @@ The AI understands the complete trump hierarchy and conserves valuable trump car
 - **Blocking Tactics**: Prevent opponent point collection with intelligent card usage
 - **Real-time Adaptation**: Adjust strategy based on current trick winner status
 - **Conservative Resource Management**: Avoid wasteful high card usage when appropriate *(Issue #61 Fix)*
+
+## Trump Declaration Strategy
+
+The AI employs a sophisticated trump declaration strategy during the dealing phase, evaluating multiple strategic factors to make intelligent decisions about when and what to declare.
+
+### Declaration Decision Framework
+
+The AI's trump declaration decision process follows a multi-factor evaluation system:
+
+```typescript
+declarationProbability = baseDeclarationProbability 
+  × dealingProgressMultiplier 
+  × currentDeclarationMultiplier 
+  × handQualityMultiplier 
+  × randomFactor
+```
+
+### Base Declaration Probabilities
+
+**Declaration Type Eagerness:**
+
+- **Singles**: 30% (conservative - only with strong hands)
+- **Pairs**: 70% (likely - strong declarations)
+- **Small Joker Pairs**: 85% (very likely - excellent declarations)
+- **Big Joker Pairs**: 95% (almost always - strongest possible)
+
+### Dealing Progress Strategy
+
+**Timing Optimization:**
+
+- **0-20% dealt**: 0.8x (wait to see more cards)
+- **20-40% dealt**: 1.4x (good timing to establish trump)
+- **40-70% dealt**: 1.6x (peak optimal timing)
+- **70-90% dealt**: 1.3x (urgent last opportunity)
+- **90%+ dealt**: 0.6x (very limited benefit)
+
+The AI recognizes that mid-dealing (40-70%) is the optimal window for trump declaration, balancing information gathering with strategic timing.
+
+### Current Declaration Response
+
+**Override Strategy:**
+
+- **No current declaration**: 1.5x bonus (establish early control)
+- **Cannot override**: 5% chance (almost never declare weaker)
+- **+1 strength advantage**: 60% chance (competitive override)
+- **+2 strength advantage**: 90% chance (very likely override)
+- **+3+ strength advantage**: 100% chance (always override with big advantage)
+
+### Hand Quality Assessment (Primary Factor)
+
+The AI prioritizes **suit length and combinations** over individual card strength, correctly understanding that trump value comes from suit control rather than high cards.
+
+#### Suit Length Evaluation (2-deck Tractor)
+
+**24 trump suit cards ÷ 4 players = 6 average per player**
+
+**Length-Based Multipliers:**
+
+- **≤2 cards**: 0.2x penalty (way below average - very bad)
+- **3-4 cards**: 0.4-0.7x penalty (below average - bad/poor)
+- **5 cards**: 0.9x (slightly below average)
+- **6 cards**: 1.0x (average - **okay to declare**)
+- **7 cards**: 1.2x (above average - **decent**)
+- **8 cards**: 1.4x (well above average - **good**)
+- **≥9 cards**: 1.6x (significantly above average - **excellent**)
+
+#### Combination Bonuses
+
+**Pairs in Trump Suit:**
+
+- **≥3 pairs**: 1.4x bonus (excellent - multiple pairs)
+- **2 pairs**: 1.2x bonus (very good - two pairs)
+- **1 pair**: 1.1x bonus (good - one pair)
+- **0 pairs**: No penalty (length still matters most)
+
+### Strategic Examples
+
+**✅ Strong Declaration Scenarios:**
+
+- 8 Spades with 2 pairs → 1.4x × 1.2x = 1.68x multiplier
+- 7 Hearts with 1 pair → 1.2x × 1.1x = 1.32x multiplier
+- 6 Clubs with no pairs → 1.0x (neutral - average holding)
+
+**❌ Weak Declaration Scenarios:**
+
+- 4 Spades with pairs → 0.7x (below average length overrides pairs)
+- 3 Hearts regardless of quality → 0.4x (well below average)
+
+### Key Strategic Principles
+
+1. **Suit Length Priority**: Number of cards in potential trump suit is the primary factor
+2. **Realistic Thresholds**: Based on statistical expectations (6 cards = average)
+3. **Combination Awareness**: Pairs provide bonus but don't override poor length
+4. **Timing Sensitivity**: Mid-dealing phase offers optimal declaration window
+5. **Override Logic**: Competitive but not wasteful override decisions
+
+### Implementation Details
+
+- **Module**: `src/ai/aiTrumpDeclarationStrategy.ts`
+- **Decision Function**: `getAITrumpDeclarationDecision()`
+- **Hand Analysis**: `getHandQualityMultiplier()` - focuses on suit length and pairs
+- **Timing Logic**: `getDealingProgressMultiplier()` - optimizes declaration timing
+- **Override Logic**: `getCurrentDeclarationMultiplier()` - competitive override strategy
+
+This strategic approach ensures AI makes **realistic trump declarations** based on actual hand viability rather than random or overly aggressive behavior.
 
 ## Performance Characteristics
 
@@ -489,7 +675,7 @@ The AI understands the complete trump hierarchy and conserves valuable trump car
 
 ### AI Module Architecture
 
-The AI system consists of 6 specialized modules in `src/ai/`:
+The AI system consists of 7 specialized modules in `src/ai/`:
 
 - **`aiLogic.ts`**: Public AI API and game rule compliance
 - **`aiStrategy.ts`**: Core AI decision making and strategy implementation
@@ -497,6 +683,7 @@ The AI system consists of 6 specialized modules in `src/ai/`:
 - **`aiPointFocusedStrategy.ts`**: Point collection, early game leading (with integrated Ace priority), and team coordination strategies
 - **`aiCardMemory.ts`**: Comprehensive card tracking and probability systems
 - **`aiAdvancedCombinations.ts`**: Advanced combination analysis and optimization
+- **`aiTrumpDeclarationStrategy.ts`**: Sophisticated trump declaration decision-making during dealing phase
 
 ### Current Implementation Status
 
@@ -519,11 +706,13 @@ The AI system uses a robust card comparison framework with strict validation to 
 #### Core Functions
 
 **`compareCards(cardA, cardB, trumpInfo)`**
+
 - **Purpose**: Direct comparison of individual cards within same suit or trump group
 - **Validation**: Automatically prevents invalid cross-suit non-trump comparisons
 - **Usage**: Card sorting, trump hierarchy evaluation, same-suit strength comparison
 
 **`evaluateTrickPlay(cards, trick, trumpInfo, hand)`**
+
 - **Purpose**: Context-aware trick evaluation for strategic decision-making
 - **Features**: Cross-suit evaluation, legal play validation, trick winner determination
 - **Usage**: AI strategy decisions, trick competition analysis, opponent blocking
@@ -562,11 +751,13 @@ if (!playerHasMatchingCards && combo.type === leadingComboType) {
 ```
 
 #### Enhanced Mixed Combination Generation
+
 - **Priority 1**: Use all cards of leading suit/trump (Tractor rule compliance)
 - **Priority 2**: Prefer singletons over breaking pairs when filling remaining slots
 - **Priority 3**: Break pairs only as last resort for required combination length
 
 #### Comprehensive Edge Case Coverage
+
 The enhancement handles all scenarios correctly:
 
 1. **Out of Suit**: Context filtering prevents wasteful cross-suit pairs
@@ -575,14 +766,16 @@ The enhancement handles all scenarios correctly:
 4. **Minimal Hands**: Works correctly even with very few cards
 
 #### Test Results
-```
+
+```text
 ✅ AI selected: 3Diamonds, 4Spades  // Preserved valuable Ace pair
 ✅ Valid combos: 5                  // Multiple strategic options
 ✅ Cross-suit pairs filtered        // Proper pairs rejected when out of suit
 ✅ Mixed options available          // Strategic alternatives provided
 ```
 
-**Benefits**:
+**Benefits:**
+
 - **Eliminates AI Wastefulness**: No more using A♣-A♣ pairs when out of Hearts
 - **Maintains Rule Compliance**: All Tractor/Shengji rules preserved
 - **Strategic Options**: Provides multiple mixed combinations for AI to choose from
@@ -599,7 +792,8 @@ The enhancement handles all scenarios correctly:
 
 ### Test Coverage
 
-- **75+ AI intelligence tests** covering all 4 phases comprehensively
+- **85+ AI intelligence tests** covering all 4 phases comprehensively
+- **Trump declaration strategy testing** validating dealing phase decision-making with hand quality analysis, timing optimization, and override logic
 - **Card comparison validation testing** ensuring proper function usage and error handling
 - **Trick winner analysis testing** with comprehensive scenarios for teammate/opponent/self winning
 - **Point card management testing** validating strategic disposal when opponent winning

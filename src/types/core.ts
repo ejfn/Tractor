@@ -51,7 +51,6 @@ export enum PlayerName {
 
 export enum GamePhase {
   Dealing = "dealing",
-  Declaring = "declaring",
   Playing = "playing",
   Scoring = "scoring",
   RoundEnd = "roundEnd",

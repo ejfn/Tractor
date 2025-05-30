@@ -34,8 +34,8 @@ export function DealingProgressIndicator({
 
   // Use TouchableOpacity only when not paused, otherwise use View
   const ContainerComponent = isPaused ? View : TouchableOpacity;
-  const containerProps = isPaused 
-    ? { style: styles.container } 
+  const containerProps = isPaused
+    ? { style: styles.container }
     : { style: styles.container, onPress: handleTap, activeOpacity: 0.8 };
 
   return (
@@ -50,15 +50,18 @@ export function DealingProgressIndicator({
       {/* Compact status text */}
       <Text style={styles.statusText}>
         {isPaused && pauseReason === "trump_declaration"
-          ? "🃏 Trump Declaration"
+          ? "Trump Declaration"
           : `Dealing... ${progress.current}/${progress.total}`}
       </Text>
 
       {/* Show current declaration winner */}
       {declarationStatus.hasDeclaration && (
         <Text style={styles.declarationText}>
-          🃏 {getPlayerDisplayName(declarationStatus.declarer!)} leads:{" "}
-          {getDeclarationDisplay(declarationStatus.type!, declarationStatus.suit)}
+          {getPlayerDisplayName(declarationStatus.declarer!)} leads:{" "}
+          {getDeclarationDisplay(
+            declarationStatus.type!,
+            declarationStatus.suit,
+          )}
         </Text>
       )}
 
@@ -70,11 +73,7 @@ export function DealingProgressIndicator({
       )}
 
       {/* Tap hint */}
-      {!isPaused && (
-        <Text style={styles.tapHint}>
-          Tap to pause & declare
-        </Text>
-      )}
+      {!isPaused && <Text style={styles.tapHint}>Tap to pause & declare</Text>}
     </ContainerComponent>
   );
 }
@@ -94,35 +93,35 @@ function getPlayerDisplayName(playerId: string): string {
   }
 }
 
-function getSuitEmoji(suit: any): string {
+function getSuitDisplay(suit: any): string {
   switch (suit) {
     case "Hearts":
-      return "♥";
+      return "Hearts";
     case "Diamonds":
-      return "♦";
+      return "Diamonds";
     case "Clubs":
-      return "♣";
+      return "Clubs";
     case "Spades":
-      return "♠";
+      return "Spades";
     default:
       return suit;
   }
 }
 
 function getDeclarationDisplay(type: DeclarationType, suit: any): string {
-  const suitEmoji = getSuitEmoji(suit);
-  
+  const suitDisplay = getSuitDisplay(suit);
+
   switch (type) {
     case DeclarationType.Single:
-      return suitEmoji; // Single emoji for single
+      return suitDisplay; // Single symbol for single
     case DeclarationType.Pair:
-      return `${suitEmoji}${suitEmoji}`; // Double emoji for pair
+      return `${suitDisplay} Pair`; // Suit name + "Pair"
     case DeclarationType.SmallJokerPair:
-      return "🃏🃏 (Small)"; // Two joker emojis with indicator
+      return "Small Jokers";
     case DeclarationType.BigJokerPair:
-      return "🃏🃏 (Big)"; // Two joker emojis with indicator
+      return "Big Jokers";
     default:
-      return `${type} in ${suitEmoji}`;
+      return `${type} in ${suitDisplay}`;
   }
 }
 
@@ -132,48 +131,61 @@ const styles = StyleSheet.create({
     top: 60,
     left: 10,
     right: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-    padding: 12,
-    borderRadius: 6,
+    backgroundColor: "rgba(30, 40, 50, 0.95)",
+    padding: 14,
+    borderRadius: 12,
     zIndex: 1000,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(100, 200, 255, 0.3)",
   },
   progressBar: {
-    height: 6,
+    height: 8,
     width: "100%",
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 4,
     overflow: "hidden",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#00E676",
+    borderRadius: 4,
   },
   statusText: {
-    color: "#FFFFFF",
-    fontSize: 12,
+    color: "#E8F4F8",
+    fontSize: 13,
     textAlign: "center",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   declarationText: {
-    color: "#FFD700",
-    fontSize: 11,
+    color: "#FFD54F",
+    fontSize: 12,
     textAlign: "center",
     fontWeight: "bold",
-    marginTop: 2,
+    marginTop: 3,
+    backgroundColor: "rgba(255, 213, 79, 0.15)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   lastCardText: {
-    color: "#CCCCCC",
-    fontSize: 10,
-    textAlign: "center",
-    marginTop: 1,
-  },
-  tapHint: {
-    color: "rgba(255, 215, 0, 0.7)",
-    fontSize: 9,
+    color: "#B0BEC5",
+    fontSize: 11,
     textAlign: "center",
     marginTop: 2,
+  },
+  tapHint: {
+    color: "#64B5F6",
+    fontSize: 10,
+    textAlign: "center",
+    marginTop: 3,
     fontStyle: "italic",
+    opacity: 0.9,
   },
 });

@@ -9,7 +9,7 @@ describe('Issue #78: Auto-select after trump declaration skip', () => {
     const gameState = createIsolatedGameState();
     
     // Ensure we're in declaring phase initially
-    gameState.gamePhase = GamePhase.Declaring;
+    gameState.gamePhase = GamePhase.Dealing;
     gameState.trumpInfo.declared = false;
     
     console.log('Initial state - declared:', gameState.trumpInfo.declared);
@@ -71,7 +71,7 @@ describe('Issue #78: Auto-select after trump declaration skip', () => {
   it('should enable auto-selection after declaring a trump suit', () => {
     // Create initial game state
     const gameState = createIsolatedGameState();
-    gameState.gamePhase = GamePhase.Declaring;
+    gameState.gamePhase = GamePhase.Dealing;
     gameState.trumpInfo.declared = false;
     
     // Declare Hearts as trump

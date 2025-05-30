@@ -100,7 +100,7 @@ export const createIsolatedGameState = (): GameState => {
   }));
 
   // Update game phase
-  gameState.gamePhase = GamePhase.Declaring;
+  gameState.gamePhase = GamePhase.Dealing;
 
   return gameState;
 };

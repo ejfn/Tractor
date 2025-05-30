@@ -7,6 +7,10 @@ import { useTrickResults } from "../hooks/useTrickResults";
 import { useAITurns } from "../hooks/useAITurns";
 import { useProgressiveDealing } from "../hooks/useProgressiveDealing";
 
+// Game logic
+import { finalizeTrumpDeclaration } from "../game/trumpDeclarationManager";
+import { GamePhase } from "../types";
+
 // View component
 import GameScreenView from "./GameScreenView";
 
@@ -39,7 +43,6 @@ const GameScreenController: React.FC = () => {
     handleProcessPlay,
     handleDeclareTrumpSuit,
     handleConfirmTrumpDeclaration,
-    handleCheckAITrumpDeclaration,
     handleNextRound,
     startNewGame,
     handleTrickResultComplete, // Make sure this is imported
@@ -83,7 +86,7 @@ const GameScreenController: React.FC = () => {
   } = useProgressiveDealing({
     gameState,
     setGameState,
-    dealingSpeed: 500,
+    dealingSpeed: 250, // Nice middle speed (was 500)
   });
 
   // Initialize game on first render
@@ -98,20 +101,31 @@ const GameScreenController: React.FC = () => {
     });
   }, [initGame, setTrickResultCompleteCallback, handleTrickResultComplete]);
 
-  // Check for AI trump declaration
+  // Handle trump declaration finalization when dealing completes
+  const finalizedRoundRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (
       gameState &&
-      gameState.gamePhase === "declaring" &&
-      !showTrumpDeclaration
+      gameState.gamePhase === GamePhase.Playing &&
+      !isDealingInProgress &&
+      !showDeclarationModal && // Don't finalize if trump declaration modal is showing
+      finalizedRoundRef.current !== gameState.roundNumber
     ) {
-      handleCheckAITrumpDeclaration();
+      // Dealing is complete and we've transitioned to playing phase
+      // Only finalize if we haven't already finalized this round
+      finalizedRoundRef.current = gameState.roundNumber;
+
+      const finalizedState = finalizeTrumpDeclaration(gameState);
+      setGameState(finalizedState);
     }
   }, [
-    gameState,
     gameState?.gamePhase,
-    showTrumpDeclaration,
-    handleCheckAITrumpDeclaration,
+    gameState?.roundNumber,
+    isDealingInProgress,
+    showDeclarationModal,
+    setGameState,
+    gameState,
   ]);
 
   // We've removed the player change detector - keeping it simple

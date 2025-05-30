@@ -163,12 +163,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   const canPlay =
     gameState.gamePhase === GamePhase.Playing && isPlayerCurrentTurn;
 
-  // Allow card interaction during dealing for trump declaration and during playing
-  const canInteractWithCards =
-    gameState.gamePhase === GamePhase.Dealing ||
-    gameState.gamePhase === GamePhase.Declaring ||
-    canPlay;
-
   // Check if selected cards are valid to play
   const isValidPlay =
     selectedCards.length > 0 && validatePlay(gameState, selectedCards);
@@ -194,10 +188,10 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
       );
     }
     // For subsequent rounds:
-    // - During declaration phase, use currentPlayerIndex (who will start)
-    // - After trump is declared, use lastRoundStartingPlayerIndex
+    // - During dealing phase, use currentPlayerIndex (who will start)
+    // - After dealing is complete, use lastRoundStartingPlayerIndex
     if (gameState.roundNumber > 1) {
-      if (gameState.gamePhase === GamePhase.Declaring) {
+      if (gameState.gamePhase === GamePhase.Dealing) {
         return gameState.currentPlayerIndex;
       }
       return gameState.lastRoundStartingPlayerIndex ?? 0;
@@ -370,8 +364,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
       {/* Progressive dealing indicators */}
       {gameState.gamePhase === GamePhase.Dealing && (
-        <DealingProgressIndicator 
-          gameState={gameState} 
+        <DealingProgressIndicator
+          gameState={gameState}
           onPauseDealing={onManualPause}
         />
       )}

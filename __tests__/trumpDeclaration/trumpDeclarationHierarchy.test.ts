@@ -168,20 +168,26 @@ describe('Trump Declaration Hierarchy System', () => {
       const wrongRank = [createCard(Suit.Spades, Rank.Three), createCard(Suit.Spades, Rank.Three)];
       expect(validateDeclarationCards(wrongRank, DeclarationType.Pair, trumpRank)).toBe(false);
 
-      // Valid: joker pair
-      const jokerPair = [
+      // Invalid: mixed joker pair (game rules: only same jokers make pairs)
+      const mixedJokerPair = [
         { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
         { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 }
       ];
-      expect(validateDeclarationCards(jokerPair, DeclarationType.Pair, trumpRank)).toBe(true);
+      expect(validateDeclarationCards(mixedJokerPair, DeclarationType.Pair, trumpRank)).toBe(false);
     });
 
     test('should validate joker pair declarations', () => {
-      const validJokerPair = [
-        { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
-        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 }
+      const validBigJokerPair = [
+        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 },
+        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj2', points: 0 }
       ];
-      expect(validateDeclarationCards(validJokerPair, DeclarationType.BigJokerPair, trumpRank)).toBe(true);
+      expect(validateDeclarationCards(validBigJokerPair, DeclarationType.BigJokerPair, trumpRank)).toBe(true);
+
+      const validSmallJokerPair = [
+        { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
+        { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj2', points: 0 }
+      ];
+      expect(validateDeclarationCards(validSmallJokerPair, DeclarationType.SmallJokerPair, trumpRank)).toBe(true);
 
       const invalidMixed = [
         createCard(Suit.Spades, trumpRank),
@@ -197,8 +203,8 @@ describe('Trump Declaration Hierarchy System', () => {
         createCard(Suit.Spades, trumpRank),
         createCard(Suit.Spades, trumpRank),
         createCard(Suit.Hearts, trumpRank),
-        { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
         { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 },
+        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj2', points: 0 },
         createCard(Suit.Clubs, Rank.Ace)
       ];
 
