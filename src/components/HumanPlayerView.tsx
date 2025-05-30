@@ -74,7 +74,11 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
           !showTrickResult &&
           !lastCompletedTrick &&
           !(currentTrick?.winningPlayerId === player.id && currentTrick) && (
-            <ThinkingIndicator visible={true} dots={thinkingDots} />
+            <ThinkingIndicator
+              visible={true}
+              dots={thinkingDots}
+              testID="thinking-indicator-visible"
+            />
           )}
       </View>
       <HumanHandAnimated

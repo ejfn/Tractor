@@ -37,10 +37,10 @@ export function useProgressiveDealing({
 
   // Clean up timers on unmount
   useEffect(() => {
-    return () => {
-      const dealingInterval = dealingIntervalRef.current;
-      const declarationTimeout = declarationTimeoutRef.current;
+    const dealingInterval = dealingIntervalRef.current;
+    const declarationTimeout = declarationTimeoutRef.current;
 
+    return () => {
       if (dealingInterval) {
         clearInterval(dealingInterval);
       }
@@ -49,6 +49,14 @@ export function useProgressiveDealing({
       }
     };
   }, []);
+
+  // Use useRef to store stable functions that can be called by other callbacks
+  const startProgressiveDealingRef = useRef<
+    (stateOverride?: GameState) => void
+  >(() => {});
+  const checkForDeclarationOpportunitiesRef = useRef<
+    (state: GameState) => void
+  >(() => {});
 
   const handleAIDeclaration = useCallback(
     (state: GameState, playerId: PlayerId, declaration: any) => {
@@ -71,7 +79,7 @@ export function useProgressiveDealing({
           // Resume dealing after AI declaration
           if (!isDealingComplete(resumedState)) {
             setTimeout(() => {
-              startProgressiveDealing(resumedState);
+              startProgressiveDealingRef.current(resumedState);
             }, 100);
           }
         }, 1500);
@@ -82,34 +90,37 @@ export function useProgressiveDealing({
         setGameState(resumedState);
         setIsDealingInProgress(false);
         setTimeout(() => {
-          startProgressiveDealing(resumedState);
+          startProgressiveDealingRef.current(resumedState);
         }, 100);
       }
     },
-    [],
+    [setGameState, setIsDealingInProgress],
   );
 
-  const checkAIDeclarations = useCallback((state: GameState) => {
-    // Check each AI player for declaration opportunities
-    const aiPlayers = state.players.filter((p) => !p.isHuman);
+  const checkAIDeclarations = useCallback(
+    (state: GameState) => {
+      // Check each AI player for declaration opportunities
+      const aiPlayers = state.players.filter((p) => !p.isHuman);
 
-    for (const player of aiPlayers) {
-      const aiDecision = getAITrumpDeclarationDecision(
-        state,
-        player.id as PlayerId,
-      );
-
-      if (aiDecision.shouldDeclare && aiDecision.declaration) {
-        console.log(`AI ${player.id} decision: ${aiDecision.reasoning}`);
-        handleAIDeclaration(
+      for (const player of aiPlayers) {
+        const aiDecision = getAITrumpDeclarationDecision(
           state,
           player.id as PlayerId,
-          aiDecision.declaration,
         );
-        break; // Only one AI declares at a time
+
+        if (aiDecision.shouldDeclare && aiDecision.declaration) {
+          console.log(`AI ${player.id} decision: ${aiDecision.reasoning}`);
+          handleAIDeclaration(
+            state,
+            player.id as PlayerId,
+            aiDecision.declaration,
+          );
+          break; // Only one AI declares at a time
+        }
       }
-    }
-  }, []);
+    },
+    [handleAIDeclaration],
+  );
 
   const checkForDeclarationOpportunities = useCallback(
     (state: GameState) => {
@@ -163,7 +174,14 @@ export function useProgressiveDealing({
         checkAIDeclarations(state);
       }
     },
-    [humanSkippedDeclaration, showDeclarationModal],
+    [
+      checkAIDeclarations,
+      setGameState,
+      humanSkippedDeclaration,
+      showDeclarationModal,
+      setAvailableDeclarations,
+      setShowDeclarationModal,
+    ],
   );
 
   const startProgressiveDealing = useCallback(
@@ -195,7 +213,7 @@ export function useProgressiveDealing({
         setHumanSkippedDeclaration(false);
 
         // Check for declaration opportunities after dealing card
-        checkForDeclarationOpportunities(newState);
+        checkForDeclarationOpportunitiesRef.current(newState);
 
         // Continue dealing if not complete and not paused
         if (!isDealingComplete(newState) && !isDealingPaused(newState)) {
@@ -233,8 +251,24 @@ export function useProgressiveDealing({
         dealingSpeed,
       );
     },
-    [gameState, isDealingInProgress, dealingSpeed],
+    [
+      gameState,
+      isDealingInProgress,
+      dealingSpeed,
+      setGameState,
+      setIsDealingInProgress,
+      setAvailableDeclarations,
+      setShowDeclarationModal,
+      setHumanSkippedDeclaration,
+    ],
   );
+
+  // Update refs to current functions
+  useEffect(() => {
+    startProgressiveDealingRef.current = startProgressiveDealing;
+    checkForDeclarationOpportunitiesRef.current =
+      checkForDeclarationOpportunities;
+  });
 
   // Start progressive dealing when game phase is Dealing
   useEffect(() => {
@@ -307,7 +341,7 @@ export function useProgressiveDealing({
               const newState = dealNextCard(stateToUse);
               setGameState(newState);
               setHumanSkippedDeclaration(false);
-              checkForDeclarationOpportunities(newState);
+              checkForDeclarationOpportunitiesRef.current(newState);
 
               if (!isDealingComplete(newState) && !isDealingPaused(newState)) {
                 dealingIntervalRef.current = setTimeout(
@@ -415,7 +449,7 @@ export function useProgressiveDealing({
         const newState = dealNextCard(stateToUse);
         setGameState(newState);
         setHumanSkippedDeclaration(false);
-        checkForDeclarationOpportunities(newState);
+        checkForDeclarationOpportunitiesRef.current(newState);
 
         if (!isDealingComplete(newState) && !isDealingPaused(newState)) {
           dealingIntervalRef.current = setTimeout(

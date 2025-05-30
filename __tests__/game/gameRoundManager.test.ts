@@ -45,8 +45,8 @@ describe('gameRoundManager', () => {
       // Verify round number was incremented
       expect(result.roundNumber).toBe(2);
       
-      // Verify game phase was set to declaring (not dealing - it changes to declaring in line 61)
-      expect(result.gamePhase).toBe('declaring');
+      // Verify game phase was set to dealing (progressive dealing starts with dealing phase)
+      expect(result.gamePhase).toBe('dealing');
       
       // Verify trump info was reset
       expect(result.trumpInfo.trumpSuit).toBeUndefined();

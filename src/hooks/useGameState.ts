@@ -1,14 +1,14 @@
-import { useState, useRef, useEffect } from "react";
-import { GameState, Card, Suit, GamePhase } from "../types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { initializeGame } from "../game/gameLogic";
-import { prepareNextRound, endRound } from "../game/gameRoundManager";
-import { declareTrumpSuit } from "../game/trumpManager";
 import { processPlay, validatePlay } from "../game/gamePlayManager";
+import { endRound, prepareNextRound } from "../game/gameRoundManager";
+import { declareTrumpSuit } from "../game/trumpManager";
+import { Card, GamePhase, GameState, Suit } from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import {
-  TRICK_RESULT_DISPLAY_TIME,
   CARD_SELECTION_DELAY,
   ROUND_COMPLETE_BUFFER,
+  TRICK_RESULT_DISPLAY_TIME,
 } from "../utils/gameTimings";
 
 // Interface for trick completion data
@@ -45,18 +45,18 @@ export function useGameState() {
   // Initialize game on component mount if no game state exists
   useEffect(() => {
     if (!showSetupInternal && !gameState) {
-      initGame();
+      const newGameState = initializeGame();
+      setGameState(newGameState);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array for mount only
+  }, [showSetupInternal, gameState]);
 
-  // Initialize game
-  const initGame = () => {
+  // Initialize game (for manual initialization)
+  const initGame = useCallback(() => {
     if (!showSetupInternal && !gameState) {
       const newGameState = initializeGame();
       setGameState(newGameState);
     }
-  };
+  }, [showSetupInternal, gameState]);
 
   // Handle card selection
   const handleCardSelect = (card: Card) => {

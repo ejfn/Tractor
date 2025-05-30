@@ -1,11 +1,11 @@
 import { GameState, Card, Rank } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
 import { processPlay } from '../../src/game/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { createFullyDealtGameState } from '../helpers/gameStates';
 
 describe('Double Play Detection Tests', () => {
   test('Track each player play-by-play', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     // Detailed tracking for each player
@@ -142,7 +142,7 @@ describe('Double Play Detection Tests', () => {
   });
   
   test('Test trick completion detection', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     console.log('\n=== Testing trick completion ===');

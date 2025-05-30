@@ -389,3 +389,26 @@ export const setupTestHands = {
   }
 };
 
+/**
+ * Creates a game state with fully dealt cards ready for Playing phase
+ * Uses the progressive dealing system to deal all cards, then sets to Playing
+ * This is what most logic tests should use instead of initializeGame
+ */
+export const createFullyDealtGameState = (): GameState => {
+  // Import the dealing functions
+  const { initializeGame, dealNextCard, isDealingComplete } = require('../../src/game/gameLogic');
+  
+  // Initialize game
+  let gameState = initializeGame();
+  
+  // Deal all cards using progressive dealing
+  while (!isDealingComplete(gameState)) {
+    gameState = dealNextCard(gameState);
+  }
+  
+  // Set to playing phase
+  gameState.gamePhase = GamePhase.Playing;
+  
+  return gameState;
+};
+

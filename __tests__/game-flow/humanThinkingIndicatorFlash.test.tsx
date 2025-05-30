@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
-import { Card, Suit, Rank, Player, TrumpInfo, PlayerId, PlayerName, TeamId } from "../../src/types";
+import { Card, Suit, Rank, Player, TrumpInfo, PlayerId, PlayerName, TeamId, GamePhase } from "../../src/types";
 import { Animated } from 'react-native';
 
 // Mock the ThinkingIndicator to easily check if it's rendered
@@ -10,7 +10,7 @@ jest.mock('../../src/components/ThinkingIndicator', () => ({
   default: ({ visible }: { visible: boolean }) => {
     const View = require('react-native').View;
     const Text = require('react-native').Text;
-    return visible ? <View testID="thinking-indicator"><Text>ThinkingIndicator</Text></View> : null;
+    return visible ? <View testID="thinking-indicator-visible"><Text>ThinkingIndicator</Text></View> : null;
   }
 }));
 
@@ -88,7 +88,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
     );
 
     // The thinking indicator should NOT be visible in this scenario
-    expect(queryByTestId('thinking-indicator')).toBeNull();
+    expect(queryByTestId('thinking-indicator-visible')).toBeNull();
   });
 
   it('should show thinking indicator during normal human turn', () => {
@@ -111,11 +111,12 @@ describe('Human Thinking Indicator Flash Fix', () => {
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
         currentTrick={mockCurrentTrickOngoing}  // Active trick without human winning yet
+        gamePhase={GamePhase.Playing}
       />
     );
 
     // The thinking indicator SHOULD be visible during normal turns
-    expect(queryByTestId('thinking-indicator')).toBeTruthy();
+    expect(queryByTestId('thinking-indicator-visible')).toBeTruthy();
   });
 
   it('should not show thinking indicator when showing trick result', () => {
@@ -141,7 +142,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
     );
 
     // The thinking indicator should NOT be visible when showing trick results
-    expect(queryByTestId('thinking-indicator')).toBeNull();
+    expect(queryByTestId('thinking-indicator-visible')).toBeNull();
   });
 
   it('should handle edge case where human leads new trick after winning', () => {
@@ -164,11 +165,12 @@ describe('Human Thinking Indicator Flash Fix', () => {
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
         currentTrick={null}  // No current trick - leading new trick
+        gamePhase={GamePhase.Playing}
       />
     );
 
     // When leading a new trick after winning, thinking indicator SHOULD show
-    expect(queryByTestId('thinking-indicator')).toBeTruthy();
+    expect(queryByTestId('thinking-indicator-visible')).toBeTruthy();
   });
 
   it('should handle transitions correctly', () => {
@@ -191,11 +193,12 @@ describe('Human Thinking Indicator Flash Fix', () => {
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={aiPlayerIndex}
         currentTrick={mockCurrentTrickOngoing}  // Ongoing trick, AI's turn initially
+        gamePhase={GamePhase.Playing}
       />
     );
 
     // Initially not human's turn - no indicator
-    expect(queryByTestId('thinking-indicator')).toBeNull();
+    expect(queryByTestId('thinking-indicator-visible')).toBeNull();
 
     // Human wins trick - both indices update simultaneously
     // This is the problematic moment where the flash occurs
@@ -215,11 +218,12 @@ describe('Human Thinking Indicator Flash Fix', () => {
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}  // Human is current
         currentTrick={mockCurrentTrickHumanWon}  // Trick still exists with human as winner
+        gamePhase={GamePhase.Playing}
       />
     );
 
     // With the fix, no indicator should show during this gap
-    expect(queryByTestId('thinking-indicator')).toBeNull();
+    expect(queryByTestId('thinking-indicator-visible')).toBeNull();
 
     // After transition completes and trick is cleared
     rerender(
@@ -238,10 +242,11 @@ describe('Human Thinking Indicator Flash Fix', () => {
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
         currentTrick={null}  // Trick cleared - starting new trick
+        gamePhase={GamePhase.Playing}
       />
     );
 
     // Now the indicator should show for the real turn
-    expect(queryByTestId('thinking-indicator')).toBeTruthy();
+    expect(queryByTestId('thinking-indicator-visible')).toBeTruthy();
   });
 });
