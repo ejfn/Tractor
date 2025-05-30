@@ -15,9 +15,26 @@ Work with your AI teammate to collect points (5s, 10s, Kings) and advance throug
 ## Basic Rules
 
 ### 1. Trump Declaration
-- Declare trump suit by playing pairs during dealing phase
-- Higher pairs override lower pairs for trump selection
-- Big/Small Joker pairs can declare "no trump" rounds
+
+**Declaration Types & Strength Hierarchy:**
+- **Single** (strength: 1) - One trump rank card (NO jokers allowed for singles)
+- **Pair** (strength: 2) - Two identical trump rank cards (same rank AND same suit)
+- **Small Joker Pair** (strength: 3) - Two small jokers only
+- **Big Joker Pair** (strength: 4) - Two big jokers only (strongest)
+
+**Declaration Rules:**
+- Declarations happen during the dealing phase
+- Players can override weaker declarations with stronger ones
+- Same player can only strengthen in the SAME suit (cannot redeclare same rank in different suit)
+- **Strengthening Rule**: If you declared a single (e.g., 2♠) and get another matching card (another 2♠), you can upgrade to a pair (2♠-2♠) as long as your declaration hasn't been overridden
+- Different players can override with ANY suit if using stronger combination
+- Only same jokers make pairs (Small-Small or Big-Big, never mixed)
+
+**First Round Special Rules:**
+- Trump declarer (winner of declaration) leads the first trick
+- **Trump declarer's team becomes the DEFENDING team** (only for first round)
+- **Other team becomes the ATTACKING team** (only for first round)
+- Kitty cards always belong to whoever leads the first trick
 
 ### 2. Trick Play
 - Follow suit when possible (must play same suit if you have it)
@@ -153,6 +170,79 @@ Based on attacking team performance:
 - **Isolation**: Not coordinating with teammate
 - **Point Neglect**: Focusing only on winning tricks, ignoring points
 - **Endgame Planning**: Not saving critical cards for final tricks
+
+### Trump Declaration Errors
+- **Invalid Single Jokers**: Trying to declare with single jokers (not allowed)
+- **Mixed Joker Pairs**: Attempting Small + Big joker pair (invalid)
+- **Same Player Suit Switching**: Redeclaring same rank in different suit
+- **Weak Override Attempts**: Trying to override with equal or lower strength
+- **Cross-Suit Pairs**: Using different suits for pair declarations
+
+## Trump Declaration System
+
+### Declaration Types & Examples
+
+**Valid Declarations:**
+- ✅ **Single 2♠** (trump rank 2, spades) - strength 1
+- ✅ **Pair 2♥-2♥** (two 2s of hearts) - strength 2
+- ✅ **Small Joker Pair** (two small jokers) - strength 3
+- ✅ **Big Joker Pair** (two big jokers) - strength 4
+
+**Invalid Declarations:**
+- ❌ **Single Small Joker** (jokers cannot declare as singles)
+- ❌ **Single Big Joker** (jokers cannot declare as singles)
+- ❌ **Mixed Joker Pair** (Small + Big joker)
+- ❌ **Cross-suit pair** (2♠ + 2♥)
+
+### Override Rules & Examples
+
+**Same Player Rules:**
+- Can only strengthen in the SAME suit
+- Cannot redeclare same rank in different suit
+
+*Example:* If you declared 2♠ (single), you can later declare 2♠-2♠ (pair) but NOT 2♥ (single in different suit)
+
+**Different Player Rules:**
+- Can override with ANY suit if using stronger combination
+- Must use higher strength to override
+
+*Example:* Player A declares 2♠ (single), Player B can override with 2♥-2♥ (pair) or any joker pair
+
+### Declaration Sequence Example
+
+1. **Player A**: Declares 2♠ (single, strength 1)
+2. **Player B**: Declares 2♥-2♥ (pair, strength 2) ✅ Valid override
+3. **Player A**: Attempts 2♣ (single, strength 1) ❌ Invalid - same player, different suit
+4. **Player A**: Gets another 2♠ and declares 2♠-2♠ (pair, strength 2) ❌ Invalid - Player B already overrode with 2♥ pair
+5. **Player C**: Declares Small Joker Pair (strength 3) ✅ Valid override
+6. **Player D**: Declares Big Joker Pair (strength 4) ✅ Valid override - FINAL
+
+**Result**: Player D wins trump declaration with Big Joker Pair
+
+### Strengthening Example
+
+1. **Player A**: Declares 2♠ (single, strength 1)
+2. **Dealing continues**: Player A receives another 2♠
+3. **Player A**: Can now declare 2♠-2♠ (pair, strength 2) ✅ Valid strengthening
+4. **Player B**: Must use strength 3+ to override (e.g., joker pair)
+
+**Key**: Strengthening only works if your original declaration hasn't been overridden!
+
+### First Round & Kitty Rules
+
+**First Round Team Assignment:**
+- **No team roles decided** when game starts
+- **Trump declarer's team becomes DEFENDING team** (only for first round)
+- **Other team becomes ATTACKING team** (only for first round)
+- Trump declarer (Player D above) leads the first trick
+- Sets the starting position and team roles for the entire game
+
+**Kitty Cards:**
+- Always belong to whoever leads the first trick
+- In first round: Trump declarer gets kitty
+- In later rounds: Previous trick winner who leads gets kitty
+
+**Important**: After first round, team roles alternate normally between rounds based on performance.
 
 ## Advanced Concepts
 

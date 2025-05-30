@@ -1,6 +1,6 @@
 import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { Card, Player, TrumpInfo } from "../types";
+import { Card, Player, TrumpInfo, GamePhase } from "../types";
 import HumanHandAnimated from "./HumanHandAnimated";
 import ThinkingIndicator from "./ThinkingIndicator";
 import { sharedStyles } from "../styles/sharedStyles";
@@ -28,6 +28,7 @@ interface HumanPlayerViewProps {
   currentPlayerIndex?: number;
   currentTrick?: any;
   isRoundStartingPlayer?: boolean;
+  gamePhase?: GamePhase;
 }
 
 /**
@@ -52,6 +53,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   currentPlayerIndex,
   currentTrick,
   isRoundStartingPlayer = false,
+  gamePhase,
 }) => {
   return (
     <View style={styles.container}>
@@ -68,6 +70,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
           <Text style={sharedStyles.playerLabel}>You</Text>
         </View>
         {isCurrentPlayer &&
+          gamePhase === GamePhase.Playing &&
           !showTrickResult &&
           !lastCompletedTrick &&
           !(currentTrick?.winningPlayerId === player.id && currentTrick) && (

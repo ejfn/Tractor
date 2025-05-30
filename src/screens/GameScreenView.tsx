@@ -12,6 +12,8 @@ import HumanPlayerView from "../components/HumanPlayerView";
 // import TrumpDeclarationModal from '../components/TrumpDeclarationModal'; // Not used anymore
 import RoundCompleteModal from "../components/RoundCompleteModal";
 import TrickResultDisplay from "../components/TrickResultDisplay";
+import { TrumpDeclarationDuringDealing } from "../components/TrumpDeclarationDuringDealing";
+import { DealingProgressIndicator } from "../components/DealingProgressIndicator";
 
 // Types
 import { Card, GameState, PlayerId, Trick, GamePhase } from "../types";
@@ -41,6 +43,11 @@ interface GameScreenViewProps {
   teamNames: [string, string];
   isTransitioningTricks: boolean;
 
+  // Progressive dealing
+  isDealingInProgress: boolean;
+  showDeclarationModal: boolean;
+  availableDeclarations: any[];
+
   // Animations
   fadeAnim: Animated.Value;
   scaleAnim: Animated.Value;
@@ -59,6 +66,9 @@ interface GameScreenViewProps {
   onConfirmTrumpDeclaration: () => void;
   onNextRound: () => void;
   onAnimationComplete: () => void;
+  onHumanDeclaration: (declaration: any) => void;
+  onSkipDeclaration: () => void;
+  onManualPause: () => void;
 }
 
 /**
@@ -86,6 +96,11 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   teamNames,
   isTransitioningTricks,
 
+  // Progressive dealing
+  isDealingInProgress,
+  showDeclarationModal,
+  availableDeclarations,
+
   // Animations
   fadeAnim,
   scaleAnim,
@@ -100,6 +115,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onConfirmTrumpDeclaration,
   onNextRound,
   onAnimationComplete,
+  onHumanDeclaration,
+  onSkipDeclaration,
+  onManualPause,
 }) => {
   // Setup screen with animations
   if (showSetup) {
@@ -144,6 +162,12 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   const isPlayerCurrentTurn = gameState.currentPlayerIndex === humanPlayerIndex;
   const canPlay =
     gameState.gamePhase === GamePhase.Playing && isPlayerCurrentTurn;
+
+  // Allow card interaction during dealing for trump declaration and during playing
+  const canInteractWithCards =
+    gameState.gamePhase === GamePhase.Dealing ||
+    gameState.gamePhase === GamePhase.Declaring ||
+    canPlay;
 
   // Check if selected cards are valid to play
   const isValidPlay =
@@ -302,6 +326,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   currentPlayerIndex={gameState.currentPlayerIndex}
                   currentTrick={gameState.currentTrick}
                   isRoundStartingPlayer={isHumanRoundStartingPlayer}
+                  gamePhase={gameState.gamePhase}
                 />
               ) : null
             }
@@ -342,6 +367,23 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         />
         */}
       </Animated.View>
+
+      {/* Progressive dealing indicators */}
+      {gameState.gamePhase === GamePhase.Dealing && (
+        <DealingProgressIndicator 
+          gameState={gameState} 
+          onPauseDealing={onManualPause}
+        />
+      )}
+
+      {/* Trump declaration during dealing modal */}
+      {showDeclarationModal && gameState && (
+        <TrumpDeclarationDuringDealing
+          gameState={gameState}
+          onDeclaration={onHumanDeclaration}
+          onSkipDeclaration={onSkipDeclaration}
+        />
+      )}
 
       {/* Round complete modal - outside of AnimatedView */}
       <RoundCompleteModal

@@ -147,11 +147,13 @@ export function shouldAIOverrideDeclaration(
 function getBaseDeclarationProbability(type: DeclarationType): number {
   switch (type) {
     case DeclarationType.Single:
-      return 0.3; // Conservative for single cards
+      return 0.05; // Extremely conservative for single cards (TEMP: reduced for testing)
     case DeclarationType.Pair:
-      return 0.6; // More likely for pairs
-    case DeclarationType.JokerPair:
-      return 0.9; // Almost always declare joker pairs
+      return 0.1; // Very unlikely for pairs (TEMP: reduced for testing)
+    case DeclarationType.SmallJokerPair:
+      return 0.15; // Much reduced for small joker pairs (TEMP: reduced for testing)
+    case DeclarationType.BigJokerPair:
+      return 0.2; // Even big joker pairs very reduced (TEMP: reduced for testing)
     default:
       return 0.1;
   }

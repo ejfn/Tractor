@@ -16,7 +16,8 @@ describe('Trump Declaration Hierarchy System', () => {
     test('should return correct strength values', () => {
       expect(getDeclarationStrength(DeclarationType.Single)).toBe(1);
       expect(getDeclarationStrength(DeclarationType.Pair)).toBe(2);
-      expect(getDeclarationStrength(DeclarationType.JokerPair)).toBe(3);
+      expect(getDeclarationStrength(DeclarationType.SmallJokerPair)).toBe(3);
+      expect(getDeclarationStrength(DeclarationType.BigJokerPair)).toBe(4);
     });
   });
 
@@ -130,7 +131,7 @@ describe('Trump Declaration Hierarchy System', () => {
         playerId: PlayerId.Bot1,
         rank: trumpRank, // Rank doesn't matter for jokers
         suit: Suit.Spades, // Suit doesn't matter for jokers
-        type: DeclarationType.JokerPair,
+        type: DeclarationType.BigJokerPair,
         cards: [
           { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
           { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 }
@@ -180,13 +181,13 @@ describe('Trump Declaration Hierarchy System', () => {
         { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
         { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 }
       ];
-      expect(validateDeclarationCards(validJokerPair, DeclarationType.JokerPair, trumpRank)).toBe(true);
+      expect(validateDeclarationCards(validJokerPair, DeclarationType.BigJokerPair, trumpRank)).toBe(true);
 
       const invalidMixed = [
         createCard(Suit.Spades, trumpRank),
         { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 }
       ];
-      expect(validateDeclarationCards(invalidMixed, DeclarationType.JokerPair, trumpRank)).toBe(false);
+      expect(validateDeclarationCards(invalidMixed, DeclarationType.BigJokerPair, trumpRank)).toBe(false);
     });
   });
 
@@ -207,7 +208,7 @@ describe('Trump Declaration Hierarchy System', () => {
       expect(declarations).toHaveLength(3);
       
       // Joker pair should be first (strongest)
-      expect(declarations[0].type).toBe(DeclarationType.JokerPair);
+      expect(declarations[0].type).toBe(DeclarationType.BigJokerPair);
       
       // Spades pair should be second
       expect(declarations[1].type).toBe(DeclarationType.Pair);

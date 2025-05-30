@@ -199,16 +199,18 @@ export const checkDeclarationOpportunities = (
     return opportunities;
   }
 
+  const currentDeclaration = state.trumpDeclarationState?.currentDeclaration;
+
   state.players.forEach((player) => {
     const declarations = detectPossibleDeclarations(
       player.hand,
       state.trumpInfo.trumpRank,
+      currentDeclaration,
+      player.id as PlayerId,
     );
 
     if (declarations.length > 0) {
       // Filter declarations that can actually override current declaration
-      const currentDeclaration =
-        state.trumpDeclarationState?.currentDeclaration;
 
       const validDeclarations = declarations.filter((declaration) => {
         const mockDeclaration = {
@@ -1891,6 +1893,18 @@ export const initializeGame = (): GameState => {
     gamePhase: GamePhase.Dealing,
   };
 
-  // Deal cards to players
-  return dealCards(gameState);
+  // Initialize dealing state for progressive dealing
+  const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
+  gameState.dealingState = {
+    cardsPerPlayer,
+    currentRound: 0,
+    currentPlayerIndex: 0,
+    totalRounds: cardsPerPlayer,
+    completed: false,
+    kittyDealt: false,
+    paused: false,
+  };
+
+  // Return game state in dealing phase - progressive dealing will handle the rest
+  return gameState;
 };

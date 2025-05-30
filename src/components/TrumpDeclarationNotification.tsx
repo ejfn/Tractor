@@ -144,8 +144,10 @@ function getDeclarationTypeDisplay(type: DeclarationType): string {
       return "a single trump";
     case DeclarationType.Pair:
       return "a trump pair";
-    case DeclarationType.JokerPair:
-      return "joker pair";
+    case DeclarationType.SmallJokerPair:
+      return "small joker pair";
+    case DeclarationType.BigJokerPair:
+      return "big joker pair";
     default:
       return type;
   }

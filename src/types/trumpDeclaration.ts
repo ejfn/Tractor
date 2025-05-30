@@ -4,7 +4,8 @@ import { PlayerId, Rank, Suit, Card } from "./core";
 export enum DeclarationType {
   Single = "single", // One card of trump rank
   Pair = "pair", // Two cards of trump rank (maximum with two decks)
-  JokerPair = "jokerPair", // Two jokers (strongest possible)
+  SmallJokerPair = "smallJokerPair", // Two small jokers
+  BigJokerPair = "bigJokerPair", // Two big jokers (strongest possible)
 }
 
 export type TrumpDeclaration = {
@@ -31,8 +32,10 @@ export function getDeclarationStrength(type: DeclarationType): number {
       return 1;
     case DeclarationType.Pair:
       return 2;
-    case DeclarationType.JokerPair:
+    case DeclarationType.SmallJokerPair:
       return 3;
+    case DeclarationType.BigJokerPair:
+      return 4;
     default:
       return 0;
   }
@@ -41,9 +44,10 @@ export function getDeclarationStrength(type: DeclarationType): number {
 /**
  * Check if a new declaration can override the current one
  * Rules:
- * - Same player: Can only strengthen in SAME suit
+ * - Same player: Can only strengthen in SAME suit (cannot redeclare same rank in different suit)
  * - Different player: Can override with ANY suit if stronger combination
- * - Joker pair always beats trump rank pairs
+ * - Only same jokers make pairs (SmallJokerPair vs BigJokerPair)
+ * - Joker pairs always beat trump rank pairs
  */
 export function canOverrideDeclaration(
   current: TrumpDeclaration | undefined,
@@ -59,6 +63,7 @@ export function canOverrideDeclaration(
 
   // Same player strengthening
   if (current.playerId === newDeclaration.playerId) {
+    // Rule 3: Cannot redeclare same rank in different suit
     // Must be same suit AND stronger combination
     return (
       current.suit === newDeclaration.suit && newStrength > currentStrength
@@ -82,27 +87,27 @@ export function validateDeclarationCards(
     case DeclarationType.Single:
       return (
         cards.length === 1 &&
-        (cards[0].rank === trumpRank || cards[0].joker !== undefined)
+        cards[0].rank === trumpRank &&
+        cards[0].joker === undefined
       );
 
     case DeclarationType.Pair:
       if (cards.length !== 2) return false;
 
-      // Joker pair
-      if (cards.every((card) => card.joker !== undefined)) {
-        return true;
-      }
-
-      // Trump rank pair - must be same rank and same suit
+      // Trump rank pair - must be same rank and same suit (no jokers)
       return (
-        cards.every((card) => card.rank === trumpRank) &&
-        cards[0].suit === cards[1].suit
+        cards.every(
+          (card) => card.rank === trumpRank && card.joker === undefined,
+        ) && cards[0].suit === cards[1].suit
       );
 
-    case DeclarationType.JokerPair:
+    case DeclarationType.SmallJokerPair:
       return (
-        cards.length === 2 && cards.every((card) => card.joker !== undefined)
+        cards.length === 2 && cards.every((card) => card.joker === "Small")
       );
+
+    case DeclarationType.BigJokerPair:
+      return cards.length === 2 && cards.every((card) => card.joker === "Big");
 
     default:
       return false;
@@ -110,21 +115,82 @@ export function validateDeclarationCards(
 }
 
 /**
+ * Check if player can strengthen their current declaration
+ * Rule: Single can be upgraded to pair if player gets another matching card
+ */
+function checkStrengtheningOpportunities(
+  hand: Card[],
+  currentDeclaration: TrumpDeclaration,
+  trumpRank: Rank,
+): { type: DeclarationType; cards: Card[]; suit: Suit } | null {
+  // Only allow strengthening from Single to Pair for trump rank cards
+  if (currentDeclaration.type !== DeclarationType.Single) {
+    return null; // Can't strengthen pairs or joker pairs further
+  }
+
+  // Find trump rank cards in the same suit as current declaration
+  const matchingCards = hand.filter(
+    (card) =>
+      card.rank === trumpRank &&
+      card.suit === currentDeclaration.suit &&
+      card.joker === undefined,
+  );
+
+  // Need at least 2 cards to make a pair
+  if (matchingCards.length >= 2) {
+    return {
+      type: DeclarationType.Pair,
+      cards: matchingCards.slice(0, 2),
+      suit: currentDeclaration.suit,
+    };
+  }
+
+  return null;
+}
+
+/**
  * Detect possible declarations from a player's hand
+ * Includes strengthening opportunities if player is current declarer
  */
 export function detectPossibleDeclarations(
   hand: Card[],
   trumpRank: Rank,
+  currentDeclaration?: TrumpDeclaration,
+  playerId?: PlayerId,
 ): { type: DeclarationType; cards: Card[]; suit: Suit }[] {
   const declarations: { type: DeclarationType; cards: Card[]; suit: Suit }[] =
     [];
 
+  // Check for strengthening opportunities if this player is the current declarer
+  if (currentDeclaration && playerId && currentDeclaration.playerId === playerId) {
+    const canStrengthen = checkStrengtheningOpportunities(
+      hand,
+      currentDeclaration,
+      trumpRank,
+    );
+    if (canStrengthen) {
+      declarations.push(canStrengthen);
+    }
+  }
+
   // Check for joker pairs first (strongest)
-  const jokers = hand.filter((card) => card.joker !== undefined);
-  if (jokers.length >= 2) {
+  const bigJokers = hand.filter((card) => card.joker === "Big");
+  const smallJokers = hand.filter((card) => card.joker === "Small");
+
+  // Big joker pair (strongest)
+  if (bigJokers.length >= 2) {
     declarations.push({
-      type: DeclarationType.JokerPair,
-      cards: jokers.slice(0, 2),
+      type: DeclarationType.BigJokerPair,
+      cards: bigJokers.slice(0, 2),
+      suit: Suit.Spades, // Default suit for jokers, will be overridden
+    });
+  }
+
+  // Small joker pair
+  if (smallJokers.length >= 2) {
+    declarations.push({
+      type: DeclarationType.SmallJokerPair,
+      cards: smallJokers.slice(0, 2),
       suit: Suit.Spades, // Default suit for jokers, will be overridden
     });
   }

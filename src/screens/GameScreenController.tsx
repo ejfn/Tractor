@@ -5,6 +5,7 @@ import { useGameState } from "../hooks/useGameState";
 import { useUIAnimations, useThinkingDots } from "../hooks/useAnimations";
 import { useTrickResults } from "../hooks/useTrickResults";
 import { useAITurns } from "../hooks/useAITurns";
+import { useProgressiveDealing } from "../hooks/useProgressiveDealing";
 
 // View component
 import GameScreenView from "./GameScreenView";
@@ -42,6 +43,7 @@ const GameScreenController: React.FC = () => {
     handleNextRound,
     startNewGame,
     handleTrickResultComplete, // Make sure this is imported
+    setGameState,
   } = useGameState();
 
   // Trick results management
@@ -69,6 +71,20 @@ const GameScreenController: React.FC = () => {
     lastCompletedTrick,
     showRoundComplete,
   );
+
+  // Progressive dealing with trump declaration
+  const {
+    isDealingInProgress,
+    showDeclarationModal,
+    availableDeclarations,
+    handleHumanDeclaration,
+    handleSkipDeclaration,
+    handleManualPause,
+  } = useProgressiveDealing({
+    gameState,
+    setGameState,
+    dealingSpeed: 500,
+  });
 
   // Initialize game on first render
   useEffect(() => {
@@ -175,6 +191,10 @@ const GameScreenController: React.FC = () => {
       roundCompleteMessage={roundCompleteMessage}
       teamNames={["Team A", "Team B"]}
       isTransitioningTricks={isTransitioningTricks}
+      // Progressive dealing
+      isDealingInProgress={isDealingInProgress}
+      showDeclarationModal={showDeclarationModal}
+      availableDeclarations={availableDeclarations}
       // Animations
       fadeAnim={fadeAnim}
       scaleAnim={scaleAnim}
@@ -188,6 +208,9 @@ const GameScreenController: React.FC = () => {
       onConfirmTrumpDeclaration={handleConfirmTrumpDeclaration}
       onNextRound={handleNextRound}
       onAnimationComplete={onAnimationComplete}
+      onHumanDeclaration={handleHumanDeclaration}
+      onSkipDeclaration={handleSkipDeclaration}
+      onManualPause={handleManualPause}
     />
   );
 };

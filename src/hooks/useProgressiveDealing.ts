@@ -28,8 +28,11 @@ export function useProgressiveDealing({
   const [isDealingInProgress, setIsDealingInProgress] = useState(false);
   const [showDeclarationModal, setShowDeclarationModal] = useState(false);
   const [availableDeclarations, setAvailableDeclarations] = useState<any[]>([]);
-  const dealingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const declarationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [humanSkippedDeclaration, setHumanSkippedDeclaration] = useState(false);
+  const dealingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const declarationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   // Start progressive dealing when game phase is Dealing
   useEffect(() => {
@@ -50,23 +53,31 @@ export function useProgressiveDealing({
     };
   }, []);
 
-  const startProgressiveDealing = () => {
-    if (!gameState || isDealingInProgress) return;
+  const startProgressiveDealing = (stateOverride?: GameState) => {
+    const currentState = stateOverride || gameState;
+    if (!currentState || isDealingInProgress) return;
 
     setIsDealingInProgress(true);
+    setHumanSkippedDeclaration(false); // Reset skip flag when starting new dealing
 
-    const dealNextCardWithDelay = () => {
+    const dealNextCardWithDelay = (dealState?: GameState) => {
+      // Use passed state or the initial current state
+      const stateToUse = dealState || currentState;
+      
       if (
-        !gameState ||
-        isDealingComplete(gameState) ||
-        isDealingPaused(gameState)
+        !stateToUse ||
+        isDealingComplete(stateToUse) ||
+        isDealingPaused(stateToUse)
       ) {
         return;
       }
 
       // Deal next card
-      const newState = dealNextCard(gameState);
+      const newState = dealNextCard(stateToUse);
       setGameState(newState);
+
+      // Reset skip flag when a new card is dealt - allows new declaration opportunities
+      setHumanSkippedDeclaration(false);
 
       // Check for declaration opportunities after dealing card
       checkForDeclarationOpportunities(newState);
@@ -74,7 +85,7 @@ export function useProgressiveDealing({
       // Continue dealing if not complete and not paused
       if (!isDealingComplete(newState) && !isDealingPaused(newState)) {
         dealingIntervalRef.current = setTimeout(
-          dealNextCardWithDelay,
+          () => dealNextCardWithDelay(newState),
           dealingSpeed,
         );
       } else if (isDealingComplete(newState)) {
@@ -84,7 +95,7 @@ export function useProgressiveDealing({
 
     // Start the dealing process
     dealingIntervalRef.current = setTimeout(
-      dealNextCardWithDelay,
+      () => dealNextCardWithDelay(),
       dealingSpeed,
     );
   };
@@ -94,7 +105,7 @@ export function useProgressiveDealing({
 
     // Check if human player has declaration opportunities
     const humanOpportunities = opportunities.get(PlayerId.Human);
-    if (humanOpportunities && humanOpportunities.length > 0) {
+    if (humanOpportunities && humanOpportunities.length > 0 && !humanSkippedDeclaration) {
       // Pause dealing and show declaration modal
       const pausedState = pauseDealing(state, "trump_declaration");
       setGameState(pausedState);
@@ -153,10 +164,13 @@ export function useProgressiveDealing({
       setTimeout(() => {
         const resumedState = resumeDealing(newState);
         setGameState(resumedState);
+        setIsDealingInProgress(false);
 
         // Resume dealing after AI declaration
         if (!isDealingComplete(resumedState)) {
-          startProgressiveDealing();
+          setTimeout(() => {
+            startProgressiveDealing(resumedState);
+          }, 100);
         }
       }, 1500);
     } catch (error) {
@@ -164,7 +178,10 @@ export function useProgressiveDealing({
       // Continue dealing on error
       const resumedState = resumeDealing(state);
       setGameState(resumedState);
-      startProgressiveDealing();
+      setIsDealingInProgress(false);
+      setTimeout(() => {
+        startProgressiveDealing(resumedState);
+      }, 100);
     }
   };
 
@@ -186,15 +203,43 @@ export function useProgressiveDealing({
       setGameState(newState);
       setShowDeclarationModal(false);
       setAvailableDeclarations([]);
+      setHumanSkippedDeclaration(false); // Reset skip flag after declaration
 
       // Resume dealing after human declaration
       setTimeout(() => {
         const resumedState = resumeDealing(newState);
         setGameState(resumedState);
 
-        if (!isDealingComplete(resumedState)) {
-          startProgressiveDealing();
-        }
+        // Force dealing to continue
+        setTimeout(() => {
+          if (!isDealingComplete(resumedState)) {
+            setIsDealingInProgress(true);
+            
+            const dealNextCardWithDelay = (currentState: GameState) => {
+              if (isDealingComplete(currentState) || isDealingPaused(currentState)) {
+                setIsDealingInProgress(false);
+                return;
+              }
+
+              const nextState = dealNextCard(currentState);
+              setGameState(nextState);
+              
+              checkForDeclarationOpportunities(nextState);
+
+              if (!isDealingComplete(nextState) && !isDealingPaused(nextState)) {
+                dealingIntervalRef.current = setTimeout(() => {
+                  dealNextCardWithDelay(nextState);
+                }, dealingSpeed);
+              } else if (isDealingComplete(nextState)) {
+                setIsDealingInProgress(false);
+              }
+            };
+
+            dealingIntervalRef.current = setTimeout(() => {
+              dealNextCardWithDelay(resumedState);
+            }, dealingSpeed);
+          }
+        }, 100);
       }, 1000);
     } catch (error) {
       console.warn("Human declaration failed:", error);
@@ -203,18 +248,68 @@ export function useProgressiveDealing({
     }
   };
 
+  const handleManualPause = () => {
+    if (!gameState || isDealingPaused(gameState)) return;
+
+    // Clear dealing timer
+    if (dealingIntervalRef.current) {
+      clearTimeout(dealingIntervalRef.current);
+      dealingIntervalRef.current = null;
+    }
+
+    // Pause dealing and show declaration modal
+    const pausedState = pauseDealing(gameState, "trump_declaration");
+    setGameState(pausedState);
+    
+    // Get human's declaration options (even if empty, we want to show the modal)
+    const humanOpportunities = checkDeclarationOpportunities(pausedState).get(PlayerId.Human) || [];
+    setAvailableDeclarations(humanOpportunities);
+    
+    // Always show the modal when manually paused, even if no declarations available
+    setShowDeclarationModal(true);
+    setIsDealingInProgress(false);
+  };
+
   const handleSkipDeclaration = () => {
     if (!gameState) return;
 
-    const resumedState = resumeDealing(gameState);
-    setGameState(resumedState);
     setShowDeclarationModal(false);
     setAvailableDeclarations([]);
+    setHumanSkippedDeclaration(true); // Prevent modal from re-appearing
+    
+    const resumedState = resumeDealing(gameState);
+    setGameState(resumedState);
+    
+    // Force dealing to continue by using a more direct approach
+    setTimeout(() => {
+      if (!isDealingComplete(resumedState)) {
+        setIsDealingInProgress(true);
+        
+        const dealNextCardWithDelay = (currentState: GameState) => {
+          if (isDealingComplete(currentState) || isDealingPaused(currentState)) {
+            setIsDealingInProgress(false);
+            return;
+          }
 
-    // Resume dealing
-    if (!isDealingComplete(resumedState)) {
-      startProgressiveDealing();
-    }
+          const newState = dealNextCard(currentState);
+          setGameState(newState);
+          
+          checkForDeclarationOpportunities(newState);
+
+          if (!isDealingComplete(newState) && !isDealingPaused(newState)) {
+            dealingIntervalRef.current = setTimeout(() => {
+              dealNextCardWithDelay(newState);
+            }, dealingSpeed);
+          } else if (isDealingComplete(newState)) {
+            setIsDealingInProgress(false);
+          }
+        };
+
+        dealingIntervalRef.current = setTimeout(() => {
+          dealNextCardWithDelay(resumedState);
+        }, dealingSpeed);
+      }
+    }, 200);
   };
 
   return {
@@ -223,5 +318,6 @@ export function useProgressiveDealing({
     availableDeclarations,
     handleHumanDeclaration,
     handleSkipDeclaration,
+    handleManualPause,
   };
 }

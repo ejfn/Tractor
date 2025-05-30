@@ -86,15 +86,17 @@ export function getPlayerDeclarationOptions(
     return [];
   }
 
+  // Get current declaration for strengthening opportunities
+  const currentDeclaration =
+    gameState.trumpDeclarationState?.currentDeclaration;
+
   // Get all possible declarations from the player's hand
   const possibleDeclarations = detectPossibleDeclarations(
     player.hand,
     gameState.trumpInfo.trumpRank,
+    currentDeclaration,
+    playerId,
   );
-
-  // Filter out declarations that cannot override the current one
-  const currentDeclaration =
-    gameState.trumpDeclarationState?.currentDeclaration;
 
   return possibleDeclarations.filter((declaration) => {
     const mockDeclaration: TrumpDeclaration = {
@@ -137,6 +139,34 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     newState.trumpInfo.trumpSuit = finalDeclaration.suit;
     newState.trumpInfo.declared = true;
     newState.trumpInfo.declarerPlayerId = finalDeclaration.playerId;
+
+    // Rule 2: In first round, trump declarer determines team roles and leads first trick
+    if (newState.roundNumber === 1) {
+      // Set trump declarer as the starting player for the playing phase
+      const declarerIndex = newState.players.findIndex(
+        (p) => p.id === finalDeclaration.playerId,
+      );
+      if (declarerIndex !== -1) {
+        newState.currentPlayerIndex = declarerIndex;
+
+        // Kitty cards belong to the first trick leader (trump declarer in first round)
+        newState.players[declarerIndex].hand.push(...newState.kittyCards);
+        newState.kittyCards = []; // Clear kitty since it's been given to first trick leader
+
+        // First round only: Trump declarer's team becomes DEFENDING team
+        const declarerPlayer = newState.players[declarerIndex];
+        const declarerTeam = declarerPlayer.team;
+        
+        // Set team roles based on trump declarer
+        newState.teams.forEach(team => {
+          if (team.id === declarerTeam) {
+            team.isDefending = true;  // Declarer's team defends
+          } else {
+            team.isDefending = false; // Other team attacks
+          }
+        });
+      }
+    }
   }
 
   // Close the declaration window
