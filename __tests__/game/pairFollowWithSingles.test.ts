@@ -46,6 +46,7 @@ describe('Pair Follow With Singles', () => {
       tricks: [],
       roundNumber: 1,
       currentPlayerIndex: 0,
+      roundStartingPlayerIndex: 0,
       gamePhase: GamePhase.Playing
     };
   });

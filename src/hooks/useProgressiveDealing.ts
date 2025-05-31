@@ -94,6 +94,12 @@ export function useProgressiveDealing({
           return;
         }
 
+        // Clear any existing dealing timer to prevent concurrent dealing
+        if (dealingIntervalRef.current) {
+          clearTimeout(dealingIntervalRef.current);
+          dealingIntervalRef.current = null;
+        }
+
         const newState = makeTrumpDeclaration(state, playerId, {
           rank: state.trumpInfo.trumpRank,
           suit: declaration.suit,
@@ -179,6 +185,11 @@ export function useProgressiveDealing({
 
   const checkForDeclarationOpportunities = useCallback(
     (state: GameState) => {
+      // Skip if game is no longer in dealing phase
+      if (state.gamePhase !== GamePhase.Dealing) {
+        return;
+      }
+
       // Skip if human just declared to prevent immediate re-triggering
       if (humanJustDeclaredRef.current) {
         humanJustDeclaredRef.current = false;
@@ -281,7 +292,7 @@ export function useProgressiveDealing({
             setShowDeclarationModal(true);
             // No need to reset skip flag - using immutable tracking
           } else {
-            // No opportunities, transition to playing phase
+            // No opportunities, transition to playing phase immediately
             const playingState = { ...newState, gamePhase: GamePhase.Playing };
             setGameState(playingState);
           }

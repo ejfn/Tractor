@@ -97,6 +97,7 @@ const createTestGameState = (overrides: Partial<GameState> = {}): GameState => (
   tricks: [],
   roundNumber: 1,
   currentPlayerIndex: 0,
+  roundStartingPlayerIndex: 0,
   gamePhase: GamePhase.Playing,
   ...overrides,
 });

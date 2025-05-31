@@ -58,6 +58,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       tricks: [],
       roundNumber: 1,
       currentPlayerIndex: 0,
+      roundStartingPlayerIndex: 0,
       gamePhase: GamePhase.Playing
     };
   });

@@ -70,8 +70,12 @@ describe('gameRoundManager', () => {
       expect(result.tricks.length).toBe(0);
       expect(result.currentTrick).toBeNull();
       
-      // Verify trump declaration state was reset
-      expect(result.trumpDeclarationState).toBeUndefined();
+      // Verify trump declaration state was properly initialized
+      expect(result.trumpDeclarationState).toEqual({
+        currentDeclaration: undefined,
+        declarationHistory: [],
+        declarationWindow: true
+      });
       
       // Verify dealing state was reset
       expect(result.dealingState).toBeUndefined();

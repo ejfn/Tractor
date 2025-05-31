@@ -89,6 +89,14 @@ export function makeTrumpDeclaration(
           team.isDefending = false; // Other team attacks
         }
       });
+
+      // Update round starting player to the trump declarer during round 1 dealing
+      const declarerIndex = newState.players.findIndex(
+        (p) => p.id === playerId,
+      );
+      if (declarerIndex !== -1) {
+        newState.roundStartingPlayerIndex = declarerIndex;
+      }
     }
   }
 
@@ -182,31 +190,14 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     } else {
       newState.trumpInfo.trumpSuit = finalDeclaration.suit; // Regular trump rank declarations
     }
-
-    // Rule 2: In first round ONLY, trump declarer determines team roles and leads first trick
-    // For subsequent rounds, the first trick leader is determined by round outcome rules
-    if (newState.roundNumber === 1) {
-      // Set trump declarer as the starting player for the playing phase
-      const declarerIndex = newState.players.findIndex(
-        (p) => p.id === finalDeclaration.playerId,
-      );
-      if (declarerIndex !== -1) {
-        newState.currentPlayerIndex = declarerIndex;
-
-        // TODO: Implement kitty card swapping mechanism
-        // For now, keep kitty cards separate until swapping is implemented
-
-        // Note: Team roles are already set in real-time during makeTrumpDeclaration
-      }
-    }
-    // For round 2+: currentPlayerIndex should already be correctly set by prepareNextRound
-    // based on round outcome rules and should NOT be changed by trump declarations
   } else {
     // No one declared trump during dealing - set to Suit.None (no trump game)
     newState.trumpInfo.trumpSuit = Suit.None;
   }
 
-  // Trump declaration is complete (trumpSuit will indicate if someone declared or not)
+  // Set currentPlayerIndex to the round starting player when transitioning to Playing phase
+  // roundStartingPlayerIndex was set during trump declarations or round preparation
+  newState.currentPlayerIndex = newState.roundStartingPlayerIndex;
 
   // Close the declaration window
   if (newState.trumpDeclarationState) {

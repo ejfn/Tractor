@@ -3,7 +3,8 @@
 export type DealingState = {
   cardsPerPlayer: number; // Number of cards each player should receive
   currentRound: number; // Current dealing round (0-based)
-  currentPlayerIndex: number; // Index of player receiving next card
+  currentDealingPlayerIndex: number; // Index of player receiving next card
+  startingDealingPlayerIndex: number; // Index of player who started dealing (for round completion)
   totalRounds: number; // Total rounds needed to complete dealing
   completed: boolean; // Whether dealing is finished
   kittyDealt: boolean; // Whether kitty cards have been set aside

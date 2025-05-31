@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { initializeGame } from "../game/gameLogic";
 import { processPlay, validatePlay } from "../game/gamePlayManager";
 import { endRound, prepareNextRound } from "../game/gameRoundManager";
-import { declareTrumpSuit } from "../game/trumpManager";
-import { Card, GamePhase, GameState, Suit } from "../types";
+import { Card, GamePhase, GameState } from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import {
   CARD_SELECTION_DELAY,
@@ -30,7 +29,6 @@ export function useGameState() {
 
   // Game flow control
   const [showSetupInternal, setShowSetupInternal] = useState(false);
-  const [showTrumpDeclaration, setShowTrumpDeclaration] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState<"A" | "B" | null>(null);
 
@@ -63,19 +61,6 @@ export function useGameState() {
     if (!gameState) return;
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-
-    // Handle trump declaration mode - select card but don't declare immediately
-    if (showTrumpDeclaration) {
-      if (card.rank === gameState.trumpInfo.trumpRank && card.suit) {
-        // Toggle selection of trump cards
-        if (selectedCards.some((c) => c.id === card.id)) {
-          setSelectedCards([]);
-        } else {
-          setSelectedCards([card]);
-        }
-      }
-      return;
-    }
 
     if (gameState.gamePhase !== GamePhase.Playing) return;
 
@@ -189,26 +174,6 @@ export function useGameState() {
     }
   };
 
-  // Handle trump suit declaration
-  const handleDeclareTrumpSuit = (suit: Suit | null) => {
-    if (!gameState) return;
-
-    const newState = declareTrumpSuit(gameState, suit);
-    setGameState(newState);
-    setShowTrumpDeclaration(false);
-    setSelectedCards([]);
-  };
-
-  // Confirm trump declaration with selected card
-  const handleConfirmTrumpDeclaration = () => {
-    if (!gameState || selectedCards.length === 0) return;
-
-    const selectedCard = selectedCards[0];
-    if (selectedCard.suit) {
-      handleDeclareTrumpSuit(selectedCard.suit);
-    }
-  };
-
   // Handle end of round
   const handleEndRound = (state: GameState) => {
     const result = endRound(state);
@@ -288,7 +253,6 @@ export function useGameState() {
     gameState,
     selectedCards,
     showSetup: showSetupInternal,
-    showTrumpDeclaration,
     gameOver,
     winner,
     showRoundComplete,
@@ -304,8 +268,6 @@ export function useGameState() {
     handleCardSelect,
     handlePlay,
     handleProcessPlay,
-    handleDeclareTrumpSuit,
-    handleConfirmTrumpDeclaration,
     handleNextRound,
     startNewGame,
     handleTrickResultComplete,
@@ -314,6 +276,5 @@ export function useGameState() {
     setGameState,
     setSelectedCards,
     setShowSetup: setShowSetupInternal,
-    setShowTrumpDeclaration,
   };
 }

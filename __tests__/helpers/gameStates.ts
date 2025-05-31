@@ -26,6 +26,7 @@ interface GameStateOptions {
   trumpInfo?: TrumpInfo;
   gamePhase?: GamePhase;
   currentPlayerIndex?: number;
+  roundStartingPlayerIndex?: number;
   currentTrick?: Trick | null;
   tricks?: Trick[];
   roundNumber?: number;
@@ -43,6 +44,7 @@ export const createGameState = (options: GameStateOptions = {}): GameState => ({
   trumpInfo: options.trumpInfo || createTrumpInfo(),
   gamePhase: options.gamePhase || GamePhase.Playing,
   currentPlayerIndex: options.currentPlayerIndex ?? 0,
+  roundStartingPlayerIndex: options.roundStartingPlayerIndex ?? 0,
   currentTrick: options.currentTrick ?? null,
   tricks: options.tricks || [],
   deck: options.deck || [],

@@ -1,5 +1,6 @@
 import { GameState, Rank, GamePhase } from "../types";
 import { initializeGame } from "./gameLogic";
+import { initializeTrumpDeclarationState } from "./trumpDeclarationManager";
 
 /**
  * Prepares the game state for the next round
@@ -54,52 +55,26 @@ export function prepareNextRound(state: GameState): GameState {
     (p) => p.team === defendingTeam?.id,
   );
 
-  // Save trump declaration state for first round player determination before resetting
-  const previousTrumpDeclaration =
-    newState.trumpDeclarationState?.currentDeclaration;
+  // Determine who should start the new round based on game rules
+  let nextRoundStartingPlayerIndex: number;
 
-  // Reset trump declaration state for new round
-  newState.trumpDeclarationState = undefined;
-
-  // Reset dealing state for progressive dealing
-  newState.dealingState = undefined;
-
-  // Handle first round when we have a trump declaration
-  if (newState.roundNumber === 1 && previousTrumpDeclaration) {
-    // Find index of the trump declarer from the declaration state
-    const declarerIndex = newState.players.findIndex(
-      (p) => p.id === previousTrumpDeclaration?.playerId,
-    );
-
-    if (declarerIndex !== -1) {
-      newState.currentPlayerIndex = declarerIndex;
-    } else {
-      // Fallback if declarer not found
-      newState.currentPlayerIndex = newState.players.indexOf(
-        defendingPlayers[0],
-      );
-    }
-  }
-  // For subsequent rounds
-  else if (newState.roundNumber > 1) {
-    // Need to pass information about whether attacking team won from endRound
-    // Since teams switch roles after winning, we need to track this differently
-    // For now, use a simpler approach: if we have lastRoundStartingPlayerIndex,
-    // check if the current defending team has a different ID than expected
-
-    // The rule is:
+  // For subsequent rounds (round 2+), use round outcome rules
+  if (newState.roundNumber > 1) {
+    // Rule:
     // - If defending team successfully defended, the OTHER player on defending team goes first
     // - If attacking team won, next player counter-clockwise goes first
 
-    // We can determine this by checking if we have enough information
-    if (
-      newState.lastRoundStartingPlayerIndex !== undefined &&
-      newState.lastRoundStartingPlayerIndex >= 0
-    ) {
-      // Get the player who started last round
-      const lastRoundStarter =
-        newState.players[newState.lastRoundStartingPlayerIndex];
+    // Get the player who started the previous round
+    const lastRoundStarter =
+      newState.players[newState.roundStartingPlayerIndex];
 
+    // Validate that we have a valid last round starter
+    if (!lastRoundStarter) {
+      // Fallback: Use first defending player if no valid last starter
+      nextRoundStartingPlayerIndex = newState.players.indexOf(
+        defendingPlayers[0],
+      );
+    } else {
       // Check if this player is on the current defending team
       const isLastStarterOnCurrentDefendingTeam =
         lastRoundStarter.team === defendingTeam?.id;
@@ -111,9 +86,8 @@ export function prepareNextRound(state: GameState): GameState {
       if (didAttackingTeamWin) {
         // Attacking team won (teams switched roles)
         // Next player counter-clockwise from the last round starter goes first
-        const nextPlayerIndex =
-          (newState.lastRoundStartingPlayerIndex + 1) % newState.players.length;
-        newState.currentPlayerIndex = nextPlayerIndex;
+        nextRoundStartingPlayerIndex =
+          (newState.roundStartingPlayerIndex + 1) % newState.players.length;
       } else {
         // Defending team successfully defended
         // The other player on defending team should start
@@ -121,8 +95,7 @@ export function prepareNextRound(state: GameState): GameState {
         // Find which player on the defending team played first last round
         const defendingTeamLastRoundStarter = defendingPlayers.find(
           (p) =>
-            newState.players.indexOf(p) ===
-            newState.lastRoundStartingPlayerIndex,
+            newState.players.indexOf(p) === newState.roundStartingPlayerIndex,
         );
 
         if (defendingTeamLastRoundStarter) {
@@ -132,31 +105,50 @@ export function prepareNextRound(state: GameState): GameState {
           );
 
           if (otherPlayer) {
-            newState.currentPlayerIndex = newState.players.indexOf(otherPlayer);
+            nextRoundStartingPlayerIndex =
+              newState.players.indexOf(otherPlayer);
           } else {
             // Fallback
-            newState.currentPlayerIndex = newState.players.indexOf(
+            nextRoundStartingPlayerIndex = newState.players.indexOf(
               defendingPlayers[0],
             );
           }
         } else {
           // If we can't determine who played first last round
-          newState.currentPlayerIndex = newState.players.indexOf(
+          nextRoundStartingPlayerIndex = newState.players.indexOf(
             defendingPlayers[0],
           );
         }
       }
-    } else {
-      // Fallback if lastRoundStartingPlayerIndex is not available
-      newState.currentPlayerIndex = newState.players.indexOf(
-        defendingPlayers[0],
+    }
+  } else {
+    // Round 1: Check if there's already a trump declaration, otherwise Human starts by default
+    if (newState.trumpDeclarationState?.currentDeclaration?.playerId) {
+      // Trump declarer starts the first round
+      const declarerId =
+        newState.trumpDeclarationState.currentDeclaration.playerId;
+      const declarerIndex = newState.players.findIndex(
+        (p) => p.id === declarerId,
       );
+      nextRoundStartingPlayerIndex = declarerIndex >= 0 ? declarerIndex : 0;
+    } else {
+      // No trump declaration yet, Human starts by default (can be updated during dealing)
+      nextRoundStartingPlayerIndex = 0; // Human (index 0)
     }
   }
-  // Fallback for any other case
-  else {
-    newState.currentPlayerIndex = newState.players.indexOf(defendingPlayers[0]);
-  }
+
+  // Set the round starting player (this may be updated during trump declarations in round 1)
+  newState.roundStartingPlayerIndex = nextRoundStartingPlayerIndex;
+
+  // currentPlayerIndex will be set to roundStartingPlayerIndex when transitioning to playing phase
+  // For now, set it for dealing phase to start dealing from the correct player
+  newState.currentPlayerIndex = nextRoundStartingPlayerIndex;
+
+  // Reset trump declaration state for new round (AFTER we've used it to determine starting player)
+  newState.trumpDeclarationState = initializeTrumpDeclarationState();
+
+  // Reset dealing state for progressive dealing
+  newState.dealingState = undefined;
 
   // Set phase to dealing for progressive dealing system
   newState.gamePhase = GamePhase.Dealing;

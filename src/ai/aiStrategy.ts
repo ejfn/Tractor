@@ -50,14 +50,6 @@ export interface AIStrategy {
    * @returns Array of cards to play
    */
   makePlay(gameState: GameState, player: Player, validCombos: Combo[]): Card[];
-
-  /**
-   * Decide whether to declare trump suit during dealing phase
-   * @param gameState Current game state
-   * @param player AI player making the decision
-   * @returns True if should declare trump, false otherwise
-   */
-  declareTrumpSuit(gameState: GameState, player: Player): boolean;
 }
 
 /**
@@ -160,51 +152,6 @@ export class AIStrategyImplementation implements AIStrategy {
 
     // If following, use strategic following logic
     return this.selectFollowingPlay(gameState, validCombos, context);
-  }
-
-  declareTrumpSuit(gameState: GameState, player: Player): boolean {
-    // Hard AI uses more strategic logic to decide when to declare
-    const trumpRankCards = player.hand.filter(
-      (card) => card.rank === gameState.trumpInfo.trumpRank,
-    );
-
-    // Count cards by suit to find most common suit
-    const suitCounts = player.hand.reduce(
-      (counts, card) => {
-        if (card.suit) {
-          counts[card.suit] = (counts[card.suit] || 0) + 1;
-        }
-        return counts;
-      },
-      {} as Record<string, number>,
-    );
-
-    // Find suit with most cards
-    let mostCommonSuit = "";
-    let maxCount = 0;
-
-    Object.entries(suitCounts).forEach(([suit, count]) => {
-      if (count > maxCount) {
-        mostCommonSuit = suit;
-        maxCount = count;
-      }
-    });
-
-    // Declare if we have multiple trump rank cards AND they match our most common suit
-    const trumpOfMostCommonSuit = trumpRankCards.filter(
-      (card) => card.suit === mostCommonSuit,
-    );
-
-    if (trumpRankCards.length >= 2 && trumpOfMostCommonSuit.length > 0) {
-      return true;
-    }
-
-    // Also declare if we have many cards of the same suit (8+)
-    if (maxCount >= 8) {
-      return true;
-    }
-
-    return false;
   }
 
   // === RESTRUCTURED PRIORITY CHAIN FOR FOLLOWING PLAY ===

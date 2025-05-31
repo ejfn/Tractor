@@ -29,7 +29,6 @@ interface GameScreenViewProps {
 
   // UI state
   showSetup: boolean;
-  showTrumpDeclaration: boolean;
   gameOver: boolean;
   winner: "A" | "B" | null;
   waitingForAI: boolean;
@@ -62,8 +61,6 @@ interface GameScreenViewProps {
   onCardSelect: (card: Card) => void;
   onPlayCards: () => void;
   onStartNewGame: () => void;
-  onDeclareTrumpSuit: (suit: any) => void;
-  onConfirmTrumpDeclaration: () => void;
   onNextRound: () => void;
   onAnimationComplete: () => void;
   onHumanDeclaration: (declaration: any) => void;
@@ -82,7 +79,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
   // UI state
   showSetup,
-  showTrumpDeclaration,
   gameOver,
   winner,
   waitingForAI,
@@ -111,8 +107,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onCardSelect,
   onPlayCards,
   onStartNewGame,
-  onDeclareTrumpSuit,
-  onConfirmTrumpDeclaration,
   onNextRound,
   onAnimationComplete,
   onHumanDeclaration,
@@ -179,47 +173,19 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   const ai3Team = getPlayerTeam(PlayerId.Bot3);
   const humanTeam = getPlayerTeam(humanPlayer.id);
 
-  // Determine which player is the round starting player
-  const getRoundStartingPlayerIndex = () => {
-    // For round 1, the trump declarer starts (stored in trumpDeclarationState.currentDeclaration.playerId)
-    if (
-      gameState.roundNumber === 1 &&
-      gameState.trumpDeclarationState?.currentDeclaration?.playerId
-    ) {
-      return gameState.players.findIndex(
-        (p) =>
-          p.id ===
-          gameState.trumpDeclarationState?.currentDeclaration?.playerId,
-      );
-    }
-    // For subsequent rounds:
-    // - Use the stable currentPlayerIndex that was set by prepareNextRound based on round outcome
-    // - This should NOT change during trump declarations in round 2+
-    if (gameState.roundNumber > 1) {
-      // For round 2+, the first trick leader is determined by round outcome rules
-      // and should remain stable during dealing regardless of trump declarations
-      return gameState.currentPlayerIndex;
-    }
+  // Crown display: always use the stable roundStartingPlayerIndex
+  const roundStartingPlayerIndex = gameState.roundStartingPlayerIndex;
 
-    return 0; // Fallback
-  };
-
-  const roundStartingPlayerIndex = getRoundStartingPlayerIndex();
+  // Calculate AI player indices once for efficiency and consistency
+  const ai1Index = gameState.players.findIndex((p) => p.id === PlayerId.Bot1);
+  const ai2Index = gameState.players.findIndex((p) => p.id === PlayerId.Bot2);
+  const ai3Index = gameState.players.findIndex((p) => p.id === PlayerId.Bot3);
 
   const isHumanRoundStartingPlayer =
     roundStartingPlayerIndex === humanPlayerIndex;
-  const isAI1RoundStartingPlayer =
-    ai1 &&
-    roundStartingPlayerIndex ===
-      gameState.players.findIndex((p) => p.id === ai1.id);
-  const isAI2RoundStartingPlayer =
-    ai2 &&
-    roundStartingPlayerIndex ===
-      gameState.players.findIndex((p) => p.id === ai2.id);
-  const isAI3RoundStartingPlayer =
-    ai3 &&
-    roundStartingPlayerIndex ===
-      gameState.players.findIndex((p) => p.id === ai3.id);
+  const isAI1RoundStartingPlayer = roundStartingPlayerIndex === ai1Index;
+  const isAI2RoundStartingPlayer = roundStartingPlayerIndex === ai2Index;
+  const isAI3RoundStartingPlayer = roundStartingPlayerIndex === ai3Index;
 
   return (
     <View style={styles.container}>
@@ -318,9 +284,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
-                  trumpDeclarationMode={showTrumpDeclaration}
-                  onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
-                  onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
                   currentPlayerIndex={gameState.currentPlayerIndex}
                   currentTrick={gameState.currentTrick}
                   isRoundStartingPlayer={isHumanRoundStartingPlayer}

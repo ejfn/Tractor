@@ -105,10 +105,12 @@ export const dealNextCard = (state: GameState): GameState => {
   // Initialize dealing state if not present
   if (!newState.dealingState) {
     const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
+    const startingPlayerIndex = newState.currentPlayerIndex;
     newState.dealingState = {
       cardsPerPlayer,
       currentRound: 0,
-      currentPlayerIndex: 0,
+      currentDealingPlayerIndex: startingPlayerIndex, // Start dealing from the first trick leader
+      startingDealingPlayerIndex: startingPlayerIndex, // Remember who we started with for round completion
       totalRounds: cardsPerPlayer,
       completed: false,
       kittyDealt: false,
@@ -131,19 +133,22 @@ export const dealNextCard = (state: GameState): GameState => {
   // Deal one card to the current player
   const cardIndex =
     dealingState.currentRound * players.length +
-    dealingState.currentPlayerIndex;
+    dealingState.currentDealingPlayerIndex;
 
   if (cardIndex < deck.length - 8) {
     // Reserve 8 for kitty
     const card = deck[cardIndex];
-    players[dealingState.currentPlayerIndex].hand.push(card);
+    players[dealingState.currentDealingPlayerIndex].hand.push(card);
 
     // Move to next player
-    dealingState.currentPlayerIndex =
-      (dealingState.currentPlayerIndex + 1) % players.length;
+    dealingState.currentDealingPlayerIndex =
+      (dealingState.currentDealingPlayerIndex + 1) % players.length;
 
     // If we've gone through all players, move to next round
-    if (dealingState.currentPlayerIndex === 0) {
+    if (
+      dealingState.currentDealingPlayerIndex ===
+      dealingState.startingDealingPlayerIndex
+    ) {
       dealingState.currentRound++;
     }
 
@@ -179,8 +184,10 @@ export const getDealingProgress = (
     return { current: 0, total: 1 };
   }
 
-  const { currentRound, currentPlayerIndex, totalRounds } = state.dealingState;
-  const cardsDealt = currentRound * state.players.length + currentPlayerIndex;
+  const { currentRound, currentDealingPlayerIndex, totalRounds } =
+    state.dealingState;
+  const cardsDealt =
+    currentRound * state.players.length + currentDealingPlayerIndex;
   const totalCards = totalRounds * state.players.length;
 
   return { current: cardsDealt, total: totalCards };
@@ -239,10 +246,10 @@ export const getLastDealtCard = (
     return null;
   }
 
-  const { currentRound, currentPlayerIndex } = state.dealingState;
+  const { currentRound, currentDealingPlayerIndex } = state.dealingState;
 
   // Calculate the previous card position
-  let prevPlayerIndex = currentPlayerIndex - 1;
+  let prevPlayerIndex = currentDealingPlayerIndex - 1;
   let prevRound = currentRound;
 
   if (prevPlayerIndex < 0) {
@@ -1889,6 +1896,7 @@ export const initializeGame = (): GameState => {
     tricks: [],
     roundNumber: 1,
     currentPlayerIndex: 0,
+    roundStartingPlayerIndex: 0, // Round 1 starts with Human (index 0)
     gamePhase: GamePhase.Dealing,
   };
 
@@ -1897,7 +1905,8 @@ export const initializeGame = (): GameState => {
   gameState.dealingState = {
     cardsPerPlayer,
     currentRound: 0,
-    currentPlayerIndex: 0,
+    currentDealingPlayerIndex: 0, // Start from player 0 (Human) in round 1
+    startingDealingPlayerIndex: 0, // Remember starting player for round completion
     totalRounds: cardsPerPlayer,
     completed: false,
     kittyDealt: false,

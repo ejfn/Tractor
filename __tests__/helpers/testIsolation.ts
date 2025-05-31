@@ -81,6 +81,7 @@ export const createIsolatedGameState = (): GameState => {
     tricks: [],
     roundNumber: 1,
     currentPlayerIndex: 0,
+    roundStartingPlayerIndex: 0,
     gamePhase: GamePhase.Dealing,
   };
 

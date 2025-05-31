@@ -28,8 +28,7 @@ export const mockConfigs = {
   },
   
   aiLogic: {
-    getAIMove: jest.fn(),
-    shouldAIDeclare: jest.fn().mockReturnValue(false)
+    getAIMove: jest.fn()
   },
   
   gamePlayManager: {
@@ -38,11 +37,6 @@ export const mockConfigs = {
     getAIMoveWithErrorHandling: jest.fn()
   },
   
-  trumpManager: {
-    declareTrumpSuit: jest.fn(),
-    checkAITrumpDeclaration: jest.fn().mockReturnValue({ shouldDeclare: false }),
-    humanHasTrumpRank: jest.fn().mockReturnValue(false)
-  },
   
   gameRoundManager: {
     prepareNextRound: jest.fn(),

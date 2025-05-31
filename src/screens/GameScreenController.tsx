@@ -5,7 +5,8 @@ import { useGameState } from "../hooks/useGameState";
 import { useUIAnimations, useThinkingDots } from "../hooks/useAnimations";
 import { useTrickResults } from "../hooks/useTrickResults";
 import { useAITurns } from "../hooks/useAITurns";
-import { useProgressiveDealing } from "../hooks/useProgressiveDealing";
+import { useSimpleDealing } from "../hooks/useSimpleDealing";
+import { useTrumpDeclarations } from "../hooks/useTrumpDeclarations";
 
 // Game logic
 import { finalizeTrumpDeclaration } from "../game/trumpDeclarationManager";
@@ -30,7 +31,6 @@ const GameScreenController: React.FC = () => {
     gameState,
     selectedCards,
     showSetup,
-    showTrumpDeclaration,
     gameOver,
     winner,
     showRoundComplete,
@@ -41,8 +41,6 @@ const GameScreenController: React.FC = () => {
     handleCardSelect,
     handlePlay,
     handleProcessPlay,
-    handleDeclareTrumpSuit,
-    handleConfirmTrumpDeclaration,
     handleNextRound,
     startNewGame,
     handleTrickResultComplete, // Make sure this is imported
@@ -75,18 +73,26 @@ const GameScreenController: React.FC = () => {
     showRoundComplete,
   );
 
-  // Progressive dealing with trump declaration
+  // Simple dealing
+  const { isDealingInProgress, startDealing, pauseDealing, resumeDealing } =
+    useSimpleDealing({
+      gameState,
+      setGameState,
+      dealingSpeed: 250,
+    });
+
+  // Trump declarations
   const {
-    isDealingInProgress,
     showDeclarationModal,
     availableDeclarations,
     handleHumanDeclaration,
     handleSkipDeclaration,
     handleManualPause,
-  } = useProgressiveDealing({
+  } = useTrumpDeclarations({
     gameState,
     setGameState,
-    dealingSpeed: 250, // Nice middle speed (was 500)
+    pauseDealing,
+    resumeDealing,
   });
 
   // Initialize game on first render
@@ -100,6 +106,13 @@ const GameScreenController: React.FC = () => {
       handleTrickResultComplete();
     });
   }, [initGame, setTrickResultCompleteCallback, handleTrickResultComplete]);
+
+  // Start dealing when game phase is dealing
+  useEffect(() => {
+    if (gameState?.gamePhase === GamePhase.Dealing && !isDealingInProgress) {
+      startDealing();
+    }
+  }, [gameState?.gamePhase, startDealing, isDealingInProgress]);
 
   // Handle trump declaration finalization when dealing completes
   const finalizedRoundRef = useRef<number | null>(null);
@@ -192,7 +205,6 @@ const GameScreenController: React.FC = () => {
       humanPlayerIndex={humanPlayerIndex}
       // UI state
       showSetup={showSetup}
-      showTrumpDeclaration={showTrumpDeclaration}
       gameOver={gameOver}
       winner={winner}
       waitingForAI={waitingForAI}
@@ -218,8 +230,6 @@ const GameScreenController: React.FC = () => {
       onCardSelect={handleCardSelect}
       onPlayCards={handlePlay}
       onStartNewGame={startNewGame}
-      onDeclareTrumpSuit={handleDeclareTrumpSuit}
-      onConfirmTrumpDeclaration={handleConfirmTrumpDeclaration}
       onNextRound={handleNextRound}
       onAnimationComplete={onAnimationComplete}
       onHumanDeclaration={handleHumanDeclaration}

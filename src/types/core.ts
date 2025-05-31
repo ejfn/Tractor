@@ -109,6 +109,7 @@ export type GameState = {
   tricks: Trick[]; // History of all completed tricks in the current round
   roundNumber: number;
   currentPlayerIndex: number;
+  roundStartingPlayerIndex: number; // Index of the player who starts the current round (for crown display)
   lastRoundStartingPlayerIndex?: number; // Stores index of the player who started last round
   gamePhase: GamePhase;
 };
