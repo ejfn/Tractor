@@ -1,17 +1,8 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getDealingProgress } from "../game/gameLogic";
-import {
-  getPlayerDeclarationOptions,
-  getTrumpDeclarationStatus,
-} from "../game/trumpDeclarationManager";
-import {
-  Card,
-  DeclarationType,
-  GameState,
-  PlayerId,
-  PlayerName,
-} from "../types";
+import { getPlayerDeclarationOptions } from "../game/trumpDeclarationManager";
+import { Card, DeclarationType, GameState, PlayerId } from "../types";
 
 interface TrumpDeclarationDuringDealingProps {
   gameState: GameState;
@@ -28,8 +19,7 @@ export function TrumpDeclarationDuringDealing({
   onDeclaration,
   onSkipDeclaration,
 }: TrumpDeclarationDuringDealingProps) {
-  // Get current declaration status
-  const declarationStatus = getTrumpDeclarationStatus(gameState);
+  // Get dealing progress
   const dealingProgress = getDealingProgress(gameState);
 
   // Get human player's declaration options
@@ -50,21 +40,7 @@ export function TrumpDeclarationDuringDealing({
         </Text>
       </View>
 
-      {declarationStatus.hasDeclaration && (
-        <View style={styles.currentDeclaration}>
-          <Text style={styles.currentDeclarationText}>
-            Current: {getPlayerDisplayName(declarationStatus.declarer!)}{" "}
-            declared{" "}
-            {getDeclarationDisplay(
-              declarationStatus.type!,
-              declarationStatus.suit,
-            )}
-          </Text>
-        </View>
-      )}
-
       <View style={styles.options}>
-        <Text style={styles.optionsTitle}>Your Declaration Options:</Text>
         {declarationOptions.length > 0 ? (
           <View style={styles.optionsContainer}>
             {declarationOptions.map((option, index) => (
@@ -101,53 +77,6 @@ export function TrumpDeclarationDuringDealing({
       </View>
     </View>
   );
-}
-
-function getPlayerDisplayName(playerId: PlayerId): string {
-  switch (playerId) {
-    case PlayerId.Human:
-      return PlayerName.Human;
-    case PlayerId.Bot1:
-      return PlayerName.Bot1;
-    case PlayerId.Bot2:
-      return PlayerName.Bot2;
-    case PlayerId.Bot3:
-      return PlayerName.Bot3;
-    default:
-      return playerId;
-  }
-}
-
-function getSuitDisplay(suit: any): string {
-  switch (suit) {
-    case "Hearts":
-      return "Hearts";
-    case "Diamonds":
-      return "Diamonds";
-    case "Clubs":
-      return "Clubs";
-    case "Spades":
-      return "Spades";
-    default:
-      return suit;
-  }
-}
-
-function getDeclarationDisplay(type: DeclarationType, suit: any): string {
-  const suitDisplay = getSuitDisplay(suit);
-
-  switch (type) {
-    case DeclarationType.Single:
-      return suitDisplay; // Single suit name
-    case DeclarationType.Pair:
-      return `${suitDisplay} Pair`; // Suit name + "Pair"
-    case DeclarationType.SmallJokerPair:
-      return "Small Jokers";
-    case DeclarationType.BigJokerPair:
-      return "Big Jokers";
-    default:
-      return `${type} in ${suitDisplay}`;
-  }
 }
 
 function getDeclarationButtonDisplay(type: DeclarationType, suit: any): string {

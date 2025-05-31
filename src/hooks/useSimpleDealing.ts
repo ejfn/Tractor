@@ -77,11 +77,16 @@ export function useSimpleDealing({
 
   // Resume dealing
   const resumeDealing = (stateOverride?: GameState) => {
-    if (isPausedRef.current && isDealingInProgress) {
+    // More forgiving resume logic - if we have a state to work with and we're paused, resume
+    if (isPausedRef.current) {
       const stateToUse = stateOverride || currentStateRef.current;
-      if (stateToUse) {
+      if (stateToUse && stateToUse.gamePhase === "dealing") {
         currentStateRef.current = stateToUse; // Update the ref with the latest state
         isPausedRef.current = false;
+        // Ensure dealing is marked as in progress
+        if (!isDealingInProgress) {
+          setIsDealingInProgress(true);
+        }
         dealNextCardStep(stateToUse);
       }
     }

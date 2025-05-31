@@ -591,7 +591,7 @@ The AI recognizes that mid-dealing (40-70%) is the optimal window for trump decl
 
 **Override Strategy:**
 
-- **No current declaration**: 1.5x bonus (establish early control)
+- **No current declaration**: 1.2x bonus (establish early control)
 - **Cannot override**: 5% chance (almost never declare weaker)
 - **+1 strength advantage**: 60% chance (competitive override)
 - **+2 strength advantage**: 90% chance (very likely override)
@@ -609,11 +609,11 @@ The AI prioritizes **suit length and combinations** over individual card strengt
 
 - **≤2 cards**: 0.2x penalty (way below average - very bad)
 - **3-4 cards**: 0.4-0.7x penalty (below average - bad/poor)
-- **5 cards**: 0.9x (slightly below average)
-- **6 cards**: 1.0x (average - **okay to declare**)
-- **7 cards**: 1.2x (above average - **decent**)
-- **8 cards**: 1.4x (well above average - **good**)
-- **≥9 cards**: 1.6x (significantly above average - **excellent**)
+- **5 cards**: 0.8x (below average)
+- **6 cards**: 0.9x (slightly below average)
+- **7 cards**: 1.0x (average - **baseline for declaration**)
+- **8 cards**: 1.2x (above average - **good**)
+- **≥9 cards**: 1.4x (well above average - **excellent**)
 
 #### Combination Bonuses
 
@@ -628,9 +628,9 @@ The AI prioritizes **suit length and combinations** over individual card strengt
 
 **✅ Strong Declaration Scenarios:**
 
-- 8 Spades with 2 pairs → 1.4x × 1.2x = 1.68x multiplier
-- 7 Hearts with 1 pair → 1.2x × 1.1x = 1.32x multiplier
-- 6 Clubs with no pairs → 1.0x (neutral - average holding)
+- 8 Spades with 2 pairs → 1.2x × 1.2x = 1.44x multiplier
+- 7 Hearts with 1 pair → 1.0x × 1.1x = 1.1x multiplier
+- 6 Clubs with no pairs → 0.9x (slightly below average holding)
 
 **❌ Weak Declaration Scenarios:**
 
@@ -640,7 +640,7 @@ The AI prioritizes **suit length and combinations** over individual card strengt
 ### Key Strategic Principles
 
 1. **Suit Length Priority**: Number of cards in potential trump suit is the primary factor
-2. **Realistic Thresholds**: Based on statistical expectations (6 cards = average)
+2. **Realistic Thresholds**: Based on statistical expectations (7 cards = average baseline)
 3. **Combination Awareness**: Pairs provide bonus but don't override poor length
 4. **Timing Sensitivity**: Mid-dealing phase offers optimal declaration window
 5. **Override Logic**: Competitive but not wasteful override decisions

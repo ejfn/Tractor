@@ -334,6 +334,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         <DealingProgressIndicator
           gameState={gameState}
           onPauseDealing={onManualPause}
+          isModalVisible={showDeclarationModal}
         />
       )}
 

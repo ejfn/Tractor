@@ -21,6 +21,8 @@ export function useTrumpDeclarations({
 }: UseTrumpDeclarationsProps) {
   const [showDeclarationModal, setShowDeclarationModal] = useState(false);
   const [availableDeclarations, setAvailableDeclarations] = useState<any[]>([]);
+  const [currentOpportunitiesHash, setCurrentOpportunitiesHash] =
+    useState<string>("");
 
   // Use refs to store the functions to avoid dependency issues
   const pauseDealingRef = useRef(pauseDealing);
@@ -62,6 +64,14 @@ export function useTrumpDeclarations({
     }
   }, [gameState, setGameState]);
 
+  // Create hash of opportunities to detect changes
+  const createOpportunityHash = (opportunities: any[]) => {
+    return opportunities
+      .map((opp) => `${opp.type}-${opp.suit}`)
+      .sort()
+      .join(",");
+  };
+
   // Check for trump declaration opportunities after each card
   const handLength = gameState?.players?.[0]?.hand?.length;
   useEffect(() => {
@@ -69,8 +79,11 @@ export function useTrumpDeclarations({
 
     // Check human opportunities
     const humanOptions = getPlayerDeclarationOptions(gameState, PlayerId.Human);
-    if (humanOptions.length > 0) {
-      // PAUSE dealing when human has new opportunities
+    const newHash = createOpportunityHash(humanOptions);
+
+    if (humanOptions.length > 0 && newHash !== currentOpportunitiesHash) {
+      // Only pause for NEW opportunities
+      setCurrentOpportunitiesHash(newHash);
       pauseDealingRef.current();
       setAvailableDeclarations(humanOptions);
       setShowDeclarationModal(true);
@@ -79,7 +92,7 @@ export function useTrumpDeclarations({
 
     // Check AI opportunities
     checkAIDeclarations();
-  }, [gameState, handLength, checkAIDeclarations]);
+  }, [gameState, handLength, checkAIDeclarations, currentOpportunitiesHash]);
 
   const handleHumanDeclaration = (declaration: any) => {
     if (!gameState) return;
@@ -102,7 +115,7 @@ export function useTrumpDeclarations({
 
   const handleSkipDeclaration = () => {
     setShowDeclarationModal(false);
-    // RESUME dealing after human skips
+    // RESUME dealing after human skips - just force it to resume
     if (gameState) {
       resumeDealingRef.current(gameState);
     }

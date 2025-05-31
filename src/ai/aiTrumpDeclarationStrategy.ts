@@ -192,7 +192,7 @@ function getCurrentDeclarationMultiplier(
   proposedDeclaration: { type: DeclarationType },
 ): number {
   if (!currentDeclaration.hasDeclaration) {
-    return 1.5; // Strong bonus when no one has declared yet - establish early control
+    return 1.2; // Strong bonus when no one has declared yet - establish early control
   }
 
   const currentStrength = getDeclarationStrength(currentDeclaration.type);
@@ -276,15 +276,15 @@ function getHandQualityMultiplier(hand: Card[], trumpRank: Rank): number {
   } else if (bestSuitLength <= 4) {
     multiplier *= 0.7; // Poor - below average
   } else if (bestSuitLength <= 5) {
-    multiplier *= 0.9; // Slightly below average
+    multiplier *= 0.8; // Below average
   } else if (bestSuitLength === 6) {
-    multiplier *= 1.0; // Okay - average trump suit length
-  } else if (bestSuitLength <= 7) {
-    multiplier *= 1.2; // Decent - above average
-  } else if (bestSuitLength <= 8) {
-    multiplier *= 1.4; // Good - well above average
+    multiplier *= 0.9; // Slightly below average
+  } else if (bestSuitLength === 7) {
+    multiplier *= 1.0; // Average trump suit length
+  } else if (bestSuitLength === 8) {
+    multiplier *= 1.2; // Good - above average
   } else if (bestSuitLength >= 9) {
-    multiplier *= 1.6; // Excellent - significantly above average
+    multiplier *= 1.4; // Excellent - well above average
   }
 
   // Pair bonus in the trump suit

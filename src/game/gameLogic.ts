@@ -105,11 +105,11 @@ export const dealNextCard = (state: GameState): GameState => {
   // Initialize dealing state if not present
   if (!newState.dealingState) {
     const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
-    const startingPlayerIndex = newState.currentPlayerIndex;
+    const startingPlayerIndex = newState.roundStartingPlayerIndex;
     newState.dealingState = {
       cardsPerPlayer,
       currentRound: 0,
-      currentDealingPlayerIndex: startingPlayerIndex, // Start dealing from the first trick leader
+      currentDealingPlayerIndex: startingPlayerIndex, // Start dealing from the round starting player
       startingDealingPlayerIndex: startingPlayerIndex, // Remember who we started with for round completion
       totalRounds: cardsPerPlayer,
       completed: false,

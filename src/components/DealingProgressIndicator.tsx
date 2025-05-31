@@ -12,11 +12,13 @@ import { getTrumpDeclarationStatus } from "../game/trumpDeclarationManager";
 interface DealingProgressIndicatorProps {
   gameState: GameState;
   onPauseDealing?: () => void;
+  isModalVisible?: boolean;
 }
 
 export function DealingProgressIndicator({
   gameState,
   onPauseDealing,
+  isModalVisible = false,
 }: DealingProgressIndicatorProps) {
   const progress = getDealingProgress(gameState);
   const lastDealtCard = getLastDealtCard(gameState);
@@ -65,15 +67,17 @@ export function DealingProgressIndicator({
         </Text>
       )}
 
-      {/* Show last dealt card */}
-      {lastDealtCard && !isPaused && (
+      {/* Show last dealt card - hide when modal is visible */}
+      {lastDealtCard && !isPaused && !isModalVisible && (
         <Text style={styles.lastCardText}>
           → {getPlayerDisplayName(lastDealtCard.playerId)}
         </Text>
       )}
 
-      {/* Tap hint */}
-      {!isPaused && <Text style={styles.tapHint}>Tap to pause & declare</Text>}
+      {/* Tap hint - hide when modal is visible */}
+      {!isPaused && !isModalVisible && (
+        <Text style={styles.tapHint}>Tap to pause & declare</Text>
+      )}
     </ContainerComponent>
   );
 }
