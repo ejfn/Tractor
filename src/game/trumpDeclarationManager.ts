@@ -183,7 +183,8 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
       newState.trumpInfo.trumpSuit = finalDeclaration.suit; // Regular trump rank declarations
     }
 
-    // Rule 2: In first round, trump declarer determines team roles and leads first trick
+    // Rule 2: In first round ONLY, trump declarer determines team roles and leads first trick
+    // For subsequent rounds, the first trick leader is determined by round outcome rules
     if (newState.roundNumber === 1) {
       // Set trump declarer as the starting player for the playing phase
       const declarerIndex = newState.players.findIndex(
@@ -198,6 +199,8 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
         // Note: Team roles are already set in real-time during makeTrumpDeclaration
       }
     }
+    // For round 2+: currentPlayerIndex should already be correctly set by prepareNextRound
+    // based on round outcome rules and should NOT be changed by trump declarations
   } else {
     // No one declared trump during dealing - set to Suit.None (no trump game)
     newState.trumpInfo.trumpSuit = Suit.None;

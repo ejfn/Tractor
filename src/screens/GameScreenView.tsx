@@ -193,13 +193,12 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
       );
     }
     // For subsequent rounds:
-    // - During dealing phase, use currentPlayerIndex (who will start)
-    // - After dealing is complete, use lastRoundStartingPlayerIndex
+    // - Use the stable currentPlayerIndex that was set by prepareNextRound based on round outcome
+    // - This should NOT change during trump declarations in round 2+
     if (gameState.roundNumber > 1) {
-      if (gameState.gamePhase === GamePhase.Dealing) {
-        return gameState.currentPlayerIndex;
-      }
-      return gameState.lastRoundStartingPlayerIndex ?? 0;
+      // For round 2+, the first trick leader is determined by round outcome rules
+      // and should remain stable during dealing regardless of trump declarations
+      return gameState.currentPlayerIndex;
     }
 
     return 0; // Fallback
