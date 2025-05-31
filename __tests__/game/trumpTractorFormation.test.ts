@@ -10,7 +10,7 @@ describe('Trump Tractor Formation Validation', () => {
     // Trump is rank 3 (no trump suit declared)
     const trumpInfo: TrumpInfo = { 
       trumpRank: Rank.Three, 
-      declared: true 
+       
       // No trumpSuit - so only rank 3 cards are trump
     };
     
@@ -81,7 +81,7 @@ describe('Trump Tractor Formation Validation', () => {
     // Trump is Hearts suit with rank 2
     const trumpInfo: TrumpInfo = { 
       trumpRank: Rank.Two, 
-      declared: true,
+      
       trumpSuit: Suit.Hearts 
     };
     
@@ -129,7 +129,7 @@ describe('Trump Tractor Formation Validation', () => {
     // Trump is rank 2 with no trump suit
     const trumpInfo: TrumpInfo = { 
       trumpRank: Rank.Two, 
-      declared: true 
+       
     };
     
     // Test cards: 5♠-5♠-6♠-6♠ (all non-trump)

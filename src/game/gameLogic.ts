@@ -26,25 +26,27 @@ export const createDeck = (): Card[] => {
 
   // Create 2 decks with all suits and ranks
   for (let deckNum = 0; deckNum < 2; deckNum++) {
-    // Regular cards
-    Object.values(Suit).forEach((suit) => {
-      Object.values(Rank).forEach((rank) => {
-        // Calculate points: 5s = 5, 10s and Ks = 10, others = 0
-        let points = 0;
-        if (rank === Rank.Five) {
-          points = 5;
-        } else if (rank === Rank.Ten || rank === Rank.King) {
-          points = 10;
-        }
+    // Regular cards (exclude Suit.None which is only for trump declarations)
+    Object.values(Suit)
+      .filter((suit) => suit !== Suit.None)
+      .forEach((suit) => {
+        Object.values(Rank).forEach((rank) => {
+          // Calculate points: 5s = 5, 10s and Ks = 10, others = 0
+          let points = 0;
+          if (rank === Rank.Five) {
+            points = 5;
+          } else if (rank === Rank.Ten || rank === Rank.King) {
+            points = 10;
+          }
 
-        deck.push({
-          suit,
-          rank,
-          id: `${suit}_${rank}_${deckNum}`,
-          points,
+          deck.push({
+            suit,
+            rank,
+            id: `${suit}_${rank}_${deckNum}`,
+            points,
+          });
         });
       });
-    });
 
     // Add jokers
     deck.push({
@@ -312,7 +314,8 @@ export const isTrump = (card: Card, trumpInfo: TrumpInfo): boolean => {
   if (card.rank === trumpInfo.trumpRank) return true;
 
   // Cards of trump suit (if declared) are trump
-  if (trumpInfo.declared && card.suit === trumpInfo.trumpSuit) return true;
+  if (trumpInfo.trumpSuit !== undefined && card.suit === trumpInfo.trumpSuit)
+    return true;
 
   return false;
 };
@@ -336,7 +339,8 @@ export const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
   if (card.rank === trumpInfo.trumpRank) return 2;
 
   // Trump suit cards - fifth highest
-  if (trumpInfo.declared && card.suit === trumpInfo.trumpSuit) return 1;
+  if (trumpInfo.trumpSuit !== undefined && card.suit === trumpInfo.trumpSuit)
+    return 1;
 
   return 0; // Not a trump (shouldn't reach here)
 };
@@ -1879,7 +1883,7 @@ export const initializeGame = (): GameState => {
     currentTrick: null,
     trumpInfo: {
       trumpRank: Rank.Two,
-      declared: false,
+      trumpSuit: undefined,
     },
     trumpDeclarationState: initializeTrumpDeclarationState(),
     tricks: [],

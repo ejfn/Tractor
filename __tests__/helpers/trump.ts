@@ -14,24 +14,20 @@ import {
  */
 export const createTrumpInfo = (
   trumpRank: Rank = Rank.Two,
-  trumpSuit?: Suit,
-  declared: boolean = false,
-  declarerPlayerId?: PlayerId
+  trumpSuit?: Suit
 ): TrumpInfo => ({
   trumpRank,
-  trumpSuit,
-  declared,
-  declarerPlayerId
+  trumpSuit
 });
 
 /**
  * Creates trump info for common test scenarios
  */
 export const createTrumpScenarios = {
-  noTrump: () => createTrumpInfo(Rank.Two, undefined, false),
-  heartsTrump: () => createTrumpInfo(Rank.Two, Suit.Hearts, true),
-  spadesTrump: () => createTrumpInfo(Rank.Two, Suit.Spades, true),
-  clubsTrump: () => createTrumpInfo(Rank.Two, Suit.Clubs, true),
-  diamondsTrump: () => createTrumpInfo(Rank.Two, Suit.Diamonds, true),
-  rankOnly: (rank: Rank) => createTrumpInfo(rank, undefined, false)
+  noTrump: () => createTrumpInfo(Rank.Two, undefined),
+  heartsTrump: () => createTrumpInfo(Rank.Two, Suit.Hearts),
+  spadesTrump: () => createTrumpInfo(Rank.Two, Suit.Spades),
+  clubsTrump: () => createTrumpInfo(Rank.Two, Suit.Clubs),
+  diamondsTrump: () => createTrumpInfo(Rank.Two, Suit.Diamonds),
+  rankOnly: (rank: Rank) => createTrumpInfo(rank, undefined)
 };

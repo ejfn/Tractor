@@ -11,7 +11,7 @@ export enum DeclarationType {
 export type TrumpDeclaration = {
   playerId: PlayerId;
   rank: Rank;
-  suit: Suit; // Required - must specify suit for trump rank cards
+  suit: Suit; // Suit.None for joker pairs, specific suit for trump rank cards
   type: DeclarationType;
   cards: Card[]; // The actual cards used for declaration
   timestamp: number; // When the declaration was made
@@ -185,21 +185,21 @@ export function detectPossibleDeclarations(
   const bigJokers = hand.filter((card) => card.joker === JokerType.Big);
   const smallJokers = hand.filter((card) => card.joker === JokerType.Small);
 
-  // Big joker pair (strongest)
+  // Big joker pair (strongest) - No trump suit, only jokers + trump rank in all suits
   if (bigJokers.length >= 2) {
     declarations.push({
       type: DeclarationType.BigJokerPair,
       cards: bigJokers.slice(0, 2),
-      suit: Suit.Spades, // Default suit for jokers, will be overridden
+      suit: Suit.None, // No trump suit for joker pairs
     });
   }
 
-  // Small joker pair
+  // Small joker pair - No trump suit, only jokers + trump rank in all suits
   if (smallJokers.length >= 2) {
     declarations.push({
       type: DeclarationType.SmallJokerPair,
       cards: smallJokers.slice(0, 2),
-      suit: Suit.Spades, // Default suit for jokers, will be overridden
+      suit: Suit.None, // No trump suit for joker pairs
     });
   }
 

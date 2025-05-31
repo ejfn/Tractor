@@ -65,13 +65,13 @@ export const createGameScenarios = {
   // Trump declaration phase
   trumpDeclaration: () => createGameState({
     gamePhase: GamePhase.Dealing,
-    trumpInfo: createTrumpInfo(Rank.Two, undefined, false)
+    trumpInfo: createTrumpInfo(Rank.Two, undefined)
   }),
 
   // Active game with trump declared
   playingWithTrump: (trumpSuit: Suit) => createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, trumpSuit, true)
+    trumpInfo: createTrumpInfo(Rank.Two, trumpSuit)
   }),
 
   // Game in progress, human's turn
@@ -109,7 +109,7 @@ export const createGameScenarios = {
  */
 export const createBasicGameState = (): GameState => createGameState({
   gamePhase: GamePhase.Playing,
-  trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
+  trumpInfo: createTrumpInfo(Rank.Two, undefined),
   currentPlayerIndex: 0
 });
 
@@ -119,7 +119,7 @@ export const createBasicGameState = (): GameState => createGameState({
  */
 export const createTrumpGameState = (trumpSuit: Suit): GameState => createGameState({
   gamePhase: GamePhase.Playing,
-  trumpInfo: createTrumpInfo(Rank.Two, trumpSuit, true),
+  trumpInfo: createTrumpInfo(Rank.Two, trumpSuit),
   currentPlayerIndex: 0
 });
 
@@ -130,7 +130,7 @@ export const createTrumpGameState = (trumpSuit: Suit): GameState => createGameSt
 export const createTestCardsGameState = (): GameState => {
   let state = createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
+    trumpInfo: createTrumpInfo(Rank.Two, undefined),
     currentPlayerIndex: 0
   });
 
@@ -182,7 +182,7 @@ export const createScoringGameState = (teamAPoints: number = 0, teamBPoints: num
 export const createTrumpDeclarationGameState = (): GameState => {
   let state = createGameState({
     gamePhase: GamePhase.Dealing,
-    trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
+    trumpInfo: createTrumpInfo(Rank.Two, undefined),
     currentPlayerIndex: 0
   });
 
@@ -217,7 +217,7 @@ export const createTrumpDeclarationGameState = (): GameState => {
 export const createFullGameStateWithTricks = (): GameState => {
   let state = createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades, true),
+    trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades),
     currentPlayerIndex: 0,
     roundNumber: 1
   });
@@ -277,7 +277,7 @@ export const createFullGameStateWithTricks = (): GameState => {
  */
 export const createRotationTestGameState = (): GameState => createGameState({
   gamePhase: GamePhase.Playing,
-  trumpInfo: createTrumpInfo(Rank.Two, Suit.Hearts, true),
+  trumpInfo: createTrumpInfo(Rank.Two, Suit.Hearts),
   currentPlayerIndex: 0
 });
 
@@ -288,7 +288,7 @@ export const createRotationTestGameState = (): GameState => createGameState({
 export const createComponentTestGameState = (): GameState => {
   let state = createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
+    trumpInfo: createTrumpInfo(Rank.Two, undefined),
     currentPlayerIndex: 0
   });
 

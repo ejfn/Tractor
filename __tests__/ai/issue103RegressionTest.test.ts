@@ -12,8 +12,8 @@ describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', ()
 
     const gameState = initializeGame();
     gameState.trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
       trumpRank: Rank.Two, // Rank 2 is trump
       trumpSuit: Suit.Spades,
     };
@@ -92,8 +92,8 @@ describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', ()
     // Test with Hearts trump to see if bug persists across different trump suits
     const gameState = initializeGame();
     gameState.trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
       trumpRank: Rank.Three, // Rank 3 is trump
       trumpSuit: Suit.Hearts,
     };

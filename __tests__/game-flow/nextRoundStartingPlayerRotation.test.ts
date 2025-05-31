@@ -1,4 +1,4 @@
-import { GameState, PlayerId, Rank } from "../../src/types";
+import { GameState, PlayerId, Rank, DeclarationType, Suit } from "../../src/types";
 import { prepareNextRound, endRound } from "../../src/game/gameRoundManager";
 import { initializeGame } from "../../src/game/gameLogic";
 
@@ -195,7 +195,19 @@ describe("Next Round Starting Player Rotation", () => {
       // First round: trump declarer should start
       const firstRoundState = initializeGame();
       firstRoundState.roundNumber = 0; // Will be incremented to 1 by prepareNextRound
-      firstRoundState.trumpInfo.declarerPlayerId = PlayerId.Bot2;
+      // Set up trump declaration state to indicate Bot2 declared trump
+      firstRoundState.trumpDeclarationState = {
+        declarationHistory: [],
+        declarationWindow: false,
+        currentDeclaration: {
+          playerId: PlayerId.Bot2,
+          rank: firstRoundState.trumpInfo.trumpRank,
+          suit: firstRoundState.trumpInfo.trumpSuit || Suit.Hearts,
+          type: DeclarationType.Pair,
+          cards: [],
+          timestamp: Date.now()
+        }
+      };
       
       const nextRoundState = prepareNextRound(firstRoundState);
       

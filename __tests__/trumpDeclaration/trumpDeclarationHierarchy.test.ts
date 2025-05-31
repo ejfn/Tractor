@@ -117,6 +117,51 @@ describe('Trump Declaration Hierarchy System', () => {
       expect(canOverrideDeclaration(currentDeclaration, weakerOverride)).toBe(false);
     });
 
+    test('equal strength declarations should NOT override each other', () => {
+      // Current declaration: 2♣-2♣ (Pair, strength 2)
+      const currentPairDeclaration: TrumpDeclaration = {
+        playerId: PlayerId.Human,
+        rank: trumpRank,
+        suit: Suit.Clubs,
+        type: DeclarationType.Pair,
+        cards: [createCard(Suit.Clubs, trumpRank), createCard(Suit.Clubs, trumpRank)],
+        timestamp: Date.now()
+      };
+
+      // Attempted override: 2♦-2♦ (also Pair, strength 2) - should NOT be allowed
+      const equalStrengthPair: TrumpDeclaration = {
+        playerId: PlayerId.Bot1,
+        rank: trumpRank,
+        suit: Suit.Diamonds,
+        type: DeclarationType.Pair,
+        cards: [createCard(Suit.Diamonds, trumpRank), createCard(Suit.Diamonds, trumpRank)],
+        timestamp: Date.now() + 1
+      };
+
+      expect(canOverrideDeclaration(currentPairDeclaration, equalStrengthPair)).toBe(false);
+
+      // Another test case: Single vs Single should also not override
+      const currentSingleDeclaration: TrumpDeclaration = {
+        playerId: PlayerId.Human,
+        rank: trumpRank,
+        suit: Suit.Spades,
+        type: DeclarationType.Single,
+        cards: [createCard(Suit.Spades, trumpRank)],
+        timestamp: Date.now()
+      };
+
+      const equalStrengthSingle: TrumpDeclaration = {
+        playerId: PlayerId.Bot1,
+        rank: trumpRank,
+        suit: Suit.Hearts,
+        type: DeclarationType.Single,
+        cards: [createCard(Suit.Hearts, trumpRank)],
+        timestamp: Date.now() + 1
+      };
+
+      expect(canOverrideDeclaration(currentSingleDeclaration, equalStrengthSingle)).toBe(false);
+    });
+
     test('joker pair beats any trump rank pair', () => {
       const trumpRankPair: TrumpDeclaration = {
         playerId: PlayerId.Human,

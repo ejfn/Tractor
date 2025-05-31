@@ -17,7 +17,7 @@ export function prepareNextRound(state: GameState): GameState {
   if (newDefendingTeam) {
     newState.trumpInfo.trumpRank = newDefendingTeam.currentRank;
     newState.trumpInfo.trumpSuit = undefined;
-    newState.trumpInfo.declared = false;
+    newState.trumpInfo.trumpSuit = undefined; // No trump declared yet
   }
 
   // Create and shuffle a new deck
@@ -60,11 +60,15 @@ export function prepareNextRound(state: GameState): GameState {
     (p) => p.team === defendingTeam?.id,
   );
 
-  // Handle first round when we have a trump declarer
-  if (newState.roundNumber === 1 && newState.trumpInfo.declarerPlayerId) {
-    // Find index of the trump declarer
+  // Handle first round when we have a trump declaration
+  if (
+    newState.roundNumber === 1 &&
+    newState.trumpDeclarationState?.currentDeclaration
+  ) {
+    // Find index of the trump declarer from the declaration state
     const declarerIndex = newState.players.findIndex(
-      (p) => p.id === newState.trumpInfo.declarerPlayerId,
+      (p) =>
+        p.id === newState.trumpDeclarationState?.currentDeclaration?.playerId,
     );
 
     if (declarerIndex !== -1) {

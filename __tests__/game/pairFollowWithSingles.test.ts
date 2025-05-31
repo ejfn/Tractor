@@ -42,7 +42,7 @@ describe('Pair Follow With Singles', () => {
       deck: [],
       kittyCards: [],
       currentTrick: null,
-      trumpInfo: { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades },
+      trumpInfo: { trumpRank: Rank.Two,  trumpSuit: Suit.Spades },
       tricks: [],
       roundNumber: 1,
       currentPlayerIndex: 0,

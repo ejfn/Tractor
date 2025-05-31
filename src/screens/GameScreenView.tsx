@@ -181,10 +181,15 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
   // Determine which player is the round starting player
   const getRoundStartingPlayerIndex = () => {
-    // For round 1, the trump declarer starts (stored in trumpInfo.declarerPlayerId)
-    if (gameState.roundNumber === 1 && gameState.trumpInfo.declarerPlayerId) {
+    // For round 1, the trump declarer starts (stored in trumpDeclarationState.currentDeclaration.playerId)
+    if (
+      gameState.roundNumber === 1 &&
+      gameState.trumpDeclarationState?.currentDeclaration?.playerId
+    ) {
       return gameState.players.findIndex(
-        (p) => p.id === gameState.trumpInfo.declarerPlayerId,
+        (p) =>
+          p.id ===
+          gameState.trumpDeclarationState?.currentDeclaration?.playerId,
       );
     }
     // For subsequent rounds:

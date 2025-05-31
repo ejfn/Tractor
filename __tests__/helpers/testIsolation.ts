@@ -76,7 +76,7 @@ export const createIsolatedGameState = (): GameState => {
     currentTrick: null,
     trumpInfo: {
       trumpRank: Rank.Two,
-      declared: false,
+      trumpSuit: undefined,
     },
     tricks: [],
     roundNumber: 1,

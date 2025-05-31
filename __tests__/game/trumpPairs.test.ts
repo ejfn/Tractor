@@ -115,7 +115,7 @@ describe('Trump Pair Tests', () => {
   const trumpInfo: TrumpInfo = {
     trumpRank: Rank.Four,
     trumpSuit: Suit.Diamonds,
-    declared: true
+    
   };
 
   // Individual card tests
@@ -366,7 +366,7 @@ describe('Trump Pair Tests', () => {
     const nonFiveTrumpInfo: TrumpInfo = {
       trumpRank: Rank.Seven,
       trumpSuit: Suit.Diamonds,
-      declared: true
+      
     };
 
     // Create a proper pair of five spades (non-trump)
@@ -405,7 +405,7 @@ describe('Trump Pair Tests', () => {
     const trumpTwoDiamonds: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Diamonds,
-      declared: true
+      
     };
 
     // Create a pair of fives (lower rank, non-trump)
@@ -454,7 +454,7 @@ describe('Trump Pair Tests', () => {
     const trumpTwoDiamonds: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Diamonds,
-      declared: true
+      
     };
 
     // Create a pair of fives (lower rank, same suit)

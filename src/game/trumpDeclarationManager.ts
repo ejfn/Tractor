@@ -1,4 +1,4 @@
-import { GameState, PlayerId } from "../types";
+import { GameState, PlayerId, Suit } from "../types";
 import {
   TrumpDeclaration,
   TrumpDeclarationState,
@@ -67,9 +67,12 @@ export function makeTrumpDeclaration(
   newState.trumpDeclarationState.declarationHistory.push(fullDeclaration);
 
   // Update trump info if this is a valid declaration
-  newState.trumpInfo.trumpSuit = fullDeclaration.suit;
-  newState.trumpInfo.declared = true;
-  newState.trumpInfo.declarerPlayerId = playerId;
+  // For joker pairs (Suit.None), keep trump suit as None (no specific trump suit)
+  if (fullDeclaration.suit === Suit.None) {
+    newState.trumpInfo.trumpSuit = Suit.None; // No trump suit - only jokers + trump rank in all suits
+  } else {
+    newState.trumpInfo.trumpSuit = fullDeclaration.suit; // Regular trump rank declarations use suit
+  }
 
   // Real-time team role changes during dealing (first round only)
   if (newState.roundNumber === 1) {
@@ -154,8 +157,12 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     const finalDeclaration = newState.trumpDeclarationState.currentDeclaration;
 
     // Apply the final trump declaration to trumpInfo
-    newState.trumpInfo.trumpSuit = finalDeclaration.suit;
-    newState.trumpInfo.declarerPlayerId = finalDeclaration.playerId;
+    // Handle Suit.None the same way as during declaration
+    if (finalDeclaration.suit === Suit.None) {
+      newState.trumpInfo.trumpSuit = Suit.None; // No trump suit for joker pairs
+    } else {
+      newState.trumpInfo.trumpSuit = finalDeclaration.suit; // Regular trump rank declarations
+    }
 
     // Rule 2: In first round, trump declarer determines team roles and leads first trick
     if (newState.roundNumber === 1) {
@@ -172,10 +179,12 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
         // Note: Team roles are already set in real-time during makeTrumpDeclaration
       }
     }
+  } else {
+    // No one declared trump during dealing - set to Suit.None (no trump game)
+    newState.trumpInfo.trumpSuit = Suit.None;
   }
 
-  // Always mark trump declaration as complete (whether someone declared or not)
-  newState.trumpInfo.declared = true;
+  // Trump declaration is complete (trumpSuit will indicate if someone declared or not)
 
   // Close the declaration window
   if (newState.trumpDeclarationState) {

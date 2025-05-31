@@ -11,6 +11,7 @@ import {
 import {
   makeTrumpDeclaration,
   getPlayerDeclarationOptions,
+  getTrumpDeclarationStatus,
 } from "../game/trumpDeclarationManager";
 import { getAITrumpDeclarationDecision } from "../ai/aiTrumpDeclarationStrategy";
 
@@ -28,8 +29,12 @@ export function useProgressiveDealing({
   const [isDealingInProgress, setIsDealingInProgress] = useState(false);
   const [showDeclarationModal, setShowDeclarationModal] = useState(false);
   const [availableDeclarations, setAvailableDeclarations] = useState<any[]>([]);
-  const [humanSkippedDeclaration, setHumanSkippedDeclaration] = useState(false);
-  const lastShownOpportunitiesRef = useRef<string>(""); // Track what opportunities were last shown
+  // Removed humanSkippedDeclaration state - now using immutable opportunity tracking
+
+  // Immutable tracking of human declaration decisions
+  const humanDecisionHistoryRef = useRef<Set<string>>(new Set()); // Track what opportunity sets human has already seen/decided on
+  const lastOpportunityHashRef = useRef<string>(""); // Track current opportunity signature
+  const humanJustDeclaredRef = useRef<boolean>(false); // Track if human just made a declaration
   const dealingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const declarationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -61,6 +66,40 @@ export function useProgressiveDealing({
   const handleAIDeclaration = useCallback(
     (state: GameState, playerId: PlayerId, declaration: any) => {
       try {
+        // CRITICAL: Double-check declaration validity just before making the declaration
+        // This prevents race conditions where the AI decision was made with stale state
+        const currentDeclarationOptions = getPlayerDeclarationOptions(
+          state,
+          playerId,
+        );
+        const isValidDeclaration = currentDeclarationOptions.some(
+          (option) =>
+            option.type === declaration.type &&
+            option.suit === declaration.suit,
+        );
+
+        if (!isValidDeclaration) {
+          console.warn(
+            `AI ${playerId} declaration rejected - no longer valid due to state change`,
+          );
+          console.warn(`Attempted declaration:`, declaration);
+          console.warn(`Valid options:`, currentDeclarationOptions);
+
+          // Continue dealing without declaring
+          const resumedState = resumeDealing(state);
+          setGameState(resumedState);
+          setIsDealingInProgress(false);
+          setTimeout(() => {
+            startProgressiveDealingRef.current(resumedState);
+          }, 100);
+          return;
+        }
+
+        console.log(
+          `AI ${playerId} declaration validated - proceeding with:`,
+          declaration,
+        );
+
         const newState = makeTrumpDeclaration(state, playerId, {
           rank: state.trumpInfo.trumpRank,
           suit: declaration.suit,
@@ -103,6 +142,21 @@ export function useProgressiveDealing({
       const aiPlayers = state.players.filter((p) => !p.isHuman);
 
       for (const player of aiPlayers) {
+        // CRITICAL: Re-check the current trump declaration status before each AI decision
+        // This prevents race conditions where multiple AIs make decisions based on stale state
+        const currentDeclarationStatus = getTrumpDeclarationStatus(state);
+
+        // Get fresh declaration options based on current state (not stale state)
+        const currentDeclarationOptions = getPlayerDeclarationOptions(
+          state,
+          player.id as PlayerId,
+        );
+
+        // If this AI has no valid options due to state changes, skip
+        if (currentDeclarationOptions.length === 0) {
+          continue;
+        }
+
         const aiDecision = getAITrumpDeclarationDecision(
           state,
           player.id as PlayerId,
@@ -110,6 +164,8 @@ export function useProgressiveDealing({
 
         if (aiDecision.shouldDeclare && aiDecision.declaration) {
           console.log(`AI ${player.id} decision: ${aiDecision.reasoning}`);
+          console.log(`Current declaration status:`, currentDeclarationStatus);
+
           handleAIDeclaration(
             state,
             player.id as PlayerId,
@@ -122,27 +178,42 @@ export function useProgressiveDealing({
     [handleAIDeclaration],
   );
 
+  const createOpportunityHash = useCallback((opportunities: any[]) => {
+    // Create a deterministic hash of opportunities including trump context
+    return opportunities
+      .map((opp) => `${opp.type}-${opp.suit}`)
+      .sort()
+      .join(",");
+  }, []);
+
   const checkForDeclarationOpportunities = useCallback(
     (state: GameState) => {
+      // Skip if human just declared to prevent immediate re-triggering
+      if (humanJustDeclaredRef.current) {
+        humanJustDeclaredRef.current = false;
+        checkAIDeclarations(state);
+        return;
+      }
+
       const opportunities = checkDeclarationOpportunities(state);
-
-      // Check if human player has declaration opportunities
       const humanOpportunities = opportunities.get(PlayerId.Human);
+
       if (humanOpportunities && humanOpportunities.length > 0) {
-        // Create a signature of current opportunities to compare with previously shown ones
-        const currentOpportunitiesSignature = humanOpportunities
-          .map((opp) => `${opp.type}-${opp.suit}`)
-          .sort()
-          .join(",");
+        const currentHash = createOpportunityHash(humanOpportunities);
 
-        // Only show modal if opportunities have changed AND human hasn't skipped this specific set
-        if (
-          currentOpportunitiesSignature !== lastShownOpportunitiesRef.current
-        ) {
-          lastShownOpportunitiesRef.current = currentOpportunitiesSignature;
+        // Check if this exact opportunity set has been seen before
+        const hasSeenThisSet = humanDecisionHistoryRef.current.has(currentHash);
+        const isNewOpportunitySet =
+          currentHash !== lastOpportunityHashRef.current;
 
-          // Reset skip flag when new opportunities arise (different from what was previously shown)
-          setHumanSkippedDeclaration(false);
+        // Only show modal for NEW opportunity sets that haven't been seen before
+        if (isNewOpportunitySet && !hasSeenThisSet && !showDeclarationModal) {
+          console.log(
+            `🎯 New human declaration opportunities detected: ${currentHash}`,
+          );
+
+          // Update tracking
+          lastOpportunityHashRef.current = currentHash;
 
           // Pause dealing and show declaration modal
           const pausedState = pauseDealing(state, "trump_declaration");
@@ -155,29 +226,20 @@ export function useProgressiveDealing({
             clearTimeout(dealingIntervalRef.current);
             dealingIntervalRef.current = null;
           }
-        } else if (!humanSkippedDeclaration && !showDeclarationModal) {
-          // Same opportunities but human hasn't been asked yet (first time)
-          // Pause dealing and show declaration modal
-          const pausedState = pauseDealing(state, "trump_declaration");
-          setGameState(pausedState);
-          setAvailableDeclarations(humanOpportunities);
-          setShowDeclarationModal(true);
-
-          // Stop dealing timer
-          if (dealingIntervalRef.current) {
-            clearTimeout(dealingIntervalRef.current);
-            dealingIntervalRef.current = null;
-          }
+        } else {
+          // Same opportunities already seen/decided upon, or modal already showing
+          // Check AI declarations instead
+          checkAIDeclarations(state);
         }
       } else {
-        // Check AI declarations
+        // No human opportunities, check AI declarations
         checkAIDeclarations(state);
       }
     },
     [
+      createOpportunityHash,
       checkAIDeclarations,
       setGameState,
-      humanSkippedDeclaration,
       showDeclarationModal,
       setAvailableDeclarations,
       setShowDeclarationModal,
@@ -190,8 +252,12 @@ export function useProgressiveDealing({
       if (!currentState || isDealingInProgress) return;
 
       setIsDealingInProgress(true);
-      setHumanSkippedDeclaration(false); // Reset skip flag when starting new dealing
-      lastShownOpportunitiesRef.current = ""; // Reset shown opportunities for new dealing
+      // No longer need skip flag - using immutable opportunity tracking
+
+      // Reset immutable tracking for new dealing session
+      humanDecisionHistoryRef.current.clear();
+      lastOpportunityHashRef.current = "";
+      humanJustDeclaredRef.current = false;
 
       const dealNextCardWithDelay = (dealState?: GameState) => {
         // Use passed state or the initial current state
@@ -209,8 +275,7 @@ export function useProgressiveDealing({
         const newState = dealNextCard(stateToUse);
         setGameState(newState);
 
-        // Reset skip flag when a new card is dealt - allows new declaration opportunities
-        setHumanSkippedDeclaration(false);
+        // No longer reset skip flag - rely on immutable opportunity tracking instead
 
         // Check for declaration opportunities after dealing card
         checkForDeclarationOpportunitiesRef.current(newState);
@@ -231,12 +296,12 @@ export function useProgressiveDealing({
           );
 
           if (declarationOptions && declarationOptions.length > 0) {
-            // Pause for trump declaration opportunity
+            // Pause for trump declaration opportunity at end of dealing
             const pausedState = pauseDealing(newState, "trump_declaration");
             setGameState(pausedState);
             setAvailableDeclarations(declarationOptions);
             setShowDeclarationModal(true);
-            setHumanSkippedDeclaration(false);
+            // No need to reset skip flag - using immutable tracking
           } else {
             // No opportunities, transition to playing phase
             const playingState = { ...newState, gamePhase: GamePhase.Playing };
@@ -259,7 +324,6 @@ export function useProgressiveDealing({
       setIsDealingInProgress,
       setAvailableDeclarations,
       setShowDeclarationModal,
-      setHumanSkippedDeclaration,
     ],
   );
 
@@ -295,7 +359,19 @@ export function useProgressiveDealing({
       setGameState(newState);
       setShowDeclarationModal(false);
       setAvailableDeclarations([]);
-      setHumanSkippedDeclaration(false); // Reset skip flag after declaration
+      // No longer need skip flag - using immutable opportunity tracking
+
+      // Record that human just declared to prevent immediate re-triggering
+      humanJustDeclaredRef.current = true;
+
+      // Add current opportunity set to decision history since human chose to declare
+      const currentHash = lastOpportunityHashRef.current;
+      if (currentHash) {
+        humanDecisionHistoryRef.current.add(currentHash);
+        console.log(
+          `📝 Human declared - recording decision for: ${currentHash}`,
+        );
+      }
 
       // Resume dealing after human declaration
       setTimeout(() => {
@@ -340,7 +416,7 @@ export function useProgressiveDealing({
 
               const newState = dealNextCard(stateToUse);
               setGameState(newState);
-              setHumanSkippedDeclaration(false);
+              // No longer reset skip flag - using immutable tracking
               checkForDeclarationOpportunitiesRef.current(newState);
 
               if (!isDealingComplete(newState) && !isDealingPaused(newState)) {
@@ -364,7 +440,7 @@ export function useProgressiveDealing({
                   setGameState(pausedState);
                   setAvailableDeclarations(declarationOptions);
                   setShowDeclarationModal(true);
-                  setHumanSkippedDeclaration(false);
+                  // No longer reset skip flag - using immutable tracking
                 } else {
                   const playingState = {
                     ...newState,
@@ -417,7 +493,14 @@ export function useProgressiveDealing({
 
     setShowDeclarationModal(false);
     setAvailableDeclarations([]);
-    setHumanSkippedDeclaration(true); // Prevent modal from re-appearing
+    // No longer need skip flag - using immutable opportunity tracking
+
+    // Record that human skipped this specific opportunity set
+    const currentHash = lastOpportunityHashRef.current;
+    if (currentHash) {
+      humanDecisionHistoryRef.current.add(currentHash);
+      console.log(`🚫 Human skipped - recording decision for: ${currentHash}`);
+    }
 
     const resumedState = resumeDealing(gameState);
     setGameState(resumedState);
@@ -448,7 +531,7 @@ export function useProgressiveDealing({
 
         const newState = dealNextCard(stateToUse);
         setGameState(newState);
-        setHumanSkippedDeclaration(false);
+        // No longer reset skip flag - using immutable tracking
         checkForDeclarationOpportunitiesRef.current(newState);
 
         if (!isDealingComplete(newState) && !isDealingPaused(newState)) {
@@ -469,7 +552,7 @@ export function useProgressiveDealing({
             setGameState(pausedState);
             setAvailableDeclarations(declarationOptions);
             setShowDeclarationModal(true);
-            setHumanSkippedDeclaration(false);
+            // No longer reset skip flag - using immutable tracking
           } else {
             const playingState = { ...newState, gamePhase: GamePhase.Playing };
             setGameState(playingState);

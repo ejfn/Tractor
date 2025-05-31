@@ -318,26 +318,58 @@ function getTeamStrategyMultiplier(
   return 1.0;
 }
 
+function getDeclarationTypeDisplayName(type: DeclarationType): string {
+  switch (type) {
+    case DeclarationType.Single:
+      return "single";
+    case DeclarationType.Pair:
+      return "pair";
+    case DeclarationType.SmallJokerPair:
+      return "small joker pair";
+    case DeclarationType.BigJokerPair:
+      return "big joker pair";
+    default:
+      return type;
+  }
+}
+
 function generateDecisionReasoning(
   shouldDeclare: boolean,
   declarationType: DeclarationType,
-  currentDeclaration: any,
+  currentDeclarationStatus: {
+    hasDeclaration: boolean;
+    declarer?: string;
+    type?: DeclarationType;
+  },
   dealingProgress: { current: number; total: number },
 ): string {
+  const currentTypeDisplay = currentDeclarationStatus.type
+    ? getDeclarationTypeDisplayName(currentDeclarationStatus.type)
+    : "unknown";
+  const newTypeDisplay = getDeclarationTypeDisplayName(declarationType);
+
   if (!shouldDeclare) {
-    if (currentDeclaration.hasDeclaration) {
-      return `Holding back - ${currentDeclaration.declarer} already declared ${currentDeclaration.type}`;
+    if (
+      currentDeclarationStatus.hasDeclaration &&
+      currentDeclarationStatus.declarer &&
+      currentDeclarationStatus.type
+    ) {
+      return `Holding back - ${currentDeclarationStatus.declarer} already declared ${currentTypeDisplay}`;
     } else {
-      return `Waiting for better opportunity - only ${declarationType} available`;
+      return `Waiting for better opportunity - only ${newTypeDisplay} available`;
     }
   } else {
-    if (currentDeclaration.hasDeclaration) {
-      return `Overriding ${currentDeclaration.declarer}'s ${currentDeclaration.type} with ${declarationType}`;
+    if (
+      currentDeclarationStatus.hasDeclaration &&
+      currentDeclarationStatus.declarer &&
+      currentDeclarationStatus.type
+    ) {
+      return `Overriding ${currentDeclarationStatus.declarer}'s ${currentTypeDisplay} with ${newTypeDisplay}`;
     } else {
       const progressPercent = Math.round(
         (dealingProgress.current / dealingProgress.total) * 100,
       );
-      return `Declaring ${declarationType} early (${progressPercent}% dealt) to establish trump`;
+      return `Declaring ${newTypeDisplay} early (${progressPercent}% dealt) to establish trump`;
     }
   }
 }

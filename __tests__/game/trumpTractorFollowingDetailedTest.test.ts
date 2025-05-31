@@ -54,7 +54,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
       deck: [],
       kittyCards: [],
       currentTrick: null,
-      trumpInfo: { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades },
+      trumpInfo: { trumpRank: Rank.Two,  trumpSuit: Suit.Spades },
       tricks: [],
       roundNumber: 1,
       currentPlayerIndex: 0,
@@ -65,7 +65,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
   describe('Trump Suit Pairs Count as Valid Pairs', () => {
     test('Should accept trump suit pairs when following trump tractor', () => {
       // Trump is 2 with spades as trump suit
-      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades };
+      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two,  trumpSuit: Suit.Spades };
       
       // AI leads with spades trump tractor: 3-3-4-4
       const leadingTrumpTractor: Card[] = [
@@ -105,7 +105,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
   describe('Trump Rank Pairs Count as Valid Pairs', () => {
     test('Should accept trump rank pairs from different suits when following trump tractor', () => {
       // Trump is 2 with spades as trump suit
-      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades };
+      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two,  trumpSuit: Suit.Spades };
       
       // AI leads with spades trump tractor: 3-3-4-4 (trump suit tractor)
       const leadingTrumpTractor: Card[] = [
@@ -151,7 +151,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
   describe('Joker Pairs Count as Valid Pairs', () => {
     test('Should accept joker pairs when following trump tractor', () => {
       // Trump is 2 with spades as trump suit
-      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades };
+      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two,  trumpSuit: Suit.Spades };
       
       // AI leads with spades trump tractor: 3-3-4-4
       const leadingTrumpTractor: Card[] = [
@@ -195,7 +195,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
   describe('Mixed Trump Pairs Should Work', () => {
     test('Should accept mix of trump suit pairs, trump rank pairs, and joker pairs', () => {
       // Trump is 2 with spades as trump suit
-      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades };
+      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two,  trumpSuit: Suit.Spades };
       
       // AI leads with big trump tractor: 6 cards (3 pairs)
       const leadingBigTrumpTractor: Card[] = [
@@ -239,7 +239,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
   describe('Cannot Use Non-Trump Pairs for Trump Tractor', () => {
     test('Should reject non-trump pairs when player has trump pairs available', () => {
       // Trump is 2 with spades as trump suit
-      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades };
+      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two,  trumpSuit: Suit.Spades };
       
       // AI leads with spades trump tractor: 3-3-4-4
       const leadingTrumpTractor: Card[] = [
@@ -286,7 +286,7 @@ describe('Trump Tractor Following Detailed Rules (Issue #71)', () => {
   describe('Complex Trump Hierarchy Test', () => {
     test('Should properly handle complex trump tractor following with all trump types', () => {
       // Trump is 2 with hearts as trump suit
-      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Hearts };
+      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two,  trumpSuit: Suit.Hearts };
       
       // AI leads with big joker tractor (highest trump): SJ-SJ-BJ-BJ
       const leadingJokerTractor: Card[] = [

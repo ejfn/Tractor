@@ -10,19 +10,19 @@ describe('Issue #78: Auto-select after trump declaration skip', () => {
     
     // Ensure we're in declaring phase initially
     gameState.gamePhase = GamePhase.Dealing;
-    gameState.trumpInfo.declared = false;
+    gameState.trumpInfo.trumpSuit = undefined;
     
-    console.log('Initial state - declared:', gameState.trumpInfo.declared);
+    console.log('Initial state - trumpSuit:', gameState.trumpInfo.trumpSuit);
     console.log('Initial phase:', gameState.gamePhase);
     
     // Skip trump declaration (pass null)
     const stateAfterSkip = declareTrumpSuit(gameState, null);
     
-    console.log('After skip - declared:', stateAfterSkip.trumpInfo.declared);
+    console.log('After skip - trumpSuit:', stateAfterSkip.trumpInfo.trumpSuit);
     console.log('After skip phase:', stateAfterSkip.gamePhase);
     
-    // Verify trump declaration is marked as complete
-    expect(stateAfterSkip.trumpInfo.declared).toBe(true);
+    // Verify trump declaration was skipped (trumpSuit should be Suit.None)
+    expect(stateAfterSkip.trumpInfo.trumpSuit).toBe(Suit.None);
     expect(stateAfterSkip.gamePhase).toBe(GamePhase.Playing);
     
     // Create test cards for auto-selection
@@ -72,13 +72,12 @@ describe('Issue #78: Auto-select after trump declaration skip', () => {
     // Create initial game state
     const gameState = createIsolatedGameState();
     gameState.gamePhase = GamePhase.Dealing;
-    gameState.trumpInfo.declared = false;
+    gameState.trumpInfo.trumpSuit = undefined;
     
     // Declare Hearts as trump
     const stateAfterDeclaration = declareTrumpSuit(gameState, Suit.Hearts);
     
     // Verify trump declaration is complete
-    expect(stateAfterDeclaration.trumpInfo.declared).toBe(true);
     expect(stateAfterDeclaration.trumpInfo.trumpSuit).toBe(Suit.Hearts);
     expect(stateAfterDeclaration.gamePhase).toBe(GamePhase.Playing);
     

@@ -27,9 +27,6 @@ describe('trumpManager', () => {
       // Verify trump suit was set
       expect(result.trumpInfo.trumpSuit).toBe(Suit.Spades);
       
-      // Verify declared flag was set
-      expect(result.trumpInfo.declared).toBe(true);
-      
       // Verify game phase was updated
       expect(result.gamePhase).toBe('playing');
     });
@@ -38,11 +35,8 @@ describe('trumpManager', () => {
       const mockState = createMockGameState();
       const result = declareTrumpSuit(mockState, null);
       
-      // Verify trump suit remains undefined
-      expect(result.trumpInfo.trumpSuit).toBeUndefined();
-      
-      // Verify declared flag was set to complete the declaration phase
-      expect(result.trumpInfo.declared).toBe(true);
+      // Verify trump suit is Suit.None (no trump declared)
+      expect(result.trumpInfo.trumpSuit).toBe(Suit.None);
       
       // Verify game phase was updated
       expect(result.gamePhase).toBe('playing');

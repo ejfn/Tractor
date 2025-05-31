@@ -1,17 +1,17 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import {
-  Card,
-  GameState,
-  PlayerId,
-  DeclarationType,
-  PlayerName,
-} from "../types";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { getDealingProgress } from "../game/gameLogic";
 import {
   getPlayerDeclarationOptions,
   getTrumpDeclarationStatus,
 } from "../game/trumpDeclarationManager";
-import { getDealingProgress, isDealingComplete } from "../game/gameLogic";
+import {
+  Card,
+  DeclarationType,
+  GameState,
+  PlayerId,
+  PlayerName,
+} from "../types";
 
 interface TrumpDeclarationDuringDealingProps {
   gameState: GameState;
@@ -31,7 +31,6 @@ export function TrumpDeclarationDuringDealing({
   // Get current declaration status
   const declarationStatus = getTrumpDeclarationStatus(gameState);
   const dealingProgress = getDealingProgress(gameState);
-  const isComplete = isDealingComplete(gameState);
 
   // Get human player's declaration options
   const humanPlayer = gameState.players.find((p) => p.id === PlayerId.Human);
@@ -97,9 +96,7 @@ export function TrumpDeclarationDuringDealing({
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.skipButton} onPress={onSkipDeclaration}>
-          <Text style={styles.skipButtonText}>
-            {isComplete ? "Start Playing" : "Continue Dealing"}
-          </Text>
+          <Text style={styles.skipButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
     </View>

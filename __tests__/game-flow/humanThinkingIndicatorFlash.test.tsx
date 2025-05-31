@@ -30,7 +30,6 @@ const mockPlayer: Player = {
 
 const mockTrumpInfo: TrumpInfo = {
   trumpRank: Rank.Two,
-  declared: true,
   trumpSuit: Suit.Hearts
 };
 

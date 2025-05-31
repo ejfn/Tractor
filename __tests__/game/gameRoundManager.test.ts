@@ -50,7 +50,6 @@ describe('gameRoundManager', () => {
       
       // Verify trump info was reset
       expect(result.trumpInfo.trumpSuit).toBeUndefined();
-      expect(result.trumpInfo.declared).toBe(false);
       expect(result.trumpInfo.trumpRank).toBe(Rank.Two); // Same as defending team's rank
       
       // Verify trump rank was set from defending team

@@ -68,7 +68,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
       // If both are trump rank, sort by suit
       if (aIsTrumpRank && bIsTrumpRank) {
         if (a.suit && b.suit) {
-          if (trumpInfo.declared) {
+          if (trumpInfo.trumpSuit !== undefined) {
             if (
               a.suit === trumpInfo.trumpSuit &&
               b.suit !== trumpInfo.trumpSuit
@@ -84,7 +84,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
           // Sort by rotated suit order
           const standardSuitOrder = ["Spades", "Hearts", "Clubs", "Diamonds"];
           let trumpIndex = -1;
-          if (trumpInfo.declared && trumpInfo.trumpSuit) {
+          if (trumpInfo.trumpSuit !== undefined) {
             trumpIndex = standardSuitOrder.indexOf(trumpInfo.trumpSuit);
           }
 
@@ -133,7 +133,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
     if (a.suit && b.suit && a.suit !== b.suit) {
       const standardSuitOrder = ["Spades", "Hearts", "Clubs", "Diamonds"];
       let trumpIndex = -1;
-      if (trumpInfo.declared && trumpInfo.trumpSuit) {
+      if (trumpInfo.trumpSuit !== undefined) {
         trumpIndex = standardSuitOrder.indexOf(trumpInfo.trumpSuit);
       }
 

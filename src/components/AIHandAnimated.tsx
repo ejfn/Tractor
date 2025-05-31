@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Player, TrumpInfo } from "../types";
+import { Player, TrumpInfo, Suit } from "../types";
 import { isTrump } from "../game/gameLogic";
 import AnimatedCardComponent from "./AnimatedCard";
 
@@ -35,7 +35,13 @@ const AIHandAnimated: React.FC<AIHandAnimatedProps> = ({
 
     // Sort by suit and rank
     if (a.suit && b.suit && a.suit !== b.suit) {
-      const suitOrder = { Spades: 0, Hearts: 1, Clubs: 2, Diamonds: 3 };
+      const suitOrder: Record<Suit, number> = {
+        Spades: 0,
+        Hearts: 1,
+        Clubs: 2,
+        Diamonds: 3,
+        None: 4,
+      };
       return suitOrder[a.suit] - suitOrder[b.suit];
     }
 

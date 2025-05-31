@@ -7,6 +7,7 @@ export enum Suit {
   Diamonds = "Diamonds",
   Clubs = "Clubs",
   Spades = "Spades",
+  None = "None", // For joker pair declarations - no trump suit
 }
 
 export enum Rank {
@@ -93,9 +94,7 @@ export type Trick = {
 
 export type TrumpInfo = {
   trumpRank: Rank;
-  trumpSuit?: Suit;
-  declared: boolean;
-  declarerPlayerId?: PlayerId; // ID of the player who declared trump
+  trumpSuit?: Suit; // undefined = not declared, Suit.None = joker pairs, specific suit = trump rank declarations
 };
 
 export type GameState = {

@@ -17,8 +17,6 @@ describe('Player Starting Indicator', () => {
   const createMockTrumpInfo = (): TrumpInfo => ({
     trumpRank: Rank.Two,
     trumpSuit: Suit.Spades,
-    declared: true,
-    declarerPlayerId: PlayerId.Human,
   });
 
   const createMockThinkingDots = () => ({

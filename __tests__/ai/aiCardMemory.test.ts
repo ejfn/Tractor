@@ -28,8 +28,8 @@ describe('AI Card Memory System - Phase 3', () => {
     trumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Hearts,
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
     };
     gameState.trumpInfo = trumpInfo;
   });

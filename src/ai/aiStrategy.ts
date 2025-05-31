@@ -908,7 +908,7 @@ export class AIStrategyImplementation implements AIStrategy {
       // This prevents wasteful leading with valuable trump cards that opponents might beat
       let safePreferred = preferred;
 
-      if (trumpInfo?.declared && trumpInfo.trumpSuit) {
+      if (trumpInfo?.trumpSuit) {
         safePreferred = preferred.filter((ca) => {
           const combo = ca.combo;
 
@@ -935,11 +935,7 @@ export class AIStrategyImplementation implements AIStrategy {
         safePreferred.length > 0 ? safePreferred : preferred;
 
       // If no safe preferred options and trump protection is needed, expand to all combos and avoid trump suit high cards
-      if (
-        safePreferred.length === 0 &&
-        trumpInfo?.declared &&
-        trumpInfo.trumpSuit
-      ) {
+      if (safePreferred.length === 0 && trumpInfo?.trumpSuit) {
         // Filter ALL combos to avoid trump suit high cards, regardless of strength
         const allSafeOptions = comboAnalyses.filter((ca) => {
           const combo = ca.combo;
@@ -1519,7 +1515,7 @@ export class AIStrategyImplementation implements AIStrategy {
 
     // TRUMP LEADING PROTECTION: Filter out trump suit high cards when leading
     let safeCombos = combos;
-    if (trumpInfo?.declared && trumpInfo.trumpSuit) {
+    if (trumpInfo?.trumpSuit) {
       const safeOptions = combos.filter((combo) => {
         const hasTrumpSuitHighCard = combo.cards.some((card) => {
           if (!card.suit || card.joker) return false;

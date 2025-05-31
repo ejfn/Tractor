@@ -62,8 +62,6 @@ describe('Trump Declaration Manager', () => {
       expect(newState.trumpDeclarationState?.currentDeclaration?.playerId).toBe(PlayerId.Human);
       expect(newState.trumpDeclarationState?.currentDeclaration?.type).toBe(DeclarationType.Single);
       expect(newState.trumpInfo.trumpSuit).toBe(Suit.Spades);
-      expect(newState.trumpInfo.declared).toBe(true);
-      expect(newState.trumpInfo.declarerPlayerId).toBe(PlayerId.Human);
     });
 
     test('should reject invalid declaration cards', () => {
@@ -128,6 +126,54 @@ describe('Trump Declaration Manager', () => {
       expect(() => {
         makeTrumpDeclaration(newState, PlayerId.Human, weakerDeclaration);
       }).toThrow('Declaration cannot override current declaration');
+    });
+
+    test('should reject equal strength override attempt (pair vs pair)', () => {
+      // First declaration: Human plays pair of 2♣
+      const firstPairDeclaration = {
+        rank: Rank.Two,
+        suit: Suit.Clubs,
+        type: DeclarationType.Pair,
+        cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      };
+
+      const newState = makeTrumpDeclaration(gameState, PlayerId.Human, firstPairDeclaration);
+
+      // Try to override with equal strength pair of 2♦ (should fail)
+      const equalStrengthPairDeclaration = {
+        rank: Rank.Two,
+        suit: Suit.Diamonds,
+        type: DeclarationType.Pair,
+        cards: [createCard(Suit.Diamonds, Rank.Two), createCard(Suit.Diamonds, Rank.Two)]
+      };
+
+      expect(() => {
+        makeTrumpDeclaration(newState, PlayerId.Bot1, equalStrengthPairDeclaration);
+      }).toThrow('Declaration cannot override current declaration');
+    });
+
+    test('getPlayerDeclarationOptions should filter out equal strength declarations', () => {
+      // Setup: Give Bot1 a pair of 2♦ 
+      const bot1Player = gameState.players.find((p: any) => p.id === PlayerId.Bot1);
+      bot1Player.hand = [
+        createCard(Suit.Diamonds, Rank.Two), 
+        createCard(Suit.Diamonds, Rank.Two), 
+        createCard(Suit.Spades, Rank.Queen)
+      ];
+
+      // First declaration: Human plays pair of 2♣
+      const firstPairDeclaration = {
+        rank: Rank.Two,
+        suit: Suit.Clubs,
+        type: DeclarationType.Pair,
+        cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      };
+
+      const newState = makeTrumpDeclaration(gameState, PlayerId.Human, firstPairDeclaration);
+
+      // Bot1 should have NO valid declaration options (their pair is equal strength)
+      const bot1Options = getPlayerDeclarationOptions(newState, PlayerId.Bot1);
+      expect(bot1Options).toHaveLength(0);
     });
   });
 
@@ -204,8 +250,6 @@ describe('Trump Declaration Manager', () => {
       newState = finalizeTrumpDeclaration(newState);
 
       expect(newState.trumpInfo.trumpSuit).toBe(Suit.Spades);
-      expect(newState.trumpInfo.declared).toBe(true);
-      expect(newState.trumpInfo.declarerPlayerId).toBe(PlayerId.Human);
       expect(areDeclarationsAllowed(newState)).toBe(false);
     });
   });

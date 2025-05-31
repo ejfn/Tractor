@@ -22,14 +22,9 @@ export function declareTrumpSuit(
 
   if (suit) {
     newState.trumpInfo.trumpSuit = suit;
-    newState.trumpInfo.declared = true;
-
-    // Record the player who declared trump
-    const currentPlayer = newState.players[newState.currentPlayerIndex];
-    newState.trumpInfo.declarerPlayerId = currentPlayer.id;
   } else {
-    // Trump declaration was skipped - mark as declared to complete the phase
-    newState.trumpInfo.declared = true;
+    // Trump declaration was skipped - no trump declared (use Suit.None to indicate no trump suit)
+    newState.trumpInfo.trumpSuit = Suit.None;
   }
 
   // Save the starting player for this round when transitioning to Playing phase
