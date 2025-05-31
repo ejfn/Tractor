@@ -7,8 +7,8 @@ describe('getValidCombinations Bug Reproduction', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
 
     // Leading combo: 10♠-10♠ (trump pair)

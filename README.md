@@ -5,14 +5,15 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![Tests](https://img.shields.io/badge/Tests-315%20Passing-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-537%20Passing-brightgreen)
 
 ## What is Tractor?
 
 **Tractor** is a classic Chinese card game where you work with an AI teammate to collect points and advance through card ranks. The first team to reach Ace wins!
 
 - **Teams**: You + Bot 2 vs Bot 1 + Bot 3  
-- **Trump System**: Declare trump by playing pairs during dealing
+- **Progressive Dealing**: Cards dealt one-by-one with real-time trump declaration opportunities
+- **Trump System**: Declare trump by playing pairs during dealing with hierarchy-based overrides
 - **Combinations**: Singles, pairs, and tractors (consecutive pairs)
 - **Points**: 5s (5pts), 10s and Kings (10pts)
 - **Objective**: Collect enough points to advance through card ranks
@@ -22,10 +23,12 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ## Key Features
 
 - **4-Phase AI Intelligence** with sophisticated strategic decision-making
+- **Progressive dealing with real-time trump declarations** during card distribution
+- **AI trump declaration strategy** with hand quality analysis and timing optimization
 - **Smooth card animations** with React Native Reanimated
 - **Smart card auto-selection** for pairs and tractors
-- **Touch-optimized UI** with team color coding
-- **Comprehensive testing** with 427 tests across 60 test suites
+- **Touch-optimized UI** with team color coding and dark theme
+- **Comprehensive testing** with 537 tests across 77 test suites
 
 ## Technology
 
@@ -44,6 +47,7 @@ Built with **React Native + Expo** for mobile platforms:
 Sophisticated **4-phase AI system** with restructured priority chain, real-time trick analysis, enhanced opponent blocking, strategic point card management, and intelligent trump conservation.
 
 **Latest Enhancements:**
+- **Trump Declaration Strategy**: Sophisticated dealing phase AI with hand quality analysis, timing optimization, and strategic override decisions
 - **Strategic Pair Conservation**: AI intelligently preserves valuable pairs when out of suit, using strategic mixed combinations instead
 - **Strategic Point Management**: AI avoids wasting point cards when opponent is winning
 - **Trump Conservation Hierarchy**: Optimal selection using conservation values (Big Joker: 100 → Small Joker: 90 → Trump rank cards: 70-80 → Trump suit cards: 5-60)

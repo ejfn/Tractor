@@ -1,4 +1,4 @@
-import { GameState, PlayerId, Rank } from "../../src/types";
+import { GameState, PlayerId, Rank, DeclarationType, Suit } from "../../src/types";
 import { prepareNextRound, endRound } from "../../src/game/gameRoundManager";
 import { initializeGame } from "../../src/game/gameLogic";
 
@@ -33,7 +33,7 @@ describe("Next Round Starting Player Rotation", () => {
     const newState = { ...state };
     
     // Set last round starting player
-    newState.lastRoundStartingPlayerIndex = lastRoundStarterIndex;
+    newState.roundStartingPlayerIndex = lastRoundStarterIndex;
     
     // Set attacking team points
     const attackingTeam = newState.teams.find(t => !t.isDefending);
@@ -44,8 +44,8 @@ describe("Next Round Starting Player Rotation", () => {
     // Process round end
     const { newState: endedState } = endRound(newState);
     
-    // Preserve the lastRoundStartingPlayerIndex through endRound
-    endedState.lastRoundStartingPlayerIndex = lastRoundStarterIndex;
+    // Preserve the roundStartingPlayerIndex through endRound
+    endedState.roundStartingPlayerIndex = lastRoundStarterIndex;
     
     return endedState;
   }
@@ -195,7 +195,19 @@ describe("Next Round Starting Player Rotation", () => {
       // First round: trump declarer should start
       const firstRoundState = initializeGame();
       firstRoundState.roundNumber = 0; // Will be incremented to 1 by prepareNextRound
-      firstRoundState.trumpInfo.declarerPlayerId = PlayerId.Bot2;
+      // Set up trump declaration state to indicate Bot2 declared trump
+      firstRoundState.trumpDeclarationState = {
+        declarationHistory: [],
+        declarationWindow: false,
+        currentDeclaration: {
+          playerId: PlayerId.Bot2,
+          rank: firstRoundState.trumpInfo.trumpRank,
+          suit: firstRoundState.trumpInfo.trumpSuit || Suit.Hearts,
+          type: DeclarationType.Pair,
+          cards: [],
+          timestamp: Date.now()
+        }
+      };
       
       const nextRoundState = prepareNextRound(firstRoundState);
       
@@ -204,11 +216,11 @@ describe("Next Round Starting Player Rotation", () => {
       expect(nextRoundState.players[2].id).toBe(PlayerId.Bot2);
     });
 
-    test("Should handle missing lastRoundStartingPlayerIndex gracefully", () => {
-      // Setup without setting lastRoundStartingPlayerIndex
+    test("Should handle missing roundStartingPlayerIndex gracefully", () => {
+      // Setup without setting roundStartingPlayerIndex
       gameState.teams[0].isDefending = true;  // Team A defending
       gameState.teams[1].isDefending = false; // Team B attacking
-      gameState.lastRoundStartingPlayerIndex = -1; // Invalid index
+      gameState.roundStartingPlayerIndex = -1; // Invalid index
       
       // Attacking team wins
       const afterRoundEnd = simulateRoundEnd(gameState, 100, -1);

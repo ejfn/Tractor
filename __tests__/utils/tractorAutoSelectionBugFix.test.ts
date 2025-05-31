@@ -10,7 +10,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
-      declared: true,
+      
       trumpSuit: Suit.Spades // 2H will be trump due to rank, 3H will be non-trump hearts
     };
 
@@ -40,7 +40,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
-      declared: true,
+      
       trumpSuit: Suit.Hearts // Hearts is trump suit
     };
 
@@ -70,7 +70,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
-      declared: true,
+      
       trumpSuit: Suit.Spades
     };
 
@@ -100,7 +100,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
-      declared: true,
+      
       trumpSuit: Suit.Spades
     };
 
@@ -130,7 +130,7 @@ describe('Tractor Auto-Selection Bug Fix - Issue #92', () => {
     
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
-      declared: true,
+      
       trumpSuit: Suit.Spades
     };
 

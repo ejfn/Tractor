@@ -48,7 +48,8 @@ npm test              # Run tests
 │   ├── aiGameContext.ts   # Game context analysis
 │   ├── aiAdvancedCombinations.ts # Advanced combination analysis
 │   ├── aiCardMemory.ts    # Card memory system (Phase 3)
-│   └── aiPointFocusedStrategy.ts # Point-focused strategy and early game leading (with integrated Ace priority)
+│   ├── aiPointFocusedStrategy.ts # Point-focused strategy and early game leading (with integrated Ace priority)
+│   └── aiTrumpDeclarationStrategy.ts # Sophisticated trump declaration during dealing phase
 ├── game/                  # Core game logic and management
 │   ├── gameLogic.ts       # Core mechanics, rules, and valid combination detection
 │   ├── gamePlayManager.ts # Card play validation and tricks
@@ -76,6 +77,8 @@ npm test              # Run tests
 ├── card-tracking/         # Card counting integration tests
 ├── game-flow/             # Game flow and interaction tests
 ├── game-state/            # Game state management tests
+├── trump-declaration/     # Trump declaration system tests
+├── debug/                 # Debug and regression tests
 └── helpers/               # Test utilities (modular organization)
     ├── index.ts           # Main helpers re-export file
     ├── cards.ts           # Card creation utilities
@@ -143,6 +146,12 @@ Always run these checks before committing:
 npm run qualitycheck  # Runs all checks
 ```
 
+**CRITICAL QUALITY REQUIREMENTS:**
+- **ALL TESTS MUST PASS**: The main branch has no existing failing tests. Any test failures introduced must be fixed.
+- **NO LINT WARNINGS/ERRORS**: All ESLint warnings and errors must be resolved.
+- **TYPECHECK MUST PASS**: No TypeScript compilation errors allowed.
+- **Zero Tolerance Policy**: `npm run qualitycheck` must pass completely with no failures or warnings before any commit.
+
 ### Git Workflow
 
 **IMPORTANT: The main branch is protected. All changes MUST go through pull requests.**
@@ -189,13 +198,20 @@ npx eas --version
    - `GameState` type defines complete game state
    - State transitions preserve winning player on trick completion
 
-2. **Card Mechanics**
+2. **Progressive Dealing System**
+   - Cards dealt one-by-one with real-time trump declaration opportunities
+   - AI bots can declare trump during dealing with sophisticated strategy
+   - Human players can pause dealing to declare trump or continue
+   - Declaration hierarchy system with override capabilities
+   - Real-time team role changes in first round based on trump declarer
+
+3. **Card Mechanics**
    - Suits: Spades ♠, Hearts ♥, Clubs ♣, Diamonds ♦
    - Special cards: Big Joker, Small Joker
    - Points: 5s = 5pts, 10s and Kings = 10pts
    - Trump hierarchy: Big Joker > Small Joker > Trump rank in trump suit > Trump rank in other suits > Trump suit cards
 
-3. **Smart Card Selection**
+4. **Smart Card Selection**
    - **Auto-selection**: Tapping a card automatically selects related cards to form optimal combinations
    - **When leading**: Prioritizes tractors over pairs for better play
    - **When following**: Auto-selects matching combination type if possible
@@ -203,14 +219,15 @@ npx eas --version
    - **Fallback**: Single card selection when no combinations available
    - **Implementation**: `cardAutoSelection.ts` utility with combination detection logic
 
-4. **Combination Rules**
+5. **Combination Rules**
    - **Singles**: Any card
    - **Pairs**: Two identical cards (same rank AND suit)
    - **Tractors**: Consecutive pairs of same suit
    - Special: SJ-SJ-BJ-BJ forms highest tractor
 
-5. **Game Flow**
-   - Phases: dealing → declaring → playing → scoring → gameOver
+6. **Game Flow**
+   - Phases: dealing → (optional declaring) → playing → scoring → gameOver
+   - Progressive dealing with real-time trump declaration opportunities
    - Teams alternate between defending and attacking
    - Trick winner leads next trick
 
@@ -546,6 +563,15 @@ if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
   return selectEndgameOptimalPlay(combos, context, trumpInfo);
 }
 ```
+
+### AI Trump Declaration Strategy
+
+The AI includes sophisticated trump declaration logic during the progressive dealing phase:
+
+- **Hand Quality Analysis**: Evaluates suit length, pairs, and overall trump potential
+- **Timing Optimization**: Adjusts declaration probability based on dealing progress
+- **Override Strategy**: Intelligent decisions on when to override opponent declarations
+- **Strategic Coordination**: Team-aware declaration timing and positioning
 
 ### AI Priority Chain Architecture
 

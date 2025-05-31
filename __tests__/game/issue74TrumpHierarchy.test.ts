@@ -21,7 +21,7 @@ describe('Issue #74: Trump Hierarchy Bug Fix', () => {
     // Set up trump as described in issue: 2(D) is trump
     const trumpInfo: TrumpInfo = { 
       trumpRank: Rank.Two, 
-      declared: true,
+      
       trumpSuit: Suit.Diamonds 
     };
     
@@ -45,7 +45,7 @@ describe('Issue #74: Trump Hierarchy Bug Fix', () => {
     // Test with different trump rank and suit to ensure fix is general
     const trumpInfo: TrumpInfo = { 
       trumpRank: Rank.Five, 
-      declared: true,
+      
       trumpSuit: Suit.Hearts 
     };
     
@@ -67,7 +67,7 @@ describe('Issue #74: Trump Hierarchy Bug Fix', () => {
     // Ensure fix doesn't break cross-suit trump comparisons
     const trumpInfo: TrumpInfo = { 
       trumpRank: Rank.Ace, 
-      declared: true,
+      
       trumpSuit: Suit.Spades 
     };
     

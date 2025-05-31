@@ -11,13 +11,13 @@ import {
   PointPressure,
   GamePhase,
 } from "../../src/types";
-import { initializeGame } from "../../src/game/gameLogic";
+import { createTestCardsGameState } from "../helpers/gameStates";
 
 describe("AI Game Context", () => {
   let gameState: any;
 
   beforeEach(() => {
-    gameState = initializeGame();
+    gameState = createTestCardsGameState();
     gameState.gamePhase = GamePhase.Playing;
   });
 

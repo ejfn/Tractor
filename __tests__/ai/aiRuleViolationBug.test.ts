@@ -8,7 +8,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     // Create a game state where AI must follow a pair but cannot form one from leading suit
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
-      declared: true,
+      
       trumpSuit: Suit.Spades
     };
 
@@ -73,7 +73,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
   test('AI should not violate suit following when no cards of leading suit', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
-      declared: true,
+      
       trumpSuit: Suit.Spades
     };
 
@@ -116,7 +116,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
   test('AI should play all cards of leading suit when insufficient for combo', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two, 
-      declared: true,
+      
       trumpSuit: Suit.Spades
     };
 
@@ -166,7 +166,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
   test('AI should never generate invalid combinations through emergency fallback', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
-      declared: true,
+      
       trumpSuit: Suit.Spades
     };
 
@@ -224,7 +224,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
   test('AI should handle complex scenarios without falling back to invalid moves', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Ace,
-      declared: true,
+      
       trumpSuit: Suit.Hearts
     };
 

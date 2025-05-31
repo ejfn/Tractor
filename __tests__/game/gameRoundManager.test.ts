@@ -45,12 +45,11 @@ describe('gameRoundManager', () => {
       // Verify round number was incremented
       expect(result.roundNumber).toBe(2);
       
-      // Verify game phase was set to declaring (not dealing - it changes to declaring in line 61)
-      expect(result.gamePhase).toBe('declaring');
+      // Verify game phase was set to dealing (progressive dealing starts with dealing phase)
+      expect(result.gamePhase).toBe('dealing');
       
       // Verify trump info was reset
       expect(result.trumpInfo.trumpSuit).toBeUndefined();
-      expect(result.trumpInfo.declared).toBe(false);
       expect(result.trumpInfo.trumpRank).toBe(Rank.Two); // Same as defending team's rank
       
       // Verify trump rank was set from defending team
@@ -59,19 +58,27 @@ describe('gameRoundManager', () => {
       // Verify deck was created
       expect(result.deck).toEqual(mockDeck);
       
-      // Verify cards were dealt to players
-      const cardsPerPlayer = Math.floor((mockDeck.length - 8) / mockState.players.length);
-      
+      // Verify player hands are cleared for progressive dealing
       result.players.forEach(player => {
-        expect(player.hand.length).toBe(cardsPerPlayer);
+        expect(player.hand.length).toBe(0);
       });
       
-      // Verify kitty cards
-      expect(result.kittyCards.length).toBe(8);
+      // Verify kitty cards are cleared for progressive dealing
+      expect(result.kittyCards.length).toBe(0);
       
       // Verify tricks were reset
       expect(result.tricks.length).toBe(0);
       expect(result.currentTrick).toBeNull();
+      
+      // Verify trump declaration state was properly initialized
+      expect(result.trumpDeclarationState).toEqual({
+        currentDeclaration: undefined,
+        declarationHistory: [],
+        declarationWindow: true
+      });
+      
+      // Verify dealing state was reset
+      expect(result.dealingState).toBeUndefined();
       
       // Verify initializeGame was called
       expect(gameLogic.initializeGame).toHaveBeenCalled();

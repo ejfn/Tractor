@@ -7,8 +7,8 @@ describe('Strategic Sorting Improvement Test', () => {
     // Test scenario: AI has point cards and should avoid wasting them
     const gameState = initializeGame();
     gameState.trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
     };
@@ -87,8 +87,8 @@ describe('Strategic Sorting Improvement Test', () => {
     // Test trump card preservation
     const gameState = initializeGame();
     gameState.trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
     };
@@ -159,8 +159,8 @@ describe('Strategic Sorting Improvement Test', () => {
   it('should have consistent strategic value calculation across modes', () => {
     // Test our shared strategic value function
     const trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
     };

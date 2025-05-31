@@ -5,8 +5,8 @@ describe('Trump Following Rules', () => {
   const createTestTrumpInfo = (trumpRank: Rank, trumpSuit: Suit): TrumpInfo => ({
     trumpRank,
     trumpSuit,
-    declared: true,
-    declarerPlayerId: PlayerId.Human
+    
+    
   });
 
   describe('Basic Trump Following Rules (Issue #102 Fix)', () => {

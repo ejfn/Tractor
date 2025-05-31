@@ -8,8 +8,8 @@ describe('Bot 3 Trump Following Decision Tree Bug', () => {
     // Initialize game with trump rank 2, trump suit Diamonds
     const gameState = initializeGame();
     gameState.trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
       trumpRank: Rank.Two,
       trumpSuit: Suit.Diamonds,
     };
@@ -84,8 +84,8 @@ describe('Bot 3 Trump Following Decision Tree Bug', () => {
     // Test that conservation values are calculated correctly
     const gameState = initializeGame();
     gameState.trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
       trumpRank: Rank.Two,
       trumpSuit: Suit.Diamonds,
     };

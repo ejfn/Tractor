@@ -10,7 +10,7 @@ describe('GamePlayManager Trick Winner Determination', () => {
       let gameState = createGameState({
         gamePhase: GamePhase.Playing,
         currentPlayerIndex: 0, // Human turn
-        trumpInfo: { trumpSuit: Suit.Hearts, trumpRank: Rank.Two, declared: true }
+        trumpInfo: { trumpSuit: Suit.Hearts, trumpRank: Rank.Two,  }
       });
 
       // Give human some cards including the leading combo
@@ -57,7 +57,7 @@ describe('GamePlayManager Trick Winner Determination', () => {
       let gameState = createGameState({
         gamePhase: GamePhase.Playing,
         currentPlayerIndex: 0, // Human turn
-        trumpInfo: { trumpSuit: Suit.Hearts, trumpRank: Rank.Two, declared: true }
+        trumpInfo: { trumpSuit: Suit.Hearts, trumpRank: Rank.Two,  }
       });
 
       // Give human some cards
@@ -103,7 +103,7 @@ describe('GamePlayManager Trick Winner Determination', () => {
       let gameState = createGameState({
         gamePhase: GamePhase.Playing,
         currentPlayerIndex: 0, // Human turn
-        trumpInfo: { trumpSuit: Suit.Hearts, trumpRank: Rank.Two, declared: true }
+        trumpInfo: { trumpSuit: Suit.Hearts, trumpRank: Rank.Two,  }
       });
 
       // Give human non-trump cards

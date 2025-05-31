@@ -1,18 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import { GameState, Card, Suit, GamePhase } from "../types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { initializeGame } from "../game/gameLogic";
-import { prepareNextRound, endRound } from "../game/gameRoundManager";
-import {
-  declareTrumpSuit,
-  checkAITrumpDeclaration,
-  humanHasTrumpRank,
-} from "../game/trumpManager";
 import { processPlay, validatePlay } from "../game/gamePlayManager";
+import { endRound, prepareNextRound } from "../game/gameRoundManager";
+import { Card, GamePhase, GameState } from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import {
-  TRICK_RESULT_DISPLAY_TIME,
   CARD_SELECTION_DELAY,
   ROUND_COMPLETE_BUFFER,
+  TRICK_RESULT_DISPLAY_TIME,
 } from "../utils/gameTimings";
 
 // Interface for trick completion data
@@ -34,7 +29,6 @@ export function useGameState() {
 
   // Game flow control
   const [showSetupInternal, setShowSetupInternal] = useState(false);
-  const [showTrumpDeclaration, setShowTrumpDeclaration] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState<"A" | "B" | null>(null);
 
@@ -49,42 +43,24 @@ export function useGameState() {
   // Initialize game on component mount if no game state exists
   useEffect(() => {
     if (!showSetupInternal && !gameState) {
-      initGame();
+      const newGameState = initializeGame();
+      setGameState(newGameState);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array for mount only
+  }, [showSetupInternal, gameState]);
 
-  // Initialize game
-  const initGame = () => {
+  // Initialize game (for manual initialization)
+  const initGame = useCallback(() => {
     if (!showSetupInternal && !gameState) {
       const newGameState = initializeGame();
       setGameState(newGameState);
-
-      // Check if player has trump rank to declare
-      if (humanHasTrumpRank(newGameState)) {
-        setShowTrumpDeclaration(true);
-      }
     }
-  };
+  }, [showSetupInternal, gameState]);
 
   // Handle card selection
   const handleCardSelect = (card: Card) => {
     if (!gameState) return;
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-
-    // Handle trump declaration mode - select card but don't declare immediately
-    if (showTrumpDeclaration) {
-      if (card.rank === gameState.trumpInfo.trumpRank && card.suit) {
-        // Toggle selection of trump cards
-        if (selectedCards.some((c) => c.id === card.id)) {
-          setSelectedCards([]);
-        } else {
-          setSelectedCards([card]);
-        }
-      }
-      return;
-    }
 
     if (gameState.gamePhase !== GamePhase.Playing) return;
 
@@ -198,53 +174,6 @@ export function useGameState() {
     }
   };
 
-  // Handle trump suit declaration
-  const handleDeclareTrumpSuit = (suit: Suit | null) => {
-    if (!gameState) return;
-
-    const newState = declareTrumpSuit(gameState, suit);
-    setGameState(newState);
-    setShowTrumpDeclaration(false);
-    setSelectedCards([]);
-  };
-
-  // Confirm trump declaration with selected card
-  const handleConfirmTrumpDeclaration = () => {
-    if (!gameState || selectedCards.length === 0) return;
-
-    const selectedCard = selectedCards[0];
-    if (selectedCard.suit) {
-      handleDeclareTrumpSuit(selectedCard.suit);
-    }
-  };
-
-  // Handle check for AI trump declaration
-  const handleCheckAITrumpDeclaration = () => {
-    if (
-      !gameState ||
-      gameState.gamePhase !== GamePhase.Declaring ||
-      showTrumpDeclaration
-    )
-      return;
-
-    // Find the human player
-    const humanPlayer = gameState.players.find((p) => p.isHuman);
-    if (humanPlayer) {
-      const hasTrumpRank = humanPlayer.hand.some(
-        (card) => card.rank === gameState.trumpInfo.trumpRank,
-      );
-
-      // If human doesn't have trump rank, let AI check
-      if (!hasTrumpRank) {
-        const { shouldDeclare, suit } = checkAITrumpDeclaration(gameState);
-
-        if (shouldDeclare && suit) {
-          handleDeclareTrumpSuit(suit);
-        }
-      }
-    }
-  };
-
   // Handle end of round
   const handleEndRound = (state: GameState) => {
     const result = endRound(state);
@@ -274,11 +203,6 @@ export function useGameState() {
 
       setGameState(nextRoundState);
       pendingStateRef.current = null;
-
-      // Check for trump declaration
-      if (humanHasTrumpRank(nextRoundState)) {
-        setShowTrumpDeclaration(true);
-      }
     }
   };
 
@@ -329,7 +253,6 @@ export function useGameState() {
     gameState,
     selectedCards,
     showSetup: showSetupInternal,
-    showTrumpDeclaration,
     gameOver,
     winner,
     showRoundComplete,
@@ -345,9 +268,6 @@ export function useGameState() {
     handleCardSelect,
     handlePlay,
     handleProcessPlay,
-    handleDeclareTrumpSuit,
-    handleConfirmTrumpDeclaration,
-    handleCheckAITrumpDeclaration,
     handleNextRound,
     startNewGame,
     handleTrickResultComplete,
@@ -356,6 +276,5 @@ export function useGameState() {
     setGameState,
     setSelectedCards,
     setShowSetup: setShowSetupInternal,
-    setShowTrumpDeclaration,
   };
 }

@@ -34,7 +34,6 @@ const createMockGameState = () => {
   const state = createTestCardsGameState();
   // Override trump to Spades for this test
   state.trumpInfo.trumpSuit = Suit.Spades;
-  state.trumpInfo.declared = true;
   return state;
 };
 

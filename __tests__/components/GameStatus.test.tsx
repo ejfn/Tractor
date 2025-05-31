@@ -108,24 +108,4 @@ describe('GameStatus', () => {
     expect(getByText('♥')).toBeTruthy();
   });
 
-  it('should handle no trump scenario', () => {
-    const noTrumpInfo = {
-      trumpRank: Rank.Ace,
-      trumpSuit: undefined,
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
-    };
-
-    const { getByText } = render(
-      <GameStatus
-        teams={mockTeams}
-        trumpInfo={noTrumpInfo}
-        roundNumber={1}
-        gamePhase={GamePhase.Playing}
-      />
-    );
-
-    expect(getByText('A')).toBeTruthy();
-    expect(getByText('🤡')).toBeTruthy();
-  });
 });

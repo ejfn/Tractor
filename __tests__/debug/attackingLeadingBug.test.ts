@@ -9,8 +9,8 @@ describe('Attacking Leading Strategy Bug Test', () => {
     
     // Setup to trigger attacking team + desperate strategy
     gameState.trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Bot1, // AI declared trump - attacking team
+      
+       // AI declared trump - attacking team
       trumpRank: Rank.Two,
       trumpSuit: Suit.Hearts,
     };
@@ -79,8 +79,8 @@ describe('Attacking Leading Strategy Bug Test', () => {
     const gameState = initializeGame();
     
     gameState.trumpInfo = {
-      declared: true,
-      declarerPlayerId: PlayerId.Bot2, // Bot2 declared trump 
+      
+       // Bot2 declared trump 
       trumpRank: Rank.Two,
       trumpSuit: Suit.Diamonds,
     };

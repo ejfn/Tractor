@@ -11,8 +11,8 @@ describe('AI Trump Following Behavior', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
     gameState.trumpInfo = trumpInfo;
     
@@ -116,8 +116,8 @@ describe('AI Trump Following Behavior', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Hearts,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
     gameState.trumpInfo = trumpInfo;
     

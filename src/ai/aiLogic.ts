@@ -63,26 +63,3 @@ export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
   const strategy = createAIStrategy();
   return strategy.makePlay(gameState, player, validCombos);
 };
-
-/**
- * AI trump declaration decision logic
- *
- * Determines whether an AI player should declare trump during the dealing phase
- * based on hand strength and suit distribution
- *
- * @param gameState Current game state
- * @param playerId ID of the AI player making the decision
- * @returns True if should declare trump, false otherwise
- */
-export const shouldAIDeclare = (
-  gameState: GameState,
-  playerId: string,
-): boolean => {
-  const player = gameState.players.find((p) => p.id === playerId);
-  if (!player) {
-    throw new Error(`AI player with ID ${playerId} not found`);
-  }
-
-  const strategy = createAIStrategy();
-  return strategy.declareTrumpSuit(gameState, player);
-};

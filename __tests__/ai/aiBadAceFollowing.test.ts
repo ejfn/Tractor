@@ -17,8 +17,6 @@ describe('Issue #61: AI Bad Ace Following', () => {
     gameState.trumpInfo = {
       trumpSuit: Suit.Hearts,
       trumpRank: Rank.Two,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
     };
     
     // Find AI player
@@ -81,8 +79,6 @@ describe('Issue #61: AI Bad Ace Following', () => {
     gameState.trumpInfo = {
       trumpSuit: Suit.Hearts,
       trumpRank: Rank.Two,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
     };
     
     const bot1Player = gameState.players.find(p => p.id === PlayerId.Bot1)!;
@@ -127,8 +123,6 @@ describe('Issue #61: AI Bad Ace Following', () => {
     gameState.trumpInfo = {
       trumpSuit: Suit.Hearts,
       trumpRank: Rank.Two,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
     };
     
     const bot1Player = gameState.players.find(p => p.id === PlayerId.Bot1)!;
@@ -190,8 +184,6 @@ describe('Issue #61: AI Bad Ace Following', () => {
     gameState.trumpInfo = {
       trumpSuit: Suit.Hearts,
       trumpRank: Rank.Two,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
     };
     
     const bot3Player = gameState.players.find(p => p.id === PlayerId.Bot3)!; // Bot3 is last to play

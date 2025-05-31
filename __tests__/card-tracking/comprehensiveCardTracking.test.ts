@@ -1,7 +1,7 @@
 import { GameState, Card, Rank } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
 import { processPlay } from '../../src/game/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { createFullyDealtGameState } from '../helpers/gameStates';
 
 describe('Comprehensive Card Tracking Tests', () => {
   // Helper function to verify card counts
@@ -26,7 +26,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   };
 
   test('Track card counts with Bot 2 focus', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     const bot2Index = state.players.findIndex(p => p.name === 'Bot 2');
@@ -114,7 +114,7 @@ describe('Comprehensive Card Tracking Tests', () => {
     for (let startingPlayer = 0; startingPlayer < 4; startingPlayer++) {
       console.log(`\n=== Testing with Player ${startingPlayer} starting ===`);
       
-      const gameState = initializeGame();
+      const gameState = createFullyDealtGameState();
       let state = gameState;
       state.currentPlayerIndex = startingPlayer;
       
@@ -150,7 +150,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   });
 
   test('Test with multiple cards played (pairs, tractors)', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     // Give players some pairs to test multi-card plays
@@ -226,7 +226,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   });
 
   test('Test edge cases - empty hands, invalid moves', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     // Test what happens when we try to process invalid states
@@ -272,7 +272,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   });
 
   test('Test concurrent plays and race conditions', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     
     console.log('\n=== Testing race conditions ===');
     

@@ -12,6 +12,8 @@ import HumanPlayerView from "../components/HumanPlayerView";
 // import TrumpDeclarationModal from '../components/TrumpDeclarationModal'; // Not used anymore
 import RoundCompleteModal from "../components/RoundCompleteModal";
 import TrickResultDisplay from "../components/TrickResultDisplay";
+import { TrumpDeclarationDuringDealing } from "../components/TrumpDeclarationDuringDealing";
+import { DealingProgressIndicator } from "../components/DealingProgressIndicator";
 
 // Types
 import { Card, GameState, PlayerId, Trick, GamePhase } from "../types";
@@ -27,7 +29,6 @@ interface GameScreenViewProps {
 
   // UI state
   showSetup: boolean;
-  showTrumpDeclaration: boolean;
   gameOver: boolean;
   winner: "A" | "B" | null;
   waitingForAI: boolean;
@@ -40,6 +41,11 @@ interface GameScreenViewProps {
   roundCompleteMessage: string;
   teamNames: [string, string];
   isTransitioningTricks: boolean;
+
+  // Progressive dealing
+  isDealingInProgress: boolean;
+  showDeclarationModal: boolean;
+  availableDeclarations: any[];
 
   // Animations
   fadeAnim: Animated.Value;
@@ -55,10 +61,11 @@ interface GameScreenViewProps {
   onCardSelect: (card: Card) => void;
   onPlayCards: () => void;
   onStartNewGame: () => void;
-  onDeclareTrumpSuit: (suit: any) => void;
-  onConfirmTrumpDeclaration: () => void;
   onNextRound: () => void;
   onAnimationComplete: () => void;
+  onHumanDeclaration: (declaration: any) => void;
+  onSkipDeclaration: () => void;
+  onManualPause: () => void;
 }
 
 /**
@@ -72,7 +79,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
   // UI state
   showSetup,
-  showTrumpDeclaration,
   gameOver,
   winner,
   waitingForAI,
@@ -86,6 +92,11 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   teamNames,
   isTransitioningTricks,
 
+  // Progressive dealing
+  isDealingInProgress,
+  showDeclarationModal,
+  availableDeclarations,
+
   // Animations
   fadeAnim,
   scaleAnim,
@@ -96,10 +107,11 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onCardSelect,
   onPlayCards,
   onStartNewGame,
-  onDeclareTrumpSuit,
-  onConfirmTrumpDeclaration,
   onNextRound,
   onAnimationComplete,
+  onHumanDeclaration,
+  onSkipDeclaration,
+  onManualPause,
 }) => {
   // Setup screen with animations
   if (showSetup) {
@@ -161,43 +173,19 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   const ai3Team = getPlayerTeam(PlayerId.Bot3);
   const humanTeam = getPlayerTeam(humanPlayer.id);
 
-  // Determine which player is the round starting player
-  const getRoundStartingPlayerIndex = () => {
-    // For round 1, the trump declarer starts (stored in trumpInfo.declarerPlayerId)
-    if (gameState.roundNumber === 1 && gameState.trumpInfo.declarerPlayerId) {
-      return gameState.players.findIndex(
-        (p) => p.id === gameState.trumpInfo.declarerPlayerId,
-      );
-    }
-    // For subsequent rounds:
-    // - During declaration phase, use currentPlayerIndex (who will start)
-    // - After trump is declared, use lastRoundStartingPlayerIndex
-    if (gameState.roundNumber > 1) {
-      if (gameState.gamePhase === GamePhase.Declaring) {
-        return gameState.currentPlayerIndex;
-      }
-      return gameState.lastRoundStartingPlayerIndex ?? 0;
-    }
+  // Crown display: always use the stable roundStartingPlayerIndex
+  const roundStartingPlayerIndex = gameState.roundStartingPlayerIndex;
 
-    return 0; // Fallback
-  };
-
-  const roundStartingPlayerIndex = getRoundStartingPlayerIndex();
+  // Calculate AI player indices once for efficiency and consistency
+  const ai1Index = gameState.players.findIndex((p) => p.id === PlayerId.Bot1);
+  const ai2Index = gameState.players.findIndex((p) => p.id === PlayerId.Bot2);
+  const ai3Index = gameState.players.findIndex((p) => p.id === PlayerId.Bot3);
 
   const isHumanRoundStartingPlayer =
     roundStartingPlayerIndex === humanPlayerIndex;
-  const isAI1RoundStartingPlayer =
-    ai1 &&
-    roundStartingPlayerIndex ===
-      gameState.players.findIndex((p) => p.id === ai1.id);
-  const isAI2RoundStartingPlayer =
-    ai2 &&
-    roundStartingPlayerIndex ===
-      gameState.players.findIndex((p) => p.id === ai2.id);
-  const isAI3RoundStartingPlayer =
-    ai3 &&
-    roundStartingPlayerIndex ===
-      gameState.players.findIndex((p) => p.id === ai3.id);
+  const isAI1RoundStartingPlayer = roundStartingPlayerIndex === ai1Index;
+  const isAI2RoundStartingPlayer = roundStartingPlayerIndex === ai2Index;
+  const isAI3RoundStartingPlayer = roundStartingPlayerIndex === ai3Index;
 
   return (
     <View style={styles.container}>
@@ -296,12 +284,10 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   showTrickResult={showTrickResult}
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
-                  trumpDeclarationMode={showTrumpDeclaration}
-                  onSkipTrumpDeclaration={() => onDeclareTrumpSuit(null)}
-                  onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
                   currentPlayerIndex={gameState.currentPlayerIndex}
                   currentTrick={gameState.currentTrick}
                   isRoundStartingPlayer={isHumanRoundStartingPlayer}
+                  gamePhase={gameState.gamePhase}
                 />
               ) : null
             }
@@ -342,6 +328,24 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         />
         */}
       </Animated.View>
+
+      {/* Progressive dealing indicators */}
+      {gameState.gamePhase === GamePhase.Dealing && (
+        <DealingProgressIndicator
+          gameState={gameState}
+          onPauseDealing={onManualPause}
+          isModalVisible={showDeclarationModal}
+        />
+      )}
+
+      {/* Trump declaration during dealing modal */}
+      {showDeclarationModal && gameState && (
+        <TrumpDeclarationDuringDealing
+          gameState={gameState}
+          onDeclaration={onHumanDeclaration}
+          onSkipDeclaration={onSkipDeclaration}
+        />
+      )}
 
       {/* Round complete modal - outside of AnimatedView */}
       <RoundCompleteModal

@@ -28,8 +28,7 @@ export const mockConfigs = {
   },
   
   aiLogic: {
-    getAIMove: jest.fn(),
-    shouldAIDeclare: jest.fn().mockReturnValue(false)
+    getAIMove: jest.fn()
   },
   
   gamePlayManager: {
@@ -38,11 +37,6 @@ export const mockConfigs = {
     getAIMoveWithErrorHandling: jest.fn()
   },
   
-  trumpManager: {
-    declareTrumpSuit: jest.fn(),
-    checkAITrumpDeclaration: jest.fn().mockReturnValue({ shouldDeclare: false }),
-    humanHasTrumpRank: jest.fn().mockReturnValue(false)
-  },
   
   gameRoundManager: {
     prepareNextRound: jest.fn(),
@@ -93,7 +87,6 @@ export const testAssertions = {
     expect(gameState.trumpInfo.trumpRank).toBe(expectedRank);
     if (expectedSuit) {
       expect(gameState.trumpInfo.trumpSuit).toBe(expectedSuit);
-      expect(gameState.trumpInfo.declared).toBe(true);
     }
   }
 };
@@ -132,7 +125,7 @@ export const createLargeGameState = (): GameState => {
   
   let state = createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades, true),
+    trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades),
     currentPlayerIndex: 0
   });
 
@@ -198,7 +191,7 @@ export const createInvalidGameStates = {
   inconsistentTrump: () => {
     const { createGameState } = require('./gameStates');
     return createGameState({
-      trumpInfo: createTrumpInfo(Rank.Two, Suit.Hearts, false) // Suit declared but marked as not declared
+      trumpInfo: createTrumpInfo(Rank.Two, undefined) // No trump declared
     });
   },
 

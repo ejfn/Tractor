@@ -2,6 +2,27 @@ import React, { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { GamePhase, Suit, Team, TrumpInfo } from "../types";
 
+const getSuitSymbol = (suit: Suit): string => {
+  switch (suit) {
+    case Suit.Hearts:
+      return "♥";
+    case Suit.Diamonds:
+      return "♦";
+    case Suit.Clubs:
+      return "♣";
+    case Suit.Spades:
+      return "♠";
+    default:
+      return "";
+  }
+};
+
+const getSuitColorStyle = (suit: Suit, styles: any) => {
+  return suit === Suit.Hearts || suit === Suit.Diamonds
+    ? styles.redSuit
+    : styles.blackSuit;
+};
+
 interface GameStatusProps {
   teams: [Team, Team];
   trumpInfo: TrumpInfo;
@@ -151,15 +172,12 @@ const GameStatus: React.FC<GameStatusProps> = ({
             ]}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {trumpInfo.trumpSuit ? (
+              {trumpInfo.trumpSuit && trumpInfo.trumpSuit !== Suit.None ? (
                 <>
                   <Text
                     style={[
                       styles.trumpText,
-                      trumpInfo.trumpSuit === Suit.Hearts ||
-                      trumpInfo.trumpSuit === Suit.Diamonds
-                        ? styles.redSuit
-                        : styles.blackSuit,
+                      getSuitColorStyle(trumpInfo.trumpSuit, styles),
                     ]}
                   >
                     {trumpInfo.trumpRank}
@@ -167,27 +185,16 @@ const GameStatus: React.FC<GameStatusProps> = ({
                   <Text
                     style={[
                       styles.suitSymbol,
-                      trumpInfo.trumpSuit === Suit.Hearts ||
-                      trumpInfo.trumpSuit === Suit.Diamonds
-                        ? styles.redSuit
-                        : styles.blackSuit,
+                      getSuitColorStyle(trumpInfo.trumpSuit, styles),
                     ]}
                   >
-                    {trumpInfo.trumpSuit === Suit.Hearts
-                      ? "♥"
-                      : trumpInfo.trumpSuit === Suit.Diamonds
-                        ? "♦"
-                        : trumpInfo.trumpSuit === Suit.Clubs
-                          ? "♣"
-                          : trumpInfo.trumpSuit === Suit.Spades
-                            ? "♠"
-                            : ""}
+                    {getSuitSymbol(trumpInfo.trumpSuit)}
                   </Text>
                 </>
               ) : (
                 <>
                   <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
-                  {gamePhase !== GamePhase.Declaring && (
+                  {trumpInfo.trumpSuit === Suit.None && (
                     <Text style={styles.suitSymbol}>🤡</Text>
                   )}
                 </>
@@ -292,7 +299,7 @@ const styles = StyleSheet.create({
   phaseIndicator: {
     backgroundColor: "#E1F5FE", // Solid light blue background
     paddingHorizontal: 8, // Reduced horizontal padding
-    paddingVertical: 5, // Reduced vertical padding
+    paddingVertical: 0, // No vertical padding
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#0a7ea4", // Teal border (app's tint color)

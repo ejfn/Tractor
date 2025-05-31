@@ -8,6 +8,7 @@ interface ThinkingIndicatorProps {
     dot2: Animated.Value;
     dot3: Animated.Value;
   };
+  testID?: string;
 }
 
 /**
@@ -16,6 +17,7 @@ interface ThinkingIndicatorProps {
 const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
   visible,
   dots,
+  testID,
 }) => {
   // Track indicator visibility changes
   React.useEffect(() => {
@@ -25,7 +27,7 @@ const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
   if (!visible) return null;
 
   return (
-    <View style={styles.thinkingIndicator}>
+    <View style={styles.thinkingIndicator} testID={testID}>
       <Animated.View style={[styles.thinkingDot, { opacity: dots.dot1 }]} />
       <Animated.View style={[styles.thinkingDot, { opacity: dots.dot2 }]} />
       <Animated.View style={[styles.thinkingDot, { opacity: dots.dot3 }]} />

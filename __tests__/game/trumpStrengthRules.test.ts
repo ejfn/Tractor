@@ -5,7 +5,7 @@ describe('Trump Strength Rules (Issue #37)', () => {
   const trumpInfo: TrumpInfo = {
     trumpRank: Rank.Two,
     trumpSuit: Suit.Spades,
-    declared: true,
+    
   };
 
   describe('Trump hierarchy', () => {

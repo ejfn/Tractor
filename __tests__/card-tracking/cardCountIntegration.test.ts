@@ -1,12 +1,12 @@
 import { GameState, Card, Rank } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
 import { processPlay } from '../../src/game/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { createFullyDealtGameState } from '../helpers/gameStates';
 
 describe('Card Count Integration Test', () => {
   test('Track card removal through processPlay', () => {
     // Initialize game with 4 players
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     
     let state = gameState;
     
@@ -73,7 +73,7 @@ describe('Card Count Integration Test', () => {
   });
   
   test('Track processPlay with state mutations', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     
     // Make first play
     console.log('\n=== Testing state mutation ===');

@@ -29,11 +29,6 @@ jest.mock('../../src/game/gamePlayManager', () => ({
   validatePlay: jest.fn()
 }));
 
-jest.mock('../../src/game/trumpManager', () => ({
-  declareTrumpSuit: jest.fn(),
-  checkAITrumpDeclaration: jest.fn().mockReturnValue({ shouldDeclare: false }),
-  humanHasTrumpRank: jest.fn().mockReturnValue(false)
-}));
 
 jest.mock('../../src/game/gameRoundManager', () => ({
   prepareNextRound: jest.fn(),

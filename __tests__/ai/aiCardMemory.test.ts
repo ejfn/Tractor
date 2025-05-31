@@ -17,19 +17,19 @@ import {
   Card,
   Trick,
 } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
+import { createTestCardsGameState } from '../helpers/gameStates';
 
 describe('AI Card Memory System - Phase 3', () => {
   let gameState: GameState;
   let trumpInfo: TrumpInfo;
 
   beforeEach(() => {
-    gameState = initializeGame();
+    gameState = createTestCardsGameState();
     trumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Hearts,
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
     };
     gameState.trumpInfo = trumpInfo;
   });

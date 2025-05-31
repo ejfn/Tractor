@@ -1,16 +1,16 @@
-import { GameState, Rank } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
+import { GameState, Rank, Player, Card } from "../../src/types";
 import { processPlay } from '../../src/game/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { createFullyDealtGameState } from '../helpers/gameStates';
 
 describe('Final Card Count Verification', () => {
   test('Bot 3 maintains correct card count throughout extended gameplay', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     // Play 10 complete tricks
     for (let trickNum = 0; trickNum < 10; trickNum++) {
-      const trickStartCounts = state.players.map(p => p.hand.length);
+      const trickStartCounts = state.players.map((p: Player) => p.hand.length);
       
       console.log(`\nTrick ${trickNum + 1} starting with counts: ${trickStartCounts.join(', ')}`);
       
@@ -52,7 +52,7 @@ describe('Final Card Count Verification', () => {
       }
       
       // Verify equal card counts after each trick
-      const trickEndCounts = state.players.map(p => p.hand.length);
+      const trickEndCounts = state.players.map((p: Player) => p.hand.length);
       const uniqueCounts = new Set(trickEndCounts);
       
       if (uniqueCounts.size > 1) {
@@ -61,7 +61,7 @@ describe('Final Card Count Verification', () => {
         
         // Show which players have different counts
         const expectedCount = trickEndCounts[0];
-        state.players.forEach((player, idx) => {
+        state.players.forEach((player: Player, idx: number) => {
           if (player.hand.length !== expectedCount) {
             console.error(`  ${player.name} has ${player.hand.length} cards, expected ${expectedCount}`);
           }
@@ -74,7 +74,7 @@ describe('Final Card Count Verification', () => {
     }
     
     // Final verification
-    const finalCounts = state.players.map(p => p.hand.length);
+    const finalCounts = state.players.map((p: Player) => p.hand.length);
     console.log(`\nFinal card counts after 10 tricks: ${finalCounts.join(', ')}`);
     
     expect(new Set(finalCounts).size).toBe(1);
@@ -82,27 +82,27 @@ describe('Final Card Count Verification', () => {
   });
   
   test('Winner correctly becomes next player', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     // Give Bot 3 all the aces to ensure it wins
     const bot3Index = 3;
-    const allAces = state.players.flatMap(p => p.hand.filter(c => c.rank === 'A'));
-    const nonAcesBot3 = state.players[bot3Index].hand.filter(c => c.rank !== 'A');
-    const otherCards = state.players.flatMap((p, idx) => 
-      idx !== bot3Index ? p.hand.filter(c => c.rank !== 'A') : []
+    const allAces = state.players.flatMap((p: Player) => p.hand.filter((c: Card) => c.rank === Rank.Ace));
+    const nonAcesBot3 = state.players[bot3Index].hand.filter((c: Card) => c.rank !== Rank.Ace);
+    const otherCards = state.players.flatMap((p: Player, idx: number) => 
+      idx !== bot3Index ? p.hand.filter((c: Card) => c.rank !== Rank.Ace) : []
     );
     
     // Redistribute cards: Bot 3 gets all aces
     state.players[bot3Index].hand = [...allAces, ...nonAcesBot3.slice(0, 25 - allAces.length)];
-    state.players.forEach((player, idx) => {
+    state.players.forEach((player: Player, idx: number) => {
       if (idx !== bot3Index) {
         const startIdx = idx * 25;
         player.hand = otherCards.slice(startIdx, startIdx + 25);
       }
     });
     
-    console.log(`Bot 3 has ${state.players[bot3Index].hand.filter(c => c.rank === 'A').length} aces`);
+    console.log(`Bot 3 has ${state.players[bot3Index].hand.filter((c: Card) => c.rank === Rank.Ace).length} aces`);
     
     // Play a trick
     let winners: string[] = [];

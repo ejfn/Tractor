@@ -133,7 +133,10 @@ export const findTractorCards = (
     let nextSuitKey: string = targetCard.suit;
     if (nextRank === trumpInfo.trumpRank) {
       nextSuitKey = `trump_${targetCard.suit}`;
-    } else if (targetCard.suit === trumpInfo.trumpSuit && trumpInfo.declared) {
+    } else if (
+      targetCard.suit === trumpInfo.trumpSuit &&
+      trumpInfo.trumpSuit !== undefined
+    ) {
       nextSuitKey = "trump_suit";
     }
 
@@ -158,7 +161,10 @@ export const findTractorCards = (
     let prevSuitKey: string = targetCard.suit;
     if (prevRank === trumpInfo.trumpRank) {
       prevSuitKey = `trump_${targetCard.suit}`;
-    } else if (targetCard.suit === trumpInfo.trumpSuit && trumpInfo.declared) {
+    } else if (
+      targetCard.suit === trumpInfo.trumpSuit &&
+      trumpInfo.trumpSuit !== undefined
+    ) {
       prevSuitKey = "trump_suit";
     }
 
@@ -194,8 +200,10 @@ export const getAutoSelectedCards = (
     return currentSelection.filter((c) => c.id !== clickedCard.id);
   }
 
-  // Special handling during trump declaration - single selection only
-  if (!trumpInfo?.declared) {
+  // Special handling during trump declaration phase - single selection only
+  // trumpSuit === undefined means trump declaration is still in progress
+  // trumpSuit === Suit.None or specific suit means trump declaration is complete
+  if (trumpInfo?.trumpSuit === undefined) {
     return [...currentSelection, clickedCard];
   }
 

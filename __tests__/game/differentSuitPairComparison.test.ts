@@ -5,7 +5,7 @@ import { createGameState } from '../helpers/gameStates';
 
 describe('Different Suit Pair Comparison Bug', () => {
   const mockGameState = createGameState();
-  const trumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two, declared: true };
+  const trumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two };
 
   describe('Non-trump pairs from different suits', () => {
     test('A♣-A♣ pair should NOT beat 4♦-4♦ pair (different suits, both non-trump)', () => {
@@ -171,10 +171,10 @@ describe('Different Suit Pair Comparison Bug', () => {
 
   describe('Trump suit skipped scenarios', () => {
     // When trump suit is skipped, only trump rank and jokers are trump
-    const skippedTrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two, declared: false };
+    const skippedTrumpInfo = { trumpSuit: undefined, trumpRank: Rank.Two };
 
     test('A♣-A♣ should NOT beat 4♥-4♥ when trump suit skipped (both non-trump)', () => {
-      // Hearts is the "trump suit" but declared=false, so Heart cards are regular
+      // No trump suit declared, so Heart cards are regular
       const aceClubs1 = createCard(Suit.Clubs, Rank.Ace, '1');
       const aceClubs2 = createCard(Suit.Clubs, Rank.Ace, '2');
       const fourHearts1 = createCard(Suit.Hearts, Rank.Four, '1');
@@ -183,7 +183,7 @@ describe('Different Suit Pair Comparison Bug', () => {
       // Neither should be trump since trump suit is not declared
       expect(aceClubs1.suit).toBe(Suit.Clubs);
       expect(fourHearts1.suit).toBe(Suit.Hearts);
-      expect(skippedTrumpInfo.declared).toBe(false);
+      expect(skippedTrumpInfo.trumpSuit).toBe(undefined);
 
       // Test that compareCards correctly rejects cross-suit non-trump comparisons
       expect(() => {
@@ -203,8 +203,8 @@ describe('Different Suit Pair Comparison Bug', () => {
       expect(comparison).toBeGreaterThan(0); // Trump rank should beat non-trump
     });
 
-    test('2♥-2♥ should NOT be trump when trump suit skipped', () => {
-      // Even though Hearts is the trump suit, when declared=false, 2♥ is still trump rank
+    test('2♥-2♥ should be trump when trump suit skipped', () => {
+      // Even though no trump suit is declared, 2♥ is still trump rank
       const twoHearts1 = createCard(Suit.Hearts, Rank.Two, '1');
       const fourHearts1 = createCard(Suit.Hearts, Rank.Four, '1');
 

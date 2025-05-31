@@ -1,11 +1,11 @@
 import { GameState, Card, Rank } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
 import { processPlay } from '../../src/game/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { createFullyDealtGameState } from '../helpers/gameStates';
 
 describe('Human Multi-Card Loss Bug', () => {
   test('Reproduce human losing multiple cards', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     console.log('=== Initial state ===');

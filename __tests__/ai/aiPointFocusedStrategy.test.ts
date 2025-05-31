@@ -41,7 +41,7 @@ const createTestJoker = (jokerType: JokerType): Card => ({
 const createTestTrumpInfo = (trumpRank: Rank = Rank.Two, trumpSuit?: Suit): TrumpInfo => ({
   trumpRank,
   trumpSuit,
-  declared: true,
+  
 });
 
 const createTestGameContext = (overrides: Partial<GameContext> = {}): GameContext => ({
@@ -97,6 +97,7 @@ const createTestGameState = (overrides: Partial<GameState> = {}): GameState => (
   tricks: [],
   roundNumber: 1,
   currentPlayerIndex: 0,
+  roundStartingPlayerIndex: 0,
   gamePhase: GamePhase.Playing,
   ...overrides,
 });
@@ -336,7 +337,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         },
       ];
       
-      const trumpInfo = { trumpRank: Rank.Two, declared: false }; // No trump suit declared
+      const trumpInfo = { trumpRank: Rank.Two,  }; // No trump suit declared
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,
@@ -373,7 +374,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         },
       ];
       
-      const trumpInfo = { trumpRank: Rank.Two, declared: false };
+      const trumpInfo = { trumpRank: Rank.Two,  };
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,
@@ -557,7 +558,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       ];
       
       // No trump suit declared - strategy should work and prioritize Aces
-      const trumpInfo = { trumpRank: Rank.Two, declared: false };
+      const trumpInfo = { trumpRank: Rank.Two,  };
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,
@@ -593,7 +594,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         },
       ];
       
-      const trumpInfo = { trumpRank: Rank.Two, declared: false };
+      const trumpInfo = { trumpRank: Rank.Two,  };
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,

@@ -40,7 +40,6 @@ describe('CardPlayArea', () => {
   const mockTrumpInfo: TrumpInfo = {
     trumpRank: Rank.Two,
     trumpSuit: Suit.Spades,
-    declared: true
   };
 
   // Helper function to create a mock card

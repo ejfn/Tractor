@@ -14,8 +14,8 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
       };
@@ -80,8 +80,8 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // SCENARIO: When opponent is winning with points, AI should use strong pairs to beat them
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -134,8 +134,8 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // SCENARIO: When teammate is winning, conserve pairs for later
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Diamonds,
       };
@@ -202,8 +202,8 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // SCENARIO: When opponent has unbeatable trick, don't waste valuable pairs
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
       };
@@ -265,8 +265,8 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // This tests the game logic side of Issue #104 fix
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -340,8 +340,8 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // Expected: Must use Hearts card, cannot waste cross-suit pair
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -406,8 +406,8 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // Expected: Must use Hearts card, cannot use cross-suit pair
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -472,8 +472,8 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // Expected: Trump pairs should be valid options, cross-suit pairs filtered
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };

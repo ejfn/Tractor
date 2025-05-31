@@ -26,6 +26,7 @@ interface GameStateOptions {
   trumpInfo?: TrumpInfo;
   gamePhase?: GamePhase;
   currentPlayerIndex?: number;
+  roundStartingPlayerIndex?: number;
   currentTrick?: Trick | null;
   tricks?: Trick[];
   roundNumber?: number;
@@ -43,6 +44,7 @@ export const createGameState = (options: GameStateOptions = {}): GameState => ({
   trumpInfo: options.trumpInfo || createTrumpInfo(),
   gamePhase: options.gamePhase || GamePhase.Playing,
   currentPlayerIndex: options.currentPlayerIndex ?? 0,
+  roundStartingPlayerIndex: options.roundStartingPlayerIndex ?? 0,
   currentTrick: options.currentTrick ?? null,
   tricks: options.tricks || [],
   deck: options.deck || [],
@@ -64,14 +66,14 @@ export const createGameScenarios = {
 
   // Trump declaration phase
   trumpDeclaration: () => createGameState({
-    gamePhase: GamePhase.Declaring,
-    trumpInfo: createTrumpInfo(Rank.Two, undefined, false)
+    gamePhase: GamePhase.Dealing,
+    trumpInfo: createTrumpInfo(Rank.Two, undefined)
   }),
 
   // Active game with trump declared
   playingWithTrump: (trumpSuit: Suit) => createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, trumpSuit, true)
+    trumpInfo: createTrumpInfo(Rank.Two, trumpSuit)
   }),
 
   // Game in progress, human's turn
@@ -109,7 +111,7 @@ export const createGameScenarios = {
  */
 export const createBasicGameState = (): GameState => createGameState({
   gamePhase: GamePhase.Playing,
-  trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
+  trumpInfo: createTrumpInfo(Rank.Two, undefined),
   currentPlayerIndex: 0
 });
 
@@ -119,7 +121,7 @@ export const createBasicGameState = (): GameState => createGameState({
  */
 export const createTrumpGameState = (trumpSuit: Suit): GameState => createGameState({
   gamePhase: GamePhase.Playing,
-  trumpInfo: createTrumpInfo(Rank.Two, trumpSuit, true),
+  trumpInfo: createTrumpInfo(Rank.Two, trumpSuit),
   currentPlayerIndex: 0
 });
 
@@ -130,7 +132,7 @@ export const createTrumpGameState = (trumpSuit: Suit): GameState => createGameSt
 export const createTestCardsGameState = (): GameState => {
   let state = createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
+    trumpInfo: createTrumpInfo(Rank.Two, undefined),
     currentPlayerIndex: 0
   });
 
@@ -181,8 +183,8 @@ export const createScoringGameState = (teamAPoints: number = 0, teamBPoints: num
  */
 export const createTrumpDeclarationGameState = (): GameState => {
   let state = createGameState({
-    gamePhase: GamePhase.Declaring,
-    trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
+    gamePhase: GamePhase.Dealing,
+    trumpInfo: createTrumpInfo(Rank.Two, undefined),
     currentPlayerIndex: 0
   });
 
@@ -217,7 +219,7 @@ export const createTrumpDeclarationGameState = (): GameState => {
 export const createFullGameStateWithTricks = (): GameState => {
   let state = createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades, true),
+    trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades),
     currentPlayerIndex: 0,
     roundNumber: 1
   });
@@ -277,7 +279,7 @@ export const createFullGameStateWithTricks = (): GameState => {
  */
 export const createRotationTestGameState = (): GameState => createGameState({
   gamePhase: GamePhase.Playing,
-  trumpInfo: createTrumpInfo(Rank.Two, Suit.Hearts, true),
+  trumpInfo: createTrumpInfo(Rank.Two, Suit.Hearts),
   currentPlayerIndex: 0
 });
 
@@ -288,7 +290,7 @@ export const createRotationTestGameState = (): GameState => createGameState({
 export const createComponentTestGameState = (): GameState => {
   let state = createGameState({
     gamePhase: GamePhase.Playing,
-    trumpInfo: createTrumpInfo(Rank.Two, undefined, false),
+    trumpInfo: createTrumpInfo(Rank.Two, undefined),
     currentPlayerIndex: 0
   });
 
@@ -387,5 +389,28 @@ export const setupTestHands = {
       return givePlayerCards(state, playerIndex, cards);
     }, gameState);
   }
+};
+
+/**
+ * Creates a game state with fully dealt cards ready for Playing phase
+ * Uses the progressive dealing system to deal all cards, then sets to Playing
+ * This is what most logic tests should use instead of initializeGame
+ */
+export const createFullyDealtGameState = (): GameState => {
+  // Import the dealing functions
+  const { initializeGame, dealNextCard, isDealingComplete } = require('../../src/game/gameLogic');
+  
+  // Initialize game
+  let gameState = initializeGame();
+  
+  // Deal all cards using progressive dealing
+  while (!isDealingComplete(gameState)) {
+    gameState = dealNextCard(gameState);
+  }
+  
+  // Set to playing phase
+  gameState.gamePhase = GamePhase.Playing;
+  
+  return gameState;
 };
 
