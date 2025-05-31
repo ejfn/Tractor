@@ -58,19 +58,23 @@ describe('gameRoundManager', () => {
       // Verify deck was created
       expect(result.deck).toEqual(mockDeck);
       
-      // Verify cards were dealt to players
-      const cardsPerPlayer = Math.floor((mockDeck.length - 8) / mockState.players.length);
-      
+      // Verify player hands are cleared for progressive dealing
       result.players.forEach(player => {
-        expect(player.hand.length).toBe(cardsPerPlayer);
+        expect(player.hand.length).toBe(0);
       });
       
-      // Verify kitty cards
-      expect(result.kittyCards.length).toBe(8);
+      // Verify kitty cards are cleared for progressive dealing
+      expect(result.kittyCards.length).toBe(0);
       
       // Verify tricks were reset
       expect(result.tricks.length).toBe(0);
       expect(result.currentTrick).toBeNull();
+      
+      // Verify trump declaration state was reset
+      expect(result.trumpDeclarationState).toBeUndefined();
+      
+      // Verify dealing state was reset
+      expect(result.dealingState).toBeUndefined();
       
       // Verify initializeGame was called
       expect(gameLogic.initializeGame).toHaveBeenCalled();

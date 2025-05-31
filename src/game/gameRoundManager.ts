@@ -25,19 +25,13 @@ export function prepareNextRound(state: GameState): GameState {
 
   newState.deck = deck;
 
-  // Deal cards
-  let cardIndex = 0;
-  const cardsPerPlayer = Math.floor(
-    (deck.length - 8) / newState.players.length,
-  );
-
+  // Clear player hands for progressive dealing
   newState.players.forEach((player) => {
-    player.hand = deck.slice(cardIndex, cardIndex + cardsPerPlayer);
-    cardIndex += cardsPerPlayer;
+    player.hand = [];
   });
 
-  // Set kitty cards
-  newState.kittyCards = deck.slice(deck.length - 8);
+  // Clear kitty cards for progressive dealing
+  newState.kittyCards = [];
 
   // Reset trick history
   newState.tricks = [];
@@ -60,15 +54,21 @@ export function prepareNextRound(state: GameState): GameState {
     (p) => p.team === defendingTeam?.id,
   );
 
+  // Save trump declaration state for first round player determination before resetting
+  const previousTrumpDeclaration =
+    newState.trumpDeclarationState?.currentDeclaration;
+
+  // Reset trump declaration state for new round
+  newState.trumpDeclarationState = undefined;
+
+  // Reset dealing state for progressive dealing
+  newState.dealingState = undefined;
+
   // Handle first round when we have a trump declaration
-  if (
-    newState.roundNumber === 1 &&
-    newState.trumpDeclarationState?.currentDeclaration
-  ) {
+  if (newState.roundNumber === 1 && previousTrumpDeclaration) {
     // Find index of the trump declarer from the declaration state
     const declarerIndex = newState.players.findIndex(
-      (p) =>
-        p.id === newState.trumpDeclarationState?.currentDeclaration?.playerId,
+      (p) => p.id === previousTrumpDeclaration?.playerId,
     );
 
     if (declarerIndex !== -1) {
