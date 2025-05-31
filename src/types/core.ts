@@ -1,10 +1,13 @@
 // Core game enums and basic types
+import { TrumpDeclarationState } from "./trumpDeclaration";
+import { DealingState } from "./dealing";
 
 export enum Suit {
   Hearts = "Hearts",
   Diamonds = "Diamonds",
   Clubs = "Clubs",
   Spades = "Spades",
+  None = "None", // For joker pair declarations - no trump suit
 }
 
 export enum Rank {
@@ -49,7 +52,6 @@ export enum PlayerName {
 
 export enum GamePhase {
   Dealing = "dealing",
-  Declaring = "declaring",
   Playing = "playing",
   Scoring = "scoring",
   RoundEnd = "roundEnd",
@@ -92,9 +94,7 @@ export type Trick = {
 
 export type TrumpInfo = {
   trumpRank: Rank;
-  trumpSuit?: Suit;
-  declared: boolean;
-  declarerPlayerId?: PlayerId; // ID of the player who declared trump
+  trumpSuit?: Suit; // undefined = not declared, Suit.None = joker pairs, specific suit = trump rank declarations
 };
 
 export type GameState = {
@@ -104,9 +104,12 @@ export type GameState = {
   kittyCards: Card[]; // Bottom cards that no one gets to see
   currentTrick: Trick | null; // The trick currently being played (null when no trick in progress)
   trumpInfo: TrumpInfo;
+  trumpDeclarationState?: TrumpDeclarationState; // Trump declarations during dealing phase (optional for backward compatibility)
+  dealingState?: DealingState; // Progressive dealing state (optional for backward compatibility)
   tricks: Trick[]; // History of all completed tricks in the current round
   roundNumber: number;
   currentPlayerIndex: number;
+  roundStartingPlayerIndex: number; // Index of the player who starts the current round (for crown display)
   lastRoundStartingPlayerIndex?: number; // Stores index of the player who started last round
   gamePhase: GamePhase;
 };

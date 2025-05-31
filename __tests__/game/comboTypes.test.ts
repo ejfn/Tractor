@@ -244,7 +244,7 @@ describe('Combo Type Identification Tests', () => {
       const trumpInfo3: TrumpInfo = {
         trumpRank: Rank.Three,
         trumpSuit: Suit.Spades,
-        declared: true
+        
       };
 
       // Create the cards
@@ -276,7 +276,7 @@ describe('Combo Type Identification Tests', () => {
       const trumpInfoHearts: TrumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
-        declared: true
+        
       };
       
       // Create 7-7-8-8 of Hearts (the trump suit)
@@ -301,7 +301,7 @@ describe('Combo Type Identification Tests', () => {
       const trumpInfoHearts: TrumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
-        declared: true
+        
       };
       
       // Create a tractor in Hearts (trump)
@@ -349,7 +349,7 @@ describe('Combo Type Identification Tests', () => {
       const trumpInfo2: TrumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
-        declared: true
+        
       };
 
       // Create pairs of 2s from different suits (all are trump due to rank)
@@ -409,7 +409,7 @@ describe('Combo Type Identification Tests', () => {
       const trumpInfo2: TrumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
-        declared: true
+        
       };
 
       const hand = [heartAa, heartAb, heart2a, heart2b];
@@ -570,7 +570,7 @@ describe('Combo Type Identification Tests', () => {
       const trumpInfoHearts: TrumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
-        declared: true
+        
       };
       
       const heartAa = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');

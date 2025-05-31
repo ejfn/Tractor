@@ -9,8 +9,8 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
     it('should play weakest trump suit card over trump rank when opponent wins with trump', () => {
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -55,8 +55,8 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
     it('should prefer weak trump suit over valuable trump rank in mixed scenarios', () => {
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
       };
@@ -101,8 +101,8 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
     it('should avoid point cards when opponent winning and play weakest non-point trump', () => {
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Diamonds,
       };
@@ -147,8 +147,8 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
     it('should prioritize conservation when multiple weak trump options available', () => {
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Ace,
         trumpSuit: Suit.Clubs,
       };
@@ -195,8 +195,8 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
     it('should follow trump while conserving when opponent has unbeatable trump pair', () => {
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -250,8 +250,8 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
     it('should conserve when forced to follow trump but cannot win', () => {
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.King,
         trumpSuit: Suit.Hearts,
       };
@@ -300,8 +300,8 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
     it('should handle mixed trump types with proper conservation priorities', () => {
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        declared: true,
-        declarerPlayerId: PlayerId.Human,
+        
+        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Diamonds,
       };
@@ -361,8 +361,8 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       testCases.forEach(({ trumpSuit, trumpRank }) => {
         const gameState = initializeGame();
         gameState.trumpInfo = {
-          declared: true,
-          declarerPlayerId: PlayerId.Human,
+          
+          
           trumpRank,
           trumpSuit,
         };

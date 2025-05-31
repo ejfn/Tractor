@@ -3,7 +3,7 @@ import { createCard } from '../helpers/cards';
 import { Suit, Rank, ComboType, PlayerId } from '../../src/types';
 
 describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
-  const trumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two, declared: true };
+  const trumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two,  };
 
   describe('The Original Bug: A♣-A♣ vs 4♦-4♦', () => {
     test('A♣-A♣ should NOT beat 4♦-4♦ when 4♦-4♦ leads', () => {

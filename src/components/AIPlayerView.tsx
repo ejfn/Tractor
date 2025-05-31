@@ -94,7 +94,11 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
           )}
           <Text style={sharedStyles.playerLabel}>{playerLabel}</Text>
         </View>
-        <ThinkingIndicator visible={showThinking} dots={thinkingDots} />
+        <ThinkingIndicator
+          visible={showThinking}
+          dots={thinkingDots}
+          testID={`thinking-indicator-${showThinking ? "visible" : "hidden"}`}
+        />
       </View>
       <View style={[getCardContainerStyle()]}>
         {[...Array(Math.min(10, player.hand.length))].map((_, i) => (

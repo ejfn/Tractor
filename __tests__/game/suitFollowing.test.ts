@@ -6,8 +6,8 @@ describe('Suit Following Rules Tests', () => {
   const createTestTrumpInfo = (trumpRank: Rank, trumpSuit: Suit): TrumpInfo => ({
     trumpRank,
     trumpSuit, 
-    declared: true,
-    declarerPlayerId: PlayerId.Human
+    
+    
   });
 
   describe('Basic Suit Following Rules', () => {
@@ -157,8 +157,8 @@ describe('Suit Following Rules Tests', () => {
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Diamonds,
-        declared: true,
-        declarerPlayerId: PlayerId.Human
+        
+        
       };
       
       // Leading Hearts pair (3♥-3♥) - non-trump

@@ -55,10 +55,11 @@ describe('Tractor Following Rules (Issue #71)', () => {
       deck: [],
       kittyCards: [],
       currentTrick: null,
-      trumpInfo: { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades },
+      trumpInfo: { trumpRank: Rank.Two,  trumpSuit: Suit.Spades },
       tricks: [],
       roundNumber: 1,
       currentPlayerIndex: 0,
+      roundStartingPlayerIndex: 0,
       gamePhase: GamePhase.Playing
     };
   });
@@ -264,7 +265,7 @@ describe('Tractor Following Rules (Issue #71)', () => {
   describe('Trump Tractor Following Rules', () => {
     test('Should treat trump rank pairs as valid pairs when following trump tractor', () => {
       // Create trump info where 2 is trump rank and spades is trump suit
-      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, declared: true, trumpSuit: Suit.Spades };
+      const trumpInfo: TrumpInfo = { trumpRank: Rank.Two,  trumpSuit: Suit.Spades };
       
       // AI leads with trump tractor (spades): 3-3-4-4
       const leadingTrumpTractor: Card[] = [

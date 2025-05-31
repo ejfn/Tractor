@@ -2,7 +2,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
 import { Animated } from 'react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
-import { PlayerId, PlayerName, TeamId } from "../../src/types";
+import { PlayerId, PlayerName, TeamId, GamePhase } from "../../src/types";
 import {
   createPlayer,
   createTrumpScenarios,
@@ -59,6 +59,7 @@ describe('HumanPlayerView', () => {
         showTrickResult={false}
         lastCompletedTrick={null}
         thinkingDots={thinkingDots}
+        gamePhase={GamePhase.Playing}
       />
     );
     

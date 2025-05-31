@@ -70,7 +70,7 @@ describe('Card Auto-Selection Utils', () => {
   });
 
   describe('findTractorCards', () => {
-    const trumpInfo = createTrumpInfo(Rank.Two, Suit.Spades, true);
+    const trumpInfo = createTrumpInfo(Rank.Two, Suit.Spades);
 
     test('should find regular tractor (consecutive pairs)', () => {
       const hand = [
@@ -151,7 +151,7 @@ describe('Card Auto-Selection Utils', () => {
   });
 
   describe('getAutoSelectedCards', () => {
-    const trumpInfo = createTrumpInfo(Rank.Two, Suit.Spades, true);
+    const trumpInfo = createTrumpInfo(Rank.Two, Suit.Spades);
 
     test('should toggle off already selected card', () => {
       const hand = [createCard(Suit.Hearts, Rank.King)];
@@ -248,7 +248,7 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should handle trump declaration mode by appending to selection', () => {
       const hand = [createCard(Suit.Hearts, Rank.Two)];
-      const trumpInfoUndeclared = createTrumpInfo(Rank.Two, undefined, false);
+      const trumpInfoUndeclared = createTrumpInfo(Rank.Two, undefined);
       const existingSelection = [createCard(Suit.Spades, Rank.King)];
       
       const result = getAutoSelectedCards(
@@ -509,7 +509,7 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should handle mixed trump and non-trump in longer tractor correctly', () => {
       // Create trump scenario where Hearts is trump suit
-      const trumpInfoHearts = createTrumpInfo(Rank.Two, Suit.Hearts, true);
+      const trumpInfoHearts = createTrumpInfo(Rank.Two, Suit.Hearts);
       
       // Hand with A♥-A♥-K♥-K♥-Q♥-Q♥ (trump suit tractor)
       const hand = [

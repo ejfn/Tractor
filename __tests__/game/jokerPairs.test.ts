@@ -53,7 +53,7 @@ const aceHearts2: Card = {
 describe('Joker Pair Tests', () => {
   const trumpInfo = {
     trumpRank: Rank.Two,
-    declared: false
+    
   };
 
   test('Small Joker Pair is recognized as a Pair', () => {

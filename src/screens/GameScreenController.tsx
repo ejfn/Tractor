@@ -5,6 +5,12 @@ import { useGameState } from "../hooks/useGameState";
 import { useUIAnimations, useThinkingDots } from "../hooks/useAnimations";
 import { useTrickResults } from "../hooks/useTrickResults";
 import { useAITurns } from "../hooks/useAITurns";
+import { useSimpleDealing } from "../hooks/useSimpleDealing";
+import { useTrumpDeclarations } from "../hooks/useTrumpDeclarations";
+
+// Game logic
+import { finalizeTrumpDeclaration } from "../game/trumpDeclarationManager";
+import { GamePhase } from "../types";
 
 // View component
 import GameScreenView from "./GameScreenView";
@@ -25,7 +31,6 @@ const GameScreenController: React.FC = () => {
     gameState,
     selectedCards,
     showSetup,
-    showTrumpDeclaration,
     gameOver,
     winner,
     showRoundComplete,
@@ -36,12 +41,10 @@ const GameScreenController: React.FC = () => {
     handleCardSelect,
     handlePlay,
     handleProcessPlay,
-    handleDeclareTrumpSuit,
-    handleConfirmTrumpDeclaration,
-    handleCheckAITrumpDeclaration,
     handleNextRound,
     startNewGame,
     handleTrickResultComplete, // Make sure this is imported
+    setGameState,
   } = useGameState();
 
   // Trick results management
@@ -70,6 +73,28 @@ const GameScreenController: React.FC = () => {
     showRoundComplete,
   );
 
+  // Simple dealing
+  const { isDealingInProgress, startDealing, pauseDealing, resumeDealing } =
+    useSimpleDealing({
+      gameState,
+      setGameState,
+      dealingSpeed: 250,
+    });
+
+  // Trump declarations
+  const {
+    showDeclarationModal,
+    availableDeclarations,
+    handleHumanDeclaration,
+    handleSkipDeclaration,
+    handleManualPause,
+  } = useTrumpDeclarations({
+    gameState,
+    setGameState,
+    pauseDealing,
+    resumeDealing,
+  });
+
   // Initialize game on first render
   useEffect(() => {
     initGame();
@@ -82,20 +107,38 @@ const GameScreenController: React.FC = () => {
     });
   }, [initGame, setTrickResultCompleteCallback, handleTrickResultComplete]);
 
-  // Check for AI trump declaration
+  // Start dealing when game phase is dealing
+  useEffect(() => {
+    if (gameState?.gamePhase === GamePhase.Dealing && !isDealingInProgress) {
+      startDealing();
+    }
+  }, [gameState?.gamePhase, startDealing, isDealingInProgress]);
+
+  // Handle trump declaration finalization when dealing completes
+  const finalizedRoundRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (
       gameState &&
-      gameState.gamePhase === "declaring" &&
-      !showTrumpDeclaration
+      gameState.gamePhase === GamePhase.Playing &&
+      !isDealingInProgress &&
+      !showDeclarationModal && // Don't finalize if trump declaration modal is showing
+      finalizedRoundRef.current !== gameState.roundNumber
     ) {
-      handleCheckAITrumpDeclaration();
+      // Dealing is complete and we've transitioned to playing phase
+      // Only finalize if we haven't already finalized this round
+      finalizedRoundRef.current = gameState.roundNumber;
+
+      const finalizedState = finalizeTrumpDeclaration(gameState);
+      setGameState(finalizedState);
     }
   }, [
-    gameState,
     gameState?.gamePhase,
-    showTrumpDeclaration,
-    handleCheckAITrumpDeclaration,
+    gameState?.roundNumber,
+    isDealingInProgress,
+    showDeclarationModal,
+    setGameState,
+    gameState,
   ]);
 
   // We've removed the player change detector - keeping it simple
@@ -162,7 +205,6 @@ const GameScreenController: React.FC = () => {
       humanPlayerIndex={humanPlayerIndex}
       // UI state
       showSetup={showSetup}
-      showTrumpDeclaration={showTrumpDeclaration}
       gameOver={gameOver}
       winner={winner}
       waitingForAI={waitingForAI}
@@ -175,6 +217,10 @@ const GameScreenController: React.FC = () => {
       roundCompleteMessage={roundCompleteMessage}
       teamNames={["Team A", "Team B"]}
       isTransitioningTricks={isTransitioningTricks}
+      // Progressive dealing
+      isDealingInProgress={isDealingInProgress}
+      showDeclarationModal={showDeclarationModal}
+      availableDeclarations={availableDeclarations}
       // Animations
       fadeAnim={fadeAnim}
       scaleAnim={scaleAnim}
@@ -184,10 +230,11 @@ const GameScreenController: React.FC = () => {
       onCardSelect={handleCardSelect}
       onPlayCards={handlePlay}
       onStartNewGame={startNewGame}
-      onDeclareTrumpSuit={handleDeclareTrumpSuit}
-      onConfirmTrumpDeclaration={handleConfirmTrumpDeclaration}
       onNextRound={handleNextRound}
       onAnimationComplete={onAnimationComplete}
+      onHumanDeclaration={handleHumanDeclaration}
+      onSkipDeclaration={handleSkipDeclaration}
+      onManualPause={handleManualPause}
     />
   );
 };

@@ -10,8 +10,8 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Hearts,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
     gameState.trumpInfo = trumpInfo;
     
@@ -151,8 +151,8 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Hearts,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
     gameState.trumpInfo = trumpInfo;
     
@@ -282,8 +282,8 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two, 
       trumpSuit: Suit.Hearts,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
     gameState.trumpInfo = trumpInfo;
     
@@ -370,8 +370,8 @@ describe('Last Player Point Strategy (Issue #61 Enhancement)', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Hearts,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
     gameState.trumpInfo = trumpInfo;
     

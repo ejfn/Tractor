@@ -43,7 +43,6 @@ const createTestJoker = (jokerType: JokerType): Card => ({
 const createTestTrumpInfo = (trumpRank: Rank = Rank.Two, trumpSuit?: Suit): TrumpInfo => ({
   trumpRank,
   trumpSuit,
-  declared: true,
 });
 
 const createTestGameContext = (overrides: Partial<GameContext> = {}): GameContext => ({
@@ -99,6 +98,7 @@ const createTestGameState = (overrides: Partial<GameState> = {}): GameState => (
   tricks: [],
   roundNumber: 1,
   currentPlayerIndex: 0,
+  roundStartingPlayerIndex: 0,
   gamePhase: GamePhase.Playing,
   ...overrides,
 });

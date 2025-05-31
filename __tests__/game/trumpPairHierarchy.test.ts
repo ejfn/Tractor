@@ -8,8 +8,8 @@ describe('Trump Pair Hierarchy Tests', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
     };
 
     test('2♣-2♣ pair should beat Q♠-Q♠ pair (trump rank vs trump suit)', () => {
@@ -42,8 +42,8 @@ describe('Trump Pair Hierarchy Tests', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
     };
 
     test('2♠-2♠ pair should beat 2♣-2♣ pair (trump rank in trump suit vs other suits)', () => {
@@ -85,8 +85,8 @@ describe('Trump Pair Hierarchy Tests', () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
     };
 
     test('Non-trump pairs comparison should remain unchanged', () => {

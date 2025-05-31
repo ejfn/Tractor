@@ -30,8 +30,8 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
     trumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Hearts,
-      declared: true,
-      declarerPlayerId: PlayerId.Human,
+      
+      
     };
   });
 
@@ -341,7 +341,7 @@ describe('AI Game Context - Phase 2 Enhancements', () => {
     it('should handle missing trump suit gracefully', () => {
       const noSuitTrump: TrumpInfo = {
         trumpRank: Rank.Two,
-        declared: false,
+        
       };
 
       const cards = [{ rank: Rank.Two, suit: Suit.Hearts, id: 'two_hearts', points: 0 }];

@@ -20,8 +20,8 @@ describe('Issue #71: AI Tractor Following Rules', () => {
     gameState.trumpInfo = {
       trumpSuit: Suit.Hearts,
       trumpRank: Rank.Two,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
     
     // Find players
@@ -102,8 +102,8 @@ describe('Issue #71: AI Tractor Following Rules', () => {
     gameState.trumpInfo = {
       trumpSuit: Suit.Hearts,
       trumpRank: Rank.Two,
-      declared: true,
-      declarerPlayerId: PlayerId.Human
+      
+      
     };
     
     const bot1Player = gameState.players.find(p => p.id === PlayerId.Bot1)!;

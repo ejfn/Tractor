@@ -14,7 +14,10 @@ import {
   TeamId,
   Trick,
   TrumpInfo,
+  detectPossibleDeclarations,
+  canOverrideDeclaration,
 } from "../types";
+import { initializeTrumpDeclarationState } from "./trumpDeclarationManager";
 // No UUID used in this project
 
 // Create a new deck of cards (2 decks for Shengji)
@@ -23,25 +26,27 @@ export const createDeck = (): Card[] => {
 
   // Create 2 decks with all suits and ranks
   for (let deckNum = 0; deckNum < 2; deckNum++) {
-    // Regular cards
-    Object.values(Suit).forEach((suit) => {
-      Object.values(Rank).forEach((rank) => {
-        // Calculate points: 5s = 5, 10s and Ks = 10, others = 0
-        let points = 0;
-        if (rank === Rank.Five) {
-          points = 5;
-        } else if (rank === Rank.Ten || rank === Rank.King) {
-          points = 10;
-        }
+    // Regular cards (exclude Suit.None which is only for trump declarations)
+    Object.values(Suit)
+      .filter((suit) => suit !== Suit.None)
+      .forEach((suit) => {
+        Object.values(Rank).forEach((rank) => {
+          // Calculate points: 5s = 5, 10s and Ks = 10, others = 0
+          let points = 0;
+          if (rank === Rank.Five) {
+            points = 5;
+          } else if (rank === Rank.Ten || rank === Rank.King) {
+            points = 10;
+          }
 
-        deck.push({
-          suit,
-          rank,
-          id: `${suit}_${rank}_${deckNum}`,
-          points,
+          deck.push({
+            suit,
+            rank,
+            id: `${suit}_${rank}_${deckNum}`,
+            points,
+          });
         });
       });
-    });
 
     // Add jokers
     deck.push({
@@ -70,7 +75,7 @@ export const shuffleDeck = (deck: Card[]): Card[] => {
   return newDeck;
 };
 
-// Deal cards to players
+// Deal cards to players (original all-at-once dealing for backward compatibility)
 export const dealCards = (state: GameState): GameState => {
   const newState = { ...state };
   const { players, deck } = newState;
@@ -86,10 +91,225 @@ export const dealCards = (state: GameState): GameState => {
   // Set kitty cards (bottom 8 cards)
   newState.kittyCards = deck.slice(deck.length - 8);
 
-  // Update game phase
-  newState.gamePhase = GamePhase.Declaring;
+  // Update game phase - start with dealing for progressive dealing system
+  newState.gamePhase = GamePhase.Dealing;
 
   return newState;
+};
+
+// Progressive dealing with trump declaration opportunities
+export const dealNextCard = (state: GameState): GameState => {
+  const newState = { ...state };
+  const { players, deck } = newState;
+
+  // Initialize dealing state if not present
+  if (!newState.dealingState) {
+    const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
+    const startingPlayerIndex = 0; // Always start dealing from human player (index 0) for testing
+    newState.dealingState = {
+      cardsPerPlayer,
+      currentRound: 0,
+      currentDealingPlayerIndex: startingPlayerIndex, // Start dealing from human player
+      startingDealingPlayerIndex: startingPlayerIndex, // Remember who we started with for round completion
+      totalRounds: cardsPerPlayer,
+      completed: false,
+      kittyDealt: false,
+      paused: false,
+    };
+
+    // Initialize empty hands
+    players.forEach((player) => {
+      player.hand = [];
+    });
+  }
+
+  const dealingState = newState.dealingState;
+
+  // Check if dealing is complete or paused
+  if (dealingState.completed || dealingState.paused) {
+    return newState;
+  }
+
+  // Deal one card to the current player
+  const cardIndex =
+    dealingState.currentRound * players.length +
+    dealingState.currentDealingPlayerIndex;
+
+  if (cardIndex < deck.length - 8) {
+    // Reserve 8 for kitty
+    const card = deck[cardIndex];
+    players[dealingState.currentDealingPlayerIndex].hand.push(card);
+
+    // Move to next player
+    dealingState.currentDealingPlayerIndex =
+      (dealingState.currentDealingPlayerIndex + 1) % players.length;
+
+    // If we've gone through all players, move to next round
+    if (
+      dealingState.currentDealingPlayerIndex ===
+      dealingState.startingDealingPlayerIndex
+    ) {
+      dealingState.currentRound++;
+    }
+
+    // Check if dealing is complete
+    if (dealingState.currentRound >= dealingState.totalRounds) {
+      dealingState.completed = true;
+
+      // Deal kitty cards if not already done
+      if (!dealingState.kittyDealt) {
+        newState.kittyCards = deck.slice(deck.length - 8);
+        dealingState.kittyDealt = true;
+      }
+
+      // Dealing is complete, but don't immediately transition to playing phase
+      // Let the dealing system handle final trump declaration opportunities first
+      // The phase transition will happen after final opportunities are processed
+    }
+  }
+
+  return newState;
+};
+
+// Check if dealing is complete
+export const isDealingComplete = (state: GameState): boolean => {
+  return state.dealingState?.completed ?? false;
+};
+
+// Get dealing progress for UI display
+export const getDealingProgress = (
+  state: GameState,
+): { current: number; total: number } => {
+  if (!state.dealingState) {
+    return { current: 0, total: 1 };
+  }
+
+  const { currentRound, currentDealingPlayerIndex, totalRounds } =
+    state.dealingState;
+  const cardsDealt =
+    currentRound * state.players.length + currentDealingPlayerIndex;
+  const totalCards = totalRounds * state.players.length;
+
+  return { current: cardsDealt, total: totalCards };
+};
+
+// Check if any player has new declaration opportunities after receiving a card
+export const checkDeclarationOpportunities = (
+  state: GameState,
+): Map<string, any[]> => {
+  const opportunities = new Map<string, any[]>();
+
+  if (!state.trumpDeclarationState?.declarationWindow) {
+    return opportunities;
+  }
+
+  const currentDeclaration = state.trumpDeclarationState?.currentDeclaration;
+
+  state.players.forEach((player) => {
+    const declarations = detectPossibleDeclarations(
+      player.hand,
+      state.trumpInfo.trumpRank,
+      currentDeclaration,
+      player.id as PlayerId,
+    );
+
+    if (declarations.length > 0) {
+      // Filter declarations that can actually override current declaration
+
+      const validDeclarations = declarations.filter((declaration) => {
+        const mockDeclaration = {
+          playerId: player.id,
+          rank: state.trumpInfo.trumpRank,
+          suit: declaration.suit,
+          type: declaration.type,
+          cards: declaration.cards,
+          timestamp: Date.now(),
+        };
+
+        return canOverrideDeclaration(currentDeclaration, mockDeclaration);
+      });
+
+      if (validDeclarations.length > 0) {
+        opportunities.set(player.id, validDeclarations);
+      }
+    }
+  });
+
+  return opportunities;
+};
+
+// Get the last card dealt (for highlighting/animation purposes)
+export const getLastDealtCard = (
+  state: GameState,
+): { playerId: string; card: Card } | null => {
+  if (!state.dealingState || state.dealingState.completed) {
+    return null;
+  }
+
+  const { currentRound, currentDealingPlayerIndex } = state.dealingState;
+
+  // Calculate the previous card position
+  let prevPlayerIndex = currentDealingPlayerIndex - 1;
+  let prevRound = currentRound;
+
+  if (prevPlayerIndex < 0) {
+    prevPlayerIndex = state.players.length - 1;
+    prevRound = currentRound - 1;
+  }
+
+  // If we're at the very beginning, no card has been dealt yet
+  if (prevRound < 0) {
+    return null;
+  }
+
+  const prevCardIndex = prevRound * state.players.length + prevPlayerIndex;
+  const prevPlayer = state.players[prevPlayerIndex];
+
+  if (prevCardIndex < state.deck.length - 8 && prevPlayer.hand.length > 0) {
+    return {
+      playerId: prevPlayer.id,
+      card: prevPlayer.hand[prevPlayer.hand.length - 1], // Last card in hand
+    };
+  }
+
+  return null;
+};
+
+// Pause dealing for trump declarations
+export const pauseDealing = (
+  state: GameState,
+  reason: string = "trump_declaration",
+): GameState => {
+  const newState = { ...state };
+
+  if (newState.dealingState && !newState.dealingState.completed) {
+    newState.dealingState.paused = true;
+    newState.dealingState.pauseReason = reason;
+  }
+
+  return newState;
+};
+
+// Resume dealing after trump declarations are resolved
+export const resumeDealing = (state: GameState): GameState => {
+  const newState = { ...state };
+
+  if (newState.dealingState) {
+    newState.dealingState.paused = false;
+    newState.dealingState.pauseReason = undefined;
+  }
+
+  return newState;
+};
+
+// Check if dealing is currently paused
+export const isDealingPaused = (state: GameState): boolean => {
+  return state.dealingState?.paused ?? false;
+};
+
+// Get dealing pause reason
+export const getDealingPauseReason = (state: GameState): string | undefined => {
+  return state.dealingState?.pauseReason;
 };
 
 // Check if a card is a trump
@@ -101,7 +321,8 @@ export const isTrump = (card: Card, trumpInfo: TrumpInfo): boolean => {
   if (card.rank === trumpInfo.trumpRank) return true;
 
   // Cards of trump suit (if declared) are trump
-  if (trumpInfo.declared && card.suit === trumpInfo.trumpSuit) return true;
+  if (trumpInfo.trumpSuit !== undefined && card.suit === trumpInfo.trumpSuit)
+    return true;
 
   return false;
 };
@@ -125,7 +346,8 @@ export const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
   if (card.rank === trumpInfo.trumpRank) return 2;
 
   // Trump suit cards - fifth highest
-  if (trumpInfo.declared && card.suit === trumpInfo.trumpSuit) return 1;
+  if (trumpInfo.trumpSuit !== undefined && card.suit === trumpInfo.trumpSuit)
+    return 1;
 
   return 0; // Not a trump (shouldn't reach here)
 };
@@ -1668,14 +1890,29 @@ export const initializeGame = (): GameState => {
     currentTrick: null,
     trumpInfo: {
       trumpRank: Rank.Two,
-      declared: false,
+      trumpSuit: undefined,
     },
+    trumpDeclarationState: initializeTrumpDeclarationState(),
     tricks: [],
     roundNumber: 1,
     currentPlayerIndex: 0,
+    roundStartingPlayerIndex: 0, // Round 1 starts with Human (index 0)
     gamePhase: GamePhase.Dealing,
   };
 
-  // Deal cards to players
-  return dealCards(gameState);
+  // Initialize dealing state for progressive dealing
+  const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
+  gameState.dealingState = {
+    cardsPerPlayer,
+    currentRound: 0,
+    currentDealingPlayerIndex: 0, // Start from player 0 (Human) in round 1
+    startingDealingPlayerIndex: 0, // Remember starting player for round completion
+    totalRounds: cardsPerPlayer,
+    completed: false,
+    kittyDealt: false,
+    paused: false,
+  };
+
+  // Return game state in dealing phase - progressive dealing will handle the rest
+  return gameState;
 };

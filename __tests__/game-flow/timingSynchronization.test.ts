@@ -1,15 +1,15 @@
 import { GameState, Rank } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
 import { processPlay } from '../../src/game/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
 import { TRICK_RESULT_DISPLAY_TIME } from '../../src/utils/gameTimings';
+import { createFullyDealtGameState } from '../helpers/gameStates';
 
 // Helper to simulate async timing
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 describe('Timing Synchronization Tests', () => {
   test('Simulate race condition during trick completion', async () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     console.log('=== Testing timing synchronization ===');
@@ -116,7 +116,7 @@ describe('Timing Synchronization Tests', () => {
   });
   
   test('Check for state mutations during async operations', async () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     console.log('\n=== Testing state mutations ===');

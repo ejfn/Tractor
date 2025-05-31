@@ -1,11 +1,11 @@
 import { GameState, Rank } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
 import { processPlay } from '../../src/game/gamePlayManager';
 import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { createFullyDealtGameState } from '../helpers/gameStates';
 
 describe('Trick Winner Determination', () => {
   test('should correctly determine trick winner and set current player', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     // Play one complete trick
@@ -41,7 +41,7 @@ describe('Trick Winner Determination', () => {
   });
   
   test('should maintain consistent winner information', () => {
-    const gameState = initializeGame();
+    const gameState = createFullyDealtGameState();
     let state = gameState;
     
     // Play multiple tricks and verify consistency

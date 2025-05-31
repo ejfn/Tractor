@@ -3,6 +3,12 @@
 // Core types
 export * from "./core";
 
+// Trump declaration types
+export * from "./trumpDeclaration";
+
+// Dealing types
+export * from "./dealing";
+
 // AI strategy types
 export * from "./ai";
 

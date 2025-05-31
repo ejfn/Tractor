@@ -76,11 +76,12 @@ export const createIsolatedGameState = (): GameState => {
     currentTrick: null,
     trumpInfo: {
       trumpRank: Rank.Two,
-      declared: false,
+      trumpSuit: undefined,
     },
     tricks: [],
     roundNumber: 1,
     currentPlayerIndex: 0,
+    roundStartingPlayerIndex: 0,
     gamePhase: GamePhase.Dealing,
   };
 
@@ -100,7 +101,7 @@ export const createIsolatedGameState = (): GameState => {
   }));
 
   // Update game phase
-  gameState.gamePhase = GamePhase.Declaring;
+  gameState.gamePhase = GamePhase.Dealing;
 
   return gameState;
 };
