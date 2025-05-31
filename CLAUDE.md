@@ -77,6 +77,8 @@ npm test              # Run tests
 ├── card-tracking/         # Card counting integration tests
 ├── game-flow/             # Game flow and interaction tests
 ├── game-state/            # Game state management tests
+├── trump-declaration/     # Trump declaration system tests
+├── debug/                 # Debug and regression tests
 └── helpers/               # Test utilities (modular organization)
     ├── index.ts           # Main helpers re-export file
     ├── cards.ts           # Card creation utilities

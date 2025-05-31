@@ -179,9 +179,12 @@ export function detectPossibleDeclarations(
     if (canStrengthen) {
       declarations.push(canStrengthen);
     }
+    // If this player already has a declaration, only return strengthening opportunities
+    // Cannot make new declarations once you've declared (except strengthening single → pair)
+    return declarations;
   }
 
-  // Check for joker pairs first (strongest)
+  // Check for joker pairs first (strongest) - only if no current declaration from this player
   const bigJokers = hand.filter((card) => card.joker === JokerType.Big);
   const smallJokers = hand.filter((card) => card.joker === JokerType.Small);
 

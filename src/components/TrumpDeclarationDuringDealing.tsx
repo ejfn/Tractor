@@ -159,9 +159,9 @@ function getDeclarationButtonDisplay(type: DeclarationType, suit: any): string {
     case DeclarationType.Pair:
       return `${suitEmoji}${suitEmoji}`; // Double emoji for pair
     case DeclarationType.SmallJokerPair:
-      return "🃏🃏 (Small)";
+      return "🃏🃏";
     case DeclarationType.BigJokerPair:
-      return "🃏🃏 (Big)";
+      return "🃏🃏";
     default:
       return `${type} in ${suitEmoji}`;
   }

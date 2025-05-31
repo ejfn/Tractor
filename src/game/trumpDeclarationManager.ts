@@ -129,7 +129,26 @@ export function getPlayerDeclarationOptions(
       timestamp: Date.now(),
     };
 
-    return canOverrideDeclaration(currentDeclaration, mockDeclaration);
+    // Check if declaration can override current declaration
+    if (!canOverrideDeclaration(currentDeclaration, mockDeclaration)) {
+      return false;
+    }
+
+    // Additional restriction for bots: joker declarations require 4+ trump rank cards
+    if (
+      !player.isHuman &&
+      (declaration.type === DeclarationType.SmallJokerPair ||
+        declaration.type === DeclarationType.BigJokerPair)
+    ) {
+      const trumpRankCards = player.hand.filter(
+        (card) =>
+          card.rank === gameState.trumpInfo.trumpRank &&
+          card.joker === undefined,
+      );
+      return trumpRankCards.length >= 4;
+    }
+
+    return true;
   });
 }
 
