@@ -105,11 +105,11 @@ export const dealNextCard = (state: GameState): GameState => {
   // Initialize dealing state if not present
   if (!newState.dealingState) {
     const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
-    const startingPlayerIndex = newState.roundStartingPlayerIndex;
+    const startingPlayerIndex = 0; // Always start dealing from human player (index 0) for testing
     newState.dealingState = {
       cardsPerPlayer,
       currentRound: 0,
-      currentDealingPlayerIndex: startingPlayerIndex, // Start dealing from the round starting player
+      currentDealingPlayerIndex: startingPlayerIndex, // Start dealing from human player
       startingDealingPlayerIndex: startingPlayerIndex, // Remember who we started with for round completion
       totalRounds: cardsPerPlayer,
       completed: false,
@@ -163,7 +163,7 @@ export const dealNextCard = (state: GameState): GameState => {
       }
 
       // Dealing is complete, but don't immediately transition to playing phase
-      // Let useProgressiveDealing handle final trump declaration opportunities first
+      // Let the dealing system handle final trump declaration opportunities first
       // The phase transition will happen after final opportunities are processed
     }
   }

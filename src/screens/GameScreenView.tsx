@@ -9,7 +9,6 @@ import GameSetupScreen from "../components/GameSetupScreen";
 import GameStatus from "../components/GameStatus";
 import GameTable from "../components/GameTable";
 import HumanPlayerView from "../components/HumanPlayerView";
-// import TrumpDeclarationModal from '../components/TrumpDeclarationModal'; // Not used anymore
 import RoundCompleteModal from "../components/RoundCompleteModal";
 import TrickResultDisplay from "../components/TrickResultDisplay";
 import { TrumpDeclarationDuringDealing } from "../components/TrumpDeclarationDuringDealing";
@@ -317,16 +316,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
         {/* Bottom spacing view */}
         <View style={styles.bottomSpacing} />
-
-        {/* Trump declaration modal - removed in favor of in-hand selection
-        <TrumpDeclarationModal
-          visible={!!gameState && showTrumpDeclaration}
-          trumpInfo={gameState?.trumpInfo || { trumpRank: Rank.Two, declared: false }}
-          onDeclareSuit={onDeclareTrumpSuit}
-          fadeAnim={fadeAnim}
-          scaleAnim={scaleAnim}
-        />
-        */}
       </Animated.View>
 
       {/* Progressive dealing indicators */}
