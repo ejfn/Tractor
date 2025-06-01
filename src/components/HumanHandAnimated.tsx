@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card as CardType, Player, TrumpInfo } from "../types";
+import { Card as CardType, Player, TrumpInfo, GamePhase } from "../types";
 import { isTrump } from "../game/gameLogic";
 import AnimatedCardComponent from "./AnimatedCard";
 
@@ -25,6 +25,8 @@ interface HumanHandAnimatedProps {
   onConfirmTrumpDeclaration?: () => void;
   showTrickResult?: boolean;
   lastCompletedTrick?: any;
+  gamePhase?: GamePhase;
+  onKittySwap?: () => void;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -43,6 +45,8 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
   onConfirmTrumpDeclaration,
   showTrickResult = false,
   lastCompletedTrick = null,
+  gamePhase,
+  onKittySwap,
 }) => {
   // Sort cards by suit and rank for better display
   const sortedHand = [...player.hand].sort((a, b) => {
@@ -234,10 +238,11 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
                 <AnimatedCardComponent
                   card={card}
                   onSelect={
-                    (trumpDeclarationMode || isCurrentPlayer) &&
-                    isCardSelectableForTrump(card) &&
-                    !showTrickResult &&
-                    !lastCompletedTrick
+                    ((trumpDeclarationMode || isCurrentPlayer) &&
+                      isCardSelectableForTrump(card) &&
+                      !showTrickResult &&
+                      !lastCompletedTrick) ||
+                    (gamePhase === GamePhase.KittySwap && isCurrentPlayer)
                       ? onCardSelect
                       : undefined
                   }
@@ -279,30 +284,58 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
         </View>
       )}
 
-      {!trumpDeclarationMode &&
-        canPlay &&
-        selectedCards.length > 0 &&
-        onPlayCards && (
-          <View style={styles.playButtonContainer}>
+      {!trumpDeclarationMode && canPlay && selectedCards.length > 0 && (
+        <View style={styles.playButtonContainer}>
+          {gamePhase === GamePhase.KittySwap && onKittySwap ? (
+            // Kitty swap mode
             <TouchableOpacity
-              style={[styles.playButton, !canInteract && styles.disabledButton]}
-              onPress={onPlayCards}
-              disabled={!canInteract}
+              style={[
+                styles.playButton,
+                styles.kittySwapButton,
+                selectedCards.length !== 8 && styles.disabledButton,
+              ]}
+              onPress={onKittySwap}
+              disabled={selectedCards.length !== 8}
               hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
             >
               <Text
                 style={[
                   styles.playButtonText,
-                  !canInteract && styles.disabledButtonText,
+                  selectedCards.length !== 8 && styles.disabledButtonText,
                 ]}
               >
-                {selectedCards.length === 1
-                  ? "Play 1 Card"
-                  : `Play ${selectedCards.length} Cards`}
+                {selectedCards.length === 8
+                  ? "Swap Kitty Cards"
+                  : `Select ${8 - selectedCards.length} More Cards`}
               </Text>
             </TouchableOpacity>
-          </View>
-        )}
+          ) : (
+            // Normal play mode
+            onPlayCards && (
+              <TouchableOpacity
+                style={[
+                  styles.playButton,
+                  !canInteract && styles.disabledButton,
+                ]}
+                onPress={onPlayCards}
+                disabled={!canInteract}
+                hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+              >
+                <Text
+                  style={[
+                    styles.playButtonText,
+                    !canInteract && styles.disabledButtonText,
+                  ]}
+                >
+                  {selectedCards.length === 1
+                    ? "Play 1 Card"
+                    : `Play ${selectedCards.length} Cards`}
+                </Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
+      )}
     </View>
   );
 };
@@ -367,6 +400,12 @@ const styles = StyleSheet.create({
     maxWidth: 200,
     height: 36,
     marginBottom: 5,
+  },
+  kittySwapButton: {
+    backgroundColor: "#2E7D32",
+    borderColor: "rgba(76, 175, 80, 0.6)",
+    minWidth: 150,
+    maxWidth: 220,
   },
   playButtonText: {
     color: "#FFFFFF",

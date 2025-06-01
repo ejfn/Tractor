@@ -40,6 +40,7 @@ const GameScreenController: React.FC = () => {
     initGame,
     handleCardSelect,
     handlePlay,
+    handleKittySwap,
     handleProcessPlay,
     handleNextRound,
     startNewGame,
@@ -218,6 +219,7 @@ const GameScreenController: React.FC = () => {
       // Handlers
       onCardSelect={handleCardSelect}
       onPlayCards={handlePlay}
+      onKittySwap={handleKittySwap}
       onStartNewGame={startNewGame}
       onNextRound={handleNextRound}
       onAnimationComplete={onAnimationComplete}

@@ -52,6 +52,7 @@ export enum PlayerName {
 
 export enum GamePhase {
   Dealing = "dealing",
+  KittySwap = "kittySwap",
   Playing = "playing",
   Scoring = "scoring",
   RoundEnd = "roundEnd",

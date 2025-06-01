@@ -1,4 +1,5 @@
-import { GameState, PlayerId, Suit } from "../types";
+import { GameState, PlayerId, Suit, GamePhase } from "../types";
+import { pickupKittyCards } from "./gameLogic";
 import {
   TrumpDeclaration,
   TrumpDeclarationState,
@@ -201,7 +202,23 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     newState.trumpDeclarationState.declarationWindow = false;
   }
 
-  return newState;
+  // Handle kitty cards pickup - round starting player always gets the kitty
+  // The round starting player (who leads the first trick) picks up the 8 kitty cards
+  // Note: roundStartingPlayerIndex is set by:
+  //   - First round: trump declarer (set in makeTrumpDeclaration)
+  //   - Later rounds: determined by previous round results (set in prepareNextRound)
+  if (newState.kittyCards.length === 8) {
+    const roundStartingPlayerId =
+      newState.players[newState.roundStartingPlayerIndex].id;
+
+    // Round starting player picks up kitty cards and enters KittySwap phase
+    const stateWithKitty = pickupKittyCards(newState, roundStartingPlayerId);
+    return stateWithKitty;
+  } else {
+    // No kitty cards available - transition directly to Playing phase
+    newState.gamePhase = GamePhase.Playing;
+    return newState;
+  }
 }
 
 /**

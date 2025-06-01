@@ -29,6 +29,7 @@ interface HumanPlayerViewProps {
   currentTrick?: any;
   isRoundStartingPlayer?: boolean;
   gamePhase?: GamePhase;
+  onKittySwap?: () => void;
 }
 
 /**
@@ -54,6 +55,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   currentTrick,
   isRoundStartingPlayer = false,
   gamePhase,
+  onKittySwap,
 }) => {
   return (
     <View style={styles.container}>
@@ -95,6 +97,8 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
         onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
         showTrickResult={showTrickResult}
         lastCompletedTrick={lastCompletedTrick}
+        gamePhase={gamePhase}
+        onKittySwap={onKittySwap}
       />
     </View>
   );
