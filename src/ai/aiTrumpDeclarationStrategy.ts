@@ -165,25 +165,25 @@ function getDealingProgressMultiplier(progress: {
 }): number {
   const progressRatio = progress.current / progress.total;
 
-  // Early in dealing: moderate chance (wait to see more cards)
+  // Early in dealing: very conservative chance (wait to see more cards)
   if (progressRatio < 0.2) {
-    return 0.8;
+    return 0.5;
   }
-  // Early-mid dealing: higher chance (good timing to establish trump)
+  // Early-mid dealing: moderate chance (good timing to establish trump)
   else if (progressRatio < 0.4) {
-    return 1.4;
+    return 1.1;
   }
   // Mid dealing: peak chance (optimal timing)
   else if (progressRatio < 0.7) {
-    return 1.6;
-  }
-  // Late dealing: urgent chance (last opportunity)
-  else if (progressRatio < 0.9) {
     return 1.3;
   }
-  // Very late: lower chance (very limited benefit)
+  // Late dealing: moderate urgency (last opportunity)
+  else if (progressRatio < 0.9) {
+    return 1.1;
+  }
+  // Very late: conservative chance (very limited benefit)
   else {
-    return 0.6;
+    return 0.5;
   }
 }
 

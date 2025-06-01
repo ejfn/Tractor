@@ -417,11 +417,11 @@ const shouldDeclare = Math.random() < declarationProbability;
 - **Very Poor (≤2 suit cards)**: 0.2x multiplier
 
 **Timing Multipliers by Dealing Progress**:
-- **Early (0-20%)**: 0.8x (wait for more cards)
-- **Early-Mid (20-40%)**: 1.4x (good timing)
-- **Peak (40-70%)**: 1.6x (optimal window)
-- **Late (70-90%)**: 1.3x (urgency factor)
-- **Very Late (90%+)**: 0.6x (limited benefit)
+- **Early (0-20%)**: 0.5x (very conservative - wait for more cards)
+- **Early-Mid (20-40%)**: 1.1x (moderate timing)
+- **Peak (40-70%)**: 1.3x (optimal window)
+- **Late (70-90%)**: 1.1x (moderate urgency)
+- **Very Late (90%+)**: 0.5x (conservative - limited benefit)
 
 #### Strategic Benefits
 
@@ -579,11 +579,11 @@ declarationProbability = baseDeclarationProbability
 
 **Timing Optimization:**
 
-- **0-20% dealt**: 0.8x (wait to see more cards)
-- **20-40% dealt**: 1.4x (good timing to establish trump)
-- **40-70% dealt**: 1.6x (peak optimal timing)
-- **70-90% dealt**: 1.3x (urgent last opportunity)
-- **90%+ dealt**: 0.6x (very limited benefit)
+- **0-20% dealt**: 0.5x (very conservative - wait to see more cards)
+- **20-40% dealt**: 1.1x (moderate timing)
+- **40-70% dealt**: 1.3x (optimal timing)
+- **70-90% dealt**: 1.1x (moderate urgency)
+- **90%+ dealt**: 0.5x (conservative - limited benefit)
 
 The AI recognizes that mid-dealing (40-70%) is the optimal window for trump declaration, balancing information gathering with strategic timing.
 
