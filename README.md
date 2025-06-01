@@ -5,7 +5,6 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![CI/CD](https://img.shields.io/github/actions/workflow/status/ejfn/Tractor/ci-cd.yml?branch=main&label=CI/CD)
 
 ## What is Tractor?
 
