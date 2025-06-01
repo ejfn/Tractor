@@ -110,6 +110,7 @@ export const dealNextCard = (state: GameState): GameState => {
       newState.roundNumber === 1
         ? 0 // Round 1 always starts from human
         : newState.roundStartingPlayerIndex; // Round 2+ uses round starting player
+    
     newState.dealingState = {
       cardsPerPlayer,
       currentRound: 0,
@@ -148,7 +149,9 @@ export const dealNextCard = (state: GameState): GameState => {
   if (cardIndex < deck.length - 8) {
     // Reserve 8 for kitty
     const card = deck[cardIndex];
-    players[dealingState.currentDealingPlayerIndex].hand.push(card);
+    const currentPlayer = players[dealingState.currentDealingPlayerIndex];
+    currentPlayer.hand.push(card);
+    
 
     // Move to next player
     dealingState.currentDealingPlayerIndex =
@@ -194,11 +197,22 @@ export const getDealingProgress = (
     return { current: 0, total: 1 };
   }
 
-  const { currentRound, currentDealingPlayerIndex, totalRounds } =
-    state.dealingState;
-  const cardsDealt =
-    currentRound * state.players.length + currentDealingPlayerIndex;
+  const {
+    currentRound,
+    currentDealingPlayerIndex,
+    startingDealingPlayerIndex,
+    totalRounds,
+  } = state.dealingState;
+
+  // Calculate cards dealt in current round
+  // currentDealingPlayerIndex is the NEXT player to receive a card
+  // We need to count how many cards have actually been dealt from the starting player
+  const cardsDealtThisRound = (currentDealingPlayerIndex - startingDealingPlayerIndex + state.players.length) % state.players.length;
+
+  // Total cards dealt = completed rounds * players + cards dealt in current round
+  const cardsDealt = currentRound * state.players.length + cardsDealtThisRound;
   const totalCards = totalRounds * state.players.length;
+
 
   return { current: cardsDealt, total: totalCards };
 };
@@ -1910,18 +1924,8 @@ export const initializeGame = (): GameState => {
     gamePhase: GamePhase.Dealing,
   };
 
-  // Initialize dealing state for progressive dealing
-  const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
-  gameState.dealingState = {
-    cardsPerPlayer,
-    currentRound: 0,
-    currentDealingPlayerIndex: 0, // Start from player 0 (Human) in round 1
-    startingDealingPlayerIndex: 0, // Remember starting player for round completion
-    totalRounds: cardsPerPlayer,
-    completed: false,
-    kittyDealt: false,
-    paused: false,
-  };
+  // Don't initialize dealing state here - let dealNextCard() handle it properly
+  // This ensures Round 1 vs Round 2+ logic is handled correctly
 
   // Return game state in dealing phase - progressive dealing will handle the rest
   return gameState;
