@@ -105,11 +105,15 @@ export const dealNextCard = (state: GameState): GameState => {
   // Initialize dealing state if not present
   if (!newState.dealingState) {
     const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
-    const startingPlayerIndex = 0; // Always start dealing from human player (index 0) for testing
+    // Round 1 always starts from human player (index 0), round 2+ uses roundStartingPlayerIndex
+    const startingPlayerIndex =
+      newState.roundNumber === 1
+        ? 0 // Round 1 always starts from human
+        : newState.roundStartingPlayerIndex; // Round 2+ uses round starting player
     newState.dealingState = {
       cardsPerPlayer,
       currentRound: 0,
-      currentDealingPlayerIndex: startingPlayerIndex, // Start dealing from human player
+      currentDealingPlayerIndex: startingPlayerIndex, // Start dealing from appropriate player
       startingDealingPlayerIndex: startingPlayerIndex, // Remember who we started with for round completion
       totalRounds: cardsPerPlayer,
       completed: false,
@@ -131,9 +135,15 @@ export const dealNextCard = (state: GameState): GameState => {
   }
 
   // Deal one card to the current player
-  const cardIndex =
-    dealingState.currentRound * players.length +
-    dealingState.currentDealingPlayerIndex;
+  // Calculate total cards dealt so far (independent of starting player)
+  const cardsDealtSoFar = dealingState.currentRound * players.length;
+  // Calculate position within current round (how many players have been dealt to this round)
+  const playersDealtInCurrentRound =
+    (dealingState.currentDealingPlayerIndex -
+      dealingState.startingDealingPlayerIndex +
+      players.length) %
+    players.length;
+  const cardIndex = cardsDealtSoFar + playersDealtInCurrentRound;
 
   if (cardIndex < deck.length - 8) {
     // Reserve 8 for kitty
