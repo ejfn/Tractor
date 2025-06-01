@@ -43,13 +43,11 @@ export function useSimpleDealing({
 
   // Deal one card and schedule the next
   const dealNextCardStep = (currentState: GameState) => {
-    // Stop if dealing is complete
+    // Stop if dealing is complete - PAUSE to show final modal
     if (isDealingComplete(currentState)) {
       setIsDealingInProgress(false);
-      isPausedRef.current = false;
-      // Transition to playing phase
-      const playingState = { ...currentState, gamePhase: GamePhase.Playing };
-      setGameState(playingState);
+      isPausedRef.current = true; // PAUSE instead of completing
+      setGameState(currentState);
       return;
     }
 
@@ -83,6 +81,14 @@ export function useSimpleDealing({
       if (stateToUse && stateToUse.gamePhase === "dealing") {
         currentStateRef.current = stateToUse; // Update the ref with the latest state
         isPausedRef.current = false;
+
+        // If dealing is complete, transition to playing
+        if (isDealingComplete(stateToUse)) {
+          const playingState = { ...stateToUse, gamePhase: GamePhase.Playing };
+          setGameState(playingState);
+          return;
+        }
+
         // Ensure dealing is marked as in progress
         if (!isDealingInProgress) {
           setIsDealingInProgress(true);
