@@ -28,7 +28,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **Smooth card animations** with React Native Reanimated
 - **Smart card auto-selection** for pairs and tractors
 - **Touch-optimized UI** with team color coding and dark theme
-- **Comprehensive testing** with 537 tests across 77 test suites
+- **Comprehensive testing** with 533 tests across 75 test suites
 
 ## Technology
 
@@ -58,7 +58,13 @@ Sophisticated **4-phase AI system** with restructured priority chain, real-time 
 
 ## Architecture
 
-**React Native + TypeScript** with modular design: AI intelligence modules, game logic, React hooks, and UI components.
+**React Native + TypeScript** with modular design: AI intelligence modules, game logic, consolidated React hooks, and UI components.
+
+**Key architectural highlights:**
+- **Consolidated hook architecture**: Single-responsibility hooks with minimal interdependencies
+- **Progressive dealing system**: Unified dealing and trump declaration management
+- **Type-safe enum usage**: Eliminates magic strings throughout the codebase
+- **Modular AI system**: 4-phase intelligence with strategic decision trees
 
 *Architecture details are covered in **[CLAUDE.md](CLAUDE.md)***
 

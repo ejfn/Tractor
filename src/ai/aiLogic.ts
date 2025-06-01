@@ -1,5 +1,5 @@
-import { Card, GameState } from "../types";
 import { getValidCombinations } from "../game/gameLogic";
+import { Card, GameState } from "../types";
 import { createAIStrategy } from "./aiStrategy";
 
 /**

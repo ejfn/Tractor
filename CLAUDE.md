@@ -61,6 +61,7 @@ npm test              # Run tests
 ├── hooks/                 # Custom React hooks
 │   ├── useGameState.ts    # Core game state management
 │   ├── useAITurns.ts      # AI turn handling
+│   ├── useProgressiveDealing.ts # Progressive dealing with trump declarations
 │   ├── useTrickResults.ts # Trick completion logic
 │   └── useAnimations.ts   # Card animations
 ├── components/            # UI components
@@ -632,8 +633,63 @@ return this.selectStrategicDisposal(/* ... */);
 - **Debugging**: When AI behavior changes, check the priority chain order and handler logic
 - **Testing**: Always include point card management and trump conservation in AI tests
 
+## Hook Architecture
+
+### Progressive Dealing System
+
+The progressive dealing system is managed through a single consolidated hook:
+
+**`useProgressiveDealing.ts`** - Unified dealing and trump declaration system
+- **Progressive dealing**: Card-by-card distribution with configurable speed
+- **Trump declaration detection**: Real-time opportunity detection for humans
+- **AI declaration integration**: Ready for AI trump declaration during dealing
+- **Pause/Resume control**: Unified dealing pause/resume for declarations
+- **State management**: Single source of truth for dealing and declaration state
+
+#### Key Benefits of Consolidation:
+- **Eliminates circular dependencies**: No more inter-hook function calls
+- **Single responsibility**: One hook manages entire dealing lifecycle
+- **Cleaner state management**: Unified dealing and declaration state
+- **Better performance**: Reduced hook complexity and re-renders
+- **Easier maintenance**: Single file for all dealing-related logic
+
+#### Usage Pattern:
+```typescript
+const {
+  // Dealing state
+  isDealingInProgress,
+  shouldShowOpportunities,
+  
+  // Dealing controls
+  startDealing,
+  
+  // Trump declaration handlers
+  handleHumanDeclaration,
+  handleContinue,
+  handleManualPause,
+} = useProgressiveDealing({
+  gameState,
+  setGameState,
+  dealingSpeed: 250,
+});
+```
+
+### Hook Integration
+
+The hooks work together in a coordinated fashion:
+
+1. **`useGameState`**: Core game state and logic management
+2. **`useProgressiveDealing`**: Progressive dealing with trump declarations
+3. **`useAITurns`**: AI turn handling during play phase
+4. **`useTrickResults`**: Trick completion and result display
+5. **`useAnimations`**: UI animations and timing
+
+Each hook has a single, well-defined responsibility with minimal overlap.
+
 ## Development Memories
 
 - When fixing a bug, always try to reproduce it with existing test or a debug test
 - Do not add any player-specific hacks into AI strategy
 - Do not add any \special handling\ to solve a problem
+- **Hook consolidation**: Always prefer single-responsibility hooks over multiple interdependent hooks
+- **Circular dependencies**: Use refs and careful dependency management to avoid useCallback circular dependencies

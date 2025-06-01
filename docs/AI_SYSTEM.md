@@ -812,6 +812,34 @@ The enhancement handles all scenarios correctly:
   - Edge case: Minimal hand composition
   - Edge case: Trump pairs vs cross-suit pairs interaction
 
+## Recent System Improvements
+
+### Hook Architecture Consolidation (Latest)
+
+**Problem**: The progressive dealing system was split across two interdependent hooks (`useSimpleDealing` and `useTrumpDeclarations`) that created circular dependencies and complex state management.
+
+**Solution**: Consolidated into a single `useProgressiveDealing` hook that manages the entire dealing lifecycle:
+
+#### Benefits Achieved:
+- **Eliminated circular dependencies**: No more inter-hook function calls
+- **Single responsibility**: One hook manages entire dealing lifecycle  
+- **Cleaner state management**: Unified dealing and declaration state
+- **Better performance**: Reduced hook complexity and re-renders
+- **Easier maintenance**: Single file for all dealing-related logic
+
+#### Key Features:
+- **Progressive dealing**: Card-by-card distribution with configurable speed
+- **Trump declaration detection**: Real-time opportunity detection for humans
+- **AI declaration integration**: Ready for AI trump declaration during dealing
+- **Pause/Resume control**: Unified dealing pause/resume for declarations
+- **Bug fixes**: Resolved trump declaration component reappearing issue
+
+#### Implementation Impact:
+- **Reduced codebase complexity**: From 2 hooks (~270 lines) to 1 hook (~266 lines)
+- **Fixed TypeScript issues**: Eliminated circular dependency compilation errors
+- **Improved user experience**: Fixed expandable trump declaration disappearing/reappearing bug
+- **Enhanced maintainability**: Single source of truth for dealing system
+
 ---
 
 **See Also:**
