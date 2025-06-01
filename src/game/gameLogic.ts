@@ -2,8 +2,8 @@ import {
   Card,
   Combo,
   ComboType,
-  GameState,
   GamePhase,
+  GameState,
   JokerType,
   Player,
   PlayerId,
@@ -14,8 +14,8 @@ import {
   TeamId,
   Trick,
   TrumpInfo,
-  detectPossibleDeclarations,
   canOverrideDeclaration,
+  detectPossibleDeclarations,
 } from "../types";
 import { initializeTrumpDeclarationState } from "./trumpDeclarationManager";
 // No UUID used in this project

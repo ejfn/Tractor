@@ -5,8 +5,7 @@ import { useGameState } from "../hooks/useGameState";
 import { useUIAnimations, useThinkingDots } from "../hooks/useAnimations";
 import { useTrickResults } from "../hooks/useTrickResults";
 import { useAITurns } from "../hooks/useAITurns";
-import { useSimpleDealing } from "../hooks/useSimpleDealing";
-import { useTrumpDeclarations } from "../hooks/useTrumpDeclarations";
+import { useProgressiveDealing } from "../hooks/useProgressiveDealing";
 
 // Game logic
 import { finalizeTrumpDeclaration } from "../game/trumpDeclarationManager";
@@ -74,26 +73,18 @@ const GameScreenController: React.FC = () => {
     showRoundComplete,
   );
 
-  // Simple dealing
-  const { isDealingInProgress, startDealing, pauseDealing, resumeDealing } =
-    useSimpleDealing({
-      gameState,
-      setGameState,
-      dealingSpeed: 250,
-    });
-
-  // Trump declarations
+  // Progressive dealing with trump declarations
   const {
-    showDeclarationModal,
-    availableDeclarations,
+    isDealingInProgress,
+    startDealing,
+    shouldShowOpportunities,
     handleHumanDeclaration,
-    handleSkipDeclaration,
+    handleContinue,
     handleManualPause,
-  } = useTrumpDeclarations({
+  } = useProgressiveDealing({
     gameState,
     setGameState,
-    pauseDealing,
-    resumeDealing,
+    dealingSpeed: 250,
   });
 
   // Initialize game on first render
@@ -123,7 +114,6 @@ const GameScreenController: React.FC = () => {
       gameState &&
       gameState.gamePhase === GamePhase.Playing &&
       !isDealingInProgress &&
-      !showDeclarationModal && // Don't finalize if trump declaration modal is showing
       finalizedRoundRef.current !== gameState.roundNumber
     ) {
       // Dealing is complete and we've transitioned to playing phase
@@ -137,7 +127,6 @@ const GameScreenController: React.FC = () => {
     gameState?.gamePhase,
     gameState?.roundNumber,
     isDealingInProgress,
-    showDeclarationModal,
     setGameState,
     gameState,
   ]);
@@ -220,8 +209,6 @@ const GameScreenController: React.FC = () => {
       isTransitioningTricks={isTransitioningTricks}
       // Progressive dealing
       isDealingInProgress={isDealingInProgress}
-      showDeclarationModal={showDeclarationModal}
-      availableDeclarations={availableDeclarations}
       isProcessingPlay={isProcessingPlay}
       // Animations
       fadeAnim={fadeAnim}
@@ -235,8 +222,9 @@ const GameScreenController: React.FC = () => {
       onNextRound={handleNextRound}
       onAnimationComplete={onAnimationComplete}
       onHumanDeclaration={handleHumanDeclaration}
-      onSkipDeclaration={handleSkipDeclaration}
+      onContinue={handleContinue}
       onManualPause={handleManualPause}
+      shouldShowOpportunities={shouldShowOpportunities}
     />
   );
 };

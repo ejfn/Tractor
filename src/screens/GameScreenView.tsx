@@ -11,8 +11,7 @@ import GameTable from "../components/GameTable";
 import HumanPlayerView from "../components/HumanPlayerView";
 import RoundCompleteModal from "../components/RoundCompleteModal";
 import TrickResultDisplay from "../components/TrickResultDisplay";
-import { TrumpDeclarationDuringDealing } from "../components/TrumpDeclarationDuringDealing";
-import { DealingProgressIndicator } from "../components/DealingProgressIndicator";
+import { ExpandableTrumpDeclaration } from "../components/ExpandableTrumpDeclaration";
 
 // Types
 import { Card, GameState, PlayerId, Trick, GamePhase } from "../types";
@@ -43,8 +42,6 @@ interface GameScreenViewProps {
 
   // Progressive dealing
   isDealingInProgress: boolean;
-  showDeclarationModal: boolean;
-  availableDeclarations: any[];
   isProcessingPlay: boolean;
 
   // Animations
@@ -64,8 +61,9 @@ interface GameScreenViewProps {
   onNextRound: () => void;
   onAnimationComplete: () => void;
   onHumanDeclaration: (declaration: any) => void;
-  onSkipDeclaration: () => void;
+  onContinue: () => void;
   onManualPause: () => void;
+  shouldShowOpportunities: boolean;
 }
 
 /**
@@ -94,8 +92,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
   // Progressive dealing
   isDealingInProgress,
-  showDeclarationModal,
-  availableDeclarations,
   isProcessingPlay,
 
   // Animations
@@ -111,8 +107,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onNextRound,
   onAnimationComplete,
   onHumanDeclaration,
-  onSkipDeclaration,
+  onContinue,
   onManualPause,
+  shouldShowOpportunities,
 }) => {
   // Setup screen with animations
   if (showSetup) {
@@ -322,21 +319,14 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         <View style={styles.bottomSpacing} />
       </Animated.View>
 
-      {/* Progressive dealing indicators */}
+      {/* Expandable trump declaration component */}
       {gameState.gamePhase === GamePhase.Dealing && (
-        <DealingProgressIndicator
-          gameState={gameState}
-          onPauseDealing={onManualPause}
-          isModalVisible={showDeclarationModal}
-        />
-      )}
-
-      {/* Trump declaration during dealing modal */}
-      {showDeclarationModal && gameState && (
-        <TrumpDeclarationDuringDealing
+        <ExpandableTrumpDeclaration
           gameState={gameState}
           onDeclaration={onHumanDeclaration}
-          onSkipDeclaration={onSkipDeclaration}
+          onContinue={onContinue}
+          onPause={onManualPause}
+          shouldShowOpportunities={shouldShowOpportunities}
         />
       )}
 
