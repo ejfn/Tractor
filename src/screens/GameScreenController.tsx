@@ -35,6 +35,7 @@ const GameScreenController: React.FC = () => {
     winner,
     showRoundComplete,
     roundCompleteMessage,
+    isProcessingPlay,
     trickCompletionDataRef,
 
     initGame,
@@ -221,6 +222,7 @@ const GameScreenController: React.FC = () => {
       isDealingInProgress={isDealingInProgress}
       showDeclarationModal={showDeclarationModal}
       availableDeclarations={availableDeclarations}
+      isProcessingPlay={isProcessingPlay}
       // Animations
       fadeAnim={fadeAnim}
       scaleAnim={scaleAnim}

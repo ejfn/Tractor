@@ -45,6 +45,7 @@ interface GameScreenViewProps {
   isDealingInProgress: boolean;
   showDeclarationModal: boolean;
   availableDeclarations: any[];
+  isProcessingPlay: boolean;
 
   // Animations
   fadeAnim: Animated.Value;
@@ -95,6 +96,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   isDealingInProgress,
   showDeclarationModal,
   availableDeclarations,
+  isProcessingPlay,
 
   // Animations
   fadeAnim,
@@ -153,8 +155,10 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   const ai3 = gameState.players.find((p) => p.id === PlayerId.Bot3);
 
   const isPlayerCurrentTurn = gameState.currentPlayerIndex === humanPlayerIndex;
-  const canPlay =
-    gameState.gamePhase === GamePhase.Playing && isPlayerCurrentTurn;
+  const canInteract =
+    gameState.gamePhase === GamePhase.Playing &&
+    isPlayerCurrentTurn &&
+    !isProcessingPlay;
 
   // Check if selected cards are valid to play
   const isValidPlay =
@@ -277,7 +281,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   selectedCards={selectedCards}
                   onCardSelect={onCardSelect}
                   onPlayCards={onPlayCards}
-                  canPlay={canPlay}
+                  canPlay={canInteract}
                   isValidPlay={isValidPlay}
                   trumpInfo={gameState.trumpInfo}
                   showTrickResult={showTrickResult}
