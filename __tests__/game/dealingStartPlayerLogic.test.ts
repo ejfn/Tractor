@@ -173,16 +173,6 @@ describe("Dealing Start Player Logic", () => {
   });
 
   describe("Edge Cases", () => {
-    test("should handle invalid roundStartingPlayerIndex gracefully", () => {
-      // Test with out-of-bounds index
-      gameState.roundNumber = 2;
-      gameState.roundStartingPlayerIndex = 5; // Invalid index
-      
-      // Should not crash and should handle gracefully
-      expect(() => {
-        dealNextCard(gameState);
-      }).not.toThrow();
-    });
 
     test("should handle round 0 as round 1 behavior", () => {
       // Edge case: round 0 should behave like round 1

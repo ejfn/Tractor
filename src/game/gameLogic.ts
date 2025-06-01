@@ -110,7 +110,7 @@ export const dealNextCard = (state: GameState): GameState => {
       newState.roundNumber === 1
         ? 0 // Round 1 always starts from human
         : newState.roundStartingPlayerIndex; // Round 2+ uses round starting player
-    
+
     newState.dealingState = {
       cardsPerPlayer,
       currentRound: 0,
@@ -151,7 +151,6 @@ export const dealNextCard = (state: GameState): GameState => {
     const card = deck[cardIndex];
     const currentPlayer = players[dealingState.currentDealingPlayerIndex];
     currentPlayer.hand.push(card);
-    
 
     // Move to next player
     dealingState.currentDealingPlayerIndex =
@@ -207,12 +206,15 @@ export const getDealingProgress = (
   // Calculate cards dealt in current round
   // currentDealingPlayerIndex is the NEXT player to receive a card
   // We need to count how many cards have actually been dealt from the starting player
-  const cardsDealtThisRound = (currentDealingPlayerIndex - startingDealingPlayerIndex + state.players.length) % state.players.length;
+  const cardsDealtThisRound =
+    (currentDealingPlayerIndex -
+      startingDealingPlayerIndex +
+      state.players.length) %
+    state.players.length;
 
   // Total cards dealt = completed rounds * players + cards dealt in current round
   const cardsDealt = currentRound * state.players.length + cardsDealtThisRound;
   const totalCards = totalRounds * state.players.length;
-
 
   return { current: cardsDealt, total: totalCards };
 };

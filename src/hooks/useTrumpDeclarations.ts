@@ -5,6 +5,7 @@ import {
   getPlayerDeclarationOptions,
 } from "../game/trumpDeclarationManager";
 import { getAITrumpDeclarationDecision } from "../ai/aiTrumpDeclarationStrategy";
+import { isDealingComplete } from "../game/gameLogic";
 
 interface UseTrumpDeclarationsProps {
   gameState: GameState | null;
@@ -76,6 +77,12 @@ export function useTrumpDeclarations({
   const handLength = gameState?.players?.[0]?.hand?.length;
   useEffect(() => {
     if (!gameState || gameState.gamePhase !== "dealing") return;
+
+    // Check if dealing is complete - show final modal
+    if (isDealingComplete(gameState)) {
+      setShowDeclarationModal(true);
+      return;
+    }
 
     // Check human opportunities
     const humanOptions = getPlayerDeclarationOptions(gameState, PlayerId.Human);
