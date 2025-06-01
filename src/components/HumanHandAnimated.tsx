@@ -188,6 +188,9 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
     return trumpDeclarationMode ? card.rank === trumpInfo.trumpRank : true;
   };
 
+  // Determine if player can interact with cards and buttons
+  const canInteract = canPlay && isValidPlay;
+
   // Constants for card layout
   const cardWidth = 65;
   const cardOverlap = 40;
@@ -282,15 +285,15 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
         onPlayCards && (
           <View style={styles.playButtonContainer}>
             <TouchableOpacity
-              style={[styles.playButton, !isValidPlay && styles.disabledButton]}
+              style={[styles.playButton, !canInteract && styles.disabledButton]}
               onPress={onPlayCards}
-              disabled={!isValidPlay}
+              disabled={!canInteract}
               hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
             >
               <Text
                 style={[
                   styles.playButtonText,
-                  !isValidPlay && styles.disabledButtonText,
+                  !canInteract && styles.disabledButtonText,
                 ]}
               >
                 {selectedCards.length === 1

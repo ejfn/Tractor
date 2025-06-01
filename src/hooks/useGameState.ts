@@ -26,6 +26,7 @@ export function useGameState() {
   // Core game state
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
+  const [isProcessingPlay, setIsProcessingPlay] = useState(false);
 
   // Game flow control
   const [showSetupInternal, setShowSetupInternal] = useState(false);
@@ -89,12 +90,17 @@ export function useGameState() {
 
   // Handle play button click
   const handlePlay = () => {
-    if (!gameState || selectedCards.length === 0) return;
+    if (!gameState || selectedCards.length === 0 || isProcessingPlay) return;
+
+    // Set processing state to prevent double-taps
+    setIsProcessingPlay(true);
 
     // Check if play is valid
     const isValid = validatePlay(gameState, selectedCards);
 
     if (!isValid) {
+      // Reset processing state on validation error
+      setIsProcessingPlay(false);
       // In a real implementation, we'd show an alert or error message
       console.warn(
         "Invalid Play",
@@ -113,6 +119,9 @@ export function useGameState() {
 
       // Process the play - this will remove cards from the player's hand
       handleProcessPlay(cardsToPlay);
+
+      // Reset processing state after play is complete
+      setIsProcessingPlay(false);
     }, CARD_SELECTION_DELAY);
   };
 
@@ -257,6 +266,7 @@ export function useGameState() {
     winner,
     showRoundComplete,
     roundCompleteMessage,
+    isProcessingPlay,
 
     // Trick completion data ref (for communication with other hooks)
     trickCompletionDataRef,
