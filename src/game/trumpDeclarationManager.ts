@@ -1,5 +1,5 @@
 import { GameState, PlayerId, Suit, GamePhase } from "../types";
-import { pickupKittyCards } from "./gameLogic";
+import { pickupKittyCards } from "./kittyManager";
 import {
   TrumpDeclaration,
   TrumpDeclarationState,
@@ -212,7 +212,10 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
       newState.players[newState.roundStartingPlayerIndex].id;
 
     // Round starting player picks up kitty cards and enters KittySwap phase
-    const stateWithKitty = pickupKittyCards(newState, roundStartingPlayerId);
+    const { newState: stateWithKitty } = pickupKittyCards(
+      newState,
+      roundStartingPlayerId,
+    );
     return stateWithKitty;
   } else {
     // No kitty cards available - transition directly to Playing phase

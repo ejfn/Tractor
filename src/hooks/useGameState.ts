@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  initializeGame,
-  putbackKittyCards,
-  validateKittySwap,
-} from "../game/gameLogic";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { initializeGame } from "../game/gameLogic";
+import { putbackKittyCards, validateKittySwap } from "../game/kittyManager";
 import { processPlay, validatePlay } from "../game/gamePlayManager";
 import { endRound, prepareNextRound } from "../game/gameRoundManager";
 import { Card, GamePhase, GameState } from "../types";
@@ -32,6 +29,11 @@ export function useGameState() {
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
   const [isProcessingPlay, setIsProcessingPlay] = useState(false);
 
+  // Track previous game phase to detect transitions
+  const [previousGamePhase, setPreviousGamePhase] = useState<GamePhase | null>(
+    null,
+  );
+
   // Game flow control
   const [showSetupInternal, setShowSetupInternal] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -45,6 +47,9 @@ export function useGameState() {
   // Ref for trick completion data (used for communication with other hooks)
   const trickCompletionDataRef = useRef<TrickCompletionData | null>(null);
 
+  // Ref to store kitty cards for pre-selection
+  const kittyCardsRef = useRef<Card[]>([]);
+
   // Initialize game on component mount if no game state exists
   useEffect(() => {
     if (!showSetupInternal && !gameState) {
@@ -52,6 +57,39 @@ export function useGameState() {
       setGameState(newGameState);
     }
   }, [showSetupInternal, gameState]);
+
+  // Extract relevant values for kitty swap detection
+  const gamePhase = gameState?.gamePhase;
+  const currentPlayer = useMemo(() => {
+    return gameState?.players?.[gameState.currentPlayerIndex];
+  }, [gameState?.players, gameState?.currentPlayerIndex]);
+
+  // Effect to handle KittySwap phase transition and pre-select kitty cards
+  useEffect(() => {
+    if (!gameState || !currentPlayer) return;
+
+    // Detect transition to KittySwap phase
+    if (
+      previousGamePhase !== GamePhase.KittySwap &&
+      gamePhase === GamePhase.KittySwap
+    ) {
+      // Only pre-select for human player
+      if (currentPlayer.isHuman) {
+        // The last 8 cards in the hand are the kitty cards (they were just added)
+        const handSize = currentPlayer.hand.length;
+        const kittyCards = currentPlayer.hand.slice(handSize - 8);
+
+        // Store kitty cards in ref for later reference
+        kittyCardsRef.current = kittyCards;
+
+        // Pre-select the kitty cards
+        setSelectedCards(kittyCards);
+      }
+    }
+
+    // Update previous phase
+    setPreviousGamePhase(gamePhase || null);
+  }, [gamePhase, currentPlayer, previousGamePhase, gameState]);
 
   // Initialize game (for manual initialization)
   const initGame = useCallback(() => {
@@ -277,7 +315,9 @@ export function useGameState() {
     setShowSetupInternal(false);
     setGameOver(false);
     setWinner(null);
+    setPreviousGamePhase(null);
     pendingStateRef.current = null;
+    kittyCardsRef.current = [];
 
     // Initialize will be called on next render due to dependency changes
   };

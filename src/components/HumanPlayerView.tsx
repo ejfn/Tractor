@@ -22,9 +22,6 @@ interface HumanPlayerViewProps {
     dot2: Animated.Value;
     dot3: Animated.Value;
   };
-  trumpDeclarationMode?: boolean;
-  onSkipTrumpDeclaration?: () => void;
-  onConfirmTrumpDeclaration?: () => void;
   currentPlayerIndex?: number;
   currentTrick?: any;
   isRoundStartingPlayer?: boolean;
@@ -48,9 +45,6 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   showTrickResult = false,
   lastCompletedTrick = null,
   thinkingDots,
-  trumpDeclarationMode = false,
-  onSkipTrumpDeclaration,
-  onConfirmTrumpDeclaration,
   currentPlayerIndex,
   currentTrick,
   isRoundStartingPlayer = false,
@@ -92,9 +86,6 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
         trumpInfo={trumpInfo}
         canPlay={canPlay}
         isValidPlay={isValidPlay}
-        trumpDeclarationMode={trumpDeclarationMode}
-        onSkipTrumpDeclaration={onSkipTrumpDeclaration}
-        onConfirmTrumpDeclaration={onConfirmTrumpDeclaration}
         showTrickResult={showTrickResult}
         lastCompletedTrick={lastCompletedTrick}
         gamePhase={gamePhase}

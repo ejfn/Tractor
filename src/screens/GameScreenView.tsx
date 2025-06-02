@@ -155,7 +155,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
   const isPlayerCurrentTurn = gameState.currentPlayerIndex === humanPlayerIndex;
   const canInteract =
-    gameState.gamePhase === GamePhase.Playing &&
+    (gameState.gamePhase === GamePhase.Playing ||
+      gameState.gamePhase === GamePhase.KittySwap) &&
     isPlayerCurrentTurn &&
     !isProcessingPlay;
 
