@@ -5,6 +5,8 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
+![Tests](https://img.shields.io/badge/Tests-533%20Passing-brightgreen?logo=jest)
+![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
 
 ## What is Tractor?
 
@@ -32,6 +34,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ## Technology
 
 Built with **React Native + Expo** for mobile platforms:
+
 - **React Native 0.76+** - Cross-platform mobile development
 - **Expo SDK 52** - Development tools and native API access
 - **TypeScript 5.7+** - Type safety and developer experience
@@ -46,6 +49,7 @@ Built with **React Native + Expo** for mobile platforms:
 Sophisticated **4-phase AI system** with restructured priority chain, real-time trick analysis, enhanced opponent blocking, strategic point card management, and intelligent trump conservation.
 
 **Latest Enhancements:**
+
 - **Trump Declaration Strategy**: Sophisticated dealing phase AI with hand quality analysis, timing optimization, and strategic override decisions
 - **Strategic Pair Conservation**: AI intelligently preserves valuable pairs when out of suit, using strategic mixed combinations instead
 - **Strategic Point Management**: AI avoids wasting point cards when opponent is winning
@@ -60,6 +64,7 @@ Sophisticated **4-phase AI system** with restructured priority chain, real-time 
 **React Native + TypeScript** with modular design: AI intelligence modules, game logic, consolidated React hooks, and UI components.
 
 **Key architectural highlights:**
+
 - **Consolidated hook architecture**: Single-responsibility hooks with minimal interdependencies
 - **Progressive dealing system**: Unified dealing and trump declaration management
 - **Type-safe enum usage**: Eliminates magic strings throughout the codebase
