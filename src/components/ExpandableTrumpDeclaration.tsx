@@ -89,14 +89,14 @@ export function ExpandableTrumpDeclaration({
     setIsExpanded(false);
     Animated.timing(animatedHeight, {
       toValue: 0,
-      duration: 300,
+      duration: 250,
       useNativeDriver: false,
     }).start(() => {
       onContinue();
       // Keep collapsing flag longer to prevent re-expansion
       setTimeout(() => {
         setIsCollapsing(false);
-      }, 250);
+      }, 500);
     });
   };
 
@@ -105,14 +105,14 @@ export function ExpandableTrumpDeclaration({
     setIsExpanded(false);
     Animated.timing(animatedHeight, {
       toValue: 0,
-      duration: 300,
+      duration: 250,
       useNativeDriver: false,
     }).start(() => {
       onDeclaration(declaration);
       // Keep collapsing flag longer to prevent re-expansion
       setTimeout(() => {
         setIsCollapsing(false);
-      }, 250);
+      }, 500);
     });
   };
 

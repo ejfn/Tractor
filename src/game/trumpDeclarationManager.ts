@@ -96,6 +96,7 @@ export function makeTrumpDeclaration(
       );
       if (declarerIndex !== -1) {
         newState.roundStartingPlayerIndex = declarerIndex;
+        newState.currentPlayerIndex = declarerIndex; // Set current player immediately to prevent UI timing issues
       }
     }
   }
@@ -194,10 +195,6 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     // No one declared trump during dealing - set to Suit.None (no trump game)
     newState.trumpInfo.trumpSuit = Suit.None;
   }
-
-  // Set currentPlayerIndex to the round starting player when transitioning to Playing phase
-  // roundStartingPlayerIndex was set during trump declarations or round preparation
-  newState.currentPlayerIndex = newState.roundStartingPlayerIndex;
 
   // Close the declaration window
   if (newState.trumpDeclarationState) {
