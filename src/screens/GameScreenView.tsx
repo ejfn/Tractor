@@ -57,6 +57,7 @@ interface GameScreenViewProps {
   // Handlers
   onCardSelect: (card: Card) => void;
   onPlayCards: () => void;
+  onKittySwap: () => void;
   onStartNewGame: () => void;
   onNextRound: () => void;
   onAnimationComplete: () => void;
@@ -103,6 +104,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   // Handlers
   onCardSelect,
   onPlayCards,
+  onKittySwap,
   onStartNewGame,
   onNextRound,
   onAnimationComplete,
@@ -153,7 +155,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
   const isPlayerCurrentTurn = gameState.currentPlayerIndex === humanPlayerIndex;
   const canInteract =
-    gameState.gamePhase === GamePhase.Playing &&
+    (gameState.gamePhase === GamePhase.Playing ||
+      gameState.gamePhase === GamePhase.KittySwap) &&
     isPlayerCurrentTurn &&
     !isProcessingPlay;
 
@@ -288,6 +291,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   currentTrick={gameState.currentTrick}
                   isRoundStartingPlayer={isHumanRoundStartingPlayer}
                   gamePhase={gameState.gamePhase}
+                  onKittySwap={onKittySwap}
                 />
               ) : null
             }
@@ -337,6 +341,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         onNextRound={onNextRound}
         fadeAnim={fadeAnim}
         scaleAnim={scaleAnim}
+        kittyCards={
+          gameState?.roundEndKittyInfo ? gameState.kittyCards : undefined
+        }
       />
     </View>
   );

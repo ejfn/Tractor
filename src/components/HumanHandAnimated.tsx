@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dimensions,
   ScrollView,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card as CardType, Player, TrumpInfo } from "../types";
+import { Card as CardType, Player, TrumpInfo, GamePhase } from "../types";
 import { isTrump } from "../game/gameLogic";
 import AnimatedCardComponent from "./AnimatedCard";
 
@@ -20,11 +20,10 @@ interface HumanHandAnimatedProps {
   trumpInfo: TrumpInfo;
   canPlay?: boolean;
   isValidPlay?: boolean;
-  trumpDeclarationMode?: boolean;
-  onSkipTrumpDeclaration?: () => void;
-  onConfirmTrumpDeclaration?: () => void;
   showTrickResult?: boolean;
   lastCompletedTrick?: any;
+  gamePhase?: GamePhase;
+  onKittySwap?: () => void;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -38,12 +37,28 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
   trumpInfo,
   canPlay = false,
   isValidPlay = true,
-  trumpDeclarationMode = false,
-  onSkipTrumpDeclaration,
-  onConfirmTrumpDeclaration,
   showTrickResult = false,
   lastCompletedTrick = null,
+  gamePhase,
+  onKittySwap,
 }) => {
+  // Local state to track if user has interacted with kitty cards
+  const [hasInteractedWithKitty, setHasInteractedWithKitty] = useState(false);
+
+  // Reset interaction state when entering KittySwap phase
+  useEffect(() => {
+    if (gamePhase === GamePhase.KittySwap && isCurrentPlayer) {
+      setHasInteractedWithKitty(false);
+    }
+  }, [gamePhase, isCurrentPlayer]);
+
+  // Enhanced card selection handler that tracks interaction
+  const handleCardSelect = (card: CardType) => {
+    if (gamePhase === GamePhase.KittySwap && !hasInteractedWithKitty) {
+      setHasInteractedWithKitty(true);
+    }
+    onCardSelect?.(card);
+  };
   // Sort cards by suit and rank for better display
   const sortedHand = [...player.hand].sort((a, b) => {
     // Jokers first, big joker before small joker
@@ -180,13 +195,8 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
     return selectedCards.some((c) => c.id === card.id);
   };
 
-  // Don't filter cards - show full hand even in trump declaration mode
+  // Show full hand
   const displayHand = sortedHand;
-
-  // Check if card is selectable in trump declaration mode
-  const isCardSelectableForTrump = (card: CardType) => {
-    return trumpDeclarationMode ? card.rank === trumpInfo.trumpRank : true;
-  };
 
   // Determine if player can interact with cards and buttons
   const canInteract = canPlay && isValidPlay;
@@ -234,20 +244,17 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
                 <AnimatedCardComponent
                   card={card}
                   onSelect={
-                    (trumpDeclarationMode || isCurrentPlayer) &&
-                    isCardSelectableForTrump(card) &&
-                    !showTrickResult &&
-                    !lastCompletedTrick
-                      ? onCardSelect
+                    (isCurrentPlayer &&
+                      !showTrickResult &&
+                      !lastCompletedTrick) ||
+                    (gamePhase === GamePhase.KittySwap && isCurrentPlayer)
+                      ? handleCardSelect
                       : undefined
                   }
                   selected={isCardSelected(card)}
                   faceDown={false}
                   isTrump={isTrump(card, trumpInfo)}
                   delay={index * 30}
-                  disabled={
-                    trumpDeclarationMode && !isCardSelectableForTrump(card)
-                  }
                 />
               </View>
             ))}
@@ -255,54 +262,62 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
         </ScrollView>
       </View>
 
-      {trumpDeclarationMode && (
-        <View style={styles.trumpDeclareSimple}>
-          <Text style={styles.trumpDeclareText}>
-            Select a {trumpInfo.trumpRank} to declare trump
-          </Text>
-          <View style={styles.buttonRow}>
-            {selectedCards.length > 0 && onConfirmTrumpDeclaration && (
-              <TouchableOpacity
-                style={styles.confirmButtonSimple}
-                onPress={onConfirmTrumpDeclaration}
-              >
-                <Text style={styles.buttonText}>OK</Text>
-              </TouchableOpacity>
-            )}
+      {canPlay && selectedCards.length > 0 && (
+        <View style={styles.playButtonContainer}>
+          {gamePhase === GamePhase.KittySwap && onKittySwap ? (
+            // Kitty swap mode
             <TouchableOpacity
-              style={styles.skipButtonSimple}
-              onPress={onSkipTrumpDeclaration}
-            >
-              <Text style={styles.buttonText}>Skip</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {!trumpDeclarationMode &&
-        canPlay &&
-        selectedCards.length > 0 &&
-        onPlayCards && (
-          <View style={styles.playButtonContainer}>
-            <TouchableOpacity
-              style={[styles.playButton, !canInteract && styles.disabledButton]}
-              onPress={onPlayCards}
-              disabled={!canInteract}
+              style={[
+                styles.playButton,
+                styles.kittySwapButton,
+                (!hasInteractedWithKitty || selectedCards.length !== 8) &&
+                  styles.disabledButton,
+              ]}
+              onPress={onKittySwap}
+              disabled={!hasInteractedWithKitty || selectedCards.length !== 8}
               hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
             >
               <Text
                 style={[
                   styles.playButtonText,
-                  !canInteract && styles.disabledButtonText,
+                  (!hasInteractedWithKitty || selectedCards.length !== 8) &&
+                    styles.disabledButtonText,
                 ]}
               >
-                {selectedCards.length === 1
-                  ? "Play 1 Card"
-                  : `Play ${selectedCards.length} Cards`}
+                {!hasInteractedWithKitty
+                  ? "Select Cards to Swap"
+                  : selectedCards.length === 8
+                    ? "Swap Kitty Cards"
+                    : `Select ${8 - selectedCards.length} More Cards`}
               </Text>
             </TouchableOpacity>
-          </View>
-        )}
+          ) : (
+            // Normal play mode
+            onPlayCards && (
+              <TouchableOpacity
+                style={[
+                  styles.playButton,
+                  !canInteract && styles.disabledButton,
+                ]}
+                onPress={onPlayCards}
+                disabled={!canInteract}
+                hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+              >
+                <Text
+                  style={[
+                    styles.playButtonText,
+                    !canInteract && styles.disabledButtonText,
+                  ]}
+                >
+                  {selectedCards.length === 1
+                    ? "Play 1 Card"
+                    : `Play ${selectedCards.length} Cards`}
+                </Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
+      )}
     </View>
   );
 };
@@ -368,49 +383,18 @@ const styles = StyleSheet.create({
     height: 36,
     marginBottom: 5,
   },
+  kittySwapButton: {
+    backgroundColor: "#2E7D32",
+    borderColor: "rgba(76, 175, 80, 0.6)",
+    minWidth: 150,
+    maxWidth: 220,
+  },
   playButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
     flexShrink: 1,
-  },
-  trumpDeclareSimple: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    alignItems: "center",
-    marginTop: -10, // Move up by 10 pixels
-  },
-  trumpDeclareText: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    fontWeight: "600",
-    marginBottom: 8,
-    textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.3)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  buttonRow: {
-    flexDirection: "row",
-  },
-  confirmButtonSimple: {
-    backgroundColor: "#3F51B5",
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  skipButtonSimple: {
-    backgroundColor: "#6C757D",
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
   },
   disabledButton: {
     backgroundColor: "rgba(128, 128, 128, 0.4)",

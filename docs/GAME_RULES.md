@@ -54,9 +54,46 @@ Work with your AI teammate to collect points (5s, 10s, Kings) and advance throug
 - **Trump declarer's team becomes the DEFENDING team** (only for first round)
 - **Other team becomes the ATTACKING team** (only for first round)
 - Real-time team role changes during dealing as declarations are made
-- Kitty cards always belong to whoever leads the first trick
+- **Round starting player** (who leads the first trick) gets the 8 kitty cards
 
-### 2. Trick Play
+### 2. Kitty Cards Management
+
+After dealing completes, the round starting player must manage the 8 kitty cards:
+
+**Kitty Pickup Phase:**
+- Round starting player automatically receives the 8 kitty cards
+- Kitty cards are added to their hand (now 25 total cards)
+- Game enters kitty swap phase
+
+**Kitty Swap Phase:**
+- Round starting player must select exactly 8 cards to put back into the kitty
+- Can choose any combination of original hand cards and kitty cards
+- Strategic decision: optimize hand while considering kitty scoring potential
+- Game continues to trick play once 8 cards are selected
+
+**Kitty Scoring Rules:**
+- Kitty cards are hidden during normal play
+- **Critical**: If attacking team wins the FINAL trick of the round:
+  - Kitty cards are revealed
+  - Points in kitty (5s, 10s, Kings) are calculated
+  - **Multiplier applied based on final trick type:**
+    - **Singles**: 2x kitty points
+    - **Pairs/Tractors**: 4x kitty points
+  - Bonus points added to attacking team's total
+- If defending team wins final trick: kitty points remain hidden (not scored)
+
+**Strategic Importance:**
+- Kitty selection affects both hand optimization and potential endgame bonus
+- Final trick becomes extremely valuable with high-point kitty
+- Attacking team may contest final trick aggressively for kitty bonus
+- Defending team may sacrifice points to deny kitty bonus
+
+**Key Rule Reminder:**
+- **Round starting player** (who leads first trick) always manages kitty cards
+- **First round only**: Trump declarer becomes the round starting player
+- **Later rounds**: Round starting player determined by who won previous round
+
+### 3. Trick Play
 
 - Follow suit when possible (must play same suit if you have it)
 - Highest card wins trick unless trumped
@@ -157,6 +194,21 @@ The game features intelligent card selection to help with combination play:
 - **10s**: 10 points each  
 - **Kings**: 10 points each
 - **All other cards**: 0 points
+
+### Kitty Bonus Scoring
+
+**When attacking team wins the final trick:**
+- Kitty cards are revealed and points calculated
+- **Multiplier based on final trick type:**
+  - **Singles final trick**: Kitty points × 2
+  - **Pairs/Tractors final trick**: Kitty points × 4
+- Bonus added to attacking team's collected points
+
+**Example Scenarios:**
+- Kitty contains 2 Kings + 1 Five = 25 points
+- Final trick won with singles: +50 bonus points (25 × 2)
+- Final trick won with pair: +100 bonus points (25 × 4)
+- Can dramatically change round outcomes (80 → 180 points)
 
 ### Win Conditions
 
@@ -292,9 +344,9 @@ Based on attacking team performance:
 
 **Kitty Cards:**
 
-- Always belong to whoever leads the first trick
-- In first round: Trump declarer gets kitty
-- In later rounds: Previous trick winner who leads gets kitty
+- Always belong to the round starting player (who leads the first trick)
+- **First round**: Trump declarer becomes round starting player and gets kitty
+- **Later rounds**: Round starting player determined by previous round results gets kitty
 
 **Important**: After first round, team roles alternate normally between rounds based on performance.
 

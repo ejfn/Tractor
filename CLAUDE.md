@@ -49,12 +49,14 @@ npm test              # Run tests
 │   ├── aiAdvancedCombinations.ts # Advanced combination analysis
 │   ├── aiCardMemory.ts    # Card memory system (Phase 3)
 │   ├── aiPointFocusedStrategy.ts # Point-focused strategy and early game leading (with integrated Ace priority)
+│   ├── aiKittySwapStrategy.ts # Advanced kitty swap strategy with suit elimination
 │   └── aiTrumpDeclarationStrategy.ts # Sophisticated trump declaration during dealing phase
 ├── game/                  # Core game logic and management
 │   ├── gameLogic.ts       # Core mechanics, rules, and valid combination detection
 │   ├── gamePlayManager.ts # Card play validation and tricks
 │   ├── gameRoundManager.ts # Round management and scoring
-│   └── trumpManager.ts    # Trump card management
+│   ├── kittyManager.ts    # Kitty card management and scoring
+│   └── trumpDeclarationManager.ts # Trump declaration system and rules
 ├── utils/                 # True utility functions
 │   ├── cardAutoSelection.ts # Smart card selection logic
 │   └── gameTimings.ts     # Animation timing constants
@@ -71,15 +73,14 @@ npm test              # Run tests
 
 ```
 /__tests__/
-├── ai/                    # AI module tests
-├── game/                  # Game logic tests
+├── ai/                    # AI module tests and strategy regression tests
+├── game/                  # Game logic tests and validation tests
 ├── components/            # UI component tests
 ├── utils/                 # Utility function tests
 ├── card-tracking/         # Card counting integration tests
 ├── game-flow/             # Game flow and interaction tests
 ├── game-state/            # Game state management tests
 ├── trump-declaration/     # Trump declaration system tests
-├── debug/                 # Debug and regression tests
 └── helpers/               # Test utilities (modular organization)
     ├── index.ts           # Main helpers re-export file
     ├── cards.ts           # Card creation utilities
@@ -244,7 +245,8 @@ npx eas --version
 
 ```typescript
 // Player move timings
-AI_MOVE_DELAY = 600ms              // AI thinking animation
+AI_MOVE_DELAY = 600ms              // AI thinking animation for regular moves
+AI_KITTY_SWAP_DELAY = 1000ms       // AI thinking animation for kitty swap (longer deliberation)
 MOVE_COMPLETION_DELAY = 1000ms     // Time to see played cards
 
 // Trick result display timings
@@ -688,8 +690,32 @@ Each hook has a single, well-defined responsibility with minimal overlap.
 
 ## Development Memories
 
-- When fixing a bug, always try to reproduce it with existing test or a debug test
-- Do not add any player-specific hacks into AI strategy
-- Do not add any \special handling\ to solve a problem
+These are lessons learned and principles established through development experience on this project.
+
+### Testing & Debugging
+
+- **Bug reproduction**: When fixing a bug, always try to reproduce it with existing test or a debug test
+- **Test count maintenance**: Always check and update test counts in README.md badges when adding/removing tests
+- **Test realism**: Use actual game logic when possible for more realistic test coverage
+
+### Code Architecture & Quality
+
+- **No special handling**: Do not add any player-specific hacks into AI strategy or special case handling to solve problems
+- **General solutions**: Prefer general solutions over special cases to maintain code consistency
 - **Hook consolidation**: Always prefer single-responsibility hooks over multiple interdependent hooks
 - **Circular dependencies**: Use refs and careful dependency management to avoid useCallback circular dependencies
+- **Phase-specific AI handling**: Ensure AI detection hooks handle all relevant game phases (Playing AND KittySwap) to prevent bot players from getting stuck
+
+### AI Development Patterns
+
+- **Enum usage**: Always import and use enums instead of magic strings throughout AI code
+- **Priority chains**: Use structured priority decision chains to avoid conflicts and rabbit holes
+- **Strategic disposal**: Implement strategic disposal patterns that avoid wasting point cards when opponent is winning
+- **Trump conservation**: Use proper trump hierarchy with conservation values when AI cannot beat opponents
+- **Phase-specific timing**: Use appropriate delays for different game phases (1000ms for kitty swap vs 600ms for regular moves) to enhance user experience
+
+### Project Management
+
+- **Documentation sync**: Update documentation when adding new features or changing architecture
+- **File naming**: Use descriptive names that reflect actual complexity (avoid "Simple" for sophisticated implementations)
+- **Modular organization**: Organize files by logical domain (ai/, game/, utils/) rather than just file type

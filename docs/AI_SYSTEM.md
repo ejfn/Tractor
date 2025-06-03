@@ -436,6 +436,113 @@ const shouldDeclare = Math.random() < declarationProbability;
 - **`trumpDeclarationManager.ts`**: Game rule enforcement and state management
 - **`useProgressiveDealing.ts`**: Integration with dealing system and UI
 
+## AI Kitty Swap Strategy
+
+### Advanced Strategic Approach with Suit Elimination
+
+The AI employs a sophisticated kitty swap strategy that combines strategic suit elimination with intelligent trump management:
+
+#### Core Strategic Principles
+
+1. **Strategic Suit Elimination**: 
+   - **Primary objective**: Empty 1-2 weak suits completely for optimal hand structure
+   - **Preserve valuable cards**: Always protect Aces, Kings, tractors, and big pairs
+   - **Target weak suits**: Focus on short suits with only low-value cards
+   - **Hand optimization**: Create voids for strategic endgame advantage
+
+2. **Refined Trump Management**:
+   - **Usually avoid trump cards** in kitty (standard conservative approach)
+   - **Strategic trump inclusion** when hands are exceptionally strong:
+     - Very long trump suit (10+ cards) with strong combinations
+     - Strong non-trump combinations that shouldn't be sacrificed
+     - Insufficient non-trump cards for conservative approach
+
+3. **Advanced Decision Framework**:
+   - **Suit Elimination Strategy**: When beneficial elimination candidates exist
+   - **Conservative Approach**: Standard weakest non-trump card selection
+   - **Exceptional Trump Strategy**: Strategic trump inclusion for optimal hands
+
+#### Comprehensive Hand Analysis
+
+The AI performs sophisticated analysis to determine the optimal strategy:
+
+**Suit Analysis Scoring System:**
+- **Length Bonus**: Shorter suits get higher elimination scores (+50 for ≤3 cards)
+- **Value Penalties**: Aces (-40), Kings (-25), Pairs (-20 each), Tractors (-35 each)
+- **Weak Card Bonus**: Suits with only weak cards get +40 elimination score
+- **Decision Criteria**: Eliminate if score > 20, length ≤ 6, and no tractors
+
+**Exceptional Strength Evaluation:**
+- **Criterion 1**: Very long trump suit (10+ cards) with multiple pairs (≥2)
+- **Criterion 2**: Strong non-trump combinations with strength score ≥2.0:
+  - Pair count (0.5 points each)
+  - High cards (Aces: 0.3, Kings: 0.2)  
+  - Tractor potential (2+ pairs: 0.5 bonus)
+  - Long suits with good cards (6+ cards: 0.3)
+
+#### Strategic Decision Flow
+
+```typescript
+// 1. Comprehensive hand analysis
+const analysis = analyzeHandForKittySwap(hand, trumpInfo);
+
+// 2. Strategic recommendation based on analysis
+switch (analysis.strategicRecommendation) {
+  case 'SUIT_ELIMINATION':
+    return executeSuitEliminationStrategy(eliminationCandidates, nonTrumpCards);
+    
+  case 'CONSERVATIVE':
+    return selectWeakestCards(nonTrumpCards, 8);
+    
+  case 'EXCEPTIONAL_TRUMP':
+    const needed = 8 - nonTrumpCards.length;
+    const weakestTrumps = selectWeakestTrumpCards(trumpCards, needed);
+    return [...nonTrumpCards, ...weakestTrumps];
+}
+```
+
+#### Suit Elimination Examples
+
+**✅ Optimal Elimination Scenario:**
+- **Hand**: 8 Spades (trump), 3 Hearts (A♥, K♥, Q♥), 3 Clubs (3♣, 4♣, 6♣), 2 Diamonds (3♦, 7♦), 9 mixed cards
+- **Strategy**: Eliminate all Clubs and Diamonds (5 cards), select 3 weakest from mixed cards
+- **Result**: Preserve valuable Hearts, eliminate weak suits completely, optimize hand structure
+
+**✅ Conservative Scenario:**
+- **Hand**: 8 Spades (trump), 17 mixed non-trump cards with good distribution
+- **Strategy**: Select 8 weakest non-trump cards, preserve all trump and valuable cards
+- **Result**: Standard conservative approach maintains hand balance
+
+**✅ Exceptional Trump Scenario:**
+- **Hand**: 18 Spades (trump), 7 non-trump cards
+- **Strategy**: Use all 7 non-trump cards + 1 weakest trump (3♠)
+- **Result**: Exceptionally long trump suit justifies minimal strategic trump sacrifice
+
+#### Trump Card Selection Hierarchy
+
+When trump inclusion is necessary:
+
+**Weakest to Strongest (reverse conservation order):**
+1. **Trump suit low cards** (3♠, 4♠, 5♠, ...) - Prioritized for kitty
+2. **Trump rank in off-suits** (2♥, 2♣, 2♦) - Valuable but considered  
+3. **Trump rank in trump suit** (2♠) - Highly valuable, avoid if possible
+4. **Small Joker** - Never in kitty unless extreme circumstances
+5. **Big Joker** - Never in kitty
+
+#### Strategic Benefits
+
+- **Hand Structure Optimization**: Creates strategic voids for endgame advantage
+- **Value Preservation**: Protects Aces, Kings, tractors, and valuable pairs
+- **Flexible Trump Management**: Balances conservation with strategic sacrifice
+- **Sophisticated Analysis**: Multi-dimensional evaluation for optimal decisions
+
+### Implementation Files
+
+- **`aiKittySwapStrategy.ts`**: Advanced kitty swap strategy with suit elimination logic
+- **`aiLogic.ts`**: Integration layer and public API
+- **`useAITurns.ts`**: Hook integration for KittySwap phase with enhanced 1000ms thinking delay
+- **`gameTimings.ts`**: Timing constants including AI_KITTY_SWAP_DELAY for deliberate UX
+
 ## Phase 3: Memory & Pattern Recognition (Implemented)
 
 ### Advanced Capabilities
@@ -661,6 +768,9 @@ This strategic approach ensures AI makes **realistic trump declarations** based 
 
 - **Real-time Analysis**: Context evaluation in ~100ms
 - **Strategy Selection**: Play choice in ~200ms  
+- **Phase-Specific Timing**: 
+  - Regular moves: 600ms thinking delay
+  - Kitty swap: 1000ms deliberation delay (enhanced UX)
 - **Smooth Gameplay**: Maintains natural game flow
 - **Responsive AI**: Quick adaptation to game changes
 
@@ -675,7 +785,7 @@ This strategic approach ensures AI makes **realistic trump declarations** based 
 
 ### AI Module Architecture
 
-The AI system consists of 7 specialized modules in `src/ai/`:
+The AI system consists of 8 specialized modules in `src/ai/`:
 
 - **`aiLogic.ts`**: Public AI API and game rule compliance
 - **`aiStrategy.ts`**: Core AI decision making and strategy implementation
@@ -683,6 +793,7 @@ The AI system consists of 7 specialized modules in `src/ai/`:
 - **`aiPointFocusedStrategy.ts`**: Point collection, early game leading (with integrated Ace priority), and team coordination strategies
 - **`aiCardMemory.ts`**: Comprehensive card tracking and probability systems
 - **`aiAdvancedCombinations.ts`**: Advanced combination analysis and optimization
+- **`aiKittySwapStrategy.ts`**: Advanced kitty swap strategy with sophisticated suit elimination and strategic analysis
 - **`aiTrumpDeclarationStrategy.ts`**: Sophisticated trump declaration decision-making during dealing phase
 
 ### Current Implementation Status
@@ -693,6 +804,7 @@ The AI system consists of 7 specialized modules in `src/ai/`:
 - ✅ **Issue #61 fix**: Conservative play to avoid wasteful high card usage
 - ✅ **Enhanced opponent blocking**: Strategic point card management and trump conservation
 - ✅ **Trump hierarchy logic**: Proper weak trump vs valuable trump selection
+- ✅ **AI kitty swap strategy**: Refined approach balancing conservative play with strategic trump inclusion
 - ✅ **Comprehensive test coverage** with extensive AI testing across all phases
 - ✅ **Production ready** with sophisticated strategic decision-making
 - ✅ **Real-time performance** maintaining smooth gameplay experience
@@ -791,8 +903,7 @@ The enhancement handles all scenarios correctly:
 - **Balance Verification**: Ensures fair and engaging gameplay with challenging AI
 
 ### Test Coverage
-
-- **85+ AI intelligence tests** covering all 4 phases comprehensively
+- **AI kitty swap strategy testing** with 10 comprehensive test scenarios validating strategic decision-making, trump inclusion logic, suit elimination, and edge case handling
 - **Trump declaration strategy testing** validating dealing phase decision-making with hand quality analysis, timing optimization, and override logic
 - **Card comparison validation testing** ensuring proper function usage and error handling
 - **Trick winner analysis testing** with comprehensive scenarios for teammate/opponent/self winning

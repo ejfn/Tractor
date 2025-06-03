@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { initializeGame } from "../game/gameLogic";
+import { putbackKittyCards, validateKittySwap } from "../game/kittyManager";
 import { processPlay, validatePlay } from "../game/gamePlayManager";
 import { endRound, prepareNextRound } from "../game/gameRoundManager";
 import { Card, GamePhase, GameState } from "../types";
@@ -28,6 +29,11 @@ export function useGameState() {
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
   const [isProcessingPlay, setIsProcessingPlay] = useState(false);
 
+  // Track previous game phase to detect transitions
+  const [previousGamePhase, setPreviousGamePhase] = useState<GamePhase | null>(
+    null,
+  );
+
   // Game flow control
   const [showSetupInternal, setShowSetupInternal] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -41,6 +47,9 @@ export function useGameState() {
   // Ref for trick completion data (used for communication with other hooks)
   const trickCompletionDataRef = useRef<TrickCompletionData | null>(null);
 
+  // Ref to store kitty cards for pre-selection
+  const kittyCardsRef = useRef<Card[]>([]);
+
   // Initialize game on component mount if no game state exists
   useEffect(() => {
     if (!showSetupInternal && !gameState) {
@@ -48,6 +57,39 @@ export function useGameState() {
       setGameState(newGameState);
     }
   }, [showSetupInternal, gameState]);
+
+  // Extract relevant values for kitty swap detection
+  const gamePhase = gameState?.gamePhase;
+  const currentPlayer = useMemo(() => {
+    return gameState?.players?.[gameState.currentPlayerIndex];
+  }, [gameState?.players, gameState?.currentPlayerIndex]);
+
+  // Effect to handle KittySwap phase transition and pre-select kitty cards
+  useEffect(() => {
+    if (!gameState || !currentPlayer) return;
+
+    // Detect transition to KittySwap phase
+    if (
+      previousGamePhase !== GamePhase.KittySwap &&
+      gamePhase === GamePhase.KittySwap
+    ) {
+      // Only pre-select for human player
+      if (currentPlayer.isHuman) {
+        // The last 8 cards in the hand are the kitty cards (they were just added)
+        const handSize = currentPlayer.hand.length;
+        const kittyCards = currentPlayer.hand.slice(handSize - 8);
+
+        // Store kitty cards in ref for later reference
+        kittyCardsRef.current = kittyCards;
+
+        // Pre-select the kitty cards
+        setSelectedCards(kittyCards);
+      }
+    }
+
+    // Update previous phase
+    setPreviousGamePhase(gamePhase || null);
+  }, [gamePhase, currentPlayer, previousGamePhase, gameState]);
 
   // Initialize game (for manual initialization)
   const initGame = useCallback(() => {
@@ -63,29 +105,54 @@ export function useGameState() {
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
-    if (gameState.gamePhase !== GamePhase.Playing) return;
+    // Allow card selection in Playing and KittySwap phases
+    if (
+      gameState.gamePhase !== GamePhase.Playing &&
+      gameState.gamePhase !== GamePhase.KittySwap
+    )
+      return;
 
     // Only allow current player to select cards
     if (!currentPlayer.isHuman) return;
 
-    // Determine if player is leading this trick
-    const isLeading =
-      !gameState.currentTrick || gameState.currentTrick.plays.length === 0;
+    if (gameState.gamePhase === GamePhase.KittySwap) {
+      // Simple selection/deselection for kitty swap
+      const isSelected = selectedCards.some(
+        (selected) => selected.id === card.id,
+      );
 
-    // Get leading combo if following
-    const leadingCombo = gameState.currentTrick?.leadingCombo;
+      if (isSelected) {
+        // Deselect the card
+        setSelectedCards(
+          selectedCards.filter((selected) => selected.id !== card.id),
+        );
+      } else {
+        // Select the card (if not already at max 8)
+        if (selectedCards.length < 8) {
+          setSelectedCards([...selectedCards, card]);
+        }
+      }
+    } else {
+      // Normal playing phase - use smart auto-selection logic
+      // Determine if player is leading this trick
+      const isLeading =
+        !gameState.currentTrick || gameState.currentTrick.plays.length === 0;
 
-    // Use smart auto-selection logic
-    const newSelection = getAutoSelectedCards(
-      card,
-      currentPlayer.hand,
-      selectedCards,
-      isLeading,
-      leadingCombo,
-      gameState.trumpInfo,
-    );
+      // Get leading combo if following
+      const leadingCombo = gameState.currentTrick?.leadingCombo;
 
-    setSelectedCards(newSelection);
+      // Use smart auto-selection logic
+      const newSelection = getAutoSelectedCards(
+        card,
+        currentPlayer.hand,
+        selectedCards,
+        isLeading,
+        leadingCombo,
+        gameState.trumpInfo,
+      );
+
+      setSelectedCards(newSelection);
+    }
   };
 
   // Handle play button click
@@ -123,6 +190,32 @@ export function useGameState() {
       // Reset processing state after play is complete
       setIsProcessingPlay(false);
     }, CARD_SELECTION_DELAY);
+  };
+
+  // Handle kitty swap
+  const handleKittySwap = () => {
+    if (!gameState || gameState.gamePhase !== GamePhase.KittySwap) return;
+
+    if (!validateKittySwap(selectedCards)) {
+      console.warn("Invalid Kitty Swap", "Please select exactly 8 cards.");
+      return;
+    }
+
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (!currentPlayer.isHuman) return;
+
+    try {
+      // Put back selected cards to kitty and transition to playing phase
+      const newGameState = putbackKittyCards(
+        gameState,
+        selectedCards,
+        currentPlayer.id,
+      );
+      setGameState(newGameState);
+      setSelectedCards([]);
+    } catch (error) {
+      console.error("Kitty swap failed:", error);
+    }
   };
 
   // Process a play (wrapper around the utility function)
@@ -222,7 +315,9 @@ export function useGameState() {
     setShowSetupInternal(false);
     setGameOver(false);
     setWinner(null);
+    setPreviousGamePhase(null);
     pendingStateRef.current = null;
+    kittyCardsRef.current = [];
 
     // Initialize will be called on next render due to dependency changes
   };
@@ -277,6 +372,7 @@ export function useGameState() {
     // Actions
     handleCardSelect,
     handlePlay,
+    handleKittySwap,
     handleProcessPlay,
     handleNextRound,
     startNewGame,

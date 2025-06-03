@@ -246,11 +246,42 @@ describe('Trump Declaration Manager', () => {
         cards: [createCard(Suit.Spades, Rank.Two)]
       };
 
+      // Set up kitty cards (needed for finalization with trump declarer)
+      gameState.kittyCards = [
+        createCard(Suit.Clubs, Rank.Three),
+        createCard(Suit.Clubs, Rank.Four),
+        createCard(Suit.Clubs, Rank.Five),
+        createCard(Suit.Clubs, Rank.Six),
+        createCard(Suit.Diamonds, Rank.Three),
+        createCard(Suit.Diamonds, Rank.Four),
+        createCard(Suit.Diamonds, Rank.Five),
+        createCard(Suit.Diamonds, Rank.Six)
+      ];
+
       let newState = makeTrumpDeclaration(gameState, PlayerId.Human, declaration);
       newState = finalizeTrumpDeclaration(newState);
 
       expect(newState.trumpInfo.trumpSuit).toBe(Suit.Spades);
       expect(areDeclarationsAllowed(newState)).toBe(false);
+      
+      // After finalization with kitty cards, should be in KittySwap phase
+      expect(newState.gamePhase).toBe('kittySwap');
+      
+      // In first round: trump declarer becomes round starting player and gets kitty cards
+      const humanPlayer = newState.players.find((p: any) => p.id === PlayerId.Human);
+      const roundStartingPlayer = newState.players[newState.roundStartingPlayerIndex];
+      expect(humanPlayer).toBeDefined();
+      expect(humanPlayer!.id).toBe(roundStartingPlayer.id); // Trump declarer becomes round starter (first round)
+      expect(humanPlayer!.hand.length).toBe(11); // Original 3 + 8 kitty cards
+    });
+    
+    test('should finalize with no trump declarer and go to Playing phase', () => {
+      // No trump declaration made - finalize should go directly to Playing
+      const newState = finalizeTrumpDeclaration(gameState);
+
+      expect(newState.trumpInfo.trumpSuit).toBe(Suit.None);
+      expect(areDeclarationsAllowed(newState)).toBe(false);
+      expect(newState.gamePhase).toBe('playing');
     });
   });
 });

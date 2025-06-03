@@ -1,6 +1,75 @@
 import { getValidCombinations } from "../game/gameLogic";
-import { Card, GameState } from "../types";
+import { Card, GameState, GamePhase, PlayerId } from "../types";
 import { createAIStrategy } from "./aiStrategy";
+import { selectAIKittySwapCards } from "./aiKittySwapStrategy";
+
+/**
+ * Main AI kitty swap logic - selects 8 cards to put back into kitty
+ *
+ * Refined Strategic Approach:
+ * - USUALLY avoid trump cards, but allow when hands are exceptionally strong:
+ *   * Very long trump suit (10+ cards) with strong combinations
+ *   * Strong hands in other suits (tractors, big pairs) that shouldn't be sacrificed
+ * - PREFER non-point cards, but allow strategic point cards if needed
+ * - Focus on weak cards from non-trump suits as primary targets
+ * - Attempt suit elimination for strategic advantage
+ * - Preserve pairs, tractors, and high cards for play phase
+ *
+ * @param gameState Current game state
+ * @param playerId ID of the AI player making the kitty swap
+ * @returns Array of 8 cards to put back into kitty
+ */
+export const getAIKittySwap = (
+  gameState: GameState,
+  playerId: PlayerId,
+): Card[] => {
+  const player = gameState.players.find((p) => p.id === playerId);
+  if (!player) {
+    throw new Error(`AI player with ID ${playerId} not found`);
+  }
+
+  if (gameState.gamePhase !== GamePhase.KittySwap) {
+    throw new Error(`AI kitty swap called during ${gameState.gamePhase} phase`);
+  }
+
+  if (player.hand.length !== 33) {
+    throw new Error(
+      `AI kitty swap: expected 33 cards (25 + 8 kitty), got ${player.hand.length}`,
+    );
+  }
+
+  const selectedCards = selectAIKittySwapCards(gameState, playerId);
+
+  // Validate AI selected exactly 8 cards
+  if (selectedCards.length !== 8) {
+    throw new Error(
+      `AI kitty swap: AI must select exactly 8 cards, but selected ${selectedCards.length}`,
+    );
+  }
+
+  // Validate all selected cards are actually in the player's hand
+  const selectedCardIds = selectedCards.map((c) => c.id);
+  const handCardIds = player.hand.map((c) => c.id);
+  const invalidCards = selectedCardIds.filter(
+    (id) => !handCardIds.includes(id),
+  );
+
+  if (invalidCards.length > 0) {
+    throw new Error(
+      `AI kitty swap: AI selected cards not in player's hand: ${invalidCards.join(", ")}`,
+    );
+  }
+
+  // Validate that removing selected cards would leave exactly 25 cards
+  const remainingCardCount = player.hand.length - selectedCards.length;
+  if (remainingCardCount !== 25) {
+    throw new Error(
+      `AI kitty swap: After removing ${selectedCards.length} cards, player would have ${remainingCardCount} cards instead of 25`,
+    );
+  }
+
+  return selectedCards;
+};
 
 /**
  * Main AI player logic - selects cards to play for a given AI player

@@ -5,7 +5,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![Tests](https://img.shields.io/badge/Tests-533%20Passing-brightgreen?logo=jest)
+![Tests](https://img.shields.io/badge/Tests-565%20Passing-brightgreen?logo=jest)
 ![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
 
 ## What is Tractor?
@@ -29,7 +29,6 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **Smooth card animations** with React Native Reanimated
 - **Smart card auto-selection** for pairs and tractors
 - **Touch-optimized UI** with team color coding and dark theme
-- **Comprehensive testing** with 533 tests across 75 test suites
 
 ## Technology
 
@@ -50,6 +49,7 @@ Sophisticated **4-phase AI system** with restructured priority chain, real-time 
 
 **Latest Enhancements:**
 
+- **AI Kitty Swap Strategy**: Refined approach that usually avoids trump cards but strategically includes them when hands are exceptionally strong (very long trump suits or strong non-trump combinations)
 - **Trump Declaration Strategy**: Sophisticated dealing phase AI with hand quality analysis, timing optimization, and strategic override decisions
 - **Strategic Pair Conservation**: AI intelligently preserves valuable pairs when out of suit, using strategic mixed combinations instead
 - **Strategic Point Management**: AI avoids wasting point cards when opponent is winning

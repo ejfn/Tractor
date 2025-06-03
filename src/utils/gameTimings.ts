@@ -8,6 +8,7 @@
 
 // Player move timings
 export const AI_MOVE_DELAY = 600; // Delay before AI makes a move (thinking animation time)
+export const AI_KITTY_SWAP_DELAY = 1000; // Delay before AI makes kitty swap (additional thinking time)
 export const MOVE_COMPLETION_DELAY = 1000; // Delay after any player's move completes
 
 // Trick result display timings

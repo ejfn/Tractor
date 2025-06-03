@@ -1,6 +1,6 @@
 import { GameState, Rank, GamePhase } from "../types";
 import { initializeGame } from "./gameLogic";
-import { initializeTrumpDeclarationState } from "./trumpDeclarationManager";
+import { initializeTrumpDeclarationState } from "../utils/gameInitialization";
 
 /**
  * Prepares the game state for the next round
@@ -17,7 +17,6 @@ export function prepareNextRound(state: GameState): GameState {
   const newDefendingTeam = newState.teams.find((t) => t.isDefending);
   if (newDefendingTeam) {
     newState.trumpInfo.trumpRank = newDefendingTeam.currentRank;
-    newState.trumpInfo.trumpSuit = undefined;
     newState.trumpInfo.trumpSuit = undefined; // No trump declared yet
   }
 
@@ -178,7 +177,27 @@ export function endRound(state: GameState): {
 
   if (defendingTeam && attackingTeam) {
     const rankOrder = Object.values(Rank);
+
+    // Calculate trick points before adding kitty bonus
+    const kittyInfo = newState.roundEndKittyInfo;
+    const kittyBonus = kittyInfo?.kittyBonus?.bonusPoints || 0;
+    const trickPoints = attackingTeam.points; // Get trick points before bonus
+
+    // Add kitty bonus to attacking team points during round completion
+    // (This was deferred from trick completion to separate visual timing)
+    if (kittyBonus > 0) {
+      attackingTeam.points += kittyBonus;
+    }
+
     const points = attackingTeam.points;
+    let pointsBreakdown = "";
+
+    if (kittyInfo) {
+      pointsBreakdown =
+        kittyBonus > 0
+          ? `\n(${trickPoints} + ${kittyInfo.kittyPoints} × ${kittyInfo.kittyBonus!.multiplier} kitty bonus)`
+          : ``;
+    }
 
     // Attacking team needs 80+ points to win
     if (points >= 80) {
@@ -205,11 +224,11 @@ export function endRound(state: GameState): {
         defendingTeam.isDefending = false;
         attackingTeam.isDefending = true;
 
-        // Create round result message
+        // Create round result message with breakdown
         if (rankAdvancement === 0) {
-          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and will defend at rank ${attackingTeam.currentRank}!`;
+          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and will defend at rank ${attackingTeam.currentRank}!${pointsBreakdown}`;
         } else {
-          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${attackingTeam.currentRank}!`;
+          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${attackingTeam.currentRank}!${pointsBreakdown}`;
         }
       } else {
         // Game over - attacking team reached Ace and won
@@ -248,7 +267,7 @@ export function endRound(state: GameState): {
           pointMessage = `defended with attackers getting ${points}/80 points`;
         }
 
-        roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${defendingTeam.currentRank}!`;
+        roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${defendingTeam.currentRank}!${pointsBreakdown}`;
       } else {
         // Game over - defending team reached Ace and won
         gameOver = true;
@@ -259,6 +278,9 @@ export function endRound(state: GameState): {
     // Reset points for next round
     defendingTeam.points = 0;
     attackingTeam.points = 0;
+
+    // Clear kitty info for next round
+    newState.roundEndKittyInfo = undefined;
   }
 
   return {
