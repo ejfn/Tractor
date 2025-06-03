@@ -918,6 +918,53 @@ const findTractors = (
   }
 };
 
+/**
+ * Check if same-suit pairs are preserved when following combinations
+ * Issue #126 Fix: Enforce that pairs from the same suit as led cannot be broken
+ */
+const checkSameSuitPairPreservation = (
+  playedCards: Card[],
+  leadingCombo: Card[],
+  playerHand: Card[],
+  trumpInfo: TrumpInfo,
+): boolean => {
+  const leadingSuit = getLeadingSuit(leadingCombo);
+  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+
+  // Get all cards of the leading suit/trump in player's hand
+  const relevantCards = isLeadingTrump
+    ? playerHand.filter((card) => isTrump(card, trumpInfo))
+    : playerHand.filter(
+        (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+      );
+
+  // Identify pairs in the relevant cards (same suit as led)
+  const relevantPairs = identifyCombos(relevantCards, trumpInfo)
+    .filter((combo) => combo.type === ComboType.Pair)
+    .map((combo) => combo.cards);
+
+  if (relevantPairs.length === 0) {
+    return true; // No same-suit pairs to preserve
+  }
+
+  // Check each same-suit pair - if any card from a pair is played, the whole pair must be played
+  for (const pair of relevantPairs) {
+    const cardsFromPairPlayed = pair.filter((pairCard) =>
+      playedCards.some((played) => played.id === pairCard.id),
+    );
+
+    // If some but not all cards from a pair are played, this violates pair preservation
+    if (
+      cardsFromPairPlayed.length > 0 &&
+      cardsFromPairPlayed.length < pair.length
+    ) {
+      return false; // Same-suit pair broken
+    }
+  }
+
+  return true; // All same-suit pairs preserved
+};
+
 // Check if a play is valid following Shengji rules
 export const isValidPlay = (
   playedCards: Card[],
@@ -1077,7 +1124,13 @@ export const isValidPlay = (
           return false;
         }
 
-        return true;
+        // Issue #126 Fix: Also check same-suit pair preservation for trump following
+        return checkSameSuitPairPreservation(
+          playedCards,
+          leadingCombo,
+          playerHand,
+          trumpInfo,
+        );
       }
     } else {
       // No trump cards, can play anything
@@ -1113,7 +1166,18 @@ export const isValidPlay = (
     const allLeadingSuit = playedCards.every((card) =>
       leadingSuitCards.some((handCard) => handCard.id === card.id),
     );
-    return allLeadingSuit;
+
+    // Issue #126 Fix: Also check same-suit pair preservation
+    if (allLeadingSuit) {
+      return checkSameSuitPairPreservation(
+        playedCards,
+        leadingCombo,
+        playerHand,
+        trumpInfo,
+      );
+    }
+
+    return false;
   }
 
   // 4. If player has some cards of the leading suit, but not enough for the combo,
@@ -1161,7 +1225,17 @@ export const isValidPlay = (
       playerHand.some((handCard) => handCard.id === card.id),
     );
 
-    return allPlayedFromHand;
+    // Issue #126 Fix: Also check same-suit pair preservation for partial suit following
+    if (allPlayedFromHand) {
+      return checkSameSuitPairPreservation(
+        playedCards,
+        leadingCombo,
+        playerHand,
+        trumpInfo,
+      );
+    }
+
+    return false;
   }
 
   // 5. If no cards of the leading suit, can play ANY cards of the correct length,
