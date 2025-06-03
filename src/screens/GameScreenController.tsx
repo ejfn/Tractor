@@ -69,6 +69,7 @@ const GameScreenController: React.FC = () => {
   } = useAITurns(
     gameState,
     handleProcessPlay,
+    setGameState,
     showTrickResult,
     lastCompletedTrick,
     showRoundComplete,

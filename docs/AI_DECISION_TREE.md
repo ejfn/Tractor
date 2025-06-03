@@ -193,6 +193,84 @@ When forced to play trump cards, the AI follows proper trump value hierarchy:
 
 ---
 
+## AI Kitty Swap Strategy Decision Tree
+
+When the AI must select 8 cards to put back into the kitty during the KittySwap phase:
+
+```mermaid
+flowchart LR
+    Start([🎲 AI Kitty Swap<br/>Phase]) --> Analyze[🔍 Comprehensive<br/>Hand Analysis]
+    
+    Analyze --> Strategy{Strategic<br/>Recommendation?}
+    
+    Strategy -->|Suit Elimination| Elimination[🎯 SUIT ELIMINATION<br/>Eliminate weak suits<br/>completely]
+    
+    Strategy -->|Conservative| Conservative[🛡️ CONSERVATIVE<br/>Select weakest<br/>non-trump cards]
+    
+    Strategy -->|Exceptional Trump| ExceptionalTrump[⚡ EXCEPTIONAL TRUMP<br/>Include strategic<br/>trump cards]
+    
+    Elimination --> Validate[✅ Validation &<br/>Execution]
+    Conservative --> Validate
+    ExceptionalTrump --> Validate
+    
+    Validate --> End([🏁 Kitty Swap<br/>Complete])
+```
+
+**Strategy Details:**
+
+- **Suit Elimination**: Eliminate 1-2 weak suits completely while preserving Aces, Kings, tractors, and pairs
+- **Conservative**: Select 8 weakest non-trump cards, preserve all trump cards for standard play
+- **Exceptional Trump**: Include weak trump cards when hand has very long trump suit (10+ cards) or strong non-trump combinations
+
+### Suit Elimination Analysis
+
+The AI uses sophisticated suit analysis to determine elimination candidates:
+
+```mermaid
+flowchart LR
+    Start([🔍 Suit Analysis]) --> Length{Suit Length?}
+    
+    Length -->|≤3 cards| Short[+50 Score<br/>Short Suit]
+    Length -->|4-5 cards| Medium[+30 Score<br/>Medium Suit]
+    Length -->|6-7 cards| Long[+10 Score<br/>Long Suit]
+    Length -->|≥8 cards| VeryLong[No Bonus<br/>Very Long]
+    
+    Short --> Valuable{Has Valuable<br/>Cards?}
+    Medium --> Valuable
+    Long --> Valuable
+    VeryLong --> Valuable
+    
+    Valuable -->|Ace| AcePenalty[-40 Score<br/>Ace Penalty]
+    Valuable -->|King| KingPenalty[-25 Score<br/>King Penalty]
+    Valuable -->|Pairs| PairPenalty[-20 per pair<br/>Pair Penalty]
+    Valuable -->|Tractors| TractorPenalty[-35 per tractor<br/>Tractor Penalty]
+    Valuable -->|Only Weak| WeakBonus[+40 Score<br/>Weak Card Bonus]
+    
+    AcePenalty --> Decision{Final<br/>Decision}
+    KingPenalty --> Decision
+    PairPenalty --> Decision
+    TractorPenalty --> Decision
+    WeakBonus --> Decision
+    
+    Decision -->|High Elimination| Eliminate[✅ ELIMINATE<br/>SUIT]
+    Decision -->|High Preservation| Preserve[🛡️ PRESERVE<br/>SUIT]
+```
+
+**Scoring Rules:**
+- **Length Bonus**: Shorter suits get higher elimination scores
+- **Value Penalties**: Aces (-40), Kings (-25), Pairs (-20 each), Tractors (-35 each)
+- **Weak Card Bonus**: Suits with only weak cards get +40 elimination score
+- **Decision Criteria**: Eliminate if score > 20, length ≤ 6, and no tractors
+
+### Strategic Principles
+
+1. **Trump Conservation**: Usually avoid trump cards unless exceptionally strong hand
+2. **Suit Elimination**: Empty 1-2 weak suits completely for optimal hand structure
+3. **Value Preservation**: Always preserve Aces, Kings, tractors, and valuable pairs
+4. **Exceptional Flexibility**: Allow strategic trump inclusion for very strong hands
+
+---
+
 ## Summary
 
 The AI decision tree system provides a sophisticated yet maintainable strategic framework:
@@ -205,6 +283,7 @@ The AI decision tree system provides a sophisticated yet maintainable strategic 
 4. **Trump Conservation**: Proper weak trump vs valuable trump selection
 5. **Real-Time Adaptation**: Dynamic strategy based on current trick winner
 6. **Team Coordination**: Optimal cooperation with human teammates
+7. **Advanced Kitty Strategy**: Sophisticated suit elimination with strategic trump inclusion flexibility
 
 ### Implementation Benefits
 

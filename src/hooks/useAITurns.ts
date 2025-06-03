@@ -1,21 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAIMoveWithErrorHandling } from "../game/gamePlayManager";
+import { getAIKittySwap } from "../ai/aiLogic";
+import { putbackKittyCards } from "../game/kittyManager";
 import { Card, GamePhase, GameState } from "../types";
 import { AI_MOVE_DELAY } from "../utils/gameTimings";
 
 type ProcessPlayFn = (cards: Card[]) => void;
+type SetGameStateFn = (gameState: GameState) => void;
 
 /**
  * Hook for managing AI turn handling with timers
+ * Handles both card play during Playing phase and kitty swap during KittySwap phase
  * @param gameState Current game state
- * @param processPlay Function to process a play
+ * @param processPlay Function to process a play during Playing phase
+ * @param setGameState Function to update game state during KittySwap phase
  * @param showTrickResult Whether trick result is being shown
  * @param lastCompletedTrick Completed trick that might be showing
+ * @param showRoundComplete Whether round complete modal is showing
  * @returns Waiting status and handlers for AI actions
  */
 export function useAITurns(
   gameState: GameState | null,
   processPlay: ProcessPlayFn,
+  setGameState: SetGameStateFn,
   showTrickResult: boolean,
   lastCompletedTrick: any | null, // Using any to match original implementation
   showRoundComplete: boolean = false, // Optional parameter for round completion
@@ -90,7 +97,8 @@ export function useAITurns(
       gameState.currentTrick.plays.length === gameState.players.length - 1;
 
     const botReady =
-      gameState.gamePhase === GamePhase.Playing &&
+      (gameState.gamePhase === GamePhase.Playing ||
+        gameState.gamePhase === GamePhase.KittySwap) &&
       !showTrickResult &&
       !showRoundComplete &&
       !trickComplete; // Don't let AI play if trick is complete but not cleared
@@ -106,6 +114,40 @@ export function useAITurns(
     }
 
     try {
+      if (gameState.gamePhase === GamePhase.KittySwap) {
+        // Handle AI kitty swap
+        const selectedCards = getAIKittySwap(gameState, currentPlayer.id);
+
+        if (selectedCards.length === 8) {
+          // Mark this turn as processed to prevent duplicates
+          lastProcessedTurnRef.current = {
+            playerIndex,
+            timestamp: Date.now(),
+          };
+
+          // Apply kitty swap directly to game state
+          const newGameState = putbackKittyCards(
+            gameState,
+            selectedCards,
+            currentPlayer.id,
+          );
+          setGameState(newGameState);
+
+          // Reset waiting state
+          setWaitingForAI(false);
+          setWaitingPlayerId("");
+          return;
+        } else {
+          console.error(
+            `AI ${currentPlayer.name} returned invalid kitty swap: ${selectedCards.length} cards`,
+          );
+          setWaitingForAI(false);
+          setWaitingPlayerId("");
+          return;
+        }
+      }
+
+      // Handle regular card play during Playing phase
       // Get AI move with error handling - pass the actual game state
       // The AI logic should not mutate the state, just read from it
       const { cards, error } = getAIMoveWithErrorHandling(gameState);
@@ -170,6 +212,7 @@ export function useAITurns(
     showTrickResult,
     lastCompletedTrick,
     showRoundComplete,
+    setGameState,
   ]);
 
   // Main effect for AI turn detection

@@ -1,6 +1,45 @@
 import { getValidCombinations } from "../game/gameLogic";
-import { Card, GameState } from "../types";
+import { Card, GameState, GamePhase, PlayerId } from "../types";
 import { createAIStrategy } from "./aiStrategy";
+import { selectAIKittySwapCards } from "./aiKittySwapStrategy";
+
+/**
+ * Main AI kitty swap logic - selects 8 cards to put back into kitty
+ *
+ * Refined Strategic Approach:
+ * - USUALLY avoid trump cards, but allow when hands are exceptionally strong:
+ *   * Very long trump suit (10+ cards) with strong combinations
+ *   * Strong hands in other suits (tractors, big pairs) that shouldn't be sacrificed
+ * - PREFER non-point cards, but allow strategic point cards if needed
+ * - Focus on weak cards from non-trump suits as primary targets
+ * - Attempt suit elimination for strategic advantage
+ * - Preserve pairs, tractors, and high cards for play phase
+ *
+ * @param gameState Current game state
+ * @param playerId ID of the AI player making the kitty swap
+ * @returns Array of 8 cards to put back into kitty
+ */
+export const getAIKittySwap = (
+  gameState: GameState,
+  playerId: PlayerId,
+): Card[] => {
+  const player = gameState.players.find((p) => p.id === playerId);
+  if (!player) {
+    throw new Error(`AI player with ID ${playerId} not found`);
+  }
+
+  if (gameState.gamePhase !== GamePhase.KittySwap) {
+    throw new Error(`AI kitty swap called during ${gameState.gamePhase} phase`);
+  }
+
+  if (player.hand.length !== 25) {
+    throw new Error(
+      `AI kitty swap: expected 25 cards, got ${player.hand.length}`,
+    );
+  }
+
+  return selectAIKittySwapCards(gameState, playerId);
+};
 
 /**
  * Main AI player logic - selects cards to play for a given AI player

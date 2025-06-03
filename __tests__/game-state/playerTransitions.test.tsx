@@ -65,6 +65,7 @@ const TestComponent: React.FC<TestComponentProps> = ({ initialState, onStateChan
   const aiTurnsHook = useAITurns(
     gameStateHook.gameState,
     gameStateHook.handleProcessPlay,
+    gameStateHook.setGameState,
     false, // showTrickResult
     null,  // lastCompletedTrick
     false  // showRoundComplete
