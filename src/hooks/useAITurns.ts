@@ -224,12 +224,13 @@ export function useAITurns(
       gameState.currentTrick &&
       gameState.currentTrick.plays.length === gameState.players.length - 1;
 
-    // Block processing if showing trick result, round complete, trick is complete, or not in playing phase
+    // Block processing if showing trick result, round complete, trick is complete, or not in playing/kittyswap phase
     if (
       showTrickResult ||
       lastCompletedTrick ||
       showRoundComplete ||
-      gameState.gamePhase !== GamePhase.Playing ||
+      (gameState.gamePhase !== GamePhase.Playing &&
+        gameState.gamePhase !== GamePhase.KittySwap) ||
       currentTrickComplete
     ) {
       return;
@@ -273,8 +274,12 @@ export function useAITurns(
   useEffect(() => {
     if (!gameState) return;
 
-    // If game is not in playing phase, clear any thinking indicators
-    if (gameState.gamePhase !== GamePhase.Playing && waitingForAI) {
+    // If game is not in playing or kittyswap phase, clear any thinking indicators
+    if (
+      gameState.gamePhase !== GamePhase.Playing &&
+      gameState.gamePhase !== GamePhase.KittySwap &&
+      waitingForAI
+    ) {
       setWaitingForAI(false);
       setWaitingPlayerId("");
     }

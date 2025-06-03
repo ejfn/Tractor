@@ -14,7 +14,7 @@ function createKittySwapGameState(): GameState {
     trumpInfo: { trumpRank: Rank.Two, trumpSuit: Suit.Spades }
   });
 
-  // Give Bot1 a balanced hand with 25 cards (17 regular + 8 kitty)
+  // Give Bot1 a balanced hand with 33 cards (25 regular + 8 kitty)
   const bot1Cards: Card[] = [];
   
   // Add some trump cards (Spades suit + 2s)
@@ -30,7 +30,7 @@ function createKittySwapGameState(): GameState {
   const nonTrumpRanks = [Rank.Three, Rank.Four, Rank.Five, Rank.Six, Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King, Rank.Ace];
   
   let cardIndex = 0;
-  for (let i = 0; i < 15; i++) { // 15 non-trump cards to reach 25 total
+  for (let i = 0; i < 23; i++) { // 23 non-trump cards to reach 33 total
     const suit = nonTrumpSuits[cardIndex % nonTrumpSuits.length];
     const rank = nonTrumpRanks[Math.floor(cardIndex / nonTrumpSuits.length) % nonTrumpRanks.length];
     
@@ -45,8 +45,8 @@ function createKittySwapGameState(): GameState {
     cardIndex++;
   }
   
-  // Give Bot1 exactly 25 cards
-  gameState = givePlayerCards(gameState, 1, bot1Cards.slice(0, 25));
+  // Give Bot1 exactly 33 cards
+  gameState = givePlayerCards(gameState, 1, bot1Cards.slice(0, 33));
   
   return gameState;
 }
@@ -118,7 +118,7 @@ describe("AI Kitty Swap Strategy - Basic Tests", () => {
       
       expect(() => {
         selectAIKittySwapCards(gameState, botPlayerId);
-      }).toThrow("AI kitty swap: expected 25 cards, got 20");
+      }).toThrow("AI kitty swap: expected 33 cards (25 + 8 kitty), got 20");
     });
   });
 
@@ -133,7 +133,7 @@ describe("AI Kitty Swap Strategy - Basic Tests", () => {
       }
       
       // Replace some cards to ensure we have non-point options
-      player.hand = [...player.hand.slice(0, 17), ...simpleNonPointCards];
+      player.hand = [...player.hand.slice(0, 25), ...simpleNonPointCards];
       
       const selectedCards = selectAIKittySwapCards(gameState, botPlayerId);
       
@@ -180,6 +180,11 @@ describe("AI Kitty Swap Strategy - Basic Tests", () => {
         longTrumpHand.push(createCard(Suit.Hearts, Rank.Four, `nontrump${i}`));
       }
       
+      // Add 8 more trump cards to reach 33 total (18 + 7 + 8 = 33)
+      for (let i = 18; i < 26; i++) {
+        longTrumpHand.push(createCard(Suit.Spades, Rank.Four, `trump${i}`));
+      }
+      
       player.hand = longTrumpHand;
       
       const selectedCards = selectAIKittySwapCards(gameState, botPlayerId);
@@ -221,8 +226,8 @@ describe("AI Kitty Swap Strategy - Basic Tests", () => {
       strategicHand.push(createCard(Suit.Diamonds, Rank.Three, `diamonds_weak1`));
       strategicHand.push(createCard(Suit.Diamonds, Rank.Seven, `diamonds_weak2`));
       
-      // Add mixed weak cards to reach 25 (need 9 more cards: 8 trump + 3 hearts + 3 clubs + 2 diamonds = 16, need 25 total)
-      for (let i = 0; i < 9; i++) {
+      // Add mixed weak cards to reach 33 (need 17 more cards: 8 trump + 3 hearts + 3 clubs + 2 diamonds = 16, need 33 total)
+      for (let i = 0; i < 17; i++) {
         strategicHand.push(createCard(Suit.Hearts, Rank.Eight, `filler${i}`));
       }
       

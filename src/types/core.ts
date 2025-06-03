@@ -113,6 +113,16 @@ export type GameState = {
   roundStartingPlayerIndex: number; // Index of the player who starts the current round (for crown display)
   lastRoundStartingPlayerIndex?: number; // Stores index of the player who started last round
   gamePhase: GamePhase;
+  roundEndKittyInfo?: {
+    // Track kitty info for round result display (use gameState.kittyCards for the actual cards)
+    kittyPoints: number;
+    finalTrickType: string; // "singles" or "pairs/tractors"
+    kittyBonus?: {
+      // Only present if attacking team won final trick
+      bonusPoints: number;
+      multiplier: number;
+    };
+  };
 };
 
 // Combination types for valid plays

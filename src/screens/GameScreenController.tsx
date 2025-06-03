@@ -9,6 +9,7 @@ import { useProgressiveDealing } from "../hooks/useProgressiveDealing";
 
 // Game logic
 import { finalizeTrumpDeclaration } from "../game/trumpDeclarationManager";
+import { isDealingComplete } from "../game/gameLogic";
 import { GamePhase } from "../types";
 
 // View component
@@ -114,11 +115,12 @@ const GameScreenController: React.FC = () => {
   useEffect(() => {
     if (
       gameState &&
-      gameState.gamePhase === GamePhase.Playing &&
+      gameState.gamePhase === GamePhase.Dealing &&
       !isDealingInProgress &&
+      isDealingComplete(gameState) &&
       finalizedRoundRef.current !== gameState.roundNumber
     ) {
-      // Dealing is complete and we've transitioned to playing phase
+      // Dealing is complete but still in Dealing phase - finalize trump declarations
       // Only finalize if we haven't already finalized this round
       finalizedRoundRef.current = gameState.roundNumber;
 

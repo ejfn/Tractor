@@ -341,6 +341,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         onNextRound={onNextRound}
         fadeAnim={fadeAnim}
         scaleAnim={scaleAnim}
+        kittyCards={
+          gameState?.roundEndKittyInfo ? gameState.kittyCards : undefined
+        }
       />
     </View>
   );

@@ -1,24 +1,13 @@
 import { GameState, PlayerId, Suit, GamePhase } from "../types";
 import { pickupKittyCards } from "./kittyManager";
+import { initializeTrumpDeclarationState } from "../utils/gameInitialization";
 import {
   TrumpDeclaration,
-  TrumpDeclarationState,
   DeclarationType,
   canOverrideDeclaration,
   validateDeclarationCards,
   detectPossibleDeclarations,
 } from "../types/trumpDeclaration";
-
-/**
- * Initialize trump declaration state for a new round
- */
-export function initializeTrumpDeclarationState(): TrumpDeclarationState {
-  return {
-    currentDeclaration: undefined,
-    declarationHistory: [],
-    declarationWindow: true, // Start with declarations allowed
-  };
-}
 
 /**
  * Make a trump declaration during the dealing phase

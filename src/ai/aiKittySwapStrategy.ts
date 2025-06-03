@@ -45,9 +45,9 @@ export function selectAIKittySwapCards(
     throw new Error(`AI kitty swap called during ${gameState.gamePhase} phase`);
   }
 
-  if (player.hand.length !== 25) {
+  if (player.hand.length !== 33) {
     throw new Error(
-      `AI kitty swap: expected 25 cards, got ${player.hand.length}`,
+      `AI kitty swap: expected 33 cards (25 + 8 kitty), got ${player.hand.length}`,
     );
   }
 

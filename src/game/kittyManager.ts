@@ -1,4 +1,12 @@
-import { GameState, PlayerId, GamePhase, Card, Trick } from "../types";
+import {
+  GameState,
+  PlayerId,
+  GamePhase,
+  Card,
+  Trick,
+  ComboType,
+} from "../types";
+import { identifyCombos } from "./gameLogic";
 
 /**
  * Picks up kitty cards for the round starting player
@@ -93,6 +101,13 @@ export const putbackKittyCards = (
     (card) => !selectedCardIds.includes(card.id),
   );
 
+  // Validate player has exactly 25 cards after kitty swap
+  if (player.hand.length !== 25) {
+    throw new Error(
+      `After kitty swap, player ${playerId} should have 25 cards, but has ${player.hand.length}`,
+    );
+  }
+
   // Put selected cards back to kitty
   newState.kittyCards = [...selectedCards];
 
@@ -121,12 +136,25 @@ export const isFinalTrick = (gameState: GameState): boolean => {
 /**
  * Analyzes the type of the final trick (singles vs pairs/tractors)
  * Returns the multiplier for kitty scoring: 2x for singles, 4x for pairs/tractors
+ * Rule: If leading combo contains pairs or tractors, 4x multiplier. Otherwise (singles only), 2x multiplier.
  */
-export const getFinalTrickMultiplier = (finalTrick: Trick): number => {
-  const leadingComboLength = finalTrick.leadingCombo.length;
+export const getFinalTrickMultiplier = (
+  finalTrick: Trick,
+  gameState: GameState,
+): number => {
+  const leadingCombo = finalTrick.leadingCombo;
 
-  // Singles = 1 card, everything else (pairs/tractors) = multiple cards
-  return leadingComboLength === 1 ? 2 : 4;
+  // Analyze the actual combo structure to determine if it contains pairs or tractors
+  const combos = identifyCombos(leadingCombo, gameState.trumpInfo);
+
+  // Check if any combo in the leading play is a pair or tractor
+  const hasPairsOrTractors = combos.some(
+    (combo) =>
+      combo.type === ComboType.Pair || combo.type === ComboType.Tractor,
+  );
+
+  // If contains pairs or tractors: 4x multiplier, otherwise (singles only): 2x multiplier
+  return hasPairsOrTractors ? 4 : 2;
 };
 
 /**
@@ -155,6 +183,6 @@ export const calculateKittyBonus = (
   }
 
   // Attacking team wins final trick = apply multiplier
-  const multiplier = getFinalTrickMultiplier(finalTrick);
+  const multiplier = getFinalTrickMultiplier(finalTrick, gameState);
   return kittyPoints * multiplier;
 };

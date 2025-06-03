@@ -73,15 +73,14 @@ npm test              # Run tests
 
 ```
 /__tests__/
-├── ai/                    # AI module tests
-├── game/                  # Game logic tests
+├── ai/                    # AI module tests and strategy regression tests
+├── game/                  # Game logic tests and validation tests
 ├── components/            # UI component tests
 ├── utils/                 # Utility function tests
 ├── card-tracking/         # Card counting integration tests
 ├── game-flow/             # Game flow and interaction tests
 ├── game-state/            # Game state management tests
 ├── trump-declaration/     # Trump declaration system tests
-├── debug/                 # Debug and regression tests
 └── helpers/               # Test utilities (modular organization)
     ├── index.ts           # Main helpers re-export file
     ├── cards.ts           # Card creation utilities
@@ -704,6 +703,7 @@ These are lessons learned and principles established through development experie
 - **General solutions**: Prefer general solutions over special cases to maintain code consistency
 - **Hook consolidation**: Always prefer single-responsibility hooks over multiple interdependent hooks
 - **Circular dependencies**: Use refs and careful dependency management to avoid useCallback circular dependencies
+- **Phase-specific AI handling**: Ensure AI detection hooks handle all relevant game phases (Playing AND KittySwap) to prevent bot players from getting stuck
 
 ### AI Development Patterns
 

@@ -1,13 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import {
-  View,
+  Animated,
+  Modal,
+  SafeAreaView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Animated,
-  SafeAreaView,
+  View,
 } from "react-native";
+import { Card } from "../types";
+import AnimatedCardComponent from "./AnimatedCard";
 
 interface RoundCompleteModalProps {
   visible: boolean;
@@ -15,6 +17,7 @@ interface RoundCompleteModalProps {
   onNextRound: () => void;
   fadeAnim?: any;
   scaleAnim?: any;
+  kittyCards?: Card[]; // Kitty cards to display
 }
 
 /**
@@ -24,6 +27,7 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   visible,
   message,
   onNextRound,
+  kittyCards,
 }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -94,6 +98,31 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
             <Text style={styles.title}>Round Complete!</Text>
             <Text style={styles.message}>{message}</Text>
 
+            {/* Kitty Cards Display */}
+            {kittyCards && kittyCards.length > 0 && (
+              <View style={styles.kittySection}>
+                <View style={styles.kittyCardsContainer}>
+                  {kittyCards.map((card, index) => (
+                    <View
+                      key={card.id}
+                      style={[
+                        styles.kittyCardWrapper,
+                        index === 0 ? { marginLeft: 0 } : {},
+                      ]}
+                    >
+                      <AnimatedCardComponent
+                        card={card}
+                        selected={false}
+                        scale={0.75}
+                        disabled={false}
+                        style={styles.kittyCard}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
             <TouchableOpacity
               style={styles.button}
               onPress={onNextRound}
@@ -129,21 +158,21 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#FAFAFA",
-    borderRadius: 20,
-    padding: 30,
-    width: "100%",
-    maxWidth: 380,
+    borderRadius: 16,
+    padding: 20,
+    width: "90%",
+    maxWidth: 320,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 6,
     },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 12,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
     zIndex: 10000,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: "#FFD700",
     position: "relative",
     overflow: "hidden",
@@ -169,96 +198,117 @@ const styles = StyleSheet.create({
     opacity: 0.08,
   },
   trophy: {
-    fontSize: 60,
-    marginBottom: 15,
+    fontSize: 48,
+    marginBottom: 10,
     textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 3,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#2C3E50",
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: "center",
     textShadowColor: "rgba(0, 0, 0, 0.1)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
   message: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#34495E",
     textAlign: "center",
-    marginBottom: 30,
-    lineHeight: 26,
+    marginBottom: 8,
+    lineHeight: 22,
     fontWeight: "500",
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
+  },
+  kittySection: {
+    marginBottom: 20,
+    paddingRight: 20,
+    width: "100%",
+    alignItems: "center",
+  },
+  kittyCardsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+    height: 70,
+  },
+  kittyCardWrapper: {
+    width: 40,
+    height: 70,
+    marginLeft: -16,
+  },
+  kittyCard: {
+    // Scale handled by AnimatedCard scale prop
   },
   button: {
-    marginTop: 10,
+    marginTop: 8,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 3,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 6,
   },
   buttonGradient: {
     backgroundColor: "#4CAF50",
-    paddingVertical: 16,
-    paddingHorizontal: 45,
-    borderRadius: 30,
-    minWidth: 200,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    minWidth: 160,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: "#45a049",
   },
   buttonText: {
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   corner: {
     position: "absolute",
-    width: 30,
-    height: 30,
+    width: 24,
+    height: 24,
     borderColor: "#FFD700",
-    borderWidth: 3,
+    borderWidth: 2,
   },
   topLeft: {
-    top: -3,
-    left: -3,
+    top: -2,
+    left: -2,
     borderRightWidth: 0,
     borderBottomWidth: 0,
-    borderTopLeftRadius: 20,
+    borderTopLeftRadius: 16,
   },
   topRight: {
-    top: -3,
-    right: -3,
+    top: -2,
+    right: -2,
     borderLeftWidth: 0,
     borderBottomWidth: 0,
-    borderTopRightRadius: 20,
+    borderTopRightRadius: 16,
   },
   bottomLeft: {
-    bottom: -3,
-    left: -3,
+    bottom: -2,
+    left: -2,
     borderRightWidth: 0,
     borderTopWidth: 0,
-    borderBottomLeftRadius: 20,
+    borderBottomLeftRadius: 16,
   },
   bottomRight: {
-    bottom: -3,
-    right: -3,
+    bottom: -2,
+    right: -2,
     borderLeftWidth: 0,
     borderTopWidth: 0,
-    borderBottomRightRadius: 20,
+    borderBottomRightRadius: 16,
   },
 });
 

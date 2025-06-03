@@ -1,6 +1,11 @@
 import { GameState, Card, Trick, Team } from "../types";
 import { identifyCombos, isValidPlay, evaluateTrickPlay } from "./gameLogic";
 import { getAIMove } from "../ai/aiLogic";
+import {
+  calculateKittyBonus,
+  calculateKittyPoints,
+  getFinalTrickMultiplier,
+} from "./kittyManager";
 
 /**
  * Process a player's play (human or AI)
@@ -47,6 +52,12 @@ export function processPlay(
     newState.players[newState.currentPlayerIndex]?.id === currentWinner;
 
   if (!newState.currentTrick || (isTrickComplete && isWinner)) {
+    // Check if this will be the final trick (all players have exactly enough cards for the combo type)
+    const comboLength = cards.length;
+    const willBeFinalTrick = newState.players.every(
+      (player) => player.hand.length === comboLength,
+    );
+
     // For the first player, create new trick and don't add to plays array
     newState.currentTrick = {
       leadingPlayerId: currentPlayer.id,
@@ -54,7 +65,8 @@ export function processPlay(
       plays: [],
       winningPlayerId: currentPlayer.id, // Initially, the leading player is winning
       points: 0,
-    };
+      isFinalTrick: willBeFinalTrick, // Track if this is the final trick
+    } as any; // Type assertion since we're adding a custom property
 
     // First player is leading the trick
   } else if (newState.currentTrick) {
@@ -110,27 +122,22 @@ export function processPlay(
 
   // Calculate points from this play
   const playPoints = cards.reduce((sum, card) => sum + card.points, 0);
-  newState.currentTrick.points += playPoints;
-
-  // Remove played cards from player's hand
-  // Find the current player in our deep-copied state
-  const playerIndex = newState.players.findIndex(
-    (p) => p.id === currentPlayer.id,
-  );
-
-  if (playerIndex !== -1) {
-    // Create a new hand array without the played cards
-    const newHand = newState.players[playerIndex].hand.filter(
-      (card) => !cards.some((playedCard) => playedCard.id === card.id),
-    );
-
-    // Update the player's hand in the new state
-    newState.players[playerIndex].hand = newHand;
+  if (newState.currentTrick) {
+    newState.currentTrick.points += playPoints;
   }
+
+  // Check for final trick using the tracked property
+  const willBeCompletedTrick = newState.currentTrick
+    ? newState.currentTrick.plays.length === newState.players.length - 1
+    : false;
+  const isThisFinalTrick =
+    willBeCompletedTrick &&
+    newState.currentTrick &&
+    (newState.currentTrick as any).isFinalTrick;
 
   // Check if this completes a trick - should be plays.length = players.length-1
   // Since the leading player's cards are in leadingCombo, not in the plays array
-  if (newState.currentTrick.plays.length === newState.players.length - 1) {
+  if (willBeCompletedTrick && newState.currentTrick) {
     // winningPlayerId is already being tracked throughout the trick, so we can use it directly
     const winningPlayerId =
       newState.currentTrick.winningPlayerId ||
@@ -146,6 +153,40 @@ export function processPlay(
       );
       if (winningTeam) {
         winningTeam.points += newState.currentTrick.points;
+
+        // KITTY BONUS: Check if this is the final trick and calculate kitty bonus
+        if (isThisFinalTrick) {
+          const kittyBonus = calculateKittyBonus(
+            newState,
+            newState.currentTrick,
+            winningPlayerId,
+          );
+
+          // Populate roundEndKittyInfo for round result display
+          const kittyPoints = calculateKittyPoints(newState.kittyCards);
+          const multiplier = getFinalTrickMultiplier(
+            newState.currentTrick,
+            newState,
+          );
+          const finalTrickType =
+            multiplier === 4 ? "pairs/tractors" : "singles";
+
+          newState.roundEndKittyInfo = {
+            kittyPoints,
+            finalTrickType,
+            kittyBonus:
+              kittyBonus > 0
+                ? {
+                    bonusPoints: kittyBonus,
+                    multiplier,
+                  }
+                : undefined,
+          };
+
+          if (kittyBonus > 0) {
+            winningTeam.points += kittyBonus;
+          }
+        }
       }
     }
 
@@ -160,28 +201,46 @@ export function processPlay(
       (p) => p.id === winningPlayerId,
     );
     newState.currentPlayerIndex = winningPlayerIndex;
+  } else {
+    // Move to next player
+    newState.currentPlayerIndex =
+      (newState.currentPlayerIndex + 1) % newState.players.length;
+  }
 
-    // DO NOT clear current trick immediately
-    // We'll keep it in the state so cards remain visible
-    // The UI will use this currentTrick until the trick result is shown
-    // Only then will we use the saved completedTrick for displaying the result
-    // newState.currentTrick = null; -- REMOVED THIS LINE
+  // Remove played cards from player's hand (for both completing and non-completing plays)
+  const playerIndex = newState.players.findIndex(
+    (p) => p.id === currentPlayer.id,
+  );
 
-    // Use the completed trick with winner ID for result display
-    const trickWithWinner = completedTrick;
+  if (playerIndex !== -1) {
+    // Create a new hand array without the played cards
+    const newHand = newState.players[playerIndex].hand.filter(
+      (card) => !cards.some((playedCard) => playedCard.id === card.id),
+    );
+
+    // Update the player's hand in the new state
+    newState.players[playerIndex].hand = newHand;
+  }
+
+  // Return appropriate result based on whether trick was completed
+  if (
+    newState.currentTrick &&
+    newState.currentTrick.plays.length === newState.players.length - 1
+  ) {
+    // Trick was completed - return the previously saved result
+    const completedTrick = newState.tricks[newState.tricks.length - 1];
+    const winningPlayerId =
+      newState.currentTrick.winningPlayerId ||
+      newState.currentTrick.leadingPlayerId;
 
     return {
       newState,
       trickComplete: true,
       trickWinnerId: winningPlayerId,
       trickPoints: completedTrick.points,
-      completedTrick: trickWithWinner,
+      completedTrick: completedTrick,
     };
   } else {
-    // Move to next player
-    newState.currentPlayerIndex =
-      (newState.currentPlayerIndex + 1) % newState.players.length;
-
     return {
       newState,
       trickComplete: false,

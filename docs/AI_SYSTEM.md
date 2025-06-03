@@ -899,8 +899,6 @@ The enhancement handles all scenarios correctly:
 - **Balance Verification**: Ensures fair and engaging gameplay with challenging AI
 
 ### Test Coverage
-
-- **95+ AI intelligence tests** covering all 4 phases comprehensively
 - **AI kitty swap strategy testing** with 10 comprehensive test scenarios validating strategic decision-making, trump inclusion logic, suit elimination, and edge case handling
 - **Trump declaration strategy testing** validating dealing phase decision-making with hand quality analysis, timing optimization, and override logic
 - **Card comparison validation testing** ensuring proper function usage and error handling

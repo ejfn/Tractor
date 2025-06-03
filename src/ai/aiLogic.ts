@@ -32,13 +32,43 @@ export const getAIKittySwap = (
     throw new Error(`AI kitty swap called during ${gameState.gamePhase} phase`);
   }
 
-  if (player.hand.length !== 25) {
+  if (player.hand.length !== 33) {
     throw new Error(
-      `AI kitty swap: expected 25 cards, got ${player.hand.length}`,
+      `AI kitty swap: expected 33 cards (25 + 8 kitty), got ${player.hand.length}`,
     );
   }
 
-  return selectAIKittySwapCards(gameState, playerId);
+  const selectedCards = selectAIKittySwapCards(gameState, playerId);
+
+  // Validate AI selected exactly 8 cards
+  if (selectedCards.length !== 8) {
+    throw new Error(
+      `AI kitty swap: AI must select exactly 8 cards, but selected ${selectedCards.length}`,
+    );
+  }
+
+  // Validate all selected cards are actually in the player's hand
+  const selectedCardIds = selectedCards.map((c) => c.id);
+  const handCardIds = player.hand.map((c) => c.id);
+  const invalidCards = selectedCardIds.filter(
+    (id) => !handCardIds.includes(id),
+  );
+
+  if (invalidCards.length > 0) {
+    throw new Error(
+      `AI kitty swap: AI selected cards not in player's hand: ${invalidCards.join(", ")}`,
+    );
+  }
+
+  // Validate that removing selected cards would leave exactly 25 cards
+  const remainingCardCount = player.hand.length - selectedCards.length;
+  if (remainingCardCount !== 25) {
+    throw new Error(
+      `AI kitty swap: After removing ${selectedCards.length} cards, player would have ${remainingCardCount} cards instead of 25`,
+    );
+  }
+
+  return selectedCards;
 };
 
 /**
