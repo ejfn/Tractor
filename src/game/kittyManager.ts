@@ -158,31 +158,56 @@ export const getFinalTrickMultiplier = (
 };
 
 /**
+ * Calculates complete kitty bonus information for the final trick
+ * Returns all data needed for both scoring and UI display
+ */
+export const calculateKittyBonusInfo = (
+  gameState: GameState,
+  finalTrick: Trick,
+  finalTrickWinnerId: PlayerId,
+): {
+  kittyPoints: number;
+  multiplier: number;
+  bonusPoints: number;
+  finalTrickType: string;
+} => {
+  const kittyPoints = calculateKittyPoints(gameState.kittyCards);
+  const multiplier = getFinalTrickMultiplier(finalTrick, gameState);
+  const finalTrickType = multiplier === 4 ? "pairs/tractors" : "singles";
+
+  // Find the winning player's team
+  const winningPlayer = gameState.players.find(
+    (p) => p.id === finalTrickWinnerId,
+  );
+  if (!winningPlayer) {
+    return { kittyPoints, multiplier, bonusPoints: 0, finalTrickType };
+  }
+
+  const winningTeam = gameState.teams.find((t) => t.id === winningPlayer.team);
+  if (!winningTeam) {
+    return { kittyPoints, multiplier, bonusPoints: 0, finalTrickType };
+  }
+
+  // Only attacking team gets kitty bonus
+  if (winningTeam.isDefending) {
+    return { kittyPoints, multiplier, bonusPoints: 0, finalTrickType };
+  }
+
+  // Attacking team wins final trick = apply multiplier
+  const bonusPoints = kittyPoints * multiplier;
+  return { kittyPoints, multiplier, bonusPoints, finalTrickType };
+};
+
+/**
  * Calculates the kitty bonus points if attacking team wins the final trick
  * Returns 0 if defending team wins, or kitty points × multiplier if attacking team wins
+ * @deprecated Use calculateKittyBonusInfo for new code
  */
 export const calculateKittyBonus = (
   gameState: GameState,
   finalTrick: Trick,
   finalTrickWinnerId: PlayerId,
 ): number => {
-  const kittyPoints = calculateKittyPoints(gameState.kittyCards);
-
-  // Find the winning player's team
-  const winningPlayer = gameState.players.find(
-    (p) => p.id === finalTrickWinnerId,
-  );
-  if (!winningPlayer) return 0;
-
-  const winningTeam = gameState.teams.find((t) => t.id === winningPlayer.team);
-  if (!winningTeam) return 0;
-
-  // Only attacking team gets kitty bonus
-  if (winningTeam.isDefending) {
-    return 0; // Defending team wins final trick = no kitty bonus
-  }
-
-  // Attacking team wins final trick = apply multiplier
-  const multiplier = getFinalTrickMultiplier(finalTrick, gameState);
-  return kittyPoints * multiplier;
+  return calculateKittyBonusInfo(gameState, finalTrick, finalTrickWinnerId)
+    .bonusPoints;
 };

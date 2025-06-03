@@ -3,7 +3,7 @@ import { getAIMoveWithErrorHandling } from "../game/gamePlayManager";
 import { getAIKittySwap } from "../ai/aiLogic";
 import { putbackKittyCards } from "../game/kittyManager";
 import { Card, GamePhase, GameState } from "../types";
-import { AI_MOVE_DELAY } from "../utils/gameTimings";
+import { AI_MOVE_DELAY, AI_KITTY_SWAP_DELAY } from "../utils/gameTimings";
 
 type ProcessPlayFn = (cards: Card[]) => void;
 type SetGameStateFn = (gameState: GameState) => void;
@@ -253,10 +253,14 @@ export function useAITurns(
       setWaitingForAI(true);
       setWaitingPlayerId(currentPlayer.id);
 
-      // Schedule the AI move
+      // Schedule the AI move with appropriate delay based on phase
+      const delay =
+        gameState.gamePhase === GamePhase.KittySwap
+          ? AI_KITTY_SWAP_DELAY
+          : AI_MOVE_DELAY;
       setTimeout(() => {
         handleAIMove();
-      }, AI_MOVE_DELAY);
+      }, delay);
     }
   }, [
     gameState?.currentPlayerIndex,

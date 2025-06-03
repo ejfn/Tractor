@@ -8,8 +8,6 @@ import { useAITurns } from "../hooks/useAITurns";
 import { useProgressiveDealing } from "../hooks/useProgressiveDealing";
 
 // Game logic
-import { finalizeTrumpDeclaration } from "../game/trumpDeclarationManager";
-import { isDealingComplete } from "../game/gameLogic";
 import { GamePhase } from "../types";
 
 // View component
@@ -109,31 +107,8 @@ const GameScreenController: React.FC = () => {
     }
   }, [gameState?.gamePhase, startDealing, isDealingInProgress]);
 
-  // Handle trump declaration finalization when dealing completes
-  const finalizedRoundRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (
-      gameState &&
-      gameState.gamePhase === GamePhase.Dealing &&
-      !isDealingInProgress &&
-      isDealingComplete(gameState) &&
-      finalizedRoundRef.current !== gameState.roundNumber
-    ) {
-      // Dealing is complete but still in Dealing phase - finalize trump declarations
-      // Only finalize if we haven't already finalized this round
-      finalizedRoundRef.current = gameState.roundNumber;
-
-      const finalizedState = finalizeTrumpDeclaration(gameState);
-      setGameState(finalizedState);
-    }
-  }, [
-    gameState?.gamePhase,
-    gameState?.roundNumber,
-    isDealingInProgress,
-    setGameState,
-    gameState,
-  ]);
+  // Note: Trump declaration finalization is now handled by the progressive dealing hook
+  // when the user clicks "Continue" or "Start Playing" in the ExpandableTrumpDeclaration component
 
   // We've removed the player change detector - keeping it simple
 

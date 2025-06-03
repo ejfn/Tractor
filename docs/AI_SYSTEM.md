@@ -540,7 +540,8 @@ When trump inclusion is necessary:
 
 - **`aiKittySwapStrategy.ts`**: Advanced kitty swap strategy with suit elimination logic
 - **`aiLogic.ts`**: Integration layer and public API
-- **`useAITurns.ts`**: Hook integration for KittySwap phase
+- **`useAITurns.ts`**: Hook integration for KittySwap phase with enhanced 1000ms thinking delay
+- **`gameTimings.ts`**: Timing constants including AI_KITTY_SWAP_DELAY for deliberate UX
 
 ## Phase 3: Memory & Pattern Recognition (Implemented)
 
@@ -767,6 +768,9 @@ This strategic approach ensures AI makes **realistic trump declarations** based 
 
 - **Real-time Analysis**: Context evaluation in ~100ms
 - **Strategy Selection**: Play choice in ~200ms  
+- **Phase-Specific Timing**: 
+  - Regular moves: 600ms thinking delay
+  - Kitty swap: 1000ms deliberation delay (enhanced UX)
 - **Smooth Gameplay**: Maintains natural game flow
 - **Responsive AI**: Quick adaptation to game changes
 

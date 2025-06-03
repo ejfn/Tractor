@@ -77,9 +77,13 @@ describe("Kitty Bonus Integration", () => {
     const trickPoints = 10 + 5; // King (10) + Five (5) = 15 points
     const kittyPoints = 10 + 10 + 5; // 2 Kings + 1 Five = 25 points
     const kittyBonus = kittyPoints * 2; // Singles final trick = 2x multiplier = 50 points
-    const expectedTotal = trickPoints + kittyBonus; // 15 + 50 = 65 points
 
-    expect(teamA.points).toBe(expectedTotal);
+    // After trick completion: team should have ONLY trick points (kitty bonus applied later)
+    expect(teamA.points).toBe(trickPoints);
+
+    // Verify kitty bonus info is properly stored for round completion
+    expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
+    expect(finalResult.newState.roundEndKittyInfo!.kittyBonus!.bonusPoints).toBe(kittyBonus);
   });
 
   test("should apply 4x kitty bonus when attacking team wins final trick with pairs", () => {
@@ -130,9 +134,13 @@ describe("Kitty Bonus Integration", () => {
     const trickPoints = 20 + 10; // Human Kings (20) + Bot2 Fives (10) = 30 points
     const kittyPoints = 25; // Same kitty: 25 points
     const kittyBonus = kittyPoints * 4; // Pairs final trick = 4x multiplier = 100 points
-    const expectedTotal = trickPoints + kittyBonus; // 30 + 100 = 130 points
 
-    expect(teamA.points).toBe(expectedTotal);
+    // After trick completion: team should have ONLY trick points (kitty bonus applied later)
+    expect(teamA.points).toBe(trickPoints);
+
+    // Verify kitty bonus info is properly stored for round completion
+    expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
+    expect(finalResult.newState.roundEndKittyInfo!.kittyBonus!.bonusPoints).toBe(kittyBonus);
   });
 
   test("should NOT apply kitty bonus when defending team wins final trick", () => {
@@ -292,9 +300,13 @@ describe("Kitty Bonus Integration", () => {
     const trickPoints = 10; // Bot2 Five = 5 points * 2 = 10 points
     const kittyPoints = 25; // Same kitty: 25 points
     const kittyBonus = kittyPoints * 4; // Tractor final trick = 4x multiplier = 100 points
-    const expectedTotal = trickPoints + kittyBonus; // 10 + 100 = 110 points
 
-    expect(teamA.points).toBe(expectedTotal);
+    // After trick completion: team should have ONLY trick points (kitty bonus applied later)
+    expect(teamA.points).toBe(trickPoints);
+
+    // Verify kitty bonus info is properly stored for round completion
+    expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
+    expect(finalResult.newState.roundEndKittyInfo!.kittyBonus!.bonusPoints).toBe(kittyBonus);
   });
 
   test("should populate roundEndKittyInfo for display in round result modal", () => {

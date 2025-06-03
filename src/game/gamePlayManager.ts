@@ -1,11 +1,7 @@
 import { GameState, Card, Trick, Team } from "../types";
 import { identifyCombos, isValidPlay, evaluateTrickPlay } from "./gameLogic";
 import { getAIMove } from "../ai/aiLogic";
-import {
-  calculateKittyBonus,
-  calculateKittyPoints,
-  getFinalTrickMultiplier,
-} from "./kittyManager";
+import { calculateKittyBonusInfo } from "./kittyManager";
 
 /**
  * Process a player's play (human or AI)
@@ -156,36 +152,30 @@ export function processPlay(
 
         // KITTY BONUS: Check if this is the final trick and calculate kitty bonus
         if (isThisFinalTrick) {
-          const kittyBonus = calculateKittyBonus(
+          const kittyInfo = calculateKittyBonusInfo(
             newState,
             newState.currentTrick,
             winningPlayerId,
           );
 
           // Populate roundEndKittyInfo for round result display
-          const kittyPoints = calculateKittyPoints(newState.kittyCards);
-          const multiplier = getFinalTrickMultiplier(
-            newState.currentTrick,
-            newState,
-          );
-          const finalTrickType =
-            multiplier === 4 ? "pairs/tractors" : "singles";
-
+          // Store kitty bonus info but DON'T add to team points yet - save for round completion
           newState.roundEndKittyInfo = {
-            kittyPoints,
-            finalTrickType,
+            kittyPoints: kittyInfo.kittyPoints,
+            finalTrickType: kittyInfo.finalTrickType,
             kittyBonus:
-              kittyBonus > 0
+              kittyInfo.bonusPoints > 0
                 ? {
-                    bonusPoints: kittyBonus,
-                    multiplier,
+                    bonusPoints: kittyInfo.bonusPoints,
+                    multiplier: kittyInfo.multiplier,
                   }
                 : undefined,
           };
 
-          if (kittyBonus > 0) {
-            winningTeam.points += kittyBonus;
-          }
+          // NOTE: Kitty bonus points are NOT added to team.points here
+          // They will be added during round completion (gameRoundManager.endRound)
+          // This allows trick display to show only regular trick points
+          // while the full bonus is revealed in the round complete modal
         }
       }
     }

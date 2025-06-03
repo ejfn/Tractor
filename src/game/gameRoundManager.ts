@@ -177,18 +177,22 @@ export function endRound(state: GameState): {
 
   if (defendingTeam && attackingTeam) {
     const rankOrder = Object.values(Rank);
-    const points = attackingTeam.points;
 
-    // Calculate breakdown for message
+    // Calculate trick points before adding kitty bonus
     const kittyInfo = newState.roundEndKittyInfo;
+    const kittyBonus = kittyInfo?.kittyBonus?.bonusPoints || 0;
+    const trickPoints = attackingTeam.points; // Get trick points before bonus
+
+    // Add kitty bonus to attacking team points during round completion
+    // (This was deferred from trick completion to separate visual timing)
+    if (kittyBonus > 0) {
+      attackingTeam.points += kittyBonus;
+    }
+
+    const points = attackingTeam.points;
     let pointsBreakdown = "";
 
     if (kittyInfo) {
-      const trickPoints = kittyInfo.kittyBonus
-        ? points - kittyInfo.kittyBonus.bonusPoints
-        : points;
-      const kittyBonus = kittyInfo.kittyBonus?.bonusPoints || 0;
-
       pointsBreakdown =
         kittyBonus > 0
           ? `\n(${trickPoints} + ${kittyInfo.kittyPoints} × ${kittyInfo.kittyBonus!.multiplier} kitty bonus)`

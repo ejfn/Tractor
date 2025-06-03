@@ -245,7 +245,8 @@ npx eas --version
 
 ```typescript
 // Player move timings
-AI_MOVE_DELAY = 600ms              // AI thinking animation
+AI_MOVE_DELAY = 600ms              // AI thinking animation for regular moves
+AI_KITTY_SWAP_DELAY = 1000ms       // AI thinking animation for kitty swap (longer deliberation)
 MOVE_COMPLETION_DELAY = 1000ms     // Time to see played cards
 
 // Trick result display timings
@@ -711,6 +712,7 @@ These are lessons learned and principles established through development experie
 - **Priority chains**: Use structured priority decision chains to avoid conflicts and rabbit holes
 - **Strategic disposal**: Implement strategic disposal patterns that avoid wasting point cards when opponent is winning
 - **Trump conservation**: Use proper trump hierarchy with conservation values when AI cannot beat opponents
+- **Phase-specific timing**: Use appropriate delays for different game phases (1000ms for kitty swap vs 600ms for regular moves) to enhance user experience
 
 ### Project Management
 

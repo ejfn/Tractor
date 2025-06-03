@@ -4,6 +4,7 @@ import { dealNextCard, isDealingComplete } from "../game/gameLogic";
 import {
   makeTrumpDeclaration,
   getPlayerDeclarationOptions,
+  finalizeTrumpDeclaration,
 } from "../game/trumpDeclarationManager";
 import { getAITrumpDeclarationDecision } from "../ai/aiTrumpDeclarationStrategy";
 
@@ -240,13 +241,10 @@ export function useProgressiveDealing({
           setGameState(resumedState);
           isPausedRef.current = false;
 
-          // If dealing is complete, transition to playing
+          // If dealing is complete, finalize trump declaration and transition properly
           if (isDealingComplete(resumedState)) {
-            const playingState = {
-              ...resumedState,
-              gamePhase: GamePhase.Playing,
-            };
-            setGameState(playingState);
+            const finalizedState = finalizeTrumpDeclaration(resumedState);
+            setGameState(finalizedState);
             return;
           }
 
