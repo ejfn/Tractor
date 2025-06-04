@@ -18,6 +18,7 @@ import { Card, GameState, PlayerId, Trick, GamePhase } from "../types";
 
 // Utils
 import { validatePlay } from "../game/gamePlayManager";
+import { sortCards } from "../utils/cardSorting";
 
 interface GameScreenViewProps {
   // Game state
@@ -342,7 +343,9 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         fadeAnim={fadeAnim}
         scaleAnim={scaleAnim}
         kittyCards={
-          gameState?.roundEndKittyInfo ? gameState.kittyCards : undefined
+          gameState?.roundEndKittyInfo && gameState.kittyCards
+            ? sortCards(gameState.kittyCards, gameState.trumpInfo)
+            : undefined
         }
       />
     </View>

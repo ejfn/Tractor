@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Card as CardType, Player, TrumpInfo, GamePhase } from "../types";
 import { isTrump } from "../game/gameLogic";
+import { sortCards } from "../utils/cardSorting";
 import AnimatedCardComponent from "./AnimatedCard";
 
 interface HumanHandAnimatedProps {
@@ -60,136 +61,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
     onCardSelect?.(card);
   };
   // Sort cards by suit and rank for better display
-  const sortedHand = [...player.hand].sort((a, b) => {
-    // Jokers first, big joker before small joker
-    if (a.joker && b.joker) {
-      return a.joker === "Big" ? -1 : 1;
-    }
-    if (a.joker && !b.joker) return -1;
-    if (!a.joker && b.joker) return 1;
-
-    // Trump cards next
-    const aIsTrump = isTrump(a, trumpInfo);
-    const bIsTrump = isTrump(b, trumpInfo);
-
-    if (aIsTrump && bIsTrump) {
-      // Trump rank cards first
-      const aIsTrumpRank = a.rank === trumpInfo.trumpRank;
-      const bIsTrumpRank = b.rank === trumpInfo.trumpRank;
-
-      if (aIsTrumpRank && !bIsTrumpRank) return -1;
-      if (!aIsTrumpRank && bIsTrumpRank) return 1;
-
-      // If both are trump rank, sort by suit
-      if (aIsTrumpRank && bIsTrumpRank) {
-        if (a.suit && b.suit) {
-          if (trumpInfo.trumpSuit !== undefined) {
-            if (
-              a.suit === trumpInfo.trumpSuit &&
-              b.suit !== trumpInfo.trumpSuit
-            )
-              return -1;
-            if (
-              a.suit !== trumpInfo.trumpSuit &&
-              b.suit === trumpInfo.trumpSuit
-            )
-              return 1;
-          }
-
-          // Sort by rotated suit order
-          const standardSuitOrder = ["Spades", "Hearts", "Clubs", "Diamonds"];
-          let trumpIndex = -1;
-          if (trumpInfo.trumpSuit !== undefined) {
-            trumpIndex = standardSuitOrder.indexOf(trumpInfo.trumpSuit);
-          }
-
-          let rotatedOrder = [...standardSuitOrder];
-          if (trumpIndex > 0) {
-            rotatedOrder = [
-              ...standardSuitOrder.slice(trumpIndex),
-              ...standardSuitOrder.slice(0, trumpIndex),
-            ];
-          }
-
-          const suitOrder: Record<string, number> = {};
-          rotatedOrder.forEach((suit, index) => {
-            suitOrder[suit] = index;
-          });
-
-          return suitOrder[a.suit] - suitOrder[b.suit];
-        }
-      }
-
-      // Sort by rank (descending)
-      if (a.rank && b.rank) {
-        const rankOrder = {
-          "2": 0,
-          "3": 1,
-          "4": 2,
-          "5": 3,
-          "6": 4,
-          "7": 5,
-          "8": 6,
-          "9": 7,
-          "10": 8,
-          J: 9,
-          Q: 10,
-          K: 11,
-          A: 12,
-        };
-        return rankOrder[b.rank] - rankOrder[a.rank];
-      }
-    }
-
-    if (aIsTrump && !bIsTrump) return -1;
-    if (!aIsTrump && bIsTrump) return 1;
-
-    // Neither is trump - sort by suit with rotation
-    if (a.suit && b.suit && a.suit !== b.suit) {
-      const standardSuitOrder = ["Spades", "Hearts", "Clubs", "Diamonds"];
-      let trumpIndex = -1;
-      if (trumpInfo.trumpSuit !== undefined) {
-        trumpIndex = standardSuitOrder.indexOf(trumpInfo.trumpSuit);
-      }
-
-      let rotatedOrder = [...standardSuitOrder];
-      if (trumpIndex > 0) {
-        rotatedOrder = [
-          ...standardSuitOrder.slice(trumpIndex),
-          ...standardSuitOrder.slice(0, trumpIndex),
-        ];
-      }
-
-      const suitOrder: Record<string, number> = {};
-      rotatedOrder.forEach((suit, index) => {
-        suitOrder[suit] = index;
-      });
-
-      return suitOrder[a.suit] - suitOrder[b.suit];
-    }
-
-    // Same suit - sort by rank (descending)
-    if (a.rank && b.rank) {
-      const rankOrder = {
-        "2": 0,
-        "3": 1,
-        "4": 2,
-        "5": 3,
-        "6": 4,
-        "7": 5,
-        "8": 6,
-        "9": 7,
-        "10": 8,
-        J: 9,
-        Q: 10,
-        K: 11,
-        A: 12,
-      };
-      return rankOrder[b.rank] - rankOrder[a.rank];
-    }
-
-    return 0;
-  });
+  const sortedHand = sortCards(player.hand, trumpInfo);
 
   const isCardSelected = (card: CardType) => {
     return selectedCards.some((c) => c.id === card.id);
