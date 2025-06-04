@@ -1,4 +1,4 @@
-import { GameState, PlayerId, Rank, DeclarationType, Suit } from "../../src/types";
+import { GameState, PlayerId, Rank, DeclarationType, Suit, TeamId } from "../../src/types";
 import { prepareNextRound, endRound } from "../../src/game/gameRoundManager";
 import { initializeGame } from "../../src/game/gameLogic";
 
@@ -23,13 +23,13 @@ describe("Next Round Starting Player Rotation", () => {
   });
 
   /**
-   * Helper function to simulate a round end and determine winner
+   * Helper function to simulate a round end and return both the original state and round result
    */
   function simulateRoundEnd(
     state: GameState,
     attackingTeamPoints: number,
     lastRoundStarterIndex: number
-  ): GameState {
+  ): { state: GameState; roundResult: any } {
     const newState = { ...state };
     
     // Set last round starting player
@@ -42,12 +42,9 @@ describe("Next Round Starting Player Rotation", () => {
     }
     
     // Process round end
-    const { newState: endedState } = endRound(newState);
+    const roundResult = endRound(newState);
     
-    // Preserve the roundStartingPlayerIndex through endRound
-    endedState.roundStartingPlayerIndex = lastRoundStarterIndex;
-    
-    return endedState;
+    return { state: newState, roundResult };
   }
 
   describe("Attacking Team Wins - Counter-clockwise Rotation", () => {
@@ -58,10 +55,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = false; // Team B attacking
       
       // Attacking team (Team B) wins with 100 points
-      const afterRoundEnd = simulateRoundEnd(gameState, 100, humanStarterIndex);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 100, humanStarterIndex);
       
       // Prepare next round
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Bot1 (index 1) should start - next counter-clockwise from Human (0)
       expect(nextRoundState.currentPlayerIndex).toBe(1);
@@ -75,10 +72,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = true;  // Team B defending
       
       // Attacking team (Team A) wins with 80 points
-      const afterRoundEnd = simulateRoundEnd(gameState, 80, bot1StarterIndex);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 80, bot1StarterIndex);
       
       // Prepare next round
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Bot2 (index 2) should start - next counter-clockwise from Bot1 (1)
       expect(nextRoundState.currentPlayerIndex).toBe(2);
@@ -92,10 +89,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = false; // Team B attacking
       
       // Attacking team (Team B) wins with 120 points
-      const afterRoundEnd = simulateRoundEnd(gameState, 120, bot2StarterIndex);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 120, bot2StarterIndex);
       
       // Prepare next round
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Bot3 (index 3) should start - next counter-clockwise from Bot2 (2)
       expect(nextRoundState.currentPlayerIndex).toBe(3);
@@ -109,10 +106,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = true;  // Team B defending
       
       // Attacking team (Team A) wins with 90 points
-      const afterRoundEnd = simulateRoundEnd(gameState, 90, bot3StarterIndex);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 90, bot3StarterIndex);
       
       // Prepare next round
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Human (index 0) should start - next counter-clockwise from Bot3 (3)
       expect(nextRoundState.currentPlayerIndex).toBe(0);
@@ -128,10 +125,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = false; // Team B attacking
       
       // Defending team wins (attacking team gets < 80 points)
-      const afterRoundEnd = simulateRoundEnd(gameState, 60, humanStarterIndex);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 60, humanStarterIndex);
       
       // Prepare next round
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Bot2 (index 2) should start - other Team A player
       expect(nextRoundState.currentPlayerIndex).toBe(2);
@@ -145,10 +142,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = false; // Team B attacking
       
       // Defending team wins (attacking team gets 40 points)
-      const afterRoundEnd = simulateRoundEnd(gameState, 40, bot2StarterIndex);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 40, bot2StarterIndex);
       
       // Prepare next round
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Human (index 0) should start - other Team A player
       expect(nextRoundState.currentPlayerIndex).toBe(0);
@@ -162,10 +159,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = true;  // Team B defending (Bot1, Bot3)
       
       // Defending team wins (attacking team gets 0 points)
-      const afterRoundEnd = simulateRoundEnd(gameState, 0, bot1StarterIndex);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 0, bot1StarterIndex);
       
       // Prepare next round
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Bot3 (index 3) should start - other Team B player
       expect(nextRoundState.currentPlayerIndex).toBe(3);
@@ -179,10 +176,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = true;  // Team B defending (Bot1, Bot3)
       
       // Defending team wins (attacking team gets 30 points)
-      const afterRoundEnd = simulateRoundEnd(gameState, 30, bot3StarterIndex);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 30, bot3StarterIndex);
       
       // Prepare next round
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Bot1 (index 1) should start - other Team B player
       expect(nextRoundState.currentPlayerIndex).toBe(1);
@@ -209,7 +206,18 @@ describe("Next Round Starting Player Rotation", () => {
         }
       };
       
-      const nextRoundState = prepareNextRound(firstRoundState);
+      // Create a mock round result for first round
+      const mockRoundResult = {
+        gameOver: false,
+        gameWinner: undefined,
+        roundCompleteMessage: "Test message",
+        attackingTeamWon: false,
+        rankChanges: {} as Record<TeamId, Rank>,
+        finalPoints: 0,
+        pointsBreakdown: ""
+      };
+      
+      const nextRoundState = prepareNextRound(firstRoundState, mockRoundResult);
       
       // Bot2 should start as the trump declarer
       expect(nextRoundState.currentPlayerIndex).toBe(2);
@@ -223,10 +231,10 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.roundStartingPlayerIndex = -1; // Invalid index
       
       // Attacking team wins
-      const afterRoundEnd = simulateRoundEnd(gameState, 100, -1);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 100, -1);
       
       // Should not crash and should use fallback logic
-      const nextRoundState = prepareNextRound(afterRoundEnd);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
       // Should have a valid player index
       expect(nextRoundState.currentPlayerIndex).toBeGreaterThanOrEqual(0);
@@ -241,11 +249,12 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = false; // Team B attacking
       
       // Attacking team (Team B) wins
-      const afterRoundEnd = simulateRoundEnd(gameState, 100, 1);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 100, 1);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
-      // Team roles should switch
-      expect(afterRoundEnd.teams[0].isDefending).toBe(false); // Team A now attacking
-      expect(afterRoundEnd.teams[1].isDefending).toBe(true);  // Team B now defending
+      // Team roles should switch (verify from the prepared next round state)
+      expect(nextRoundState.teams[0].isDefending).toBe(false); // Team A now attacking
+      expect(nextRoundState.teams[1].isDefending).toBe(true);  // Team B now defending
     });
 
     test("When defending team wins, they stay defending", () => {
@@ -254,11 +263,12 @@ describe("Next Round Starting Player Rotation", () => {
       gameState.teams[1].isDefending = false; // Team B attacking
       
       // Defending team wins (attacking gets < 80)
-      const afterRoundEnd = simulateRoundEnd(gameState, 50, 0);
+      const { state: afterRoundEnd, roundResult } = simulateRoundEnd(gameState, 50, 0);
+      const nextRoundState = prepareNextRound(afterRoundEnd, roundResult);
       
-      // Team roles should stay the same
-      expect(afterRoundEnd.teams[0].isDefending).toBe(true);  // Team A still defending
-      expect(afterRoundEnd.teams[1].isDefending).toBe(false); // Team B still attacking
+      // Team roles should stay the same (verify from the prepared next round state)
+      expect(nextRoundState.teams[0].isDefending).toBe(true);  // Team A still defending
+      expect(nextRoundState.teams[1].isDefending).toBe(false); // Team B still attacking
     });
   });
 });

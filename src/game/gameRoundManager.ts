@@ -1,19 +1,52 @@
-import { GameState, Rank, GamePhase } from "../types";
+import { GameState, Rank, GamePhase, RoundResult, TeamId } from "../types";
 import { initializeGame } from "./gameLogic";
 import { initializeTrumpDeclarationState } from "../utils/gameInitialization";
 
 /**
- * Prepares the game state for the next round
+ * Prepares the game state for the next round using round result information
  * @param state Current game state
+ * @param roundResult Result from endRound() containing computed changes to apply
  * @returns Updated game state ready for the next round
  */
-export function prepareNextRound(state: GameState): GameState {
+export function prepareNextRound(
+  state: GameState,
+  roundResult: RoundResult,
+): GameState {
   const newState = { ...state };
 
   newState.roundNumber++;
   newState.gamePhase = GamePhase.Dealing;
 
-  // Set trump rank to defending team's rank
+  // Apply computed changes from round result
+
+  // Apply rank changes
+  Object.entries(roundResult.rankChanges).forEach(([teamId, newRank]) => {
+    const team = newState.teams.find((t) => t.id === (teamId as TeamId));
+    if (team) {
+      team.currentRank = newRank;
+    }
+  });
+
+  // Handle team role switching if attacking team won
+  if (roundResult.attackingTeamWon) {
+    const defendingTeam = newState.teams.find((t) => t.isDefending);
+    const attackingTeam = newState.teams.find((t) => !t.isDefending);
+
+    if (defendingTeam && attackingTeam) {
+      defendingTeam.isDefending = false;
+      attackingTeam.isDefending = true;
+    }
+  }
+
+  // Reset team points for next round
+  newState.teams.forEach((team) => {
+    team.points = 0;
+  });
+
+  // Clear kitty info for next round
+  newState.roundEndKittyInfo = undefined;
+
+  // Set trump rank to defending team's rank (after potential role switch)
   const newDefendingTeam = newState.teams.find((t) => t.isDefending);
   if (newDefendingTeam) {
     newState.trumpInfo.trumpRank = newDefendingTeam.currentRank;
@@ -156,41 +189,34 @@ export function prepareNextRound(state: GameState): GameState {
 }
 
 /**
- * Processes the end of a round and determines outcomes
+ * Processes the end of a round and computes outcomes (pure function - no state changes)
  * @param state Current game state
- * @returns Object containing updated state, game over flag, winner, and result message
+ * @returns RoundResult containing all computed information for modal display and next round preparation
  */
-export function endRound(state: GameState): {
-  newState: GameState;
-  gameOver: boolean;
-  winner: "A" | "B" | null;
-  roundCompleteMessage: string;
-} {
-  const newState = { ...state };
+export function endRound(state: GameState): RoundResult {
   let gameOver = false;
-  let winner: "A" | "B" | null = null;
+  let gameWinner: TeamId | undefined = undefined;
   let roundCompleteMessage = "";
+  let attackingTeamWon = false;
+  const rankChanges: Record<TeamId, Rank> = {} as Record<TeamId, Rank>;
+  let finalPoints = 0;
+  let pointsBreakdown = "";
 
   // Calculate scores and determine if a team levels up
-  const defendingTeam = newState.teams.find((t) => t.isDefending);
-  const attackingTeam = newState.teams.find((t) => !t.isDefending);
+  const defendingTeam = state.teams.find((t) => t.isDefending);
+  const attackingTeam = state.teams.find((t) => !t.isDefending);
 
   if (defendingTeam && attackingTeam) {
     const rankOrder = Object.values(Rank);
 
     // Calculate trick points before adding kitty bonus
-    const kittyInfo = newState.roundEndKittyInfo;
+    const kittyInfo = state.roundEndKittyInfo;
     const kittyBonus = kittyInfo?.kittyBonus?.bonusPoints || 0;
     const trickPoints = attackingTeam.points; // Get trick points before bonus
 
-    // Add kitty bonus to attacking team points during round completion
-    // (This was deferred from trick completion to separate visual timing)
-    if (kittyBonus > 0) {
-      attackingTeam.points += kittyBonus;
-    }
-
-    const points = attackingTeam.points;
-    let pointsBreakdown = "";
+    // Calculate final points (including kitty bonus)
+    const points = attackingTeam.points + kittyBonus;
+    finalPoints = points;
 
     if (kittyInfo) {
       pointsBreakdown =
@@ -201,16 +227,15 @@ export function endRound(state: GameState): {
 
     // Attacking team needs 80+ points to win
     if (points >= 80) {
-      // Attacking team wins and becomes new defending team
-      let rankAdvancement = 0;
+      attackingTeamWon = true;
 
       // Calculate rank advancement based on points
-      // For every 40 points above 80, advance one additional rank
+      let rankAdvancement = 0;
       if (points >= 120) {
         rankAdvancement = Math.floor((points - 80) / 40);
       }
 
-      // Update attacking team's rank
+      // Calculate new rank for attacking team
       const currentRankIndex = rankOrder.indexOf(attackingTeam.currentRank);
       const newRankIndex = Math.min(
         currentRankIndex + rankAdvancement,
@@ -218,28 +243,26 @@ export function endRound(state: GameState): {
       );
 
       if (newRankIndex < rankOrder.length - 1) {
-        attackingTeam.currentRank = rankOrder[newRankIndex];
+        const newRank = rankOrder[newRankIndex];
+        rankChanges[attackingTeam.id] = newRank;
 
-        // Switch defending/attacking roles
-        defendingTeam.isDefending = false;
-        attackingTeam.isDefending = true;
-
-        // Create round result message with breakdown
+        // Create round result message
         if (rankAdvancement === 0) {
-          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and will defend at rank ${attackingTeam.currentRank}!${pointsBreakdown}`;
+          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and will defend next round at rank ${newRank}!${pointsBreakdown}`;
         } else {
-          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${attackingTeam.currentRank}!${pointsBreakdown}`;
+          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and advanced ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${newRank}!${pointsBreakdown}`;
         }
       } else {
         // Game over - attacking team reached Ace and won
         gameOver = true;
-        winner = attackingTeam.id;
+        gameWinner = attackingTeam.id;
       }
     } else {
       // Defending team successfully defended
-      let rankAdvancement = 1; // Default advancement
+      attackingTeamWon = false;
 
       // Calculate rank advancement based on attacker's points
+      let rankAdvancement = 1; // Default advancement
       if (points < 40) {
         rankAdvancement = 2;
       }
@@ -247,7 +270,7 @@ export function endRound(state: GameState): {
         rankAdvancement = 3;
       }
 
-      // Update defending team's rank
+      // Calculate new rank for defending team
       const currentRankIndex = rankOrder.indexOf(defendingTeam.currentRank);
       const newRankIndex = Math.min(
         currentRankIndex + rankAdvancement,
@@ -255,7 +278,8 @@ export function endRound(state: GameState): {
       );
 
       if (newRankIndex < rankOrder.length - 1) {
-        defendingTeam.currentRank = rankOrder[newRankIndex];
+        const newRank = rankOrder[newRankIndex];
+        rankChanges[defendingTeam.id] = newRank;
 
         // Create round result message
         let pointMessage = "";
@@ -267,26 +291,22 @@ export function endRound(state: GameState): {
           pointMessage = `defended with attackers getting ${points}/80 points`;
         }
 
-        roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${defendingTeam.currentRank}!${pointsBreakdown}`;
+        roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${newRank}!${pointsBreakdown}`;
       } else {
         // Game over - defending team reached Ace and won
         gameOver = true;
-        winner = defendingTeam.id;
+        gameWinner = defendingTeam.id;
       }
     }
-
-    // Reset points for next round
-    defendingTeam.points = 0;
-    attackingTeam.points = 0;
-
-    // Clear kitty info for next round
-    newState.roundEndKittyInfo = undefined;
   }
 
   return {
-    newState,
     gameOver,
-    winner,
+    gameWinner,
     roundCompleteMessage,
+    attackingTeamWon,
+    rankChanges,
+    finalPoints,
+    pointsBreakdown,
   };
 }

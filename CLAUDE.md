@@ -233,6 +233,12 @@ npx eas --version
    - Teams alternate between defending and attacking
    - Trick winner leads next trick
 
+7. **Round Management & UI Timing**
+   - **RoundResult System**: Pure computation approach separating round end calculations from state changes
+   - **Modal Timing Consistency**: Round complete modal displays information from completed round, not next round
+   - **Clean Architecture**: `endRound()` computes results, `prepareNextRound()` applies changes
+   - **State Preservation**: Current game state preserved during modal display using refs
+
 ### Implementation Philosophy
 
 - Fail-fast approach for invalid states
@@ -240,6 +246,7 @@ npx eas --version
 - No special case handling for specific players
 - Synchronized state transitions
 - Explicit error handling
+- **Pure computation separation**: Round end logic separated from state mutations for clean UI timing
 
 ### Timing Constants
 
@@ -688,6 +695,70 @@ The hooks work together in a coordinated fashion:
 
 Each hook has a single, well-defined responsibility with minimal overlap.
 
+## RoundResult System Architecture
+
+### Problem Solved
+
+**Issue**: Team roles were being updated for the next round while the round complete modal was still displaying trump info from the previous round, creating UI inconsistency.
+
+**Root Cause**: `endRound()` was directly mutating game state, causing immediate team role changes before the modal could display consistent information.
+
+### Solution: Pure Computation Approach
+
+The RoundResult system implements clean separation of concerns:
+
+```typescript
+// Pure computation - no side effects
+export function endRound(state: GameState): RoundResult {
+  // Computes round outcomes without modifying state
+  return {
+    gameOver: boolean,
+    gameWinner?: TeamId,
+    roundCompleteMessage: string,
+    attackingTeamWon: boolean,
+    rankChanges: Record<TeamId, Rank>,
+    finalPoints: number,
+    pointsBreakdown: string
+  };
+}
+
+// State mutation - applies computed changes
+export function prepareNextRound(state: GameState, roundResult: RoundResult): GameState {
+  // Applies rank changes, team role switches, and round setup
+}
+```
+
+### UI Timing Flow
+
+```typescript
+// 1. Compute round results without state changes
+const roundResult = endRound(currentState);
+
+// 2. Store results and current state for modal display
+roundResultRef.current = roundResult;
+pendingStateRef.current = currentState; // Preserve current state
+
+// 3. Show modal with consistent information from completed round
+setShowRoundComplete(true);
+
+// 4. After modal dismissal, apply changes for next round
+const nextRoundState = prepareNextRound(pendingStateRef.current, roundResult);
+```
+
+### Benefits Achieved
+
+- **UI Consistency**: Round complete modal displays information from completed round, not next round
+- **Clean Architecture**: Pure computation separated from state mutations
+- **Type Safety**: `RoundResult` type ensures all computed information is captured
+- **Testability**: Easy to test round logic without side effects
+- **Maintainability**: Clear separation of concerns between computation and application
+
+### Implementation Files
+
+- **`src/types/core.ts`**: `RoundResult` type definition
+- **`src/game/gameRoundManager.ts`**: Pure `endRound()` and stateful `prepareNextRound()`
+- **`src/hooks/useGameState.ts`**: UI timing coordination with refs
+
 ## Development Memories
 
 These are lessons learned and principles established through development experience on this project.
@@ -697,6 +768,7 @@ These are lessons learned and principles established through development experie
 - **Bug reproduction**: When fixing a bug, always try to reproduce it with existing test or a debug test
 - **Test count maintenance**: Always check and update test counts in README.md badges when adding/removing tests
 - **Test realism**: Use actual game logic when possible for more realistic test coverage
+- **API evolution**: When improving APIs, update tests to use the new, better patterns instead of creating legacy compatibility wrappers
 
 ### Code Architecture & Quality
 
@@ -705,6 +777,8 @@ These are lessons learned and principles established through development experie
 - **Hook consolidation**: Always prefer single-responsibility hooks over multiple interdependent hooks
 - **Circular dependencies**: Use refs and careful dependency management to avoid useCallback circular dependencies
 - **Phase-specific AI handling**: Ensure AI detection hooks handle all relevant game phases (Playing AND KittySwap) to prevent bot players from getting stuck
+- **Pure computation**: Use pure functions for complex calculations to improve testability and UI timing consistency
+- **State timing**: When UI timing is critical, use refs to preserve state during modal displays and transitions
 
 ### AI Development Patterns
 

@@ -137,3 +137,21 @@ export type Combo = {
   cards: Card[];
   value: number; // Relative hand strength for comparison
 };
+
+/**
+ * Result of processing a round end - contains computed information for modal display and next round preparation
+ */
+export type RoundResult = {
+  // Game outcome
+  gameOver: boolean;
+  gameWinner?: TeamId; // Only set when entire game ends
+  roundCompleteMessage: string;
+
+  // Team and rank changes
+  attackingTeamWon: boolean; // Also indicates round winner and if team roles should switch
+  rankChanges: Record<TeamId, Rank>;
+
+  // Point information
+  finalPoints: number;
+  pointsBreakdown: string;
+};

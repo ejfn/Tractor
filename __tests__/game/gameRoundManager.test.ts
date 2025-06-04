@@ -6,7 +6,8 @@ import {
   GameState, 
   Rank, 
   Suit, 
-  Card
+  Card,
+  TeamId
 } from "../../src/types";
 import { createFullGameStateWithTricks } from "../helpers";
 import * as gameLogic from '../../src/game/gameLogic';
@@ -40,7 +41,18 @@ describe('gameRoundManager', () => {
         deck: mockDeck
       });
       
-      const result = prepareNextRound(mockState);
+      // Create a mock round result for testing prepareNextRound
+      const mockRoundResult = {
+        gameOver: false,
+        gameWinner: undefined,
+        roundCompleteMessage: "Test message",
+        attackingTeamWon: false,
+        rankChanges: {} as Record<TeamId, Rank>,
+        finalPoints: 0,
+        pointsBreakdown: ""
+      };
+      
+      const result = prepareNextRound(mockState, mockRoundResult);
       
       // Verify round number was incremented
       expect(result.roundNumber).toBe(2);
@@ -86,24 +98,27 @@ describe('gameRoundManager', () => {
   });
 
   describe('endRound', () => {
-    test('should end the round with team A winning', () => {
+    test('should end the round with team A defending successfully', () => {
       const mockState = createMockGameState();
-      mockState.teams[0].points = 80; // Team A has more points
-      mockState.teams[1].points = 20;
+      // Team A is defending (standard setup), Team B is attacking
+      mockState.teams[0].points = 0; // Team A (defending) points
+      mockState.teams[1].points = 20; // Team B (attacking) points - less than 80, so defending wins
       
       const result = endRound(mockState);
       
       // Note: gamePhase is not updated by endRound function
       
-      // Verify teams' points are reset for next round
-      expect(result.newState.teams[0].points).toBe(0);
-      expect(result.newState.teams[1].points).toBe(0);
+      // Verify round result properties (finalPoints = attacking team points)
+      expect(result.finalPoints).toBe(20); // Team B (attacking) points
       
-      // Verify winner is Team A
-      expect(result.winner).toBe(null); // Winner is null since Team A is already defending, they just level up
+      // Verify gameWinner is undefined (not game over)
+      expect(result.gameWinner).toBe(undefined);
       
-      // Verify game is not over yet - no rank change
+      // Verify game is not over yet
       expect(result.gameOver).toBe(false);
+      
+      // Verify attacking team did not win (defending team successfully defended)
+      expect(result.attackingTeamWon).toBe(false);
       
       // Verify round complete message
       expect(result.roundCompleteMessage).toContain('Team A');
@@ -119,22 +134,21 @@ describe('gameRoundManager', () => {
       
       // Note: gamePhase is not updated by endRound function
       
-      // Verify winner result (null since team just ranks up)
-      expect(result.winner).toBe(null);
+      // Verify gameWinner is undefined (not game over)
+      expect(result.gameWinner).toBe(undefined);
       
       // Verify game is not over yet
       expect(result.gameOver).toBe(false);
       
       // Verify team B's rank was NOT increased (with 80 points exactly, they don't advance)
-      expect(result.newState.teams[1].currentRank).toBe(Rank.Two);
+      expect(result.rankChanges[TeamId.B]).toBe(Rank.Two);
       
-      // Verify defending status was swapped
-      expect(result.newState.teams[0].isDefending).toBe(false);
-      expect(result.newState.teams[1].isDefending).toBe(true);
+      // Verify attacking team won (which means roles will switch)
+      expect(result.attackingTeamWon).toBe(true);
       
       // Verify round complete message
       expect(result.roundCompleteMessage).toContain('Team B');
-      expect(result.roundCompleteMessage).toContain('will defend at rank 2');
+      expect(result.roundCompleteMessage).toContain('will defend next round at rank 2');
     });
 
     test('should end the round with defending team winning', () => {
@@ -153,17 +167,16 @@ describe('gameRoundManager', () => {
       // Note: gamePhase is not updated by endRound function
       
       // Verify defending team's rank increases by 2 (from Rank.Two to Rank.Four)
-      expect(result.newState.teams[0].currentRank).toBe(Rank.Four);
+      expect(result.rankChanges[TeamId.A]).toBe(Rank.Four);
       
-      // Verify winner is null (since it's just a rank advancement)
-      expect(result.winner).toBe(null);
+      // Verify gameWinner is undefined (since it's just a rank advancement)
+      expect(result.gameWinner).toBe(undefined);
       
       // Verify game is not over yet
       expect(result.gameOver).toBe(false);
       
-      // Verify defending status remains the same
-      expect(result.newState.teams[0].isDefending).toBe(true);
-      expect(result.newState.teams[1].isDefending).toBe(false);
+      // Verify attacking team did not win (defending team successfully defended)
+      expect(result.attackingTeamWon).toBe(false);
       
       // Verify round complete message
       expect(result.roundCompleteMessage).toContain('Team A');
@@ -188,10 +201,10 @@ describe('gameRoundManager', () => {
       
       // Since team B advances from King to Ace, the game should be over
       expect(result.gameOver).toBe(true);
-      expect(result.winner).toBe('B');
+      expect(result.gameWinner).toBe(TeamId.B);
       
-      // Note: The teams still have their final state
-      expect(result.newState.teams[1].currentRank).toBe(Rank.King); // Remains King when game ends
+      // Note: When game ends, rank changes are not included
+      expect(result.rankChanges[TeamId.B]).toBe(undefined);
       
       // Verify no round complete message when game is over
       expect(result.roundCompleteMessage).toBe('');
