@@ -241,8 +241,8 @@ export function ExpandableTrumpDeclaration({
               </Text>
               <Text style={styles.noOptionsHint}>
                 {isComplete
-                ? "Play will begin with the current trump setting"
-                : "Need matching trump rank cards or joker pairs"}
+                  ? "Play will begin with the current trump setting"
+                  : "Need matching trump rank cards or joker pairs"}
               </Text>
             </View>
           )}
