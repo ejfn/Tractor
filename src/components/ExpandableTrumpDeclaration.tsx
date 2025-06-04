@@ -237,15 +237,13 @@ export function ExpandableTrumpDeclaration({
           ) : (
             <View style={styles.noOptionsContainer}>
               <Text style={styles.noOptionsText}>
-                {isComplete
-                  ? "No valid trump declarations available with your current hand. Play will begin with the current trump setting."
-                  : "No declarations available with current hand"}
+                No valid declarations available with your current hand.
               </Text>
-              {!isComplete && (
-                <Text style={styles.noOptionsHint}>
-                  Need matching trump rank cards or joker pairs
-                </Text>
-              )}
+              <Text style={styles.noOptionsHint}>
+                {isComplete
+                  ? "Play will begin with the current trump setting"
+                  : "Need matching trump rank cards or joker pairs"}
+              </Text>
             </View>
           )}
         </View>
