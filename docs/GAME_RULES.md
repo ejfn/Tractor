@@ -168,6 +168,65 @@ Cards are ranked from highest to lowest trump strength:
   - 7♥7♥-9♥9♥ (non-consecutive)
   - Trump + non-trump pairs mixed
 
+## Tractor Following Rules
+
+When a tractor is led, players must follow a specific priority order when responding. These rules ensure fair and strategic play while preserving the traditional Tractor/Shengji game mechanics.
+
+### Following Priority Order (Same Suit)
+
+When following a tractor in the **same suit**, you must follow this exact priority:
+
+1. **Tractors first**: Must play a tractor of the same amount of pairs if available
+2. **Same amount of pairs**: If no tractor available, must play the same number of pairs
+3. **All remaining pairs**: If insufficient pairs for the tractor, must use all pairs you have
+4. **All remaining singles**: Fill remaining slots with singles from the same suit
+5. **Weakest from other suits**: Only when you've exhausted all cards of the leading suit
+
+### Trump Suit Special Rules
+
+When following **trump tractors**, the same priority order applies, but with expanded pair recognition:
+
+- **Trump suit pairs** count as valid pairs (e.g., 5♠-5♠ when Spades trump)
+- **Trump rank pairs** count as valid pairs (e.g., 2♥-2♥ when rank 2 trump)
+- **Joker pairs** count as valid pairs (Small-Small or Big-Big)
+
+**Example**: When trump tractor 3♠3♠-4♠4♠ is led, you can respond with:
+- ✅ Hearts 2♥-2♥ + Clubs 2♣-2♣ (trump rank pairs)
+- ✅ Spades 6♠-6♠ + Small Joker pair (trump suit + joker pairs)
+- ✅ Any combination of trump pairs totaling the same number
+
+### Cross-Suit Trump Victory
+
+**Special Rule**: When you have **zero cards** in the leading suit, you can win with trump combinations of the **same type**:
+
+- If Hearts tractor 7♥7♥-8♥8♥ is led and you have no Hearts
+- You can win with trump tractor 5♠5♠-6♠6♠ (same combination type)
+- This applies to singles, pairs, and tractors
+
+### Examples
+
+**Example 1: Hearts Tractor Following**
+- **Led**: Hearts tractor 9♥9♥-10♥10♥ (2 pairs)
+- **Your Hearts**: J♥-J♥, Q♥-Q♥, K♥, A♥ (2 pairs + 2 singles)
+- **Must play**: J♥-J♥ + Q♥-Q♥ (matching pairs), **cannot** play K♥+A♥+J♥+Q♥ (breaking pairs)
+
+**Example 2: Insufficient Pairs**
+- **Led**: Hearts tractor 9♥9♥-10♥10♥ (2 pairs) 
+- **Your Hearts**: J♥-J♥, Q♥, K♥ (1 pair + 2 singles)
+- **Must play**: J♥-J♥ + Q♥ + K♥ (all your Hearts), **cannot** play singles from other suits while having Hearts
+
+**Example 3: Trump Tractor Response**
+- **Led**: Spades trump tractor 3♠3♠-4♠4♠ (when rank 2, Spades trump)
+- **Your trumps**: 2♥-2♥ (trump rank pair) + 5♠-5♠ (trump suit pair) + other cards
+- **Can play**: 2♥-2♥ + 5♠-5♠ (valid trump pairs response)
+
+### Key Principles
+
+- **Priority-based**: Always follow the priority order - cannot skip to lower priorities while higher ones are available
+- **Suit exhaustion**: Must use **all** cards of the leading suit before playing other suits
+- **Pair preservation**: Cannot break pairs when following combinations that require pairs
+- **Trump recognition**: All trump cards (suit, rank, jokers) are treated equally for pair/tractor formation
+
 ## Smart Card Selection
 
 The game features intelligent card selection to help with combination play:
