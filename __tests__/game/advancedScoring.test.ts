@@ -1,4 +1,4 @@
-import { endRound } from '../../src/game/gameRoundManager';
+import { endRound, prepareNextRound } from '../../src/game/gameRoundManager';
 import { GameState, Team, Player, Rank, TeamId } from "../../src/types";
 import { createScoringGameState } from "../helpers";
 
@@ -29,9 +29,10 @@ describe('Advanced Scoring Rules', () => {
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
+      const newState = prepareNextRound(gameState, result);
 
-      expect(result.newState.teams[0].currentRank).toBe(Rank.Four);
-      expect(result.newState.teams[0].isDefending).toBe(true);
+      expect(result.rankChanges[TeamId.A]).toBe(Rank.Four);
+      expect(result.attackingTeamWon).toBe(false);
       expect(result.roundCompleteMessage).toContain('65/80 points');
       expect(result.roundCompleteMessage).toContain('advances 1 rank to 4');
     });
@@ -52,9 +53,10 @@ describe('Advanced Scoring Rules', () => {
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
+      const newState = prepareNextRound(gameState, result);
 
-      expect(result.newState.teams[0].currentRank).toBe(Rank.Five);
-      expect(result.newState.teams[0].isDefending).toBe(true);
+      expect(result.rankChanges[TeamId.A]).toBe(Rank.Five);
+      expect(result.attackingTeamWon).toBe(false);
       expect(result.roundCompleteMessage).toContain('held attackers to only 25 points');
       expect(result.roundCompleteMessage).toContain('advances 2 ranks to 5');
     });
@@ -75,9 +77,10 @@ describe('Advanced Scoring Rules', () => {
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
+      const newState = prepareNextRound(gameState, result);
 
-      expect(result.newState.teams[0].currentRank).toBe(Rank.Six);
-      expect(result.newState.teams[0].isDefending).toBe(true);
+      expect(result.rankChanges[TeamId.A]).toBe(Rank.Six);
+      expect(result.attackingTeamWon).toBe(false);
       expect(result.roundCompleteMessage).toContain('shut out the attackers');
       expect(result.roundCompleteMessage).toContain('advances 3 ranks to 6');
     });
@@ -100,7 +103,7 @@ describe('Advanced Scoring Rules', () => {
       const result = endRound(gameState);
 
       expect(result.gameOver).toBe(true);
-      expect(result.winner).toBe('A');
+      expect(result.gameWinner).toBe(TeamId.A);
     });
   });
 
@@ -121,12 +124,12 @@ describe('Advanced Scoring Rules', () => {
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
+      const newState = prepareNextRound(gameState, result);
 
-      expect(result.newState.teams[1].currentRank).toBe(Rank.Five); // No rank change
-      expect(result.newState.teams[1].isDefending).toBe(true); // Now defending
-      expect(result.newState.teams[0].isDefending).toBe(false); // Now attacking
+      expect(result.rankChanges[TeamId.B]).toBe(Rank.Five); // No rank change
+      expect(result.attackingTeamWon).toBe(true); // Attacking team won, so roles will switch
       expect(result.roundCompleteMessage).toContain('won with 100 points');
-      expect(result.roundCompleteMessage).toContain('will defend at rank 5');
+      expect(result.roundCompleteMessage).toContain('will defend next round at rank 5');
     });
 
     it('should advance attacking team by 1 rank when they get 120-159 points', () => {
@@ -145,11 +148,12 @@ describe('Advanced Scoring Rules', () => {
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
+      const newState = prepareNextRound(gameState, result);
 
-      expect(result.newState.teams[1].currentRank).toBe(Rank.Six);
-      expect(result.newState.teams[1].isDefending).toBe(true);
+      expect(result.rankChanges[TeamId.B]).toBe(Rank.Six);
+      expect(result.attackingTeamWon).toBe(true);
       expect(result.roundCompleteMessage).toContain('won with 140 points');
-      expect(result.roundCompleteMessage).toContain('advances 1 rank to 6');
+      expect(result.roundCompleteMessage).toContain('advanced 1 rank to 6');
     });
 
     it('should advance attacking team by 2 ranks when they get 160-199 points', () => {
@@ -168,11 +172,12 @@ describe('Advanced Scoring Rules', () => {
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
+      const newState = prepareNextRound(gameState, result);
 
-      expect(result.newState.teams[1].currentRank).toBe(Rank.Seven);
-      expect(result.newState.teams[1].isDefending).toBe(true);
+      expect(result.rankChanges[TeamId.B]).toBe(Rank.Seven);
+      expect(result.attackingTeamWon).toBe(true);
       expect(result.roundCompleteMessage).toContain('won with 180 points');
-      expect(result.roundCompleteMessage).toContain('advances 2 ranks to 7');
+      expect(result.roundCompleteMessage).toContain('advanced 2 ranks to 7');
     });
 
     it('should advance attacking team by 3 ranks when they get 200+ points', () => {
@@ -191,11 +196,12 @@ describe('Advanced Scoring Rules', () => {
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
+      const newState = prepareNextRound(gameState, result);
 
-      expect(result.newState.teams[1].currentRank).toBe(Rank.Eight);
-      expect(result.newState.teams[1].isDefending).toBe(true);
+      expect(result.rankChanges[TeamId.B]).toBe(Rank.Eight);
+      expect(result.attackingTeamWon).toBe(true);
       expect(result.roundCompleteMessage).toContain('won with 220 points');
-      expect(result.roundCompleteMessage).toContain('advances 3 ranks to 8');
+      expect(result.roundCompleteMessage).toContain('advanced 3 ranks to 8');
     });
 
     it('should win the game when attacking team reaches Ace', () => {
@@ -216,7 +222,7 @@ describe('Advanced Scoring Rules', () => {
       const result = endRound(gameState);
 
       expect(result.gameOver).toBe(true);
-      expect(result.winner).toBe('B');
+      expect(result.gameWinner).toBe(TeamId.B);
     });
   });
 
@@ -229,7 +235,7 @@ describe('Advanced Scoring Rules', () => {
       );
       const resultDefending = endRound(defendingAtAce);
       expect(resultDefending.gameOver).toBe(true);
-      expect(resultDefending.winner).toBe('A');
+      expect(resultDefending.gameWinner).toBe(TeamId.A);
       expect(resultDefending.roundCompleteMessage).toBe('');
 
       // Test attacking team at King winning with high points (would go beyond Ace)
@@ -239,7 +245,7 @@ describe('Advanced Scoring Rules', () => {
       );
       const resultAttacking = endRound(attackingAtKing);
       expect(resultAttacking.gameOver).toBe(true);
-      expect(resultAttacking.winner).toBe('B');
+      expect(resultAttacking.gameWinner).toBe(TeamId.B);
       expect(resultAttacking.roundCompleteMessage).toBe('');
 
       // Test attacking team at Queen winning with very high points (would go 2 ranks beyond Ace)
@@ -249,7 +255,7 @@ describe('Advanced Scoring Rules', () => {
       );
       const resultAttackingQueen = endRound(attackingAtQueen);
       expect(resultAttackingQueen.gameOver).toBe(true);
-      expect(resultAttackingQueen.winner).toBe('B');
+      expect(resultAttackingQueen.gameWinner).toBe(TeamId.B);
       expect(resultAttackingQueen.roundCompleteMessage).toBe('');
 
       // Test defending team at King defending against 0 points (would advance 3 ranks beyond Ace)
@@ -259,7 +265,7 @@ describe('Advanced Scoring Rules', () => {
       );
       const resultDefendingKing = endRound(defendingAtKing);
       expect(resultDefendingKing.gameOver).toBe(true);
-      expect(resultDefendingKing.winner).toBe('A');
+      expect(resultDefendingKing.gameWinner).toBe(TeamId.A);
       expect(resultDefendingKing.roundCompleteMessage).toBe('');
 
       // Test defending team at Queen defending with <40 points (would advance 2 ranks beyond Ace)
@@ -269,7 +275,7 @@ describe('Advanced Scoring Rules', () => {
       );
       const resultDefendingQueen = endRound(defendingAtQueen);
       expect(resultDefendingQueen.gameOver).toBe(true);
-      expect(resultDefendingQueen.winner).toBe('A');
+      expect(resultDefendingQueen.gameWinner).toBe(TeamId.A);
       expect(resultDefendingQueen.roundCompleteMessage).toBe('');
 
       // Test defending team at Ten defending with <40 points (advances to Ace exactly)
@@ -279,8 +285,8 @@ describe('Advanced Scoring Rules', () => {
       );
       const resultDefendingTen = endRound(defendingAtTen);
       expect(resultDefendingTen.gameOver).toBe(false);
-      expect(resultDefendingTen.winner).toBe(null);
-      expect(resultDefendingTen.newState.teams[0].currentRank).toBe(Rank.Queen);
+      expect(resultDefendingTen.gameWinner).toBe(undefined);
+      expect(resultDefendingTen.rankChanges[TeamId.A]).toBe(Rank.Queen);
       expect(resultDefendingTen.roundCompleteMessage).toContain('advances 2 ranks to Q');
     });
 
@@ -291,7 +297,7 @@ describe('Advanced Scoring Rules', () => {
         { id: TeamId.B, currentRank: Rank.Five, isDefending: false, points: 40 }
       );
       const result40 = endRound(gameState40);
-      expect(result40.newState.teams[0].currentRank).toBe(Rank.Four);
+      expect(result40.rankChanges[TeamId.A]).toBe(Rank.Four);
 
       // Test 80 points (attacking team wins, no advancement)
       const gameState80 = createMockGameState(
@@ -299,8 +305,8 @@ describe('Advanced Scoring Rules', () => {
         { id: TeamId.B, currentRank: Rank.Five, isDefending: false, points: 80 }
       );
       const result80 = endRound(gameState80);
-      expect(result80.newState.teams[1].currentRank).toBe(Rank.Five);
-      expect(result80.newState.teams[1].isDefending).toBe(true);
+      expect(result80.rankChanges[TeamId.B]).toBe(Rank.Five);
+      expect(result80.attackingTeamWon).toBe(true);
 
       // Test 120 points (attacking team wins, 1 rank advancement)
       const gameState120 = createMockGameState(
@@ -308,7 +314,7 @@ describe('Advanced Scoring Rules', () => {
         { id: TeamId.B, currentRank: Rank.Five, isDefending: false, points: 120 }
       );
       const result120 = endRound(gameState120);
-      expect(result120.newState.teams[1].currentRank).toBe(Rank.Six);
+      expect(result120.rankChanges[TeamId.B]).toBe(Rank.Six);
     });
 
     it('should reset team points for the next round', () => {
@@ -317,9 +323,10 @@ describe('Advanced Scoring Rules', () => {
         { id: TeamId.B, currentRank: Rank.Five, isDefending: false, points: 100 }
       );
       const result = endRound(gameState);
+      const newState = prepareNextRound(gameState, result);
 
-      expect(result.newState.teams[0].points).toBe(0);
-      expect(result.newState.teams[1].points).toBe(0);
+      expect(newState.teams[0].points).toBe(0);
+      expect(newState.teams[1].points).toBe(0);
     });
   });
 });

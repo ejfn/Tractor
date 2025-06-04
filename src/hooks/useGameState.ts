@@ -3,7 +3,7 @@ import { initializeGame } from "../game/gameLogic";
 import { putbackKittyCards, validateKittySwap } from "../game/kittyManager";
 import { processPlay, validatePlay } from "../game/gamePlayManager";
 import { endRound, prepareNextRound } from "../game/gameRoundManager";
-import { Card, GamePhase, GameState } from "../types";
+import { Card, GamePhase, GameState, RoundResult } from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import {
   CARD_SELECTION_DELAY,
@@ -276,22 +276,26 @@ export function useGameState() {
     }
   };
 
+  // Store round result for processing after modal dismissal
+  const roundResultRef = useRef<RoundResult | null>(null);
+
   // Handle end of round
   const handleEndRound = (state: GameState) => {
-    const result = endRound(state);
+    const roundResult = endRound(state);
 
-    if (result.gameOver) {
+    if (roundResult.gameOver) {
       // Set game phase to 'gameOver' to prevent AI moves
       const gameOverState = { ...state, gamePhase: GamePhase.GameOver };
       setGameState(gameOverState);
       setGameOver(true);
-      setWinner(result.winner);
+      setWinner(roundResult.gameWinner || null);
     } else {
-      setRoundCompleteMessage(result.roundCompleteMessage);
+      setRoundCompleteMessage(roundResult.roundCompleteMessage);
       setShowRoundComplete(true);
 
-      // Store the state to be processed after the modal is dismissed
-      pendingStateRef.current = result.newState;
+      // Store the round result and current state for processing after modal dismissal
+      roundResultRef.current = roundResult;
+      pendingStateRef.current = state; // Store current state, not modified state
     }
   };
 
@@ -299,12 +303,16 @@ export function useGameState() {
   const handleNextRound = () => {
     setShowRoundComplete(false);
 
-    // Process the pending state after the modal animation completes
-    if (pendingStateRef.current) {
-      const nextRoundState = prepareNextRound(pendingStateRef.current);
+    // Process the pending state and round result after the modal animation completes
+    if (pendingStateRef.current && roundResultRef.current) {
+      const nextRoundState = prepareNextRound(
+        pendingStateRef.current,
+        roundResultRef.current,
+      );
 
       setGameState(nextRoundState);
       pendingStateRef.current = null;
+      roundResultRef.current = null;
     }
   };
 
