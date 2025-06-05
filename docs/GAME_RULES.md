@@ -1,435 +1,440 @@
-# Game Rules & How to Play
+# Game Rules Reference
 
-This guide provides comprehensive rules and gameplay instructions for Tractor (升级), also known as Shengji.
+**Comprehensive Rules & Strategy Guide for Tractor (升级/Shengji)**
 
-## Game Objective
+*For AI details, see **[AI System](AI_SYSTEM.md)** | For development, see **[CLAUDE.md](../CLAUDE.md)***
 
-Work with your AI teammate to collect points (5s, 10s, Kings) and advance through card ranks. The first team to reach Ace wins!
+---
 
-## Team Setup
+## Quick Start (New Players)
 
-- **Team A**: You + Bot 2
-- **Team B**: Bot 1 + Bot 3
+**Never played Tractor?** Here's everything you need for your first game:
+
+### **The Goal**
+Work with your AI teammate to collect 80+ points per round and advance through card ranks from 2 to Ace. First team to Ace wins!
+
+### **Your Team**
+- **You + Bot 2** vs **Bot 1 + Bot 3**
+- Play goes counter-clockwise: You → Bot 1 → Bot 2 → Bot 3
+
+### **Key Points to Remember**
+1. **Point Cards**: Only 5s (5pts), 10s (10pts), and Kings (10pts) are worth points
+2. **Trump Cards**: Beat all non-trump cards. Jokers are always trump.
+3. **Follow Suit**: Must play same suit as led if you have it
+4. **Combinations**: Can play singles, pairs (identical cards), or tractors (consecutive pairs)
+5. **80 Points**: Your team needs 80+ points to advance ranks
+
+### **During Play**
+- **Trump Declaration**: During dealing, you can declare trump with pairs or jokers
+- **Smart Selection**: Tap cards - the game auto-selects good combinations
+- **Kitty Cards**: If you win trump declaration, you get 8 bonus cards to manage
+- **Final Trick**: Winning the last trick can give huge bonus points!
+
+**That's it!** The AI will help guide you. For detailed rules, see sections below.
+
+---
+
+## Quick Lookup Tables
+
+| **Topic** | **Key Rule** | **Details** |
+|-----------|-------------|-------------|
+| **Deck** | 2 decks + 4 jokers = 108 cards | [Game Setup](#game-setup) |
+| **Card Distribution** | 25 per player + 8 kitty → 33 after pickup | [Kitty Management](#kitty-management) |
+| **Trump Hierarchy** | BJ > SJ > Trump Rank > Trump Suit | [Trump System](#trump-system) |
+| **Points** | 5s=5pts, 10s=10pts, Kings=10pts (200 total) | [Point Values](#point-values) |
+| **Advancement** | 80+ points to advance ranks | [Scoring System](#scoring-system) |
+| **Victory** | First team to Ace rank wins | [Victory Conditions](#victory-conditions) |
+
+### **Trump Declaration Strength**
+1. **Big Joker Pair** (strength 4) - Strongest
+2. **Small Joker Pair** (strength 3)
+3. **Regular Pair** (strength 2) - Two identical trump rank cards
+4. **Single** (strength 1) - One trump rank card
+
+### **Combination Types**
+- **Singles**: Any individual card
+- **Pairs**: Two identical cards (same rank AND suit)
+- **Tractors**: 2+ consecutive pairs of same suit
+
+### **Following Priority (Tractor)**
+1. Tractor (same # pairs) → 2. Same # pairs → 3. All pairs → 4. Singles → 5. Other suits
+
+---
+
+## Table of Contents
+
+1. [Game Setup](#game-setup)
+2. [Progressive Dealing & Trump Declaration](#progressive-dealing--trump-declaration)
+3. [Kitty Management](#kitty-management)
+4. [Trump System](#trump-system)
+5. [Card Combinations](#card-combinations)
+6. [Trick Play Rules](#trick-play-rules)
+7. [Following Rules](#following-rules)
+8. [Scoring System](#scoring-system)
+9. [Victory Conditions](#victory-conditions)
+10. [Special Rules & Edge Cases](#special-rules--edge-cases)
+11. [Strategy Guidelines](#strategy-guidelines)
+
+---
+
+## Game Setup
+
+### **Players & Teams**
+- **4 Players**: Human + 3 AI bots
+- **2 Teams**: 
+  - **Team A**: You + Bot 2
+  - **Team B**: Bot 1 + Bot 3
 - **Play Order**: Counter-clockwise (Human → Bot 1 → Bot 2 → Bot 3)
 
-## Basic Rules
+### **Deck Composition**
+- **2 Standard Decks**: 104 cards (52 × 2)
+- **4 Jokers**: 2 Big Jokers + 2 Small Jokers
+- **Total**: 108 cards
 
-### 1. Progressive Dealing & Trump Declaration
+### **Point Values**
+- **5s**: 5 points each (8 cards = 40 points)
+- **10s**: 10 points each (8 cards = 80 points)
+- **Kings**: 10 points each (8 cards = 80 points)
+- **All others**: 0 points
+- **Total Available**: 200 points
 
-**Progressive Dealing System:**
+### **Starting Conditions**
+- **Both teams start at rank 2**
+- **Team roles determined by trump declaration** (first round only)
+- **Goal**: Advance through ranks 2→3→4→5→6→7→8→9→10→J→Q→K→A
 
-- Cards are dealt one-by-one to each player in turn
-- Players can declare trump at any time during dealing when they receive qualifying cards
-- Human players can tap the progress indicator to pause dealing and check for declaration opportunities
-- AI players automatically evaluate and make strategic trump declarations during dealing
-- Dealing continues after declarations until all cards are distributed
+---
 
-**Declaration Types & Strength Hierarchy:**
+## Progressive Dealing & Trump Declaration
 
-- **Single** (strength: 1) - One trump rank card (NO jokers allowed for singles)
-- **Pair** (strength: 2) - Two identical trump rank cards (same rank AND same suit)
-- **Small Joker Pair** (strength: 3) - Two small jokers only
-- **Big Joker Pair** (strength: 4) - Two big jokers only (strongest)
+### **Dealing Process**
+- **Cards dealt one-by-one** around the table
+- **100 cards to players** (25 each), **8 cards to kitty**
+- **Real-time trump opportunities** during dealing
+- **AI automatic evaluation**, **Human can pause to declare**
 
-**Declaration Rules:**
+### **Trump Declaration System**
 
-- Declarations happen during the progressive dealing phase
-- Players can override weaker declarations with stronger ones at any time during dealing
-- Same player can only strengthen in the SAME suit (cannot redeclare same rank in different suit)
-- **Strengthening Rule**: If you declared a single (e.g., 2♠) and get another matching card (another 2♠), you can upgrade to a pair (2♠-2♠) as long as your declaration hasn't been overridden
-- Different players can override with ANY suit if using stronger combination
-- Only same jokers make pairs (Small-Small or Big-Big, never mixed)
-- **Final Opportunity**: At the end of dealing, human players get one final chance to declare if they have valid options
+#### **Declaration Types & Requirements**
+| **Type** | **Requirement** | **Strength** | **Notes** |
+|----------|----------------|--------------|-----------|
+| **Single** | One trump rank card | 1 | NO jokers allowed |
+| **Pair** | Two identical trump rank cards | 2 | Same rank + same suit |
+| **Small Joker Pair** | Two Small Jokers | 3 | Must be identical |
+| **Big Joker Pair** | Two Big Jokers | 4 | Strongest possible |
 
-**AI Declaration Strategy:**
+#### **Declaration Rules**
+- **Available throughout dealing phase**
+- **Stronger declarations override weaker ones**
+- **Same player**: Can only strengthen in SAME suit
+- **Different players**: Can override with ANY suit using higher strength
+- **Final opportunity**: Human gets last chance at end of dealing
 
-- AI players analyze hand quality, suit length, and combinations to make strategic declarations
-- Declaration probability varies based on dealing progress (peak timing at 40-70% dealt)
-- AI considers override opportunities and team positioning
-- Advanced hand quality analysis evaluates trump potential and suit distribution
+#### **Examples**
+- ✅ **Valid Override**: Player A declares 2♠ (single), Player B overrides with 3♥-3♥ (pair)
+- ✅ **Valid Strengthening**: Player A declares 2♠ (single), gets another 2♠, upgrades to 2♠-2♠ (pair)
+- ❌ **Invalid**: Player A declares 2♠, then tries to declare 2♥ (same rank, different suit)
 
-**First Round Special Rules:**
+### **First Round Special Rules**
+- **Trump declarer's team becomes DEFENDING team** (only round 1)
+- **Other team becomes ATTACKING team** (only round 1)
+- **Trump declarer leads first trick and manages kitty**
+- **Subsequent rounds**: Roles alternate based on performance
 
-- Trump declarer (winner of declaration) leads the first trick
-- **Trump declarer's team becomes the DEFENDING team** (only for first round)
-- **Other team becomes the ATTACKING team** (only for first round)
-- Real-time team role changes during dealing as declarations are made
-- **Round starting player** (who leads the first trick) gets the 8 kitty cards
+---
 
-### 2. Kitty Cards Management
+## Kitty Management
 
-After dealing completes, the round starting player must manage the 8 kitty cards:
+### **Who Manages Kitty**
+- **First Round**: Trump declarer (winner of final declaration)
+- **Later Rounds**: Winner of previous round (round starting player)
 
-**Kitty Pickup Phase:**
-- Round starting player automatically receives the 8 kitty cards
-- Kitty cards are added to their hand (now 25 total cards)
-- Game enters kitty swap phase
+### **Kitty Process**
 
-**Kitty Swap Phase:**
-- Round starting player must select exactly 8 cards to put back into the kitty
-- Can choose any combination of original hand cards and kitty cards
-- Strategic decision: optimize hand while considering kitty scoring potential
-- Game continues to trick play once 8 cards are selected
+#### **1. Pickup Phase**
+- **Automatic**: 8 kitty cards added to hand
+- **Total cards**: 25 (original) + 8 (kitty) = **33 cards**
+- **Game enters kitty swap phase**
 
-**Kitty Scoring Rules:**
-- Kitty cards are hidden during normal play
-- **Critical**: If attacking team wins the FINAL trick of the round:
-  - Kitty cards are revealed
-  - Points in kitty (5s, 10s, Kings) are calculated
-  - **Multiplier applied based on final trick type:**
-    - **Singles**: 2x kitty points
-    - **Pairs/Tractors**: 4x kitty points
-  - Bonus points added to attacking team's total
-- If defending team wins final trick: kitty points remain hidden (not scored)
+#### **2. Swap Phase**
+- **Must select exactly 8 cards** to put back
+- **Can choose any combination** of original + kitty cards
+- **Strategic decision**: Balance hand optimization vs kitty scoring potential
 
-**Strategic Importance:**
-- Kitty selection affects both hand optimization and potential endgame bonus
-- Final trick becomes extremely valuable with high-point kitty
-- Attacking team may contest final trick aggressively for kitty bonus
-- Defending team may sacrifice points to deny kitty bonus
+#### **3. Scoring Rules**
+- **Hidden during play**: Kitty cards not revealed
+- **Critical endgame rule**: Only scored if attacking team wins FINAL trick
+- **Multiplier system**:
+  - **Singles final trick**: Kitty points × 2
+  - **Pairs/Tractors final trick**: Kitty points × 4
 
-**Key Rule Reminder:**
-- **Round starting player** (who leads first trick) always manages kitty cards
-- **First round only**: Trump declarer becomes the round starting player
-- **Later rounds**: Round starting player determined by who won previous round
+#### **Kitty Bonus Examples**
+- **Scenario**: Kitty contains 2 Kings + 1 Five = 25 points
+- **Singles final win**: 25 × 2 = **+50 bonus points**
+- **Pair final win**: 25 × 4 = **+100 bonus points**
+- **Can change 80 points → 180 points** (massive swing!)
 
-### 3. Trick Play
+---
 
-- Follow suit when possible (must play same suit if you have it)
-- Highest card wins trick unless trumped
-- Trick winner leads next trick
-- Must match combination type when following (singles, pairs, tractors)
+## Trump System
 
-### 3. Point Collection
+### **Trump Hierarchy** (Highest to Lowest)
 
-- **5s**: 5 points each
-- **10s and Kings**: 10 points each
-- **Other cards**: 0 points
-- Team collects points from tricks they win
+#### **Complete Trump Order**
+1. **Big Joker** - Always highest trump
+2. **Small Joker** - Always second highest trump
+3. **Trump Rank in Trump Suit** - (e.g., 2♠ when rank 2, Spades trump)
+4. **Trump Rank in Off-Suits** - Equal strength, first played wins
+5. **Trump Suit Cards** - A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3 of trump suit
 
-### 4. Round Advancement
+#### **Example: Rank 2, Spades Trump**
+**BJ** > **SJ** > **2♠** > **2♥=2♣=2♦** > **A♠** > **K♠** > **Q♠** > **J♠** > **10♠** > **9♠** > **8♠** > **7♠** > **6♠** > **5♠** > **4♠** > **3♠**
 
-- **Attacking team** (starts with lower rank) needs 80+ points to advance
-- **Defending team** (starts with higher rank) tries to prevent this
-- Successful teams advance 1-3 ranks based on performance
-- Teams alternate between attacking and defending roles
+### **Trump Properties**
+- **All trump cards beat all non-trump cards**
+- **Trump rank cards are trump regardless of suit**
+- **Jokers are always trump regardless of declaration**
+- **Equal strength rule**: Among equal trump rank off-suits, first played wins
 
-## Card Hierarchy
+### **Non-Trump Cards**
+- **Within suit ranking**: A > K > Q > J > 10 > 9 > 8 > 7 > 6 > 5 > 4 > 3
+- **Cannot beat trump cards**
+- **Cross-suit**: Different non-trump suits cannot beat each other
 
-Cards are ranked from highest to lowest trump strength:
+---
 
-### Trump Group (All trump cards beat non-trump cards)
+## Card Combinations
 
-1. **Big Joker** (🃏) - Highest trump card
-2. **Small Joker** (🃏) - Second highest trump
-3. **Trump rank in trump suit** (e.g., 2♠ when Spades trump, rank 2)
-4. **Trump rank in off-suits** (e.g., 2♥, 2♣, 2♦ when Spades trump)
-   - *Equal strength - first played wins*
-5. **Trump suit cards** (A♠, K♠, Q♠, J♠, 10♠, 9♠, 8♠, 7♠, 6♠, 5♠, 4♠, 3♠ when Spades trump)
-
-**Complete Trump Group Example (when rank 2, trump suit Spades):**
-
-- **BJ** > **SJ** > **2♠** > **2♥, 2♣, 2♦** > **A♠** > **K♠** > **Q♠** > **J♠** > **10♠** > **9♠** > **8♠** > **7♠** > **6♠** > **5♠** > **4♠** > **3♠**
-
-### Non-Trump Cards
-
-- Ranked within each suit: A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3
-- Cannot beat any trump group cards
-- Higher cards beat lower cards of same suit only
-
-## Combination Types
-
-### Singles
-
+### **Singles**
 - **Definition**: Any individual card
 - **Rules**: Must follow suit if possible, trump beats non-trump
-- **Example**: Playing 8♠ when Hearts are led
+- **Usage**: Basic play, card disposal
 
-### Pairs
-
+### **Pairs**
 - **Definition**: Two identical cards (same rank AND same suit)
 - **Valid Examples**:
   - 8♥-8♥ (two 8 of Hearts)
-  - Small Joker pair
-  - Big Joker pair
+  - Small Joker-Small Joker
+  - Big Joker-Big Joker
 - **Invalid Examples**:
   - 8♥-8♦ (different suits)
-  - Small Joker + Big Joker (different types)
+  - Small Joker + Big Joker (different joker types)
 
-### Tractors
-
+### **Tractors**
 - **Definition**: Two or more consecutive pairs of the same suit
 - **Valid Examples**:
-  - 7♥7♥-8♥8♥ (consecutive pairs in Hearts)
-  - Small Joker pair + Big Joker pair (consecutive trump pairs)
-  - 2♠2♠-3♠3♠-4♠4♠ (three consecutive pairs)
+  - 7♥7♥-8♥8♥ (two consecutive pairs)
+  - 5♠5♠-6♠6♠-7♠7♠ (three consecutive pairs)
+  - Small Joker Pair + Big Joker Pair (consecutive trump pairs)
 - **Invalid Examples**:
   - 7♥7♥-8♦8♦ (different suits)
-  - 7♥7♥-9♥9♥ (non-consecutive)
+  - 7♥7♥-9♥9♥ (non-consecutive, missing 8)
   - Trump + non-trump pairs mixed
 
-## Tractor Following Rules
+### **Combination Strength**
+- **Trump combinations always beat non-trump** of same type
+- **Higher combinations beat lower**: Tractors > Pairs > Singles
+- **Within same type**: Higher cards beat lower cards
 
-When a tractor is led, players must follow a specific priority order when responding. These rules ensure fair and strategic play while preserving the traditional Tractor/Shengji game mechanics.
+---
 
-### Following Priority Order (Same Suit)
+## Trick Play Rules
 
-When following a tractor in the **same suit**, you must follow this exact priority:
+### **Basic Mechanics**
+1. **Leader plays first**: Any valid combination
+2. **Followers respond**: Must follow specific rules
+3. **Highest wins**: Based on trump hierarchy and combination rules
+4. **Winner leads next**: Trick winner leads subsequent trick
 
-1. **Tractors first**: Must play a tractor of the same amount of pairs if available
-2. **Same amount of pairs**: If no tractor available, must play the same number of pairs
-3. **All remaining pairs**: If insufficient pairs for the tractor, must use all pairs you have
-4. **All remaining singles**: Fill remaining slots with singles from the same suit
-5. **Weakest from other suits**: Only when you've exhausted all cards of the leading suit
+### **Leading Rules**
+- **Can play any valid combination** from hand
+- **Sets combination type** for all followers
+- **Strategic choice**: Controls trick direction and information
 
-### Trump Suit Special Rules
+### **General Following Rules**
+1. **Follow suit if possible**: Must play same suit as led
+2. **Match combination type**: Must match singles/pairs/tractors if able
+3. **Suit exhaustion first**: Use all cards of led suit before others
+4. **Trump when out of suit**: Can use trump if no cards of led suit
+5. **Any suit last resort**: Play from other suits only when necessary
 
-When following **trump tractors**, the same priority order applies, but with expanded pair recognition:
+---
 
-- **Trump suit pairs** count as valid pairs (e.g., 5♠-5♠ when Spades trump)
-- **Trump rank pairs** count as valid pairs (e.g., 2♥-2♥ when rank 2 trump)
-- **Joker pairs** count as valid pairs (Small-Small or Big-Big)
+## Following Rules
 
-**Example**: When trump tractor 3♠3♠-4♠4♠ is led, you can respond with:
-- ✅ Hearts 2♥-2♥ + Clubs 2♣-2♣ (trump rank pairs)
-- ✅ Spades 6♠-6♠ + Small Joker pair (trump suit + joker pairs)
-- ✅ Any combination of trump pairs totaling the same number
+### **Basic Following Priority**
+When a card/combination is led, followers must:
+1. **Follow suit + match type** (if possible)
+2. **Follow suit + best available combination** (if exact match impossible)
+3. **Use ALL remaining cards of led suit** (if insufficient for combination)
+4. **Play trump cards** (if out of led suit entirely)
+5. **Play any other suit** (if out of both led suit and trump)
 
-### Cross-Suit Trump Victory
+### **Tractor Following Rules**
+Complex priority system when tractor is led:
 
-**Special Rule**: When you have **zero cards** in the leading suit, you can win with trump combinations of the **same type**:
+#### **Same Suit Response Priority**
+1. **Tractors first**: Play tractor with same number of pairs
+2. **Matching pairs**: Play same number of pairs (non-consecutive)
+3. **All available pairs**: Use all pairs if insufficient for full response
+4. **Fill with singles**: Complete response with singles from same suit
+5. **Other suits**: Only when led suit completely exhausted
 
-- If Hearts tractor 7♥7♥-8♥8♥ is led and you have no Hearts
-- You can win with trump tractor 5♠5♠-6♠6♠ (same combination type)
-- This applies to singles, pairs, and tractors
+#### **Trump Tractor Special Rules**
+When trump tractor is led:
+- **Trump suit pairs** count as valid pairs
+- **Trump rank pairs** count as valid pairs
+- **Joker pairs** count as valid pairs
+- **Can mix different trump pair types** in response
 
-### Examples
+#### **Examples**
 
-**Example 1: Hearts Tractor Following**
-- **Led**: Hearts tractor 9♥9♥-10♥10♥ (2 pairs)
-- **Your Hearts**: J♥-J♥, Q♥-Q♥, K♥, A♥ (2 pairs + 2 singles)
-- **Must play**: J♥-J♥ + Q♥-Q♥ (matching pairs), **cannot** play K♥+A♥+J♥+Q♥ (breaking pairs)
+**Example 1: Hearts Tractor Response**
+- **Led**: 9♥9♥-10♥10♥ (2 pairs)
+- **Your Hearts**: J♥-J♥, Q♥-Q♥, K♥, A♥
+- **Must play**: J♥-J♥ + Q♥-Q♥ (matching pairs)
+- **Cannot play**: K♥ + A♥ + J♥ + Q♥ (breaks up pairs)
 
 **Example 2: Insufficient Pairs**
-- **Led**: Hearts tractor 9♥9♥-10♥10♥ (2 pairs) 
-- **Your Hearts**: J♥-J♥, Q♥, K♥ (1 pair + 2 singles)
-- **Must play**: J♥-J♥ + Q♥ + K♥ (all your Hearts), **cannot** play singles from other suits while having Hearts
+- **Led**: 9♥9♥-10♥10♥ (2 pairs)
+- **Your Hearts**: J♥-J♥, Q♥, K♥ (only 1 pair)
+- **Must play**: J♥-J♥ + Q♥ + K♥ (all your Hearts)
 
 **Example 3: Trump Tractor Response**
-- **Led**: Spades trump tractor 3♠3♠-4♠4♠ (when rank 2, Spades trump)
-- **Your trumps**: 2♥-2♥ (trump rank pair) + 5♠-5♠ (trump suit pair) + other cards
+- **Led**: 3♠3♠-4♠4♠ (trump tractor, 2 pairs)
+- **Your trump**: 2♥-2♥ + 5♠-5♠ (trump rank pair + trump suit pair)
 - **Can play**: 2♥-2♥ + 5♠-5♠ (valid trump pairs response)
 
-### Key Principles
+### **Cross-Suit Trump Victory**
+**Special rule**: When completely out of led suit, can win with trump combination of same type:
+- **Hearts tractor led**, you have no Hearts
+- **Can win with trump tractor** of same size
+- **Must match combination type** (singles/pairs/tractors)
 
-- **Priority-based**: Always follow the priority order - cannot skip to lower priorities while higher ones are available
-- **Suit exhaustion**: Must use **all** cards of the leading suit before playing other suits
-- **Pair preservation**: Cannot break pairs when following combinations that require pairs
-- **Trump recognition**: All trump cards (suit, rank, jokers) are treated equally for pair/tractor formation
+---
 
-## Smart Card Selection
+## Scoring System
 
-The game features intelligent card selection to help with combination play:
-
-### Auto-Selection Features
-
-- **Pair Detection**: Tap any card in a pair → both cards selected automatically
-- **Tractor Priority**: When leading, prioritizes tractors over pairs for optimal play
-- **Following Logic**: Auto-selects matching combination type when possible
-- **Toggle Control**: Tap selected card again to deselect and choose manually
-
-### Selection Strategy
-
-- **Leading**: Prioritizes strongest available combinations
-- **Following**: Attempts to match the led combination type
-- **Fallback**: Single card selection when no combinations available
-- **Manual Override**: Always allows manual selection by toggling cards
-
-## Scoring & Advancement
-
-### Point Values
-
+### **Point Collection**
+Teams collect points from tricks they win:
 - **5s**: 5 points each
-- **10s**: 10 points each  
+- **10s**: 10 points each
 - **Kings**: 10 points each
-- **All other cards**: 0 points
+- **Running total** tracked throughout round
 
-### Kitty Bonus Scoring
+### **Round Advancement**
+Based on attacking team's total points:
 
-**When attacking team wins the final trick:**
-- Kitty cards are revealed and points calculated
-- **Multiplier based on final trick type:**
-  - **Singles final trick**: Kitty points × 2
-  - **Pairs/Tractors final trick**: Kitty points × 4
-- Bonus added to attacking team's collected points
+| **Points Collected** | **Result** |
+|---------------------|------------|
+| **160+ points** | Attacking team advances 2 ranks |
+| **120-159 points** | Attacking team advances 1 rank |
+| **80-119 points** | No advancement, teams switch roles |
+| **40-79 points** | Defending team advances 1 rank |
+| **0-39 points** | Defending team advances 2 ranks |
 
-**Example Scenarios:**
-- Kitty contains 2 Kings + 1 Five = 25 points
-- Final trick won with singles: +50 bonus points (25 × 2)
-- Final trick won with pair: +100 bonus points (25 × 4)
-- Can dramatically change round outcomes (80 → 180 points)
+### **Team Role Changes**
+- **80+ points**: Attacking team becomes defending team next round
+- **<80 points**: Defending team remains defending team
+- **Roles alternate** based on success/failure
 
-### Win Conditions
+### **Kitty Bonus Impact**
+- **Can dramatically change outcomes**: 80 points → 180 points
+- **Strategic importance**: Final trick becomes extremely valuable
+- **Risk/reward**: Attacking team may sacrifice earlier tricks for final trick
 
-- **Attacking Team Success**: Collect 80+ points in the round
-- **Defending Team Success**: Hold attacking team below 80 points
-- **Game Victory**: First team to advance to Ace rank
+---
 
-### Rank Advancement
+## Victory Conditions
 
-Based on attacking team performance:
+### **Game Victory**
+- **First team to reach Ace rank wins**
+- **Rank progression**: 2→3→4→5→6→7→8→9→10→J→Q→K→**A**
+- **Multiple rounds required**: Typically 8-12 rounds
+- **Average game time**: 30-45 minutes
 
-- **0 points**: Defending team advances 3 ranks
-- **< 40 points**: Defending team advances 2 ranks
-- **< 80 points**: Defending team advances 1 rank
-- **80+ points**: No advancement, attacking team becomes defending team
-- **120+ points**: Attacking team advances 1 rank
-- **160+ points**: Attacking team advances 2 ranks
+### **Round Victory**
+- **Attacking team**: Needs 80+ points to succeed
+- **Defending team**: Needs to hold attackers under 80 points
+- **Advancement varies** based on point margin
 
-**Role Changes:**
+---
 
-- If attacking team gets 80+ points: They become defending team next round
-- If defending team succeeds (attack gets <80): They stay defending team next round
+## Special Rules & Edge Cases
 
-## Strategic Tips
+### **Equal Strength Trump Cards**
+- **Trump rank off-suits have equal strength**
+- **First played wins** among equal cards
+- **Example**: 2♥ vs 2♣ (when Spades trump) - first played wins
 
-### General Strategy
+### **Joker Pair Rules**
+- **Small Jokers only pair with Small Jokers**
+- **Big Jokers only pair with Big Jokers**
+- **Never mix Small + Big** in a pair
+- **Both types always trump** regardless of declared suit
 
-- **Point Management**: Focus on collecting 5s, 10s, and Kings
-- **Trump Conservation**: Save trump cards for critical moments
-- **Combination Building**: Build pairs and tractors for stronger plays
-- **Team Coordination**: Work with your AI teammate
+### **Declaration Edge Cases**
+- **Same player strengthening**: Must be same suit as original declaration
+- **Override timing**: Can happen anytime during dealing
+- **Final opportunity**: Human gets last chance even after dealing completes
 
-### Positional Play
+### **Kitty Scoring Edge Cases**
+- **Only attacking team benefits** from kitty bonus
+- **Only if winning final trick** - defending team denial strategy
+- **Multiplier based on final trick type** - not kitty contents
 
-- **Leading**: Control the trick direction, probe for information
-- **Following**: Balance point collection with combination requirements
-- **Late Position**: Maximize point collection or block opponents
+---
 
-### Trump Usage
+## Strategy Guidelines
 
-- **Timing**: Use trumps strategically, not wastefully
-- **Conservation**: Save high trumps for important tricks
-- **Blocking**: Use trumps to prevent opponent point collection
-- **Coordination**: Work with teammate for optimal trump usage
+### **Trump Declaration Strategy**
+- **Suit length over high cards**: 7+ cards in suit recommended
+- **Timing matters**: Peak window at 40-70% of dealing
+- **Team coordination**: Consider teammate's likely holdings
+- **Override potential**: Evaluate risk of being overridden
 
-## Common Mistakes
+### **Kitty Management Strategy**
+- **Hand optimization vs scoring potential**
+- **Keep valuable combinations** (pairs, tractors)
+- **Consider endgame scenarios** (final trick importance)
+- **Balance point cards** in kitty vs hand
 
-### Card Play Errors
+### **Trick Play Strategy**
+- **Point collection focus**: Target 5s, 10s, Kings
+- **Trump conservation**: Save high trump for critical moments
+- **Team coordination**: Support teammate when winning
+- **Endgame planning**: Final trick can change everything
 
-- **Suit Following**: Forgetting to follow suit when possible
-- **Combination Matching**: Not matching the led combination type
-- **Trump Waste**: Using high trumps unnecessarily
-- **Point Timing**: Playing point cards at wrong moments
+### **Following Strategy**
+- **Combination preservation**: Don't break pairs unnecessarily
+- **Trump timing**: Use trump strategically, not wastefully
+- **Information gathering**: Watch opponent plays for future planning
+- **Defensive play**: Avoid giving points when opponent winning
 
-### Strategic Errors
+---
 
-- **Poor Trump Declaration**: Declaring trump without strong holdings
-- **Isolation**: Not coordinating with teammate
-- **Point Neglect**: Focusing only on winning tricks, ignoring points
-- **Endgame Planning**: Not saving critical cards for final tricks
+## Index
 
-### Trump Declaration Errors
+### **By Game Phase**
+- **Setup**: [Game Setup](#game-setup)
+- **Dealing**: [Progressive Dealing](#progressive-dealing--trump-declaration)
+- **Kitty**: [Kitty Management](#kitty-management)
+- **Playing**: [Trick Play Rules](#trick-play-rules), [Following Rules](#following-rules)
+- **Scoring**: [Scoring System](#scoring-system)
 
-- **Invalid Single Jokers**: Trying to declare with single jokers (not allowed)
-- **Mixed Joker Pairs**: Attempting Small + Big joker pair (invalid)
-- **Same Player Suit Switching**: Redeclaring same rank in different suit
-- **Weak Override Attempts**: Trying to override with equal or lower strength
-- **Cross-Suit Pairs**: Using different suits for pair declarations
+### **By Card Type**
+- **Trump**: [Trump System](#trump-system), [Trump Declaration](#progressive-dealing--trump-declaration)
+- **Combinations**: [Card Combinations](#card-combinations)
+- **Points**: [Point Values](#point-values), [Scoring System](#scoring-system)
 
-## Trump Declaration System
+### **By Rule Type**
+- **Basic Rules**: [Trick Play Rules](#trick-play-rules)
+- **Complex Rules**: [Following Rules](#following-rules), [Tractor Following](#following-rules)
+- **Special Cases**: [Special Rules & Edge Cases](#special-rules--edge-cases)
 
-### Declaration Types & Examples
+---
 
-**Valid Declarations:**
-
-- ✅ **Single 2♠** (trump rank 2, spades) - strength 1
-- ✅ **Pair 2♥-2♥** (two 2s of hearts) - strength 2
-- ✅ **Small Joker Pair** (two small jokers) - strength 3
-- ✅ **Big Joker Pair** (two big jokers) - strength 4
-
-**Invalid Declarations:**
-
-- ❌ **Single Small Joker** (jokers cannot declare as singles)
-- ❌ **Single Big Joker** (jokers cannot declare as singles)
-- ❌ **Mixed Joker Pair** (Small + Big joker)
-- ❌ **Cross-suit pair** (2♠ + 2♥)
-
-### Override Rules & Examples
-
-**Same Player Rules:**
-
-- Can only strengthen in the SAME suit
-- Cannot redeclare same rank in different suit
-
-*Example:* If you declared 2♠ (single), you can later declare 2♠-2♠ (pair) but NOT 2♥ (single in different suit)
-
-**Different Player Rules:**
-
-- Can override with ANY suit if using stronger combination
-- Must use higher strength to override
-
-*Example:* Player A declares 2♠ (single), Player B can override with 2♥-2♥ (pair) or any joker pair
-
-### Declaration Sequence Example
-
-1. **Player A**: Declares 2♠ (single, strength 1)
-2. **Player B**: Declares 2♥-2♥ (pair, strength 2) ✅ Valid override
-3. **Player A**: Attempts 2♣ (single, strength 1) ❌ Invalid - same player, different suit
-4. **Player A**: Gets another 2♠ and declares 2♠-2♠ (pair, strength 2) ❌ Invalid - Player B already overrode with 2♥ pair
-5. **Player C**: Declares Small Joker Pair (strength 3) ✅ Valid override
-6. **Player D**: Declares Big Joker Pair (strength 4) ✅ Valid override - FINAL
-
-**Result**: Player D wins trump declaration with Big Joker Pair
-
-### Strengthening Example
-
-1. **Player A**: Declares 2♠ (single, strength 1)
-2. **Dealing continues**: Player A receives another 2♠
-3. **Player A**: Can now declare 2♠-2♠ (pair, strength 2) ✅ Valid strengthening
-4. **Player B**: Must use strength 3+ to override (e.g., joker pair)
-
-**Key**: Strengthening only works if your original declaration hasn't been overridden!
-
-### First Round & Kitty Rules
-
-**First Round Team Assignment:**
-
-- **No team roles decided** when game starts
-- **Current trump declarer's team becomes DEFENDING team** (changes with each new declaration)
-- **Other team becomes ATTACKING team** (changes with each new declaration)
-- **Final trump declarer** (when dealing ends) leads the first trick
-- Sets the starting position and team roles for the entire game
-
-**Kitty Cards:**
-
-- Always belong to the round starting player (who leads the first trick)
-- **First round**: Trump declarer becomes round starting player and gets kitty
-- **Later rounds**: Round starting player determined by previous round results gets kitty
-
-**Important**: After first round, team roles alternate normally between rounds based on performance.
-
-## Advanced Concepts
-
-### Trump Suit Rotation
-
-When trump is declared, the suit order rotates to maintain black-red alternation:
-
-- **No Trump**: ♠ ♥ ♣ ♦
-- **Hearts Trump**: ♥ ♣ ♦ ♠
-- **Clubs Trump**: ♣ ♦ ♠ ♥
-- **Diamonds Trump**: ♦ ♠ ♥ ♣
-- **Spades Trump**: ♠ ♥ ♣ ♦
-
-### Equal Strength Rules
-
-- When trump rank cards in different suits have equal strength
-- **Rule**: First played wins among equal strength cards
-- **Example**: If 2♥ and 2♣ are both played (when Spades trump, rank 2), whichever was played first wins
-
-### Combination Hierarchy
-
-- **Trump combinations** always beat **non-trump combinations** of same type
-- **Higher combinations** (tractors) beat **lower combinations** (pairs) beat **singles**
-- **Within same type**: Higher cards beat lower cards
-- **Following**: Must play same combination type if possible
+**Related Documentation:**
+- **[How to Play](HOW_TO_PLAY.md)** - Beginner's guide
+- **[AI System](AI_SYSTEM.md)** - AI intelligence documentation
+- **[CLAUDE.md](../CLAUDE.md)** - Development guidelines
