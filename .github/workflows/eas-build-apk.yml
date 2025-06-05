@@ -1,0 +1,106 @@
+name: EAS Build APK
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build Production APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run quality checks
+      run: npm run qualitycheck
+
+    - name: Setup Expo
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: latest
+        eas-version: latest
+        token: ${{ secrets.EXPO_TOKEN }}
+
+    - name: Set version variables
+      id: vars
+      run: |
+        VERSION="${{ github.event.release.tag_name }}"
+        GIT_HASH_SHORT=$(git rev-parse --short HEAD)
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "GIT_HASH_SHORT=$GIT_HASH_SHORT" >> $GITHUB_OUTPUT
+        echo "Building APK for $VERSION"
+
+    - name: Inject version into app.json
+      run: |
+        # Inject release version into app.json
+        jq '.expo.extra.version = "${{ steps.vars.outputs.VERSION }}" | .expo.extra.gitCommit = "${{ github.sha }}"' app.json > app.json.tmp
+        mv app.json.tmp app.json
+        echo "Injected version ${{ steps.vars.outputs.VERSION }} into app.json"
+
+    - name: Build APK
+      run: eas build --platform android --profile production --non-interactive --wait
+
+    - name: Get build artifact URL
+      id: build-url
+      run: |
+        # Get the latest build for this project
+        BUILD_URL=$(eas build:list --platform android --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
+        echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+        echo "Build URL: $BUILD_URL"
+
+    - name: Download APK
+      run: |
+        curl -L -o tractor-${{ steps.vars.outputs.VERSION }}.apk "${{ steps.build-url.outputs.build_url }}"
+
+    - name: Upload APK to Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: tractor-${{ steps.vars.outputs.VERSION }}.apk
+        tag_name: ${{ steps.vars.outputs.VERSION }}
+        append_body: true
+        body: |
+          
+          ---
+          
+          ## 📱 Production APK
+          
+          **Package**: `com.cardgame.tractor`  
+          **Platform**: Android  
+          **Build**: Production APK  
+          **Commit**: ${{ steps.vars.outputs.GIT_HASH_SHORT }}
+          
+          ### 🎮 Installation
+          1. Download `tractor-${{ steps.vars.outputs.VERSION }}.apk` below
+          2. Enable "Install from unknown sources" in Android settings  
+          3. Install the APK
+          4. Enjoy playing Tractor! 🃏
+          
+          ### 📱 Game Features
+          - Chinese card game Tractor (升级/Shengji)
+          - 4-phase AI intelligence with strategic play
+          - Beautiful jade/teal card designs with authentic gameplay
+          - Offline play - no internet required
+          
+          ### 🔄 Updates
+          - **Patch updates** (bug fixes): Automatic via OTA
+          - **Feature updates** (new versions): Manual APK download
+          
+          ---
+          
+          🤖 Built with EAS Build • 🚀 Deployed via GitHub Actions
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

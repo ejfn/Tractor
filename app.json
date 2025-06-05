@@ -12,12 +12,21 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.cardgame.tractor",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#3F51B5"
       },
+      "permissions": [
+        "android.permission.VIBRATE"
+      ],
       "softwareKeyboardLayoutMode": "pan",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "proguardFile": true,
+      "enableProguardInReleaseBuilds": true,
+      "enableSeparateBuildPerCPUArchitecture": false,
+      "universalApk": true
     },
     "plugins": [
       "expo-router",
@@ -25,9 +34,9 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 250,
           "resizeMode": "contain",
-          "backgroundColor": "#3F51B5"
+          "backgroundColor": "#0F2D2D"
         }
       ]
     ],
@@ -37,7 +46,10 @@
     "jsEngine": "hermes",
     "updates": {
       "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/3256dcee-103a-467b-96c4-97a9f634df51"
+      "url": "https://u.expo.dev/3256dcee-103a-467b-96c4-97a9f634df51",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
     },
     "assetBundlePatterns": [
       "**/*"
