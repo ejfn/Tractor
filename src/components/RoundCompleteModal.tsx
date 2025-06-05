@@ -8,61 +8,55 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card } from "../types";
+import { Card, RoundResult } from "../types";
 import AnimatedCardComponent from "./AnimatedCard";
 
 interface RoundCompleteModalProps {
-  visible: boolean;
-  message: string;
   onNextRound: () => void;
   fadeAnim?: any;
   scaleAnim?: any;
   kittyCards?: Card[]; // Kitty cards to display
+  roundResult: RoundResult; // Round result containing message and winning team data
 }
 
 /**
  * Round completion modal displaying the round results and next round button
  */
 const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
-  visible,
-  message,
   onNextRound,
   kittyCards,
+  roundResult,
 }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (visible) {
-      // Reset animations
-      scaleAnim.setValue(0);
-      bounceAnim.setValue(0);
-      fadeAnim.setValue(0);
+    // Reset animations
+    scaleAnim.setValue(0);
+    bounceAnim.setValue(0);
+    fadeAnim.setValue(0);
 
-      // Start animations
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 100,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible, bounceAnim, fadeAnim, scaleAnim]);
-
-  if (!visible) return null;
+    // Start animations
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 10,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bounceAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [bounceAnim, fadeAnim, scaleAnim]);
 
   const translateY = bounceAnim.interpolate({
     inputRange: [0, 0.5, 0.7, 0.85, 1],
@@ -71,7 +65,7 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
 
   return (
     <Modal
-      visible={visible}
+      visible={true}
       transparent={true}
       animationType="fade"
       onRequestClose={onNextRound}
@@ -92,11 +86,13 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
 
             {/* Trophy/Crown emoji for winner */}
             <Text style={styles.trophy}>
-              {message.toLowerCase().includes("advance") ? "⚔️" : "🛡️"}
+              {roundResult.attackingTeamWon ? "⚔️" : "🛡️"}
             </Text>
 
             <Text style={styles.title}>Round Complete!</Text>
-            <Text style={styles.message}>{message}</Text>
+            <Text style={styles.message}>
+              {roundResult.roundCompleteMessage}
+            </Text>
 
             {/* Kitty Cards Display */}
             {kittyCards && kittyCards.length > 0 && (
