@@ -435,6 +435,5 @@ Based on attacking team's total points:
 ---
 
 **Related Documentation:**
-- **[How to Play](HOW_TO_PLAY.md)** - Beginner's guide
 - **[AI System](AI_SYSTEM.md)** - AI intelligence documentation
 - **[CLAUDE.md](../CLAUDE.md)** - Development guidelines
