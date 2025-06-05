@@ -374,6 +374,9 @@ export function useGameState() {
     // Trick completion data ref (for communication with other hooks)
     trickCompletionDataRef,
 
+    // Round result ref (for round complete modal)
+    roundResultRef,
+
     // Initializers
     initGame,
 

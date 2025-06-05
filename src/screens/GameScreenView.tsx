@@ -14,7 +14,14 @@ import TrickResultDisplay from "../components/TrickResultDisplay";
 import { ExpandableTrumpDeclaration } from "../components/ExpandableTrumpDeclaration";
 
 // Types
-import { Card, GameState, PlayerId, Trick, GamePhase } from "../types";
+import {
+  Card,
+  GameState,
+  PlayerId,
+  Trick,
+  GamePhase,
+  RoundResult,
+} from "../types";
 
 // Utils
 import { validatePlay } from "../game/gamePlayManager";
@@ -37,12 +44,8 @@ interface GameScreenViewProps {
   lastTrickPoints: number;
   lastCompletedTrick: (Trick & { winningPlayerId?: string }) | null;
   showRoundComplete: boolean;
-  roundCompleteMessage: string;
+  roundResultRef: React.RefObject<RoundResult | null>;
   teamNames: [string, string];
-  isTransitioningTricks: boolean;
-
-  // Progressive dealing
-  isDealingInProgress: boolean;
   isProcessingPlay: boolean;
 
   // Animations
@@ -88,12 +91,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   lastTrickPoints,
   lastCompletedTrick,
   showRoundComplete,
-  roundCompleteMessage,
+  roundResultRef,
   teamNames,
-  isTransitioningTricks,
-
-  // Progressive dealing
-  isDealingInProgress,
   isProcessingPlay,
 
   // Animations
@@ -336,18 +335,19 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
       )}
 
       {/* Round complete modal - outside of AnimatedView */}
-      <RoundCompleteModal
-        visible={showRoundComplete}
-        message={roundCompleteMessage}
-        onNextRound={onNextRound}
-        fadeAnim={fadeAnim}
-        scaleAnim={scaleAnim}
-        kittyCards={
-          gameState?.roundEndKittyInfo && gameState.kittyCards
-            ? sortCards(gameState.kittyCards, gameState.trumpInfo)
-            : undefined
-        }
-      />
+      {roundResultRef.current && (
+        <RoundCompleteModal
+          roundResult={roundResultRef.current}
+          onNextRound={onNextRound}
+          fadeAnim={fadeAnim}
+          scaleAnim={scaleAnim}
+          kittyCards={
+            gameState?.roundEndKittyInfo && gameState.kittyCards
+              ? sortCards(gameState.kittyCards, gameState.trumpInfo)
+              : undefined
+          }
+        />
+      )}
     </View>
   );
 };

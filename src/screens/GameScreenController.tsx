@@ -32,9 +32,9 @@ const GameScreenController: React.FC = () => {
     gameOver,
     winner,
     showRoundComplete,
-    roundCompleteMessage,
     isProcessingPlay,
     trickCompletionDataRef,
+    roundResultRef,
 
     initGame,
     handleCardSelect,
@@ -53,7 +53,6 @@ const GameScreenController: React.FC = () => {
     lastTrickWinnerId,
     lastTrickPoints,
     lastCompletedTrick,
-    isTransitioningTricks,
     setLastCompletedTrick,
     handleTrickCompletion,
     handleTrickAnimationComplete,
@@ -183,11 +182,8 @@ const GameScreenController: React.FC = () => {
       lastTrickPoints={lastTrickPoints}
       lastCompletedTrick={lastCompletedTrick}
       showRoundComplete={showRoundComplete}
-      roundCompleteMessage={roundCompleteMessage}
+      roundResultRef={roundResultRef}
       teamNames={["Team A", "Team B"]}
-      isTransitioningTricks={isTransitioningTricks}
-      // Progressive dealing
-      isDealingInProgress={isDealingInProgress}
       isProcessingPlay={isProcessingPlay}
       // Animations
       fadeAnim={fadeAnim}

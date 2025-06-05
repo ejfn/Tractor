@@ -237,7 +237,7 @@ export function ExpandableTrumpDeclaration({
           ) : (
             <View style={styles.noOptionsContainer}>
               <Text style={styles.noOptionsText}>
-                No valid declarations available with your current hand.
+                No valid declarations available.
               </Text>
               <Text style={styles.noOptionsHint}>
                 {isComplete

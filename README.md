@@ -5,79 +5,79 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![Tests](https://img.shields.io/badge/Tests-587%20Passing-brightgreen?logo=jest)
+![Tests](https://img.shields.io/badge/Tests-526%20Passing-brightgreen?logo=jest)
 ![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
 
 ## What is Tractor?
 
-**Tractor** is a classic Chinese card game where you work with an AI teammate to collect points and advance through card ranks. The first team to reach Ace wins!
+**Tractor** (升级/Shengji) is a challenging Chinese trick-taking card game where strategy and teamwork are essential. You partner with an AI teammate to collect points and advance through card ranks from 2 to Ace.
 
-- **Teams**: You + Bot 2 vs Bot 1 + Bot 3  
+**Core Gameplay:**
+- **Team-based**: You + Bot 2 vs Bot 1 + Bot 3 in strategic cooperation
+- **Rank Progression**: Start at rank 2, advance through ranks by collecting 80+ points per round
+- **Trump Declaration**: Players can declare trump during progressive dealing using pairs or jokers
+- **Card Combinations**: Play singles, pairs, or tractors (consecutive pairs) with complex following rules
+- **Victory Condition**: First team to advance to Ace rank wins the game
+
+**Unique Features:**
 - **Progressive Dealing**: Cards dealt one-by-one with real-time trump declaration opportunities
-- **Trump System**: Declare trump by playing pairs during dealing with hierarchy-based overrides
-- **Combinations**: Singles, pairs, and tractors (consecutive pairs)
-- **Points**: 5s (5pts), 10s and Kings (10pts)
-- **Objective**: Collect enough points to advance through card ranks
+- **Kitty Management**: Winner receives 8 hidden cards that can provide massive endgame bonuses
+- **Complex Trump Hierarchy**: Big Joker > Small Joker > Trump rank cards > Trump suit cards
 
-*For complete rules and strategy guide, see **[Game Rules](docs/GAME_RULES.md)***
+*Complete rules and quick start guide in **[Game Rules](docs/GAME_RULES.md)***
 
 ## Key Features
 
-- **4-Phase AI Intelligence** with sophisticated strategic decision-making
-- **Progressive dealing with real-time trump declarations** during card distribution
-- **AI trump declaration strategy** with hand quality analysis and timing optimization
-- **Smooth card animations** with React Native Reanimated
-- **Smart card auto-selection** for pairs and tractors
-- **Touch-optimized UI** with team color coding and dark theme
+- **🧠 4-Phase AI Intelligence**: Memory-enhanced decision trees with strategic point management and trump conservation
+- **🃏 Smart Card Auto-Selection**: Intelligent pair/tractor detection with tap-to-toggle controls
+- **⚡ Progressive Dealing System**: Real-time trump declarations with sophisticated AI strategy
+- **🎯 Advanced Kitty Management**: Strategic suit elimination and endgame bonus multipliers
+- **📱 Touch-Optimized UI**: Smooth animations, team color coding, and dark theme support
+- **🏆 Authentic Gameplay**: Complete Shengji/Tractor rules with proper combination following
 
-## Technology
+## Technology & Architecture
 
-Built with **React Native + Expo** for mobile platforms:
+**Built with React Native + Expo** for cross-platform mobile development:
 
-- **React Native 0.76+** - Cross-platform mobile development
+- **React Native 0.76+** - Cross-platform mobile framework
 - **Expo SDK 52** - Development tools and native API access
-- **TypeScript 5.7+** - Type safety and developer experience
-- **Jest** - Testing framework with React Testing Library
-- **ESLint** - Code linting with React Native specific rules
-- **React Native Reanimated** - High-performance animations
+- **TypeScript 5.7+** - Strict type safety and enhanced developer experience
+- **Jest** - 526 comprehensive tests with React Testing Library
+- **ESLint** - Code quality with React Native specific rules
+- **React Native Reanimated** - High-performance card animations
 
-*Mobile-only support for Android and iOS. Currently tested on Android only.*
+**Architectural Highlights:**
+- **Modular AI System**: 8 specialized modules with 4-phase intelligence
+- **Consolidated Hook Architecture**: Single-responsibility hooks with minimal interdependencies
+- **Progressive Dealing System**: Unified dealing and trump declaration management
+- **RoundResult System**: Pure computation approach for consistent UI timing
+- **Type-Safe Development**: Enum usage eliminates magic strings throughout codebase
+
+*Mobile-only support for Android and iOS. Architecture details in **[CLAUDE.md](CLAUDE.md)***
 
 ## AI Intelligence
 
-Sophisticated **4-phase AI system** with restructured priority chain, real-time trick analysis, enhanced opponent blocking, strategic point card management, and intelligent trump conservation.
+**Sophisticated 4-phase AI system** with memory-enhanced decision trees, strategic point management, and intelligent trump conservation.
 
-**Latest Enhancements:**
+**Core AI Capabilities:**
+- **🧠 Memory-Enhanced Strategy**: Card tracking with guaranteed winner identification
+- **🎯 4-Priority Decision Chain**: Team coordination → Opponent blocking → Trick contention → Strategic disposal
+- **🃏 Advanced Kitty Management**: Suit elimination strategy with trump conservation
+- **⚡ Real-Time Trump Declarations**: Hand quality analysis with timing optimization
+- **🛡️ Strategic Conservation**: Trump hierarchy preservation and point card management
 
-- **AI Kitty Swap Strategy**: Refined approach that usually avoids trump cards but strategically includes them when hands are exceptionally strong (very long trump suits or strong non-trump combinations)
-- **Trump Declaration Strategy**: Sophisticated dealing phase AI with hand quality analysis, timing optimization, and strategic override decisions
-- **Strategic Pair Conservation**: AI intelligently preserves valuable pairs when out of suit, using strategic mixed combinations instead
-- **Strategic Point Management**: AI avoids wasting point cards when opponent is winning
-- **Trump Conservation Hierarchy**: Optimal selection using conservation values (Big Joker: 100 → Small Joker: 90 → Trump rank cards: 70-80 → Trump suit cards: 5-60)
-- **Enhanced Opponent Blocking**: Sophisticated response based on trick value and card conservation
-- **Low-Value Trick Optimization**: Conservation logic for 0-4 point tricks to preserve valuable cards
+**Latest Intelligence Features:**
+- **Memory-Enhanced Biggest Remaining**: Uses card tracking to identify guaranteed winners
+- **Strategic Point Timing**: Prioritizes point collection before opponents run out of suit
+- **Enhanced Opponent Blocking**: Sophisticated response based on trick value and conservation
+- **Trump Conservation Hierarchy**: Optimal selection using conservation values (Big Joker: 100 → 3♠: 5)
 
-*For complete AI system documentation, see **[AI System Guide](docs/AI_SYSTEM.md)***
-
-## Architecture
-
-**React Native + TypeScript** with modular design: AI intelligence modules, game logic, consolidated React hooks, and UI components.
-
-**Key architectural highlights:**
-
-- **Consolidated hook architecture**: Single-responsibility hooks with minimal interdependencies
-- **Progressive dealing system**: Unified dealing and trump declaration management
-- **RoundResult system**: Pure computation approach ensuring consistent UI timing during round transitions
-- **Type-safe enum usage**: Eliminates magic strings throughout the codebase
-- **Modular AI system**: 4-phase intelligence with strategic decision trees
-
-*Architecture details are covered in **[CLAUDE.md](CLAUDE.md)***
+*Complete AI documentation in **[AI System Guide](docs/AI_SYSTEM.md)***
 
 ## Documentation
 
-- **[Game Rules](docs/GAME_RULES.md)** - Complete rules and strategy guide
-- **[AI System](docs/AI_SYSTEM.md)** - Detailed AI intelligence documentation
-- **[AI Decision Trees](docs/AI_DECISION_TREE.md)** - Comprehensive AI decision logic and strategic flowcharts
+- **[Game Rules](docs/GAME_RULES.md)** - Complete rules, quick start, and strategy reference
+- **[AI System](docs/AI_SYSTEM.md)** - Comprehensive AI intelligence documentation
 - **[CLAUDE.md](CLAUDE.md)** - Development guidelines and project architecture
 
 ## Built with Claude Code

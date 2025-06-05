@@ -75,12 +75,8 @@ npm test              # Run tests
 /__tests__/
 ├── ai/                    # AI module tests and strategy regression tests
 ├── game/                  # Game logic tests and validation tests
-├── components/            # UI component tests
+├── integration/           # Integration tests and cross-system testing
 ├── utils/                 # Utility function tests
-├── card-tracking/         # Card counting integration tests
-├── game-flow/             # Game flow and interaction tests
-├── game-state/            # Game state management tests
-├── trump-declaration/     # Trump declaration system tests
 └── helpers/               # Test utilities (modular organization)
     ├── index.ts           # Main helpers re-export file
     ├── cards.ts           # Card creation utilities
@@ -94,10 +90,8 @@ npm test              # Run tests
 
 ```
 /docs/
-├── AI_SYSTEM.md           # Comprehensive AI intelligence documentation
-├── AI_DECISION_TREE.md    # Detailed AI decision logic and strategic flowcharts
-├── GAME_RULES.md          # Complete game rules and strategy guide
-└── README.md              # Project overview (main entry point)
+├── AI_SYSTEM.md           # Comprehensive AI intelligence with decision trees
+└── GAME_RULES.md          # Complete rules, quick start, and strategy reference
 ```
 
 ## Development Guidelines
@@ -121,24 +115,23 @@ This structure makes it easy to:
 
 ### Documentation Philosophy
 
-The project uses a modular documentation approach:
+The project uses a streamlined documentation approach:
 
-- **README.md** - Concise project overview and quick reference
+- **README.md** - Project overview with accurate features and technology details
 - **CLAUDE.md** - Comprehensive development guidelines (this file)
-- **docs/AI_SYSTEM.md** - Detailed AI intelligence system documentation
-- **docs/AI_DECISION_TREE.md** - Visual decision flowcharts and strategic logic trees
-- **docs/GAME_RULES.md** - Complete game rules and strategy guide
+- **docs/AI_SYSTEM.md** - Complete AI intelligence documentation with decision trees and strategic flowcharts
+- **docs/GAME_RULES.md** - Comprehensive rules reference with quick start guide for new players
 
-This keeps the main README clean while providing comprehensive documentation for developers and users.
+This provides complete coverage while eliminating redundancy and maintenance overhead.
 
 **Documentation Guidelines:**
 
-- **README.md** should be scannable and focus on what the project is and key features
+- **README.md** should be scannable and focus on project overview and key features
 - **CLAUDE.md** contains all development standards, architecture details, and coding guidelines
-- **docs/AI_SYSTEM.md** for detailed AI system documentation and technical implementation
-- **docs/AI_DECISION_TREE.md** for visual flowcharts and decision logic for each AI strategy
-- **docs/GAME_RULES.md** for comprehensive game rules, strategy, and player guidance
-- Never duplicate content between files - use cross-references instead
+- **docs/AI_SYSTEM.md** for comprehensive AI system documentation including decision trees and strategic logic
+- **docs/GAME_RULES.md** for complete game rules, quick start guide, and strategy reference
+- **Single source of truth**: No duplicate content between files - each document has clear scope
+- **Cross-references**: Link between documents rather than duplicating content
 
 ### Code Quality
 
@@ -153,6 +146,7 @@ npm run qualitycheck  # Runs all checks
 - **NO LINT WARNINGS/ERRORS**: All ESLint warnings and errors must be resolved.
 - **TYPECHECK MUST PASS**: No TypeScript compilation errors allowed.
 - **Zero Tolerance Policy**: `npm run qualitycheck` must pass completely with no failures or warnings before any commit.
+- **Current Test Count**: 526 tests passing (update README.md badge when count changes)
 
 ### Git Workflow
 
