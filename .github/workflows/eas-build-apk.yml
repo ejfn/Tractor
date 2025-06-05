@@ -3,6 +3,12 @@ name: EAS Build APK
 on:
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version for testing (e.g., v1.0.0-test)'
+        required: true
+        default: 'v1.0.0-test'
 
 jobs:
   build:
@@ -37,7 +43,11 @@ jobs:
     - name: Set version variables
       id: vars
       run: |
-        VERSION="${{ github.event.release.tag_name }}"
+        if [ "${{ github.event_name }}" = "release" ]; then
+          VERSION="${{ github.event.release.tag_name }}"
+        else
+          VERSION="${{ github.event.inputs.version }}"
+        fi
         GIT_HASH_SHORT=$(git rev-parse --short HEAD)
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "GIT_HASH_SHORT=$GIT_HASH_SHORT" >> $GITHUB_OUTPUT
@@ -65,7 +75,16 @@ jobs:
       run: |
         curl -L -o tractor-${{ steps.vars.outputs.VERSION }}.apk "${{ steps.build-url.outputs.build_url }}"
 
+    - name: Upload APK as Artifact (for manual testing)
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v4
+      with:
+        name: tractor-${{ steps.vars.outputs.VERSION }}.apk
+        path: tractor-${{ steps.vars.outputs.VERSION }}.apk
+        retention-days: 7
+
     - name: Upload APK to Release
+      if: github.event_name == 'release'
       uses: softprops/action-gh-release@v1
       with:
         files: tractor-${{ steps.vars.outputs.VERSION }}.apk
