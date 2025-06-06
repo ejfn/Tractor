@@ -22,11 +22,7 @@
         "android.permission.VIBRATE"
       ],
       "softwareKeyboardLayoutMode": "pan",
-      "edgeToEdgeEnabled": true,
-      "proguardFile": true,
-      "enableProguardInReleaseBuilds": true,
-      "enableSeparateBuildPerCPUArchitecture": false,
-      "universalApk": true
+      "edgeToEdgeEnabled": true
     },
     "plugins": [
       "expo-router",
