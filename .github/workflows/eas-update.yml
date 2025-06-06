@@ -48,7 +48,7 @@ jobs:
 
     - name: Detect version and inject into app.json
       id: version
-      uses: ./.github/actions/git-version.yml
+      uses: ./.github/actions/git-version
 
     - name: EAS Update
       run: eas update --branch ${{ steps.version.outputs.eas-branch }} --message "Release ${{ steps.version.outputs.version }}"
