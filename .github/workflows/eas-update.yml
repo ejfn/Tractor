@@ -46,63 +46,11 @@ jobs:
         eas-version: latest
         token: ${{ secrets.EXPO_TOKEN }}
 
-    - name: Set deployment variables
-      id: vars
-      run: |
-        # Get git info
-        GIT_COMMIT=$(git rev-parse HEAD)
-        GIT_HASH_SHORT=$(git rev-parse --short HEAD)
-        echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
-        echo "GIT_HASH_SHORT=$GIT_HASH_SHORT" >> $GITHUB_OUTPUT
-        
-        # Get base version and commit count (only look for version tags)
-        LAST_TAG=$(git tag -l "v*.*.*" --sort=-version:refname | head -n1 || echo "")
-        if [[ -n "$LAST_TAG" ]]; then
-          BASE_VERSION=${LAST_TAG#v}
-          COMMIT_COUNT=$(git rev-list --count ${LAST_TAG}..HEAD)
-        else
-          BASE_VERSION="1.0.0"
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-        fi
-        
-        # Determine deployment based on trigger
-        if [[ $GITHUB_REF == refs/tags/v* ]]; then
-          # Production release from tag
-          VERSION="${GITHUB_REF#refs/tags/}+${GIT_HASH_SHORT}"
-          EAS_BRANCH="production"
-          MESSAGE="Release $VERSION"
-          
-        elif [[ $GITHUB_REF == refs/heads/main ]]; then
-          # Beta release from main
-          VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          EAS_BRANCH="beta"
-          MESSAGE="Beta release $VERSION"
-          
-        else
-          # Alpha build from other branch (manual trigger)
-          BRANCH_NAME="${{ github.event.inputs.branch_name }}"
-          if [[ -z "$BRANCH_NAME" ]]; then
-            BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          fi
-          VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          EAS_BRANCH="alpha"
-          MESSAGE="Alpha build from $BRANCH_NAME branch"
-        fi
-        
-        # Output variables
-        echo "EAS_BRANCH=$EAS_BRANCH" >> $GITHUB_OUTPUT
-        echo "EAS_MESSAGE=$MESSAGE" >> $GITHUB_OUTPUT
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "Deploying to $EAS_BRANCH with version: $VERSION"
-
-    - name: Inject version into app.json
-      run: |
-        # Use jq to inject version and git commit into app.json extra field
-        jq '.expo.extra.version = "${{ steps.vars.outputs.VERSION }}" | .expo.extra.gitCommit = "${{ steps.vars.outputs.GIT_COMMIT }}"' app.json > app.json.tmp
-        mv app.json.tmp app.json
-        echo "Injected version ${{ steps.vars.outputs.VERSION }} into app.json"
+    - name: Detect version and inject into app.json
+      id: version
+      uses: ./.github/actions/git-version
 
     - name: EAS Update
-      run: eas update --branch ${{ steps.vars.outputs.EAS_BRANCH }} --message "${{ steps.vars.outputs.EAS_MESSAGE }}"
+      run: eas update --branch ${{ steps.version.outputs.eas-branch }} --message "Release ${{ steps.version.outputs.version }}"
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

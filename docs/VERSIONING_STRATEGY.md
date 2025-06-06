@@ -13,10 +13,10 @@ Tractor uses a **single-channel OTA update strategy** with EAS Updates for seaml
 
 // app.json android section  
 "versionCode": 1
-"package": "com.tractorgame.app"
+"package": "com.cardgame.tractor"
 
 // EAS Updates
-"runtimeVersion": {"policy": "sdkVersion"}
+"runtimeVersion": {"policy": "appVersion"}
 "updates": {
   "url": "https://u.expo.dev/3256dcee-103a-467b-96c4-97a9f634df51",
   "requestHeaders": {"expo-channel-name": "production"}
@@ -35,8 +35,8 @@ Tractor uses a **single-channel OTA update strategy** with EAS Updates for seaml
 # 1. Update version (keep versionCode: 1)
 npm version patch  # 1.0.0 → 1.0.1
 
-# 2. Push OTA update to production channel
-npx eas update --channel production --message "Bug fixes for v1.0.1"
+# 2. Push to main branch - automatic OTA update via GitHub Actions
+git push origin main
 
 # 3. All v1.0.x users automatically receive update
 ```
@@ -52,10 +52,11 @@ npx eas update --channel production --message "Bug fixes for v1.0.1"
 npm version minor  # 1.0.x → 1.1.0
 # Update app.json: "versionCode": 2
 
-# 2. Build new APK
-npx eas build --platform android --profile production
+# 2. Create GitHub Release - automatic APK build and upload
+git tag v1.1.0
+git push origin v1.1.0
 
-# 3. Create GitHub Release with new APK
+# 3. GitHub Actions builds APK and attaches to release
 # 4. Users must manually install to get 1.1.x features
 ```
 
@@ -111,13 +112,15 @@ npx eas build --platform android --profile production
 ✅ **Single Channel**: `production` channel for all releases
 ✅ **Version Strategy**: 1.0.0 baseline with clear upgrade path
 ✅ **App Configuration**: Android package and permissions set
+✅ **GitHub Actions**: Automated build and deployment workflows
+✅ **Git Version Action**: Automated version detection and app.json injection
 
 ## Next Steps for v1.0 Release
 
-1. **Build Production APK**: `npx eas build --platform android --profile production`
+1. **Create GitHub Release**: Tag v1.0.0 to trigger automated APK build
 2. **Test APK Installation**: Verify on multiple Android devices
-3. **Create GitHub Release**: Upload APK with release notes
-4. **Test OTA Updates**: Verify patch update workflow from v1.0.0
+3. **Test OTA Updates**: Verify patch update workflow from v1.0.0
+4. **Monitor Workflows**: Ensure GitHub Actions build and deploy successfully
 
 ## Future Considerations
 
@@ -128,6 +131,6 @@ npx eas build --platform android --profile production
 
 ---
 
-**Documentation Updated**: June 5, 2024  
+**Documentation Updated**: January 6, 2025  
 **Current Version**: 1.0.0 (versionCode: 1)  
-**Status**: Ready for v1.0 production release
+**Status**: Automated workflows ready for v1.0 production release
