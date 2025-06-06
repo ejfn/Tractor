@@ -893,20 +893,33 @@ const findTractors = (
   // Sort pairs by rank value
   pairs.sort((a, b) => getRankValue(a.rank) - getRankValue(b.rank));
 
-  // Find consecutive pairs to form tractors
-  for (let i = 0; i < pairs.length - 1; i++) {
-    const currentRankValue = getRankValue(pairs[i].rank);
-    const nextRankValue = getRankValue(pairs[i + 1].rank);
+  // Find consecutive pairs to form tractors of any length
+  for (let startIdx = 0; startIdx < pairs.length; startIdx++) {
+    // Build the longest possible tractor starting from this position
+    const tractorPairs = [pairs[startIdx]];
+    let currentIdx = startIdx;
 
-    // Check if consecutive
-    if (nextRankValue - currentRankValue === 1) {
-      // Found a tractor!
-      const tractorCards = [...pairs[i].cards, ...pairs[i + 1].cards];
+    // Keep adding consecutive pairs
+    while (currentIdx + 1 < pairs.length) {
+      const currentRankValue = getRankValue(pairs[currentIdx].rank);
+      const nextRankValue = getRankValue(pairs[currentIdx + 1].rank);
+
+      // Check if next pair is consecutive
+      if (nextRankValue - currentRankValue === 1) {
+        tractorPairs.push(pairs[currentIdx + 1]);
+        currentIdx++;
+      } else {
+        break; // No more consecutive pairs
+      }
+    }
+
+    // Only add tractor if it has at least 2 pairs (4 cards)
+    if (tractorPairs.length >= 2) {
+      const tractorCards = tractorPairs.flatMap((pair) => pair.cards);
 
       // Calculate value based on the highest rank in the tractor
       const value = Math.max(
-        getCardValue(pairs[i].cards[0], trumpInfo),
-        getCardValue(pairs[i + 1].cards[0], trumpInfo),
+        ...tractorPairs.map((pair) => getCardValue(pair.cards[0], trumpInfo)),
       );
 
       combos.push({
