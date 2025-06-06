@@ -7,6 +7,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
 ![Tests](https://img.shields.io/badge/Tests-526%20Passing-brightgreen?logo=jest)
 ![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
+![EAS Build APK](https://github.com/ejfn/Tractor/actions/workflows/eas-build-apk.yml/badge.svg?branch=main)
 
 ## What is Tractor?
 
