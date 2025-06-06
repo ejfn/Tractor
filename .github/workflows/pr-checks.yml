@@ -18,12 +18,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Increase inotify watchers limit
-      run: |
-        sudo sysctl -w fs.inotify.max_user_watches=524288
-        sudo sysctl -w fs.inotify.max_user_instances=524288
-        sudo sysctl -w fs.inotify.max_queued_events=524288
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
