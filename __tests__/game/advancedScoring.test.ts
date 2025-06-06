@@ -85,7 +85,7 @@ describe('Advanced Scoring Rules', () => {
       expect(result.roundCompleteMessage).toContain('advances 3 ranks to 6');
     });
 
-    it('should win the game when defending team reaches Ace', () => {
+    it('should advance defending team to Ace and continue game', () => {
       const defendingTeam: Team = {
         id: TeamId.A,
         currentRank: Rank.King,
@@ -96,14 +96,36 @@ describe('Advanced Scoring Rules', () => {
         id: TeamId.B,
         currentRank: Rank.Five,
         isDefending: false,
-        points: 0
+        points: 50  // 1 rank advancement: King -> Ace
       };
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
 
-      expect(result.gameOver).toBe(true);
-      expect(result.gameWinner).toBe(TeamId.A);
+      expect(result.gameOver).toBe(false);
+      expect(result.rankChanges[TeamId.A]).toBe(Rank.Ace);
+    });
+
+    it('should cap defending team at Ace when would advance beyond', () => {
+      const defendingTeam: Team = {
+        id: TeamId.A,
+        currentRank: Rank.King,
+        isDefending: true,
+        points: 0
+      };
+      const attackingTeam: Team = {
+        id: TeamId.B,
+        currentRank: Rank.Five,
+        isDefending: false,
+        points: 0  // 3 rank advancement: King -> capped at Ace
+      };
+
+      const gameState = createMockGameState(defendingTeam, attackingTeam);
+      const result = endRound(gameState);
+
+      expect(result.gameOver).toBe(false);
+      expect(result.rankChanges[TeamId.A]).toBe(Rank.Ace);
+      expect(result.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
     });
   });
 
@@ -204,7 +226,7 @@ describe('Advanced Scoring Rules', () => {
       expect(result.roundCompleteMessage).toContain('advanced 3 ranks to 8');
     });
 
-    it('should win the game when attacking team reaches Ace', () => {
+    it('should advance attacking team to Ace and continue game', () => {
       const defendingTeam: Team = {
         id: TeamId.A,
         currentRank: Rank.Three,
@@ -215,14 +237,36 @@ describe('Advanced Scoring Rules', () => {
         id: TeamId.B,
         currentRank: Rank.King,
         isDefending: false,
-        points: 160
+        points: 120  // 1 rank advancement: King -> Ace
       };
 
       const gameState = createMockGameState(defendingTeam, attackingTeam);
       const result = endRound(gameState);
 
-      expect(result.gameOver).toBe(true);
-      expect(result.gameWinner).toBe(TeamId.B);
+      expect(result.gameOver).toBe(false);
+      expect(result.rankChanges[TeamId.B]).toBe(Rank.Ace);
+    });
+
+    it('should cap attacking team at Ace when would advance beyond', () => {
+      const defendingTeam: Team = {
+        id: TeamId.A,
+        currentRank: Rank.Three,
+        isDefending: true,
+        points: 0
+      };
+      const attackingTeam: Team = {
+        id: TeamId.B,
+        currentRank: Rank.King,
+        isDefending: false,
+        points: 160  // 2 rank advancement: King -> capped at Ace
+      };
+
+      const gameState = createMockGameState(defendingTeam, attackingTeam);
+      const result = endRound(gameState);
+
+      expect(result.gameOver).toBe(false);
+      expect(result.rankChanges[TeamId.B]).toBe(Rank.Ace);
+      expect(result.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
     });
   });
 
@@ -236,47 +280,55 @@ describe('Advanced Scoring Rules', () => {
       const resultDefending = endRound(defendingAtAce);
       expect(resultDefending.gameOver).toBe(true);
       expect(resultDefending.gameWinner).toBe(TeamId.A);
-      expect(resultDefending.roundCompleteMessage).toBe('');
+      expect(resultDefending.roundCompleteMessage).toContain('wins the game by successfully defending Ace!');
 
-      // Test attacking team at King winning with high points (would go beyond Ace)
+      // Test attacking team at King advancing to Ace (should continue game)
       const attackingAtKing = createMockGameState(
         { id: TeamId.A, currentRank: Rank.Three, isDefending: true, points: 0 },
         { id: TeamId.B, currentRank: Rank.King, isDefending: false, points: 120 }
       );
       const resultAttacking = endRound(attackingAtKing);
-      expect(resultAttacking.gameOver).toBe(true);
-      expect(resultAttacking.gameWinner).toBe(TeamId.B);
-      expect(resultAttacking.roundCompleteMessage).toBe('');
+      expect(resultAttacking.gameOver).toBe(false);
+      expect(resultAttacking.rankChanges[TeamId.B]).toBe(Rank.Ace);
 
-      // Test attacking team at Queen winning with very high points (would go 2 ranks beyond Ace)
+      // Test attacking team at Ace winning (should continue game - attacking teams never trigger game over)
+      const attackingAtAce = createMockGameState(
+        { id: TeamId.A, currentRank: Rank.Three, isDefending: true, points: 0 },
+        { id: TeamId.B, currentRank: Rank.Ace, isDefending: false, points: 120 }
+      );
+      const resultAttackingAce = endRound(attackingAtAce);
+      expect(resultAttackingAce.gameOver).toBe(false);
+      expect(resultAttackingAce.rankChanges[TeamId.B]).toBe(Rank.Ace); // Stays at Ace
+
+      // Test attacking team at Queen advancing to Ace (should continue game)  
       const attackingAtQueen = createMockGameState(
         { id: TeamId.A, currentRank: Rank.Three, isDefending: true, points: 0 },
         { id: TeamId.B, currentRank: Rank.Queen, isDefending: false, points: 160 }
       );
       const resultAttackingQueen = endRound(attackingAtQueen);
-      expect(resultAttackingQueen.gameOver).toBe(true);
-      expect(resultAttackingQueen.gameWinner).toBe(TeamId.B);
-      expect(resultAttackingQueen.roundCompleteMessage).toBe('');
+      expect(resultAttackingQueen.gameOver).toBe(false);
+      expect(resultAttackingQueen.rankChanges[TeamId.B]).toBe(Rank.Ace);
+      expect(resultAttackingQueen.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
 
-      // Test defending team at King defending against 0 points (would advance 3 ranks beyond Ace)
+      // Test defending team at King defending against 0 points (3 ranks = capped at Ace)
       const defendingAtKing = createMockGameState(
         { id: TeamId.A, currentRank: Rank.King, isDefending: true, points: 0 },
         { id: TeamId.B, currentRank: Rank.Five, isDefending: false, points: 0 }
       );
       const resultDefendingKing = endRound(defendingAtKing);
-      expect(resultDefendingKing.gameOver).toBe(true);
-      expect(resultDefendingKing.gameWinner).toBe(TeamId.A);
-      expect(resultDefendingKing.roundCompleteMessage).toBe('');
+      expect(resultDefendingKing.gameOver).toBe(false);
+      expect(resultDefendingKing.rankChanges[TeamId.A]).toBe(Rank.Ace);
+      expect(resultDefendingKing.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
 
-      // Test defending team at Queen defending with <40 points (would advance 2 ranks beyond Ace)
+      // Test defending team at Queen advancing to Ace (should continue game)
       const defendingAtQueen = createMockGameState(
         { id: TeamId.A, currentRank: Rank.Queen, isDefending: true, points: 0 },
         { id: TeamId.B, currentRank: Rank.Five, isDefending: false, points: 30 }
       );
       const resultDefendingQueen = endRound(defendingAtQueen);
-      expect(resultDefendingQueen.gameOver).toBe(true);
-      expect(resultDefendingQueen.gameWinner).toBe(TeamId.A);
-      expect(resultDefendingQueen.roundCompleteMessage).toBe('');
+      expect(resultDefendingQueen.gameOver).toBe(false);
+      expect(resultDefendingQueen.rankChanges[TeamId.A]).toBe(Rank.Ace);
+      expect(resultDefendingQueen.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
 
       // Test defending team at Ten defending with <40 points (advances to Ace exactly)
       const defendingAtTen = createMockGameState(

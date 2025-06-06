@@ -241,43 +241,55 @@ export function endRound(state: GameState): RoundResult {
         currentRankIndex + rankAdvancement,
         rankOrder.length - 1,
       );
+      const newRank = rankOrder[newRankIndex];
+      rankChanges[attackingTeam.id] = newRank;
 
-      if (newRankIndex < rankOrder.length - 1) {
-        const newRank = rankOrder[newRankIndex];
-        rankChanges[attackingTeam.id] = newRank;
-
-        // Create round result message
-        if (rankAdvancement === 0) {
-          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and will defend next round at rank ${newRank}!${pointsBreakdown}`;
+      // Create round result message
+      if (rankAdvancement === 0) {
+        roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and will defend next round at rank ${newRank}!${pointsBreakdown}`;
+      } else {
+        if (newRank === Rank.Ace) {
+          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and reached Ace! They must now defend Ace to win the game!${pointsBreakdown}`;
         } else {
           roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and advanced ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${newRank}!${pointsBreakdown}`;
         }
-      } else {
-        // Game over - attacking team reached Ace and won
-        gameOver = true;
-        gameWinner = attackingTeam.id;
       }
     } else {
       // Defending team successfully defended
       attackingTeamWon = false;
 
-      // Calculate rank advancement based on attacker's points
-      let rankAdvancement = 1; // Default advancement
-      if (points < 40) {
-        rankAdvancement = 2;
-      }
-      if (points === 0) {
-        rankAdvancement = 3;
-      }
+      // Check if defending team is already at Ace
+      if (defendingTeam.currentRank === Rank.Ace) {
+        // Already at Ace and successfully defended - game over
+        gameOver = true;
+        gameWinner = defendingTeam.id;
 
-      // Calculate new rank for defending team
-      const currentRankIndex = rankOrder.indexOf(defendingTeam.currentRank);
-      const newRankIndex = Math.min(
-        currentRankIndex + rankAdvancement,
-        rankOrder.length - 1,
-      );
+        let pointMessage = "";
+        if (points === 0) {
+          pointMessage = "shut out the attackers (0 points)";
+        } else if (points < 40) {
+          pointMessage = `held attackers to only ${points} points`;
+        } else {
+          pointMessage = `defended with attackers getting ${points}/80 points`;
+        }
 
-      if (newRankIndex < rankOrder.length - 1) {
+        roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and wins the game by successfully defending Ace!${pointsBreakdown}`;
+      } else {
+        // Calculate rank advancement based on attacker's points
+        let rankAdvancement = 1; // Default advancement
+        if (points < 40) {
+          rankAdvancement = 2;
+        }
+        if (points === 0) {
+          rankAdvancement = 3;
+        }
+
+        // Calculate new rank for defending team
+        const currentRankIndex = rankOrder.indexOf(defendingTeam.currentRank);
+        const newRankIndex = Math.min(
+          currentRankIndex + rankAdvancement,
+          rankOrder.length - 1,
+        );
         const newRank = rankOrder[newRankIndex];
         rankChanges[defendingTeam.id] = newRank;
 
@@ -291,11 +303,11 @@ export function endRound(state: GameState): RoundResult {
           pointMessage = `defended with attackers getting ${points}/80 points`;
         }
 
-        roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${newRank}!${pointsBreakdown}`;
-      } else {
-        // Game over - defending team reached Ace and won
-        gameOver = true;
-        gameWinner = defendingTeam.id;
+        if (newRank === Rank.Ace) {
+          roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and reached Ace! They must now defend Ace to win the game!${pointsBreakdown}`;
+        } else {
+          roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${newRank}!${pointsBreakdown}`;
+        }
       }
     }
   }

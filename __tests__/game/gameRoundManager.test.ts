@@ -184,7 +184,7 @@ describe('gameRoundManager', () => {
       expect(result.roundCompleteMessage).toContain('advances 2 ranks');
     });
 
-    test('should handle team reaching highest rank and winning the game', () => {
+    test('should handle team advancing to Ace and continuing game', () => {
       const mockState = createMockGameState();
       
       // Set team B to have a high rank (King)
@@ -199,15 +199,15 @@ describe('gameRoundManager', () => {
       
       const result = endRound(mockState);
       
-      // Since team B advances from King to Ace, the game should be over
-      expect(result.gameOver).toBe(true);
-      expect(result.gameWinner).toBe(TeamId.B);
+      // Since team B advances from King to Ace, the game should continue
+      expect(result.gameOver).toBe(false);
+      expect(result.gameWinner).toBe(undefined);
       
-      // Note: When game ends, rank changes are not included
-      expect(result.rankChanges[TeamId.B]).toBe(undefined);
+      // Team should advance to Ace
+      expect(result.rankChanges[TeamId.B]).toBe(Rank.Ace);
       
-      // Verify no round complete message when game is over
-      expect(result.roundCompleteMessage).toBe('');
+      // Should have round complete message
+      expect(result.roundCompleteMessage).toContain('won with 120 points');
     });
   });
 });
