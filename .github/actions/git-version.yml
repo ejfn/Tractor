@@ -5,18 +5,9 @@ outputs:
   version:
     description: 'The detected version with git hash (e.g., v1.0.0+abc1234)'
     value: ${{ steps.detect.outputs.version }}
-  git-hash-short:
-    description: 'Short git commit hash'
-    value: ${{ steps.detect.outputs.git-hash-short }}
-  git-commit:
-    description: 'Full git commit hash'
-    value: ${{ steps.detect.outputs.git-commit }}
   eas-branch:
-    description: 'EAS Update branch (only for update workflow)'
+    description: 'EAS Update branch'
     value: ${{ steps.detect.outputs.eas-branch }}
-  eas-message:
-    description: 'EAS Update message (only for update workflow)'
-    value: ${{ steps.detect.outputs.eas-message }}
 
 runs:
   using: 'composite'
@@ -43,19 +34,16 @@ runs:
           # Release event
           VERSION="${{ github.event.release.tag_name }}+${GIT_HASH_SHORT}"
           EAS_BRANCH="production"
-          MESSAGE="Release $VERSION"
           
         elif [[ ${{ github.ref }} == refs/tags/v* ]]; then
           # Tag push
           VERSION="${{ github.ref_name }}+${GIT_HASH_SHORT}"
           EAS_BRANCH="production"
-          MESSAGE="Release $VERSION"
           
         elif [[ ${{ github.ref }} == refs/heads/main ]]; then
           # Main branch push
           VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="beta"
-          MESSAGE="Beta release $VERSION"
           
         else
           # Other branch (manual trigger)
@@ -66,7 +54,6 @@ runs:
           fi
           VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="alpha"
-          MESSAGE="Alpha build from $BRANCH_NAME branch"
         fi
         
         # Set all outputs
@@ -74,7 +61,6 @@ runs:
         echo "git-hash-short=$GIT_HASH_SHORT" >> $GITHUB_OUTPUT
         echo "git-commit=$GIT_COMMIT" >> $GITHUB_OUTPUT
         echo "eas-branch=$EAS_BRANCH" >> $GITHUB_OUTPUT
-        echo "eas-message=$MESSAGE" >> $GITHUB_OUTPUT
         
         # Verbose output for debugging
         echo "Final outputs:"
@@ -82,7 +68,6 @@ runs:
         echo "  git-hash-short: $GIT_HASH_SHORT"
         echo "  git-commit: $GIT_COMMIT"
         echo "  eas-branch: $EAS_BRANCH"
-        echo "  eas-message: $MESSAGE"
 
     - name: Inject version into app.json
       shell: bash

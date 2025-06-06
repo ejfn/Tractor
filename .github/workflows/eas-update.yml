@@ -47,10 +47,10 @@ jobs:
         token: ${{ secrets.EXPO_TOKEN }}
 
     - name: Detect version and inject into app.json
-      id: vars
+      id: version
       uses: ./.github/actions/git-version.yml
 
     - name: EAS Update
-      run: eas update --branch ${{ steps.vars.outputs.eas-branch }} --message "${{ steps.vars.outputs.eas-message }}"
+      run: eas update --branch ${{ steps.version.outputs.eas-branch }} --message "Release ${{ steps.version.outputs.version }}"
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
