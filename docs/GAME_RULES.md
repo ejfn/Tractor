@@ -348,8 +348,11 @@ Based on attacking team's total points:
 ## Victory Conditions
 
 ### **Game Victory**
-- **First team to reach Ace rank wins**
+- **Teams must successfully defend at Ace rank to win**
 - **Rank progression**: 2→3→4→5→6→7→8→9→10→J→Q→K→**A**
+- **Reaching Ace**: Teams advance to Ace and continue playing
+- **Ace is final**: Cannot advance beyond Ace - it's the ultimate rank
+- **Victory condition**: Successfully defend while at Ace rank (hold attackers under 80 points)
 - **Multiple rounds required**: Typically 8-12 rounds
 - **Average game time**: 30-45 minutes
 
