@@ -10,7 +10,7 @@ import { Platform, Text, View, StatusBar as RNStatusBar } from "react-native";
 import "react-native-reanimated";
 
 // Import the color scheme hook
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "../hooks/useColorScheme";
 
 // Header title with "Tractor Card Game" on a single line
 const HeaderTitle = () => (
@@ -55,7 +55,7 @@ export default function RootLayout() {
       {Platform.OS === "android" && (
         <View
           style={{
-            backgroundColor: "#3F51B5",
+            backgroundColor: "#1B5E4F",
             height: RNStatusBar.currentHeight || 0,
             position: "absolute",
             top: 0,
@@ -68,7 +68,7 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: true,
           headerStyle: {
-            backgroundColor: "#3F51B5", // Deep blue background for header
+            backgroundColor: "#1B5E4F", // Deep emerald green background for header
           },
           headerTintColor: "#FFFFFF", // White text for header
           headerTitleAlign: "center", // Center the header title
