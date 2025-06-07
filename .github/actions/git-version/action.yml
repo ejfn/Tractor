@@ -26,8 +26,8 @@ runs:
         GIT_COMMIT=$(git rev-parse HEAD)
         GIT_HASH_SHORT=$(git rev-parse --short HEAD)
         
-        # Get base version and commit count (only look for version tags)
-        LAST_TAG=$(git tag -l "v*.*.*" --sort=-version:refname | head -n1 || echo "")
+        # Get base version and commit count (only look for minor/major version tags, exclude patches)
+        LAST_TAG=$(git tag -l "v*.*.0" --sort=-version:refname | head -n1 || echo "")
         if [[ -n "$LAST_TAG" ]]; then
           LAST_VERSION=${LAST_TAG#v}
           # Increment minor version by 1 and reset patch to 0
