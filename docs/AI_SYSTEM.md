@@ -1,50 +1,30 @@
 # AI System Guide
 
-**Complete 4-Phase AI Intelligence & Strategic Decision Making Framework**
+**Comprehensive AI Intelligence & Strategic Decision Making**
 
 *Related Documentation: [Game Rules](GAME_RULES.md) | [CLAUDE.md](../CLAUDE.md)*
 
----
+## Overview
 
-## Executive Summary
+The Tractor AI system implements **sophisticated strategic decision-making** with memory-enhanced analysis, opponent modeling, and adaptive learning capabilities. The AI delivers challenging yet fair gameplay through intelligent card play, team coordination, and predictive strategy.
 
-The Tractor AI system implements a **comprehensive 4-phase intelligence framework** that provides sophisticated strategic decision-making, memory-enhanced analysis, and adaptive learning capabilities. With **561 tests** and **8 specialized modules**, the AI delivers challenging yet fair gameplay through position-based strategies, historical analysis, and predictive opponent modeling.
-
-### **Complete 4-Phase Implementation**
-
-- ✅ **Phase 1: Foundation** - Rules compliance, basic strategy, trump management
-- ✅ **Phase 2: Strategy** - Point-focused play, team coordination, position awareness  
-- ✅ **Phase 3: Memory** - Card tracking, probability analysis, guaranteed winner detection
-- ✅ **Phase 4: Historical Intelligence** - Opponent modeling, adaptive learning, behavioral prediction
+**Core Intelligence Features:**
+- **Memory-Enhanced Strategy** - Card tracking with guaranteed winner identification
+- **Historical Pattern Recognition** - Opponent behavioral analysis and adaptive counter-strategies
+- **Position-Based Intelligence** - Specialized logic for all 4 trick positions
+- **Strategic Team Coordination** - Optimal cooperation with human teammates
+- **Advanced Trump Management** - Hierarchical conservation and strategic deployment
 
 ---
 
-## Core AI Architecture
+## Decision Framework
 
-### **8-Module Specialized System**
-
-The AI system is built on a modular architecture with clear separation of concerns:
-
-```
-src/ai/
-├── aiLogic.ts                    # Public API and game rule compliance
-├── aiStrategy.ts                 # Core decision making with 4-priority chain
-├── aiGameContext.ts              # Context analysis and trick winner tracking
-├── aiPointFocusedStrategy.ts     # Point collection and team coordination
-├── aiCardMemory.ts               # Memory system and historical analysis
-├── aiAdvancedCombinations.ts     # Combination analysis and optimization
-├── aiKittySwapStrategy.ts        # Strategic kitty management
-└── aiTrumpDeclarationStrategy.ts # Trump declaration intelligence
-```
-
-### **4-Priority Decision Chain Framework**
-
-The AI follows a clean, conflict-free priority system for all following decisions:
+The AI follows a **5-level decision framework** that ensures consistent strategic behavior across all game situations:
 
 ```mermaid
 flowchart TD
     Start([🎯 AI Following Turn]) --> Historical{📈 Historical Analysis<br/>Available?}
-    Historical -->|Yes ≥3 tricks| Phase4[🧠 PHASE 4: Historical Insights<br/>Counter-strategies & Predictions]
+    Historical -->|Yes ≥3 tricks| Phase4[🧠 PRIORITY 0: Historical Insights<br/>Counter-strategies & Predictions]
     Historical -->|No| P1{🤝 PRIORITY 1<br/>Teammate Winning?}
     
     Phase4 --> P1
@@ -65,71 +45,21 @@ flowchart TD
     P4 --> Execute
 ```
 
----
+### **Priority Levels**
 
-## Phase-by-Phase Intelligence Breakdown
+**Priority 0: Historical Insights** - Adaptive counter-strategies based on opponent behavioral patterns (activates after 3+ tricks)
 
-### **Phase 1: Foundation Intelligence**
+**Priority 1: Team Coordination** - Support teammate when winning or set up strategic plays
 
-**Core Capabilities:**
-- ✅ **Game Rule Compliance** - Perfect adherence to Tractor/Shengji rules
-- ✅ **Basic Combination Detection** - Singles, pairs, tractors with validation
-- ✅ **Trump Hierarchy Management** - Proper trump vs non-trump logic
-- ✅ **Following Rule Compliance** - Suit following, combination matching
-- ✅ **Point Card Recognition** - 5s (5pts), 10s/Kings (10pts) tracking
+**Priority 2: Opponent Blocking** - Block opponent point collection with strategic card management
 
-**Implementation:** `aiLogic.ts`, `gameLogic.ts` integration
+**Priority 3: Trick Contention** - Contest valuable tricks (≥5 points) when winnable
 
-### **Phase 2: Strategic Intelligence**
+**Priority 4: Strategic Disposal** - Play weakest cards while preserving valuable combinations
 
-**Core Capabilities:**
-- ✅ **Point-Focused Strategy** - 80+ point collection optimization
-- ✅ **Team Coordination** - Human + Bot2 vs Bot1 + Bot3 dynamics
-- ✅ **Position Awareness** - 1st/2nd/3rd/4th player specialized logic
-- ✅ **Trump Conservation** - Hierarchical preservation strategy
-- ✅ **Strategic Disposal** - Multi-level card safety prioritization
+## Memory-Enhanced Strategy
 
-**Complete Position Strategy Weights:**
-```typescript
-// All 4 positions with specialized strategic weights
-[TrickPosition.First]: {
-  informationGathering: 0.9,  // Can learn from all responses
-  riskTaking: 0.6,           // Has control of trick direction
-  partnerCoordination: 0.3,  // Must initiate coordination
-  disruptionFocus: 0.7,      // Can disrupt opponent plans
-},
-[TrickPosition.Second]: {
-  informationGathering: 0.7, // Can see leader + influence followers
-  riskTaking: 0.6,           // Has good information advantage
-  partnerCoordination: 0.6,  // Can coordinate with positions 3/4
-  disruptionFocus: 0.6,      // Can disrupt or support strategically
-},
-[TrickPosition.Third]: {
-  informationGathering: 0.2, // Has sufficient info from first 2 plays
-  riskTaking: 0.8,           // Can make informed tactical decisions
-  partnerCoordination: 0.9,  // Critical position for team coordination
-  disruptionFocus: 0.6,      // Has tactical opportunities
-},
-[TrickPosition.Fourth]: {
-  informationGathering: 1.0, // Perfect information available
-  riskTaking: 0.9,           // Can make optimal decisions
-  partnerCoordination: 1.0,  // Can optimize teammate support
-  disruptionFocus: 0.8,      // Perfect counter opportunities
-}
-```
-
-**Implementation:** `aiStrategy.ts`, `aiPointFocusedStrategy.ts`, `aiGameContext.ts`
-
-### **Phase 3: Memory Intelligence**
-
-**Core Capabilities:**
-- ✅ **Complete Card Tracking** - All played cards with suit distribution
-- ✅ **Probability Analysis** - Bayesian updates for unseen cards
-- ✅ **Biggest Remaining Detection** - Guaranteed winner identification
-- ✅ **Player Memory Profiles** - Hand size, suit voids, play patterns
-- ✅ **Trump Exhaustion Analysis** - Strategic trump usage timing
-
-**Memory-Enhanced Decision Making:**
+The AI uses sophisticated card tracking and probability analysis to make optimal decisions:
 ```mermaid
 flowchart LR
     Start([🧠 Memory Analysis]) --> Singles{Singles Logic<br/>Both copies ALL<br/>higher ranks played?}
@@ -143,160 +73,121 @@ flowchart LR
     NotGuaranteed --> Regular[⚖️ Regular Strategy]
 ```
 
-**Strategic Memory Benefits:**
-- **Point Collection Priority**: Play guaranteed point winners before opponents run out of suit
-- **Memory Intelligence**: Uses card tracking to identify certain victories
-- **Strategic Timing**: Optimal sequencing based on remaining card knowledge
+### **Guaranteed Winner Detection**
 
-**Implementation:** `aiCardMemory.ts` with comprehensive probability systems
+The AI identifies cards that are certain to win based on memory:
 
-### **Phase 4: Historical Intelligence (NEW)**
+**Singles Logic**: K♥ wins if both A♥ copies have been played
+**Pairs Logic**: Q♥-Q♥ wins if ANY A♥ or K♥ has been played
 
-**Core Capabilities:**
-- ✅ **Opponent Behavioral Analysis** - Leading patterns, aggressiveness detection
-- ✅ **Team Coordination History** - Support/blocking effectiveness tracking
-- ✅ **Adaptive Behavior Detection** - Learning rates, strategy flexibility
-- ✅ **Predictive Opponent Modeling** - Confidence-based next move predictions
-- ✅ **Cross-Trick Pattern Recognition** - Multi-trick tactical sequences
+**Strategic Benefits:**
+- **Point Collection Priority** - Play guaranteed point winners before opponents run out of suit
+- **Optimal Timing** - Sequence plays based on remaining card knowledge
+- **Risk Minimization** - Use certain winners to secure valuable tricks
 
-**Historical Analysis Framework:**
-```typescript
-interface TrickHistoryAnalysis {
-  opponentLeadingPatterns: Record<PlayerId, OpponentLeadingPattern>;
-  teamCoordinationHistory: TeamCoordinationPattern;
-  adaptiveBehaviorTrends: AdaptiveBehaviorDetection;
-  roundProgression: RoundProgressionPattern;
-  trickSequencePatterns: TrickSequencePattern[];
-}
+## Historical Intelligence
 
-interface OpponentLeadingPattern {
-  trumpLeadFrequency: number;        // 0-1 frequency of leading trump
-  pointCardLeadFrequency: number;    // 0-1 frequency of leading points
-  aggressivenessLevel: number;       // 0-1 scale of aggressive play
-  teamCoordinationStyle: string;     // "supportive" | "independent" | "opportunistic"
-  strongSuitPreference: Suit | null; // Preferred leading suit
-}
-```
+The AI analyzes opponent behavior patterns and adapts its strategy accordingly:
 
-**Predictive Intelligence:**
-- **Opponent Behavior Modeling** - Tracks aggressiveness, suit preferences, coordination style
-- **Adaptive Counter-Strategies** - Adjusts play based on detected opponent patterns
-- **Performance Optimized** - Only activates when sufficient data exists (≥3 tricks)
-- **Confidence-Based Predictions** - Reliability scoring for strategic recommendations
+### **Opponent Modeling**
 
-**Implementation:** Extended `aiCardMemory.ts` with 500+ lines of historical analysis
+**Behavioral Analysis:**
+- **Aggressiveness Patterns** - Trump lead frequency and risk-taking behavior
+- **Point Card Management** - How opponents handle valuable cards
+- **Team Coordination Style** - Supportive vs independent play patterns
+- **Suit Preferences** - Strong suits and leading tendencies
 
-**Phase Integration:** 
-- **Builds on Phase 3 Memory** - Uses existing card tracking and probability systems
-- **Enhances Decision Chain** - Adds Priority 0 (Historical Insights) before standard 4-priority chain
-- **Preserves Performance** - Only activates with sufficient data (≥3 tricks) to minimize overhead
-- **Graceful Degradation** - Falls back to Phase 3 memory when insufficient historical data available
+**Adaptive Counter-Strategies:**
+- **Against Aggressive Opponents** - Conservative blocking and trump conservation
+- **Against Conservative Opponents** - Aggressive point collection and tactical pressure
+- **Against Adaptive Opponents** - Variable strategies and unpredictable play patterns
 
 ---
 
-## Position-Based Strategic Intelligence
+## Position-Based Intelligence
 
-### **1st Player (Leading) Strategy**
+The AI adapts its strategy based on trick position, leveraging unique advantages of each playing order:
 
-**Enhanced Game Phase Adaptation:**
+### **Leading Player Strategy**
+
 ```mermaid
 flowchart LR
-    Start([🌅 AI Leading]) --> Historical{🧠 Historical<br/>Insights?}
-    Historical -->|Yes| Counter[🎯 COUNTER-STRATEGY<br/>Based on opponent patterns]
-    Historical -->|No| Memory{Memory-Enhanced<br/>Biggest Remaining?}
-    Memory -->|Yes| Guaranteed[👑 GUARANTEED WINNERS<br/>Point Collection Priority]
-    Memory -->|No| Phase{Game Phase?}
-    Phase -->|Early| Probe[🔍 PROBE STRATEGY<br/>Ace Priority & Information]
-    Phase -->|Mid| Aggressive[⚡ AGGRESSIVE<br/>Force Point Collection]
-    Phase -->|Late| Control[🎯 CONTROL<br/>Endgame Optimization]
+    Start([🌅 AI Leading]) --> Memory{🧠 Memory-Enhanced<br/>Biggest Remaining?}
+    Memory -->|Yes| Guaranteed[👑 GUARANTEED WINNERS<br/>Point cards with certainty]
+    Memory -->|No| Early{Early Game<br/>Phase?}
+    Early -->|Yes| EarlyGame[🌅 EARLY GAME STRATEGY<br/>Ace Priority & High Cards]
+    Early -->|No| Pressure{Point<br/>Pressure?}
+    Pressure -->|High| Aggressive[⚡ AGGRESSIVE<br/>Force Point Collection]
+    Pressure -->|Medium| Balanced[⚖️ BALANCED<br/>Strategic Control]
+    Pressure -->|Low| Safe[🛡️ SAFE<br/>Conservative Probes]
     
-    Counter --> Execute[✅ Execute]
-    Guaranteed --> Execute
-    Probe --> Execute
+    Guaranteed --> Execute[✅ Execute Move]
+    EarlyGame --> Execute
     Aggressive --> Execute
-    Control --> Execute
+    Balanced --> Execute
+    Safe --> Execute
 ```
 
 **Strategic Capabilities:**
 - **Memory-Enhanced Leading** - Guaranteed winner identification for optimal timing
 - **Game Phase Adaptation** - Early probing vs mid-game aggression vs endgame control
 - **Information Management** - Balance between learning and hand concealment
-- **Historical Counter-Play** - Adaptive responses to opponent behavioral patterns
+- **Point Collection Priority** - Aces and Kings before tractors when guaranteed
 
-### **2nd Player (Early Follower) Strategy**
+### **Following Player Strategy**
 
-**Leader Relationship Analysis:**
-```typescript
-interface SecondPlayerAnalysis {
-  leaderRelationship: "teammate" | "opponent";
-  leaderStrength: "weak" | "moderate" | "strong";
-  responseStrategy: "support" | "pressure" | "block" | "setup";
-  setupOpportunity: boolean; // Can setup positions 3/4
-  coordinationValue: number; // Value of team coordination
-}
-```
+All following positions use the same priority framework but with position-specific tactical advantages:
 
-**Strategic Capabilities:**
-- **Leader Assessment** - Evaluate teammate vs opponent lead strength
-- **Early Follower Tactics** - Unique position with partial information advantage
-- **Teammate Setup** - Position players 3/4 for optimal responses
-- **Information Leverage** - Strategic use of early position knowledge
-
-### **3rd Player (Tactical Position) Strategy**
-
-**Enhanced Teammate Coordination:**
 ```mermaid
 flowchart LR
-    Start([🎯 3rd Player]) --> Analysis{Teammate Lead<br/>Analysis}
-    Analysis --> Strength{Lead Strength?}
-    Strength -->|Strong| Support[🤝 SUPPORT<br/>Enhanced Point Contribution]
-    Strength -->|Moderate| Strategic[⚖️ STRATEGIC<br/>Conditional Support/Takeover]
-    Strength -->|Weak| Takeover[💪 TAKEOVER<br/>Secure Trick Victory]
+    Start([🎯 AI Following Turn]) --> Historical{📈 Historical Analysis<br/>Available?}
+    Historical -->|Yes ≥3 tricks| Phase4[🧠 PRIORITY 0: Historical Insights<br/>Counter-strategies & Predictions]
+    Historical -->|No| P1{🤝 PRIORITY 1<br/>Teammate Winning?}
     
-    Support --> Points{Point Cards<br/>Available?}
-    Strategic --> Points
-    Takeover --> Execute[✅ Execute Takeover]
+    Phase4 --> P1
+    P1 -->|Yes| Memory{🧠 Have Guaranteed<br/>Point Cards?}
+    Memory -->|Yes| SmartContribute[🎁 SMART CONTRIBUTE<br/>Memory-Enhanced Point Cards]
+    Memory -->|No| Contribute[🎁 TRADITIONAL CONTRIBUTE<br/>10s > Kings > 5s]
     
-    Points -->|Yes| Contribute[🎁 CONTRIBUTE<br/>10s > Kings > 5s Priority]
-    Points -->|No| Conserve[🛡️ CONSERVE<br/>Minimal Support]
+    P1 -->|No| P2{⚔️ PRIORITY 2<br/>Opponent Winning?}
+    P2 -->|Yes| Block[🛡️ BLOCK/BEAT<br/>Strategic Opposition]
+    P2 -->|No| P3{💰 PRIORITY 3<br/>Can Win ≥5 Points?}
+    P3 -->|Yes| Contest[⚡ CONTEST<br/>Fight for Trick]
+    P3 -->|No| P4[🗑️ PRIORITY 4<br/>Strategic Disposal]
     
-    Contribute --> Execute2[✅ Execute]
-    Conserve --> Execute2
+    SmartContribute --> Execute[✅ Execute Move]
+    Contribute --> Execute
+    Block --> Execute
+    Contest --> Execute
+    P4 --> Execute
 ```
 
-**Strategic Capabilities:**
-- **Teammate Lead Security Assessment** - Evaluate vulnerability to 4th player
-- **Tactical Takeover Logic** - Strategic decision to override teammate when beneficial
-- **Enhanced Point Contribution** - Optimized point card sequencing (10s > Kings > 5s)
-- **Risk Assessment** - Calculate takeover vs support based on trick value
+**Position-Specific Advantages:**
 
-### **4th Player (Perfect Information) Strategy**
+**2nd Player (Early Follower)**
+- **Partial Information** - Can influence remaining 2 players
+- **Setup Opportunities** - Position teammates for optimal responses
+- **Early Blocking** - Prevent opponent momentum
 
-**Perfect Information Advantage:**
-```typescript
-interface FourthPlayerAnalysis {
-  certainWinCards: Combo[];                    // Cards that definitely win
-  pointMaximizationPotential: number;          // Total points possible
-  teammateSupportOpportunity: boolean;         // Can contribute to teammate
-  guaranteedPointCards: Combo[];               // Memory-enhanced point winners
-  perfectInformationAdvantage: boolean;        // Has certain winning options
-}
-```
+**3rd Player (Tactical Position)**
+- **Enhanced Team Coordination** - Critical teammate support decisions
+- **Tactical Takeover** - Override teammate when beneficial
+- **Risk Assessment** - Informed decisions with 2 cards visible
 
-**Strategic Capabilities:**
-- **Perfect Information Analysis** - Complete visibility of all 3 played cards
-- **Memory-Enhanced Decisions** - Uses guaranteed winner detection for optimal play
-- **Point Maximization** - Strategic point contribution when teammate winning
-- **Optimal Disposal** - Perfect information for minimal point avoidance
-- **Strategic Precision** - Leverages complete trick visibility for optimal decisions
+**4th Player (Perfect Information)**
+- **Complete Visibility** - All 3 cards played before decision
+- **Optimal Decisions** - Perfect information for point maximization
+- **Strategic Precision** - Minimal waste, maximum effectiveness
 
 ---
 
-## Advanced Strategic Systems
+## Advanced Strategic Capabilities
 
-### **Trump Management Intelligence**
+### **Trump Management**
 
-**Conservation Hierarchy with Values:**
+The AI uses sophisticated trump conservation with hierarchical values:
+
+**Conservation Hierarchy:**
 ```
 Big Joker (100) > Small Joker (90) > Trump Rank in Trump Suit (80) > 
 Trump Rank in Off-Suits (70) > Trump Suit Cards (A♠:60 → 3♠:5)
@@ -305,12 +196,12 @@ Trump Rank in Off-Suits (70) > Trump Suit Cards (A♠:60 → 3♠:5)
 **Strategic Principles:**
 - **Hierarchical Preservation** - Play weakest trump when forced (3♠, 4♠)
 - **Valuable Trump Protection** - Preserve trump rank cards and jokers
-- **Optimal Timing** - Use trump exhaustion analysis for strategic deployment
 - **Memory-Enhanced Usage** - Track opponent trump depletion for optimal timing
+- **Strategic Deployment** - Use trump exhaustion analysis for perfect timing
 
-### **Kitty Swap Intelligence**
+### **Kitty Swap Strategy**
 
-**Advanced Suit Elimination Strategy:**
+The AI employs advanced suit elimination when managing the 8-card kitty:
 ```mermaid
 flowchart LR
     Start([🎲 Kitty Analysis]) --> Suits[🔍 Analyze All Suits]
@@ -329,254 +220,80 @@ flowchart LR
 ```
 
 **Strategic Framework:**
-1. **Suit Elimination Priority** - Target 1-2 weak suits for complete removal
-2. **Value Preservation** - Always protect Aces, Kings, pairs, tractors
-3. **Trump Management** - Usually avoid trump unless exceptionally strong (10+ trumps)
-4. **Hand Structure Optimization** - Create voids for strategic advantage
+- **Suit Elimination Priority** - Target 1-2 weak suits for complete removal
+- **Value Preservation** - Always protect Aces, Kings, pairs, tractors
+- **Trump Management** - Usually avoid trump unless exceptionally strong (10+ trumps)
+- **Hand Structure Optimization** - Create voids for strategic advantage
 
-### **Trump Declaration Intelligence**
+### **Trump Declaration Strategy**
 
-**Sophisticated Declaration Logic:**
-```typescript
-interface TrumpDeclarationAnalysis {
-  handQuality: number;           // Based on suit length (7+ cards good)
-  timingOptimization: number;    // Peak window 40-70% dealt
-  declarationStrength: number;   // BJ Pair(95%) > SJ Pair(85%) > Pair(70%) > Single(30%)
-  overrideStrategy: boolean;     // Strategic opponent override decisions
-}
-```
+During progressive dealing, the AI uses sophisticated declaration logic:
 
 **Strategic Capabilities:**
-- **Hand Quality Focus** - Prioritizes suit length over high cards
-- **Timing Optimization** - Strategic declaration windows for maximum effectiveness
-- **Override Intelligence** - Sophisticated opponent override decision making
-- **Team Coordination** - Declaration strategy considers teammate implications
+- **Hand Quality Focus** - Prioritizes suit length over high cards (7+ cards recommended)
+- **Timing Optimization** - Peak declaration window at 40-70% of dealing
+- **Override Intelligence** - Strategic decisions on when to override opponents
+- **Team Coordination** - Consider teammate implications and positioning
 
 ---
 
-## Historical Intelligence & Adaptive Learning
+## Strategic Disposal Hierarchy
 
-### **Opponent Behavioral Analysis**
+When the AI cannot win a trick, it follows a sophisticated disposal system:
 
-**Multi-Dimensional Pattern Recognition:**
-```typescript
-interface OpponentAnalysis {
-  // Leading Behavior
-  trumpLeadFrequency: number;      // Aggressiveness in trump usage
-  pointCardLeadFrequency: number;  // Point collection focus
-  strongSuitPreference: Suit;      // Preferred leading suits
-  
-  // Adaptation Patterns  
-  learningRate: number;            // How quickly they adapt
-  behaviorConsistency: number;     // Strategy consistency score
-  strategicFlexibility: number;    // Ability to change tactics
-  
-  // Team Coordination
-  supportFrequency: number;        // Teammate support rate
-  blockingEfficiency: number;     // Opponent blocking effectiveness
-  cooperationLevel: number;       // Overall team play quality
-}
+```mermaid
+flowchart LR
+    Start([Can't Win Trick<br/>Need to Dispose]) --> Q1{Have Safe Cards?<br/>7♣, 8♠, 9♦}
+    Q1 -->|Yes| Best[✅ SAFEST<br/>Play Weakest Safe Card]
+    Q1 -->|No| Q2{Have Non-Trump<br/>Non-Point Cards?<br/>A♣, Q♠, J♦}
+    Q2 -->|Yes| Good[✅ GOOD<br/>Play Weakest Available]
+    Q2 -->|No| Q3{Have ANY<br/>Non-Trump Cards?<br/>5♣, 10♠, K♦}
+    Q3 -->|Yes| Okay[⚠️ ACCEPTABLE<br/>Play Weakest Non-Trump]
+    Q3 -->|No| Last[❌ FORCED<br/>Play Weakest Trump]
 ```
 
-**Behavioral Pattern Examples:**
-- **Aggressive Players** - High trump leads (>50%), low cooperation, high flexibility
-- **Conservative Players** - Low trump usage (<30%), high consistency, defensive focus
-- **Adaptive Players** - High learning rate (>0.7), variable strategies, counter-play usage
-
-### **Predictive Opponent Modeling**
-
-**Confidence-Based Predictions:**
-```typescript
-interface PredictiveModel {
-  nextMoveAnalysis: {
-    mostLikelyPlay: "trump" | "point" | "safe" | "tactical";
-    confidence: number;           // 0-1 prediction confidence
-    reasoning: string;           // Why this prediction was made
-  };
-  
-  handStrengthEstimate: {
-    trumpCount: number;          // Estimated trump cards remaining
-    pointCardProbability: number; // Likelihood of having points
-    dominantSuit: Suit | null;   // Estimated strongest suit
-    overallStrength: number;     // 0-1 overall hand strength
-  };
-  
-  strategicIntent: {
-    primaryGoal: "point_collection" | "trump_conservation" | 
-                "opponent_blocking" | "endgame_setup";
-    adaptationLevel: number;     // How much strategy has evolved
-    teamCoordination: number;    // Focus on team play
-  };
-}
-```
-
-**Adaptive Counter-Strategies:**
-- **Against Aggressive Opponents (>70% aggressiveness)** - Conservative blocking, trump conservation, point card preservation
-- **Against Conservative Opponents (<30% aggressiveness)** - Aggressive point collection, tactical pressure, risk-taking
-- **Against Adaptive Opponents (high learning rate)** - Variable strategies, meta-game considerations, unpredictable play patterns
-
-**Real Counter-Strategy Examples:**
-```typescript
-// Counter aggressive Bot1 detected with 80% trump lead frequency
-if (opponentPattern.aggressivenessLevel > 0.7) {
-  return this.selectConservativeBlocking(combos, context);
-}
-
-// Exploit conservative Bot3 with low risk-taking (20% trump usage)
-if (opponentPattern.trumpLeadFrequency < 0.3) {
-  return this.selectAggressivePointCollection(combos, context);
-}
-
-// Adapt to highly flexible opponent with variable tactics
-if (adaptiveTrends.strategicFlexibility > 0.8) {
-  return this.selectUnpredictableResponse(combos, context);
-}
-```
-
-### **Performance Optimization**
-
-**Intelligent Activation:**
-- **Data Threshold** - Only activates with ≥3 tricks of history
-- **Confidence Weighting** - Predictions weighted by data reliability
-- **Graceful Degradation** - Falls back to Phase 3 memory when insufficient data
-- **Minimal Overhead** - <5% performance impact on decision making
+**Disposal Categories:**
+- **Safe Cards** - No trump, no Ace, no points (7♣, 8♠, 9♦)
+- **Good Cards** - Lose an Ace but no points given (A♣, Q♠, J♦)
+- **Acceptable Cards** - Give away points but save trump (5♣, 10♠, K♦)
+- **Forced Cards** - Trump cards only when no choice (3♦, 4♦)
 
 ---
 
-## Technical Implementation
-
-### **Integration Architecture**
-
-**Clean Priority Chain Integration:**
-```typescript
-// Phase 4 Historical Analysis Integration
-if (gameState.tricks.length >= 3) {
-  const enhancedContext = enhanceGameContextWithHistoricalMemory(
-    context, cardMemory, gameState
-  );
-  
-  const historicalInsights = this.applyHistoricalInsights(
-    enhancedContext, validCombos, trumpInfo, gameState
-  );
-  
-  if (historicalInsights) return historicalInsights;
-}
-
-// Falls back to existing 4-priority chain
-// Priority 1: Team Coordination
-// Priority 2: Opponent Blocking  
-// Priority 3: Trick Contention
-// Priority 4: Strategic Disposal
-```
-
-**Data Structures:**
-- **561 comprehensive tests** covering all intelligence phases
-- **Type-safe implementation** with strict TypeScript interfaces
-- **Modular architecture** allows independent enhancement of each phase
-- **Performance optimized** with lazy evaluation and caching
-
-### **Critical Enum Usage Patterns**
-
-The AI system relies heavily on TypeScript enums to eliminate magic strings and ensure type safety:
-
-```typescript
-// Core AI strategy enums - ALWAYS use these instead of magic strings
-enum TrickPosition {
-  First = "first",    // Leading player
-  Second = "second",  // Early follower  
-  Third = "third",    // Late follower
-  Fourth = "fourth"   // Perfect information position
-}
-
-enum PlayStyle {
-  Conservative = "conservative", // Risk minimization
-  Balanced = "balanced",        // Moderate approach
-  Aggressive = "aggressive",    // High risk/reward
-  Desperate = "desperate"       // All-out strategy
-}
-
-enum PointPressure {
-  LOW = "low",      // < 30% points needed
-  MEDIUM = "medium", // 30-70% points needed  
-  HIGH = "high"     // 70%+ points needed
-}
-
-// Correct AI implementation pattern
-if (context.trickPosition === TrickPosition.Fourth) {
-  return analyzeFourthPlayerAdvantage(combos, context);
-}
-
-// ❌ NEVER use magic strings
-if (context.trickPosition === "fourth") { // BAD
-```
-
-**Enum Benefits:**
-- **Type Safety** - Compile-time error detection for invalid values
-- **Refactoring Safety** - IDE can safely rename across entire codebase
-- **Autocomplete** - IDE provides intelligent code completion
-- **Documentation** - Self-documenting code with clear intent
-
-### **Memory Management**
-
-**Efficient Data Processing:**
-```typescript
-// Memory system handles:
-- Card tracking: O(1) lookup for played cards
-- Probability calculations: Bayesian updates in O(n) time
-- Pattern recognition: O(k) where k = number of players
-- Historical analysis: O(t) where t = number of tricks
-```
-
-**Storage Efficiency:**
-- **Minimal memory footprint** - Only essential data structures
-- **Incremental processing** - Real-time updates during gameplay
-- **Smart caching** - Calculated values cached until game state changes
-
----
-
-## Performance Metrics
+## Performance & User Experience
 
 ### **Intelligence Benchmarks**
 
 **Decision Quality:**
-- **Phase 1**: Basic rule compliance (100% accuracy)
-- **Phase 2**: Strategic point optimization (+20-30% vs random play)
-- **Phase 3**: Memory-enhanced decisions (+15-25% vs Phase 2)
-- **Phase 4**: Historical adaptation (+10-20% vs Phase 3)
+- **Rule Compliance** - Perfect adherence to complex Tractor/Shengji rules
+- **Strategic Optimization** - 20-30% improvement over basic AI play
+- **Memory Enhancement** - 15-25% improvement through card tracking
+- **Historical Adaptation** - 10-20% improvement via opponent modeling
 
 **Response Times:**
-- **Context Analysis**: ~100ms average (game state evaluation)
-- **Strategy Selection**: ~200ms average (combination analysis and priority chain)
-- **Memory Processing**: ~50ms additional overhead (Phase 3 card tracking)
-- **Historical Analysis**: ~30ms additional overhead (Phase 4, when ≥3 tricks)
-- **Total Decision Time**: <400ms for complete analysis (all 4 phases active)
-- **Baseline Performance**: ~300ms for Phases 1-3 (most common scenario)
-
-**Test Coverage:**
-- **561 total tests** with 100% pass rate
-- **12 Phase 4 specific tests** for historical analysis
-- **Edge case coverage** for all intelligence phases
-- **Integration testing** across all AI modules
+- **Standard Decisions** - ~300ms for most scenarios
+- **Full Analysis** - <400ms with complete intelligence active
+- **Minimal Overhead** - Historical analysis adds only ~30ms when sufficient data available
 
 ### **Strategic Effectiveness**
 
 **Gameplay Impact:**
-- **Challenging Opponent** - Provides consistent challenge without being unfair
+- **Challenging Opponent** - Consistent challenge without being unfair
 - **Adaptive Intelligence** - Learns and responds to player behavior patterns
 - **Team Coordination** - Effective cooperation with human teammate
-- **Strategic Depth** - Multiple layers of decision-making create engaging gameplay
+- **Strategic Depth** - Multiple decision layers create engaging gameplay
 
 **User Experience:**
-- **Predictable Core Behavior** - Consistent strategic framework
-- **Unpredictable Tactical Decisions** - Variety through adaptive intelligence
-- **Fair Competition** - Challenging but not impossible to defeat
+- **Predictable Framework** - Consistent strategic approach
+- **Tactical Variety** - Unpredictable decisions through adaptive intelligence
+- **Fair Competition** - Challenging but beatable opponent
 - **Educational Value** - Demonstrates advanced Tractor/Shengji strategy
 
 ---
 
-## Future Enhancement Potential
+## Future Enhancement Roadmap
 
-### **Phase 5 Roadmap: Multi-Game Learning**
+### **Multi-Game Learning**
 
 **Next Evolution:**
 - **Cross-Game Persistence** - Historical analysis extended across multiple games
@@ -584,40 +301,38 @@ if (context.trickPosition === "fourth") { // BAD
 - **Dynamic Difficulty Scaling** - AI intelligence adapts to player skill progression
 - **Meta-Game Strategy** - Long-term strategic evolution and counter-adaptation
 
-**Technical Foundation:**
-- **80% infrastructure exists** - Phase 4 provides comprehensive behavioral analysis
-- **Clean integration path** - Existing memory system ready for persistence extension
-- **Minimal architectural changes** - Natural evolution of current system
+**Foundation Ready:**
+- **Existing Infrastructure** - Current behavioral analysis provides 80% of required foundation
+- **Clean Integration** - Memory system ready for persistence extension
+- **Natural Evolution** - Minimal architectural changes needed
 
 ---
 
 ## Summary
 
-The Tractor AI system represents a **comprehensive 4-phase intelligence framework** that delivers sophisticated strategic gameplay through:
+The Tractor AI system delivers **sophisticated strategic gameplay** through comprehensive intelligence and adaptive learning:
 
-### **Core Achievements**
+### **Core Capabilities**
 
-1. **✅ Complete Rule Mastery** - Perfect adherence to complex Tractor/Shengji rules
-2. **✅ Strategic Intelligence** - Point optimization, team coordination, position-based play
-3. **✅ Memory Enhancement** - Card tracking, probability analysis, guaranteed winner detection  
-4. **✅ Historical Learning** - Opponent modeling, behavioral adaptation, predictive intelligence
-
-### **Technical Excellence**
-
-- **8 Specialized Modules** - Clean architectural separation of concerns
-- **561 Comprehensive Tests** - Full coverage with 100% pass rate (12 new Phase 4 tests)
-- **Type-Safe Implementation** - Strict TypeScript with comprehensive interfaces and enum usage
-- **Performance Optimized** - <400ms total decision time with sophisticated analysis
-- **Modular Architecture** - Each phase builds incrementally without disrupting existing functionality
-
-### **Strategic Sophistication**
-
-- **4-Priority Decision Chain** - Conflict-free strategic framework
+**Strategic Intelligence**
+- **Perfect Rule Compliance** - Complete adherence to complex Tractor/Shengji rules
+- **Memory-Enhanced Decisions** - Card tracking with guaranteed winner identification
 - **Position-Based Intelligence** - Specialized logic for all 4 trick positions
-- **Memory-Enhanced Decisions** - Guaranteed winner detection and probability analysis
-- **Adaptive Learning** - Historical pattern recognition and counter-strategy development
+- **Historical Adaptation** - Opponent modeling and behavioral counter-strategies
 
-The AI system successfully balances **strategic sophistication** with **code maintainability**, creating a challenging yet fair opponent that provides engaging long-term gameplay through adaptive intelligence and continuous learning capabilities.
+**Decision Framework**
+- **5-Level Priority System** - Conflict-free strategic decision making
+- **Team Coordination** - Optimal cooperation with human teammates
+- **Advanced Trump Management** - Hierarchical conservation and strategic deployment
+- **Strategic Disposal** - Multi-level card safety prioritization
+
+**Performance**
+- **Fast Response Times** - <400ms decision time with full analysis
+- **Adaptive Learning** - Improves strategy based on opponent patterns
+- **Fair Challenge** - Challenging yet beatable opponent
+- **Educational Value** - Demonstrates advanced Tractor/Shengji strategy
+
+The AI system successfully balances **strategic sophistication** with **enjoyable gameplay**, creating a challenging opponent that provides engaging long-term play through intelligent decision-making and continuous adaptation.
 
 ---
 
@@ -625,4 +340,3 @@ The AI system successfully balances **strategic sophistication** with **code mai
 
 - **[Game Rules](GAME_RULES.md)** - Complete Tractor/Shengji rules and strategy guide
 - **[CLAUDE.md](../CLAUDE.md)** - Development guidelines and project architecture
-- **[Phase 5 Enhancement Plan](https://github.com/ejfn/Tractor/issues/164)** - Multi-game learning roadmap
