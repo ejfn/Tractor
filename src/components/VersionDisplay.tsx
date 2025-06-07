@@ -8,9 +8,8 @@ interface VersionDisplayProps {
 
 export const VersionDisplay: React.FC<VersionDisplayProps> = ({ style }) => {
   const getVersion = (): string => {
-    // For local dev, show dev version with git info if available
-    const isDev = __DEV__ || Constants.appOwnership === "expo";
-    if (isDev) {
+    // Only use dev version in actual development mode
+    if (__DEV__) {
       try {
         // Try to import dev version file
         const devVersion = require("../dev-version.json");
@@ -23,23 +22,22 @@ export const VersionDisplay: React.FC<VersionDisplayProps> = ({ style }) => {
       return "v1.0.0-dev";
     }
 
-    // Use version with git hash injected by build pipeline, fallback to clean version
-    const version =
-      Constants.expoConfig?.extra?.version || Constants.expoConfig?.version;
-    if (version) {
-      return version;
+    // For published builds, use version injected by build pipeline
+    try {
+      const version =
+        Constants.expoConfig?.extra?.version || Constants.expoConfig?.version;
+      if (version) {
+        return version;
+      }
+    } catch {
+      // Fallback if Constants access fails
     }
 
-    // No version available
-    return "";
+    // Final fallback for production builds
+    return "v1.0.0";
   };
 
   const version = getVersion();
-
-  // Don't render anything if no meaningful version is available
-  if (!version) {
-    return null;
-  }
 
   return (
     <View style={[styles.container, style]}>
