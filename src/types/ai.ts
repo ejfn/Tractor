@@ -133,3 +133,15 @@ export interface FourthPlayerAnalysis {
   guaranteedPointCards: Combo[]; // Point cards that are guaranteed winners
   perfectInformationAdvantage: boolean; // Has certain winning options
 }
+
+// 3rd Player Tactical Analysis
+export interface ThirdPlayerAnalysis {
+  teammateLeadStrength: "weak" | "moderate" | "strong"; // Teammate's lead security assessment
+  takeoverRecommendation: "support" | "takeover" | "strategic"; // Recommended action
+  pointContributionStrategy: "enhanced" | "strategic" | "conservative"; // Point contribution approach
+  vulnerabilityFactors: string[]; // Specific vulnerabilities in teammate's lead
+  riskAssessment: number; // Risk level of potential takeover (0-1 scale)
+  pointMaximizationPotential: number; // Points that could be collected
+  optimalCombo: Combo | null; // Best combination for the situation
+  tacticalAdvantage: boolean; // Whether 3rd position provides tactical benefit
+}

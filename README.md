@@ -5,7 +5,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![Tests](https://img.shields.io/badge/Tests-542%20Passing-brightgreen?logo=jest)
+![Tests](https://img.shields.io/badge/Tests-549%20Passing-brightgreen?logo=jest)
 ![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
 
 ## What is Tractor?
@@ -42,7 +42,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **React Native 0.76+** - Cross-platform mobile framework
 - **Expo SDK 52** - Development tools and native API access
 - **TypeScript 5.7+** - Strict type safety and enhanced developer experience
-- **Jest** - 542 comprehensive tests with React Testing Library
+- **Jest** - 549 comprehensive tests with React Testing Library
 - **ESLint** - Code quality with React Native specific rules
 - **React Native Reanimated** - High-performance card animations
 

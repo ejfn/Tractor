@@ -371,6 +371,13 @@ function calculateEffectiveness(
   // Context adjustments
   if (context.trickPosition === TrickPosition.First) {
     effectiveness += pattern.opponentDisruption * 0.3;
+  } else if (
+    context.trickPosition === TrickPosition.Third &&
+    context.trickWinnerAnalysis?.isTeammateWinning
+  ) {
+    // 🎯 3RD PLAYER ENHANCEMENT: Enhanced effectiveness for tactical position
+    effectiveness += pattern.partnerSupport * 0.4; // Higher partner support value
+    effectiveness += pattern.opponentDisruption * 0.1; // Some disruption consideration
   } else {
     effectiveness += pattern.partnerSupport * 0.2;
   }

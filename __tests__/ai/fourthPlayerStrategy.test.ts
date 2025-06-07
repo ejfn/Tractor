@@ -1,91 +1,364 @@
-/**
- * Tests for Issue #107: 4th Player Perfect Information Enhancement
- * 
- * Tests the enhanced AI strategy for 4th player position including:
- * - Perfect information analysis
- * - Enhanced point card management  
- * - Strategic disposal optimization
- * - Teammate coordination improvements
- */
-
 import { getAIMove } from '../../src/ai/aiLogic';
+import { createIsolatedGameState } from '../helpers/testIsolation';
+import { Card, Suit, Rank, PlayerId, TrumpInfo } from '../../src/types';
 import { 
   GameState, 
-  PlayerId, 
   TrickPosition, 
-  Rank, 
-  Suit, 
-  Card,
-  TrumpInfo,
   PointPressure,
   PlayStyle 
 } from '../../src/types';
-import { createIsolatedGameState } from '../helpers/testIsolation';
 import { createCard } from '../helpers/cards';
 import { getTrickPosition } from '../../src/ai/aiGameContext';
 
-describe('Issue #107: 4th Player Perfect Information Enhancement', () => {
-  let gameState: GameState;
-  let trumpInfo: TrumpInfo;
-  const fourthPlayerId = PlayerId.Bot3; // Bot3 is 4th chronological player (TrickPosition.Fourth) in test scenarios
-
-  beforeEach(() => {
-    gameState = createIsolatedGameState();
-    trumpInfo = {
-      trumpRank: Rank.Two,
-      trumpSuit: Suit.Hearts,
-    };
-    gameState.trumpInfo = trumpInfo;
+describe('4th Player Strategy Tests', () => {
+  
+  describe('Point Card Prioritization', () => {
     
-    // Set Bot3 as current player (4th position)
-    gameState.currentPlayerIndex = 3;
+    it('should prioritize 10s over Kings over 5s when partner is winning', () => {
+      const gameState = createIsolatedGameState();
+      
+      // Set up trump info
+      const trumpInfo: TrumpInfo = {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Hearts,
+      };
+      gameState.trumpInfo = trumpInfo;
+      
+      // Create trick scenario where partner (Bot 1) is winning
+      const leadingCard: Card = {
+        id: 'spades-3-1',
+        suit: Suit.Spades,
+        rank: Rank.Three,
+        joker: undefined,
+        points: 0
+      };
+      
+      const bot1WinningCard: Card = {
+        id: 'spades-ace-1',
+        suit: Suit.Spades,
+        rank: Rank.Ace,
+        joker: undefined,
+        points: 0
+      };
+      
+      const bot2Card: Card = {
+        id: 'spades-4-1', 
+        suit: Suit.Spades,
+        rank: Rank.Four,
+        joker: undefined,
+        points: 0
+      };
+      
+      gameState.currentTrick = {
+        leadingPlayerId: PlayerId.Human,
+        leadingCombo: [leadingCard],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [bot1WinningCard] }, // Bot1 (Bot3's partner) wins
+          { playerId: PlayerId.Bot2, cards: [bot2Card] }         // Bot2 plays lower card
+        ],
+        points: 0,
+        winningPlayerId: PlayerId.Bot1 // Bot1 is currently winning with Ace
+      };
+      
+      // Set current player to Bot 3 (4th player, partner of Bot1)
+      gameState.currentPlayerIndex = 3;
+      const fourthPlayerId = PlayerId.Bot3;
+      
+      // Test case 1: 10 should be prioritized over King and 5
+      gameState.players[3].hand = [
+        {
+          id: 'spades-5-1',
+          suit: Suit.Spades,
+          rank: Rank.Five,
+          joker: undefined,
+          points: 5
+        },
+        {
+          id: 'spades-king-1',
+          suit: Suit.Spades,
+          rank: Rank.King,
+          joker: undefined,
+          points: 10
+        },
+        {
+          id: 'spades-10-1',
+          suit: Suit.Spades,
+          rank: Rank.Ten,
+          joker: undefined,
+          points: 10
+        }
+      ];
+      
+      let aiMove = getAIMove(gameState, fourthPlayerId);
+      console.log('Test 1: 10 vs King vs 5 - Selected:', aiMove[0].rank);
+      console.log('Partner (Bot1) winning with A♠, Bot3 should prioritize 10♠');
+      expect(aiMove[0].rank).toBe(Rank.Ten); // Should prioritize 10
+      
+      // Test case 2: King should be prioritized over 5 when no 10
+      gameState.players[3].hand = [
+        {
+          id: 'spades-5-1',
+          suit: Suit.Spades,
+          rank: Rank.Five,
+          joker: undefined,
+          points: 5
+        },
+        {
+          id: 'spades-king-1',
+          suit: Suit.Spades,
+          rank: Rank.King,
+          joker: undefined,
+          points: 10
+        },
+        {
+          id: 'spades-6-1',
+          suit: Suit.Spades,
+          rank: Rank.Six,
+          joker: undefined,
+          points: 0
+        }
+      ];
+      
+      aiMove = getAIMove(gameState, fourthPlayerId);
+      console.log('Test 2: King vs 5 - Selected:', aiMove[0].rank);
+      expect(aiMove[0].rank).toBe(Rank.King); // Should prioritize King over 5
+    });
+
+    it('should avoid point cards when opponent is winning', () => {
+      const gameState = createIsolatedGameState();
+      
+      // Set up trump info
+      const trumpInfo: TrumpInfo = {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Hearts,
+      };
+      gameState.trumpInfo = trumpInfo;
+      
+      // Create trick scenario where opponent (Bot 2) is winning
+      const leadingCard: Card = {
+        id: 'spades-3-1',
+        suit: Suit.Spades,
+        rank: Rank.Three,
+        joker: undefined,
+        points: 0
+      };
+      
+      const bot1Card: Card = {
+        id: 'spades-4-1', 
+        suit: Suit.Spades,
+        rank: Rank.Four,
+        joker: undefined,
+        points: 0
+      };
+      
+      const bot2WinningCard: Card = {
+        id: 'spades-ace-1',
+        suit: Suit.Spades,
+        rank: Rank.Ace,
+        joker: undefined,
+        points: 0
+      };
+      
+      // Set up trick with opponent (Bot 2) winning
+      gameState.currentTrick = {
+        leadingPlayerId: PlayerId.Human,
+        leadingCombo: [leadingCard],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [bot1Card] },
+          { playerId: PlayerId.Bot2, cards: [bot2WinningCard] }
+        ],
+        winningPlayerId: PlayerId.Bot2,
+        points: 0
+      };
+      
+      // Set current player to Bot 3 (4th player, opponent of Bot 2)
+      gameState.currentPlayerIndex = 3;
+      const fourthPlayerId = PlayerId.Bot3;
+      
+      // Create Bot 3's hand with both point cards and non-point cards
+      const bot3Hand: Card[] = [
+        // Point cards
+        {
+          id: 'spades-5-1',
+          suit: Suit.Spades,
+          rank: Rank.Five,
+          joker: undefined,
+          points: 5  // Point card
+        },
+        {
+          id: 'spades-10-1',
+          suit: Suit.Spades,
+          rank: Rank.Ten,
+          joker: undefined,
+          points: 10  // Point card
+        },
+        {
+          id: 'spades-king-1',
+          suit: Suit.Spades,
+          rank: Rank.King,
+          joker: undefined,
+          points: 10  // Point card
+        },
+        // Non-point cards
+        {
+          id: 'spades-6-1',
+          suit: Suit.Spades,
+          rank: Rank.Six,
+          joker: undefined,
+          points: 0
+        },
+        {
+          id: 'spades-7-1',
+          suit: Suit.Spades,
+          rank: Rank.Seven,
+          joker: undefined,
+          points: 0
+        },
+        // Other cards
+        {
+          id: 'clubs-8-1',
+          suit: Suit.Clubs,
+          rank: Rank.Eight,
+          joker: undefined,
+          points: 0
+        }
+      ];
+      
+      gameState.players[3].hand = bot3Hand;
+      
+      console.log('=== 4th Player Opponent Winning Test ===');
+      console.log('Opponent (Bot 2) is winning with Ace of Spades');
+      console.log('Bot 3 (4th player) has point cards available:');
+      console.log('- 5♠ (5 points)');
+      console.log('- 10♠ (10 points)');  
+      console.log('- K♠ (10 points)');
+      console.log('Also has non-point cards: 6♠, 7♠');
+      console.log('Bot 3 should play lowest value card since opponent is winning');
+      
+      // Get AI move for 4th player
+      const aiMove = getAIMove(gameState, fourthPlayerId);
+      
+      console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`));
+      
+      // Verify AI selected a low-value card (not point cards)
+      const selectedPointCard = aiMove.some(card => (card.points || 0) > 0);
+      expect(selectedPointCard).toBe(false);
+      
+      // Verify it's a single card (following leading single)
+      expect(aiMove.length).toBe(1);
+      
+      // The selected card should be one of the lowest available cards (6 or 7)
+      const selectedCard = aiMove[0];
+      expect([Rank.Six, Rank.Seven]).toContain(selectedCard.rank);
+      expect(selectedCard.points).toBe(0);
+    });
+    
+    it('should play conservative cards when no point cards available and partner winning', () => {
+      const gameState = createIsolatedGameState();
+      
+      // Set up trump info
+      const trumpInfo: TrumpInfo = {
+        trumpRank: Rank.Two, 
+        trumpSuit: Suit.Hearts,
+      };
+      gameState.trumpInfo = trumpInfo;
+      
+      // Set up trick with partner winning
+      gameState.currentTrick = {
+        leadingPlayerId: PlayerId.Human,
+        leadingCombo: [{
+          id: 'clubs-3-1',
+          suit: Suit.Clubs,
+          rank: Rank.Three,
+          joker: undefined,
+          points: 0
+        }],
+        plays: [
+          { 
+            playerId: PlayerId.Bot1, 
+            cards: [{
+              id: 'clubs-ace-1',
+              suit: Suit.Clubs,
+              rank: Rank.Ace,
+              joker: undefined,
+              points: 0
+            }]
+          },
+          { 
+            playerId: PlayerId.Bot2, 
+            cards: [{
+              id: 'clubs-4-1',
+              suit: Suit.Clubs,
+              rank: Rank.Four,
+              joker: undefined,
+              points: 0
+            }]
+          }
+        ],
+        winningPlayerId: PlayerId.Bot1, // Bot1 (Bot3's partner) winning
+        points: 0
+      };
+      
+      gameState.currentPlayerIndex = 3;
+      
+      // Bot 3 hand with only non-point cards
+      const bot3Hand: Card[] = [
+        {
+          id: 'clubs-6-1',
+          suit: Suit.Clubs,
+          rank: Rank.Six,
+          joker: undefined,
+          points: 0
+        },
+        {
+          id: 'clubs-7-1',
+          suit: Suit.Clubs,
+          rank: Rank.Seven,
+          joker: undefined,
+          points: 0
+        },
+        {
+          id: 'clubs-8-1',
+          suit: Suit.Clubs,
+          rank: Rank.Eight,
+          joker: undefined,
+          points: 0
+        }
+      ];
+      
+      gameState.players[3].hand = bot3Hand;
+      
+      const aiMove = getAIMove(gameState, PlayerId.Bot3);
+      
+      // Should select smallest non-point card
+      expect(aiMove.length).toBe(1);
+      expect(aiMove[0].suit).toBe(Suit.Clubs);
+      expect(aiMove[0].points).toBe(0);
+      
+      // Should be the smallest available (6)
+      expect(aiMove[0].rank).toBe(Rank.Six);
+    });
   });
 
-  describe('Position Detection and Strategy Weights', () => {
+  describe('Perfect Information Enhancements', () => {
+    let gameState: GameState;
+    let trumpInfo: TrumpInfo;
+    const fourthPlayerId = PlayerId.Bot3; // Bot3 is 4th chronological player (TrickPosition.Fourth) in test scenarios
+
+    beforeEach(() => {
+      gameState = createIsolatedGameState();
+      trumpInfo = {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Hearts,
+      };
+      gameState.trumpInfo = trumpInfo;
+      
+      // Set Bot3 as current player (4th position)
+      gameState.currentPlayerIndex = 3;
+    });
+
     it('should correctly detect 4th player position when Bot3 is about to play', () => {
-      // Set up trick where Human leads, Bot1, Bot2, and Bot3 have played - next player is 4th position  
-      gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Seven)],
-        plays: [
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] },
-          { playerId: PlayerId.Bot3, cards: [createCard(Suit.Spades, Rank.Six)] }
-        ],
-        winningPlayerId: PlayerId.Bot2,
-        points: 0
-      };
-
-      // When 3 followers have played after leader, the next player would be in 4th position
-      // But since all players have played, we need to test this differently
-      // Let's test when Bot3 is about to play as the 4th player
-      gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Seven)],
-        plays: [
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] },
-          { playerId: PlayerId.Bot3, cards: [createCard(Suit.Spades, Rank.Six)] }
-        ],
-        winningPlayerId: PlayerId.Bot2,
-        points: 0
-      };
-
-      // Test when Bot3 is about to play as the 4th player (leader + 3 followers = 4 total)
-      gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Seven)],
-        plays: [
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] },
-          { playerId: PlayerId.Bot3, cards: [createCard(Suit.Spades, Rank.Six)] }
-        ],
-        winningPlayerId: PlayerId.Bot2,
-        points: 0
-      };
-
-      // With 4 total players having played (leader + 3 followers), this is a completed trick
-      // Let's test when Bot3 is about to play as 4th player (leader + 2 followers played so far)
+      // Test when Bot3 is about to play as 4th player (leader + 2 followers played so far)
       gameState.currentTrick = {
         leadingPlayerId: PlayerId.Human,
         leadingCombo: [createCard(Suit.Spades, Rank.Seven)],
@@ -107,9 +380,7 @@ describe('Issue #107: 4th Player Perfect Information Enhancement', () => {
       const position = getTrickPosition(gameState, fourthPlayerId);
       expect(position).toBe(TrickPosition.Fourth);
     });
-  });
 
-  describe('Teammate Winning - Enhanced Point Card Contribution', () => {
     it('should prioritize guaranteed point card winners when teammate is winning', () => {
       // Set up trick with teammate (Bot1) winning
       gameState.currentTrick = {
@@ -169,39 +440,6 @@ describe('Issue #107: 4th Player Perfect Information Enhancement', () => {
       const playedPointValue = aiMove.reduce((total, card) => total + (card.points || 0), 0);
       expect(playedPointValue).toBeGreaterThan(0);
     });
-  });
-
-  describe('Opponent Winning - Enhanced Point Card Avoidance', () => {
-    it('should avoid point cards when opponent is winning', () => {
-      // Set up trick with opponent (Human) winning
-      gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Ace)], // Human leads with Ace
-        plays: [
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Four)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Five)] }
-        ],
-        winningPlayerId: PlayerId.Human, // Opponent winning
-        points: 5 // Already has some points
-      };
-
-      // Give Bot3 mixed hand with point and non-point cards
-      gameState.players[3].hand = [
-        createCard(Suit.Spades, Rank.Ten), // Point card to avoid
-        createCard(Suit.Spades, Rank.King), // Point card to avoid
-        createCard(Suit.Spades, Rank.Six),   // Safe non-point card
-        createCard(Suit.Spades, Rank.Seven)  // Safe non-point card
-      ];
-
-      const aiMove = getAIMove(gameState, fourthPlayerId);
-      
-      // Should avoid giving point cards to opponent
-      const playedPointValue = aiMove.reduce((total, card) => total + (card.points || 0), 0);
-      expect(playedPointValue).toBe(0);
-      
-      // Should play lowest safe card
-      expect([Rank.Six, Rank.Seven]).toContain(aiMove[0].rank);
-    });
 
     it('should use hierarchical point avoidance when no safe cards available', () => {
       // Set up opponent winning scenario with NON-trump lead so player has choice
@@ -237,6 +475,20 @@ describe('Issue #107: 4th Player Perfect Information Enhancement', () => {
   });
 
   describe('Strategic Disposal with Perfect Information', () => {
+    let gameState: GameState;
+    let trumpInfo: TrumpInfo;
+    const fourthPlayerId = PlayerId.Bot3;
+
+    beforeEach(() => {
+      gameState = createIsolatedGameState();
+      trumpInfo = {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Hearts,
+      };
+      gameState.trumpInfo = trumpInfo;
+      gameState.currentPlayerIndex = 3;
+    });
+
     it('should make optimal disposal when no one is clearly winning', () => {
       // Set up neutral trick scenario
       gameState.currentTrick = {
@@ -297,6 +549,20 @@ describe('Issue #107: 4th Player Perfect Information Enhancement', () => {
   });
 
   describe('Memory-Enhanced Perfect Information', () => {
+    let gameState: GameState;
+    let trumpInfo: TrumpInfo;
+    const fourthPlayerId = PlayerId.Bot3;
+
+    beforeEach(() => {
+      gameState = createIsolatedGameState();
+      trumpInfo = {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Hearts,
+      };
+      gameState.trumpInfo = trumpInfo;
+      gameState.currentPlayerIndex = 3;
+    });
+
     it('should identify guaranteed winners using card memory', () => {
       // Set up scenario where memory indicates guaranteed winners
       // Use a 0-point trick to trigger strategic disposal path
@@ -344,6 +610,20 @@ describe('Issue #107: 4th Player Perfect Information Enhancement', () => {
   });
 
   describe('Error Handling and Edge Cases', () => {
+    let gameState: GameState;
+    let trumpInfo: TrumpInfo;
+    const fourthPlayerId = PlayerId.Bot3;
+
+    beforeEach(() => {
+      gameState = createIsolatedGameState();
+      trumpInfo = {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Hearts,
+      };
+      gameState.trumpInfo = trumpInfo;
+      gameState.currentPlayerIndex = 3;
+    });
+
     it('should handle edge case with no valid combinations available', () => {
       // Set up minimal scenario
       gameState.currentTrick = {

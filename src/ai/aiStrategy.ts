@@ -18,6 +18,7 @@ import {
   GamePhaseStrategy,
   Rank,
   FourthPlayerAnalysis,
+  ThirdPlayerAnalysis,
 } from "../types";
 import { isTrump, evaluateTrickPlay } from "../game/gameLogic";
 import {
@@ -225,27 +226,103 @@ export class AIStrategyImplementation implements AIStrategy {
   ): Card[] {
     const trickWinner = context.trickWinnerAnalysis!;
 
-    // For now, use simple heuristics based on trick winner analysis
-    const shouldContributePoints = this.shouldContributePointCards(
-      trickWinner,
-      comboAnalyses,
-      context,
-      gameState,
-      trumpInfo,
-    );
+    // Single unified path with position-specific analysis
+    switch (context.trickPosition) {
+      case TrickPosition.Third:
+        // 3rd player tactical analysis
+        const shouldContributeThird = this.shouldContributePointCards(
+          trickWinner,
+          comboAnalyses,
+          context,
+          gameState,
+          trumpInfo,
+        );
 
-    if (shouldContributePoints) {
-      // CONTRIBUTE_POINTS: Use memory-enhanced point card hierarchy
-      return this.selectPointContribution(
-        comboAnalyses,
-        trumpInfo,
-        context,
-        gameState,
-      );
-    } else {
-      // PLAY_CONSERVATIVE: Teammate winning strong - play low, avoid point cards
-      return this.selectLowestValueNonPointCombo(comboAnalyses);
+        if (shouldContributeThird) {
+          const thirdPlayerAnalysis = this.analyzeThirdPlayerAdvantage(
+            comboAnalyses,
+            context,
+            trumpInfo,
+            gameState,
+          );
+
+          if (thirdPlayerAnalysis.optimalCombo) {
+            return thirdPlayerAnalysis.optimalCombo.cards;
+          }
+        }
+        break;
+
+      case TrickPosition.Fourth:
+        // 4th player perfect information analysis
+        const shouldContributeFourth = this.shouldContributePointCards(
+          trickWinner,
+          comboAnalyses,
+          context,
+          gameState,
+          trumpInfo,
+        );
+
+        if (shouldContributeFourth) {
+          const fourthPlayerAnalysis = this.analyzeFourthPlayerAdvantage(
+            comboAnalyses,
+            context,
+            trumpInfo,
+            gameState,
+          );
+
+          // Use 4th player perfect information for optimal point contribution
+          if (fourthPlayerAnalysis.guaranteedPointCards.length > 0) {
+            // Sort by highest point value for maximum contribution
+            const sortedByPoints =
+              fourthPlayerAnalysis.guaranteedPointCards.sort((a, b) => {
+                const aPoints = a.cards.reduce(
+                  (total, card) => total + (card.points || 0),
+                  0,
+                );
+                const bPoints = b.cards.reduce(
+                  (total, card) => total + (card.points || 0),
+                  0,
+                );
+                return bPoints - aPoints; // Highest points first
+              });
+            return sortedByPoints[0].cards;
+          } else {
+            // Use enhanced 4th player contribution with proper 10 > King > 5 priority
+            return this.selectPointContribution(
+              comboAnalyses,
+              trumpInfo,
+              context,
+              gameState,
+            );
+          }
+        }
+        break;
+
+      case TrickPosition.First:
+      case TrickPosition.Second:
+      default:
+        // Standard logic for other positions
+        const shouldContributeStandard = this.shouldContributePointCards(
+          trickWinner,
+          comboAnalyses,
+          context,
+          gameState,
+          trumpInfo,
+        );
+
+        if (shouldContributeStandard) {
+          return this.selectPointContribution(
+            comboAnalyses,
+            trumpInfo,
+            context,
+            gameState,
+          );
+        }
+        break;
     }
+
+    // Fallback: Conservative play when not contributing points
+    return this.selectLowestValueNonPointCombo(comboAnalyses);
   }
 
   // === POINT CONTRIBUTION DECISION ===
@@ -336,9 +413,13 @@ export class AIStrategyImplementation implements AIStrategy {
       return false; // Otherwise be conservative - teammate might lose the trick
     }
 
-    // If trick has low points, worth contributing
+    // For low-point tricks, only contribute if it's safe
     if (trickWinner.trickPoints < 15) {
-      return true;
+      // If teammate is winning, be conservative unless they have very strong cards
+      if (trickWinner.isTeammateWinning) {
+        return false; // Don't contribute unless teammate has very strong cards (handled above)
+      }
+      return true; // Safe to contribute when we can win low-point tricks
     }
 
     // For high-point tricks or strong teammate leads, be conservative
@@ -389,23 +470,24 @@ export class AIStrategyImplementation implements AIStrategy {
           let priority = 0;
 
           // 🎯 4TH PLAYER ENHANCEMENT: Enhanced priority for last player
+          // Priority order: 10s > Kings > 5s (traditional Shengji strategy)
           if (context?.trickPosition === TrickPosition.Fourth) {
             // Last player gets bonus priority for point cards
-            if (firstCard.rank === Rank.King) {
-              priority += 7; // Enhanced from 5 to 7
-            } else if (firstCard.rank === Rank.Ten) {
-              priority += 6; // Enhanced from 4 to 6
+            if (firstCard.rank === Rank.Ten) {
+              priority += 7; // 10s get highest priority
+            } else if (firstCard.rank === Rank.King) {
+              priority += 6; // Kings get medium priority
             } else if (firstCard.rank === Rank.Five) {
-              priority += 5; // Enhanced from 3 to 5
+              priority += 5; // 5s get lowest priority
             }
           } else {
             // Original priority for other positions
-            if (firstCard.rank === Rank.King) {
-              priority += 5; // Kings get highest priority for point contribution
-            } else if (firstCard.rank === Rank.Ten) {
-              priority += 4; // 10s get high priority
+            if (firstCard.rank === Rank.Ten) {
+              priority += 5; // 10s get highest priority for point contribution
+            } else if (firstCard.rank === Rank.King) {
+              priority += 4; // Kings get medium priority
             } else if (firstCard.rank === Rank.Five) {
-              priority += 3; // 5s get medium priority
+              priority += 3; // 5s get lowest priority
             }
           }
 
@@ -572,6 +654,387 @@ export class AIStrategyImplementation implements AIStrategy {
   }
 
   // === HELPER METHODS ===
+
+  // === 3RD PLAYER TACTICAL ANALYSIS ===
+
+  /**
+   * Analyzes tactical advantages available to the 3rd player when teammate is winning
+   * Evaluates takeover opportunities and optimal contribution strategies
+   */
+  private analyzeThirdPlayerAdvantage(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    trumpInfo: TrumpInfo,
+    gameState: GameState,
+  ): ThirdPlayerAnalysis {
+    if (context.trickPosition !== TrickPosition.Third) {
+      throw new Error(
+        "analyzeThirdPlayerAdvantage should only be called for 3rd player (TrickPosition.Third)",
+      );
+    }
+
+    if (!context.trickWinnerAnalysis?.isTeammateWinning) {
+      throw new Error(
+        "analyzeThirdPlayerAdvantage should only be called when teammate is winning",
+      );
+    }
+
+    // Analyze teammate's lead strength directly
+    const { currentTrick } = gameState;
+    if (!currentTrick) {
+      throw new Error(
+        "analyzeThirdPlayerAdvantage called with no active trick",
+      );
+    }
+
+    // Get teammate's winning cards
+    const trickWinner = context.trickWinnerAnalysis!;
+    const winnerId = trickWinner.currentWinner;
+    const winningPlay = currentTrick.plays.find(
+      (play) => play.playerId === winnerId,
+    );
+    const teammateCards = winningPlay?.cards || currentTrick.leadingCombo || [];
+
+    if (teammateCards.length === 0) {
+      throw new Error("No cards found for winning teammate");
+    }
+
+    const leadingCard = teammateCards[0];
+    const vulnerabilityFactors: string[] = [];
+    let leadStrength: "weak" | "moderate" | "strong" = "moderate";
+
+    // Analyze trump vs non-trump
+    const isTeammateTrump = isTrump(leadingCard, gameState.trumpInfo);
+
+    if (!isTeammateTrump) {
+      vulnerabilityFactors.push("non-trump-lead");
+      if (leadingCard.rank === Rank.Ace) {
+        leadStrength = "moderate";
+      } else if (
+        leadingCard.rank === Rank.King ||
+        leadingCard.rank === Rank.Queen
+      ) {
+        leadStrength = "weak";
+        vulnerabilityFactors.push("vulnerable-to-higher-cards");
+      } else {
+        leadStrength = "weak";
+        vulnerabilityFactors.push("low-card-lead");
+      }
+    } else {
+      // Trump analysis
+      if (leadingCard.joker === "Big") {
+        leadStrength = "strong";
+      } else if (leadingCard.joker === "Small") {
+        leadStrength = "strong";
+        vulnerabilityFactors.push("beatable-by-big-joker");
+      } else if (
+        leadingCard.rank === gameState.trumpInfo.trumpRank &&
+        leadingCard.suit === gameState.trumpInfo.trumpSuit
+      ) {
+        leadStrength = "strong";
+        vulnerabilityFactors.push("beatable-by-jokers");
+      } else {
+        leadStrength = "moderate";
+        vulnerabilityFactors.push("beatable-by-higher-trump");
+      }
+    }
+
+    // Combination type analysis
+    const comboType =
+      teammateCards.length === 1
+        ? "single"
+        : teammateCards.length === 2
+          ? "pair"
+          : "tractor";
+
+    if (comboType === "pair" || comboType === "tractor") {
+      // Pairs and tractors are harder to beat
+      if (leadStrength === "weak") leadStrength = "moderate";
+      else if (leadStrength === "moderate") leadStrength = "strong";
+    } else {
+      vulnerabilityFactors.push("single-card-vulnerable");
+    }
+
+    // 4th player threat assessment (simplified)
+    const isVulnerableToFourthPlayer =
+      !isTeammateTrump || leadStrength !== "strong";
+    if (isVulnerableToFourthPlayer) {
+      vulnerabilityFactors.push("fourth-player-threat");
+      // Downgrade strength if vulnerable
+      if (leadStrength === "strong") leadStrength = "moderate";
+      else if (leadStrength === "moderate") leadStrength = "weak";
+    }
+
+    // Calculate point potential
+    const currentTrickPoints = currentTrick.points || 0;
+    const pointMaximizationPotential = currentTrickPoints + 10; // Simplified estimation
+
+    // Determine strategy based on analysis
+    let takeoverRecommendation: "support" | "takeover" | "strategic";
+    let pointContributionStrategy: "enhanced" | "strategic" | "conservative";
+
+    const shouldTakeover =
+      leadStrength === "weak" &&
+      isVulnerableToFourthPlayer &&
+      pointMaximizationPotential > 15;
+
+    if (shouldTakeover) {
+      takeoverRecommendation = "takeover";
+      pointContributionStrategy = "enhanced";
+    } else if (leadStrength === "strong") {
+      takeoverRecommendation = "support";
+      pointContributionStrategy = "enhanced";
+    } else {
+      takeoverRecommendation = "strategic";
+      pointContributionStrategy = "strategic";
+    }
+
+    // Find optimal combo for the situation
+    const optimalCombo = this.selectOptimalThirdPlayerCombo(
+      comboAnalyses,
+      takeoverRecommendation,
+      pointContributionStrategy,
+      trumpInfo,
+      context,
+    );
+
+    // Calculate risk assessment
+    const riskAssessment = this.calculateThirdPlayerRisk(
+      leadStrength,
+      isVulnerableToFourthPlayer,
+      takeoverRecommendation,
+      context,
+    );
+
+    // Determine if 3rd position provides tactical advantage
+    // Only be aggressive when we have a strong reason to override conservative play
+    const tacticalAdvantage =
+      (isVulnerableToFourthPlayer && leadStrength === "strong") || // Only protect strong leads aggressively
+      pointMaximizationPotential > 20 || // Very high point potential
+      context.pointPressure === PointPressure.HIGH; // High pressure situations
+
+    return {
+      teammateLeadStrength: leadStrength,
+      takeoverRecommendation,
+      pointContributionStrategy,
+      vulnerabilityFactors,
+      riskAssessment,
+      pointMaximizationPotential,
+      optimalCombo,
+      tacticalAdvantage,
+    };
+  }
+
+  /**
+   * Selects optimal combo for 3rd player based on tactical analysis
+   */
+  private selectOptimalThirdPlayerCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    takeoverRecommendation: "support" | "takeover" | "strategic",
+    pointContributionStrategy: "enhanced" | "strategic" | "conservative",
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+  ): Combo | null {
+    if (comboAnalyses.length === 0) return null;
+
+    switch (takeoverRecommendation) {
+      case "takeover":
+        // Find combos that can beat current trick
+        const winningCombos = comboAnalyses.filter((ca) => {
+          // Simplified check - would use evaluateTrickPlay in real implementation
+          return (
+            ca.analysis.strength >= ComboStrength.Medium && ca.analysis.isTrump
+          );
+        });
+        if (winningCombos.length > 0) {
+          // Select most efficient takeover combo
+          const sorted = winningCombos.sort(
+            (a, b) =>
+              b.analysis.pointValue * 2 +
+              b.combo.value -
+              (a.analysis.pointValue * 2 + a.combo.value),
+          );
+          return sorted[0].combo;
+        }
+        // Fallback to support if no takeover possible
+        break;
+
+      case "support":
+        // Contribute points aggressively - use enhanced strategy
+        const pointContributions = comboAnalyses.filter((ca) =>
+          ca.combo.cards.some((card) => card.points > 0),
+        );
+        if (pointContributions.length > 0) {
+          // Sort by traditional Shengji priority: 10 > King > 5
+          const sorted = pointContributions.sort((a, b) => {
+            const aCard = a.combo.cards[0];
+            const bCard = b.combo.cards[0];
+
+            // Priority order: 10s first, then Kings, then 5s
+            const getPriority = (card: any) => {
+              if (card.rank === Rank.Ten) return 3;
+              if (card.rank === Rank.King) return 2;
+              if (card.rank === Rank.Five) return 1;
+              return 0;
+            };
+
+            const aPriority = getPriority(aCard);
+            const bPriority = getPriority(bCard);
+
+            if (aPriority !== bPriority) {
+              return bPriority - aPriority; // Higher priority first
+            }
+
+            // Same rank priority - prefer higher point value
+            const aPoints = a.combo.cards.reduce(
+              (total, card) => total + (card.points || 0),
+              0,
+            );
+            const bPoints = b.combo.cards.reduce(
+              (total, card) => total + (card.points || 0),
+              0,
+            );
+            return bPoints - aPoints;
+          });
+          return sorted[0].combo;
+        }
+        break;
+
+      case "strategic":
+        // Balanced approach - use same prioritization as support case
+        const strategicContributions = comboAnalyses.filter((ca) =>
+          ca.combo.cards.some((card) => card.points > 0),
+        );
+        if (strategicContributions.length > 0) {
+          // Use same priority system as support case: 10 > King > 5
+          const sorted = strategicContributions.sort((a, b) => {
+            const aCard = a.combo.cards[0];
+            const bCard = b.combo.cards[0];
+
+            // Priority order: 10s first, then Kings, then 5s
+            const getPriority = (card: any) => {
+              if (card.rank === Rank.Ten) return 3;
+              if (card.rank === Rank.King) return 2;
+              if (card.rank === Rank.Five) return 1;
+              return 0;
+            };
+
+            const aPriority = getPriority(aCard);
+            const bPriority = getPriority(bCard);
+
+            if (aPriority !== bPriority) {
+              return bPriority - aPriority; // Higher priority first
+            }
+
+            // Same rank priority - prefer higher point value
+            const aPoints = a.combo.cards.reduce(
+              (total, card) => total + (card.points || 0),
+              0,
+            );
+            const bPoints = b.combo.cards.reduce(
+              (total, card) => total + (card.points || 0),
+              0,
+            );
+            return bPoints - aPoints;
+          });
+          return sorted[0].combo;
+        }
+        break;
+    }
+
+    // Default fallback - get a valid combo for the analysis to return
+    const fallbackCombo = this.selectPointContributionCombo(
+      comboAnalyses,
+      trumpInfo,
+      context,
+    );
+    return fallbackCombo;
+  }
+
+  /**
+   * Helper method to select point contribution combo and return Combo object
+   */
+  private selectPointContributionCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+  ): Combo | null {
+    if (comboAnalyses.length === 0) return null;
+
+    // Use existing point contribution logic but return the combo instead of cards
+    const pointCardCombos = comboAnalyses.filter((ca) =>
+      ca.combo.cards.some((card) => card.points > 0),
+    );
+
+    if (pointCardCombos.length > 0) {
+      // Sort by traditional point card hierarchy: 10 > King > 5
+      const sorted = pointCardCombos.sort((a, b) => {
+        const aCard = a.combo.cards[0];
+        const bCard = b.combo.cards[0];
+
+        const getPriority = (card: any) => {
+          if (card.rank === Rank.Ten) return 3;
+          if (card.rank === Rank.King) return 2;
+          if (card.rank === Rank.Five) return 1;
+          return 0;
+        };
+
+        const aPriority = getPriority(aCard);
+        const bPriority = getPriority(bCard);
+
+        if (aPriority !== bPriority) {
+          return bPriority - aPriority; // Higher priority first
+        }
+
+        return b.analysis.pointValue - a.analysis.pointValue;
+      });
+
+      return sorted[0].combo;
+    }
+
+    // Fallback to lowest value combo if no point cards available
+    const sorted = comboAnalyses.sort((a, b) => a.combo.value - b.combo.value);
+    return sorted[0].combo;
+  }
+
+  /**
+   * Calculates risk assessment for 3rd player tactical decisions
+   */
+  private calculateThirdPlayerRisk(
+    leadStrength: "weak" | "moderate" | "strong",
+    isVulnerableToFourthPlayer: boolean,
+    takeoverRecommendation: "support" | "takeover" | "strategic",
+    context: GameContext,
+  ): number {
+    let risk = 0.3; // Base risk level
+
+    // Increase risk for takeover attempts
+    if (takeoverRecommendation === "takeover") {
+      risk += 0.3;
+    }
+
+    // Adjust based on teammate lead strength
+    switch (leadStrength) {
+      case "strong":
+        risk -= 0.1; // Lower risk with strong teammate
+        break;
+      case "weak":
+        risk += 0.2; // Higher risk with weak teammate
+        break;
+    }
+
+    // Adjust based on 4th player vulnerability
+    if (isVulnerableToFourthPlayer) {
+      risk -= 0.1; // Lower risk when protecting from 4th player
+    }
+
+    // Adjust based on game pressure
+    if (context.pointPressure === PointPressure.HIGH) {
+      risk -= 0.1; // Lower risk tolerance in high pressure
+    }
+
+    return Math.max(0, Math.min(1, risk));
+  }
 
   // === 4TH PLAYER PERFECT INFORMATION ANALYSIS ===
 
@@ -883,6 +1346,10 @@ export class AIStrategyImplementation implements AIStrategy {
 
     return null; // No perfect information advantage found
   }
+
+  // === 3RD PLAYER TACTICAL ANALYSIS (CONSOLIDATED) ===
+  // Note: Tactical analysis functionality has been consolidated into
+  // analyzeThirdPlayerAdvantage() method to reduce code duplication
 
   // REMOVED: tryCreateTwoSinglesInsteadOfPair method - no longer needed with proper game logic fix
 

@@ -146,7 +146,7 @@ npm run qualitycheck  # Runs all checks
 - **NO LINT WARNINGS/ERRORS**: All ESLint warnings and errors must be resolved.
 - **TYPECHECK MUST PASS**: No TypeScript compilation errors allowed.
 - **Zero Tolerance Policy**: `npm run qualitycheck` must pass completely with no failures or warnings before any commit.
-- **Current Test Count**: 532 tests passing (update README.md badge when count changes)
+- **Current Test Count**: 549 tests passing (update README.md badge when count changes)
 
 ### Git Workflow
 
