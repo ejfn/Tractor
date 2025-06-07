@@ -35,7 +35,6 @@ export function useGameState() {
   );
 
   // Game flow control
-  const [showSetupInternal, setShowSetupInternal] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState<"A" | "B" | null>(null);
 
@@ -52,11 +51,11 @@ export function useGameState() {
 
   // Initialize game on component mount if no game state exists
   useEffect(() => {
-    if (!showSetupInternal && !gameState) {
+    if (!gameState) {
       const newGameState = initializeGame();
       setGameState(newGameState);
     }
-  }, [showSetupInternal, gameState]);
+  }, [gameState]);
 
   // Extract relevant values for kitty swap detection
   const gamePhase = gameState?.gamePhase;
@@ -93,11 +92,11 @@ export function useGameState() {
 
   // Initialize game (for manual initialization)
   const initGame = useCallback(() => {
-    if (!showSetupInternal && !gameState) {
+    if (!gameState) {
       const newGameState = initializeGame();
       setGameState(newGameState);
     }
-  }, [showSetupInternal, gameState]);
+  }, [gameState]);
 
   // Handle card selection
   const handleCardSelect = (card: Card) => {
@@ -320,7 +319,6 @@ export function useGameState() {
   const startNewGame = () => {
     setGameState(null);
     setSelectedCards([]);
-    setShowSetupInternal(false);
     setGameOver(false);
     setWinner(null);
     setShowRoundComplete(false);
@@ -367,7 +365,6 @@ export function useGameState() {
     // State
     gameState,
     selectedCards,
-    showSetup: showSetupInternal,
     gameOver,
     winner,
     showRoundComplete,
@@ -395,6 +392,5 @@ export function useGameState() {
     // Setters
     setGameState,
     setSelectedCards,
-    setShowSetup: setShowSetupInternal,
   };
 }

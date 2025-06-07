@@ -28,7 +28,6 @@ const GameScreenController: React.FC = () => {
   const {
     gameState,
     selectedCards,
-    showSetup,
     gameOver,
     winner,
     showRoundComplete,
@@ -172,7 +171,6 @@ const GameScreenController: React.FC = () => {
       selectedCards={selectedCards}
       humanPlayerIndex={humanPlayerIndex}
       // UI state
-      showSetup={showSetup}
       gameOver={gameOver}
       winner={winner}
       waitingForAI={waitingForAI}
