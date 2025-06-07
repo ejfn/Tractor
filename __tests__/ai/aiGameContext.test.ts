@@ -478,9 +478,9 @@ describe("AI Game Context", () => {
     it('should provide fourth position strategy', () => {
       const result = getPositionStrategy(TrickPosition.Fourth, PlayStyle.Balanced);
 
-      expect(result.informationGathering).toBe(0.2); // Low - perfect information
-      expect(result.partnerCoordination).toBe(0.9);  // High - can see partner
-      expect(result.riskTaking).toBe(0.8);           // High - optimal decisions possible
+      expect(result.informationGathering).toBe(1.0); // High - perfect information available
+      expect(result.partnerCoordination).toBe(1.0);  // High - can optimize teammate support
+      expect(result.riskTaking).toBe(0.9);           // High - optimal decisions possible
     });
 
     it('should adjust for aggressive play style', () => {
@@ -557,12 +557,10 @@ describe("AI Game Context", () => {
         getPositionStrategy(pos, PlayStyle.Balanced)
       );
 
-      // Information gathering should decrease as position advances
-      for (let i = 1; i < strategies.length; i++) {
-        expect(strategies[i].informationGathering).toBeLessThanOrEqual(
-          strategies[i-1].informationGathering
-        );
-      }
+      // Information gathering should decrease through positions 1-3, then spike at 4 (perfect info)
+      expect(strategies[1].informationGathering).toBeLessThanOrEqual(strategies[0].informationGathering); // Second <= First
+      expect(strategies[2].informationGathering).toBeLessThanOrEqual(strategies[1].informationGathering); // Third <= Second
+      expect(strategies[3].informationGathering).toBe(1.0); // Fourth has perfect information
 
       // Partner coordination should increase as position advances
       for (let i = 1; i < strategies.length; i++) {
