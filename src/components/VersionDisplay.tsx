@@ -24,7 +24,8 @@ export const VersionDisplay: React.FC<VersionDisplayProps> = ({ style }) => {
     }
 
     // Use version with git hash injected by build pipeline, fallback to clean version
-    const version = Constants.expoConfig?.extra?.version || Constants.expoConfig?.version;
+    const version =
+      Constants.expoConfig?.extra?.version || Constants.expoConfig?.version;
     if (version) {
       return version;
     }
