@@ -2,9 +2,12 @@ name: 'Git Version'
 description: 'Detect version from GitHub context and inject into app.json for EAS workflows'
 
 outputs:
-  version:
-    description: 'The detected version with git hash (e.g., v1.0.0+abc1234)'
-    value: ${{ steps.detect.outputs.version }}
+  full-version:
+    description: 'The full version with git hash (e.g., v1.0.0+abc1234)'
+    value: ${{ steps.detect.outputs.full-version }}
+  app-version:
+    description: 'The app version for OTA compatibility (e.g., v1.0.0)'
+    value: ${{ steps.detect.outputs.app-version }}
   eas-branch:
     description: 'EAS Update branch'
     value: ${{ steps.detect.outputs.eas-branch }}
@@ -35,18 +38,35 @@ runs:
         fi
         
         if [ "${{ github.event_name }}" = "release" ]; then
-          # Release event
-          VERSION="${{ github.event.release.tag_name }}+${GIT_HASH_SHORT}"
+          # Release event - normalize to major.minor.0 for OTA compatibility
+          RAW_VERSION="${{ github.event.release.tag_name }}"
+          if [[ $RAW_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            APP_VERSION="v${MAJOR}.${MINOR}.0"
+          else
+            APP_VERSION="$RAW_VERSION"
+          fi
+          FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
           EAS_BRANCH="production"
           
         elif [[ ${{ github.ref }} == refs/tags/v* ]]; then
-          # Tag push
-          VERSION="${{ github.ref_name }}+${GIT_HASH_SHORT}"
+          # Tag push - normalize to major.minor.0 for OTA compatibility  
+          RAW_VERSION="${{ github.ref_name }}"
+          if [[ $RAW_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            APP_VERSION="v${MAJOR}.${MINOR}.0"
+          else
+            APP_VERSION="$RAW_VERSION"
+          fi
+          FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
           EAS_BRANCH="production"
           
         elif [[ ${{ github.ref }} == refs/heads/main ]]; then
           # Main branch push
-          VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
+          APP_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
+          FULL_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="beta"
           
         else
@@ -56,26 +76,25 @@ runs:
             BRANCH_NAME=${{ github.ref }}
             BRANCH_NAME=${BRANCH_NAME#refs/heads/}
           fi
-          VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
+          APP_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}"
+          FULL_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="alpha"
         fi
         
         # Set all outputs
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "git-hash-short=$GIT_HASH_SHORT" >> $GITHUB_OUTPUT
-        echo "git-commit=$GIT_COMMIT" >> $GITHUB_OUTPUT
+        echo "full-version=$FULL_VERSION" >> $GITHUB_OUTPUT
+        echo "app-version=$APP_VERSION" >> $GITHUB_OUTPUT
         echo "eas-branch=$EAS_BRANCH" >> $GITHUB_OUTPUT
         
         # Verbose output for debugging
         echo "Final outputs:"
-        echo "  version: $VERSION"
-        echo "  git-hash-short: $GIT_HASH_SHORT"
-        echo "  git-commit: $GIT_COMMIT"
+        echo "  full-version: $FULL_VERSION"
+        echo "  app-version: $APP_VERSION"
         echo "  eas-branch: $EAS_BRANCH"
 
     - name: Inject version into app.json
       shell: bash
       run: |
-        jq '.expo.version = "${{ steps.detect.outputs.version }}" | .expo.extra.version = "${{ steps.detect.outputs.version }}" | .expo.extra.gitCommit = "${{ steps.detect.outputs.git-commit }}"' app.json > app.json.tmp
+        jq '.expo.version = "${{ steps.detect.outputs.app-version }}" | .expo.extra.version = "${{ steps.detect.outputs.full-version }}"' app.json > app.json.tmp
         mv app.json.tmp app.json
-        echo "Injected version ${{ steps.detect.outputs.version }} into app.json"
+        echo "Injected app version ${{ steps.detect.outputs.app-version }} and full version ${{ steps.detect.outputs.full-version }} into app.json"

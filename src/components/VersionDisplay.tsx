@@ -1,36 +1,21 @@
-import React from "react";
-import { Text, View, StyleSheet } from "react-native";
 import Constants from "expo-constants";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 interface VersionDisplayProps {
   style?: any;
 }
 
 export const VersionDisplay: React.FC<VersionDisplayProps> = ({ style }) => {
-  // Try to get version from various sources
   const getVersion = (): string => {
-    // First try to get from EAS update environment variables
-    const easVersion =
-      Constants.expoConfig?.extra?.version || Constants.expoConfig?.version;
-
-    if (easVersion && easVersion !== "1.0.0") {
-      return easVersion;
-    }
-
-    // Fallback to git commit hash if available
-    const gitCommit = Constants.expoConfig?.extra?.gitCommit;
-    if (gitCommit) {
-      return `git-${gitCommit.substring(0, 7)}`;
-    }
-
     // For local dev, show dev version with git info if available
     const isDev = __DEV__ || Constants.appOwnership === "expo";
     if (isDev) {
       try {
         // Try to import dev version file
         const devVersion = require("../dev-version.json");
-        if (devVersion?.gitCommit) {
-          return `v1.0.0-dev.${devVersion.gitCommit.substring(0, 7)}`;
+        if (devVersion?.version && devVersion?.gitCommit) {
+          return `${devVersion.version}+${devVersion.gitCommit.substring(0, 7)}`;
         }
       } catch {
         // Dev version file doesn't exist or can't be read
@@ -38,7 +23,14 @@ export const VersionDisplay: React.FC<VersionDisplayProps> = ({ style }) => {
       return "v1.0.0-dev";
     }
 
-    // Final fallback - don't show version if it's just the default
+    // Use version with git hash injected by build pipeline, fallback to clean version
+    const version =
+      Constants.expoConfig?.extra?.version || Constants.expoConfig?.version;
+    if (version) {
+      return version;
+    }
+
+    // No version available
     return "";
   };
 
