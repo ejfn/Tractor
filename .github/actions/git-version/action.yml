@@ -60,7 +60,7 @@ runs:
           else
             APP_VERSION="$RAW_VERSION"
           fi
-          VERSION_WITH_HASH="${RAW_VERSION}+${GIT_HASH_SHORT}"
+          FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
           EAS_BRANCH="production"
           
         elif [[ ${{ github.ref }} == refs/heads/main ]]; then
@@ -84,21 +84,17 @@ runs:
         # Set all outputs
         echo "full-version=$FULL_VERSION" >> $GITHUB_OUTPUT
         echo "app-version=$APP_VERSION" >> $GITHUB_OUTPUT
-        echo "git-hash-short=$GIT_HASH_SHORT" >> $GITHUB_OUTPUT
-        echo "git-commit=$GIT_COMMIT" >> $GITHUB_OUTPUT
         echo "eas-branch=$EAS_BRANCH" >> $GITHUB_OUTPUT
         
         # Verbose output for debugging
         echo "Final outputs:"
         echo "  full-version: $FULL_VERSION"
         echo "  app-version: $APP_VERSION"
-        echo "  git-hash-short: $GIT_HASH_SHORT"
-        echo "  git-commit: $GIT_COMMIT"
         echo "  eas-branch: $EAS_BRANCH"
 
     - name: Inject version into app.json
       shell: bash
       run: |
-        jq '.expo.version = "${{ steps.detect.outputs.app-version }}" | .expo.extra.version = "${{ steps.detect.outputs.full-version }}" | .expo.extra.gitCommit = "${{ steps.detect.outputs.git-commit }}"' app.json > app.json.tmp
+        jq '.expo.version = "${{ steps.detect.outputs.app-version }}" | .expo.extra.version = "${{ steps.detect.outputs.full-version }}"' app.json > app.json.tmp
         mv app.json.tmp app.json
         echo "Injected app version ${{ steps.detect.outputs.app-version }} and full version ${{ steps.detect.outputs.full-version }} into app.json"
