@@ -39,7 +39,11 @@ import {
   createTrumpConservationStrategy,
   selectEarlyGameLeadingPlay,
 } from "./aiPointFocusedStrategy";
-import { isBiggestRemainingInSuit, createCardMemory } from "./aiCardMemory";
+import {
+  isBiggestRemainingInSuit,
+  createCardMemory,
+  enhanceGameContextWithHistoricalMemory,
+} from "./aiCardMemory";
 
 /**
  * Base AI strategy interface defining the core capabilities
@@ -63,13 +67,20 @@ export interface AIStrategy {
  * - Phase 1: Foundation intelligence with basic combination detection
  * - Phase 2: Strategic context awareness with point-focused gameplay
  * - Phase 3: Advanced memory systems with pattern recognition
- * - Phase 4: Strategic optimization with advanced combination analysis
+ * - Phase 4: Historical trick analysis with opponent modeling and adaptive strategies
  *
  * Priority Chain:
- * 1. Team Coordination - Support teammates and contribute points strategically
- * 2. Opponent Blocking - Counter opponent point collection based on trick value
- * 3. Trick Contention - Contest valuable tricks (≥5 points) when winnable
- * 4. Strategic Disposal - Conserve high-value cards and play optimally for future
+ * 1. Historical Insights - Apply opponent modeling and adaptive strategies (Phase 4)
+ * 2. Team Coordination - Support teammates and contribute points strategically
+ * 3. Opponent Blocking - Counter opponent point collection based on trick value
+ * 4. Trick Contention - Contest valuable tricks (≥5 points) when winnable
+ * 5. Strategic Disposal - Conserve high-value cards and play optimally for future
+ *
+ * Phase 4 Historical Analysis:
+ * - Opponent leading pattern recognition and prediction
+ * - Adaptive counter-strategies based on behavioral analysis
+ * - Team coordination pattern optimization
+ * - Multi-trick sequence pattern detection
  */
 export class AIStrategyImplementation implements AIStrategy {
   makePlay(gameState: GameState, player: Player, validCombos: Combo[]): Card[] {
@@ -78,10 +89,27 @@ export class AIStrategyImplementation implements AIStrategy {
     // Create strategic context for this AI player
     const context = createGameContext(gameState, player.id);
 
-    // Create memory context for biggest remaining detection
+    // Phase 4: Enhanced memory context with historical analysis
     const cardMemory = createCardMemory(gameState);
     if (context.memoryContext) {
       context.memoryContext.cardMemory = cardMemory;
+    }
+
+    // Integrate historical analysis when sufficient trick history exists
+    if (gameState.tricks.length >= 3) {
+      const enhancedContext = enhanceGameContextWithHistoricalMemory(
+        context,
+        cardMemory,
+        gameState,
+      );
+      // Use historical insights to inform strategy decisions
+      const historicalInsights = this.applyHistoricalInsights(
+        enhancedContext,
+        validCombos,
+        trumpInfo,
+        gameState,
+      );
+      if (historicalInsights) return historicalInsights;
     }
 
     // Enhanced Point-Focused Strategy (Issue #61)
@@ -3145,6 +3173,328 @@ export class AIStrategyImplementation implements AIStrategy {
       [Rank.Two]: 2,
     };
     return rankValues[rank] || 0;
+  }
+
+  // === PHASE 4: HISTORICAL ANALYSIS INTEGRATION ===
+
+  /**
+   * Applies historical analysis insights to inform strategic decisions
+   * Uses opponent modeling and adaptive strategy recommendations
+   */
+  private applyHistoricalInsights(
+    enhancedContext: any,
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    gameState: GameState,
+  ): Card[] | null {
+    const { memoryContext } = enhancedContext;
+
+    // Only proceed if we have enhanced memory context with historical data
+    if (!memoryContext?.trickHistory || !memoryContext?.predictiveModeling) {
+      return null;
+    }
+
+    const { trickHistory, predictiveModeling, adaptiveStrategy } =
+      memoryContext;
+
+    // Apply adaptive strategy recommendations
+    if (
+      adaptiveStrategy &&
+      this.shouldApplyAdaptiveStrategy(adaptiveStrategy, enhancedContext)
+    ) {
+      const adaptivePlay = this.selectAdaptivePlay(
+        validCombos,
+        adaptiveStrategy,
+        trickHistory,
+        enhancedContext,
+        trumpInfo,
+      );
+      if (adaptivePlay) return adaptivePlay;
+    }
+
+    // Use predictive modeling for opponent-specific strategies
+    const targetOpponent = this.identifyPrimaryThreat(
+      predictiveModeling,
+      enhancedContext,
+    );
+    if (targetOpponent) {
+      const counterPlay = this.selectCounterStrategy(
+        validCombos,
+        targetOpponent,
+        trickHistory,
+        enhancedContext,
+        trumpInfo,
+      );
+      if (counterPlay) return counterPlay;
+    }
+
+    // Apply team coordination insights
+    const coordinationPlay = this.applyTeamCoordinationInsights(
+      validCombos,
+      trickHistory.teamCoordinationHistory,
+      enhancedContext,
+      trumpInfo,
+    );
+    if (coordinationPlay) return coordinationPlay;
+
+    return null; // No historical insights applicable
+  }
+
+  /**
+   * Determines if adaptive strategy should be applied based on confidence and context
+   */
+  private shouldApplyAdaptiveStrategy(
+    adaptiveStrategy: any,
+    context: any,
+  ): boolean {
+    // Apply adaptive strategy if confidence is high and we're not in a critical trick
+    return (
+      adaptiveStrategy.confidenceLevel > 0.6 &&
+      context.trickWinnerAnalysis?.trickPoints < 15 // Not a critical high-point trick
+    );
+  }
+
+  /**
+   * Selects play based on adaptive strategy recommendations
+   */
+  private selectAdaptivePlay(
+    validCombos: Combo[],
+    adaptiveStrategy: any,
+    trickHistory: any,
+    context: any,
+    trumpInfo: TrumpInfo,
+  ): Card[] | null {
+    const comboAnalyses = validCombos.map((combo) => ({
+      combo,
+      analysis: analyzeCombo(combo, trumpInfo, context),
+    }));
+
+    // Apply tactical adjustments based on adaptive strategy
+    switch (adaptiveStrategy.recommendedApproach) {
+      case "counter":
+        return this.selectCounterAggressivePlay(
+          comboAnalyses,
+          context,
+          trumpInfo,
+        );
+
+      case "exploit":
+        return this.selectExploitativePlay(comboAnalyses, context, trumpInfo);
+
+      case "adapt":
+        return this.selectAdaptiveResponsePlay(
+          comboAnalyses,
+          context,
+          trumpInfo,
+        );
+
+      default:
+        return null; // Maintain current strategy
+    }
+  }
+
+  /**
+   * Identifies the most threatening opponent based on predictive modeling
+   */
+  private identifyPrimaryThreat(
+    predictiveModeling: any[],
+    context: any,
+  ): any | null {
+    if (!predictiveModeling || predictiveModeling.length === 0) return null;
+
+    // Find opponent with highest threat level (combination of strength and aggressiveness)
+    return predictiveModeling.reduce((maxThreat, model) => {
+      const threatLevel =
+        model.handStrengthEstimate.overallStrength * 0.6 +
+        model.reliability * 0.4;
+
+      const currentMax = maxThreat?.threatLevel || 0;
+      return threatLevel > currentMax ? { ...model, threatLevel } : maxThreat;
+    }, null);
+  }
+
+  /**
+   * Selects counter-strategy play against specific opponent
+   */
+  private selectCounterStrategy(
+    validCombos: Combo[],
+    targetOpponent: any,
+    trickHistory: any,
+    context: any,
+    trumpInfo: TrumpInfo,
+  ): Card[] | null {
+    const comboAnalyses = validCombos.map((combo) => ({
+      combo,
+      analysis: analyzeCombo(combo, trumpInfo, context),
+    }));
+
+    // Counter based on opponent's predicted next move
+    const prediction = targetOpponent.nextMoveAnalysis;
+
+    if (prediction.mostLikelyPlay === "trump" && prediction.confidence > 0.7) {
+      // Opponent likely to play trump - conserve our trump
+      return this.selectTrumpConservationPlay(comboAnalyses, context);
+    }
+
+    if (prediction.mostLikelyPlay === "point" && prediction.confidence > 0.6) {
+      // Opponent likely to play points - try to block or beat
+      return this.selectPointBlockingPlay(comboAnalyses, context, trumpInfo);
+    }
+
+    return null;
+  }
+
+  /**
+   * Applies team coordination insights from historical analysis
+   */
+  private applyTeamCoordinationInsights(
+    validCombos: Combo[],
+    teamCoordination: any,
+    context: any,
+    trumpInfo: TrumpInfo,
+  ): Card[] | null {
+    // If team coordination is strong, enhance cooperative play
+    if (teamCoordination.cooperationLevel > 0.7) {
+      const comboAnalyses = validCombos.map((combo) => ({
+        combo,
+        analysis: analyzeCombo(combo, trumpInfo, context),
+      }));
+
+      // Prioritize team support when teammate is winning
+      if (context.trickWinnerAnalysis?.isTeammateWinning) {
+        return this.selectEnhancedTeamSupport(comboAnalyses, context);
+      }
+    }
+
+    return null;
+  }
+
+  // Helper methods for historical strategy implementations
+
+  private selectCounterAggressivePlay(
+    comboAnalyses: any[],
+    context: any,
+    trumpInfo: TrumpInfo,
+  ): Card[] | null {
+    // Select conservative, trump-preserving play to counter aggressive opponents
+    const conservativeOptions = comboAnalyses.filter(
+      ({ analysis }) =>
+        analysis.strength !== ComboStrength.Critical && !analysis.isTrump,
+    );
+
+    if (conservativeOptions.length > 0) {
+      // Sort by lowest value and conservation priority
+      conservativeOptions.sort(
+        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+      );
+      return conservativeOptions[0].combo.cards;
+    }
+
+    return null;
+  }
+
+  private selectExploitativePlay(
+    comboAnalyses: any[],
+    context: any,
+    trumpInfo: TrumpInfo,
+  ): Card[] | null {
+    // Select play that exploits identified opponent weaknesses
+    const exploitOptions = comboAnalyses.filter(
+      ({ analysis }) => analysis.disruptionPotential > 0.6,
+    );
+
+    if (exploitOptions.length > 0) {
+      exploitOptions.sort(
+        (a, b) =>
+          b.analysis.disruptionPotential - a.analysis.disruptionPotential,
+      );
+      return exploitOptions[0].combo.cards;
+    }
+
+    return null;
+  }
+
+  private selectAdaptiveResponsePlay(
+    comboAnalyses: any[],
+    context: any,
+    trumpInfo: TrumpInfo,
+  ): Card[] | null {
+    // Select balanced play that adapts to opponent patterns
+    const balancedOptions = comboAnalyses.filter(
+      ({ analysis }) =>
+        analysis.strength === ComboStrength.Medium &&
+        analysis.disruptionPotential > 0.3,
+    );
+
+    if (balancedOptions.length > 0) {
+      return balancedOptions[0].combo.cards;
+    }
+
+    return null;
+  }
+
+  private selectTrumpConservationPlay(
+    comboAnalyses: any[],
+    context: any,
+  ): Card[] | null {
+    // Prioritize non-trump cards for conservation
+    const nonTrumpOptions = comboAnalyses.filter(
+      ({ analysis }) => !analysis.isTrump,
+    );
+
+    if (nonTrumpOptions.length > 0) {
+      nonTrumpOptions.sort(
+        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+      );
+      return nonTrumpOptions[0].combo.cards;
+    }
+
+    return null;
+  }
+
+  private selectPointBlockingPlay(
+    comboAnalyses: any[],
+    context: any,
+    trumpInfo: TrumpInfo,
+  ): Card[] | null {
+    // Try to beat opponent point plays with trump or higher cards
+    const blockingOptions = comboAnalyses.filter(
+      ({ analysis }) =>
+        analysis.isTrump || analysis.strength === ComboStrength.Strong,
+    );
+
+    if (blockingOptions.length > 0) {
+      // Prefer trump for blocking
+      const trumpOptions = blockingOptions.filter(
+        ({ analysis }) => analysis.isTrump,
+      );
+      if (trumpOptions.length > 0) {
+        return trumpOptions[0].combo.cards;
+      }
+      return blockingOptions[0].combo.cards;
+    }
+
+    return null;
+  }
+
+  private selectEnhancedTeamSupport(
+    comboAnalyses: any[],
+    context: any,
+  ): Card[] | null {
+    // Enhanced point contribution when team coordination is strong
+    const pointOptions = comboAnalyses.filter(
+      ({ analysis }) => analysis.hasPoints,
+    );
+
+    if (pointOptions.length > 0) {
+      // Sort by point value (highest first) for maximum contribution
+      pointOptions.sort(
+        (a, b) => b.analysis.pointValue - a.analysis.pointValue,
+      );
+      return pointOptions[0].combo.cards;
+    }
+
+    return null;
   }
 }
 

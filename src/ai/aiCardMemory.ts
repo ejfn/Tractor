@@ -9,6 +9,17 @@ import {
   Rank,
   TrumpInfo,
   JokerType,
+  TrickHistoryAnalysis,
+  OpponentLeadingPattern,
+  TeamCoordinationPattern,
+  AdaptiveBehaviorDetection,
+  RoundProgressionPattern,
+  TrickSequencePattern,
+  EnhancedMemoryContext,
+  PredictiveOpponentModel,
+  AdaptiveStrategyRecommendation,
+  PlayerId,
+  Trick,
 } from "../types";
 import { isTrump } from "../game/gameLogic";
 
@@ -606,6 +617,505 @@ function detectSuitExhaustionAdvantage(
 }
 
 /**
+ * Phase 4: Historical Trick Analysis Functions
+ */
+
+/**
+ * Analyzes historical trick patterns to identify opponent behavior and team coordination
+ */
+export function analyzeTrickHistory(
+  tricks: Trick[],
+  gameState: GameState,
+): TrickHistoryAnalysis {
+  const { players, trumpInfo } = gameState;
+
+  // Initialize analysis structure
+  const analysis: TrickHistoryAnalysis = {
+    opponentLeadingPatterns: {} as Record<PlayerId, OpponentLeadingPattern>,
+    teamCoordinationHistory: createTeamCoordinationPattern(tricks, players),
+    adaptiveBehaviorTrends: createAdaptiveBehaviorDetection(tricks, players),
+    roundProgression: createRoundProgressionPattern(tricks, players, trumpInfo),
+    trickSequencePatterns: identifyTrickSequencePatterns(tricks, players),
+  };
+
+  // Analyze each player's leading patterns
+  players.forEach((player) => {
+    analysis.opponentLeadingPatterns[player.id] = analyzeOpponentLeadingPattern(
+      player.id,
+      tricks,
+      trumpInfo,
+    );
+  });
+
+  return analysis;
+}
+
+/**
+ * Analyzes a specific player's leading behavior patterns
+ */
+function analyzeOpponentLeadingPattern(
+  playerId: PlayerId,
+  tricks: Trick[],
+  trumpInfo: TrumpInfo,
+): OpponentLeadingPattern {
+  const leaderTricks = tricks.filter(
+    (trick) => trick.leadingPlayerId === playerId,
+  );
+
+  if (leaderTricks.length === 0) {
+    return createDefaultLeadingPattern();
+  }
+
+  const trumpLeads = leaderTricks.filter((trick) =>
+    trick.leadingCombo.some((card) => isTrump(card, trumpInfo)),
+  ).length;
+
+  const pointLeads = leaderTricks.filter((trick) =>
+    trick.leadingCombo.some((card) => card.points > 0),
+  ).length;
+
+  // Analyze suit preferences
+  const suitCounts: Record<string, number> = {};
+  leaderTricks.forEach((trick) => {
+    const leadSuit = trick.leadingCombo[0]?.suit;
+    if (leadSuit) {
+      suitCounts[leadSuit] = (suitCounts[leadSuit] || 0) + 1;
+    }
+  });
+
+  const strongSuitPreference = Object.entries(suitCounts).reduce(
+    (max, [suit, count]) => {
+      if (!max || count > suitCounts[max]) {
+        return suit;
+      }
+      return max;
+    },
+    null as string | null,
+  ) as Suit | null;
+
+  // Calculate aggressiveness based on trump and point card usage
+  const aggressivenessLevel = Math.min(
+    1,
+    (trumpLeads / leaderTricks.length) * 0.6 +
+      (pointLeads / leaderTricks.length) * 0.4,
+  );
+
+  return {
+    trumpLeadFrequency: trumpLeads / leaderTricks.length,
+    pointCardLeadFrequency: pointLeads / leaderTricks.length,
+    strongSuitPreference,
+    situationalBehavior: analyzeSituationalBehavior(leaderTricks, trumpInfo),
+    aggressivenessLevel,
+    teamCoordinationStyle: analyzeTeamCoordinationStyle(leaderTricks, tricks),
+  };
+}
+
+/**
+ * Creates team coordination pattern analysis
+ */
+function createTeamCoordinationPattern(
+  tricks: Trick[],
+  players: any[],
+): TeamCoordinationPattern {
+  let supportCount = 0;
+  let blockingCount = 0;
+  let totalInteractions = 0;
+
+  // Analyze each trick for team coordination patterns
+  tricks.forEach((trick) => {
+    const allPlays = [
+      { playerId: trick.leadingPlayerId, cards: trick.leadingCombo },
+      ...trick.plays,
+    ];
+
+    for (let i = 1; i < allPlays.length; i++) {
+      const currentPlayer = players.find((p) => p.id === allPlays[i].playerId);
+      const previousPlayer = players.find(
+        (p) => p.id === allPlays[i - 1].playerId,
+      );
+
+      if (currentPlayer && previousPlayer) {
+        totalInteractions++;
+
+        // Check if they're teammates
+        if (currentPlayer.team === previousPlayer.team) {
+          // Analyze if current player is supporting previous player
+          if (analyzeSupport(allPlays[i].cards, allPlays[i - 1].cards, trick)) {
+            supportCount++;
+          }
+        } else {
+          // Analyze if current player is blocking previous player
+          if (
+            analyzeBlocking(allPlays[i].cards, allPlays[i - 1].cards, trick)
+          ) {
+            blockingCount++;
+          }
+        }
+      }
+    }
+  });
+
+  return {
+    supportFrequency:
+      totalInteractions > 0 ? supportCount / totalInteractions : 0,
+    blockingEfficiency:
+      totalInteractions > 0 ? blockingCount / totalInteractions : 0,
+    pointContributionStrategy: "conservative", // Simplified for now
+    communicationPatterns: [], // Simplified for now
+    cooperationLevel:
+      totalInteractions > 0 ? supportCount / totalInteractions : 0.5,
+  };
+}
+
+/**
+ * Creates adaptive behavior detection analysis
+ */
+function createAdaptiveBehaviorDetection(
+  tricks: Trick[],
+  players: any[],
+): AdaptiveBehaviorDetection {
+  const midpoint = Math.floor(tricks.length / 2);
+  const earlyTricks = tricks.slice(0, midpoint);
+  const lateTricks = tricks.slice(midpoint);
+
+  // Compare early vs late behavior for adaptation detection
+  const earlyPatterns = analyzePlayPatterns(earlyTricks);
+  const latePatterns = analyzePlayPatterns(lateTricks);
+
+  const behaviorConsistency = calculateBehaviorConsistency(
+    earlyPatterns,
+    latePatterns,
+  );
+
+  return {
+    learningRate: 1 - behaviorConsistency, // Less consistency = more learning
+    counterStrategyUsage: 0.3, // Simplified for now
+    behaviorConsistency,
+    adaptationTriggers: ["opponent_trump_usage", "point_pressure"], // Simplified
+    strategicFlexibility: 1 - behaviorConsistency,
+  };
+}
+
+/**
+ * Creates round progression pattern analysis
+ */
+function createRoundProgressionPattern(
+  tricks: Trick[],
+  players: any[],
+  trumpInfo: TrumpInfo,
+): RoundProgressionPattern {
+  const trickCount = tricks.length;
+  const earlyTricks = tricks.slice(0, Math.floor(trickCount / 3));
+  const midTricks = tricks.slice(
+    Math.floor(trickCount / 3),
+    Math.floor((2 * trickCount) / 3),
+  );
+  const lateTricks = tricks.slice(Math.floor((2 * trickCount) / 3));
+
+  return {
+    earlyRoundBehavior: analyzeBehaviorPhase(earlyTricks, trumpInfo),
+    midRoundBehavior: analyzeBehaviorPhase(midTricks, trumpInfo),
+    endgameBehavior: analyzeBehaviorPhase(lateTricks, trumpInfo),
+    consistencyScore: calculateRoundConsistency(
+      earlyTricks,
+      midTricks,
+      lateTricks,
+    ),
+  };
+}
+
+/**
+ * Identifies multi-trick sequence patterns
+ */
+function identifyTrickSequencePatterns(
+  tricks: Trick[],
+  players: any[],
+): TrickSequencePattern[] {
+  const patterns: TrickSequencePattern[] = [];
+
+  // Look for setup patterns (simplified implementation)
+  for (let i = 0; i < tricks.length - 1; i++) {
+    const currentTrick = tricks[i];
+    const nextTrick = tricks[i + 1];
+
+    // Check for setup patterns
+    if (isSetupPattern(currentTrick, nextTrick, players)) {
+      patterns.push({
+        patternType: "setup",
+        triggerConditions: ["low_point_trick", "teammate_next_lead"],
+        sequenceLength: 2,
+        successRate: 0.7, // Simplified
+        playerInvolved: [
+          currentTrick.leadingPlayerId,
+          nextTrick.leadingPlayerId,
+        ],
+        description: "Player sets up teammate for advantageous lead",
+      });
+    }
+  }
+
+  return patterns;
+}
+
+/**
+ * Creates enhanced memory context with historical analysis
+ */
+export function createEnhancedMemoryContext(
+  memory: CardMemory,
+  gameState: GameState,
+): EnhancedMemoryContext {
+  const baseContext = createMemoryContext(memory, gameState);
+  const trickHistory = analyzeTrickHistory(gameState.tricks, gameState);
+
+  return {
+    ...baseContext,
+    trickHistory,
+    predictiveModeling: createPredictiveModels(trickHistory, gameState),
+    adaptiveStrategy: createAdaptiveStrategy(trickHistory, gameState),
+  };
+}
+
+/**
+ * Creates predictive opponent models based on historical analysis
+ */
+function createPredictiveModels(
+  trickHistory: TrickHistoryAnalysis,
+  gameState: GameState,
+): PredictiveOpponentModel[] {
+  const models: PredictiveOpponentModel[] = [];
+
+  gameState.players.forEach((player) => {
+    const leadingPattern = trickHistory.opponentLeadingPatterns[player.id];
+    if (leadingPattern) {
+      models.push({
+        playerId: player.id,
+        nextMoveAnalysis: {
+          mostLikelyPlay: predictNextPlayType(leadingPattern),
+          confidence: calculatePredictionConfidence(leadingPattern),
+          alternativeScenarios: [],
+          reasoning: `Based on ${Math.round(leadingPattern.aggressivenessLevel * 100)}% aggressiveness and leading patterns`,
+        },
+        handStrengthEstimate: {
+          trumpCount: 2, // Simplified estimate
+          pointCardProbability: leadingPattern.pointCardLeadFrequency,
+          dominantSuit: leadingPattern.strongSuitPreference,
+          overallStrength: leadingPattern.aggressivenessLevel,
+          voidSuits: [],
+        },
+        strategicIntent: {
+          primaryGoal: determinePrimaryGoal(leadingPattern),
+          secondaryGoals: [],
+          adaptationLevel: trickHistory.adaptiveBehaviorTrends.learningRate,
+          teamCoordination:
+            trickHistory.teamCoordinationHistory.cooperationLevel,
+        },
+        reliability: Math.min(0.9, gameState.tricks.length * 0.1), // More tricks = more reliable
+      });
+    }
+  });
+
+  return models;
+}
+
+/**
+ * Creates adaptive strategy recommendations
+ */
+function createAdaptiveStrategy(
+  trickHistory: TrickHistoryAnalysis,
+  gameState: GameState,
+): AdaptiveStrategyRecommendation {
+  const mostAggressiveOpponent = Object.entries(
+    trickHistory.opponentLeadingPatterns,
+  ).reduce(
+    (
+      max: { playerId: PlayerId; pattern: OpponentLeadingPattern } | null,
+      [playerId, pattern],
+    ) =>
+      pattern.aggressivenessLevel > (max?.pattern.aggressivenessLevel || 0)
+        ? { playerId: playerId as PlayerId, pattern }
+        : max,
+    null,
+  );
+
+  return {
+    recommendedApproach:
+      (mostAggressiveOpponent?.pattern.aggressivenessLevel || 0) > 0.7
+        ? "counter"
+        : "maintain",
+    targetOpponent: mostAggressiveOpponent?.playerId || null,
+    tacticalAdjustments: [],
+    confidenceLevel: Math.min(0.8, gameState.tricks.length * 0.1),
+    expectedOutcome:
+      "Improved strategic positioning against aggressive opponents",
+  };
+}
+
+// Helper functions for historical analysis
+
+function createDefaultLeadingPattern(): OpponentLeadingPattern {
+  return {
+    trumpLeadFrequency: 0.3,
+    pointCardLeadFrequency: 0.2,
+    strongSuitPreference: null,
+    situationalBehavior: {},
+    aggressivenessLevel: 0.5,
+    teamCoordinationStyle: "supportive",
+  };
+}
+
+function analyzeSituationalBehavior(
+  tricks: Trick[],
+  trumpInfo: TrumpInfo,
+): Record<string, any> {
+  // Simplified implementation
+  return {
+    early_game: {
+      cardTypePreference: "safe",
+      comboPreference: "singles",
+      frequency: tricks.length,
+      context: "Conservative early game approach",
+    },
+  };
+}
+
+function analyzeTeamCoordinationStyle(
+  leaderTricks: Trick[],
+  allTricks: Trick[],
+): "supportive" | "independent" | "opportunistic" {
+  // Simplified analysis
+  return "supportive";
+}
+
+function analyzeSupport(
+  currentCards: Card[],
+  previousCards: Card[],
+  trick: Trick,
+): boolean {
+  // Simplified: check if current player contributed points when teammate was winning
+  return currentCards.some((card) => card.points > 0) && trick.points > 0;
+}
+
+function analyzeBlocking(
+  currentCards: Card[],
+  previousCards: Card[],
+  trick: Trick,
+): boolean {
+  // Simplified: check if current player used trump to block opponent
+  return currentCards.length > 0; // Placeholder logic
+}
+
+function analyzePlayPatterns(tricks: Trick[]): any {
+  // Simplified pattern analysis
+  if (tricks.length === 0) {
+    return {
+      trumpUsage: 0,
+      pointFocus: 0,
+    };
+  }
+
+  return {
+    trumpUsage:
+      tricks.filter((t) => t.leadingCombo.some((c) => c.rank === undefined))
+        .length / tricks.length,
+    pointFocus: tricks.filter((t) => t.points > 0).length / tricks.length,
+  };
+}
+
+function calculateBehaviorConsistency(
+  earlyPatterns: any,
+  latePatterns: any,
+): number {
+  // Handle case where patterns might be undefined or have NaN values
+  const trumpDiff = Math.abs(
+    (earlyPatterns.trumpUsage || 0) - (latePatterns.trumpUsage || 0),
+  );
+  const pointDiff = Math.abs(
+    (earlyPatterns.pointFocus || 0) - (latePatterns.pointFocus || 0),
+  );
+
+  const consistency = 1 - (trumpDiff + pointDiff) / 2;
+
+  // Ensure we return a valid number between 0 and 1
+  if (isNaN(consistency)) return 0.5; // Default consistency when no data
+  return Math.max(0, Math.min(1, consistency));
+}
+
+function analyzeBehaviorPhase(tricks: Trick[], trumpInfo: TrumpInfo): any {
+  if (tricks.length === 0) {
+    return {
+      riskTolerance: 0.5,
+      trumpUsage: 0.3,
+      pointFocus: 0.4,
+      teamOrientation: 0.5,
+    };
+  }
+
+  const trumpTricks = tricks.filter((t) =>
+    t.leadingCombo.some((c) => isTrump(c, trumpInfo)),
+  ).length;
+
+  const pointTricks = tricks.filter((t) => t.points > 0).length;
+
+  return {
+    riskTolerance: trumpTricks / tricks.length,
+    trumpUsage: trumpTricks / tricks.length,
+    pointFocus: pointTricks / tricks.length,
+    teamOrientation: 0.5, // Simplified
+  };
+}
+
+function calculateRoundConsistency(
+  early: Trick[],
+  mid: Trick[],
+  late: Trick[],
+): number {
+  // Simplified consistency score
+  return 0.7; // Placeholder
+}
+
+function isSetupPattern(current: Trick, next: Trick, players: any[]): boolean {
+  // Simplified setup pattern detection
+  const currentWinner = players.find((p) => p.id === current.winningPlayerId);
+  const nextLeader = players.find((p) => p.id === next.leadingPlayerId);
+
+  return currentWinner?.team === nextLeader?.team && current.points < 10;
+}
+
+function predictNextPlayType(
+  pattern: OpponentLeadingPattern,
+): "trump" | "point" | "safe" | "tactical" {
+  if (pattern.trumpLeadFrequency > 0.5) return "trump";
+  if (pattern.pointCardLeadFrequency > 0.4) return "point";
+  if (pattern.aggressivenessLevel < 0.3) return "safe";
+  return "tactical";
+}
+
+function calculatePredictionConfidence(
+  pattern: OpponentLeadingPattern,
+): number {
+  // Higher confidence for more consistent patterns
+  const consistency = Math.max(
+    pattern.trumpLeadFrequency,
+    pattern.pointCardLeadFrequency,
+    1 - pattern.aggressivenessLevel,
+  );
+  return Math.min(0.9, consistency);
+}
+
+function determinePrimaryGoal(
+  pattern: OpponentLeadingPattern,
+):
+  | "point_collection"
+  | "trump_conservation"
+  | "opponent_blocking"
+  | "endgame_setup" {
+  if (pattern.pointCardLeadFrequency > 0.4) return "point_collection";
+  if (pattern.trumpLeadFrequency > 0.6) return "opponent_blocking";
+  if (pattern.aggressivenessLevel < 0.3) return "trump_conservation";
+  return "endgame_setup";
+}
+
+/**
  * Integrates memory-based insights into existing game context
  */
 export function enhanceGameContextWithMemory(
@@ -619,6 +1129,28 @@ export function enhanceGameContextWithMemory(
   return {
     ...baseContext,
     memoryContext,
+    memoryStrategy,
+  };
+}
+
+/**
+ * Enhanced version that includes historical analysis
+ */
+export function enhanceGameContextWithHistoricalMemory(
+  baseContext: any,
+  memory: CardMemory,
+  gameState: GameState,
+): any {
+  const enhancedMemoryContext = createEnhancedMemoryContext(memory, gameState);
+  const memoryStrategy = createMemoryStrategy(
+    memory,
+    enhancedMemoryContext,
+    gameState,
+  );
+
+  return {
+    ...baseContext,
+    memoryContext: enhancedMemoryContext,
     memoryStrategy,
   };
 }
