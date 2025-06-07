@@ -13,7 +13,7 @@ try {
   // Get latest version tag and calculate next minor version
   let baseVersion = "1.0.0";
   try {
-    const lastTag = execSync('git tag -l "v*.*.*" --sort=-version:refname', { encoding: 'utf8' }).trim().split('\n')[0];
+    const lastTag = execSync('git tag -l "v*.*.0" --sort=-version:refname', { encoding: 'utf8' }).trim().split('\n')[0];
     if (lastTag) {
       const lastVersion = lastTag.replace('v', '');
       const [major, minor, patch] = lastVersion.split('.').map(Number);
