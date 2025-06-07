@@ -554,10 +554,10 @@ export function getPositionStrategy(
       disruptionFocus: 0.4, // Limited disruption options
     },
     [TrickPosition.Fourth]: {
-      informationGathering: 0.2, // Perfect information
-      riskTaking: 0.8, // Can make optimal decisions
-      partnerCoordination: 0.9, // Full partner visibility
-      disruptionFocus: 0.3, // Just win or conserve
+      informationGathering: 1.0, // Perfect information available
+      riskTaking: 0.9, // High - can make optimal decisions
+      partnerCoordination: 1.0, // Can optimize teammate support
+      disruptionFocus: 0.8, // High - perfect counter opportunities
     },
   };
 

@@ -17,6 +17,7 @@ import {
   TrumpConservationStrategy,
   GamePhaseStrategy,
   Rank,
+  FourthPlayerAnalysis,
 } from "../types";
 import { isTrump, evaluateTrickPlay } from "../game/gameLogic";
 import {
@@ -264,6 +265,12 @@ export class AIStrategyImplementation implements AIStrategy {
       return false; // Can't contribute what we don't have
     }
 
+    // 🎯 4TH PLAYER ENHANCEMENT: Perfect information point contribution
+    if (context.trickPosition === TrickPosition.Fourth) {
+      // Last player has perfect information - maximize point contribution when teammate winning
+      return true; // Always contribute when teammate winning and we're last
+    }
+
     // Memory-enhanced decision: Check if our point cards are biggest remaining
     if (context.memoryContext?.cardMemory) {
       const guaranteedWinningPointCards = comboAnalyses.some((ca) => {
@@ -381,13 +388,25 @@ export class AIStrategyImplementation implements AIStrategy {
         if (isBiggestRemaining) {
           let priority = 0;
 
-          // Use same priority system as leading strategy
-          if (firstCard.rank === Rank.King) {
-            priority += 5; // Kings get highest priority for point contribution
-          } else if (firstCard.rank === Rank.Ten) {
-            priority += 4; // 10s get high priority
-          } else if (firstCard.rank === Rank.Five) {
-            priority += 3; // 5s get medium priority
+          // 🎯 4TH PLAYER ENHANCEMENT: Enhanced priority for last player
+          if (context?.trickPosition === TrickPosition.Fourth) {
+            // Last player gets bonus priority for point cards
+            if (firstCard.rank === Rank.King) {
+              priority += 7; // Enhanced from 5 to 7
+            } else if (firstCard.rank === Rank.Ten) {
+              priority += 6; // Enhanced from 4 to 6
+            } else if (firstCard.rank === Rank.Five) {
+              priority += 5; // Enhanced from 3 to 5
+            }
+          } else {
+            // Original priority for other positions
+            if (firstCard.rank === Rank.King) {
+              priority += 5; // Kings get highest priority for point contribution
+            } else if (firstCard.rank === Rank.Ten) {
+              priority += 4; // 10s get high priority
+            } else if (firstCard.rank === Rank.Five) {
+              priority += 3; // 5s get medium priority
+            }
           }
 
           // Bonus for pairs vs singles
@@ -446,6 +465,14 @@ export class AIStrategyImplementation implements AIStrategy {
   ): Card[] | null {
     // Check if we can beat the opponent at all
     if (!trickWinner.canBeatCurrentWinner) {
+      // 🎯 4TH PLAYER ENHANCEMENT: Enhanced point card avoidance
+      if (context.trickPosition === TrickPosition.Fourth) {
+        return this.selectFourthPlayerPointAvoidance(
+          comboAnalyses,
+          context,
+          trumpInfo,
+        );
+      }
       // Can't beat opponent - play lowest value card to minimize points given
       return this.selectLowestValueNonPointCombo(comboAnalyses);
     }
@@ -487,6 +514,15 @@ export class AIStrategyImplementation implements AIStrategy {
         (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
       );
       return sorted[0].combo.cards;
+    }
+
+    // 🎯 4TH PLAYER ENHANCEMENT: Perfect information disposal
+    if (context.trickPosition === TrickPosition.Fourth && gameState) {
+      return this.selectFourthPlayerOptimalDisposal(
+        comboAnalyses,
+        context,
+        gameState,
+      );
     }
 
     // When we can't win the trick, conserve valuable cards (trump + Aces + point cards)
@@ -536,6 +572,317 @@ export class AIStrategyImplementation implements AIStrategy {
   }
 
   // === HELPER METHODS ===
+
+  // === 4TH PLAYER PERFECT INFORMATION ANALYSIS ===
+
+  /**
+   * Analyzes perfect information advantages available to the 4th (last) player
+   * Leverages complete visibility of all played cards for optimal decision making
+   */
+  private analyzeFourthPlayerAdvantage(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    trumpInfo: TrumpInfo,
+    gameState: GameState,
+  ): FourthPlayerAnalysis {
+    if (context.trickPosition !== TrickPosition.Fourth) {
+      throw new Error(
+        "analyzeFourthPlayerAdvantage should only be called for 4th player (TrickPosition.Fourth)",
+      );
+    }
+
+    const cardMemory = context.memoryContext?.cardMemory;
+    const trickWinner = context.trickWinnerAnalysis;
+
+    // Analyze certain win cards using memory system
+    const certainWinCards: Combo[] = [];
+    const guaranteedPointCards: Combo[] = [];
+
+    for (const { combo } of comboAnalyses) {
+      const firstCard = combo.cards[0];
+      const comboType =
+        combo.cards.length === 1
+          ? "single"
+          : combo.cards.length === 2
+            ? "pair"
+            : "tractor";
+
+      // Use existing memory system to identify guaranteed winners
+      if (
+        cardMemory &&
+        firstCard.suit &&
+        firstCard.rank &&
+        (comboType === "single" || comboType === "pair") &&
+        isBiggestRemainingInSuit(
+          cardMemory,
+          firstCard.suit,
+          firstCard.rank,
+          comboType,
+        )
+      ) {
+        certainWinCards.push(combo);
+
+        // Track point cards that are guaranteed winners
+        if (combo.cards.some((card) => (card.points || 0) > 0)) {
+          guaranteedPointCards.push(combo);
+        }
+      }
+    }
+
+    // Calculate point maximization potential
+    const currentTrickPoints =
+      gameState.currentTrick?.plays.reduce(
+        (total, play) =>
+          total +
+          play.cards.reduce(
+            (cardTotal, card) => cardTotal + (card.points || 0),
+            0,
+          ),
+        0,
+      ) || 0;
+
+    const maxPossiblePoints = Math.max(
+      ...comboAnalyses.map((ca) =>
+        ca.combo.cards.reduce((total, card) => total + (card.points || 0), 0),
+      ),
+    );
+
+    const pointMaximizationPotential = currentTrickPoints + maxPossiblePoints;
+
+    // Determine optimal strategy based on trick winner and perfect information
+    let optimalContributionStrategy: "maximize" | "conserve" | "beat";
+
+    if (trickWinner?.isTeammateWinning) {
+      // Teammate winning - maximize point contribution with guaranteed winners
+      optimalContributionStrategy =
+        guaranteedPointCards.length > 0 ? "maximize" : "conserve";
+    } else if (trickWinner?.isOpponentWinning) {
+      // Opponent winning - try to beat if possible, otherwise minimize points
+      optimalContributionStrategy = trickWinner.canBeatCurrentWinner
+        ? "beat"
+        : "conserve";
+    } else {
+      // No clear winner - use memory-informed decision
+      optimalContributionStrategy =
+        certainWinCards.length > 0 ? "beat" : "conserve";
+    }
+
+    return {
+      certainWinCards,
+      pointMaximizationPotential,
+      optimalContributionStrategy,
+      teammateSupportOpportunity: Boolean(
+        trickWinner?.isTeammateWinning && guaranteedPointCards.length > 0,
+      ),
+      guaranteedPointCards,
+      perfectInformationAdvantage: certainWinCards.length > 0,
+    };
+  }
+
+  /**
+   * Optimal disposal for 4th player using perfect information
+   * Leverages complete visibility of all played cards for strategic decision making
+   */
+  private selectFourthPlayerOptimalDisposal(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    gameState: GameState,
+  ): Card[] {
+    const trickWinner = context.trickWinnerAnalysis;
+    const trumpInfo = gameState.trumpInfo;
+
+    // Get 4th player perfect information analysis
+    const analysis = this.analyzeFourthPlayerAdvantage(
+      comboAnalyses,
+      context,
+      trumpInfo,
+      gameState,
+    );
+
+    // Strategy 1: If teammate is winning and we have guaranteed point cards, contribute them
+    if (
+      trickWinner?.isTeammateWinning &&
+      analysis.guaranteedPointCards.length > 0
+    ) {
+      // Prioritize highest point value guaranteed winners
+      const sortedByPoints = analysis.guaranteedPointCards.sort((a, b) => {
+        const aPoints = a.cards.reduce(
+          (total, card) => total + (card.points || 0),
+          0,
+        );
+        const bPoints = b.cards.reduce(
+          (total, card) => total + (card.points || 0),
+          0,
+        );
+        return bPoints - aPoints; // Descending order
+      });
+      return sortedByPoints[0].cards;
+    }
+
+    // Strategy 2: If opponent is winning, minimize point contribution using perfect information
+    if (trickWinner?.isOpponentWinning) {
+      return this.selectFourthPlayerPointAvoidance(
+        comboAnalyses,
+        context,
+        trumpInfo,
+      );
+    }
+
+    // Strategy 3: If we can win with guaranteed cards, use strategic winning
+    if (
+      analysis.perfectInformationAdvantage &&
+      analysis.certainWinCards.length > 0
+    ) {
+      // Among certain win cards, prefer non-point cards to conserve points for later
+      const nonPointWinners = analysis.certainWinCards.filter(
+        (combo) => !combo.cards.some((card) => (card.points || 0) > 0),
+      );
+
+      if (nonPointWinners.length > 0) {
+        // Use lowest value non-point winner
+        const sorted = nonPointWinners.sort((a, b) => a.value - b.value);
+        return sorted[0].cards;
+      }
+
+      // If only point card winners available, use lowest point winner
+      const sorted = analysis.certainWinCards.sort((a, b) => a.value - b.value);
+      return sorted[0].cards;
+    }
+
+    // Strategy 4: Default to enhanced disposal with perfect information context
+    // Prefer cards that won't be needed later based on perfect information
+    const enhancedDisposal = this.selectEnhancedDisposalWithPerfectInfo(
+      comboAnalyses,
+      context,
+      gameState,
+    );
+    if (enhancedDisposal) {
+      return enhancedDisposal;
+    }
+
+    // Fallback to standard disposal logic
+    return this.selectLowestValueNonPointCombo(comboAnalyses);
+  }
+
+  /**
+   * Enhanced point card avoidance for 4th player when opponent is winning
+   */
+  private selectFourthPlayerPointAvoidance(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Priority 1: Non-trump, non-point, non-Ace cards (safest disposal)
+    const safeCards = comboAnalyses.filter(
+      (ca) =>
+        !ca.analysis.isTrump &&
+        !ca.combo.cards.some((card) => (card.points || 0) > 0) &&
+        !ca.combo.cards.some((card) => card.rank === Rank.Ace),
+    );
+
+    if (safeCards.length > 0) {
+      const sorted = safeCards.sort((a, b) => a.combo.value - b.combo.value);
+      return sorted[0].combo.cards;
+    }
+
+    // Priority 2: Non-trump, non-point cards (lose Ace but avoid giving points)
+    const nonTrumpNonPoint = comboAnalyses.filter(
+      (ca) =>
+        !ca.analysis.isTrump &&
+        !ca.combo.cards.some((card) => (card.points || 0) > 0),
+    );
+
+    if (nonTrumpNonPoint.length > 0) {
+      const sorted = nonTrumpNonPoint.sort(
+        (a, b) => a.combo.value - b.combo.value,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    // Priority 3: Non-trump cards (avoid giving away trump)
+    const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
+    if (nonTrump.length > 0) {
+      // Among non-trump, prefer lowest point cards
+      const sorted = nonTrump.sort((a, b) => {
+        const aPoints = a.combo.cards.reduce(
+          (total, card) => total + (card.points || 0),
+          0,
+        );
+        const bPoints = b.combo.cards.reduce(
+          (total, card) => total + (card.points || 0),
+          0,
+        );
+        if (aPoints !== bPoints) return aPoints - bPoints; // Prefer lower points
+        return a.combo.value - b.combo.value; // Then by card value
+      });
+      return sorted[0].combo.cards;
+    }
+
+    // Last resort: Use weakest trump (only when no non-trump available)
+    const sorted = comboAnalyses.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    );
+    return sorted[0].combo.cards;
+  }
+
+  /**
+   * Enhanced disposal using perfect information about remaining cards
+   */
+  private selectEnhancedDisposalWithPerfectInfo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    gameState: GameState,
+  ): Card[] | null {
+    const cardMemory = context.memoryContext?.cardMemory;
+    if (!cardMemory) return null;
+
+    // Look for cards that are guaranteed to not be useful later
+    // (i.e., all higher cards of the same suit have been played)
+    const futureUselessCards = comboAnalyses.filter((ca) => {
+      const firstCard = ca.combo.cards[0];
+      if (!firstCard.suit || !firstCard.rank) return false;
+
+      const comboType =
+        ca.combo.cards.length === 1
+          ? "single"
+          : ca.combo.cards.length === 2
+            ? "pair"
+            : "tractor";
+
+      // Skip tractors for memory analysis
+      if (comboType === "tractor") return false;
+
+      // Check if this card will never be the biggest remaining in its suit
+      return !isBiggestRemainingInSuit(
+        cardMemory,
+        firstCard.suit,
+        firstCard.rank,
+        comboType,
+      );
+    });
+
+    if (futureUselessCards.length > 0) {
+      // Among future useless cards, prefer non-point cards
+      const nonPointUseless = futureUselessCards.filter(
+        (ca) => !ca.combo.cards.some((card) => (card.points || 0) > 0),
+      );
+
+      if (nonPointUseless.length > 0) {
+        const sorted = nonPointUseless.sort(
+          (a, b) => a.combo.value - b.combo.value,
+        );
+        return sorted[0].combo.cards;
+      }
+
+      // If only point cards are useless, use lowest point value
+      const sorted = futureUselessCards.sort(
+        (a, b) => a.combo.value - b.combo.value,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    return null; // No perfect information advantage found
+  }
 
   // REMOVED: tryCreateTwoSinglesInsteadOfPair method - no longer needed with proper game logic fix
 

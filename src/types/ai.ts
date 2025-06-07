@@ -1,6 +1,6 @@
 // AI strategy and intelligence types
 
-import { Card, PlayerId, Suit, TrumpInfo } from "./core";
+import { Card, PlayerId, Suit, TrumpInfo, Combo } from "./core";
 
 // AI Strategy Enhancement Types
 export enum TrickPosition {
@@ -122,4 +122,14 @@ export interface TrickWinnerAnalysis {
   canBeatCurrentWinner: boolean; // Can this AI beat current winner
   shouldTryToBeat: boolean; // Strategic decision to try beating
   shouldPlayConservatively: boolean; // Strategic decision for conservative play
+}
+
+// 4th Player Perfect Information Analysis
+export interface FourthPlayerAnalysis {
+  certainWinCards: Combo[]; // Cards that definitely win
+  pointMaximizationPotential: number; // Total points possible in trick
+  optimalContributionStrategy: "maximize" | "conserve" | "beat"; // Recommended strategy
+  teammateSupportOpportunity: boolean; // Can contribute points to teammate
+  guaranteedPointCards: Combo[]; // Point cards that are guaranteed winners
+  perfectInformationAdvantage: boolean; // Has certain winning options
 }
