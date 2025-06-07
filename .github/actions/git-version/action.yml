@@ -95,6 +95,6 @@ runs:
     - name: Inject version into app.json
       shell: bash
       run: |
-        jq '.expo.version = "${{ steps.detect.outputs.app-version }}" | .expo.extra.version = "${{ steps.detect.outputs.full-version }}"' app.json > app.json.tmp
+        jq '.expo.version = "${{ steps.detect.outputs.app-version }}" | .expo.extra.version = "${{ steps.detect.outputs.full-version }}" | .expo.updates.requestHeaders."expo-channel-name" = "${{ steps.detect.outputs.eas-branch }}"' app.json > app.json.tmp
         mv app.json.tmp app.json
-        echo "Injected app version ${{ steps.detect.outputs.app-version }} and full version ${{ steps.detect.outputs.full-version }} into app.json"
+        echo "Injected app version ${{ steps.detect.outputs.app-version }}, full version ${{ steps.detect.outputs.full-version }}, and channel ${{ steps.detect.outputs.eas-branch }} into app.json"
