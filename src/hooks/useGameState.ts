@@ -323,8 +323,11 @@ export function useGameState() {
     setShowSetupInternal(false);
     setGameOver(false);
     setWinner(null);
+    setShowRoundComplete(false);
+    setRoundCompleteMessage("");
     setPreviousGamePhase(null);
     pendingStateRef.current = null;
+    roundResultRef.current = null;
     kittyCardsRef.current = [];
 
     // Initialize will be called on next render due to dependency changes
