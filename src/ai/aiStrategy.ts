@@ -19,6 +19,8 @@ import {
   Rank,
   FourthPlayerAnalysis,
   ThirdPlayerAnalysis,
+  FirstPlayerAnalysis,
+  SecondPlayerAnalysis,
 } from "../types";
 import { isTrump, evaluateTrickPlay } from "../game/gameLogic";
 import {
@@ -96,6 +98,18 @@ export class AIStrategyImplementation implements AIStrategy {
 
     // Point-focused strategy takes priority when applicable
     if (!currentTrick || !currentTrick.leadingCombo) {
+      // Phase 3: First Player Leading Strategy Enhancement
+      if (context.trickPosition === TrickPosition.First) {
+        const firstPlayerStrategy = this.selectFirstPlayerLeadingStrategy(
+          validCombos,
+          trumpInfo,
+          context,
+          pointContext,
+          gameState,
+        );
+        if (firstPlayerStrategy) return firstPlayerStrategy;
+      }
+
       // Leading play with enhanced point-focused strategy
       const pointFocusedPlay = this.selectPointFocusedLeadingPlay(
         validCombos,
@@ -298,8 +312,26 @@ export class AIStrategyImplementation implements AIStrategy {
         }
         break;
 
-      case TrickPosition.First:
       case TrickPosition.Second:
+        // Phase 3: Second Player Strategy Enhancement
+        const secondPlayerAnalysis = this.analyzeSecondPlayerStrategy(
+          comboAnalyses,
+          context,
+          trumpInfo,
+          gameState,
+        );
+
+        if (secondPlayerAnalysis.shouldContribute) {
+          return this.selectSecondPlayerContribution(
+            comboAnalyses,
+            secondPlayerAnalysis,
+            trumpInfo,
+            context,
+          );
+        }
+        break;
+
+      case TrickPosition.First:
       default:
         // Standard logic for other positions
         const shouldContributeStandard = this.shouldContributePointCards(
@@ -2193,6 +2225,649 @@ export class AIStrategyImplementation implements AIStrategy {
       context.cardsRemaining <= 8 ||
       context.playStyle === PlayStyle.Aggressive ||
       context.playStyle === PlayStyle.Desperate
+    );
+  }
+
+  // Phase 3: 1st Player (Leading) Strategy Enhancement
+  private selectFirstPlayerLeadingStrategy(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+    pointContext: PointFocusedContext,
+    gameState: GameState,
+  ): Card[] | null {
+    // Analyze current game phase and leading strategy
+    const analysis = this.analyzeFirstPlayerStrategy(
+      validCombos,
+      trumpInfo,
+      context,
+      pointContext,
+      gameState,
+    );
+
+    if (!analysis.optimalLeadingCombo) {
+      return null; // No dedicated first player strategy applies
+    }
+
+    // Apply game phase specific leading logic
+    switch (analysis.gamePhaseStrategy) {
+      case "probe":
+        return this.selectProbeLeadingPlay(validCombos, trumpInfo, analysis);
+      case "aggressive":
+        return this.selectAggressiveLeadingPlay(
+          validCombos,
+          trumpInfo,
+          analysis,
+        );
+      case "control":
+        return this.selectControlLeadingPlay(validCombos, trumpInfo, analysis);
+      case "endgame":
+        return this.selectEndgameLeadingPlay(validCombos, trumpInfo, analysis);
+      default:
+        return analysis.optimalLeadingCombo.cards;
+    }
+  }
+
+  private analyzeFirstPlayerStrategy(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+    pointContext: PointFocusedContext,
+    gameState: GameState,
+  ): FirstPlayerAnalysis {
+    // Determine game phase strategy based on context
+    let gamePhaseStrategy: "probe" | "aggressive" | "control" | "endgame";
+
+    if (context.cardsRemaining > 20) {
+      gamePhaseStrategy = "probe"; // Early game - gather information
+    } else if (context.pointPressure === PointPressure.HIGH) {
+      gamePhaseStrategy = "aggressive"; // High pressure - force points
+    } else if (context.cardsRemaining <= 8) {
+      gamePhaseStrategy = "endgame"; // Late game - precise control
+    } else {
+      gamePhaseStrategy = "control"; // Mid game - strategic control
+    }
+
+    // Calculate information gathering focus
+    const informationGatheringFocus =
+      gamePhaseStrategy === "probe"
+        ? 0.9
+        : gamePhaseStrategy === "aggressive"
+          ? 0.3
+          : gamePhaseStrategy === "control"
+            ? 0.6
+            : 0.8;
+
+    // Calculate hand reveal minimization
+    const handRevealMinimization =
+      gamePhaseStrategy === "probe"
+        ? 0.8
+        : gamePhaseStrategy === "aggressive"
+          ? 0.2
+          : gamePhaseStrategy === "control"
+            ? 0.6
+            : 0.4;
+
+    // Find optimal leading combo based on strategy
+    const optimalLeadingCombo = this.selectOptimalLeadingComboForPhase(
+      validCombos,
+      trumpInfo,
+      gamePhaseStrategy,
+      context,
+    );
+
+    // Determine strategic depth
+    const strategicDepth: "shallow" | "medium" | "deep" = context.memoryContext
+      ? "deep"
+      : context.pointPressure === PointPressure.HIGH
+        ? "medium"
+        : "shallow";
+
+    return {
+      gamePhaseStrategy,
+      informationGatheringFocus,
+      handRevealMinimization,
+      optimalLeadingCombo,
+      strategicDepth,
+      trumpConservationPriority: gamePhaseStrategy === "probe" ? 0.9 : 0.6,
+      opponentProbeValue: informationGatheringFocus,
+      teamCoordinationSetup: gamePhaseStrategy === "control",
+    };
+  }
+
+  private selectOptimalLeadingComboForPhase(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    gamePhaseStrategy: "probe" | "aggressive" | "control" | "endgame",
+    context: GameContext,
+  ): Combo | null {
+    if (validCombos.length === 0) return null;
+
+    // Filter combos based on game phase strategy
+    let candidates: Combo[];
+
+    switch (gamePhaseStrategy) {
+      case "probe":
+        // Prefer safe, non-revealing leads
+        candidates = validCombos.filter(
+          (combo) =>
+            !combo.cards.some((card) => isTrump(card, trumpInfo)) &&
+            combo.cards.every((card) => (card.points || 0) === 0),
+        );
+        break;
+
+      case "aggressive":
+        // Prefer strong, point-collecting leads
+        candidates = validCombos.filter(
+          (combo) =>
+            combo.cards.some((card) => (card.points || 0) > 0) ||
+            combo.cards.some((card) => isTrump(card, trumpInfo)),
+        );
+        break;
+
+      case "control":
+        // Prefer strategic, combination-rich leads
+        candidates = validCombos.filter(
+          (combo) =>
+            combo.type === ComboType.Tractor || combo.type === ComboType.Pair,
+        );
+        break;
+
+      case "endgame":
+        // Prefer highest value available
+        candidates = validCombos;
+        break;
+
+      default:
+        candidates = validCombos;
+    }
+
+    // Fall back to all combos if no phase-specific candidates
+    if (candidates.length === 0) {
+      candidates = validCombos;
+    }
+
+    // Select best combo from candidates based on value and strategy
+    return candidates.reduce(
+      (best, combo) => {
+        const comboValue = this.calculateLeadingComboValue(
+          combo,
+          trumpInfo,
+          gamePhaseStrategy,
+        );
+        const bestValue = best
+          ? this.calculateLeadingComboValue(best, trumpInfo, gamePhaseStrategy)
+          : 0;
+
+        return comboValue > bestValue ? combo : best;
+      },
+      null as Combo | null,
+    );
+  }
+
+  private calculateLeadingComboValue(
+    combo: Combo,
+    trumpInfo: TrumpInfo,
+    gamePhaseStrategy: "probe" | "aggressive" | "control" | "endgame",
+  ): number {
+    let value = 0;
+
+    // Base value from combo type
+    switch (combo.type) {
+      case ComboType.Tractor:
+        value += 30;
+        break;
+      case ComboType.Pair:
+        value += 20;
+        break;
+      case ComboType.Single:
+        value += 10;
+        break;
+    }
+
+    // Add card strength value
+    const cardStrength = combo.cards.reduce((sum, card) => {
+      if (isTrump(card, trumpInfo)) {
+        return sum + 15; // Trump cards are valuable
+      }
+      const rankValue = card.rank ? this.getRankValue(card.rank) : 0;
+      return sum + Math.min(rankValue, 10); // Non-trump card rank value
+    }, 0);
+
+    value += cardStrength;
+
+    // Phase-specific adjustments
+    switch (gamePhaseStrategy) {
+      case "probe":
+        // Penalty for revealing strong cards early
+        if (combo.cards.some((card) => isTrump(card, trumpInfo))) {
+          value -= 20;
+        }
+        break;
+
+      case "aggressive":
+        // Bonus for point cards and strong combinations
+        const points = combo.cards.reduce(
+          (sum, card) => sum + (card.points || 0),
+          0,
+        );
+        value += points * 2;
+        break;
+
+      case "control":
+        // Bonus for tactical combinations
+        if (combo.type === ComboType.Tractor) {
+          value += 15;
+        }
+        if (combo.type === ComboType.Pair) {
+          value += 10;
+        }
+        break;
+
+      case "endgame":
+        // Maximize total value
+        const totalValue = combo.cards.reduce(
+          (sum, card) =>
+            sum +
+            (card.points || 0) +
+            (isTrump(card, trumpInfo)
+              ? 10
+              : card.rank
+                ? this.getRankValue(card.rank)
+                : 0),
+          0,
+        );
+        value += totalValue;
+        break;
+    }
+
+    return value;
+  }
+
+  private selectProbeLeadingPlay(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    analysis: FirstPlayerAnalysis,
+  ): Card[] | null {
+    // Probe strategy: Lead safe, non-revealing cards to gather information
+    const safeCombos = validCombos.filter(
+      (combo) =>
+        !combo.cards.some((card) => isTrump(card, trumpInfo)) &&
+        combo.cards.every((card) => (card.points || 0) === 0) &&
+        combo.cards.every(
+          (card) => (card.rank ? this.getRankValue(card.rank) : 0) <= 9,
+        ), // Avoid high cards
+    );
+
+    if (safeCombos.length > 0) {
+      return safeCombos[0].cards;
+    }
+
+    return analysis.optimalLeadingCombo?.cards || null;
+  }
+
+  private selectAggressiveLeadingPlay(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    analysis: FirstPlayerAnalysis,
+  ): Card[] | null {
+    // Aggressive strategy: Lead strong combinations to force early pressure
+    const strongCombos = validCombos.filter(
+      (combo) =>
+        combo.cards.some((card) => (card.points || 0) > 0) ||
+        combo.type === ComboType.Tractor ||
+        combo.type === ComboType.Pair,
+    );
+
+    if (strongCombos.length > 0) {
+      // Select combo with highest point value or strongest combination
+      const bestCombo = strongCombos.reduce((best, combo) => {
+        const comboPoints = combo.cards.reduce(
+          (sum, card) => sum + (card.points || 0),
+          0,
+        );
+        const bestPoints = best.cards.reduce(
+          (sum, card) => sum + (card.points || 0),
+          0,
+        );
+
+        if (comboPoints > bestPoints) return combo;
+        if (comboPoints === bestPoints && combo.type > best.type) return combo;
+        return best;
+      });
+
+      return bestCombo.cards;
+    }
+
+    return analysis.optimalLeadingCombo?.cards || null;
+  }
+
+  private selectControlLeadingPlay(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    analysis: FirstPlayerAnalysis,
+  ): Card[] | null {
+    // Control strategy: Lead tactical combinations that set up good team positioning
+    const tacticalCombos = validCombos.filter(
+      (combo) =>
+        combo.type === ComboType.Tractor || combo.type === ComboType.Pair,
+    );
+
+    if (tacticalCombos.length > 0) {
+      // Prefer tractors over pairs for better control
+      const tractors = tacticalCombos.filter(
+        (combo) => combo.type === ComboType.Tractor,
+      );
+      if (tractors.length > 0) {
+        return tractors[0].cards;
+      }
+      return tacticalCombos[0].cards;
+    }
+
+    return analysis.optimalLeadingCombo?.cards || null;
+  }
+
+  private selectEndgameLeadingPlay(
+    validCombos: Combo[],
+    trumpInfo: TrumpInfo,
+    analysis: FirstPlayerAnalysis,
+  ): Card[] | null {
+    // Endgame strategy: Lead highest value combinations for maximum points
+    const bestCombo = validCombos.reduce((best, combo) => {
+      const comboValue = combo.cards.reduce((sum, card) => {
+        let value = card.points || 0;
+        if (isTrump(card, trumpInfo)) value += 10;
+        value += Math.min(card.rank ? this.getRankValue(card.rank) : 0, 10);
+        return sum + value;
+      }, 0);
+
+      const bestValue = best.cards.reduce((sum, card) => {
+        let value = card.points || 0;
+        if (isTrump(card, trumpInfo)) value += 10;
+        value += Math.min(card.rank ? this.getRankValue(card.rank) : 0, 10);
+        return sum + value;
+      }, 0);
+
+      return comboValue > bestValue ? combo : best;
+    });
+
+    return bestCombo.cards;
+  }
+
+  // Phase 3: 2nd Player Strategy Enhancement
+  private analyzeSecondPlayerStrategy(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    context: GameContext,
+    trumpInfo: TrumpInfo,
+    gameState: GameState,
+  ): SecondPlayerAnalysis {
+    const leadingPlayer = gameState.currentTrick?.leadingPlayerId;
+    const leadingCombo = gameState.currentTrick?.leadingCombo;
+
+    if (!leadingPlayer || !leadingCombo) {
+      // Fallback analysis if no trick context
+      return {
+        leaderRelationship: "opponent",
+        leaderStrength: "moderate",
+        responseStrategy: "setup",
+        informationAdvantage: 0.5,
+        optimalCombo: comboAnalyses.length > 0 ? comboAnalyses[0].combo : null,
+        setupOpportunity: false,
+        blockingPotential: 0.5,
+        coordinationValue: 0.5,
+        shouldContribute: false,
+      };
+    }
+
+    // Determine relationship to leader
+    const leaderRelationship = this.isTeammate(leadingPlayer, context)
+      ? "teammate"
+      : "opponent";
+
+    // Analyze leader's play strength
+    const leaderStrength = this.assessLeaderStrength(leadingCombo, trumpInfo);
+
+    // Determine response strategy based on relationship and strength
+    let responseStrategy: "support" | "pressure" | "block" | "setup";
+    let shouldContribute = false;
+
+    if (leaderRelationship === "teammate") {
+      if (leaderStrength === "strong") {
+        responseStrategy = "support";
+        shouldContribute = true;
+      } else if (leaderStrength === "moderate") {
+        responseStrategy = "setup"; // Set up for 3rd/4th players
+        shouldContribute = false;
+      } else {
+        responseStrategy = "pressure"; // Put pressure to help weak teammate
+        shouldContribute = false;
+      }
+    } else {
+      if (leaderStrength === "strong") {
+        responseStrategy = "block"; // Try to block strong opponent
+        shouldContribute = false;
+      } else {
+        responseStrategy = "setup"; // Set up good positioning
+        shouldContribute = false;
+      }
+    }
+
+    // Calculate information advantage from seeing leader's play
+    const informationAdvantage = leaderRelationship === "opponent" ? 0.8 : 0.6;
+
+    // Find optimal combo based on strategy
+    const optimalCombo = this.selectOptimalSecondPlayerCombo(
+      comboAnalyses,
+      responseStrategy,
+      trumpInfo,
+    );
+
+    return {
+      leaderRelationship,
+      leaderStrength,
+      responseStrategy,
+      informationAdvantage,
+      optimalCombo,
+      setupOpportunity: responseStrategy === "setup",
+      blockingPotential: leaderRelationship === "opponent" ? 0.7 : 0.3,
+      coordinationValue: responseStrategy === "setup" ? 0.8 : 0.5,
+      shouldContribute,
+    };
+  }
+
+  private assessLeaderStrength(
+    leadingCombo: Card[],
+    trumpInfo: TrumpInfo,
+  ): "weak" | "moderate" | "strong" {
+    const hasTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+    const hasPoints = leadingCombo.some((card) => (card.points || 0) > 0);
+    const isHighCard = leadingCombo.some(
+      (card) => (card.rank ? this.getRankValue(card.rank) : 0) >= 11,
+    ); // Jack or higher
+    const isMultiCard = leadingCombo.length > 1;
+
+    // Strong: Trump cards, high cards, or combinations
+    if (hasTrump || (isHighCard && isMultiCard)) {
+      return "strong";
+    }
+
+    // Moderate: Point cards or single high cards
+    if (hasPoints || isHighCard) {
+      return "moderate";
+    }
+
+    // Weak: Low cards without special properties
+    return "weak";
+  }
+
+  private selectOptimalSecondPlayerCombo(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    responseStrategy: "support" | "pressure" | "block" | "setup",
+    trumpInfo: TrumpInfo,
+  ): Combo | null {
+    if (comboAnalyses.length === 0) return null;
+
+    let filteredCombos: { combo: Combo; analysis: ComboAnalysis }[];
+
+    switch (responseStrategy) {
+      case "support":
+        // Support: Play point cards or strong combinations
+        filteredCombos = comboAnalyses.filter(
+          ({ combo, analysis }) =>
+            analysis.hasPoints || analysis.strength === ComboStrength.Strong,
+        );
+        break;
+
+      case "pressure":
+        // Pressure: Play moderate strength to put pressure on trick
+        filteredCombos = comboAnalyses.filter(
+          ({ combo, analysis }) =>
+            analysis.strength === ComboStrength.Medium ||
+            analysis.strength === ComboStrength.Strong,
+        );
+        break;
+
+      case "block":
+        // Block: Play defensively, avoid giving points
+        filteredCombos = comboAnalyses.filter(
+          ({ combo, analysis }) =>
+            !analysis.hasPoints && analysis.strength !== ComboStrength.Critical,
+        );
+        break;
+
+      case "setup":
+        // Setup: Play strategically to set up good positions for 3rd/4th players
+        filteredCombos = comboAnalyses.filter(
+          ({ combo, analysis }) =>
+            analysis.strength === ComboStrength.Medium ||
+            combo.type === ComboType.Pair ||
+            combo.type === ComboType.Tractor,
+        );
+        break;
+
+      default:
+        filteredCombos = comboAnalyses;
+    }
+
+    // Fall back to all combos if no strategy-specific options
+    if (filteredCombos.length === 0) {
+      filteredCombos = comboAnalyses;
+    }
+
+    // Select best combo based on strategy and value
+    return filteredCombos.reduce((best, current) => {
+      if (!best) return current;
+
+      const currentValue = this.calculateSecondPlayerComboValue(
+        current,
+        responseStrategy,
+      );
+      const bestValue = this.calculateSecondPlayerComboValue(
+        best,
+        responseStrategy,
+      );
+
+      return currentValue > bestValue ? current : best;
+    }).combo;
+  }
+
+  private calculateSecondPlayerComboValue(
+    comboAnalysis: { combo: Combo; analysis: ComboAnalysis },
+    responseStrategy: "support" | "pressure" | "block" | "setup",
+  ): number {
+    const { combo, analysis } = comboAnalysis;
+    let value = 0;
+
+    // Base value from combo type
+    switch (combo.type) {
+      case ComboType.Tractor:
+        value += 30;
+        break;
+      case ComboType.Pair:
+        value += 20;
+        break;
+      case ComboType.Single:
+        value += 10;
+        break;
+    }
+
+    // Strategy-specific adjustments
+    switch (responseStrategy) {
+      case "support":
+        // Bonus for point cards and strong combinations
+        if (analysis.hasPoints) value += analysis.pointValue * 2;
+        if (analysis.strength === ComboStrength.Strong) value += 20;
+        break;
+
+      case "pressure":
+        // Bonus for moderate to strong combinations
+        if (analysis.strength === ComboStrength.Medium) value += 15;
+        if (analysis.strength === ComboStrength.Strong) value += 25;
+        break;
+
+      case "block":
+        // Bonus for safe, non-point cards
+        if (!analysis.hasPoints) value += 15;
+        if (analysis.strength === ComboStrength.Weak) value += 10;
+        break;
+
+      case "setup":
+        // Bonus for tactical combinations
+        if (combo.type === ComboType.Pair) value += 15;
+        if (combo.type === ComboType.Tractor) value += 25;
+        if (analysis.strength === ComboStrength.Medium) value += 10;
+        break;
+    }
+
+    return value;
+  }
+
+  private selectSecondPlayerContribution(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    analysis: SecondPlayerAnalysis,
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+  ): Card[] {
+    // If we have an optimal combo from analysis, use it
+    if (analysis.optimalCombo) {
+      return analysis.optimalCombo.cards;
+    }
+
+    // Fall back to point contribution if supporting teammate
+    if (
+      analysis.shouldContribute &&
+      analysis.leaderRelationship === "teammate"
+    ) {
+      const pointCombos = comboAnalyses.filter(
+        ({ analysis: comboAnalysis }) => comboAnalysis.hasPoints,
+      );
+
+      if (pointCombos.length > 0) {
+        // Select highest point combo
+        const bestPointCombo = pointCombos.reduce((best, current) => {
+          return current.analysis.pointValue > best.analysis.pointValue
+            ? current
+            : best;
+        });
+        return bestPointCombo.combo.cards;
+      }
+    }
+
+    // Default to first available combo
+    return comboAnalyses.length > 0 ? comboAnalyses[0].combo.cards : [];
+  }
+
+  private isTeammate(playerId: string, context: GameContext): boolean {
+    // In Shengji, Human + Bot2 vs Bot1 + Bot3
+    // This is a simplified check - in practice you'd check the game state for team assignments
+    const humanTeam = ["human", "bot2"];
+    const botTeam = ["bot1", "bot3"];
+
+    // Since we don't have the current AI player ID in context, we need to infer it
+    // This is a simplification for the implementation
+    return (
+      humanTeam.includes(playerId.toLowerCase()) ||
+      botTeam.includes(playerId.toLowerCase())
     );
   }
 

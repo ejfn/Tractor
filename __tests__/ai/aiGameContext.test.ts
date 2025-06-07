@@ -470,9 +470,9 @@ describe("AI Game Context", () => {
     it('should provide first position strategy', () => {
       const result = getPositionStrategy(TrickPosition.First, PlayStyle.Balanced);
 
-      expect(result.informationGathering).toBe(0.8); // High for leading
-      expect(result.partnerCoordination).toBe(0.2);  // Low - partner hasn't played
-      expect(result.disruptionFocus).toBe(0.6);      // Good disruption opportunity
+      expect(result.informationGathering).toBe(0.9); // Enhanced - sophisticated probe strategy
+      expect(result.partnerCoordination).toBe(0.3);  // Enhanced - strategic setup for teammates
+      expect(result.disruptionFocus).toBe(0.8);      // Enhanced - comprehensive opponent probing
     });
 
     it('should provide fourth position strategy', () => {

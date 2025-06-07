@@ -134,6 +134,31 @@ export interface FourthPlayerAnalysis {
   perfectInformationAdvantage: boolean; // Has certain winning options
 }
 
+// 1st Player (Leading) Strategy Analysis
+export interface FirstPlayerAnalysis {
+  gamePhaseStrategy: "probe" | "aggressive" | "control" | "endgame"; // Leading strategy based on game phase
+  informationGatheringFocus: number; // How much to prioritize learning from responses (0-1)
+  handRevealMinimization: number; // How much to hide hand strength from opponents (0-1)
+  optimalLeadingCombo: Combo | null; // Best combination for leading
+  strategicDepth: "shallow" | "medium" | "deep"; // How sophisticated the leading strategy should be
+  trumpConservationPriority: number; // Priority for conserving trump cards (0-1)
+  opponentProbeValue: number; // Value of probing opponent hands (0-1)
+  teamCoordinationSetup: boolean; // Whether this lead sets up good teammate positions
+}
+
+// 2nd Player Strategy Analysis
+export interface SecondPlayerAnalysis {
+  leaderRelationship: "teammate" | "opponent"; // Relationship to the leading player
+  leaderStrength: "weak" | "moderate" | "strong"; // Assessment of leader's play strength
+  responseStrategy: "support" | "pressure" | "block" | "setup"; // Recommended response strategy
+  informationAdvantage: number; // Advantage from seeing leader's play (0-1 scale)
+  optimalCombo: Combo | null; // Best combination for the situation
+  setupOpportunity: boolean; // Can setup teammates for positions 3/4
+  blockingPotential: number; // Potential to disrupt opponent plans (0-1)
+  coordinationValue: number; // Value of coordinating with future positions (0-1)
+  shouldContribute: boolean; // Whether to contribute points to trick
+}
+
 // 3rd Player Tactical Analysis
 export interface ThirdPlayerAnalysis {
   teammateLeadStrength: "weak" | "moderate" | "strong"; // Teammate's lead security assessment
