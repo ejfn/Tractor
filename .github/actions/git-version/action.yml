@@ -65,18 +65,13 @@ runs:
           
         elif [[ ${{ github.ref }} == refs/heads/main ]]; then
           # Main branch push
-          APP_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
+          APP_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           FULL_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="beta"
           
         else
           # Other branch (manual trigger)
-          BRANCH_NAME="${{ github.event.inputs.branch_name }}"
-          if [[ -z "$BRANCH_NAME" ]]; then
-            BRANCH_NAME=${{ github.ref }}
-            BRANCH_NAME=${BRANCH_NAME#refs/heads/}
-          fi
-          APP_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}"
+          APP_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           FULL_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="alpha"
         fi
