@@ -51,6 +51,6 @@ jobs:
       uses: ./.github/actions/git-version
 
     - name: EAS Update
-      run: eas update --branch ${{ steps.version.outputs.eas-branch }} --message "Update ${{ steps.version.outputs.version }}"
+      run: eas update --branch ${{ steps.version.outputs.eas-branch }} --message "Update ${{ steps.version.outputs.full-version }}"
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
