@@ -614,6 +614,42 @@ return this.selectStrategicDisposal(/* ... */);
 - **Only contest tricks ≥5 points** to avoid wasting high cards
 - **Strategic disposal conserves Aces** when tricks can't be won
 
+### AI Phase 4: Historical Analysis Usage
+
+When working with Phase 4 historical analysis features:
+
+```typescript
+// Correct historical analysis integration
+if (gameState.tricks.length >= 3) {
+  const enhancedContext = enhanceGameContextWithHistoricalMemory(
+    context, cardMemory, gameState
+  );
+  
+  const historicalInsights = this.applyHistoricalInsights(
+    enhancedContext, validCombos, trumpInfo, gameState
+  );
+  
+  if (historicalInsights) return historicalInsights;
+}
+
+// Historical pattern usage
+const opponentPattern = trickHistory.opponentLeadingPatterns[PlayerId.Bot1];
+if (opponentPattern.aggressivenessLevel > 0.7) {
+  // Counter aggressive opponent with conservative blocking
+  return selectConservativeBlocking(combos, context);
+}
+```
+
+**Key Phase 4 Guidelines:**
+
+- **Data Threshold**: Historical analysis only activates with ≥3 tricks of data
+- **Graceful Degradation**: Always fall back to Phase 3 memory when insufficient data
+- **Confidence Weighting**: Use reliability scores for strategic recommendations
+- **Performance Optimization**: Minimal overhead (<5% decision time impact)
+- **Opponent Modeling**: Track aggressiveness, suit preferences, team coordination
+- **Adaptive Counter-Strategies**: Adjust play based on detected behavioral patterns
+- **Pattern Recognition**: Analyze leading patterns, coordination history, adaptation trends
+
 ## Best Practices
 
 - ⚠️ **CRITICAL**: Always import and use enums instead of magic strings

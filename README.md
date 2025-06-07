@@ -42,7 +42,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **React Native 0.76+** - Cross-platform mobile framework
 - **Expo SDK 52** - Development tools and native API access
 - **TypeScript 5.7+** - Strict type safety and enhanced developer experience
-- **Jest** - 549 comprehensive tests with React Testing Library
+- **Jest** - 561 comprehensive tests with React Testing Library
 - **ESLint** - Code quality with React Native specific rules
 - **React Native Reanimated** - High-performance card animations
 
@@ -66,11 +66,17 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **⚡ Real-Time Trump Declarations**: Hand quality analysis with timing optimization
 - **🛡️ Strategic Conservation**: Trump hierarchy preservation and point card management
 
-**Latest Intelligence Features:**
+**Complete 4-Phase Intelligence:**
+- **Phase 1: Foundation** - Perfect rule compliance and basic strategic logic
+- **Phase 2: Strategy** - Point optimization, team coordination, position-based play
+- **Phase 3: Memory** - Card tracking, probability analysis, guaranteed winner detection
+- **Phase 4: Historical** - Opponent modeling, behavioral adaptation, predictive intelligence
+
+**Advanced Features:**
 - **Memory-Enhanced Biggest Remaining**: Uses card tracking to identify guaranteed winners
-- **Strategic Point Timing**: Prioritizes point collection before opponents run out of suit
-- **Enhanced Opponent Blocking**: Sophisticated response based on trick value and conservation
-- **Trump Conservation Hierarchy**: Optimal selection using conservation values (Big Joker: 100 → 3♠: 5)
+- **Historical Pattern Recognition**: Analyzes opponent behavior and adapts counter-strategies
+- **Position-Based Intelligence**: Specialized logic for all 4 trick positions (1st/2nd/3rd/4th player)
+- **Predictive Opponent Modeling**: Confidence-based behavioral profiles and strategic recommendations
 
 *Complete AI documentation in **[AI System Guide](docs/AI_SYSTEM.md)***
 
