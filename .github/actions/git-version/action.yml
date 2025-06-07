@@ -3,14 +3,14 @@ description: 'Detect version from GitHub context and inject into app.json for EA
 
 outputs:
   full-version:
-    description: 'The full version with git hash (e.g., v1.0.0+abc1234)'
+    description: 'The full version with git hash (e.g., v1.0.3+abc1234)'
     value: ${{ steps.detect.outputs.full-version }}
-  app-version:
-    description: 'The app version for OTA compatibility (e.g., v1.0.0)'
-    value: ${{ steps.detect.outputs.app-version }}
   version:
-    description: 'The version without git hash (e.g., v1.0.3)'
+    description: 'The app version for expo.version (e.g., v1.0.3)'
     value: ${{ steps.detect.outputs.version }}
+  runtime-version:
+    description: 'The runtime version for OTA compatibility (e.g., v1.0.0)'
+    value: ${{ steps.detect.outputs.runtime-version }}
   eas-branch:
     description: 'EAS Update branch'
     value: ${{ steps.detect.outputs.eas-branch }}
@@ -41,64 +41,64 @@ runs:
         fi
         
         if [ "${{ github.event_name }}" = "release" ]; then
-          # Release event - normalize to major.minor.0 for OTA compatibility
+          # Release event - use actual version for expo.version, normalized for runtime
           RAW_VERSION="${{ github.event.release.tag_name }}"
+          VERSION="$RAW_VERSION"
+          FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
           if [[ $RAW_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
-            APP_VERSION="v${MAJOR}.${MINOR}.0"
+            RUNTIME_VERSION="v${MAJOR}.${MINOR}.0"
           else
-            APP_VERSION="$RAW_VERSION"
+            RUNTIME_VERSION="$RAW_VERSION"
           fi
-          VERSION="$RAW_VERSION"
-          FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
           EAS_BRANCH="production"
           
         elif [[ ${{ github.ref }} == refs/tags/v* ]]; then
-          # Tag push - normalize to major.minor.0 for OTA compatibility  
+          # Tag push - use actual version for expo.version, normalized for runtime
           RAW_VERSION="${{ github.ref_name }}"
+          VERSION="$RAW_VERSION"
+          FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
           if [[ $RAW_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
-            APP_VERSION="v${MAJOR}.${MINOR}.0"
+            RUNTIME_VERSION="v${MAJOR}.${MINOR}.0"
           else
-            APP_VERSION="$RAW_VERSION"
+            RUNTIME_VERSION="$RAW_VERSION"
           fi
-          VERSION="$RAW_VERSION"
-          FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
           EAS_BRANCH="production"
           
         elif [[ ${{ github.ref }} == refs/heads/main ]]; then
-          # Main branch push
+          # Main branch push - isolate with git hash in runtime version
           VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
-          APP_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           FULL_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
+          RUNTIME_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="beta"
           
         else
-          # Other branch (manual trigger)
+          # Other branch (manual trigger) - isolate with git hash in runtime version
           VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}"
-          APP_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           FULL_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
+          RUNTIME_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="alpha"
         fi
         
         # Set all outputs
         echo "full-version=$FULL_VERSION" >> $GITHUB_OUTPUT
-        echo "app-version=$APP_VERSION" >> $GITHUB_OUTPUT
         echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "runtime-version=$RUNTIME_VERSION" >> $GITHUB_OUTPUT
         echo "eas-branch=$EAS_BRANCH" >> $GITHUB_OUTPUT
         
         # Verbose output for debugging
         echo "Final outputs:"
         echo "  full-version: $FULL_VERSION"
-        echo "  app-version: $APP_VERSION"
         echo "  version: $VERSION"
+        echo "  runtime-version: $RUNTIME_VERSION"
         echo "  eas-branch: $EAS_BRANCH"
 
     - name: Inject version into app.json
       shell: bash
       run: |
-        jq '.expo.version = "${{ steps.detect.outputs.app-version }}" | .expo.extra.version = "${{ steps.detect.outputs.full-version }}"' app.json > app.json.tmp
+        jq '.expo.version = "${{ steps.detect.outputs.version }}" | .expo.runtimeVersion = "${{ steps.detect.outputs.runtime-version }}" | .expo.extra.version = "${{ steps.detect.outputs.full-version }}"' app.json > app.json.tmp
         mv app.json.tmp app.json
-        echo "Injected app version ${{ steps.detect.outputs.app-version }} and full version ${{ steps.detect.outputs.full-version }} into app.json"
+        echo "Injected version ${{ steps.detect.outputs.version }}, runtime version ${{ steps.detect.outputs.runtime-version }}, and full version ${{ steps.detect.outputs.full-version }} into app.json"
