@@ -366,13 +366,15 @@ export function getTrickPosition(
     return TrickPosition.First;
   }
 
-  // Count how many players have played (including leader)
-  const playsCount = currentTrick.plays.length + 1; // +1 for leader
+  // Calculate current player's position
+  // Leader is position 1, so next player is position 2, etc.
+  // When plays.length === 1, current player should be position 2 (Second)
+  const currentPlayerPosition = currentTrick.plays.length + 1;
 
-  // Determine position based on play count
-  switch (playsCount) {
+  // Determine position based on current player position
+  switch (currentPlayerPosition) {
     case 1:
-      return TrickPosition.First;
+      return TrickPosition.First; // Should not happen since we check for no plays above
     case 2:
       return TrickPosition.Second;
     case 3:
@@ -548,10 +550,10 @@ export function getPositionStrategy(
       disruptionFocus: 0.5, // Can still influence trick
     },
     [TrickPosition.Third]: {
-      informationGathering: 0.4, // Good info from first two
-      riskTaking: 0.6, // More info allows calculated risks
-      partnerCoordination: 0.7, // Partner likely visible
-      disruptionFocus: 0.4, // Limited disruption options
+      informationGathering: 0.2, // Enhanced - has sufficient info from first two players for tactical decisions
+      riskTaking: 0.8, // Enhanced - can make informed tactical decisions including takeovers
+      partnerCoordination: 0.9, // Enhanced - critical position for teammate optimization and takeover analysis
+      disruptionFocus: 0.6, // Enhanced - tactical opportunities for both teammate support and opponent disruption
     },
     [TrickPosition.Fourth]: {
       informationGathering: 1.0, // Perfect information available
@@ -626,3 +628,21 @@ export function isTrickWorthFighting(
       return totalTrickPoints >= 10;
   }
 }
+
+// Note: analyzeTeammateLeadSecurity functionality has been consolidated into
+// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+
+// Note: assessFourthPlayerThreat functionality has been consolidated into
+// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+
+// Note: calculateCurrentTrickPoints functionality has been consolidated into
+// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+
+// Note: calculatePotentialAdditionalPoints functionality has been consolidated into
+// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+
+// Note: calculateSupportValue functionality has been consolidated into
+// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+
+// Note: shouldRecommendTakeover functionality has been consolidated into
+// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy

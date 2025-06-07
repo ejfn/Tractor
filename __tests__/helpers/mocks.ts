@@ -264,3 +264,28 @@ export const waitForCondition = async (
   }
 };
 
+// ============================================================================
+// 3RD PLAYER TACTICAL TEST UTILITIES
+// ============================================================================
+
+/**
+ * Creates a mock trick for testing tactical scenarios
+ */
+export const createMockTrick = (leadingPlayer: PlayerId, leadingCards: Card[]): Trick => {
+  return {
+    leadingPlayerId: leadingPlayer,
+    leadingCombo: leadingCards,
+    plays: [], // No other players have played yet
+    winningPlayerId: leadingPlayer, // Leader is currently winning
+    points: leadingCards.reduce((sum, card) => sum + (card.points || 0), 0),
+  };
+};
+
+/**
+ * Creates a mock player for testing
+ */
+export const createMockPlayer = (playerId: PlayerId, hand: Card[] = []) => {
+  const { createPlayer } = require('./players');
+  return createPlayer(playerId, hand);
+};
+
