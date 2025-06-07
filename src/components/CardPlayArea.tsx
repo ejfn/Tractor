@@ -6,6 +6,7 @@ import {
   ANIMATION_COMPLETION_DELAY,
   CARD_ANIMATION_FALLBACK,
 } from "../utils/gameTimings";
+import { sortCards } from "../utils/cardSorting";
 import AnimatedCardComponent from "./AnimatedCard";
 
 interface CardPlayAreaProps {
@@ -248,19 +249,23 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
     });
   }
 
-  // Sort cards by cardIndex to ensure proper display order within each player's area
-  topCards.sort((a, b) => a.cardIndex - b.cardIndex);
-  leftCards.sort((a, b) => a.cardIndex - b.cardIndex);
-  rightCards.sort((a, b) => a.cardIndex - b.cardIndex);
-  bottomCards.sort((a, b) => a.cardIndex - b.cardIndex);
+  // Sort cards using the shared card sorting function for consistent display order
+  // This ensures AI played cards (especially tractors) are displayed in the same order as human hand
+  // Note: Bottom cards (human) don't need sorting as human hand is already sorted
+  const sortedTopCards = sortCards(topCards, trumpInfo) as CardWithSequence[];
+  const sortedLeftCards = sortCards(leftCards, trumpInfo) as CardWithSequence[];
+  const sortedRightCards = sortCards(
+    rightCards,
+    trumpInfo,
+  ) as CardWithSequence[];
 
   return (
     <View style={styles.container}>
       {/* Top player's cards */}
       <View style={styles.topPlayArea}>
-        {topCards.length > 0 && (
+        {sortedTopCards.length > 0 && (
           <View style={[styles.playedCardsContainer]}>
-            {topCards.map((card, index) => (
+            {sortedTopCards.map((card, index) => (
               <AnimatedCardComponent
                 key={`top-${card.id}-${index}`}
                 card={card}
@@ -279,7 +284,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === "android" &&
                     index === 0 &&
-                    topCards.length > 1 && {
+                    sortedTopCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
                     }),
                   // Simple border for winning cards (works on Android)
@@ -301,9 +306,9 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       <View style={styles.middleRow}>
         {/* Left player's cards */}
         <View style={styles.leftPlayArea}>
-          {leftCards.length > 0 && (
+          {sortedLeftCards.length > 0 && (
             <View style={[styles.playedCardsContainer]}>
-              {leftCards.map((card, index) => (
+              {sortedLeftCards.map((card, index) => (
                 <AnimatedCardComponent
                   key={`left-${card.id}-${index}`}
                   card={card}
@@ -322,7 +327,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === "android" &&
                       index === 0 &&
-                      leftCards.length > 1 && {
+                      sortedLeftCards.length > 1 && {
                         marginLeft: 15, // Smaller shift for tighter centering
                       }),
                     // Simple border for winning cards (works on Android)
@@ -347,9 +352,9 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
 
         {/* Right player's cards */}
         <View style={styles.rightPlayArea}>
-          {rightCards.length > 0 && (
+          {sortedRightCards.length > 0 && (
             <View style={[styles.playedCardsContainer]}>
-              {rightCards.map((card, index) => (
+              {sortedRightCards.map((card, index) => (
                 <AnimatedCardComponent
                   key={`right-${card.id}-${index}`}
                   card={card}
@@ -368,7 +373,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === "android" &&
                       index === 0 &&
-                      rightCards.length > 1 && {
+                      sortedRightCards.length > 1 && {
                         marginLeft: 15, // Smaller shift for tighter centering
                       }),
                     // Simple border for winning cards (works on Android)
@@ -427,9 +432,9 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       </View>
 
       {/* Empty state message - moved to center */}
-      {!topCards.length &&
-        !leftCards.length &&
-        !rightCards.length &&
+      {!sortedTopCards.length &&
+        !sortedLeftCards.length &&
+        !sortedRightCards.length &&
         !bottomCards.length && (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>Waiting for first play...</Text>
