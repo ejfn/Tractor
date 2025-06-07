@@ -169,6 +169,8 @@ gh pr create --title "Your PR title" --body "Description"
 
 ### Git Workflow Rules
 
+🚨 **CLAUDE CODE AI: DO NOT COMMIT TO MAIN BRANCH!!!!** 🚨
+
 - **NEVER commit or push directly to main branch**
 - **ALWAYS create a feature branch for any changes**
 - **ALWAYS create a pull request for code review**
@@ -653,6 +655,7 @@ if (opponentPattern.aggressivenessLevel > 0.7) {
 ## Best Practices
 
 - ⚠️ **CRITICAL**: Always import and use enums instead of magic strings
+- 🚨 **NO SPECIAL CASE!!!!** - Always prefer general solutions over special case handling. Never add player-specific hacks or special case conditions to solve problems.
 - Use modular imports from `src/types` index file for clean code
 - Read file references with `file_path:line_number` format
 - Prefer general solutions over special cases

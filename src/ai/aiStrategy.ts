@@ -28,15 +28,9 @@ import {
   analyzeCombo,
   getPositionStrategy,
 } from "./aiGameContext";
-import {
-  analyzeHandCombinations,
-  performAdvancedCombinationAnalysis,
-  createCombinationStrategy,
-  selectOptimalCombination,
-} from "./aiAdvancedCombinations";
+import { performAdvancedCombinationAnalysis } from "./aiAdvancedCombinations";
 import {
   createPointFocusedContext,
-  createTrumpConservationStrategy,
   selectEarlyGameLeadingPlay,
 } from "./aiPointFocusedStrategy";
 import {
@@ -112,42 +106,17 @@ export class AIStrategyImplementation implements AIStrategy {
       if (historicalInsights) return historicalInsights;
     }
 
-    // Enhanced Point-Focused Strategy (Issue #61)
-    const pointContext = createPointFocusedContext(
-      gameState,
-      player.id,
-      context,
-    );
-    const trumpConservation = createTrumpConservationStrategy(
-      pointContext,
-      gameState,
-      trumpInfo,
-    );
+    // Enhanced Point-Focused Strategy (Issue #61) - Used in leading play selection
 
-    // Point-focused strategy takes priority when applicable
+    // Determine if leading or following
     if (!currentTrick || !currentTrick.leadingCombo) {
-      // Phase 3: First Player Leading Strategy Enhancement
-      if (context.trickPosition === TrickPosition.First) {
-        const firstPlayerStrategy = this.selectFirstPlayerLeadingStrategy(
-          validCombos,
-          trumpInfo,
-          context,
-          pointContext,
-          gameState,
-        );
-        if (firstPlayerStrategy) return firstPlayerStrategy;
-      }
-
-      // Leading play with enhanced point-focused strategy
-      const pointFocusedPlay = this.selectPointFocusedLeadingPlay(
+      // LEADING: Use unified advanced leading strategy
+      return this.selectAdvancedLeadingPlay(
         validCombos,
         trumpInfo,
         context,
-        pointContext,
-        trumpConservation,
         gameState,
       );
-      if (pointFocusedPlay) return pointFocusedPlay;
     } else {
       // Following play with RESTRUCTURED priority chain
       // Convert validCombos to comboAnalyses format using proper analysis
@@ -166,36 +135,6 @@ export class AIStrategyImplementation implements AIStrategy {
       );
       return restructuredPlay;
     }
-
-    // Phase 4: Use advanced combination logic when appropriate
-    if (this.shouldUseAdvancedCombinations(context)) {
-      // If leading, use advanced leading logic
-      if (!currentTrick || !currentTrick.leadingCombo) {
-        return this.selectAdvancedLeadingPlay(
-          validCombos,
-          trumpInfo,
-          context,
-          gameState,
-        );
-      }
-
-      // If following, use advanced following logic
-      return this.selectAdvancedFollowingPlay(
-        validCombos,
-        trumpInfo,
-        context,
-        gameState,
-      );
-    }
-
-    // Fallback to Phase 2/3 logic
-    // If leading, use strategic leading logic
-    if (!currentTrick || !currentTrick.leadingCombo) {
-      return this.selectLeadingPlay(validCombos, trumpInfo, context);
-    }
-
-    // If following, use strategic following logic
-    return this.selectFollowingPlay(gameState, validCombos, context);
   }
 
   // === RESTRUCTURED PRIORITY CHAIN FOR FOLLOWING PLAY ===
@@ -706,9 +645,37 @@ export class AIStrategyImplementation implements AIStrategy {
       }
 
       // Last resort: use trump cards (only if no non-trump available)
+      // When forced to play trump, use trump conservation hierarchy (weakest trump first)
+      const trumpCombos = comboAnalyses.filter((ca) => ca.analysis.isTrump);
+      if (trumpCombos.length > 0) {
+        const sorted = trumpCombos.sort(
+          (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+        );
+        return sorted[0].combo.cards;
+      }
     }
 
-    // Standard disposal - use weakest combo
+    // Final fallback - use trump conservation hierarchy for trump, combo value for non-trump
+    const trumpCombos = comboAnalyses.filter((ca) => ca.analysis.isTrump);
+    const nonTrumpCombos = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
+
+    // Prefer non-trump over trump when both available
+    if (nonTrumpCombos.length > 0) {
+      const sorted = nonTrumpCombos.sort(
+        (a, b) => a.combo.value - b.combo.value,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    // If only trump available, use conservation hierarchy (weakest trump first)
+    if (trumpCombos.length > 0) {
+      const sorted = trumpCombos.sort(
+        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    // Ultimate fallback (should rarely happen)
     const sorted = comboAnalyses.sort((a, b) => a.combo.value - b.combo.value);
     return sorted[0].combo.cards;
   }
@@ -2056,44 +2023,132 @@ export class AIStrategyImplementation implements AIStrategy {
     }
   }
 
-  // Phase 4: Advanced Combination Logic Methods
+  // UNIFIED LEADING PLAYER STRATEGY - Single Priority Chain
   private selectAdvancedLeadingPlay(
     validCombos: Combo[],
     trumpInfo: TrumpInfo,
     context: GameContext,
     gameState: GameState,
   ): Card[] {
-    // Find current player based on game state
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (!currentPlayer)
       return this.selectLeadingPlay(validCombos, trumpInfo, context);
 
-    // Analyze hand combination profile
-    const handProfile = analyzeHandCombinations(
-      currentPlayer.hand,
-      trumpInfo,
+    // Create analysis contexts
+    const pointContext = createPointFocusedContext(
       gameState,
+      currentPlayer.id,
       context,
     );
+    const comboAnalyses = validCombos.map((combo) => ({
+      combo,
+      analysis: analyzeCombo(combo, trumpInfo, context),
+    }));
 
-    // Create advanced combination strategy
-    const strategy = createCombinationStrategy(context, handProfile);
-
-    // Select optimal combination using Phase 4 logic
-    const optimalCombo = selectOptimalCombination(
-      validCombos,
-      strategy,
-      trumpInfo,
-      gameState,
-      context,
-    );
-
-    if (optimalCombo) {
-      return optimalCombo.cards;
+    // === PRIORITY 1: EARLY GAME ACES ===
+    // Non-trump Aces are guaranteed winners in early game - ALWAYS check this first
+    if (pointContext.gamePhase === GamePhaseStrategy.EarlyGame) {
+      const earlyGamePlay = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+      if (earlyGamePlay) {
+        return earlyGamePlay.cards;
+      }
     }
 
-    // Fallback to Phase 2/3 logic
-    return this.selectLeadingPlay(validCombos, trumpInfo, context);
+    // === PRIORITY 2: MEMORY GUARANTEED WINNERS ===
+    // Play guaranteed winners from memory analysis
+    if (context.memoryContext) {
+      const guaranteedWinner = this.selectBiggestRemainingCombo(
+        comboAnalyses,
+        context.memoryContext,
+        trumpInfo,
+      );
+      if (guaranteedWinner) {
+        return guaranteedWinner;
+      }
+    }
+
+    // === PRIORITY 3: HISTORICAL INSIGHTS ===
+    // Apply opponent modeling when sufficient data available
+    if (gameState.tricks.length >= 3) {
+      const historicalPlay = this.applyHistoricalInsights(
+        context,
+        validCombos,
+        trumpInfo,
+        gameState,
+      );
+      if (historicalPlay) {
+        return historicalPlay;
+      }
+    }
+
+    // === PRIORITY 4: FIRST PLAYER ANALYSIS ===
+    // Use FirstPlayerAnalysis for game phase strategy
+    const firstPlayerAnalysis = this.analyzeFirstPlayerStrategy(
+      validCombos,
+      trumpInfo,
+      context,
+      pointContext,
+      gameState,
+    );
+
+    if (firstPlayerAnalysis.optimalLeadingCombo) {
+      // Apply game phase specific leading logic using FirstPlayerAnalysis
+      switch (firstPlayerAnalysis.gamePhaseStrategy) {
+        case "probe":
+          const probePlay = this.selectProbeLeadingPlay(
+            validCombos,
+            trumpInfo,
+            firstPlayerAnalysis,
+          );
+          if (probePlay) return probePlay;
+          break;
+        case "aggressive":
+          const aggressivePlay = this.selectAggressiveLeadingPlay(
+            validCombos,
+            trumpInfo,
+            firstPlayerAnalysis,
+          );
+          if (aggressivePlay) return aggressivePlay;
+          break;
+        case "control":
+          const controlPlay = this.selectControlLeadingPlay(
+            validCombos,
+            trumpInfo,
+            firstPlayerAnalysis,
+          );
+          if (controlPlay) return controlPlay;
+          break;
+        case "endgame":
+          const endgamePlay = this.selectEndgameLeadingPlay(
+            validCombos,
+            trumpInfo,
+            firstPlayerAnalysis,
+          );
+          if (endgamePlay) return endgamePlay;
+          break;
+      }
+
+      // Fallback to analysis recommendation
+      return firstPlayerAnalysis.optimalLeadingCombo.cards;
+    }
+
+    // === PRIORITY 5: SAFE DISPOSAL ===
+    // Play safe, non-revealing cards when no better option
+    return this.selectSafeLeadingDisposal(comboAnalyses, trumpInfo, context);
+  }
+
+  private selectSafeLeadingDisposal(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+    context: GameContext,
+  ): Card[] {
+    // Use existing safe lead combo logic for disposal
+    return this.selectSafeLeadCombo(comboAnalyses, trumpInfo);
   }
 
   private selectAdvancedFollowingPlay(
