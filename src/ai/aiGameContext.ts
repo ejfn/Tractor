@@ -538,16 +538,16 @@ export function getPositionStrategy(
 ): PositionStrategy {
   const baseStrategies: Record<TrickPosition, PositionStrategy> = {
     [TrickPosition.First]: {
-      informationGathering: 0.8, // Leading - probe opponent hands
-      riskTaking: 0.4, // Moderate risk when leading
-      partnerCoordination: 0.2, // Partner hasn't played yet
-      disruptionFocus: 0.6, // Can set the tone
+      informationGathering: 0.9, // Enhanced - sophisticated probe strategy with game phase adaptation
+      riskTaking: 0.6, // Enhanced - strategic risk based on phase (probe/aggressive/control/endgame)
+      partnerCoordination: 0.3, // Enhanced - strategic setup for teammate positions
+      disruptionFocus: 0.8, // Enhanced - comprehensive opponent probing and information gathering
     },
     [TrickPosition.Second]: {
-      informationGathering: 0.6, // Some info from leader
-      riskTaking: 0.5, // Balanced approach
-      partnerCoordination: 0.4, // Partner might be 3rd or 4th
-      disruptionFocus: 0.5, // Can still influence trick
+      informationGathering: 0.7, // Enhanced - leverages leader analysis for strategic decisions
+      riskTaking: 0.6, // Enhanced - leader relationship-based risk assessment
+      partnerCoordination: 0.6, // Enhanced - strategic response based on leader (teammate vs opponent)
+      disruptionFocus: 0.7, // Enhanced - blocking potential and setup opportunities
     },
     [TrickPosition.Third]: {
       informationGathering: 0.2, // Enhanced - has sufficient info from first two players for tactical decisions
