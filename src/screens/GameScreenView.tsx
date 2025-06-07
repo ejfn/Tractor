@@ -5,7 +5,6 @@ import { Animated, StyleSheet, Text, View } from "react-native";
 import AIPlayerView from "../components/AIPlayerView";
 import CardPlayArea from "../components/CardPlayArea";
 import GameOverScreen from "../components/GameOverScreen";
-import GameSetupScreen from "../components/GameSetupScreen";
 import GameStatus from "../components/GameStatus";
 import GameTable from "../components/GameTable";
 import HumanPlayerView from "../components/HumanPlayerView";
@@ -34,7 +33,6 @@ interface GameScreenViewProps {
   humanPlayerIndex: number;
 
   // UI state
-  showSetup: boolean;
   gameOver: boolean;
   winner: "A" | "B" | null;
   waitingForAI: boolean;
@@ -81,7 +79,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   humanPlayerIndex,
 
   // UI state
-  showSetup,
   gameOver,
   winner,
   waitingForAI,
@@ -113,17 +110,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onManualPause,
   shouldShowOpportunities,
 }) => {
-  // Setup screen with animations
-  if (showSetup) {
-    return (
-      <GameSetupScreen
-        onStartGame={onStartNewGame}
-        fadeAnim={fadeAnim}
-        scaleAnim={scaleAnim}
-      />
-    );
-  }
-
   // Game over screen
   if (gameOver) {
     return (

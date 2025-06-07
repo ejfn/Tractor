@@ -2,6 +2,7 @@ import { getValidCombinations } from "../game/gameLogic";
 import { Card, GameState, GamePhase, PlayerId } from "../types";
 import { createAIStrategy } from "./aiStrategy";
 import { selectAIKittySwapCards } from "./aiKittySwapStrategy";
+import { sortCards } from "../utils/cardSorting";
 
 /**
  * Main AI kitty swap logic - selects 8 cards to put back into kitty
@@ -130,5 +131,8 @@ export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
 
   // Delegate all strategic decisions to the AI strategy layer
   const strategy = createAIStrategy();
-  return strategy.makePlay(gameState, player, validCombos);
+  const selectedCards = strategy.makePlay(gameState, player, validCombos);
+
+  // Sort selected cards for consistent visual presentation
+  return sortCards(selectedCards, gameState.trumpInfo);
 };
