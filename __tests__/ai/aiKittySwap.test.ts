@@ -344,4 +344,171 @@ describe("AI Kitty Swap Strategy", () => {
       });
     });
   });
+
+  describe("Trump Hierarchy Logic", () => {
+    test("should prefer weak trump suit cards over strong trump rank cards when forced to dispose trump", () => {
+      const player = gameState.players.find(p => p.id === botPlayerId)!;
+      
+      // Create hand with only trump cards to force trump disposal
+      const trumpOnlyHand: Card[] = [];
+      
+      // Add high-value trump cards that should be preserved
+      trumpOnlyHand.push(createCard(Suit.Hearts, Rank.Two, "trump_rank_hearts")); // Trump rank in off-suit (conservation: 70)
+      trumpOnlyHand.push(createCard(Suit.Spades, Rank.Two, "trump_rank_spades")); // Trump rank in trump suit (conservation: 80)
+      trumpOnlyHand.push(createCard(Suit.Spades, Rank.Ace, "trump_ace")); // Trump suit Ace (conservation: 60)
+      trumpOnlyHand.push(createCard(Suit.Spades, Rank.King, "trump_king")); // Trump suit King (conservation: 55)
+      
+      // Add low-value trump cards that should be disposed
+      for (let i = 0; i < 29; i++) {
+        trumpOnlyHand.push(createCard(Suit.Spades, Rank.Three, `trump_weak_${i}`)); // Trump suit 3 (conservation: 5)
+      }
+      
+      player.hand = trumpOnlyHand;
+      
+      const selectedCards = selectAIKittySwapCards(gameState, botPlayerId);
+      
+      expect(selectedCards).toHaveLength(8);
+      
+      // All selected cards should be weak trump cards (3♠)
+      selectedCards.forEach(card => {
+        expect(card.rank).toBe(Rank.Three);
+        expect(card.suit).toBe(Suit.Spades);
+      });
+      
+      // Should NOT dispose trump rank cards or high trump suit cards
+      const trumpRankHeart = player.hand.find(c => c.rank === Rank.Two && c.suit === Suit.Hearts);
+      const trumpRankSpade = player.hand.find(c => c.rank === Rank.Two && c.suit === Suit.Spades);
+      const trumpAce = player.hand.find(c => c.rank === Rank.Ace && c.suit === Suit.Spades);
+      const trumpKing = player.hand.find(c => c.rank === Rank.King && c.suit === Suit.Spades);
+      
+      expect(selectedCards).not.toContain(trumpRankHeart);
+      expect(selectedCards).not.toContain(trumpRankSpade);
+      expect(selectedCards).not.toContain(trumpAce);
+      expect(selectedCards).not.toContain(trumpKing);
+    });
+
+    test("should never dispose critical trump combinations (pairs/tractors)", () => {
+      const player = gameState.players.find(p => p.id === botPlayerId)!;
+      
+      // Create hand with trump pairs and tractors
+      const criticalTrumpHand: Card[] = [];
+      
+      // Add trump pairs (should be preserved)
+      criticalTrumpHand.push(createCard(Suit.Spades, Rank.Queen, "trump_pair_1a"));
+      criticalTrumpHand.push(createCard(Suit.Spades, Rank.Queen, "trump_pair_1b"));
+      criticalTrumpHand.push(createCard(Suit.Spades, Rank.Jack, "trump_pair_2a"));
+      criticalTrumpHand.push(createCard(Suit.Spades, Rank.Jack, "trump_pair_2b"));
+      
+      // Add non-trump weak cards (should be disposed)
+      for (let i = 0; i < 29; i++) {
+        criticalTrumpHand.push(createCard(Suit.Hearts, Rank.Three, `weak_nontrump_${i}`));
+      }
+      
+      player.hand = criticalTrumpHand;
+      
+      const selectedCards = selectAIKittySwapCards(gameState, botPlayerId);
+      
+      expect(selectedCards).toHaveLength(8);
+      
+      // Should not dispose any trump cards since we have enough non-trump cards
+      const trumpCardsInKitty = selectedCards.filter(card => isTrump(card, gameState.trumpInfo));
+      expect(trumpCardsInKitty).toHaveLength(0);
+      
+      // All selected cards should be weak non-trump cards
+      selectedCards.forEach(card => {
+        expect(card.rank).toBe(Rank.Three);
+        expect(card.suit).toBe(Suit.Hearts);
+      });
+    });
+
+    test("should use ComboStrength analysis for disposal prioritization", () => {
+      const player = gameState.players.find(p => p.id === botPlayerId)!;
+      
+      // Create hand with mixed strength cards
+      const mixedStrengthHand: Card[] = [];
+      
+      // Add critical strength cards (should be preserved)
+      mixedStrengthHand.push(createCard(Suit.Hearts, Rank.Two, "critical_trump_rank")); // Critical trump
+      mixedStrengthHand.push(createCard(Suit.Hearts, Rank.Ace, "strong_ace")); // Strong non-trump
+      mixedStrengthHand.push(createCard(Suit.Hearts, Rank.King, "strong_king")); // Strong non-trump
+      
+      // Add more weak strength cards to ensure they get selected over medium cards
+      for (let i = 0; i < 25; i++) {
+        mixedStrengthHand.push(createCard(Suit.Diamonds, Rank.Seven, `weak_${i}`)); // Weak
+      }
+      
+      // Add medium strength cards (point cards) - fewer of them so weak gets priority
+      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Ten, "medium_ten")); // Medium (points)
+      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Five, "medium_five")); // Medium (points)
+      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Nine, "neutral_nine")); // Non-point
+      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Eight, "neutral_eight")); // Non-point
+      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Six, "neutral_six")); // Non-point
+      
+      player.hand = mixedStrengthHand;
+      
+      const selectedCards = selectAIKittySwapCards(gameState, botPlayerId);
+      
+      expect(selectedCards).toHaveLength(8);
+      
+      // Should prefer weak strength cards (7♦) over medium point cards
+      const weakCardsInKitty = selectedCards.filter(card => 
+        card.rank === Rank.Seven && card.suit === Suit.Diamonds
+      );
+      const pointCardsInKitty = selectedCards.filter(card => card.points > 0);
+      
+      // Should dispose more weak cards than point cards
+      expect(weakCardsInKitty.length).toBeGreaterThan(pointCardsInKitty.length);
+      
+      // Should preserve critical and strong cards
+      const criticalTrump = player.hand.find(c => c.rank === Rank.Two && c.suit === Suit.Hearts);
+      const strongAce = player.hand.find(c => c.rank === Rank.Ace && c.suit === Suit.Hearts);
+      const strongKing = player.hand.find(c => c.rank === Rank.King && c.suit === Suit.Hearts);
+      
+      expect(selectedCards).not.toContain(criticalTrump);
+      expect(selectedCards).not.toContain(strongAce);
+      expect(selectedCards).not.toContain(strongKing);
+    });
+
+    test("should factor trump conservation values into suit elimination decisions", () => {
+      const player = gameState.players.find(p => p.id === botPlayerId)!;
+      
+      // Create scenario where trump consideration affects suit elimination
+      const suitEliminationHand: Card[] = [];
+      
+      // Add one suit with high-value trump cards (should NOT be eliminated)
+      suitEliminationHand.push(createCard(Suit.Spades, Rank.Ace, "trump_ace")); // High conservation value
+      suitEliminationHand.push(createCard(Suit.Spades, Rank.King, "trump_king")); // High conservation value
+      suitEliminationHand.push(createCard(Suit.Spades, Rank.Three, "trump_weak")); // Low conservation value
+      
+      // Add another suit with weak non-trump cards (should be eliminated)
+      suitEliminationHand.push(createCard(Suit.Clubs, Rank.Seven, "clubs_weak1"));
+      suitEliminationHand.push(createCard(Suit.Clubs, Rank.Eight, "clubs_weak2"));
+      suitEliminationHand.push(createCard(Suit.Clubs, Rank.Nine, "clubs_weak3"));
+      
+      // Fill with other cards
+      for (let i = 0; i < 27; i++) {
+        suitEliminationHand.push(createCard(Suit.Hearts, Rank.Four, `hearts_${i}`));
+      }
+      
+      player.hand = suitEliminationHand;
+      
+      const selectedCards = selectAIKittySwapCards(gameState, botPlayerId);
+      
+      expect(selectedCards).toHaveLength(8);
+      
+      // Should prefer eliminating non-trump Clubs suit over trump Spades suit
+      const clubsCardsInKitty = selectedCards.filter(card => card.suit === Suit.Clubs);
+      const spadesCardsInKitty = selectedCards.filter(card => card.suit === Suit.Spades);
+      
+      // Clubs should be preferred for elimination
+      expect(clubsCardsInKitty.length).toBeGreaterThan(0);
+      
+      // Should avoid disposing high-value trump cards
+      const trumpAce = suitEliminationHand.find(c => c.rank === Rank.Ace && c.suit === Suit.Spades);
+      const trumpKing = suitEliminationHand.find(c => c.rank === Rank.King && c.suit === Suit.Spades);
+      
+      expect(selectedCards).not.toContain(trumpAce);
+      expect(selectedCards).not.toContain(trumpKing);
+    });
+  });
 });

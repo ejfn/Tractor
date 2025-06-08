@@ -60,25 +60,13 @@ flowchart TD
 ## Memory-Enhanced Strategy
 
 The AI uses sophisticated card tracking and probability analysis to make optimal decisions:
-```mermaid
-flowchart LR
-    Start([🧠 Memory Analysis]) --> Singles{Singles Logic<br/>Both copies ALL<br/>higher ranks played?}
-    Singles -->|Yes| SingleWin[✅ Single Guaranteed<br/>K♥ wins if both A♥ played]
-    Singles -->|No| Pairs{Pairs Logic<br/>ANY higher rank<br/>card played?}
-    Pairs -->|Yes| PairWin[✅ Pair Guaranteed<br/>Q♥-Q♥ wins if ANY A♥ or K♥ played]
-    Pairs -->|No| NotGuaranteed[❌ Not Guaranteed<br/>Use regular strategy]
-    
-    SingleWin --> Priority[🎯 STRATEGIC PRIORITY<br/>Point Collection First]
-    PairWin --> Priority
-    NotGuaranteed --> Regular[⚖️ Regular Strategy]
-```
 
 ### **Guaranteed Winner Detection**
 
 The AI identifies cards that are certain to win based on memory:
 
-**Singles Logic**: K♥ wins if both A♥ copies have been played
-**Pairs Logic**: Q♥-Q♥ wins if ANY A♥ or K♥ has been played
+- **Singles Logic**: K♥ wins if both A♥ copies have been played
+- **Pairs Logic**: Q♥-Q♥ wins if ANY A♥ or K♥ has been played
 
 **Strategic Benefits:**
 - **Point Collection Priority** - Play guaranteed point winners before opponents run out of suit
@@ -110,24 +98,6 @@ The AI adapts its strategy based on trick position, leveraging unique advantages
 
 ### **Leading Player Strategy**
 
-```mermaid
-flowchart LR
-    Start([🌅 AI Leading]) --> Memory{🧠 Memory-Enhanced<br/>Biggest Remaining?}
-    Memory -->|Yes| Guaranteed[👑 GUARANTEED WINNERS<br/>Point cards with certainty]
-    Memory -->|No| Early{Early Game<br/>Phase?}
-    Early -->|Yes| EarlyGame[🌅 EARLY GAME STRATEGY<br/>Ace Priority & High Cards]
-    Early -->|No| Pressure{Point<br/>Pressure?}
-    Pressure -->|High| Aggressive[⚡ AGGRESSIVE<br/>Force Point Collection]
-    Pressure -->|Medium| Balanced[⚖️ BALANCED<br/>Strategic Control]
-    Pressure -->|Low| Safe[🛡️ SAFE<br/>Conservative Probes]
-    
-    Guaranteed --> Execute[✅ Execute Move]
-    EarlyGame --> Execute
-    Aggressive --> Execute
-    Balanced --> Execute
-    Safe --> Execute
-```
-
 **Strategic Capabilities:**
 - **Memory-Enhanced Leading** - Guaranteed winner identification for optimal timing
 - **Game Phase Adaptation** - Early probing vs mid-game aggression vs endgame control
@@ -138,43 +108,19 @@ flowchart LR
 
 All following positions use the same priority framework but with position-specific tactical advantages:
 
-```mermaid
-flowchart LR
-    Start([🎯 AI Following Turn]) --> Historical{📈 Historical Analysis<br/>Available?}
-    Historical -->|Yes ≥3 tricks| Phase4[🧠 PRIORITY 0: Historical Insights<br/>Counter-strategies & Predictions]
-    Historical -->|No| P1{🤝 PRIORITY 1<br/>Teammate Winning?}
-    
-    Phase4 --> P1
-    P1 -->|Yes| Memory{🧠 Have Guaranteed<br/>Point Cards?}
-    Memory -->|Yes| SmartContribute[🎁 SMART CONTRIBUTE<br/>Memory-Enhanced Point Cards]
-    Memory -->|No| Contribute[🎁 TRADITIONAL CONTRIBUTE<br/>10s > Kings > 5s]
-    
-    P1 -->|No| P2{⚔️ PRIORITY 2<br/>Opponent Winning?}
-    P2 -->|Yes| Block[🛡️ BLOCK/BEAT<br/>Strategic Opposition]
-    P2 -->|No| P3{💰 PRIORITY 3<br/>Can Win ≥5 Points?}
-    P3 -->|Yes| Contest[⚡ CONTEST<br/>Fight for Trick]
-    P3 -->|No| P4[🗑️ PRIORITY 4<br/>Strategic Disposal]
-    
-    SmartContribute --> Execute[✅ Execute Move]
-    Contribute --> Execute
-    Block --> Execute
-    Contest --> Execute
-    P4 --> Execute
-```
-
 **Position-Specific Advantages:**
 
-**2nd Player (Early Follower)**
+**2nd Player (Early Follower):**
 - **Partial Information** - Can influence remaining 2 players
 - **Setup Opportunities** - Position teammates for optimal responses
 - **Early Blocking** - Prevent opponent momentum
 
-**3rd Player (Tactical Position)**
+**3rd Player (Tactical Position):**
 - **Enhanced Team Coordination** - Critical teammate support decisions
 - **Tactical Takeover** - Override teammate when beneficial
 - **Risk Assessment** - Informed decisions with 2 cards visible
 
-**4th Player (Perfect Information)**
+**4th Player (Perfect Information):**
 - **Complete Visibility** - All 3 cards played before decision
 - **Optimal Decisions** - Perfect information for point maximization
 - **Strategic Precision** - Minimal waste, maximum effectiveness
@@ -201,29 +147,54 @@ Trump Rank in Off-Suits (70) > Trump Suit Cards (A♠:60 → 3♠:5)
 
 ### **Kitty Swap Strategy**
 
-The AI employs advanced suit elimination when managing the 8-card kitty:
-```mermaid
-flowchart LR
-    Start([🎲 Kitty Analysis]) --> Suits[🔍 Analyze All Suits]
-    Suits --> Scoring{Elimination Scoring<br/>Length + Value + Patterns}
-    
-    Scoring --> Short[+50: ≤3 cards<br/>Short Suit Bonus]
-    Scoring --> Medium[+30: 4-5 cards<br/>Medium Suit Bonus]
-    Scoring --> Penalties[-40: Aces<br/>-25: Kings<br/>-20: Pairs]
-    
-    Short --> Decision{Final Score<br/>> 20 + Length ≤ 6<br/>+ No Tractors?}
-    Medium --> Decision
-    Penalties --> Decision
-    
-    Decision -->|Yes| Eliminate[✅ ELIMINATE SUIT<br/>Complete Removal]
-    Decision -->|No| Conservative[🛡️ CONSERVATIVE<br/>Keep Structure]
-```
+The AI employs **trump-strength-aware suit elimination** with hierarchical conservation analysis when managing the 8-card kitty.
 
-**Strategic Framework:**
-- **Suit Elimination Priority** - Target 1-2 weak suits for complete removal
-- **Value Preservation** - Always protect Aces, Kings, pairs, tractors
-- **Trump Management** - Usually avoid trump unless exceptionally strong (10+ trumps)
-- **Hand Structure Optimization** - Create voids for strategic advantage
+**Enhanced Strategic Framework:**
+
+**Trump Hierarchy Integration:**
+- **Conservation Value Calculation** - Each trump card scored by hierarchy (BJ:100 → 3♠:5)
+- **Never Eliminate Critical Combos** - Suits with Critical/Strong ComboStrength preserved
+- **Trump vs Non-Trump Priorities** - Trump suits penalized by conservation value, not flat rates
+- **Hierarchical Trump Disposal** - When forced, dispose weakest trump suit cards (3♠, 4♠) over valuable trump rank cards
+
+**Trump-Only Disposal Logic:**
+When forced to dispose trump cards (insufficient non-trump options), the AI uses pure conservation hierarchy:
+- **Primary Rule**: Always select weakest trump cards first regardless of pair preservation
+- **Conservation Ranking**: 3♠ (5) < 4♠ (10) < 5♠ (15) < ... < K♠ (55) < A♠ (60) < 2♥ (70) < 2♠ (80)
+- **Implementation**: Direct conservation value sorting replaces pair-preserving logic for trump-only scenarios
+- **Result**: Consistently selects optimal trump disposal (e.g., 8×3♠ instead of 6×3♠ + K♠ + A♠)
+
+**ComboStrength-Based Analysis:**
+- **Critical Strength** - High-value trump (≥80 conservation), never disposed
+- **Strong Strength** - Mid-value trump (≥40 conservation), Aces, Kings
+- **Medium Strength** - Point cards (5s, 10s, Kings in non-trump)
+- **Weak Strength** - Low non-point cards, disposal priority
+
+**Strategic Decision Modes:**
+
+**SUIT_ELIMINATION Mode:**
+- **Target**: 1-2 weak suits with no Critical/Strong combos
+- **Requirements**: Elimination score > preservation score, no tractors, low trump conservation value
+- **Benefit**: Creates strategic voids for advanced play
+- **Protection**: Filters out Aces, Kings, and point cards during suit elimination fallback
+
+**CONSERVATIVE Mode:**
+- **Strategy**: ComboStrength-based disposal prioritization
+- **Order**: Weak → Medium → Strong → Critical (never dispose)
+- **Focus**: Preserve valuable combinations while meeting 8-card requirement
+
+**EXCEPTIONAL_TRUMP Mode:**
+- **Trigger**: Very long trump (10+ cards) OR strong non-trump combinations
+- **Strategy**: Strategic trump disposal using conservation hierarchy
+- **Safety**: Uses trump-only disposal logic for optimal weak trump selection
+- **Precision**: Guarantees disposal of weakest trump cards when forced
+
+**Advanced Features:**
+- **Trump-Aware Penalties** - Trump suits scored by conservation value rather than card count
+- **Combo Protection** - Never eliminate suits containing pairs or tractors
+- **Strategic Preservation** - Aces and Kings always protected in non-trump suits
+- **Intelligent Trump Disposal** - Conservation hierarchy overrides pair preservation in trump-only scenarios
+- **Consistent Trump Hierarchy** - All trump disposal decisions respect conservation values (3♠→4♠→5♠...)
 
 ### **Trump Declaration Strategy**
 
@@ -240,17 +211,6 @@ During progressive dealing, the AI uses sophisticated declaration logic:
 ## Strategic Disposal Hierarchy
 
 When the AI cannot win a trick, it follows a sophisticated disposal system:
-
-```mermaid
-flowchart LR
-    Start([Can't Win Trick<br/>Need to Dispose]) --> Q1{Have Safe Cards?<br/>7♣, 8♠, 9♦}
-    Q1 -->|Yes| Best[✅ SAFEST<br/>Play Weakest Safe Card]
-    Q1 -->|No| Q2{Have Non-Trump<br/>Non-Point Cards?<br/>A♣, Q♠, J♦}
-    Q2 -->|Yes| Good[✅ GOOD<br/>Play Weakest Available]
-    Q2 -->|No| Q3{Have ANY<br/>Non-Trump Cards?<br/>5♣, 10♠, K♦}
-    Q3 -->|Yes| Okay[⚠️ ACCEPTABLE<br/>Play Weakest Non-Trump]
-    Q3 -->|No| Last[❌ FORCED<br/>Play Weakest Trump]
-```
 
 **Disposal Categories:**
 - **Safe Cards** - No trump, no Ace, no points (7♣, 8♠, 9♦)
@@ -297,7 +257,7 @@ flowchart LR
 
 **Next Evolution:**
 - **Cross-Game Persistence** - Historical analysis extended across multiple games
-- **Long-Term Player Profiling** - Behavioral patterns tracked over weeks/months  
+- **Long-Term Player Profiling** - Behavioral patterns tracked over weeks/months
 - **Dynamic Difficulty Scaling** - AI intelligence adapts to player skill progression
 - **Meta-Game Strategy** - Long-term strategic evolution and counter-adaptation
 
@@ -314,19 +274,19 @@ The Tractor AI system delivers **sophisticated strategic gameplay** through comp
 
 ### **Core Capabilities**
 
-**Strategic Intelligence**
+**Strategic Intelligence:**
 - **Perfect Rule Compliance** - Complete adherence to complex Tractor/Shengji rules
 - **Memory-Enhanced Decisions** - Card tracking with guaranteed winner identification
 - **Position-Based Intelligence** - Specialized logic for all 4 trick positions
 - **Historical Adaptation** - Opponent modeling and behavioral counter-strategies
 
-**Decision Framework**
+**Decision Framework:**
 - **5-Level Priority System** - Conflict-free strategic decision making
 - **Team Coordination** - Optimal cooperation with human teammates
 - **Advanced Trump Management** - Hierarchical conservation and strategic deployment
 - **Strategic Disposal** - Multi-level card safety prioritization
 
-**Performance**
+**Performance:**
 - **Fast Response Times** - <400ms decision time with full analysis
 - **Adaptive Learning** - Improves strategy based on opponent patterns
 - **Fair Challenge** - Challenging yet beatable opponent

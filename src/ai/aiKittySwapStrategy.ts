@@ -4,9 +4,9 @@ import {
   PlayerId,
   TrumpInfo,
   GamePhase,
-  JokerType,
+  ComboStrength,
 } from "../types";
-import { isTrump } from "../game/gameLogic";
+import { isTrump, calculateCardStrategicValue } from "../game/gameLogic";
 
 /**
  * Advanced AI Kitty Swap Strategy - Sophisticated approach with suit elimination and strategic analysis
@@ -86,6 +86,8 @@ interface SuitAnalysis {
   eliminationScore: number; // Higher = better to eliminate
   preservationScore: number; // Higher = better to preserve
   isEliminationCandidate: boolean;
+  trumpConservationValue: number; // Trump hierarchy-based value
+  comboStrengthProfile: ComboStrength[]; // Strength analysis of all combos
 }
 
 /**
@@ -110,7 +112,7 @@ function analyzeHandForKittySwap(
 
   // Analyze each suit for strategic value
   const suitAnalyses: SuitAnalysis[] = Object.entries(suitGroups).map(
-    ([suit, cards]) => analyzeSuitForElimination(suit, cards),
+    ([suit, cards]) => analyzeSuitForElimination(suit, cards, trumpInfo),
   );
 
   // Identify elimination candidates
@@ -152,15 +154,33 @@ function analyzeHandForKittySwap(
 }
 
 /**
- * Analyzes a suit to determine elimination vs preservation value
+ * Analyzes a suit to determine elimination vs preservation value with trump-strength awareness
  */
-function analyzeSuitForElimination(suit: string, cards: Card[]): SuitAnalysis {
+function analyzeSuitForElimination(
+  suit: string,
+  cards: Card[],
+  trumpInfo: TrumpInfo,
+): SuitAnalysis {
   const hasAce = cards.some((card) => card.rank === "A");
   const hasKing = cards.some((card) => card.rank === "K");
 
   // Find pairs and tractors
   const pairs = findPairs(cards);
   const tractors = findTractors(pairs);
+
+  // ENHANCED: Calculate trump conservation value using proper hierarchy
+  const trumpConservationValue = calculateTrumpConservationValueForCards(
+    cards,
+    trumpInfo,
+  );
+
+  // ENHANCED: Analyze combo strength profile for strategic decisions
+  const comboStrengthProfile = analyzeComboStrengthProfile(
+    cards,
+    pairs,
+    tractors,
+    trumpInfo,
+  );
 
   // Calculate elimination score (higher = better to eliminate)
   let eliminationScore = 0;
@@ -170,11 +190,55 @@ function analyzeSuitForElimination(suit: string, cards: Card[]): SuitAnalysis {
   else if (cards.length <= 5) eliminationScore += 30;
   else if (cards.length <= 7) eliminationScore += 10;
 
-  // Penalty for valuable cards
-  if (hasAce) eliminationScore -= 40; // Aces are very valuable for leading
-  if (hasKing) eliminationScore -= 25; // Kings are strong leaders
-  eliminationScore -= pairs.length * 20; // Pairs are valuable
-  eliminationScore -= tractors.length * 35; // Tractors are extremely valuable
+  // ENHANCED: Trump-aware penalty adjustments
+  // For trump cards, use conservation hierarchy instead of flat penalties
+  const isTrumpSuit = cards.some((card) => isTrump(card, trumpInfo));
+  if (isTrumpSuit) {
+    // Trump suit penalty based on conservation value rather than count
+    eliminationScore -= Math.min(80, trumpConservationValue * 0.5);
+  } else {
+    // Non-trump penalties
+    if (hasAce) eliminationScore -= 40; // Aces are very valuable for leading
+    if (hasKing) eliminationScore -= 25; // Kings are strong leaders
+    eliminationScore -= pairs.length * 20; // Pairs are valuable
+    eliminationScore -= tractors.length * 35; // Tractors are extremely valuable
+  }
+
+  // ENHANCED: Strategic pair preservation logic
+  const criticalCombos = comboStrengthProfile.filter(
+    (s) => s === ComboStrength.Critical,
+  ).length;
+  const strongCombos = comboStrengthProfile.filter(
+    (s) => s === ComboStrength.Strong,
+  ).length;
+
+  // Strategic pair inclusion logic - similar to point card strategy
+  const { smallPairs, valuablePairs } = categorizePairs(pairs);
+
+  // Small pairs (value < 5) can be included when elimination benefit outweighs cost
+  eliminationScore -= smallPairs.length * 15; // Moderate penalty for small pairs
+
+  // Valuable pairs (Aces, Kings, point cards) heavily penalized
+  eliminationScore -= valuablePairs.length * 50; // Strong penalty for valuable pairs
+
+  // Extra protection for Aces and Kings specifically
+  if (hasAce) eliminationScore -= 60; // Aces are extremely valuable for leading
+  if (hasKing) eliminationScore -= 40; // Kings are very valuable for leading
+
+  // Extra penalty for suits with multiple pairs (potential tractors)
+  const suitPairCounts: { [suit: string]: number } = {};
+  pairs.forEach((pair) => {
+    const suit = pair[0].suit!;
+    suitPairCounts[suit] = (suitPairCounts[suit] || 0) + 1;
+  });
+  Object.values(suitPairCounts).forEach((pairCount) => {
+    if (pairCount >= 2) {
+      eliminationScore -= pairCount * 20; // Multiple pairs in suit are valuable (but allow strategic inclusion)
+    }
+  });
+
+  eliminationScore -= criticalCombos * 50; // Never eliminate critical combos
+  eliminationScore -= strongCombos * 30; // Heavy penalty for strong combos
 
   // Bonus for weak suits (only low cards)
   const onlyWeakCards = cards.every(
@@ -185,20 +249,43 @@ function analyzeSuitForElimination(suit: string, cards: Card[]): SuitAnalysis {
   );
   if (onlyWeakCards) eliminationScore += 40;
 
+  // ENHANCED: Weak combo bonus
+  const weakCombos = comboStrengthProfile.filter(
+    (s) => s === ComboStrength.Weak,
+  ).length;
+  if (weakCombos === comboStrengthProfile.length && weakCombos > 0) {
+    eliminationScore += 25; // Bonus for suits with only weak combos
+  }
+
   // Calculate preservation score (higher = better to preserve)
   let preservationScore = 0;
-  if (hasAce) preservationScore += 40; // Ace = guaranteed winning lead
-  if (hasKing) preservationScore += 25; // King = strong lead
+
+  // ENHANCED: Trump-aware preservation scoring
+  if (isTrumpSuit) {
+    preservationScore += trumpConservationValue * 0.3; // Trump value contribution
+  } else {
+    if (hasAce) preservationScore += 40; // Ace = guaranteed winning lead
+    if (hasKing) preservationScore += 25; // King = strong lead
+  }
+
   preservationScore += pairs.length * 20; // Each pair is valuable
   preservationScore += tractors.length * 40; // Tractors are extremely valuable
   if (cards.length >= 6) preservationScore += 15; // Long suits have control value
 
-  // Determine if this suit is a good elimination candidate
+  // ENHANCED: Combo strength-based preservation bonus
+  preservationScore += criticalCombos * 60; // High value for critical combos
+  preservationScore += strongCombos * 35; // Good value for strong combos
+
+  // ENHANCED: Trump-aware elimination candidate determination
   const isEliminationCandidate =
     eliminationScore > preservationScore &&
     eliminationScore > 20 && // Must have significant elimination value
     cards.length <= 6 && // Don't eliminate very long suits
-    tractors.length === 0; // Never eliminate suits with tractors
+    tractors.length === 0 && // Never eliminate suits with tractors
+    criticalCombos === 0 && // Never eliminate suits with critical combos
+    !hasAce && // Never eliminate suits with Aces
+    !hasKing && // Never eliminate suits with Kings
+    (!isTrumpSuit || trumpConservationValue <= 20); // Be cautious with trump elimination
 
   return {
     suit,
@@ -210,6 +297,8 @@ function analyzeSuitForElimination(suit: string, cards: Card[]): SuitAnalysis {
     eliminationScore,
     preservationScore,
     isEliminationCandidate,
+    trumpConservationValue,
+    comboStrengthProfile,
   };
 }
 
@@ -340,27 +429,33 @@ function executeKittySwapStrategy(
       return executeSuitEliminationStrategy(
         eliminationCandidates,
         nonTrumpCards,
+        trumpInfo,
       );
 
     case "CONSERVATIVE":
-      return selectWeakestCards(nonTrumpCards, 8);
+      return selectStrategicDisposalCards(nonTrumpCards, 8, trumpInfo);
 
     case "EXCEPTIONAL_TRUMP":
       const needed = 8 - nonTrumpCards.length;
-      const weakestTrumps = selectWeakestTrumpCards(trumpCards, needed);
+      const weakestTrumps = selectStrategicDisposalCards(
+        trumpCards,
+        needed,
+        trumpInfo,
+      );
       return [...nonTrumpCards, ...weakestTrumps];
 
     default:
-      return selectWeakestCards(nonTrumpCards, 8);
+      return selectStrategicDisposalCards(nonTrumpCards, 8, trumpInfo);
   }
 }
 
 /**
- * Executes suit elimination strategy
+ * Executes suit elimination strategy with trump-strength awareness
  */
 function executeSuitEliminationStrategy(
   eliminationCandidates: SuitAnalysis[],
   nonTrumpCards: Card[],
+  trumpInfo: TrumpInfo,
 ): Card[] {
   const cardsToSwap: Card[] = [];
 
@@ -371,16 +466,31 @@ function executeSuitEliminationStrategy(
     }
   }
 
-  // Fill remaining slots with weakest cards from remaining suits
+  // Fill remaining slots with strategically weakest cards from remaining suits
+  // BUT: Never include Aces, Kings, or valuable cards in suit elimination strategy
   if (cardsToSwap.length < 8) {
     const remainingCards = nonTrumpCards.filter(
       (card) => !cardsToSwap.includes(card),
     );
-    const additionalCards = selectWeakestCards(
-      remainingCards,
-      8 - cardsToSwap.length,
+
+    // For suit elimination strategy, only include truly weak remaining cards
+    // Filter out Aces, Kings, and point cards to preserve them for play
+    const weakRemainingCards = remainingCards.filter(
+      (card) => card.rank !== "A" && card.rank !== "K" && card.points === 0,
     );
-    cardsToSwap.push(...additionalCards);
+
+    if (weakRemainingCards.length >= 8 - cardsToSwap.length) {
+      // We have enough weak cards to complete the selection
+      const additionalCards = selectStrategicDisposalCards(
+        weakRemainingCards,
+        8 - cardsToSwap.length,
+        trumpInfo,
+      );
+      cardsToSwap.push(...additionalCards);
+    } else {
+      // Not enough weak cards - fall back to conservative strategy instead
+      return selectStrategicDisposalCards(nonTrumpCards, 8, trumpInfo);
+    }
   }
 
   return cardsToSwap.slice(0, 8);
@@ -466,81 +576,273 @@ function evaluateNonTrumpSuitStrength(nonTrumpCards: Card[]): number {
 }
 
 /**
- * Selects weakest trump cards for strategic inclusion in kitty
+ * ENHANCED: Calculates trump conservation value for a set of cards using proper hierarchy
  */
-function selectWeakestTrumpCards(trumpCards: Card[], count: number): Card[] {
-  // Sort trump cards by weakness (using conservation hierarchy in reverse)
-  const sortedTrumps = trumpCards.sort((a, b) => {
-    // Jokers are never weak - should be last resort
-    if (a.joker && !b.joker) return 1;
-    if (!a.joker && b.joker) return -1;
-    if (a.joker && b.joker) {
-      // Between jokers, Big Joker is stronger
-      return a.joker === JokerType.Big ? 1 : -1;
+function calculateTrumpConservationValueForCards(
+  cards: Card[],
+  trumpInfo: TrumpInfo,
+): number {
+  let totalValue = 0;
+  for (const card of cards) {
+    if (isTrump(card, trumpInfo)) {
+      totalValue += calculateCardStrategicValue(
+        card,
+        trumpInfo,
+        "conservation",
+      );
     }
-
-    // Among non-jokers, prefer trump suit cards over trump rank cards
-    if (a.rank && b.rank && a.suit && b.suit) {
-      // Both are trump rank cards in different suits - prefer by suit
-      const rankOrder = [
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "J",
-        "Q",
-        "K",
-        "A",
-      ];
-      const aRankIndex = rankOrder.indexOf(a.rank);
-      const bRankIndex = rankOrder.indexOf(b.rank);
-      return aRankIndex - bRankIndex;
-    }
-
-    return 0;
-  });
-
-  return sortedTrumps.slice(0, count);
+  }
+  return totalValue;
 }
 
 /**
- * Selects weakest cards from a collection
+ * ENHANCED: Analyzes combo strength profile for strategic disposal decisions
  */
-function selectWeakestCards(cards: Card[], count: number): Card[] {
-  const sortedCards = cards.sort((a, b) => {
-    // First priority: prefer non-point cards
-    if (a.points === 0 && b.points > 0) return -1;
-    if (a.points > 0 && b.points === 0) return 1;
+function analyzeComboStrengthProfile(
+  cards: Card[],
+  pairs: Card[][],
+  tractors: Card[][],
+  trumpInfo: TrumpInfo,
+): ComboStrength[] {
+  const strengthProfile: ComboStrength[] = [];
 
-    // Second priority: prefer lower point values
-    if (a.points !== b.points) return a.points - b.points;
+  // Simplified combo strength analysis without full game context
+  const analyzeCardStrength = (card: Card): ComboStrength => {
+    const isTrumpCard = isTrump(card, trumpInfo);
+    const conservationValue = isTrumpCard
+      ? calculateCardStrategicValue(card, trumpInfo, "conservation")
+      : card.points > 0
+        ? 30
+        : 10;
 
-    // Third priority: prefer weaker ranks
-    const rankOrder = [
-      "3",
-      "4",
-      "6",
-      "7",
-      "8",
-      "9",
-      "J",
-      "Q",
-      "10",
-      "5",
-      "K",
-      "A",
-    ];
-    const aIndex = rankOrder.indexOf(a.rank || "A");
-    const bIndex = rankOrder.indexOf(b.rank || "A");
+    // Determine strength based on conservation value and trump status
+    if (isTrumpCard && conservationValue >= 80) {
+      return ComboStrength.Critical; // High-value trump (Big Joker, Small Joker, Trump rank in trump suit)
+    } else if (isTrumpCard && conservationValue >= 40) {
+      return ComboStrength.Strong; // Mid-value trump (Trump suit high cards)
+    } else if (card.rank === "A" || card.rank === "K") {
+      return ComboStrength.Strong; // High non-trump cards
+    } else if (card.points > 0) {
+      return ComboStrength.Medium; // Point cards
+    } else {
+      return ComboStrength.Weak; // Low value cards
+    }
+  };
 
-    return aIndex - bIndex;
+  // Analyze singles
+  for (const card of cards) {
+    strengthProfile.push(analyzeCardStrength(card));
+  }
+
+  // Analyze pairs - pairs are generally stronger than singles
+  for (const pair of pairs) {
+    const baseStrength = analyzeCardStrength(pair[0]);
+    // Upgrade strength for pairs
+    if (baseStrength === ComboStrength.Weak) {
+      strengthProfile.push(ComboStrength.Medium);
+    } else if (baseStrength === ComboStrength.Medium) {
+      strengthProfile.push(ComboStrength.Strong);
+    } else {
+      strengthProfile.push(ComboStrength.Critical);
+    }
+  }
+
+  // Analyze tractors - tractors are very strong
+  for (const tractor of tractors) {
+    const baseStrength = analyzeCardStrength(tractor[0]);
+    // Tractors are always at least Strong
+    if (
+      baseStrength === ComboStrength.Weak ||
+      baseStrength === ComboStrength.Medium
+    ) {
+      strengthProfile.push(ComboStrength.Strong);
+    } else {
+      strengthProfile.push(ComboStrength.Critical);
+    }
+  }
+
+  return strengthProfile;
+}
+
+/**
+ * ENHANCED: Strategic disposal using ComboStrength-based prioritization - preserve pairs
+ */
+function selectStrategicDisposalCards(
+  cards: Card[],
+  count: number,
+  trumpInfo: TrumpInfo,
+): Card[] {
+  // Avoid breaking up pairs - prefer singles for disposal
+  return selectPairPreservingDisposal(cards, count, trumpInfo);
+}
+
+/**
+ * Categorizes pairs into small pairs (suitable for strategic inclusion) and valuable pairs (preserve)
+ */
+function categorizePairs(pairs: Card[][]): {
+  smallPairs: Card[][];
+  valuablePairs: Card[][];
+} {
+  const smallPairs: Card[][] = [];
+  const valuablePairs: Card[][] = [];
+
+  pairs.forEach((pair) => {
+    const card = pair[0];
+    const isValuable =
+      card.rank === "A" || // Aces are always valuable
+      card.rank === "K" || // Kings are always valuable
+      card.points > 0 || // Point cards (5s, 10s, Kings) are valuable
+      card.rank === "Q" ||
+      card.rank === "J"; // Face cards are moderately valuable
+
+    if (isValuable) {
+      valuablePairs.push(pair);
+    } else {
+      smallPairs.push(pair); // 3, 4, 6, 7, 8, 9 pairs
+    }
   });
 
-  return sortedCards.slice(0, count);
+  return { smallPairs, valuablePairs };
+}
+
+/**
+ * Enhanced pair-preserving disposal with strategic small pair inclusion
+ */
+function selectPairPreservingDisposal(
+  cards: Card[],
+  count: number,
+  trumpInfo: TrumpInfo,
+): Card[] {
+  const pairs = findPairs(cards);
+  const { smallPairs, valuablePairs } = categorizePairs(pairs);
+
+  // For trump-only disposal, use conservation hierarchy instead of pair-preserving logic
+  const allTrump = cards.every((card) => isTrump(card, trumpInfo));
+  if (allTrump) {
+    const sortedByConservation = cards
+      .map((card) => ({
+        card,
+        value: calculateCardStrategicValue(card, trumpInfo, "conservation"),
+      }))
+      .sort((a, b) => a.value - b.value); // Weakest first
+
+    return sortedByConservation.slice(0, count).map((item) => item.card);
+  }
+
+  // Calculate suit elimination benefit
+  const suitAnalysis = analyzeSuitForElimination("temp", cards, trumpInfo);
+  const hasHighEliminationScore = suitAnalysis.eliminationScore > 40;
+
+  const selectedCards: Card[] = [];
+
+  // Strategy 1: Strategic small pair inclusion when elimination benefit is high
+  if (hasHighEliminationScore && smallPairs.length > 0) {
+    // Include small pairs when elimination benefit clearly outweighs conservation cost
+    const pairsToInclude = Math.min(
+      Math.floor((count - 2) / 2), // Leave room for other cards, need even slots for pairs
+      smallPairs.length,
+      2, // Maximum 2 small pairs to include
+    );
+
+    if (pairsToInclude > 0) {
+      // Sort small pairs by rank (weakest first: 3s before 4s before 6s, etc.)
+      const rankOrder = ["3", "4", "6", "7", "8", "9"];
+      const sortedSmallPairs = smallPairs.sort((a, b) => {
+        const aIndex = rankOrder.indexOf(a[0].rank!);
+        const bIndex = rankOrder.indexOf(b[0].rank!);
+        return aIndex - bIndex;
+      });
+
+      // Include weakest small pairs
+      for (let i = 0; i < pairsToInclude; i++) {
+        selectedCards.push(...sortedSmallPairs[i]);
+      }
+    }
+  }
+
+  // Strategy 2: Fill remaining slots avoiding valuable pairs
+  if (selectedCards.length < count) {
+    const pairCards = new Set(pairs.flat().map((card) => card.id));
+    const remainingCards = cards.filter(
+      (card) => !selectedCards.some((sc) => sc.id === card.id),
+    );
+
+    // Separate singles from remaining pair cards
+    const singleCards = remainingCards.filter(
+      (card) => !pairCards.has(card.id),
+    );
+    const remainingPairCards = remainingCards.filter((card) =>
+      pairCards.has(card.id),
+    );
+
+    // Prefer singles first, but avoid high-value cards
+    if (singleCards.length > 0) {
+      const singleAnalyses = singleCards.map((card) => {
+        const conservationValue = calculateCardStrategicValue(
+          card,
+          trumpInfo,
+          "strategic",
+        );
+
+        // Extra penalty for high-value cards to ensure they're preserved
+        // BUT: Only apply to non-trump cards - trump cards use proper conservation hierarchy
+        let adjustedValue = conservationValue;
+        if (!isTrump(card, trumpInfo)) {
+          if (card.rank === "A") adjustedValue += 1000; // Aces never selected
+          if (card.rank === "K") adjustedValue += 800; // Kings never selected
+          if (card.points > 0) adjustedValue += 200; // Point cards strongly preserved
+        }
+
+        return { card, conservationValue: adjustedValue };
+      });
+
+      const sortedSingles = singleAnalyses.sort(
+        (a, b) => a.conservationValue - b.conservationValue,
+      );
+      const singlesNeeded = Math.min(
+        count - selectedCards.length,
+        sortedSingles.length,
+      );
+
+      selectedCards.push(
+        ...sortedSingles.slice(0, singlesNeeded).map((item) => item.card),
+      );
+    }
+
+    // Only break up pairs as last resort (and prefer small pairs over valuable pairs)
+    if (selectedCards.length < count && remainingPairCards.length > 0) {
+      const pairAnalyses = remainingPairCards.map((card) => {
+        const isFromValuablePair = valuablePairs.some((pair) =>
+          pair.some((pc) => pc.id === card.id),
+        );
+        const conservationValue = calculateCardStrategicValue(
+          card,
+          trumpInfo,
+          "strategic",
+        );
+        return {
+          card,
+          conservationValue,
+          isValuable: isFromValuablePair,
+        };
+      });
+
+      // Sort: small pair cards first, then by conservation value
+      const sortedPairCards = pairAnalyses.sort((a, b) => {
+        if (a.isValuable !== b.isValuable) {
+          return a.isValuable ? 1 : -1; // Small pairs first
+        }
+        return a.conservationValue - b.conservationValue;
+      });
+
+      const remainingNeeded = count - selectedCards.length;
+      selectedCards.push(
+        ...sortedPairCards.slice(0, remainingNeeded).map((item) => item.card),
+      );
+    }
+  }
+
+  return selectedCards.slice(0, count);
 }
 
 /**
