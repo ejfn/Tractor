@@ -116,8 +116,12 @@ describe('gamePlayManager', () => {
       // Setup a trick in progress with 3 players having played
       // For a 4-player game, we need leader + 3 followers to complete a trick
       freshState.currentTrick = {
-  // Bot 1 led
         plays: [
+          // Bot 1 led
+          {
+            playerId: PlayerId.Bot1,
+            cards: [createCard(Suit.Diamonds, Rank.Three)]
+          },
           // Human has played 
           {
             playerId: PlayerId.Human,

@@ -266,8 +266,8 @@ function determineIfShouldPlayConservatively(
 
     // Special case: Last player (4th position) should maximize point contribution
     const currentTrick = gameState.currentTrick;
-    if (currentTrick && currentTrick.plays.length === 2) {
-      // This is the 4th player (last to play)
+    if (currentTrick && currentTrick.plays.length === 3) {
+      // This is the 4th player (last to play) - plays[0]=leader, plays[1]=2nd, plays[2]=3rd, current=4th
       // Focus on optimal point contribution rather than conservation
       return false;
     }
