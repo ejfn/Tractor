@@ -458,7 +458,7 @@ function calculateTrumpConservationValue(
   cards: Card[],
   trumpInfo: TrumpInfo,
 ): number {
-  let maxValue = 0;
+  let totalValue = 0;
 
   for (const card of cards) {
     const cardValue = calculateCardStrategicValue(
@@ -466,10 +466,10 @@ function calculateTrumpConservationValue(
       trumpInfo,
       "conservation",
     );
-    maxValue = Math.max(maxValue, cardValue);
+    totalValue += cardValue;
   }
 
-  return maxValue;
+  return totalValue;
 }
 
 /**

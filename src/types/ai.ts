@@ -1,6 +1,6 @@
 // AI strategy and intelligence types
 
-import { Card, PlayerId, Suit, TrumpInfo, Combo } from "./core";
+import { Card, Combo, PlayerId, Suit, TrumpInfo } from "./core";
 
 // AI Strategy Enhancement Types
 export enum TrickPosition {
@@ -124,16 +124,6 @@ export interface TrickWinnerAnalysis {
   shouldPlayConservatively: boolean; // Strategic decision for conservative play
 }
 
-// 4th Player Perfect Information Analysis
-export interface FourthPlayerAnalysis {
-  certainWinCards: Combo[]; // Cards that definitely win
-  pointMaximizationPotential: number; // Total points possible in trick
-  optimalContributionStrategy: "maximize" | "conserve" | "beat"; // Recommended strategy
-  teammateSupportOpportunity: boolean; // Can contribute points to teammate
-  guaranteedPointCards: Combo[]; // Point cards that are guaranteed winners
-  perfectInformationAdvantage: boolean; // Has certain winning options
-}
-
 // 1st Player (Leading) Strategy Analysis
 export interface FirstPlayerAnalysis {
   gamePhaseStrategy: "probe" | "aggressive" | "control" | "endgame"; // Leading strategy based on game phase
@@ -169,6 +159,16 @@ export interface ThirdPlayerAnalysis {
   pointMaximizationPotential: number; // Points that could be collected
   optimalCombo: Combo | null; // Best combination for the situation
   tacticalAdvantage: boolean; // Whether 3rd position provides tactical benefit
+}
+
+// 4th Player Perfect Information Analysis
+export interface FourthPlayerAnalysis {
+  certainWinCards: Combo[]; // Cards that definitely win
+  pointMaximizationPotential: number; // Total points possible in trick
+  optimalContributionStrategy: "maximize" | "conserve" | "beat"; // Recommended strategy
+  teammateSupportOpportunity: boolean; // Can contribute points to teammate
+  guaranteedPointCards: Combo[]; // Point cards that are guaranteed winners
+  perfectInformationAdvantage: boolean; // Has certain winning options
 }
 
 // Phase 4: Historical Trick Analysis Types
