@@ -15,7 +15,7 @@ import {
   selectEarlyGameLeadingPlay,
 } from "./pointFocusedStrategy";
 import { analyzeCombo } from "../aiGameContext";
-import { analyzeFirstPlayerStrategy } from "../analysis/firstPlayerAnalysis";
+import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
 import { getRankValue } from "../analysis/comboAnalysis";
 import { isTrump } from "../../game/gameLogic";
 

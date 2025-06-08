@@ -96,31 +96,12 @@ export function selectPointContribution(
 
     // Use biggest remaining point cards if available
     if (guaranteedWinningPointCards.length > 0) {
-      console.log("DEBUG: Memory-enhanced selection found guaranteed winners:");
-      guaranteedWinningPointCards.forEach((g) =>
-        console.log(
-          `  ${g.combo.combo.cards[0].rank} - priority: ${g.priority}`,
-        ),
-      );
       guaranteedWinningPointCards.sort((a, b) => b.priority - a.priority);
-      console.log(
-        "DEBUG: Memory selected:",
-        guaranteedWinningPointCards[0].combo.combo.cards[0].rank,
-      );
       return guaranteedWinningPointCards[0].combo.combo.cards;
     }
   }
 
   // Fallback: Traditional point contribution (10 > King > 5) with 4th player enhancement
-  console.log(
-    "DEBUG: Point contribution fallback logic, position:",
-    context?.trickPosition,
-  );
-  console.log(
-    "Available point cards:",
-    pointCardCombos.map((pc) => pc.combo.cards[0].rank),
-  );
-
   const sorted = pointCardCombos.sort((a, b) => {
     const aCard = a.combo.cards[0];
     const bCard = b.combo.cards[0];
@@ -135,10 +116,6 @@ export function selectPointContribution(
     const aPriority = getPriority(aCard);
     const bPriority = getPriority(bCard);
 
-    console.log(
-      `DEBUG: Comparing ${aCard.rank} (priority ${aPriority}) vs ${bCard.rank} (priority ${bPriority})`,
-    );
-
     if (aPriority !== bPriority) {
       return bPriority - aPriority; // Higher priority first
     }
@@ -146,10 +123,6 @@ export function selectPointContribution(
     return b.analysis.pointValue - a.analysis.pointValue;
   });
 
-  console.log(
-    "DEBUG: Selected card after sorting:",
-    sorted[0].combo.cards[0].rank,
-  );
   return sorted[0].combo.cards;
 }
 

@@ -1665,39 +1665,28 @@ export const getValidCombinations = (
       return false;
     }
 
-    // CRITICAL: When out of suit, reject same combo types from other NON-TRUMP suits
+    // CRITICAL: When out of suit, reject certain combo types from other NON-TRUMP suits
     if (!playerHasMatchingCards && combo.type === leadingComboType) {
       // Player is out of suit/trump and this is a "proper" combo of the same type
       // BUT: Allow trump combos even when out of led suit (trump beats non-trump)
       const comboIsTrump = combo.cards.some((card) => isTrump(card, trumpInfo));
       if (!comboIsTrump) {
-        // This is a non-trump combo of the same type - force mixed combinations instead
-        return false;
+        // FIXED: Only reject non-trump PAIRS and TRACTORS when out of suit
+        // Singles should always be allowed when out of suit (basic Tractor rule)
+        if (combo.type !== ComboType.Single) {
+          return false;
+        }
       }
     }
 
     return isValidPlay(combo.cards, leadingCards, playerHand, trumpInfo);
   });
 
-  // DEBUG: Check why regular combos are not sufficient
-  if (validCombos.length === 0 && leadingLength === 2) {
-    console.warn("No valid regular combos found for pair, checking combos:", {
-      allCombosCount: allCombos.length,
-      pairCombos: allCombos.filter(c => c.type === ComboType.Pair && c.cards.length === 2)
-        .map(c => ({ type: c.type, cards: c.cards.map(card => card.joker || `${card.rank}${card.suit}`) })),
-      leadingCards: leadingCards.map((c) => c.joker || `${c.rank}${c.suit}`),
-      leadingSuit,
-      leadingComboType,
-      playerHasMatchingCards
-    });
-  }
-
-  // Always generate mixed combinations as additional strategic options
-  const mixedCombos = generateMixedCombinations(
-    playerHand,
-    leadingCards,
-    trumpInfo,
-  );
+  // Generate mixed combinations as additional strategic options ONLY if needed
+  const mixedCombos =
+    validCombos.length > 0
+      ? []
+      : generateMixedCombinations(playerHand, leadingCards, trumpInfo);
 
   // Combine proper combos with mixed combos for full strategic options
   const allValidCombos = [...validCombos, ...mixedCombos];

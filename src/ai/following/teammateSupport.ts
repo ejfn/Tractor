@@ -34,10 +34,6 @@ export function handleTeammateWinning(
   const trickWinner = context.trickWinnerAnalysis!;
 
   // Position-specific analysis and contribution logic
-  console.log(
-    "DEBUG: handleTeammateWinning - trickPosition:",
-    context.trickPosition,
-  );
   switch (context.trickPosition) {
     case TrickPosition.Third:
       // 3rd player tactical analysis
@@ -49,14 +45,8 @@ export function handleTeammateWinning(
         trumpInfo,
       );
 
-      console.log(
-        "DEBUG: Third player shouldContribute:",
-        shouldContributeThird,
-      );
-
       if (shouldContributeThird) {
         // Use same point contribution logic as 4th player for consistency
-        console.log("DEBUG: Third player - calling selectPointContribution");
         return selectPointContribution(
           comboAnalyses,
           trumpInfo,

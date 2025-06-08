@@ -42,14 +42,8 @@ export function selectOptimalFollowPlay(
   // Clear priority-based decision making
 
   // === PRIORITY 1: TEAM COORDINATION ===
-  console.log("DEBUG: TrickWinner analysis:", trickWinner);
-  console.log("DEBUG: isTeammateWinning:", trickWinner?.isTeammateWinning);
   if (trickWinner?.isTeammateWinning) {
     // Teammate is winning - help collect points or play conservatively
-    console.log(
-      "DEBUG: Calling handleTeammateWinning for position:",
-      context.trickPosition,
-    );
     return handleTeammateWinning(comboAnalyses, context, trumpInfo, gameState);
   }
 

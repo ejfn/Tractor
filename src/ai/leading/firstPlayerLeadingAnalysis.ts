@@ -9,7 +9,7 @@ import {
   TrumpInfo,
 } from "../../types";
 import { isTrump } from "../../game/gameLogic";
-import { getRankValue } from "./comboAnalysis";
+import { getRankValue } from "../analysis/comboAnalysis";
 
 /**
  * First Player Analysis - Strategic analysis for leading players
