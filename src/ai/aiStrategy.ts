@@ -22,7 +22,7 @@ import {
   FirstPlayerAnalysis,
   SecondPlayerAnalysis,
 } from "../types";
-import { isTrump, evaluateTrickPlay } from "../game/gameLogic";
+import { isTrump, evaluateTrickPlay, getComboType } from "../game/gameLogic";
 import {
   createGameContext,
   analyzeCombo,
@@ -174,6 +174,15 @@ export class AIStrategyImplementation implements AIStrategy {
       );
       if (opponentResponse) {
         return opponentResponse;
+      }
+
+      // Position-specific disposal when can't beat opponent
+      if (context.trickPosition === TrickPosition.Fourth) {
+        return this.selectFourthPlayerPointAvoidance(
+          comboAnalyses,
+          context,
+          trumpInfo,
+        );
       }
     }
 
@@ -544,21 +553,42 @@ export class AIStrategyImplementation implements AIStrategy {
     trumpInfo: TrumpInfo,
     gameState: GameState,
   ): Card[] | null {
-    // Check if we can beat the opponent at all
+    // Can't beat opponent - use strategic disposal
     if (!trickWinner.canBeatCurrentWinner) {
-      // 🎯 4TH PLAYER ENHANCEMENT: Enhanced point card avoidance
-      if (context.trickPosition === TrickPosition.Fourth) {
-        return this.selectFourthPlayerPointAvoidance(
-          comboAnalyses,
-          context,
-          trumpInfo,
-        );
-      }
-      // Can't beat opponent - play lowest value card to minimize points given
-      return this.selectLowestValueNonPointCombo(comboAnalyses);
+      return this.selectStrategicPointAvoidance(comboAnalyses, trumpInfo);
     }
 
-    // High-value tricks (>=10 points): definitely try to beat if we can
+    // Check for trump combos that match leading combo type for strategic dominance
+    const leadingCombo = gameState?.currentTrick?.leadingCombo;
+    if (leadingCombo) {
+      const leadingIsTrump = leadingCombo.some((card) =>
+        isTrump(card, trumpInfo),
+      );
+
+      if (!leadingIsTrump) {
+        // Non-trump led - check for proper trump combos that match type
+        const leadingComboType = getComboType(leadingCombo, trumpInfo);
+        const matchingTrumpCombos = comboAnalyses.filter(
+          (ca) =>
+            ca.combo.cards.every((card) => isTrump(card, trumpInfo)) &&
+            ca.combo.type === leadingComboType &&
+            ca.combo.type !== ComboType.Single,
+        );
+
+        // Prioritize trump tractors/pairs over mixed combos for strategic dominance
+        if (matchingTrumpCombos.length > 0) {
+          return this.selectOptimalWinningCombo(
+            matchingTrumpCombos,
+            context,
+            {} as PositionStrategy,
+            trumpInfo,
+            gameState,
+          );
+        }
+      }
+    }
+
+    // High-value tricks: contest with any available combo
     if (trickWinner.trickPoints >= 10) {
       return this.selectOptimalWinningCombo(
         comboAnalyses,
@@ -569,14 +599,59 @@ export class AIStrategyImplementation implements AIStrategy {
       );
     }
 
-    // Moderate points (5-9 points): beat if reasonable
+    // Medium-value tricks: contest if strategically sound
     if (trickWinner.trickPoints >= 5 && trickWinner.shouldTryToBeat) {
       return this.selectAggressiveBeatPlay(comboAnalyses, context);
     }
 
-    // Low value tricks (0-4 points): don't waste high cards on pointless tricks
-    // Use conservation logic to play weakest cards instead of null
-    return this.selectLowestValueNonPointCombo(comboAnalyses);
+    // Low-value tricks: use strategic disposal
+    return this.selectStrategicPointAvoidance(comboAnalyses, trumpInfo);
+  }
+
+  // Strategic point avoidance when opponent is winning
+  private selectStrategicPointAvoidance(
+    comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+    trumpInfo: TrumpInfo,
+  ): Card[] {
+    // Priority 1: Non-trump, non-point, non-Ace cards (safest disposal)
+    const safeCards = comboAnalyses.filter(
+      (ca) =>
+        !ca.analysis.isTrump &&
+        !ca.combo.cards.some((card) => (card.points || 0) > 0) &&
+        !ca.combo.cards.some((card) => card.rank === Rank.Ace),
+    );
+
+    if (safeCards.length > 0) {
+      const sorted = safeCards.sort((a, b) => a.combo.value - b.combo.value);
+      return sorted[0].combo.cards;
+    }
+
+    // Priority 2: Non-trump, non-point cards (lose Ace but avoid giving points)
+    const nonTrumpNonPoint = comboAnalyses.filter(
+      (ca) =>
+        !ca.analysis.isTrump &&
+        !ca.combo.cards.some((card) => (card.points || 0) > 0),
+    );
+
+    if (nonTrumpNonPoint.length > 0) {
+      const sorted = nonTrumpNonPoint.sort(
+        (a, b) => a.combo.value - b.combo.value,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    // Priority 3: Non-trump (even if point cards - better than trump)
+    const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
+    if (nonTrump.length > 0) {
+      const sorted = nonTrump.sort((a, b) => a.combo.value - b.combo.value);
+      return sorted[0].combo.cards;
+    }
+
+    // Last resort: trump cards (only if no non-trump available)
+    const sorted = comboAnalyses.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    );
+    return sorted[0].combo.cards;
   }
 
   // === STRATEGIC DISPOSAL ===
@@ -1440,9 +1515,11 @@ export class AIStrategyImplementation implements AIStrategy {
       return comboAnalyses[0].combo.cards; // Fallback
     }
 
-    // Use the strongest winning combo to ensure we beat the opponent
-    return winningCombos.sort((a, b) => b.combo.value - a.combo.value)[0].combo
-      .cards;
+    // Use the WEAKEST winning combo for trump conservation
+    // Sort by conservation value (ascending = weakest first)
+    return winningCombos.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    )[0].combo.cards;
   }
 
   private selectAggressiveBeatPlay(
@@ -2838,8 +2915,16 @@ export class AIStrategyImplementation implements AIStrategy {
     }
 
     // Select best combo based on strategy and value
-    return filteredCombos.reduce((best, current) => {
+    const result = filteredCombos.reduce((best, current) => {
       if (!best) return current;
+
+      // TRUMP CONSERVATION FIX: When both combos are trump, use conservation hierarchy (lowest first)
+      if (current.analysis.isTrump && best.analysis.isTrump) {
+        return current.analysis.conservationValue <
+          best.analysis.conservationValue
+          ? current
+          : best;
+      }
 
       const currentValue = this.calculateSecondPlayerComboValue(
         current,
@@ -2851,7 +2936,9 @@ export class AIStrategyImplementation implements AIStrategy {
       );
 
       return currentValue > bestValue ? current : best;
-    }).combo;
+    });
+
+    return result.combo;
   }
 
   private calculateSecondPlayerComboValue(

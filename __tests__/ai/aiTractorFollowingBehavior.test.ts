@@ -403,6 +403,11 @@ describe('AI Tractor Following Behavior', () => {
       
       const aiMove = getAIMove(gameState, PlayerId.Bot1);
       
+      console.log('=== DEBUG: AI Tractor Following Test ===');
+      console.log(`AI hand: ${bot1Player.hand.map(c => `${c.rank}${c.suit}`).join(', ')}`);
+      console.log(`Led tractor: ${leadingTractor.map(c => `${c.rank}${c.suit}`).join(', ')}`);
+      console.log(`AI selected: ${aiMove.map(c => `${c.rank}${c.suit}`).join(', ')}`);
+      
       // AI should use trump tractor to win (same combo type beats non-trump)
       const playedTrumpTractor = (
         aiMove.length === 4 &&
@@ -410,6 +415,7 @@ describe('AI Tractor Following Behavior', () => {
         aiMove.filter(card => card.rank === Rank.Eight && card.suit === Suit.Hearts).length === 2
       );
       
+      console.log(`Expected trump tractor: ${playedTrumpTractor}`);
       expect(playedTrumpTractor).toBe(true);
       expect(aiMove.length).toBe(4);
       

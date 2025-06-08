@@ -1670,44 +1670,48 @@ export const getValidCombinations = (
       return false;
     }
 
-    // CRITICAL: When out of suit, reject same combo types from other suits
+    // CRITICAL: When out of suit, reject same combo types from other NON-TRUMP suits
     if (!playerHasMatchingCards && combo.type === leadingComboType) {
       // Player is out of suit/trump and this is a "proper" combo of the same type
-      // This should not be considered valid - force mixed combinations instead
-      return false;
+      // BUT: Allow trump combos even when out of led suit (trump beats non-trump)
+      const comboIsTrump = combo.cards.some((card) => isTrump(card, trumpInfo));
+      if (!comboIsTrump) {
+        // This is a non-trump combo of the same type - force mixed combinations instead
+        return false;
+      }
     }
 
     return isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo);
   });
 
-  // If we have valid combinations, return them
-  if (validCombos.length > 0) {
-    return validCombos;
-  }
-
-  // If no standard combinations work, generate rule-compliant mixed combinations
-  // This handles cases like: partial suit following, trump requirements, etc.
+  // Always generate mixed combinations as additional strategic options
   const mixedCombos = generateMixedCombinations(
     playerHand,
     leadingCombo,
     trumpInfo,
   );
 
-  return mixedCombos;
+  // Combine proper combos with mixed combos for full strategic options
+  const allValidCombos = [...validCombos, ...mixedCombos];
+
+  // Remove duplicates based on card IDs
+  const uniqueCombos = allValidCombos.filter(
+    (combo, index, array) =>
+      array.findIndex(
+        (other) =>
+          combo.cards.length === other.cards.length &&
+          combo.cards.every((card) =>
+            other.cards.some((otherCard) => otherCard.id === card.id),
+          ),
+      ) === index,
+  );
+
+  return uniqueCombos;
 };
 
 /**
- * Generates rule-compliant mixed combinations when no standard combinations work
- *
- * This handles edge cases like:
- * - Player has some but not enough cards of the leading suit
- * - Player must play trump cards when trump is led but can't form proper combos
- * - Mixed card plays that follow game rules but aren't "proper" combinations
- *
- * @param playerHand Cards in the player's hand
- * @param leadingCombo The leading combination to follow
- * @param trumpInfo Trump information
- * @returns Array of valid mixed combinations
+ * CONSOLIDATED: Generates rule-compliant mixed combinations with trump conservation priority
+ * Fixed to use single, clean combination generator with proper trump conservation
  */
 const generateMixedCombinations = (
   playerHand: Card[],
@@ -1715,11 +1719,17 @@ const generateMixedCombinations = (
   trumpInfo: TrumpInfo,
 ): Combo[] => {
   const leadingLength = leadingCombo.length;
+  const validMixedCombos: Combo[] = [];
+  const leadingSuit = getLeadingSuit(leadingCombo);
+  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
 
-  // Generate all possible combinations of the required length
+  // Single combo generation function - no duplicates
   const generateAllCombinations = (cards: Card[], length: number): Card[][] => {
     if (length === 1) {
       return cards.map((card) => [card]);
+    }
+    if (length > cards.length) {
+      return [];
     }
 
     const combinations: Card[][] = [];
@@ -1734,154 +1744,132 @@ const generateMixedCombinations = (
     return combinations;
   };
 
-  // ISSUE #104 PROPER FIX: Intelligently construct combinations avoiding breaking pairs
-  const validMixedCombos: Combo[] = [];
-  const leadingSuit = getLeadingSuit(leadingCombo);
-  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
-
-  // Separate cards by type for intelligent selection
-  const suitCards = playerHand.filter(
-    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
-  );
-  const trumpCards = playerHand.filter((card) => isTrump(card, trumpInfo));
-
-  // Identify existing pairs to avoid breaking them
-  const existingPairs = identifyCombos(playerHand, trumpInfo)
-    .filter((combo) => combo.type === ComboType.Pair)
-    .map((combo) => combo.cards);
-
-  // Create a set of card IDs that are part of pairs
-  const cardIdsInPairs = new Set(existingPairs.flat().map((card) => card.id));
-
-  // Separate cards into: in pairs vs singletons
-  const cardsInPairs = playerHand.filter((card) => cardIdsInPairs.has(card.id));
-  const singletonCards = playerHand.filter(
-    (card) => !cardIdsInPairs.has(card.id),
-  );
-
-  // Sort singletons by strategic value (weakest first) for smart disposal
-  const sortedSingletons = singletonCards.sort((a, b) => {
-    const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
-    const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
-    return valueA - valueB; // Lowest strategic value first
-  });
-
-  // Try to construct intelligent combinations avoiding breaking pairs
-  const constructCombination = (requiredLength: number): Card[] | null => {
+  // PRIORITY 1: Intelligent combination construction with trump conservation
+  const constructOptimalCombination = (): Card[] | null => {
     const combo: Card[] = [];
 
-    // Step 1: MANDATORY - Use ALL cards of leading suit/trump (Tractor rule)
-    // This is critical for fallback scenarios where player has some but not enough leading suit cards
-    const preferredSuitCards = isLeadingTrump ? trumpCards : suitCards;
-    if (preferredSuitCards.length > 0) {
-      // CRITICAL: Must use ALL cards of the leading suit, not just some
-      combo.push(...preferredSuitCards);
-
-      // If we already have enough cards, truncate to required length
-      if (combo.length >= requiredLength) {
-        return combo.slice(0, requiredLength);
-      }
-    }
-
-    // Step 2: Fill remaining slots, prioritizing singletons over breaking pairs
-    const remaining = requiredLength - combo.length;
-    if (remaining > 0) {
-      // PRIORITY 1: Use singletons first (avoid breaking pairs)
-      // Filter out cards already used (leading suit cards)
-      const availableSingletons = sortedSingletons.filter(
-        (card) => !combo.some((c) => c.id === card.id), // Not already in combo
-      );
-
-      const singletonsToUse = Math.min(availableSingletons.length, remaining);
-      combo.push(...availableSingletons.slice(0, singletonsToUse));
-
-      // PRIORITY 2: If still need more cards, break pairs as last resort
-      const stillRemaining = requiredLength - combo.length;
-      if (stillRemaining > 0) {
-        // Filter out cards already used (leading suit cards + singletons)
-        const availablePairCards = cardsInPairs.filter(
-          (card) => !combo.some((c) => c.id === card.id), // Not already in combo
+    // Step 1: Use ALL required suit cards (Tractor rule)
+    const requiredSuitCards = isLeadingTrump
+      ? playerHand.filter((card) => isTrump(card, trumpInfo))
+      : playerHand.filter(
+          (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
         );
 
-        const pairCardsToUse = Math.min(
-          availablePairCards.length,
-          stillRemaining,
+    if (requiredSuitCards.length >= leadingLength) {
+      // Sort by trump conservation hierarchy (weakest first)
+      const sortedByConservation = requiredSuitCards.sort((a, b) => {
+        const valueA = calculateCardStrategicValue(
+          a,
+          trumpInfo,
+          "conservation",
         );
-        combo.push(...availablePairCards.slice(0, pairCardsToUse));
-      }
+        const valueB = calculateCardStrategicValue(
+          b,
+          trumpInfo,
+          "conservation",
+        );
+        return valueA - valueB; // Weakest first for disposal
+      });
+      return sortedByConservation.slice(0, leadingLength);
     }
 
-    return combo.length === requiredLength ? combo : null;
+    // Step 2: Partial suit following - use ALL required suit cards + others
+    if (requiredSuitCards.length > 0) {
+      combo.push(...requiredSuitCards);
+
+      // Get remaining cards sorted by strategic value (weakest first)
+      const remainingCards = playerHand
+        .filter((card) => !combo.some((c) => c.id === card.id))
+        .sort((a, b) => {
+          const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
+          const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
+          return valueA - valueB; // Weakest first
+        });
+
+      const remaining = leadingLength - combo.length;
+      combo.push(...remainingCards.slice(0, remaining));
+
+      return combo.length === leadingLength ? combo : null;
+    }
+
+    // Step 3: No required suit cards - choose weakest cards overall
+    const allCardsSorted = playerHand.sort((a, b) => {
+      const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
+      const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
+      return valueA - valueB; // Weakest first
+    });
+
+    return allCardsSorted.slice(0, leadingLength);
   };
 
-  const intelligentCombo = constructCombination(leadingLength);
+  // Try optimal construction first
+  const optimalCombo = constructOptimalCombination();
   if (
-    intelligentCombo &&
-    isValidPlay(intelligentCombo, leadingCombo, playerHand, trumpInfo)
+    optimalCombo &&
+    isValidPlay(optimalCombo, leadingCombo, playerHand, trumpInfo)
   ) {
     validMixedCombos.push({
       type: ComboType.Single,
-      cards: intelligentCombo,
-      value: 1,
+      cards: optimalCombo,
+      value: calculateCardStrategicValue(optimalCombo[0], trumpInfo, "combo"),
     });
   }
 
-  // Generate multiple valid options for AI to choose from strategically
-  const allPossibleCombos = generateAllCombinations(
-    playerHand,
-    leadingLength,
-  ).slice(0, 10);
-  for (const cards of allPossibleCombos) {
-    if (isValidPlay(cards, leadingCombo, playerHand, trumpInfo)) {
+  // PRIORITY 2: Generate additional valid options for AI strategy choice
+  const allCombinations = generateAllCombinations(playerHand, leadingLength);
+
+  // Sort combinations by strategic value (weakest combinations first for better disposal)
+  const sortedCombinations = allCombinations
+    .filter((cards) => isValidPlay(cards, leadingCombo, playerHand, trumpInfo))
+    .sort((a, b) => {
+      const valueA = a.reduce(
+        (sum, card) =>
+          sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
+        0,
+      );
+      const valueB = b.reduce(
+        (sum, card) =>
+          sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
+        0,
+      );
+      return valueA - valueB; // Weakest combinations first
+    })
+    .slice(0, 5); // Limit to 5 options for performance
+
+  // Add unique combinations to avoid duplicates
+  for (const cards of sortedCombinations) {
+    const isDuplicate = validMixedCombos.some(
+      (existingCombo) =>
+        existingCombo.cards.length === cards.length &&
+        existingCombo.cards.every((card) =>
+          cards.some((c) => c.id === card.id),
+        ),
+    );
+
+    if (!isDuplicate) {
       validMixedCombos.push({
         type: ComboType.Single,
         cards,
-        value: 1,
+        value: calculateCardStrategicValue(cards[0], trumpInfo, "combo"),
       });
-      if (validMixedCombos.length >= 5) break; // Give AI more strategic options
     }
   }
 
-  // CRITICAL BUG FIX: NEVER return empty array - there must always be a valid play
-  // In Tractor, game rules guarantee that every player can always make some valid move
+  // CRITICAL SAFETY: Ensure we always return at least one valid combination
   if (validMixedCombos.length === 0) {
-    // Emergency fallback: generate ALL possible combinations and find the first valid one
-    // This should never happen in a properly working game, but prevents crashes
-    const allCombinations = generateAllCombinations(playerHand, leadingLength);
+    // Emergency fallback - this should never happen in valid game state
+    const emergencyCombo = playerHand.slice(0, leadingLength);
+    console.error("CRITICAL: Emergency fallback in generateMixedCombinations", {
+      playerHand: playerHand.map((c) => c.joker || `${c.rank}${c.suit}`),
+      leadingCombo: leadingCombo.map((c) => c.joker || `${c.rank}${c.suit}`),
+      trumpInfo,
+    });
 
-    for (const cards of allCombinations) {
-      if (isValidPlay(cards, leadingCombo, playerHand, trumpInfo)) {
-        validMixedCombos.push({
-          type: ComboType.Single,
-          cards,
-          value: 1,
-        });
-        break; // Just need one valid combination to prevent crash
-      }
-    }
-
-    // If STILL no valid combinations found, this is a critical game logic error
-    // But we must provide a fallback to prevent crashes
-    if (validMixedCombos.length === 0) {
-      // Ultimate fallback: take first N cards (this shouldn't happen but prevents crash)
-      const emergencyCombo = playerHand.slice(0, leadingLength);
-      validMixedCombos.push({
-        type: ComboType.Single,
-        cards: emergencyCombo,
-        value: 1,
-      });
-
-      // Log this as a critical error for debugging
-      console.error(
-        "CRITICAL: Emergency fallback used in generateMixedCombinations",
-        {
-          playerHand: playerHand.map((c) => `${c.rank}${c.suit}`),
-          leadingCombo: leadingCombo.map((c) => `${c.rank}${c.suit}`),
-          trumpInfo,
-          emergencyCombo: emergencyCombo.map((c) => `${c.rank}${c.suit}`),
-        },
-      );
-    }
+    validMixedCombos.push({
+      type: ComboType.Single,
+      cards: emergencyCombo,
+      value: 1,
+    });
   }
 
   return validMixedCombos;
