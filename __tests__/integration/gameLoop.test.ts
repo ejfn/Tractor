@@ -104,15 +104,16 @@ describe('Game Loop Tests', () => {
     gameState.players[3].hand = [createCard(Suit.Hearts, Rank.Jack)];
     
     // Start a trick with player 0 leading
+    const aceCard = createCard(Suit.Hearts, Rank.Ace);
     gameState.currentTrick = {
       plays: [
         {
           playerId: PlayerId.Human,
-          cards: [createCard(Suit.Hearts, Rank.Ace)]
+          cards: [aceCard]
         }
       ],
       winningPlayerId: PlayerId.Human,
-      points: 0
+      points: aceCard.points // Start with Ace's points (0)
     };
     
     // Remove the card from player 0's hand
@@ -121,95 +122,30 @@ describe('Game Loop Tests', () => {
     // Player 1's turn
     gameState.currentPlayerIndex = 1;
     
-    // Process player 1's move
+    // Process player 1's move using real game logic
     const processPlayer1Move = () => {
-      const newState = { ...gameState };
-      const currentPlayer = newState.players[newState.currentPlayerIndex];
-      
-      // Play the King of Hearts
       const move = [createCard(Suit.Hearts, Rank.King)];
-      
-      // Add to trick
-      newState.currentTrick!.plays.push({
-        playerId: currentPlayer.id,
-        cards: [...move]
-      });
-      
-      // Remove played cards from hand
-      currentPlayer.hand = currentPlayer.hand.filter(
-        card => !move.some(played => played.id === card.id)
-      );
-      
-      // Move to next player
-      newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
-      
-      return newState;
+      const playResult = processPlay(gameState, move);
+      return playResult.newState;
     };
     
-    // Process player 2's move
+    // Process player 2's move using real game logic
     const processPlayer2Move = (state: GameState) => {
-      const newState = { ...state };
-      const currentPlayer = newState.players[newState.currentPlayerIndex];
-      
-      // Play the Queen of Hearts
       const move = [createCard(Suit.Hearts, Rank.Queen)];
-      
-      // Add to trick
-      newState.currentTrick!.plays.push({
-        playerId: currentPlayer.id,
-        cards: [...move]
-      });
-      
-      // Remove played cards from hand
-      currentPlayer.hand = currentPlayer.hand.filter(
-        card => !move.some(played => played.id === card.id)
-      );
-      
-      // Move to next player
-      newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
-      
-      return newState;
+      const playResult = processPlay(state, move);
+      return playResult.newState;
     };
     
     // Process player 3's move (completes the trick)
     const processPlayer3Move = (state: GameState) => {
-      const newState = { ...state };
-      const currentPlayer = newState.players[newState.currentPlayerIndex];
-      
       // Play the Jack of Hearts using real game logic
       const move = [createCard(Suit.Hearts, Rank.Jack)];
       
-      // Use real game logic to process the play (this will update winningPlayerId automatically)
-      const playResult = processPlay(newState, move);
+      // Use real game logic to process the play (this will handle trick completion automatically)
+      const playResult = processPlay(state, move);
       
-      // Get winner from the real-time tracking
-      const winningPlayerId = newState.currentTrick!.winningPlayerId;
-      
-      // Calculate points
-      const trickPoints = calculateTrickPoints(newState.currentTrick!);
-      
-      // Find winning team
-      const winningPlayer = newState.players.find(p => p.id === winningPlayerId);
-      const winningTeam = winningPlayer ? 
-        newState.teams.find(t => t.id === winningPlayer.team) :
-        null;
-      
-      if (winningTeam) {
-        winningTeam.points += trickPoints;
-      }
-      
-      // Store completed trick
-      newState.currentTrick!.winningPlayerId = winningPlayerId;
-      newState.currentTrick!.points = trickPoints;
-      newState.tricks.push({ ...newState.currentTrick! });
-      
-      // Start a new trick
-      newState.currentTrick = null;
-      
-      // Set next player to winner
-      newState.currentPlayerIndex = newState.players.findIndex(p => p.id === winningPlayerId);
-      
-      return newState;
+      // processPlay handles everything: trick completion, points, winner determination, etc.
+      return playResult.newState;
     };
     
     // Execute the trick sequence
@@ -218,7 +154,8 @@ describe('Game Loop Tests', () => {
     const finalState = processPlayer3Move(stateAfterPlayer2);
     
     // Verify the trick was completed correctly
-    expect(finalState.currentTrick).toBeNull();
+    expect(finalState.currentTrick).not.toBeNull(); // Trick remains for UI display
+    expect(finalState.currentTrick!.plays.length).toBe(4); // All 4 players have played
     expect(finalState.tricks.length).toBe(1);
     
     // Player with Ace should win

@@ -520,7 +520,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay for higher rank beats lower rank scenarios
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Higher ranks beat lower ranks: Ace > Ten > Seven > Five > Four
@@ -577,7 +577,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay to return canBeat: true for trump vs non-trump
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0]; // Updated to use unified structure
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Trump suit beats non-trump
@@ -627,7 +627,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay to return canBeat: true for Ten vs Five
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Ten beats Five
@@ -667,7 +667,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay: trump rank should NOT be beaten by trump suit
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Trump suit card (3♥) should NOT beat trump rank card (2♠)
@@ -708,7 +708,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay to return canBeat: true for Ace vs Seven
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Ace beats Seven
@@ -757,7 +757,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay to return canBeat: true only for Ace vs Three
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Only Ace beats Three

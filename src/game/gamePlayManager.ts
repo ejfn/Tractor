@@ -100,7 +100,7 @@ export function processPlay(
           cards,
           newState.currentTrick,
           newState.trumpInfo,
-          [...currentPlayerHand, ...cards], // Include played cards for validation
+          currentPlayerHand, // Player's current hand (cards not yet removed)
         );
 
         if (trickResult.canBeat) {

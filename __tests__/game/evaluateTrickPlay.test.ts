@@ -14,9 +14,12 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       ];
 
       const currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingCombo,
-        plays: [],
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: leadingCombo,
+          },
+        ],
         winningPlayerId: PlayerId.Bot1, // Bot1 is currently winning
         points: 0,
       };
@@ -49,9 +52,12 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       ];
 
       const currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCombo,
-        plays: [],
+        plays: [
+          {
+            playerId: PlayerId.Human,
+            cards: leadingCombo,
+          },
+        ],
         winningPlayerId: PlayerId.Human, // Human is currently winning with A♣-A♣
         points: 0,
       };
@@ -85,9 +91,12 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       ];
 
       const currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingCombo,
-        plays: [],
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: leadingCombo,
+          },
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -114,9 +123,12 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       ];
 
       const currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingCombo,
-        plays: [],
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: leadingCombo,
+          },
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -144,9 +156,12 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       ];
 
       const currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingCombo,
-        plays: [],
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: leadingCombo,
+          },
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -176,9 +191,12 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       ];
 
       const currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingCombo,
-        plays: [],
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: leadingCombo,
+          },
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -207,9 +225,12 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       const leadingCombo = [createCard(Suit.Diamonds, Rank.Four, '1')]; // Single
 
       const currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingCombo,
-        plays: [],
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: leadingCombo,
+          },
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
