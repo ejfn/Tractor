@@ -366,8 +366,28 @@ export function getTrickPosition(
     return TrickPosition.First;
   }
 
-  // Simple and clean: plays.length tells us how many players have played
-  // The current player will be at position plays.length + 1
+  // Check if this player has already played in the trick
+  const playerPlayIndex = currentTrick.plays.findIndex(
+    (play) => play.playerId === playerId,
+  );
+
+  if (playerPlayIndex !== -1) {
+    // Player has already played, return their actual position
+    switch (playerPlayIndex) {
+      case 0:
+        return TrickPosition.First; // Leader
+      case 1:
+        return TrickPosition.Second;
+      case 2:
+        return TrickPosition.Third;
+      case 3:
+        return TrickPosition.Fourth;
+      default:
+        return TrickPosition.First; // Fallback
+    }
+  }
+
+  // Player hasn't played yet, determine their upcoming position
   switch (currentTrick.plays.length) {
     case 0:
       return TrickPosition.First; // First player (leader)
@@ -608,7 +628,8 @@ export function isTrickWorthFighting(
 
   // Add points from leading combo (plays[0])
   const leadingPoints =
-    currentTrick.plays[0]?.cards?.reduce((sum, card) => sum + card.points, 0) || 0;
+    currentTrick.plays[0]?.cards?.reduce((sum, card) => sum + card.points, 0) ||
+    0;
 
   const totalTrickPoints = trickPoints + leadingPoints;
 

@@ -109,12 +109,15 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   // Use a ref to track if we've called the callback for this trick
   const callbackCalledRef = React.useRef(false);
 
+  // Extract complex expression for dependency array
+  const leadingPlayerId = currentTrick?.plays?.[0]?.playerId;
+
   // Reset the ref when the trick changes
   useEffect(() => {
     if (currentTrick) {
       callbackCalledRef.current = false;
     }
-  }, [currentTrick, currentTrick?.plays[0]?.playerId]); // Only reset when a new trick starts
+  }, [currentTrick, leadingPlayerId]); // Only reset when a new trick starts
 
   // Check if all animations are complete
   useEffect(() => {

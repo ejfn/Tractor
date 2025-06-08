@@ -26,12 +26,15 @@ export function useTrickResults() {
   // We'll use a ref to track if we've ever shown the result for this trick
   const hasShownResultRef = useRef(false);
 
+  // Extract complex expression for dependency array
+  const lastTrickLeadingPlayerId = lastCompletedTrick?.plays[0]?.playerId;
+
   // Reset the ref when a new trick is completed
   useEffect(() => {
     if (lastCompletedTrick) {
       hasShownResultRef.current = false;
     }
-  }, [lastCompletedTrick, lastCompletedTrick?.plays[0]?.playerId]); // Only reset when a new trick starts
+  }, [lastCompletedTrick, lastTrickLeadingPlayerId]); // Only reset when a new trick starts
 
   // When showTrickResult becomes true, mark that we've shown it
   useEffect(() => {

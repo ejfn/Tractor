@@ -51,7 +51,8 @@ export function analyzeThirdPlayerAdvantage(
   const winningPlay = currentTrick.plays.find(
     (play) => play.playerId === winnerId,
   );
-  const teammateCards = winningPlay?.cards || currentTrick.plays[0]?.cards || [];
+  const teammateCards =
+    winningPlay?.cards || currentTrick.plays[0]?.cards || [];
 
   // Find point combinations for calculating potential
   const pointCombos = comboAnalyses.filter((ca) =>

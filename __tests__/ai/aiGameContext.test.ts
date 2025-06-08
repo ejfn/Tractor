@@ -107,11 +107,15 @@ describe("AI Game Context", () => {
       expect(getTrickPosition(gameState, PlayerId.Bot1)).toBe(TrickPosition.Second);
       
       // After Bot1 plays - Bot2 is third player
-      gameState.currentTrick.plays = [{ playerId: PlayerId.Bot1, cards: [] }];
+      gameState.currentTrick.plays = [
+        { playerId: PlayerId.Human, cards: [{ id: 'lead-card', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] },
+        { playerId: PlayerId.Bot1, cards: [] }
+      ];
       expect(getTrickPosition(gameState, PlayerId.Bot2)).toBe(TrickPosition.Third);
       
       // After Bot1 and Bot2 play - Bot3 is fourth player
       gameState.currentTrick.plays = [
+        { playerId: PlayerId.Human, cards: [{ id: 'lead-card', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] },
         { playerId: PlayerId.Bot1, cards: [] },
         { playerId: PlayerId.Bot2, cards: [] },
       ];
