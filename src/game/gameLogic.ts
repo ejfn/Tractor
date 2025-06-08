@@ -1723,8 +1723,12 @@ const generateMixedCombinations = (
   const leadingSuit = getLeadingSuit(leadingCombo);
   const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
 
-  // Single combo generation function - no duplicates
-  const generateAllCombinations = (cards: Card[], length: number): Card[][] => {
+  // Smart Combination Generator - eliminates exponential complexity
+  // Uses hierarchical filtering and pattern-based generation
+  const generateSmartCombinations = (
+    cards: Card[],
+    length: number,
+  ): Card[][] => {
     if (length === 1) {
       return cards.map((card) => [card]);
     }
@@ -1732,15 +1736,113 @@ const generateMixedCombinations = (
       return [];
     }
 
-    const combinations: Card[][] = [];
-    for (let i = 0; i <= cards.length - length; i++) {
-      const first = cards[i];
-      const rest = cards.slice(i + 1);
-      const subCombinations = generateAllCombinations(rest, length - 1);
-      subCombinations.forEach((subCombo) => {
-        combinations.push([first, ...subCombo]);
-      });
+    // PERFORMANCE LIMIT: Prevent exponential blowup
+    const MAX_COMBINATIONS = 50;
+    const MAX_CARDS_FOR_FULL_GENERATION = 15;
+
+    // For large hands, use strategic sampling instead of exhaustive generation
+    if (cards.length > MAX_CARDS_FOR_FULL_GENERATION) {
+      return generateStrategicSample(cards, length, MAX_COMBINATIONS);
     }
+
+    // For smaller hands, use optimized iterative generation
+    return generateIterativeCombinations(cards, length, MAX_COMBINATIONS);
+  };
+
+  // Strategic sampling for large hands - focus on trump conservation hierarchy
+  const generateStrategicSample = (
+    cards: Card[],
+    length: number,
+    maxCombos: number,
+  ): Card[][] => {
+    const combinations: Card[][] = [];
+
+    // Sort cards by trump conservation hierarchy (weakest first)
+    const sortedCards = [...cards].sort((a, b) => {
+      const valueA = calculateCardStrategicValue(a, trumpInfo, "conservation");
+      const valueB = calculateCardStrategicValue(b, trumpInfo, "conservation");
+      return valueA - valueB; // Weakest first for disposal
+    });
+
+    // Strategy 1: Take weakest consecutive cards
+    if (sortedCards.length >= length) {
+      combinations.push(sortedCards.slice(0, length));
+    }
+
+    // Strategy 2: Sliding window through sorted cards
+    const windowSize = Math.min(length + 5, sortedCards.length);
+    for (
+      let start = 0;
+      start <= sortedCards.length - windowSize &&
+      combinations.length < maxCombos;
+      start += 3
+    ) {
+      const window = sortedCards.slice(start, start + windowSize);
+      if (window.length >= length) {
+        combinations.push(window.slice(0, length));
+      }
+    }
+
+    // Strategy 3: Mixed trump/non-trump when possible
+    const trumpCards = sortedCards.filter((card) => isTrump(card, trumpInfo));
+    const nonTrumpCards = sortedCards.filter(
+      (card) => !isTrump(card, trumpInfo),
+    );
+
+    if (trumpCards.length > 0 && nonTrumpCards.length > 0 && length >= 2) {
+      const trumpCount = Math.min(1, trumpCards.length, length - 1);
+      const nonTrumpCount = length - trumpCount;
+
+      if (nonTrumpCards.length >= nonTrumpCount) {
+        const mixedCombo = [
+          ...trumpCards.slice(0, trumpCount),
+          ...nonTrumpCards.slice(0, nonTrumpCount),
+        ];
+        if (mixedCombo.length === length) {
+          combinations.push(mixedCombo);
+        }
+      }
+    }
+
+    return combinations.slice(0, maxCombos);
+  };
+
+  // Optimized iterative generation for smaller hands
+  const generateIterativeCombinations = (
+    cards: Card[],
+    length: number,
+    maxCombos: number,
+  ): Card[][] => {
+    const combinations: Card[][] = [];
+    const totalCards = cards.length;
+
+    // Use bit manipulation for efficient iteration
+    const maxMask = (1 << totalCards) - 1;
+
+    for (
+      let mask = 0;
+      mask <= maxMask && combinations.length < maxCombos;
+      mask++
+    ) {
+      // Count bits set in mask
+      let bitCount = 0;
+      let tempMask = mask;
+      while (tempMask) {
+        bitCount += tempMask & 1;
+        tempMask >>>= 1;
+      }
+
+      if (bitCount === length) {
+        const combination: Card[] = [];
+        for (let i = 0; i < totalCards; i++) {
+          if (mask & (1 << i)) {
+            combination.push(cards[i]);
+          }
+        }
+        combinations.push(combination);
+      }
+    }
+
     return combinations;
   };
 
@@ -1802,21 +1904,79 @@ const generateMixedCombinations = (
     return allCardsSorted.slice(0, leadingLength);
   };
 
-  // Try optimal construction first
+  // Try optimal construction first - with validation retry
   const optimalCombo = constructOptimalCombination();
-  if (
-    optimalCombo &&
-    isValidPlay(optimalCombo, leadingCombo, playerHand, trumpInfo)
-  ) {
-    validMixedCombos.push({
-      type: ComboType.Single,
-      cards: optimalCombo,
-      value: calculateCardStrategicValue(optimalCombo[0], trumpInfo, "combo"),
-    });
+  if (optimalCombo) {
+    if (isValidPlay(optimalCombo, leadingCombo, playerHand, trumpInfo)) {
+      validMixedCombos.push({
+        type: ComboType.Single,
+        cards: optimalCombo,
+        value: calculateCardStrategicValue(optimalCombo[0], trumpInfo, "combo"),
+      });
+    } else {
+      // If optimal combo fails validation, try simpler approach
+      const simpleCombo = playerHand
+        .filter((card) =>
+          isLeadingTrump
+            ? isTrump(card, trumpInfo)
+            : card.suit === leadingSuit && !isTrump(card, trumpInfo),
+        )
+        .sort((a, b) => {
+          const valueA = calculateCardStrategicValue(
+            a,
+            trumpInfo,
+            "conservation",
+          );
+          const valueB = calculateCardStrategicValue(
+            b,
+            trumpInfo,
+            "conservation",
+          );
+          return valueA - valueB;
+        })
+        .slice(0, leadingLength);
+
+      // Pad with weakest cards if needed
+      if (simpleCombo.length < leadingLength) {
+        const remaining = playerHand
+          .filter((card) => !simpleCombo.some((c) => c.id === card.id))
+          .sort((a, b) => {
+            const valueA = calculateCardStrategicValue(
+              a,
+              trumpInfo,
+              "strategic",
+            );
+            const valueB = calculateCardStrategicValue(
+              b,
+              trumpInfo,
+              "strategic",
+            );
+            return valueA - valueB;
+          })
+          .slice(0, leadingLength - simpleCombo.length);
+
+        simpleCombo.push(...remaining);
+      }
+
+      if (
+        simpleCombo.length === leadingLength &&
+        isValidPlay(simpleCombo, leadingCombo, playerHand, trumpInfo)
+      ) {
+        validMixedCombos.push({
+          type: ComboType.Single,
+          cards: simpleCombo,
+          value: calculateCardStrategicValue(
+            simpleCombo[0],
+            trumpInfo,
+            "combo",
+          ),
+        });
+      }
+    }
   }
 
   // PRIORITY 2: Generate additional valid options for AI strategy choice
-  const allCombinations = generateAllCombinations(playerHand, leadingLength);
+  const allCombinations = generateSmartCombinations(playerHand, leadingLength);
 
   // Sort combinations by strategic value (weakest combinations first for better disposal)
   const sortedCombinations = allCombinations
@@ -1857,19 +2017,106 @@ const generateMixedCombinations = (
 
   // CRITICAL SAFETY: Ensure we always return at least one valid combination
   if (validMixedCombos.length === 0) {
-    // Emergency fallback - this should never happen in valid game state
-    const emergencyCombo = playerHand.slice(0, leadingLength);
-    console.error("CRITICAL: Emergency fallback in generateMixedCombinations", {
-      playerHand: playerHand.map((c) => c.joker || `${c.rank}${c.suit}`),
-      leadingCombo: leadingCombo.map((c) => c.joker || `${c.rank}${c.suit}`),
+    // Guaranteed fallback: Find any valid combination through systematic search
+    const guaranteedCombo = findGuaranteedValidCombination(
+      playerHand,
+      leadingCombo,
       trumpInfo,
-    });
+      leadingLength,
+    );
 
-    validMixedCombos.push({
-      type: ComboType.Single,
-      cards: emergencyCombo,
-      value: 1,
-    });
+    if (guaranteedCombo.length === leadingLength) {
+      validMixedCombos.push({
+        type: ComboType.Single,
+        cards: guaranteedCombo,
+        value: 1,
+      });
+    } else {
+      // Last resort emergency fallback - should be extremely rare
+      const emergencyCombo = playerHand.slice(0, leadingLength);
+      console.error(
+        "CRITICAL: Emergency fallback in generateMixedCombinations",
+        {
+          playerHand: playerHand.map((c) => c.joker || `${c.rank}${c.suit}`),
+          leadingCombo: leadingCombo.map(
+            (c) => c.joker || `${c.rank}${c.suit}`,
+          ),
+          trumpInfo,
+        },
+      );
+
+      validMixedCombos.push({
+        type: ComboType.Single,
+        cards: emergencyCombo,
+        value: 1,
+      });
+    }
+  }
+
+  // Helper function for guaranteed valid combination discovery
+  function findGuaranteedValidCombination(
+    hand: Card[],
+    leading: Card[],
+    trump: TrumpInfo,
+    length: number,
+  ): Card[] {
+    // Strategy 1: Try all cards of leading suit/trump first
+    const leadingSuitCards = isLeadingTrump
+      ? hand.filter((card) => isTrump(card, trump))
+      : hand.filter(
+          (card) => card.suit === leadingSuit && !isTrump(card, trump),
+        );
+
+    if (leadingSuitCards.length >= length) {
+      const combo = leadingSuitCards.slice(0, length);
+      if (isValidPlay(combo, leading, hand, trump)) {
+        return combo;
+      }
+    }
+
+    // Strategy 2: Mixed combinations with required suit cards
+    if (leadingSuitCards.length > 0 && leadingSuitCards.length < length) {
+      const otherCards = hand
+        .filter((card) => !leadingSuitCards.some((lsc) => lsc.id === card.id))
+        .slice(0, length - leadingSuitCards.length);
+
+      const combo = [...leadingSuitCards, ...otherCards];
+      if (combo.length === length && isValidPlay(combo, leading, hand, trump)) {
+        return combo;
+      }
+    }
+
+    // Strategy 3: Brute force - try different combinations until we find valid one
+    for (let startIndex = 0; startIndex <= hand.length - length; startIndex++) {
+      const combo = hand.slice(startIndex, startIndex + length);
+      if (isValidPlay(combo, leading, hand, trump)) {
+        return combo;
+      }
+    }
+
+    // Strategy 4: Sliding window with step size
+    for (let step = 1; step < Math.min(3, hand.length); step++) {
+      const combo: Card[] = [];
+      for (let i = 0; i < hand.length && combo.length < length; i += step) {
+        combo.push(hand[i]);
+      }
+
+      // Fill remaining slots if needed
+      if (combo.length < length) {
+        for (let i = 0; i < hand.length && combo.length < length; i++) {
+          if (!combo.some((c) => c.id === hand[i].id)) {
+            combo.push(hand[i]);
+          }
+        }
+      }
+
+      if (combo.length === length && isValidPlay(combo, leading, hand, trump)) {
+        return combo;
+      }
+    }
+
+    // Return empty array if no valid combination found (very rare edge case)
+    return [];
   }
 
   return validMixedCombos;
