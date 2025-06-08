@@ -39,9 +39,8 @@ describe("Historical Trick Analysis", () => {
     it("should analyze opponent leading patterns", () => {
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Ace)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.King)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Queen)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Jack)] },
@@ -50,9 +49,8 @@ describe("Historical Trick Analysis", () => {
           points: 10,
         },
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Spades, Rank.Two)], // Trump lead
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Two)] }, // Trump lead
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.Ten)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Nine)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Eight)] },
@@ -75,9 +73,8 @@ describe("Historical Trick Analysis", () => {
     it("should detect team coordination patterns", () => {
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.Ace)] },
             { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.King)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Ten)] }, // Teammate contributes points
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Jack)] },
@@ -99,9 +96,8 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         // Early trick
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Seven)], // Safe lead
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Seven)] }, // Safe lead
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.Eight)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Nine)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Ten)] },
@@ -111,9 +107,8 @@ describe("Historical Trick Analysis", () => {
         },
         // Mid trick
         {
-          leadingPlayerId: PlayerId.Bot2,
-          leadingCombo: [createCard(Suit.Diamonds, Rank.King)], // Point lead
           plays: [
+            { playerId: PlayerId.Bot2, cards: [createCard(Suit.Diamonds, Rank.King)] }, // Point lead
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Diamonds, Rank.Ace)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Diamonds, Rank.Queen)] },
             { playerId: PlayerId.Bot1, cards: [createCard(Suit.Diamonds, Rank.Jack)] },
@@ -123,9 +118,8 @@ describe("Historical Trick Analysis", () => {
         },
         // Late trick
         {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [createCard(Suit.Spades, Rank.Two)], // Trump lead (aggressive endgame)
           plays: [
+            { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Two)] }, // Trump lead (aggressive endgame)
             { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Three)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Four)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Five)] },
@@ -150,9 +144,8 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         // Low-value setup trick
         {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Seven)],
           plays: [
+            { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.Seven)] },
             { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Eight)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Nine)] }, // Teammate wins
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Six)] },
@@ -162,9 +155,8 @@ describe("Historical Trick Analysis", () => {
         },
         // Follow-up trick where teammate leads
         {
-          leadingPlayerId: PlayerId.Bot2, // Teammate from previous trick
-          leadingCombo: [createCard(Suit.Diamonds, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Bot2, cards: [createCard(Suit.Diamonds, Rank.Ace)] }, // Teammate from previous trick
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Diamonds, Rank.King)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Diamonds, Rank.Ten)] },
             { playerId: PlayerId.Bot1, cards: [createCard(Suit.Diamonds, Rank.Jack)] },
@@ -186,9 +178,8 @@ describe("Historical Trick Analysis", () => {
     it("should create enhanced context with historical analysis", () => {
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Ace)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.King)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Queen)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Jack)] },
@@ -223,9 +214,8 @@ describe("Historical Trick Analysis", () => {
     it("should generate predictive models for all players", () => {
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Ace)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.King)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Queen)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Jack)] },
@@ -267,9 +257,8 @@ describe("Historical Trick Analysis", () => {
     it("should provide adaptive strategy recommendations", () => {
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Spades, Rank.Two)], // Aggressive trump lead
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Two)] }, // Aggressive trump lead
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.King)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Queen)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Jack)] },
@@ -315,9 +304,8 @@ describe("Historical Trick Analysis", () => {
 
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Ace)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.King)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Queen)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Jack)] },
@@ -361,9 +349,8 @@ describe("Historical Trick Analysis", () => {
     it("should handle single trick history", () => {
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.Ace)] },
             { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.King)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Queen)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Jack)] },
@@ -383,9 +370,8 @@ describe("Historical Trick Analysis", () => {
     it("should handle tricks with no points", () => {
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Seven)],
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Seven)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.Eight)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Nine)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Six)] },
@@ -405,9 +391,8 @@ describe("Historical Trick Analysis", () => {
     it("should handle players with no leading history", () => {
       const tricks: Trick[] = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Ace)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Hearts, Rank.King)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Queen)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Jack)] },

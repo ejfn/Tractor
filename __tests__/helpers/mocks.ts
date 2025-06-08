@@ -273,9 +273,9 @@ export const waitForCondition = async (
  */
 export const createMockTrick = (leadingPlayer: PlayerId, leadingCards: Card[]): Trick => {
   return {
-    leadingPlayerId: leadingPlayer,
-    leadingCombo: leadingCards,
-    plays: [], // No other players have played yet
+    plays: [
+      { playerId: leadingPlayer, cards: leadingCards }
+    ],
     winningPlayerId: leadingPlayer, // Leader is currently winning
     points: leadingCards.reduce((sum, card) => sum + (card.points || 0), 0),
   };

@@ -64,14 +64,10 @@ describe('gamePlayManager', () => {
       
       // Verify the state was updated correctly
       expect(result.newState.currentTrick).toBeTruthy();
-      expect(result.newState.currentTrick?.leadingPlayerId).toBe(PlayerId.Human);
-      expect(result.newState.currentTrick?.leadingCombo).toEqual(cardsToPlay);
-      
-      // UPDATED: First player's cards are stored in leadingCombo, not in plays array
-      expect(result.newState.currentTrick?.plays).toHaveLength(0);
-      // Leading player's cards are in leadingCombo, not plays array
-      // expect(result.newState.currentTrick?.plays[0].playerId).toBe('human');
-      // expect(result.newState.currentTrick?.plays[0].cards).toEqual(cardsToPlay);
+      // UPDATED: First player's cards are stored in plays[0], unified structure
+      expect(result.newState.currentTrick?.plays).toHaveLength(1);
+      expect(result.newState.currentTrick?.plays[0].playerId).toBe(PlayerId.Human);
+      expect(result.newState.currentTrick?.plays[0].cards).toEqual(cardsToPlay);
       
       expect(result.newState.currentTrick?.points).toBe(5); // 5 points from the card
       
@@ -92,8 +88,6 @@ describe('gamePlayManager', () => {
       
       // Setup a trick in progress with 3 players already having played
       mockState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3,
-        leadingCombo: [createCard(Suit.Clubs, Rank.Four)],
         plays: [
           {
             playerId: PlayerId.Bot3,
@@ -122,8 +116,7 @@ describe('gamePlayManager', () => {
       // Setup a trick in progress with 3 players having played
       // For a 4-player game, we need leader + 3 followers to complete a trick
       freshState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,  // Bot 1 led
-        leadingCombo: [createCard(Suit.Diamonds, Rank.Three)],
+  // Bot 1 led
         plays: [
           // Human has played 
           {
@@ -206,8 +199,6 @@ describe('gamePlayManager', () => {
       beforeEach(() => {
         // Setup a trick in progress
         mockState.currentTrick = {
-          leadingPlayerId: PlayerId.Bot3,
-          leadingCombo: [createCard(Suit.Clubs, Rank.Four)],
           plays: [
             {
               playerId: PlayerId.Bot3,
@@ -230,7 +221,7 @@ describe('gamePlayManager', () => {
         // Verify isValidPlay was called with the correct parameters
         expect(gameLogic.isValidPlay).toHaveBeenCalledWith(
           cardsToPlay,
-          mockState.currentTrick!.leadingCombo,
+          mockState.currentTrick!.plays[0].cards,
           mockState.players[0].hand,
           mockState.trumpInfo
         );

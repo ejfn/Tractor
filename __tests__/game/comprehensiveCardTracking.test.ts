@@ -46,13 +46,13 @@ describe('Comprehensive Card Tracking Tests', () => {
         // Get cards to play
         let cardsToPlay: Card[] = [];
         if (currentPlayer.isHuman) {
-          const comboLength = state.currentTrick?.leadingCombo?.length || 1;
+          const comboLength = state.currentTrick?.plays[0]?.cards?.length || 1;
           cardsToPlay = currentPlayer.hand.slice(0, Math.min(comboLength, currentPlayer.hand.length));
         } else {
           const aiMove = getAIMoveWithErrorHandling(state);
           cardsToPlay = aiMove.error ? 
-            (state.currentTrick?.leadingCombo ? 
-              currentPlayer.hand.slice(0, Math.min(state.currentTrick.leadingCombo.length, currentPlayer.hand.length)) : 
+            (state.currentTrick?.plays[0]?.cards ? 
+              currentPlayer.hand.slice(0, Math.min(state.currentTrick.plays[0].cards.length, currentPlayer.hand.length)) : 
               [currentPlayer.hand[0]]) : 
             aiMove.cards;
         }
@@ -188,13 +188,13 @@ describe('Comprehensive Card Tracking Tests', () => {
           cardsToPlay = pairs[0];
           console.log(`  ${currentPlayer.name} plays pair: ${cardsToPlay[0].rank} of ${cardsToPlay[0].suit}`);
         } else if (currentPlayer.isHuman) {
-          const comboLength = state.currentTrick?.leadingCombo?.length || 1;
+          const comboLength = state.currentTrick?.plays[0]?.cards?.length || 1;
           cardsToPlay = currentPlayer.hand.slice(0, Math.min(comboLength, currentPlayer.hand.length));
         } else {
           const aiMove = getAIMoveWithErrorHandling(state);
           cardsToPlay = aiMove.error ? 
-            (state.currentTrick?.leadingCombo ? 
-              currentPlayer.hand.slice(0, Math.min(state.currentTrick.leadingCombo.length, currentPlayer.hand.length)) : 
+            (state.currentTrick?.plays[0]?.cards ? 
+              currentPlayer.hand.slice(0, Math.min(state.currentTrick.plays[0].cards.length, currentPlayer.hand.length)) : 
               [currentPlayer.hand[0]]) : 
             aiMove.cards;
         }
@@ -250,13 +250,13 @@ describe('Comprehensive Card Tracking Tests', () => {
         
         let cardsToPlay: Card[] = [];
         if (currentPlayer.isHuman) {
-          const comboLength = state.currentTrick?.leadingCombo?.length || 1;
+          const comboLength = state.currentTrick?.plays[0]?.cards?.length || 1;
           cardsToPlay = currentPlayer.hand.slice(0, Math.min(comboLength, currentPlayer.hand.length));
         } else {
           const aiMove = getAIMoveWithErrorHandling(state);
           cardsToPlay = aiMove.error ? 
-            (state.currentTrick?.leadingCombo ? 
-              currentPlayer.hand.slice(0, Math.min(state.currentTrick.leadingCombo.length, currentPlayer.hand.length)) : 
+            (state.currentTrick?.plays[0]?.cards ? 
+              currentPlayer.hand.slice(0, Math.min(state.currentTrick.plays[0].cards.length, currentPlayer.hand.length)) : 
               [currentPlayer.hand[0]]) : 
             aiMove.cards;
         }

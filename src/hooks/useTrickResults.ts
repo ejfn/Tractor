@@ -31,7 +31,7 @@ export function useTrickResults() {
     if (lastCompletedTrick) {
       hasShownResultRef.current = false;
     }
-  }, [lastCompletedTrick, lastCompletedTrick?.leadingPlayerId]); // Only reset when a new trick starts
+  }, [lastCompletedTrick, lastCompletedTrick?.plays[0]?.playerId]); // Only reset when a new trick starts
 
   // When showTrickResult becomes true, mark that we've shown it
   useEffect(() => {

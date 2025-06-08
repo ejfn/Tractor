@@ -37,8 +37,6 @@ describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', ()
 
     // Trick state: Someone leads Big Joker (unbeatable by any rank card)
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: [leadingCard],
       plays: [
         {
           playerId: PlayerId.Human,
@@ -116,8 +114,6 @@ describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', ()
     gameState.players[2].hand = aiBotHand;
 
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Bot1,
-      leadingCombo: [leadingCard],
       plays: [
         {
           playerId: PlayerId.Bot1,

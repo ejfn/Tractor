@@ -10,7 +10,7 @@ import {
   TrickWinnerAnalysis,
 } from "../../src/types";
 import { getAIMove } from '../../src/ai/aiLogic';
-import { createAIStrategy } from '../../src/ai/aiStrategy';
+import { makeAIPlay } from '../../src/ai/aiStrategy';
 import { createGameContext, analyzeTrickWinner } from "../../src/ai/aiGameContext";
 import { createBasicGameState, createGameState, createTrick, createCard } from "../helpers";
 
@@ -74,8 +74,6 @@ describe('AI Core Functionality', () => {
         
         // Create a trick with Hearts as the leading suit
         gameState.currentTrick = {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
           plays: [
             {
               playerId: PlayerId.Human,
@@ -107,8 +105,6 @@ describe('AI Core Functionality', () => {
         
         // Create a trick with Hearts as the leading suit
         gameState.currentTrick = {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
           plays: [
             {
               playerId: PlayerId.Human,
@@ -142,11 +138,6 @@ describe('AI Core Functionality', () => {
         
         // Create a trick with a pair as the leading combo
         gameState.currentTrick = {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [
-            createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
-            createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_2')
-          ],
           plays: [
             {
               playerId: PlayerId.Human,
@@ -184,8 +175,6 @@ describe('AI Core Functionality', () => {
 
         // Create a trick
         gameState.currentTrick = {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
           plays: [
             {
               playerId: PlayerId.Human,
@@ -215,11 +204,6 @@ describe('AI Core Functionality', () => {
 
         // Create a trick with a pair as the leading combo
         gameState.currentTrick = {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [
-            createCardWithPoints(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
-            createCardWithPoints(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
-          ],
           plays: [
             {
               playerId: PlayerId.Human,
@@ -261,11 +245,6 @@ describe('AI Core Functionality', () => {
 
         // Create a trick with a pair as the leading combo
         gameState.currentTrick = {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [
-            createCardWithPoints(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
-            createCardWithPoints(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
-          ],
           plays: [
             {
               playerId: PlayerId.Human,
@@ -305,8 +284,6 @@ describe('AI Core Functionality', () => {
     describe('AI Strategy Tests', () => {
       test('Easy strategy should always return a move', () => {
         const gameState = createMockGameState();
-        const strategy = createAIStrategy();
-        
         // Give AI1 some cards
         gameState.players[1].hand = [
           createCardWithPoints(Suit.Hearts, Rank.Six, 'hearts_6_1'),
@@ -328,7 +305,7 @@ describe('AI Core Functionality', () => {
           }
         ];
 
-        const move = strategy.makePlay(gameState, gameState.players[1], validCombos);
+        const move = makeAIPlay(gameState, gameState.players[1], validCombos);
         
         // Move should exist and be valid
         expect(move).toBeDefined();
@@ -342,9 +319,9 @@ describe('AI Core Functionality', () => {
         
         // Set up the trick: Human leads with Ace
         gameState.currentTrick = {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [createCardWithPoints(Suit.Clubs, Rank.Ace, 'clubs_ace_1')],
           plays: [
+            // Human leads with Ace
+            { playerId: PlayerId.Human, cards: [createCardWithPoints(Suit.Clubs, Rank.Ace, 'clubs_ace_1')] },
             // Bot1 (opponent) has played
             { playerId: PlayerId.Bot1, cards: [createCardWithPoints(Suit.Clubs, Rank.Three, 'clubs_3_1')] }
           ],

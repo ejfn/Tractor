@@ -83,13 +83,11 @@ export type Team = {
 };
 
 export type Trick = {
-  leadingPlayerId: PlayerId;
-  leadingCombo: Card[]; // Cards that started the trick
   plays: {
     playerId: PlayerId;
     cards: Card[];
-  }[];
-  winningPlayerId: PlayerId; // Current winner of the trick (starts with leadingPlayerId, updates as stronger plays are made)
+  }[]; // All plays including leader at plays[0]
+  winningPlayerId: PlayerId; // Current winner of the trick (starts with plays[0].playerId, updates as stronger plays are made)
   points: number; // Total points in this trick
 };
 

@@ -31,8 +31,6 @@ describe('Game Loop Tests', () => {
     
     // Create a trick with Hearts as leading suit
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
       plays: [
         {
           playerId: PlayerId.Human,
@@ -107,8 +105,6 @@ describe('Game Loop Tests', () => {
     
     // Start a trick with player 0 leading
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: [createCard(Suit.Hearts, Rank.Ace)],
       plays: [
         {
           playerId: PlayerId.Human,

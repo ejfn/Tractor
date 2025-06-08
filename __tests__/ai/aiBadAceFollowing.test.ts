@@ -35,9 +35,9 @@ describe('Issue #61: AI Bad Ace Following', () => {
     const leadingAce = createCard(Suit.Spades, Rank.Ace);
     
     gameState.currentTrick = {
-      leadingCombo: [leadingAce],
-      plays: [],
-      leadingPlayerId: PlayerId.Human,
+      plays: [
+        { playerId: PlayerId.Human, cards: [leadingAce] }
+      ],
       winningPlayerId: PlayerId.Human,
       points: 0  // No points on table
     };
@@ -95,9 +95,9 @@ describe('Issue #61: AI Bad Ace Following', () => {
     const leadingKing = createCard(Suit.Spades, Rank.King);
     
     gameState.currentTrick = {
-      leadingCombo: [leadingKing],
-      plays: [],
-      leadingPlayerId: PlayerId.Human,
+      plays: [
+        { playerId: PlayerId.Human, cards: [leadingKing] }
+      ],
       winningPlayerId: PlayerId.Human,
       points: 10  // King has 10 points - worth collecting!
     };
@@ -144,9 +144,9 @@ describe('Issue #61: AI Bad Ace Following', () => {
     ];
     
     gameState.currentTrick = {
-      leadingCombo: leadingAcePair,
-      plays: [],
-      leadingPlayerId: PlayerId.Human,
+      plays: [
+        { playerId: PlayerId.Human, cards: leadingAcePair }
+      ],
       winningPlayerId: PlayerId.Human,
       points: 0  // No points on table
     };
@@ -202,12 +202,11 @@ describe('Issue #61: AI Bad Ace Following', () => {
     const bot2Play = createCard(Suit.Spades, Rank.Queen); // Bot2 played Queen
     
     gameState.currentTrick = {
-      leadingCombo: [leadingAce],
       plays: [
+        { playerId: PlayerId.Human, cards: [leadingAce] },
         { playerId: PlayerId.Bot1, cards: [bot1Play] },
         { playerId: PlayerId.Bot2, cards: [bot2Play] }
       ],
-      leadingPlayerId: PlayerId.Human,
       winningPlayerId: PlayerId.Human, // Human's Ace is still winning
       points: 20  // King + Queen = 20 points, but Human's Ace is winning
     };

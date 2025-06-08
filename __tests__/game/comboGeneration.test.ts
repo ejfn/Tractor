@@ -132,9 +132,9 @@ describe('Combo Generation Comprehensive Tests', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingTrumpPair,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingTrumpPair }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 10,
       };
@@ -181,9 +181,9 @@ describe('Combo Generation Comprehensive Tests', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingHeartsPair,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingHeartsPair }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -222,9 +222,9 @@ describe('Combo Generation Comprehensive Tests', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingHearts,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingHearts }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -264,9 +264,9 @@ describe('Combo Generation Comprehensive Tests', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingTrumpPair,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingTrumpPair }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -318,9 +318,9 @@ describe('Combo Generation Comprehensive Tests', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingJokerTractor,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingJokerTractor }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -429,9 +429,9 @@ describe('Combo Generation Comprehensive Tests', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -466,9 +466,9 @@ describe('Combo Generation Comprehensive Tests', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: leadingTractor,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingTractor }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 5,
       };
@@ -513,9 +513,9 @@ describe('Combo Generation Comprehensive Tests', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };

@@ -59,9 +59,9 @@ describe('getValidCombinations Bug Reproduction', () => {
       ...initializeGame(),
       trumpInfo,
       currentTrick: {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       }

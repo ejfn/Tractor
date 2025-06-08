@@ -6,12 +6,12 @@ import {
   Suit,
   Rank,
   getDeclarationStrength,
-} from "../types";
+} from "../../types";
 import {
   getPlayerDeclarationOptions,
   getTrumpDeclarationStatus,
-} from "../game/trumpDeclarationManager";
-import { getDealingProgress } from "../game/gameLogic";
+} from "../../game/trumpDeclarationManager";
+import { getDealingProgress } from "../../game/gameLogic";
 
 export interface AIDeclarationDecision {
   shouldDeclare: boolean;

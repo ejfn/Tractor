@@ -27,8 +27,6 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       // Opponent is winning with higher trump
       const smallJoker = createJoker(JokerType.Small, 'small-joker');
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3,
-        leadingCombo: [smallJoker],
         plays: [
           {
             playerId: PlayerId.Bot3,
@@ -75,8 +73,6 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       // Opponent winning with unbeatable trump
       const bigJoker = createJoker(JokerType.Big, 'big-joker');
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [bigJoker],
         plays: [
           {
             playerId: PlayerId.Bot1,
@@ -120,8 +116,6 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       // Opponent winning with strong trump
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: '2-diamonds', rank: Rank.Two, suit: Suit.Diamonds, points: 0 }],
         plays: [
           {
             playerId: PlayerId.Human,
@@ -166,8 +160,6 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       // Opponent winning with unbeatable trump
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot2,
-        leadingCombo: [{ id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }],
         plays: [
           {
             playerId: PlayerId.Bot2,
@@ -216,8 +208,6 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       const smallJoker1 = createJoker(JokerType.Small, 'small-joker-1');
       const smallJoker2 = createJoker(JokerType.Small, 'small-joker-2');
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [smallJoker1, smallJoker2],
         plays: [
           {
             playerId: PlayerId.Human,
@@ -270,8 +260,6 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       // Opponent leads with unbeatable trump
       const bigJoker2 = createJoker(JokerType.Big, 'big-joker-2');
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [bigJoker2],
         plays: [
           {
             playerId: PlayerId.Bot1,
@@ -321,8 +309,6 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       // Opponent winning with maximum trump
       const smallJokerOpponent = createJoker(JokerType.Small, 'small-joker-opponent');
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [smallJokerOpponent],
         plays: [
           {
             playerId: PlayerId.Bot1,
@@ -385,9 +371,7 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
         // Opponent winning with unbeatable card
         const bigJokerLoop = createJoker(JokerType.Big, 'big-joker-loop');
         gameState.currentTrick = {
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [bigJokerLoop],
-          plays: [
+            plays: [
             {
               playerId: PlayerId.Human,
               cards: [bigJokerLoop],

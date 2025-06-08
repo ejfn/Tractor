@@ -38,8 +38,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -102,8 +100,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1, // Opponent
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Bot1,
@@ -156,8 +152,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -224,8 +218,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3, // Opponent
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Bot3,
@@ -287,8 +279,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -363,8 +353,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -427,8 +415,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -496,8 +482,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,

@@ -3,7 +3,7 @@ import {
   performAdvancedCombinationAnalysis,
   createCombinationStrategy,
   selectOptimalCombination,
-} from '../../src/ai/aiAdvancedCombinations';
+} from '../../src/ai/analysis/advancedCombinations';
 import {
   Card,
   Suit,

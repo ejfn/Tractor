@@ -28,12 +28,14 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
       
       // Create trick with trump pair led
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [
-          createCard(Suit.Spades, Rank.Two), // Trump rank in trump suit
-          createCard(Suit.Spades, Rank.Two), // Trump rank in trump suit (pair)
-        ],
         plays: [
+          {
+            playerId: PlayerId.Human,
+            cards: [
+              createCard(Suit.Spades, Rank.Two), // Trump rank in trump suit
+              createCard(Suit.Spades, Rank.Two), // Trump rank in trump suit (pair)
+            ]
+          },
           {
             playerId: PlayerId.Bot1,
             cards: [
@@ -107,14 +109,16 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
       
       // Trump tractor led
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [
-          createCard(Suit.Hearts, Rank.Three), // Trump suit tractor
-          createCard(Suit.Hearts, Rank.Three),
-          createCard(Suit.Hearts, Rank.Four),
-          createCard(Suit.Hearts, Rank.Four),
-        ],
         plays: [
+          {
+            playerId: PlayerId.Human,
+            cards: [
+              createCard(Suit.Hearts, Rank.Three), // Trump suit tractor
+              createCard(Suit.Hearts, Rank.Three),
+              createCard(Suit.Hearts, Rank.Four),
+              createCard(Suit.Hearts, Rank.Four),
+            ]
+          },
           {
             playerId: PlayerId.Bot1,
             cards: [
@@ -177,9 +181,12 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
       
       // Trump single led
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createJoker(JokerType.Big)],
-        plays: [],
+        plays: [
+          {
+            playerId: PlayerId.Human,
+            cards: [createJoker(JokerType.Big)]
+          }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };

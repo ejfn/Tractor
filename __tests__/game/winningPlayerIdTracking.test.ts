@@ -1,18 +1,13 @@
+import { describe, expect, test } from '@jest/globals';
 import {
-  processPlay,
-  validatePlay
+  processPlay
 } from '../../src/game/gamePlayManager';
 import {
-  compareCardCombos
-} from '../../src/game/gameLogic';
-import {
-  Suit, 
-  Rank, 
-  PlayerId,
   GamePhase,
-  TrumpInfo
+  PlayerId,
+  Rank,
+  Suit
 } from "../../src/types";
-import { describe, test, expect } from '@jest/globals';
 import {
   createCard,
   createGameState,
@@ -32,7 +27,7 @@ describe('Winning Player ID Tracking During Trick', () => {
     const result = processPlay(gameState, [leadingCard]);
     
     expect(result.newState.currentTrick).toBeTruthy();
-    expect(result.newState.currentTrick!.leadingPlayerId).toBe(PlayerId.Human);
+    expect(result.newState.currentTrick!.plays[0].playerId).toBe(PlayerId.Human);
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Human);
     expect(result.trickComplete).toBe(false);
   });

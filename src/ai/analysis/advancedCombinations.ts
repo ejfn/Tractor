@@ -16,9 +16,9 @@ import {
   TrickPosition,
   PointPressure,
   PlayStyle,
-} from "../types";
-import { identifyCombos } from "../game/gameLogic";
-import { analyzeCombo } from "./aiGameContext";
+} from "../../types";
+import { identifyCombos } from "../../game/gameLogic";
+import { analyzeCombo } from "../aiGameContext";
 
 /**
  * Phase 4: Advanced Combination Logic

@@ -36,9 +36,9 @@ describe('AI Trump Following Behavior', () => {
     
     // Set up leading combo
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: leadingTrumpPair,
-      plays: [],
+      plays: [
+        { playerId: PlayerId.Human, cards: leadingTrumpPair }
+      ],
       winningPlayerId: PlayerId.Human,
       points: 0
     };
@@ -141,9 +141,9 @@ describe('AI Trump Following Behavior', () => {
     
     // Set up leading combo
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: leadingTrumpPair,
-      plays: [],
+      plays: [
+        { playerId: PlayerId.Human, cards: leadingTrumpPair }
+      ],
       winningPlayerId: PlayerId.Human,
       points: 0
     };

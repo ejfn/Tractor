@@ -88,8 +88,6 @@ describe("AI Game Context", () => {
 
     it("should return First when trick has no plays", () => {
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [],
         plays: [],
       };
       expect(getTrickPosition(gameState, PlayerId.Human)).toBe(TrickPosition.First);
@@ -97,32 +95,30 @@ describe("AI Game Context", () => {
 
     it("should return correct positions based on play count", () => {
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: 'lead-card', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] }
+        ],
       };
       
-      // First player (leader)
+      // First player (leader) - Human is always First
       expect(getTrickPosition(gameState, PlayerId.Human)).toBe(TrickPosition.First);
       
-      // Second player
+      // Second player (first follower)
+      expect(getTrickPosition(gameState, PlayerId.Bot1)).toBe(TrickPosition.Second);
+      
+      // After Bot1 plays - Bot2 is third player
       gameState.currentTrick.plays = [{ playerId: PlayerId.Bot1, cards: [] }];
-      expect(getTrickPosition(gameState, PlayerId.Bot2)).toBe(TrickPosition.Second);
+      expect(getTrickPosition(gameState, PlayerId.Bot2)).toBe(TrickPosition.Third);
       
-      // Third player
+      // After Bot1 and Bot2 play - Bot3 is fourth player
       gameState.currentTrick.plays = [
         { playerId: PlayerId.Bot1, cards: [] },
         { playerId: PlayerId.Bot2, cards: [] },
       ];
-      expect(getTrickPosition(gameState, PlayerId.Bot3)).toBe(TrickPosition.Third);
+      expect(getTrickPosition(gameState, PlayerId.Bot3)).toBe(TrickPosition.Fourth);
       
-      // Fourth player
-      gameState.currentTrick.plays = [
-        { playerId: PlayerId.Bot1, cards: [] },
-        { playerId: PlayerId.Bot2, cards: [] },
-        { playerId: PlayerId.Bot3, cards: [] },
-      ];
-      expect(getTrickPosition(gameState, PlayerId.Human)).toBe(TrickPosition.Fourth);
+      // Leader is always First, regardless of how many have played
+      expect(getTrickPosition(gameState, PlayerId.Human)).toBe(TrickPosition.First);
     });
   });
 
@@ -159,9 +155,8 @@ describe("AI Game Context", () => {
   describe("isTrickWorthFighting", () => {
     beforeEach(() => {
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ points: 5 }], // 5 points from leading combo
         plays: [
+          { playerId: PlayerId.Human, cards: [{ points: 5 }] }, // 5 points from leading combo
           { playerId: PlayerId.Bot1, cards: [{ points: 10 }] }, // 10 points
         ],
       };
@@ -176,8 +171,10 @@ describe("AI Game Context", () => {
     });
 
     it("should not consider trick worth fighting with LOW pressure and low points", () => {
-      gameState.currentTrick.leadingCombo = [{ points: 0 }];
-      gameState.currentTrick.plays = [{ playerId: PlayerId.Bot1, cards: [{ points: 5 }] }];
+      gameState.currentTrick.plays = [
+        { playerId: PlayerId.Human, cards: [{ points: 0 }] },
+        { playerId: PlayerId.Bot1, cards: [{ points: 5 }] }
+      ];
       
       const context = createGameContext(gameState, PlayerId.Human);
       context.pointPressure = PointPressure.LOW;
@@ -187,8 +184,10 @@ describe("AI Game Context", () => {
     });
 
     it("should have lower threshold for MEDIUM pressure", () => {
-      gameState.currentTrick.leadingCombo = [{ points: 0 }];
-      gameState.currentTrick.plays = [{ playerId: PlayerId.Bot1, cards: [{ points: 10 }] }];
+      gameState.currentTrick.plays = [
+        { playerId: PlayerId.Human, cards: [{ points: 0 }] },
+        { playerId: PlayerId.Bot1, cards: [{ points: 10 }] }
+      ];
       
       const context = createGameContext(gameState, PlayerId.Human);
       context.pointPressure = PointPressure.MEDIUM;
@@ -198,8 +197,10 @@ describe("AI Game Context", () => {
     });
 
     it("should have lowest threshold for HIGH pressure", () => {
-      gameState.currentTrick.leadingCombo = [{ points: 0 }];
-      gameState.currentTrick.plays = [{ playerId: PlayerId.Bot1, cards: [{ points: 5 }] }];
+      gameState.currentTrick.plays = [
+        { playerId: PlayerId.Human, cards: [{ points: 0 }] },
+        { playerId: PlayerId.Bot1, cards: [{ points: 5 }] }
+      ];
       
       const context = createGameContext(gameState, PlayerId.Human);
       context.pointPressure = PointPressure.HIGH;
@@ -378,9 +379,9 @@ describe("AI Game Context", () => {
     it('should detect teammate winning status', () => {
       // Set up trick with Bot3 winning (Bot1's partner)
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3,
-        leadingCombo: [{ rank: Rank.Ace, suit: Suit.Spades, id: 'ace_spades', points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot3, cards: [{ rank: Rank.Ace, suit: Suit.Spades, id: 'ace_spades', points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Bot3,
         points: 0,
       };
@@ -396,9 +397,9 @@ describe("AI Game Context", () => {
     it('should detect opponent winning status', () => {
       // Set up trick with Human winning (Bot1's opponent)
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ rank: Rank.King, suit: Suit.Hearts, id: 'king_hearts', points: 10 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ rank: Rank.King, suit: Suit.Hearts, id: 'king_hearts', points: 10 }] }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 10,
       };
@@ -414,9 +415,9 @@ describe("AI Game Context", () => {
     it('should detect self winning status', () => {
       // Set up trick with Bot1 winning
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [{ rank: Rank.Ace, suit: Suit.Hearts, id: 'ace_hearts', points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [{ rank: Rank.Ace, suit: Suit.Hearts, id: 'ace_hearts', points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -431,9 +432,8 @@ describe("AI Game Context", () => {
 
     it('should track trick points correctly', () => {
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ rank: Rank.Five, suit: Suit.Hearts, id: 'five_hearts', points: 5 }],
         plays: [
+          { playerId: PlayerId.Human, cards: [{ rank: Rank.Five, suit: Suit.Hearts, id: 'five_hearts', points: 5 }] },
           {
             playerId: PlayerId.Bot1,
             cards: [{ rank: Rank.King, suit: Suit.Hearts, id: 'king_hearts', points: 10 }],
@@ -451,9 +451,9 @@ describe("AI Game Context", () => {
 
     it('should determine strategic decisions', () => {
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ rank: Rank.Seven, suit: Suit.Diamonds, id: 'seven_diamonds', points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ rank: Rank.Seven, suit: Suit.Diamonds, id: 'seven_diamonds', points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0,
       };

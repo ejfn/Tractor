@@ -85,23 +85,11 @@ function analyzeCompletedTrick(
   memory: CardMemory,
   trumpInfo: TrumpInfo,
 ): void {
-  // Track leading combo
-  if (trick.leadingCombo) {
-    trick.leadingCombo.forEach((card: Card) => {
-      processPlayedCard(
-        card,
-        trick.leadingPlayerId,
-        memory,
-        trumpInfo,
-        "leading",
-      );
-    });
-  }
-
-  // Track all following plays
-  trick.plays.forEach((play: any) => {
+  // Track all plays including leader at plays[0]
+  trick.plays.forEach((play: any, index: number) => {
+    const position = index === 0 ? "leading" : "following";
     play.cards.forEach((card: Card) => {
-      processPlayedCard(card, play.playerId, memory, trumpInfo, "following");
+      processPlayedCard(card, play.playerId, memory, trumpInfo, position);
     });
   });
 
@@ -116,23 +104,11 @@ function analyzeCurrentTrick(
   memory: CardMemory,
   trumpInfo: TrumpInfo,
 ): void {
-  // Track leading combo
-  if (trick.leadingCombo) {
-    trick.leadingCombo.forEach((card: Card) => {
-      processPlayedCard(
-        card,
-        trick.leadingPlayerId,
-        memory,
-        trumpInfo,
-        "leading",
-      );
-    });
-  }
-
-  // Track plays made so far
-  trick.plays.forEach((play: any) => {
+  // Track all plays made so far including leader at plays[0]
+  trick.plays.forEach((play: any, index: number) => {
+    const position = index === 0 ? "leading" : "following";
     play.cards.forEach((card: Card) => {
-      processPlayedCard(card, play.playerId, memory, trumpInfo, "following");
+      processPlayedCard(card, play.playerId, memory, trumpInfo, position);
     });
   });
 }
@@ -659,7 +635,7 @@ function analyzeOpponentLeadingPattern(
   trumpInfo: TrumpInfo,
 ): OpponentLeadingPattern {
   const leaderTricks = tricks.filter(
-    (trick) => trick.leadingPlayerId === playerId,
+    (trick) => trick.plays[0]?.playerId === playerId,
   );
 
   if (leaderTricks.length === 0) {
@@ -667,17 +643,17 @@ function analyzeOpponentLeadingPattern(
   }
 
   const trumpLeads = leaderTricks.filter((trick) =>
-    trick.leadingCombo.some((card) => isTrump(card, trumpInfo)),
+    trick.plays[0]?.cards.some((card) => isTrump(card, trumpInfo)),
   ).length;
 
   const pointLeads = leaderTricks.filter((trick) =>
-    trick.leadingCombo.some((card) => card.points > 0),
+    trick.plays[0]?.cards.some((card) => card.points > 0),
   ).length;
 
   // Analyze suit preferences
   const suitCounts: Record<string, number> = {};
   leaderTricks.forEach((trick) => {
-    const leadSuit = trick.leadingCombo[0]?.suit;
+    const leadSuit = trick.plays[0]?.cards[0]?.suit;
     if (leadSuit) {
       suitCounts[leadSuit] = (suitCounts[leadSuit] || 0) + 1;
     }
@@ -723,10 +699,7 @@ function createTeamCoordinationPattern(
 
   // Analyze each trick for team coordination patterns
   tricks.forEach((trick) => {
-    const allPlays = [
-      { playerId: trick.leadingPlayerId, cards: trick.leadingCombo },
-      ...trick.plays,
-    ];
+    const allPlays = trick.plays;
 
     for (let i = 1; i < allPlays.length; i++) {
       const currentPlayer = players.find((p) => p.id === allPlays[i].playerId);
@@ -846,8 +819,8 @@ function identifyTrickSequencePatterns(
         sequenceLength: 2,
         successRate: 0.7, // Simplified
         playerInvolved: [
-          currentTrick.leadingPlayerId,
-          nextTrick.leadingPlayerId,
+          currentTrick.plays[0]?.playerId,
+          nextTrick.plays[0]?.playerId,
         ],
         description: "Player sets up teammate for advantageous lead",
       });
@@ -1015,7 +988,7 @@ function analyzePlayPatterns(tricks: Trick[]): any {
 
   return {
     trumpUsage:
-      tricks.filter((t) => t.leadingCombo.some((c) => c.rank === undefined))
+      tricks.filter((t) => t.plays[0]?.cards.some((c) => c.rank === undefined))
         .length / tricks.length,
     pointFocus: tricks.filter((t) => t.points > 0).length / tricks.length,
   };
@@ -1051,7 +1024,7 @@ function analyzeBehaviorPhase(tricks: Trick[], trumpInfo: TrumpInfo): any {
   }
 
   const trumpTricks = tricks.filter((t) =>
-    t.leadingCombo.some((c) => isTrump(c, trumpInfo)),
+    t.plays[0]?.cards.some((c) => isTrump(c, trumpInfo)),
   ).length;
 
   const pointTricks = tricks.filter((t) => t.points > 0).length;
@@ -1076,7 +1049,7 @@ function calculateRoundConsistency(
 function isSetupPattern(current: Trick, next: Trick, players: any[]): boolean {
   // Simplified setup pattern detection
   const currentWinner = players.find((p) => p.id === current.winningPlayerId);
-  const nextLeader = players.find((p) => p.id === next.leadingPlayerId);
+  const nextLeader = players.find((p) => p.id === next.plays[0]?.playerId);
 
   return currentWinner?.team === nextLeader?.team && current.points < 10;
 }

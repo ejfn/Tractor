@@ -143,23 +143,23 @@ describe("Unified Leading Strategy", () => {
       gameState.currentPlayerIndex = 1; // Bot1 leading
       gameState.tricks = [
         { 
-          leadingPlayerId: PlayerId.Human,
-          leadingCombo: [], 
-          plays: [], 
+          plays: [
+            { playerId: PlayerId.Human, cards: [] }
+          ], 
           winningPlayerId: PlayerId.Human,
           points: 15 
         },
         { 
-          leadingPlayerId: PlayerId.Bot2,
-          leadingCombo: [], 
-          plays: [], 
+          plays: [
+            { playerId: PlayerId.Bot2, cards: [] }
+          ], 
           winningPlayerId: PlayerId.Bot2,
           points: 10 
         },
         { 
-          leadingPlayerId: PlayerId.Bot3,
-          leadingCombo: [], 
-          plays: [], 
+          plays: [
+            { playerId: PlayerId.Bot3, cards: [] }
+          ], 
           winningPlayerId: PlayerId.Bot3,
           points: 20 
         },
