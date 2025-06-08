@@ -1679,6 +1679,19 @@ export const getValidCombinations = (
     return isValidPlay(combo.cards, leadingCards, playerHand, trumpInfo);
   });
 
+  // DEBUG: Check why regular combos are not sufficient
+  if (validCombos.length === 0 && leadingLength === 2) {
+    console.warn("No valid regular combos found for pair, checking combos:", {
+      allCombosCount: allCombos.length,
+      pairCombos: allCombos.filter(c => c.type === ComboType.Pair && c.cards.length === 2)
+        .map(c => ({ type: c.type, cards: c.cards.map(card => card.joker || `${card.rank}${card.suit}`) })),
+      leadingCards: leadingCards.map((c) => c.joker || `${c.rank}${c.suit}`),
+      leadingSuit,
+      leadingComboType,
+      playerHasMatchingCards
+    });
+  }
+
   // Always generate mixed combinations as additional strategic options
   const mixedCombos = generateMixedCombinations(
     playerHand,
@@ -2012,6 +2025,18 @@ const generateMixedCombinations = (
 
   // CRITICAL SAFETY: Ensure we always return at least one valid combination
   if (validMixedCombos.length === 0) {
+    console.warn(
+      "No valid mixed combinations found, entering fallback logic:",
+      {
+        playerHandSize: playerHand.length,
+        leadingCards: leadingCards.map((c) => c.joker || `${c.rank}${c.suit}`),
+        leadingSuit,
+        isLeadingTrump,
+        spadesInHand: playerHand
+          .filter((c) => c.suit === "Spades")
+          .map((c) => `${c.rank}${c.suit}`),
+      },
+    );
     // Guaranteed fallback: Find any valid combination through systematic search
     const guaranteedCombo = findGuaranteedValidCombination(
       playerHand,
@@ -2037,6 +2062,10 @@ const generateMixedCombinations = (
             (c) => c.joker || `${c.rank}${c.suit}`,
           ),
           trumpInfo,
+          leadingSuit,
+          isLeadingTrump,
+          leadingLength,
+          guaranteedComboLength: guaranteedCombo.length,
         },
       );
 
