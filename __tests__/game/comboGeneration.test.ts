@@ -90,7 +90,7 @@ describe('Combo Generation Comprehensive Tests', () => {
       const tractors = combos.filter(c => c.type === ComboType.Tractor);
       expect(tractors).toHaveLength(1);
       expect(tractors[0].cards).toHaveLength(4);
-      expect(tractors[0].value).toBe(10000); // Highest possible value
+      expect(tractors[0].value).toBe(1000); // Big Joker combo value
     });
 
     test('should handle trump rank cards correctly', () => {

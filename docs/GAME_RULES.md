@@ -54,7 +54,10 @@ Work with your AI teammate to collect 80+ points per round and advance through c
 ### **Combination Types**
 - **Singles**: Any individual card
 - **Pairs**: Two identical cards (same rank AND suit)
-- **Tractors**: 2+ consecutive pairs of same suit
+- **Tractors**: 2+ consecutive pairs (same suit, trump cross-suit, or rank-skip)
+  - **Same-Suit**: 7♥7♥-8♥8♥ (basic consecutive pairs)
+  - **Trump Cross-Suit**: 2♠2♠-2♥2♥ (trump suit + off-suit rank)
+  - **Rank-Skip**: 6♠6♠-8♠8♠ (trump rank bridges gap)
 
 ### **Following Priority (Tractor)**
 1. Tractor (same # pairs) → 2. Same # pairs → 3. All pairs → 4. Singles → 5. Other suits
@@ -221,15 +224,35 @@ Work with your AI teammate to collect 80+ points per round and advance through c
   - Small Joker + Big Joker (different joker types)
 
 ### **Tractors**
-- **Definition**: Two or more consecutive pairs of the same suit
-- **Valid Examples**:
-  - 7♥7♥-8♥8♥ (two consecutive pairs)
-  - 5♠5♠-6♠6♠-7♠7♠ (three consecutive pairs)
-  - Small Joker Pair + Big Joker Pair (consecutive trump pairs)
+- **Definition**: Two or more consecutive pairs that can form valid tractors
+- **Basic Same-Suit Tractors**:
+  - 7♥7♥-8♥8♥ (two consecutive pairs, same suit)
+  - 5♠5♠-6♠6♠-7♠7♠ (three consecutive pairs, same suit)
+- **Advanced Tractor Types**:
+  - **Joker Tractors**: Small Joker Pair + Big Joker Pair
+  - **Trump Cross-Suit Tractors**: Trump suit rank pair + off-suit rank pair
+  - **Rank-Skip Tractors**: Consecutive pairs with trump rank creating gaps
+
+#### **Trump Cross-Suit Tractors**
+- **Rule**: Trump suit rank pair can combine with off-suit rank pairs
+- **Valid Examples** (when trump rank is 2, trump suit is Spades):
+  - 2♠2♠-2♥2♥ (trump suit rank + off-suit rank)
+  - 2♠2♠-2♣2♣ (trump suit rank + off-suit rank)
 - **Invalid Examples**:
-  - 7♥7♥-8♦8♦ (different suits)
-  - 7♥7♥-9♥9♥ (non-consecutive, missing 8)
-  - Trump + non-trump pairs mixed
+  - 2♥2♥-2♣2♣ (only off-suit rank pairs, no trump suit rank)
+
+#### **Rank-Skip Tractors**
+- **Rule**: When trump rank creates a gap, consecutive pairs can still form tractors
+- **Valid Examples** (when trump rank is 7):
+  - 6♠6♠-8♠8♠ (6-[7]-8, trump rank bridges the gap)
+  - 5♥5♥-6♥6♥-8♥8♥ (5-6-[7]-8, trump rank creates valid bridge)
+- **Invalid Examples**:
+  - 6♠6♠-8♠8♠ (when trump rank is NOT 7, no valid bridge)
+
+#### **Invalid Tractor Examples**:
+  - 7♥7♥-8♦8♦ (different suits, not trump rank)
+  - 7♥7♥-9♥9♥ (non-consecutive, no valid bridge)
+  - 2♠2♠-SJ♥SJ♥ (different tractor contexts)
 
 ### **Combination Strength**
 - **Trump combinations always beat non-trump** of same type
