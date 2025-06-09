@@ -95,16 +95,16 @@ describe('Trump System', () => {
       const cards = [fourSpades, fourDiamonds];
       const combos = identifyCombos(cards, trumpInfo);
       
-      // Should identify as two singles AND a cross-suit trump rank pair
-      // This is correct behavior according to Tractor rules - all trump cards are treated as same suit
-      expect(combos).toHaveLength(3); // 2 singles + 1 pair
+      // Should identify as two singles but NO pairs
+      // Trump cards are treated as same suit for FOLLOWING, but pairs require identical cards
+      expect(combos).toHaveLength(2); // 2 singles only
       expect(combos.filter(combo => combo.type === ComboType.Single)).toHaveLength(2);
-      expect(combos.filter(combo => combo.type === ComboType.Pair)).toHaveLength(1);
+      expect(combos.filter(combo => combo.type === ComboType.Pair)).toHaveLength(0);
       
-      // Verify the pair contains both trump rank cards
-      const pairCombo = combos.find(combo => combo.type === ComboType.Pair);
-      expect(pairCombo!.cards).toHaveLength(2);
-      expect(pairCombo!.cards.map(c => c.id).sort()).toEqual(['Spades_4', 'Diamonds_4'].sort());
+      // Verify both singles are trump rank cards
+      const singleCombos = combos.filter(combo => combo.type === ComboType.Single);
+      expect(singleCombos[0].cards[0].rank).toBe(Rank.Four);
+      expect(singleCombos[1].cards[0].rank).toBe(Rank.Four);
     });
 
     test('should not identify mixed joker pairs', () => {

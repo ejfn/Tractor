@@ -633,15 +633,32 @@ export const identifyCombos = (
     const cardsByRank = groupCardsByRank(suitCards);
 
     Object.values(cardsByRank).forEach((rankCards) => {
-      // Pairs
+      // Pairs: Only create pairs from IDENTICAL cards (same rank AND same suit)
+      // Trump unification applies to following, not pair formation
       if (rankCards.length >= 2) {
-        for (let i = 0; i < rankCards.length - 1; i++) {
-          combos.push({
-            type: ComboType.Pair,
-            cards: [rankCards[i], rankCards[i + 1]],
-            value: getCardValue(rankCards[i], trumpInfo),
-          });
-        }
+        // Group cards by suit within the same rank to ensure identical pairs
+        const cardsBySuitWithinRank: Record<string, Card[]> = {};
+
+        rankCards.forEach((card) => {
+          const suitKey = card.suit || "unknown";
+          if (!cardsBySuitWithinRank[suitKey]) {
+            cardsBySuitWithinRank[suitKey] = [];
+          }
+          cardsBySuitWithinRank[suitKey].push(card);
+        });
+
+        // Only create pairs from cards with identical suit AND rank
+        Object.values(cardsBySuitWithinRank).forEach((identicalCards) => {
+          if (identicalCards.length >= 2) {
+            for (let i = 0; i < identicalCards.length - 1; i++) {
+              combos.push({
+                type: ComboType.Pair,
+                cards: [identicalCards[i], identicalCards[i + 1]],
+                value: getCardValue(identicalCards[i], trumpInfo),
+              });
+            }
+          }
+        });
       }
     });
   });
