@@ -100,30 +100,56 @@ src/ai/
 
 ## Decision Framework
 
-The AI follows a **5-level decision framework** that ensures consistent strategic behavior across all game situations:
+The AI follows a **modular decision framework** with specialized modules handling each strategic component:
 
 ```mermaid
 flowchart TD
-    Start([🎯 AI Following Turn]) --> Historical{📈 Historical Analysis<br/>Available?}
-    Historical -->|Yes ≥3 tricks| Phase4[🧠 PRIORITY 0: Historical Insights<br/>Counter-strategies & Predictions]
-    Historical -->|No| P1{🤝 PRIORITY 1<br/>Teammate Winning?}
+    Start([🎯 AI Turn Begins]) --> Logic[🎮 aiLogic.ts<br/>Public API & Rule Compliance]
+    Logic --> Strategy[🧠 aiStrategy.ts<br/>Core Decision Coordination]
+    Strategy --> Context[📊 aiGameContext.ts<br/>Game State Analysis]
+    Context --> Memory[💾 aiCardMemory.ts<br/>Phase 3 Memory System]
     
-    Phase4 --> P1
-    P1 -->|Yes| Memory{🧠 Have Guaranteed<br/>Point Cards?}
-    Memory -->|Yes| SmartContribute[🎁 SMART CONTRIBUTE<br/>Memory-Enhanced Point Cards]
-    Memory -->|No| Contribute[🎁 TRADITIONAL CONTRIBUTE<br/>10s > Kings > 5s]
+    Memory --> Leading{🎲 Leading or<br/>Following?}
     
+    Leading -->|Leading| LeadingMods[🎯 Leading Modules]
+    Leading -->|Following| FollowingMods[🤝 Following Modules]
+    
+    LeadingMods --> LeadStrategy[leadingStrategy.ts<br/>Main Leading Logic]
+    LeadingMods --> FirstAnalysis[firstPlayerLeadingAnalysis.ts<br/>Strategic Analysis]
+    LeadingMods --> PointFocus[pointFocusedStrategy.ts<br/>Memory-Enhanced Collection]
+    
+    FollowingMods --> FollowStrategy[followingStrategy.ts<br/>4-Priority Decision Chain]
+    FollowStrategy --> P1{🤝 PRIORITY 1<br/>Teammate Winning?}
+    
+    P1 -->|Yes| TeamSupport[teammateSupport.ts<br/>🎁 Team Coordination]
     P1 -->|No| P2{⚔️ PRIORITY 2<br/>Opponent Winning?}
-    P2 -->|Yes| Block[🛡️ BLOCK/BEAT<br/>Strategic Opposition]
+    P2 -->|Yes| OpponentBlock[opponentBlocking.ts<br/>🛡️ Strategic Opposition]
     P2 -->|No| P3{💰 PRIORITY 3<br/>Can Win ≥5 Points?}
-    P3 -->|Yes| Contest[⚡ CONTEST<br/>Fight for Trick]
-    P3 -->|No| P4[🗑️ PRIORITY 4<br/>Strategic Disposal]
+    P3 -->|Yes| TrickContest[trickContention.ts<br/>⚡ Contest Trick]
+    P3 -->|No| StrategicDisp[strategicDisposal.ts<br/>🗑️ Hierarchical Disposal]
     
-    SmartContribute --> Execute[✅ Execute Move]
-    Contribute --> Execute
-    Block --> Execute
-    Contest --> Execute
-    P4 --> Execute
+    FollowingMods --> PositionMods[🎯 Position-Specific Modules]
+    PositionMods --> Second[secondPlayerStrategy.ts<br/>Early Influence]
+    PositionMods --> Third[thirdPlayerStrategy.ts<br/>Tactical Decisions]
+    PositionMods --> ThirdRisk[thirdPlayerRiskAnalysis.ts<br/>Risk Assessment]
+    PositionMods --> Fourth[fourthPlayerStrategy.ts<br/>Perfect Information]
+    
+    Memory --> Analysis[🔍 Analysis Modules]
+    Analysis --> AdvCombo[advancedCombinations.ts<br/>Complex Analysis]
+    Analysis --> ComboAnalysis[comboAnalysis.ts<br/>Combo Evaluation]
+    
+    Strategy --> Specialized[⚙️ Specialized Systems]
+    Specialized --> KittySwap[kittySwapStrategy.ts<br/>Trump-Aware Elimination]
+    Specialized --> TrumpDecl[trumpDeclarationStrategy.ts<br/>Declaration Timing]
+    Specialized --> AIHelpers[aiHelpers.ts<br/>Utility Functions]
+    
+    TeamSupport --> Execute[✅ Execute Move]
+    OpponentBlock --> Execute
+    TrickContest --> Execute
+    StrategicDisp --> Execute
+    LeadStrategy --> Execute
+    FirstAnalysis --> Execute
+    PointFocus --> Execute
 ```
 
 ### **Priority Levels**
