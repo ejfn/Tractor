@@ -5,6 +5,7 @@ import { processPlay, validatePlay } from "../game/gamePlayManager";
 import { endRound, prepareNextRound } from "../game/gameRoundManager";
 import { Card, GamePhase, GameState, RoundResult } from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
+import { sortCards } from "../utils/cardSorting";
 import {
   CARD_SELECTION_DELAY,
   ROUND_COMPLETE_BUFFER,
@@ -175,8 +176,8 @@ export function useGameState() {
       return;
     }
 
-    // Store the cards locally before processing to avoid race conditions
-    const cardsToPlay = [...selectedCards];
+    // Store the cards locally and sort them for consistent visual presentation
+    const cardsToPlay = sortCards([...selectedCards], gameState.trumpInfo);
 
     // Add a short delay to allow players to see the selected cards before playing
     setTimeout(() => {
