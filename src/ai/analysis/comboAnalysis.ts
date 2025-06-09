@@ -7,6 +7,10 @@ import {
   TrumpInfo,
 } from "../../types";
 import { isTrump } from "../../game/gameLogic";
+import {
+  getTractorTypeDescription,
+  isValidTractor,
+} from "../../game/tractorLogic";
 
 /**
  * Combo Analysis - Basic combination analysis and scoring
@@ -182,6 +186,110 @@ export function calculateSecondPlayerComboValue(
   }
 
   return value;
+}
+
+/**
+ * Enhanced tractor analysis for new tractor types
+ */
+export function analyzeTractorType(
+  combo: Combo,
+  trumpInfo: TrumpInfo,
+): {
+  tractorType: string;
+  isAdvancedTractor: boolean;
+  strategicValue: number;
+} {
+  if (combo.type !== ComboType.Tractor) {
+    return {
+      tractorType: "Not a tractor",
+      isAdvancedTractor: false,
+      strategicValue: 0,
+    };
+  }
+
+  const description = getTractorTypeDescription(combo.cards, trumpInfo);
+  const isAdvanced = description !== "Regular same-suit tractor";
+
+  // Calculate strategic value based on tractor type
+  let strategicValue = 0;
+  const baseValue = combo.cards.length * 5; // Base value per card
+
+  switch (description) {
+    case "Joker tractor":
+      strategicValue = baseValue + 50; // Highest value - jokers are precious
+      break;
+    case "Trump cross-suit tractor":
+      strategicValue = baseValue + 40; // High value - mixed trump ranks
+      break;
+    case "Rank-skip tractor":
+      strategicValue = baseValue + 30; // Medium-high value - clever play
+      break;
+    case "Regular same-suit tractor":
+      strategicValue = baseValue + 20; // Standard tractor value
+      break;
+    default:
+      strategicValue = baseValue;
+  }
+
+  // Trump bonus
+  if (combo.cards.some((card) => isTrump(card, trumpInfo))) {
+    strategicValue += 15;
+  }
+
+  // Point card bonus
+  const pointValue = combo.cards.reduce(
+    (sum, card) => sum + (card.points || 0),
+    0,
+  );
+  strategicValue += pointValue * 2;
+
+  return {
+    tractorType: description,
+    isAdvancedTractor: isAdvanced,
+    strategicValue,
+  };
+}
+
+/**
+ * Validate and analyze combo strength considering new tractor rules
+ */
+export function analyzeComboStrength(
+  combo: Combo,
+  trumpInfo: TrumpInfo,
+): ComboStrength {
+  // Enhanced tractor validation
+  if (combo.type === ComboType.Tractor) {
+    if (!isValidTractor(combo.cards, trumpInfo)) {
+      return ComboStrength.Weak; // Invalid tractor gets weak rating
+    }
+
+    const tractorAnalysis = analyzeTractorType(combo, trumpInfo);
+
+    // Advanced tractors get higher strength ratings
+    if (tractorAnalysis.isAdvancedTractor) {
+      if (tractorAnalysis.tractorType === "Joker tractor") {
+        return ComboStrength.Critical;
+      }
+      if (tractorAnalysis.tractorType === "Trump cross-suit tractor") {
+        return ComboStrength.Strong;
+      }
+      return ComboStrength.Medium; // Rank-skip tractors
+    }
+  }
+
+  // Existing strength analysis for other combo types
+  const hasHighCards = combo.cards.some(
+    (card) => card.rank === Rank.Ace || card.rank === Rank.King,
+  );
+
+  const isTrumpCombo = combo.cards.some((card) => isTrump(card, trumpInfo));
+  const hasPoints = combo.cards.some((card) => (card.points || 0) > 0);
+
+  if (isTrumpCombo && hasHighCards) return ComboStrength.Strong;
+  if (isTrumpCombo || hasHighCards) return ComboStrength.Medium;
+  if (hasPoints) return ComboStrength.Medium;
+
+  return ComboStrength.Weak;
 }
 
 /**

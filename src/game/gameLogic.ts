@@ -13,6 +13,26 @@ import {
   canOverrideDeclaration,
   detectPossibleDeclarations,
 } from "../types";
+import { findAllTractors } from "./tractorLogic";
+import {
+  getRankValue,
+  calculateCardStrategicValue,
+  isTrump,
+} from "./gameHelpers";
+
+// Re-export for backward compatibility
+export {
+  isTrump,
+  calculateCardStrategicValue,
+  getRankValue,
+} from "./gameHelpers";
+// Re-export tractor utilities for external use
+export {
+  getTractorRank,
+  getTractorContext,
+  isValidTractor,
+  getTractorTypeDescription,
+} from "./tractorLogic";
 // Re-exported utilities for backward compatibility
 export {
   createDeck,
@@ -284,21 +304,6 @@ export const getDealingPauseReason = (state: GameState): string | undefined => {
   return state.dealingState?.pauseReason;
 };
 
-// Check if a card is a trump
-export const isTrump = (card: Card, trumpInfo: TrumpInfo): boolean => {
-  // Jokers are always trump
-  if (card.joker) return true;
-
-  // Cards of trump rank are trump
-  if (card.rank === trumpInfo.trumpRank) return true;
-
-  // Cards of trump suit (if declared) are trump
-  if (trumpInfo.trumpSuit !== undefined && card.suit === trumpInfo.trumpSuit)
-    return true;
-
-  return false;
-};
-
 // Get trump hierarchy level (for comparing trumps)
 export const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
   // Not a trump
@@ -568,22 +573,7 @@ function calculateComboStrength(
 
 // Compare ranks
 const compareRanks = (rankA: Rank, rankB: Rank): number => {
-  const rankOrder = [
-    Rank.Two,
-    Rank.Three,
-    Rank.Four,
-    Rank.Five,
-    Rank.Six,
-    Rank.Seven,
-    Rank.Eight,
-    Rank.Nine,
-    Rank.Ten,
-    Rank.Jack,
-    Rank.Queen,
-    Rank.King,
-    Rank.Ace,
-  ];
-  return rankOrder.indexOf(rankA) - rankOrder.indexOf(rankB);
+  return getRankValue(rankA) - getRankValue(rankB);
 };
 
 // Identify valid combinations in a player's hand
@@ -631,14 +621,7 @@ export const identifyCombos = (
     }
   }
 
-  // Special tractor: SJ-SJ-BJ-BJ
-  if (smallJokers.length >= 2 && bigJokers.length >= 2) {
-    combos.push({
-      type: ComboType.Tractor,
-      cards: [...smallJokers.slice(0, 2), ...bigJokers.slice(0, 2)],
-      value: 10000, // Highest possible value
-    });
-  }
+  // NOTE: Special joker tractor SJ-SJ-BJ-BJ is now handled by findAllTractors
 
   // Look for regular pairs and tractors
   Object.values(cardsBySuit).forEach((suitCards) => {
@@ -661,10 +644,11 @@ export const identifyCombos = (
         }
       }
     });
-
-    // Look for tractors within this suit
-    findTractors(suitCards, trumpInfo, combos);
   });
+
+  // Look for all types of tractors with unified logic
+  const tractors = findAllTractors(cards, trumpInfo);
+  combos.push(...tractors);
 
   return combos;
 };
@@ -725,210 +709,9 @@ const groupCardsByRank = (cards: Card[]): Record<string, Card[]> => {
   return cardsByRank;
 };
 
-// Rank values for consistent card evaluation across the codebase
-const RANK_VALUES: Record<Rank, number> = {
-  [Rank.Two]: 2,
-  [Rank.Three]: 3,
-  [Rank.Four]: 4,
-  [Rank.Five]: 5,
-  [Rank.Six]: 6,
-  [Rank.Seven]: 7,
-  [Rank.Eight]: 8,
-  [Rank.Nine]: 9,
-  [Rank.Ten]: 10,
-  [Rank.Jack]: 11,
-  [Rank.Queen]: 12,
-  [Rank.King]: 13,
-  [Rank.Ace]: 14,
-};
-
-/**
- * Get trump hierarchy base value for trump suit cards
- * Used consistently across conservation and strategic modes
- */
-const getTrumpSuitBaseValue = (rank: Rank): number => {
-  switch (rank) {
-    case Rank.Ace:
-      return 60;
-    case Rank.King:
-      return 55;
-    case Rank.Queen:
-      return 50;
-    case Rank.Jack:
-      return 45;
-    case Rank.Ten:
-      return 40;
-    case Rank.Nine:
-      return 35;
-    case Rank.Eight:
-      return 30;
-    case Rank.Seven:
-      return 25;
-    case Rank.Six:
-      return 20;
-    case Rank.Five:
-      return 15;
-    case Rank.Four:
-      return 10;
-    case Rank.Three:
-      return 5;
-    default:
-      return 0;
-  }
-};
-
-/**
- * Calculate strategic value of a card considering multiple factors
- * Used for intelligent card selection, sorting, and AI decision-making
- *
- * @param card The card to evaluate
- * @param trumpInfo Current trump information
- * @param mode Evaluation mode: 'combo' (for combo comparison), 'conservation' (for AI conservation), 'strategic' (for mixed combinations)
- * @returns Numerical value representing card's strategic importance
- */
-export const calculateCardStrategicValue = (
-  card: Card,
-  trumpInfo: TrumpInfo,
-  mode: "combo" | "conservation" | "strategic" = "combo",
-): number => {
-  // Handle jokers first
-  if (card.joker) {
-    if (mode === "combo") return card.joker === JokerType.Big ? 1000 : 999;
-    if (mode === "conservation") return card.joker === JokerType.Big ? 100 : 90;
-    if (mode === "strategic") return card.joker === JokerType.Big ? 1200 : 1190; // Trump bonus + conservation
-  }
-
-  let value = 0;
-
-  // Mode-specific value calculation
-  if (mode === "strategic") {
-    // Strategic mode: Trump cards ALWAYS rank higher than non-trump cards for disposal
-
-    // Trump cards get minimum base value to ensure they rank above all non-trump cards
-    if (isTrump(card, trumpInfo)) {
-      value += 200; // Base trump value ensures trump > non-trump
-
-      // Use conservation hierarchy for trump cards to maintain proper trump priority
-      if (card.rank === trumpInfo.trumpRank) {
-        value += card.suit === trumpInfo.trumpSuit ? 80 : 70; // Trump rank priority
-      } else if (card.suit === trumpInfo.trumpSuit) {
-        // Trump suit cards get graduated bonuses based on conservation hierarchy
-        value += getTrumpSuitBaseValue(card.rank!);
-      }
-    } else {
-      // Non-trump cards: point cards and Aces are valuable but always < trump
-      if (card.points && card.points > 0) {
-        value += card.points * 10; // 5s = 50, 10s/Kings = 100
-      }
-
-      // Aces are valuable for non-trump cards
-      if (card.rank === Rank.Ace) {
-        value += 50;
-      }
-
-      // Base rank value for non-trump cards
-      value += RANK_VALUES[card.rank!] || 0;
-    }
-  } else if (mode === "conservation") {
-    // Conservation mode: Trump hierarchy for AI strategic decisions
-
-    // Trump rank cards
-    if (card.rank === trumpInfo.trumpRank) {
-      value = card.suit === trumpInfo.trumpSuit ? 80 : 70; // Trump rank in trump suit vs off-suits
-    }
-    // Trump suit cards (non-rank)
-    else if (card.suit === trumpInfo.trumpSuit) {
-      value = getTrumpSuitBaseValue(card.rank!);
-    }
-    // Non-trump cards
-    else {
-      value = RANK_VALUES[card.rank!] || 0;
-    }
-  } else {
-    // Combo mode: Basic trump hierarchy for combination comparison
-    value = RANK_VALUES[card.rank!] || 0;
-
-    // Trump cards have higher value
-    if (isTrump(card, trumpInfo)) {
-      value += 100;
-
-      // Trump suit is higher than trump rank of other suits
-      if (card.suit === trumpInfo.trumpSuit) {
-        value += 50;
-      }
-    }
-  }
-
-  return value;
-};
-
 // Legacy function for backward compatibility
 const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
   return calculateCardStrategicValue(card, trumpInfo, "combo");
-};
-
-// Find tractors (consecutive pairs) in a suit
-const findTractors = (
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-  combos: Combo[],
-): void => {
-  // Group cards by rank
-  const cardsByRank = groupCardsByRank(cards);
-
-  // Find all pairs
-  const pairs: { rank: Rank; cards: Card[] }[] = [];
-  Object.entries(cardsByRank).forEach(([rank, rankCards]) => {
-    if (rankCards.length >= 2) {
-      // Add all possible pairs of this rank
-      for (let i = 0; i < rankCards.length - 1; i += 2) {
-        pairs.push({
-          rank: rank as Rank,
-          cards: [rankCards[i], rankCards[i + 1]],
-        });
-      }
-    }
-  });
-
-  // Sort pairs by rank value
-  pairs.sort((a, b) => getRankValue(a.rank) - getRankValue(b.rank));
-
-  // Find consecutive pairs to form tractors of any length
-  for (let startIdx = 0; startIdx < pairs.length; startIdx++) {
-    // Build the longest possible tractor starting from this position
-    const tractorPairs = [pairs[startIdx]];
-    let currentIdx = startIdx;
-
-    // Keep adding consecutive pairs
-    while (currentIdx + 1 < pairs.length) {
-      const currentRankValue = getRankValue(pairs[currentIdx].rank);
-      const nextRankValue = getRankValue(pairs[currentIdx + 1].rank);
-
-      // Check if next pair is consecutive
-      if (nextRankValue - currentRankValue === 1) {
-        tractorPairs.push(pairs[currentIdx + 1]);
-        currentIdx++;
-      } else {
-        break; // No more consecutive pairs
-      }
-    }
-
-    // Only add tractor if it has at least 2 pairs (4 cards)
-    if (tractorPairs.length >= 2) {
-      const tractorCards = tractorPairs.flatMap((pair) => pair.cards);
-
-      // Calculate value based on the highest rank in the tractor
-      const value = Math.max(
-        ...tractorPairs.map((pair) => getCardValue(pair.cards[0], trumpInfo)),
-      );
-
-      combos.push({
-        type: ComboType.Tractor,
-        cards: tractorCards,
-        value: value,
-      });
-    }
-  }
 };
 
 /**
@@ -1426,26 +1209,6 @@ export const getComboType = (
 
   // Default to Single as fallback
   return ComboType.Single;
-};
-
-// Helper to get numerical rank value
-const getRankValue = (rank: Rank): number => {
-  const rankOrder = [
-    Rank.Two,
-    Rank.Three,
-    Rank.Four,
-    Rank.Five,
-    Rank.Six,
-    Rank.Seven,
-    Rank.Eight,
-    Rank.Nine,
-    Rank.Ten,
-    Rank.Jack,
-    Rank.Queen,
-    Rank.King,
-    Rank.Ace,
-  ];
-  return rankOrder.indexOf(rank);
 };
 
 // Compare two card combinations
