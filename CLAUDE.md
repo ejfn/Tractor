@@ -42,15 +42,35 @@ npm test              # Run tests
 │   ├── ai.ts              # AI strategy and intelligence types
 │   ├── combinations.ts    # Advanced combination types
 │   └── pointFocused.ts    # Point-focused strategy types
-├── ai/                    # AI modules and strategy logic
+├── ai/                    # AI modules and strategy logic (22 specialized modules)
 │   ├── aiLogic.ts         # Public AI API and game rule compliance
 │   ├── aiStrategy.ts      # Core AI decision making and strategy implementation
 │   ├── aiGameContext.ts   # Game context analysis
-│   ├── aiAdvancedCombinations.ts # Advanced combination analysis
 │   ├── aiCardMemory.ts    # Card memory system (Phase 3)
-│   ├── aiPointFocusedStrategy.ts # Point-focused strategy and early game leading (with integrated Ace priority)
-│   ├── aiKittySwapStrategy.ts # Advanced kitty swap strategy with suit elimination
-│   └── aiTrumpDeclarationStrategy.ts # Sophisticated trump declaration during dealing phase
+│   ├── analysis/          # Advanced analysis modules
+│   │   ├── advancedCombinations.ts # Complex combination analysis
+│   │   └── comboAnalysis.ts # Combo evaluation and ranking
+│   ├── following/         # Position-specific following strategies (10 modules)
+│   │   ├── followingStrategy.ts # Main following logic with 4-priority chain
+│   │   ├── fourthPlayerStrategy.ts # Perfect information 4th player logic
+│   │   ├── opponentBlocking.ts # Strategic opponent countering
+│   │   ├── pointContribution.ts # Memory-enhanced point card management
+│   │   ├── secondPlayerStrategy.ts # Early follower tactical decisions
+│   │   ├── strategicDisposal.ts # Hierarchical card disposal
+│   │   ├── teammateSupport.ts # Team coordination logic
+│   │   ├── thirdPlayerRiskAnalysis.ts # Risk assessment for 3rd player
+│   │   ├── thirdPlayerStrategy.ts # Mid-trick positioning
+│   │   └── trickContention.ts # Optimal winning combo selection
+│   ├── leading/           # Leading player strategies
+│   │   ├── firstPlayerLeadingAnalysis.ts # Strategic leading analysis
+│   │   ├── leadingStrategy.ts # Main leading decision logic
+│   │   └── pointFocusedStrategy.ts # Memory-enhanced point collection
+│   ├── kittySwap/         # Advanced kitty management
+│   │   └── kittySwapStrategy.ts # Trump-strength-aware suit elimination
+│   ├── trumpDeclaration/  # Trump declaration during dealing
+│   │   └── trumpDeclarationStrategy.ts # Sophisticated declaration timing
+│   └── utils/             # AI utility functions
+│       └── aiHelpers.ts   # Common AI helper functions
 ├── game/                  # Core game logic and management
 │   ├── gameLogic.ts       # Core mechanics, rules, and valid combination detection
 │   ├── gamePlayManager.ts # Card play validation and tricks
@@ -146,7 +166,7 @@ npm run qualitycheck  # Runs all checks
 - **NO LINT WARNINGS/ERRORS**: All ESLint warnings and errors must be resolved.
 - **TYPECHECK MUST PASS**: No TypeScript compilation errors allowed.
 - **Zero Tolerance Policy**: `npm run qualitycheck` must pass completely with no failures or warnings before any commit.
-- **Current Test Count**: 561 tests passing (update README.md badge when count changes)
+- **Current Test Count**: 618 tests passing (update README.md badge when count changes)
 
 ### Git Workflow
 
@@ -196,7 +216,15 @@ npx eas --version
    - `GameState` type defines complete game state
    - State transitions preserve winning player on trick completion
 
-2. **Progressive Dealing System**
+2. **Unified Trick Structure**
+   - **Single Source of Truth**: All tricks use unified `plays` array structure
+   - **Leader Access**: Leading cards accessed via `trick.plays[0].cards` consistently
+   - **Eliminated Dual Fields**: Removed confusing `leadingCombo` field that caused data inconsistencies
+   - **Real-time Winner Tracking**: `winningPlayerId` field tracks current trick winner throughout play
+   - **Consistent Data Flow**: All AI logic, game validation, and UI components use same trick format
+   - **Simplified Debugging**: Single trick structure eliminates confusion and logic errors
+
+3. **Progressive Dealing System**
    - Cards dealt one-by-one with real-time trump declaration opportunities
    - AI bots can declare trump during dealing with sophisticated strategy
    - Human players can pause dealing to declare trump or continue
@@ -209,7 +237,7 @@ npx eas --version
    - Points: 5s = 5pts, 10s and Kings = 10pts
    - Trump hierarchy: Big Joker > Small Joker > Trump rank in trump suit > Trump rank in other suits > Trump suit cards
 
-4. **Smart Card Selection**
+5. **Smart Card Selection**
    - **Auto-selection**: Tapping a card automatically selects related cards to form optimal combinations
    - **When leading**: Prioritizes tractors over pairs for better play
    - **When following**: Auto-selects matching combination type if possible
@@ -217,19 +245,19 @@ npx eas --version
    - **Fallback**: Single card selection when no combinations available
    - **Implementation**: `cardAutoSelection.ts` utility with combination detection logic
 
-5. **Combination Rules**
+6. **Combination Rules**
    - **Singles**: Any card
    - **Pairs**: Two identical cards (same rank AND suit)
    - **Tractors**: Consecutive pairs of same suit
    - Special: SJ-SJ-BJ-BJ forms highest tractor
 
-6. **Game Flow**
+7. **Game Flow**
    - Phases: dealing → (optional declaring) → playing → scoring → gameOver
    - Progressive dealing with real-time trump declaration opportunities
    - Teams alternate between defending and attacking
    - Trick winner leads next trick
 
-7. **Round Management & UI Timing**
+8. **Round Management & UI Timing**
    - **RoundResult System**: Pure computation approach separating round end calculations from state changes
    - **Modal Timing Consistency**: Round complete modal displays information from completed round, not next round
    - **Clean Architecture**: `endRound()` computes results, `prepareNextRound()` applies changes
@@ -458,8 +486,8 @@ Trump suit rotates to first position while maintaining alternating black-red pat
 
 - Different suits never form pairs/tractors
 - Trump combos beat non-trump combos of same type
-- Leading player's cards stored in `trick.leadingCombo`
-- Trick plays array contains (players.length - 1) plays
+- Leading player's cards accessed via `trick.plays[0].cards` (unified structure)
+- Trick plays array contains all player moves in chronological order
 - Real-time `winningPlayerId` field tracks current trick winner
 - Always block AI moves during trick result display
 
@@ -812,6 +840,8 @@ These are lessons learned and principles established through development experie
 - **Phase-specific AI handling**: Ensure AI detection hooks handle all relevant game phases (Playing AND KittySwap) to prevent bot players from getting stuck
 - **Pure computation**: Use pure functions for complex calculations to improve testability and UI timing consistency
 - **State timing**: When UI timing is critical, use refs to preserve state during modal displays and transitions
+- **Unified data structures**: Maintain single source of truth for game state - eliminate dual fields that can become inconsistent
+- **Modular AI organization**: Group AI logic by functional domain (following/, leading/, analysis/) rather than mixing strategies
 
 ### AI Development Patterns
 
@@ -820,6 +850,16 @@ These are lessons learned and principles established through development experie
 - **Strategic disposal**: Implement strategic disposal patterns that avoid wasting point cards when opponent is winning
 - **Trump conservation**: Use proper trump hierarchy with conservation values when AI cannot beat opponents
 - **Phase-specific timing**: Use appropriate delays for different game phases (1000ms for kitty swap vs 600ms for regular moves) to enhance user experience
+
+### Major Refactoring Lessons
+
+- **Trick Structure Unification**: Eliminated dual `leadingCombo`/`plays` fields that caused inconsistencies across 100+ files
+- **AI Modularization**: Split monolithic AI files into 22 specialized modules organized by functional domain (following/, leading/, analysis/, etc.)
+- **Systematic Approach**: Large refactoring requires systematic file-by-file updates with comprehensive testing at each step
+- **Test-Driven Validation**: Maintain 100% test coverage during refactoring to catch breaking changes immediately
+- **Critical Bug Discovery**: Major refactoring often reveals hidden bugs (4th player skip, mixed combinations, hierarchical point avoidance)
+- **Performance Optimization**: Consolidating related logic improves performance and eliminates redundant function calls
+- **Type Safety Benefits**: Unified structures improve TypeScript inference and eliminate type casting
 
 ### Project Management
 
