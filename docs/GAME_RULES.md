@@ -303,12 +303,20 @@ Complex priority system when tractor is led:
 4. **Fill with singles**: Complete response with singles from same suit
 5. **Other suits**: Only when led suit completely exhausted
 
-#### **Trump Tractor Special Rules**
-When trump tractor is led:
-- **Trump suit pairs** count as valid pairs
-- **Trump rank pairs** count as valid pairs
-- **Joker pairs** count as valid pairs
-- **Can mix different trump pair types** in response
+#### **🚨 CRITICAL: Trump Group Rules**
+**ALL TRUMP CARDS ARE TREATED AS THE SAME SUIT when following trump leads:**
+
+**Trump Group includes:**
+- **Jokers**: Big Joker, Small Joker
+- **Trump Rank Cards**: All cards of trump rank (e.g., all Kings when King is trump rank)
+- **Trump Suit Cards**: All cards of trump suit (e.g., all Spades when Spades is trump suit)
+
+**Key Rule**: When following trump tractors, ALL trump cards can form combinations together as if they were the same suit!
+
+**Examples:**
+- **Trump Rank K, Trump Suit ♠**: K♥-K♥ + 3♠-3♠ can form a 2-pair combination
+- **Must use ALL trump pairs before ANY trump singles** (joker pairs + rank pairs + suit pairs)
+- **Can mix**: BJ-BJ + 2♣-2♣ + 5♠-5♠ when following trump tractor
 
 #### **Examples**
 
