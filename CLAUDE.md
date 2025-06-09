@@ -860,6 +860,14 @@ These are lessons learned and principles established through development experie
 - **Performance Optimization**: Consolidating related logic improves performance and eliminates redundant function calls
 - **Type Safety Benefits**: Unified structures improve TypeScript inference and eliminate type casting
 
+### Game Rule Compliance Fixes
+
+- **Trump Group Unification (Issue #176)**: Fixed fundamental game logic where trump cards were incorrectly separated by original suit instead of being treated as unified trump group
+- **Root Cause**: `groupCardsBySuit` function was creating separate groups (`trump_Hearts`, `trump_Spades`) for trump rank cards, preventing cross-suit trump combinations
+- **Solution**: Modified card grouping to treat ALL trump cards (jokers + trump rank cards + trump suit cards) as single "trump" group for combination formation
+- **Impact**: AI now correctly forms trump rank pairs across suits (e.g., 2♠-2♥) and uses ALL trump pairs before ANY trump singles when following trump tractors
+- **Rule Enforced**: "ALL trump cards are treated as the same suit when following trump leads" - fundamental Tractor/Shengji rule now properly implemented
+
 ### Project Management
 
 - **Documentation sync**: Update documentation when adding new features or changing architecture

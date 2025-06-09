@@ -664,20 +664,17 @@ const groupCardsBySuit = (
     let suitKey = "joker";
 
     if (card.suit) {
-      // For trumps, preserve their suit for pair matching
-      // This ensures cards of different suits don't form pairs,
-      // even if they're both trumps
+      // 🚨 CRITICAL RULE: ALL TRUMP CARDS ARE TREATED AS SAME SUIT
+      // Trump group = Jokers + Trump Rank Cards + Trump Suit Cards
+      // Must play ALL trump cards when following trump lead
 
-      if (card.rank === trumpInfo.trumpRank) {
-        // For trump rank cards, use a compound key with both trump indicator and suit
-        // This allows us to identify them as trumps while maintaining suit separation
-        suitKey = `trump_${card.suit}`;
-      } else if (isTrump(card, trumpInfo)) {
-        // If card is trump suit but not trump rank, group it with trumps
-        // These are all the same suit, so we can group them together
-        suitKey = "trump_suit";
+      if (isTrump(card, trumpInfo)) {
+        // ALL trump cards (trump rank in any suit + trump suit cards) grouped together
+        // This ensures trump rank cards from different suits can form pairs
+        // as required by Tractor rules when following trump leads
+        suitKey = "trump";
       } else {
-        // Normal card
+        // Normal non-trump card
         suitKey = card.suit;
       }
     }
@@ -830,6 +827,8 @@ export const isValidPlay = (
   // 1. If leading with trumps, must play trumps if you have them
   if (isLeadingTrump) {
     if (trumpCards.length > 0) {
+      // 🚨 CRITICAL RULE: ALL TRUMP CARDS ARE TREATED AS SAME SUIT
+      // Trump group = Jokers + Trump Rank Cards + Trump Suit Cards
       // Must play ALL trump cards when following trump lead
 
       if (trumpCards.length >= leadingCombo.length) {
@@ -1109,12 +1108,11 @@ export const getComboType = (
         if (card.rank && card.suit) {
           let suitKey: string = card.suit;
 
-          if (card.rank === trumpInfo.trumpRank) {
-            // Trump rank cards get compound key with trump indicator and suit
-            suitKey = `trump_${card.suit}`;
-          } else if (isTrump(card, trumpInfo)) {
-            // Trump suit (non-trump rank) cards grouped separately
-            suitKey = "trump_suit";
+          // 🚨 CRITICAL RULE: ALL TRUMP CARDS ARE TREATED AS SAME SUIT
+          // Trump group = Jokers + Trump Rank Cards + Trump Suit Cards
+          if (isTrump(card, trumpInfo)) {
+            // ALL trump cards unified under "trump" category for combination detection
+            suitKey = "trump";
           }
 
           const key = `${card.rank}-${suitKey}`;
@@ -1618,21 +1616,59 @@ const generateMixedCombinations = (
         );
 
     if (requiredSuitCards.length >= leadingLength) {
-      // Sort by trump conservation hierarchy (weakest first)
-      const sortedByConservation = requiredSuitCards.sort((a, b) => {
-        const valueA = calculateCardStrategicValue(
-          a,
-          trumpInfo,
-          "conservation",
-        );
-        const valueB = calculateCardStrategicValue(
-          b,
-          trumpInfo,
-          "conservation",
-        );
-        return valueA - valueB; // Weakest first for disposal
-      });
-      return sortedByConservation.slice(0, leadingLength);
+      // 🚨 CRITICAL FIX: Preserve pairs when following trump tractors
+      // Must use ALL pairs before ANY singles when following trump leads
+
+      // First, identify all pairs in required suit cards
+      const pairsInRequiredSuit = identifyCombos(requiredSuitCards, trumpInfo)
+        .filter((combo) => combo.type === ComboType.Pair)
+        .sort((a, b) => {
+          // Sort pairs by conservation value of the pair (weakest pairs first)
+          const valueA = calculateCardStrategicValue(
+            a.cards[0],
+            trumpInfo,
+            "conservation",
+          );
+          const valueB = calculateCardStrategicValue(
+            b.cards[0],
+            trumpInfo,
+            "conservation",
+          );
+          return valueA - valueB;
+        });
+
+      // Use as many complete pairs as possible
+      const selectedCards: Card[] = [];
+      for (const pair of pairsInRequiredSuit) {
+        if (selectedCards.length + 2 <= leadingLength) {
+          selectedCards.push(...pair.cards);
+        }
+      }
+
+      // If we still need more cards, add singles (sorted by conservation)
+      if (selectedCards.length < leadingLength) {
+        const usedCardIds = new Set(selectedCards.map((c) => c.id));
+        const remainingCards = requiredSuitCards
+          .filter((card) => !usedCardIds.has(card.id))
+          .sort((a, b) => {
+            const valueA = calculateCardStrategicValue(
+              a,
+              trumpInfo,
+              "conservation",
+            );
+            const valueB = calculateCardStrategicValue(
+              b,
+              trumpInfo,
+              "conservation",
+            );
+            return valueA - valueB; // Weakest first
+          });
+
+        const needed = leadingLength - selectedCards.length;
+        selectedCards.push(...remainingCards.slice(0, needed));
+      }
+
+      return selectedCards.length === leadingLength ? selectedCards : null;
     }
 
     // Step 2: Partial suit following - use ALL required suit cards + others
