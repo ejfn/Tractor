@@ -17,8 +17,6 @@ describe('Attacking Leading Strategy Bug Test', () => {
 
     // Late game scenario with many opponent wins to trigger desperate mode
     gameState.tricks = Array(10).fill(null).map((_, i) => ({
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: [{ id: `dummy-${i}-lead`, rank: Rank.King, suit: Suit.Spades, points: 10 }],
       plays: [
         { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}-1`, rank: Rank.King, suit: Suit.Spades, points: 10 }] },
         { playerId: PlayerId.Bot1, cards: [{ id: `dummy-${i}-2`, rank: Rank.Three, suit: Suit.Spades, points: 0 }] },
@@ -96,9 +94,9 @@ describe('Attacking Leading Strategy Bug Test', () => {
     // 2. Attacking team losing badly  
     // 3. Memory strategy suggests trump exhaustion
     gameState.tricks = Array(12).fill(null).map((_, i) => ({
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: [{ id: `dummy-${i}-lead`, rank: Rank.Queen, suit: Suit.Spades, points: 0 }],
-      plays: [],
+      plays: [
+        { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}-lead`, rank: Rank.Queen, suit: Suit.Spades, points: 0 }] }
+      ],
       points: 15,
       winningPlayerId: PlayerId.Human, // Opponents winning everything
     }));

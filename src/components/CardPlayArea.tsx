@@ -51,14 +51,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       // Count total cards in this trick to track animations
       let totalCards = 0;
 
-      // If leading player has not already played, count their cards
-      const leadingPlayerHasPlayed = currentTrick.plays.some(
-        (play) => play.playerId === currentTrick.leadingPlayerId,
-      );
-
-      if (!leadingPlayerHasPlayed) {
-        totalCards += currentTrick.leadingCombo.length;
-      }
+      // All players including leader are now in plays array
+      // Leader is always at plays[0]
 
       // Count cards from all plays
       currentTrick.plays.forEach((play) => {
@@ -66,8 +60,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       });
 
       // Ensure we have the right player count
-      const playerCount =
-        currentTrick.plays.length + (leadingPlayerHasPlayed ? 0 : 1);
+      const playerCount = currentTrick.plays.length;
 
       // Ensure we have a backup "minimum" card count for safety
       const minExpectedCards = playerCount; // At least 1 card per player
@@ -116,12 +109,15 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   // Use a ref to track if we've called the callback for this trick
   const callbackCalledRef = React.useRef(false);
 
+  // Extract complex expression for dependency array
+  const leadingPlayerId = currentTrick?.plays?.[0]?.playerId;
+
   // Reset the ref when the trick changes
   useEffect(() => {
     if (currentTrick) {
       callbackCalledRef.current = false;
     }
-  }, [currentTrick, currentTrick?.leadingPlayerId]); // Only reset when a new trick starts
+  }, [currentTrick, leadingPlayerId]); // Only reset when a new trick starts
 
   // Check if all animations are complete
   useEffect(() => {
@@ -196,37 +192,13 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
 
   // Only process if we have a working trick
   if (workingTrick) {
-    // Check if the leading player has already played (to avoid duplication)
-    const leadingPlayerPlays = workingTrick.plays.filter(
-      (play) => play.playerId === workingTrick.leadingPlayerId,
-    );
-    const leadingPlayerHasPlayed = leadingPlayerPlays.length > 0;
+    // All players including leader are now in plays array
+    // Leader is always at plays[0]
 
-    // If the leading player has not already played, use leadingCombo
-    if (!leadingPlayerHasPlayed) {
-      const leadingPos = getPlayerPosition(workingTrick.leadingPlayerId);
-      playerSequenceMap[workingTrick.leadingPlayerId] = 0; // First player is sequence 0
-
-      workingTrick.leadingCombo.forEach((card, idx) => {
-        // Each card gets a unique global play order number
-        const cardWithSequence = {
-          ...card,
-          playSequence: 0, // First player's sequence is 0
-          cardIndex: idx, // Card index within the player's combo
-          globalPlayOrder: globalPlayOrder++, // Increment for each card played
-        };
-
-        if (leadingPos === "top") topCards.push(cardWithSequence);
-        if (leadingPos === "left") leftCards.push(cardWithSequence);
-        if (leadingPos === "right") rightCards.push(cardWithSequence);
-        if (leadingPos === "bottom") bottomCards.push(cardWithSequence);
-      });
-    }
-
-    // Add all plays with increasing sequence numbers
+    // Add all plays with sequence numbers starting from 0
     workingTrick.plays.forEach((play, playIndex) => {
       const pos = getPlayerPosition(play.playerId);
-      const sequence = playIndex + 1; // Sequence starts at 1 and increases for each play
+      const sequence = playIndex; // Sequence starts at 0 for leader and increases for each play
 
       // Record this player's sequence in the map
       playerSequenceMap[play.playerId] = sequence;

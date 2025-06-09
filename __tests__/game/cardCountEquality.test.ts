@@ -22,9 +22,9 @@ describe('Card Count Equality', () => {
       
       if (currentPlayer.isHuman) {
         // For human, just play first valid card(s)
-        if (currentState.currentTrick?.leadingCombo.length) {
+        if (currentState.currentTrick?.plays[0]?.cards.length) {
           // Following suit - play same number of cards
-          cardsToPlay = currentPlayer.hand.slice(0, currentState.currentTrick.leadingCombo.length);
+          cardsToPlay = currentPlayer.hand.slice(0, currentState.currentTrick.plays[0].cards.length);
         } else {
           // Leading - play single card
           cardsToPlay = [currentPlayer.hand[0]];

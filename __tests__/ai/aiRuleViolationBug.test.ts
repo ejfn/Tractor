@@ -30,9 +30,9 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     const gameState: GameState = createGameState({
       trumpInfo,
       currentTrick: {
-        leadingCombo,
-        leadingPlayerId: PlayerId.Human,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 10
       },
@@ -94,9 +94,9 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     const gameState: GameState = createGameState({
       trumpInfo,
       currentTrick: {
-        leadingCombo,
-        leadingPlayerId: PlayerId.Human,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 10
       },
@@ -136,9 +136,9 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     const gameState: GameState = createGameState({
       trumpInfo,
       currentTrick: {
-        leadingCombo,
-        leadingPlayerId: PlayerId.Human,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,  
         points: 10
       },
@@ -190,9 +190,9 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     const gameState: GameState = createGameState({
       trumpInfo,
       currentTrick: {
-        leadingCombo,
-        leadingPlayerId: PlayerId.Human,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 20
       },
@@ -245,9 +245,9 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     const gameState: GameState = createGameState({
       trumpInfo,
       currentTrick: {
-        leadingCombo,
-        leadingPlayerId: PlayerId.Human,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 20
       },

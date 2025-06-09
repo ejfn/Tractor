@@ -54,9 +54,9 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
 
       // Simulate mid-game scenario with some tricks played
       gameState.tricks = Array(5).fill(null).map((_, i) => ({
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Spades, points: 10 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Spades, points: 10 }] }
+        ],
         points: 10,
         winningPlayerId: PlayerId.Human,
       }));
@@ -92,9 +92,9 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
 
       // Setup trick with Human leading (teammate to Bot2)
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0,
       };
@@ -132,9 +132,9 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
 
       // Setup trick with Bot1 leading (opponent to Bot2)
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [{ id: 'lead-ten', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-ten', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }] }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 10,
       };

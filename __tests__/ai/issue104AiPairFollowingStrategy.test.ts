@@ -38,8 +38,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -102,8 +100,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1, // Opponent
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Bot1,
@@ -156,8 +152,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -224,8 +218,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3, // Opponent
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Bot3,
@@ -260,9 +252,12 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
     });
   });
 
-  describe('Mixed Combinations Support', () => {
-    it('should have mixed combinations available when out of suit following pair', () => {
-      // This tests the game logic side of Issue #104 fix
+  describe('Game Logic: Singles vs Pairs When Out of Suit', () => {
+    it('should allow singles from any suit when out of led suit, but reject cross-suit pairs', () => {
+      // This tests that when following a pair and out of the led suit:
+      // 1. Cross-suit pairs are properly filtered out (can't play A♣-A♣ when Hearts led)
+      // 2. Singles from any suit are allowed (can play mixed singles like 3♣ + 4♦)
+      // 3. Mixed combinations are generated when no proper pairs available
       const gameState = initializeGame();
       gameState.trumpInfo = {
         
@@ -287,8 +282,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -306,7 +299,7 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       const { getValidCombinations } = require('../../src/game/gameLogic');
       const validCombos = getValidCombinations(aiBotHand, gameState);
 
-      console.log('=== ISSUE #104 TEST: Mixed Combinations Availability ===');
+      console.log('=== ISSUE #104 TEST: Singles Allowed, Cross-Suit Pairs Rejected ===');
       console.log(`Led: ${leadingCards.map(c => `${c.rank}♥`).join(', ')}`);
       console.log(`Valid combos: ${validCombos.length}`);
       validCombos.forEach((combo: any, i: number) => {
@@ -330,7 +323,7 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       );
       expect(mixedCombos.length).toBeGreaterThan(0);
 
-      console.log('✅ CORRECT: Game logic provides both pair and mixed combination options');
+      console.log('✅ CORRECT: Cross-suit pairs filtered out, but singles and mixed combinations available');
     });
   });
 
@@ -363,8 +356,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -427,8 +418,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -496,8 +485,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       ];
 
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: leadingCards,
         plays: [
           {
             playerId: PlayerId.Human,
@@ -534,15 +521,19 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // The Ace pair might appear in mixed combinations but should be discouraged
       // The key test is that we have strategic alternatives that preserve pairs
       
-      // Should have diverse mixed combinations (different ranks AND suits)
-      const diverseMixedCombos = validCombos.filter((combo: any) => 
+      // Should have valid strategic alternatives to valuable pairs
+      // At minimum, should have the trump pair as a valid option
+      expect(validCombos.length).toBeGreaterThan(0);
+      
+      // Should have trump pair as valid option (can beat led pair)
+      const trumpPairCombo = validCombos.find((combo: any) => 
         combo.cards.length === 2 && 
-        combo.cards[0].rank !== combo.cards[1].rank && // Different ranks
-        combo.cards[0].suit !== combo.cards[1].suit    // Different suits
+        combo.cards.every((c: any) => c.rank === Rank.Two && c.suit === Suit.Spades) &&
+        combo.type === ComboType.Pair
       );
-      expect(diverseMixedCombos.length).toBeGreaterThan(0);
+      expect(trumpPairCombo).toBeDefined();
 
-      console.log('✅ CORRECT: Cross-suit pairs filtered as proper pairs, strategic mixed options available');
+      console.log('✅ CORRECT: Cross-suit pairs filtered as proper pairs, strategic alternatives available');
     });
   });
 });

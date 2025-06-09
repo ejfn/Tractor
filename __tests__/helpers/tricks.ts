@@ -13,14 +13,15 @@ import {
  */
 export const createTrick = (
   leadingPlayerId: PlayerId,
-  leadingCombo: Card[],
-  plays: Array<{ playerId: PlayerId; cards: Card[] }> = [],
+  leadingCards: Card[],
+  followingPlays: Array<{ playerId: PlayerId; cards: Card[] }> = [],
   points: number = 0,
   winningPlayerId?: PlayerId
 ): Trick => ({
-  leadingPlayerId,
-  leadingCombo: [...leadingCombo], // Deep copy
-  plays: plays.map(play => ({ ...play, cards: [...play.cards] })), // Deep copy
+  plays: [
+    { playerId: leadingPlayerId, cards: [...leadingCards] }, // Deep copy
+    ...followingPlays.map(play => ({ ...play, cards: [...play.cards] })) // Deep copy
+  ],
   points,
   winningPlayerId: winningPlayerId ?? leadingPlayerId // Default to leading player if not specified
 });

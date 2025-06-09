@@ -142,10 +142,10 @@ export const getFinalTrickMultiplier = (
   finalTrick: Trick,
   gameState: GameState,
 ): number => {
-  const leadingCombo = finalTrick.leadingCombo;
+  const leadingCards = finalTrick.plays[0]?.cards || [];
 
   // Analyze the actual combo structure to determine if it contains pairs or tractors
-  const combos = identifyCombos(leadingCombo, gameState.trumpInfo);
+  const combos = identifyCombos(leadingCards, gameState.trumpInfo);
 
   // Check if any combo in the leading play is a pair or tractor
   const hasPairsOrTractors = combos.some(

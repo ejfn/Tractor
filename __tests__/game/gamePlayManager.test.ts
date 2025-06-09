@@ -64,14 +64,10 @@ describe('gamePlayManager', () => {
       
       // Verify the state was updated correctly
       expect(result.newState.currentTrick).toBeTruthy();
-      expect(result.newState.currentTrick?.leadingPlayerId).toBe(PlayerId.Human);
-      expect(result.newState.currentTrick?.leadingCombo).toEqual(cardsToPlay);
-      
-      // UPDATED: First player's cards are stored in leadingCombo, not in plays array
-      expect(result.newState.currentTrick?.plays).toHaveLength(0);
-      // Leading player's cards are in leadingCombo, not plays array
-      // expect(result.newState.currentTrick?.plays[0].playerId).toBe('human');
-      // expect(result.newState.currentTrick?.plays[0].cards).toEqual(cardsToPlay);
+      // UPDATED: First player's cards are stored in plays[0], unified structure
+      expect(result.newState.currentTrick?.plays).toHaveLength(1);
+      expect(result.newState.currentTrick?.plays[0].playerId).toBe(PlayerId.Human);
+      expect(result.newState.currentTrick?.plays[0].cards).toEqual(cardsToPlay);
       
       expect(result.newState.currentTrick?.points).toBe(5); // 5 points from the card
       
@@ -92,8 +88,6 @@ describe('gamePlayManager', () => {
       
       // Setup a trick in progress with 3 players already having played
       mockState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3,
-        leadingCombo: [createCard(Suit.Clubs, Rank.Four)],
         plays: [
           {
             playerId: PlayerId.Bot3,
@@ -122,9 +116,12 @@ describe('gamePlayManager', () => {
       // Setup a trick in progress with 3 players having played
       // For a 4-player game, we need leader + 3 followers to complete a trick
       freshState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,  // Bot 1 led
-        leadingCombo: [createCard(Suit.Diamonds, Rank.Three)],
         plays: [
+          // Bot 1 led
+          {
+            playerId: PlayerId.Bot1,
+            cards: [createCard(Suit.Diamonds, Rank.Three)]
+          },
           // Human has played 
           {
             playerId: PlayerId.Human,
@@ -206,8 +203,6 @@ describe('gamePlayManager', () => {
       beforeEach(() => {
         // Setup a trick in progress
         mockState.currentTrick = {
-          leadingPlayerId: PlayerId.Bot3,
-          leadingCombo: [createCard(Suit.Clubs, Rank.Four)],
           plays: [
             {
               playerId: PlayerId.Bot3,
@@ -230,7 +225,7 @@ describe('gamePlayManager', () => {
         // Verify isValidPlay was called with the correct parameters
         expect(gameLogic.isValidPlay).toHaveBeenCalledWith(
           cardsToPlay,
-          mockState.currentTrick!.leadingCombo,
+          mockState.currentTrick!.plays[0].cards,
           mockState.players[0].hand,
           mockState.trumpInfo
         );
@@ -525,7 +520,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay for higher rank beats lower rank scenarios
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Higher ranks beat lower ranks: Ace > Ten > Seven > Five > Four
@@ -582,7 +577,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay to return canBeat: true for trump vs non-trump
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0]; // Updated to use unified structure
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Trump suit beats non-trump
@@ -632,7 +627,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay to return canBeat: true for Ten vs Five
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Ten beats Five
@@ -672,7 +667,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay: trump rank should NOT be beaten by trump suit
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Trump suit card (3♥) should NOT beat trump rank card (2♠)
@@ -713,7 +708,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay to return canBeat: true for Ace vs Seven
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Ace beats Seven
@@ -762,7 +757,7 @@ describe('gamePlayManager', () => {
         // Mock evaluateTrickPlay to return canBeat: true only for Ace vs Three
         (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
-          const leadingCard = trick?.leadingCombo?.[0];
+          const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
           
           // Only Ace beats Three

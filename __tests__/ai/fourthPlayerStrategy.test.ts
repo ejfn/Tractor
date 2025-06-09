@@ -50,9 +50,8 @@ describe('4th Player Strategy Tests', () => {
       };
       
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [leadingCard],
         plays: [
+          { playerId: PlayerId.Human, cards: [leadingCard] },
           { playerId: PlayerId.Bot1, cards: [bot1WinningCard] }, // Bot1 (Bot3's partner) wins
           { playerId: PlayerId.Bot2, cards: [bot2Card] }         // Bot2 plays lower card
         ],
@@ -161,9 +160,8 @@ describe('4th Player Strategy Tests', () => {
       
       // Set up trick with opponent (Bot 2) winning
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [leadingCard],
         plays: [
+          { playerId: PlayerId.Human, cards: [leadingCard] },
           { playerId: PlayerId.Bot1, cards: [bot1Card] },
           { playerId: PlayerId.Bot2, cards: [bot2WinningCard] }
         ],
@@ -265,15 +263,17 @@ describe('4th Player Strategy Tests', () => {
       
       // Set up trick with partner winning
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{
-          id: 'clubs-3-1',
-          suit: Suit.Clubs,
-          rank: Rank.Three,
-          joker: undefined,
-          points: 0
-        }],
         plays: [
+          { 
+            playerId: PlayerId.Human, 
+            cards: [{
+              id: 'clubs-3-1',
+              suit: Suit.Clubs,
+              rank: Rank.Three,
+              joker: undefined,
+              points: 0
+            }]
+          },
           { 
             playerId: PlayerId.Bot1, 
             cards: [{
@@ -358,11 +358,10 @@ describe('4th Player Strategy Tests', () => {
     });
 
     it('should correctly detect 4th player position when Bot3 is about to play', () => {
-      // Test when Bot3 is about to play as 4th player (leader + 2 followers played so far)
+      // Test when Bot3 is about to play as 4th player (3 players have played so far)
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Seven)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Seven)] },
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] }
         ],
@@ -370,13 +369,7 @@ describe('4th Player Strategy Tests', () => {
         points: 0
       };
 
-      // With 3 total players having played (leader + 2 followers), next player gets TrickPosition.Third
-      // But we want to test 4th player logic, so let's add one more play
-      gameState.currentTrick.plays.push(
-        { playerId: PlayerId.Bot3, cards: [createCard(Suit.Spades, Rank.Six)] }
-      );
-
-      // Now with 4 total players having played (leader + 3 followers), next player gets TrickPosition.Fourth
+      // With 3 total players having played, next player gets TrickPosition.Fourth
       const position = getTrickPosition(gameState, fourthPlayerId);
       expect(position).toBe(TrickPosition.Fourth);
     });
@@ -384,9 +377,8 @@ describe('4th Player Strategy Tests', () => {
     it('should prioritize guaranteed point card winners when teammate is winning', () => {
       // Set up trick with teammate (Bot1) winning
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Three)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Three)] },
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Ace)] }, // Partner wins strongly
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Four)] }
         ],
@@ -417,9 +409,8 @@ describe('4th Player Strategy Tests', () => {
     it('should contribute multiple point cards when teammate has very strong lead', () => {
       // Set up trick with teammate winning with trump
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Three)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Three)] },
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Two)] }, // Trump rank in trump suit
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Four)] }
         ],
@@ -444,9 +435,8 @@ describe('4th Player Strategy Tests', () => {
     it('should use hierarchical point avoidance when no safe cards available', () => {
       // Set up opponent winning scenario with NON-trump lead so player has choice
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Ace)], // Human leads non-trump Spades
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Ace)] }, // Human leads non-trump Spades
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Four)] },
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Five)] }
         ],
@@ -492,9 +482,8 @@ describe('4th Player Strategy Tests', () => {
     it('should make optimal disposal when no one is clearly winning', () => {
       // Set up neutral trick scenario
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Seven)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Seven)] },
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Six)] }
         ],
@@ -523,9 +512,8 @@ describe('4th Player Strategy Tests', () => {
     it('should take trick when guaranteed winner and trick has value', () => {
       // Set up valuable trick scenario
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.King)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.King)] },
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Ten)] },
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Five)] }
         ],
@@ -567,9 +555,8 @@ describe('4th Player Strategy Tests', () => {
       // Set up scenario where memory indicates guaranteed winners
       // Use a 0-point trick to trigger strategic disposal path
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Clubs, Rank.Seven)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Clubs, Rank.Seven)] },
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Clubs, Rank.Eight)] },
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Clubs, Rank.Nine)] }
         ],
@@ -581,9 +568,8 @@ describe('4th Player Strategy Tests', () => {
       // Set up trick history to establish memory context
       gameState.tricks = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [createCard(Suit.Clubs, Rank.Ace)],
           plays: [
+            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Clubs, Rank.Ace)] },
             { playerId: PlayerId.Bot2, cards: [createCard(Suit.Clubs, Rank.King)] },
             { playerId: PlayerId.Bot3, cards: [createCard(Suit.Clubs, Rank.Queen)] },
             { playerId: PlayerId.Human, cards: [createCard(Suit.Clubs, Rank.Jack)] }
@@ -627,9 +613,8 @@ describe('4th Player Strategy Tests', () => {
     it('should handle edge case with no valid combinations available', () => {
       // Set up minimal scenario
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Seven)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Seven)] },
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] }
         ],
@@ -654,9 +639,8 @@ describe('4th Player Strategy Tests', () => {
       gameState.tricks = []; // No trick history
       
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createCard(Suit.Spades, Rank.Seven)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Seven)] },
           { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
           { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] }
         ],

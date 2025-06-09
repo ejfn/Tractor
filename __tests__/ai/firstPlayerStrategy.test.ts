@@ -2,7 +2,6 @@ import { getAIMove } from '../../src/ai/aiLogic';
 import { createIsolatedGameState } from '../helpers/testIsolation';
 import { Card, Suit, Rank, PlayerId, TrumpInfo, JokerType } from '../../src/types';
 import { createGameContext } from "../../src/ai/aiGameContext";
-import { AIStrategyImplementation } from "../../src/ai/aiStrategy";
 import {
   TrickPosition,
   PointPressure,
@@ -134,9 +133,9 @@ describe('1st Player Strategy Tests', () => {
       
       // Mid-game scenario with some tricks played
       gameState.tricks = Array(6).fill(null).map((_, i) => ({
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Hearts, points: 10 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Hearts, points: 10 }] }
+        ],
         points: 10,
         winningPlayerId: PlayerId.Human,
       }));
@@ -173,9 +172,9 @@ describe('1st Player Strategy Tests', () => {
       
       // Mid-game with AI team winning some tricks (favorable position)
       gameState.tricks = Array(4).fill(null).map((_, i) => ({
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Spades, points: 10 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Spades, points: 10 }] }
+        ],
         points: 10,
         winningPlayerId: i % 2 === 0 ? PlayerId.Bot1 : PlayerId.Bot3, // AI team winning
       }));
@@ -211,9 +210,9 @@ describe('1st Player Strategy Tests', () => {
       
       // Endgame scenario
       gameState.tricks = Array(10).fill(null).map((_, i) => ({
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: `dummy-${i}`, rank: Rank.Seven, suit: Suit.Spades, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}`, rank: Rank.Seven, suit: Suit.Spades, points: 0 }] }
+        ],
         points: 5,
         winningPlayerId: PlayerId.Human,
       }));
@@ -249,9 +248,9 @@ describe('1st Player Strategy Tests', () => {
       
       // Late game scenario
       gameState.tricks = Array(8).fill(null).map((_, i) => ({
-        leadingPlayerId: PlayerId.Bot2,
-        leadingCombo: [{ id: `dummy-${i}`, rank: Rank.Eight, suit: Suit.Clubs, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot2, cards: [{ id: `dummy-${i}`, rank: Rank.Eight, suit: Suit.Clubs, points: 0 }] }
+        ],
         points: 0,
         winningPlayerId: PlayerId.Bot2,
       }));
@@ -327,8 +326,6 @@ describe('1st Player Strategy Tests', () => {
       // Simulate scenario where many trumps have been played
       gameState.tricks = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [{ id: 'trump-1', joker: JokerType.Small, points: 0 }],
           plays: [
             { playerId: PlayerId.Bot1, cards: [{ id: 'trump-1', joker: JokerType.Small, points: 0 }] },
             { playerId: PlayerId.Human, cards: [{ id: 'trump-2', joker: JokerType.Big, points: 0 }] },
@@ -405,8 +402,6 @@ describe('1st Player Strategy Tests', () => {
       // Setup scenario with previous trick information
       gameState.tricks = [
         {
-          leadingPlayerId: PlayerId.Bot1,
-          leadingCombo: [{ id: 'probe-1', rank: Rank.Queen, suit: Suit.Spades, points: 0 }],
           plays: [
             { playerId: PlayerId.Bot1, cards: [{ id: 'probe-1', rank: Rank.Queen, suit: Suit.Spades, points: 0 }] },
             { playerId: PlayerId.Human, cards: [{ id: 'response-1', rank: Rank.Three, suit: Suit.Spades, points: 0 }] },

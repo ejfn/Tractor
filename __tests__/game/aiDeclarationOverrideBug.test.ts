@@ -1,6 +1,6 @@
 import { initializeGame } from '../../src/game/gameLogic';
 import { makeTrumpDeclaration } from '../../src/game/trumpDeclarationManager';
-import { getAITrumpDeclarationDecision } from '../../src/ai/aiTrumpDeclarationStrategy';
+import { getAITrumpDeclarationDecision } from '../../src/ai/trumpDeclaration/trumpDeclarationStrategy';
 import { DeclarationType, PlayerId, Rank, Suit } from '../../src/types';
 import { createCard } from '../helpers/cards';
 

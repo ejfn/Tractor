@@ -137,8 +137,8 @@ export function useGameState() {
       const isLeading =
         !gameState.currentTrick || gameState.currentTrick.plays.length === 0;
 
-      // Get leading combo if following
-      const leadingCombo = gameState.currentTrick?.leadingCombo;
+      // Get leading cards if following
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
 
       // Use smart auto-selection logic
       const newSelection = getAutoSelectedCards(
@@ -146,7 +146,7 @@ export function useGameState() {
         currentPlayer.hand,
         selectedCards,
         isLeading,
-        leadingCombo,
+        leadingCards,
         gameState.trumpInfo,
       );
 
@@ -240,7 +240,6 @@ export function useGameState() {
             ...result.completedTrick,
             // Make sure we deep copy all data to prevent reference issues
             plays: [...result.completedTrick.plays],
-            leadingCombo: [...result.completedTrick.leadingCombo],
           },
           timestamp: Date.now(),
         };

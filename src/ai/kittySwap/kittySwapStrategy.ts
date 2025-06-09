@@ -5,8 +5,8 @@ import {
   TrumpInfo,
   GamePhase,
   ComboStrength,
-} from "../types";
-import { isTrump, calculateCardStrategicValue } from "../game/gameLogic";
+} from "../../types";
+import { isTrump, calculateCardStrategicValue } from "../../game/gameLogic";
 
 /**
  * Advanced AI Kitty Swap Strategy - Sophisticated approach with suit elimination and strategic analysis

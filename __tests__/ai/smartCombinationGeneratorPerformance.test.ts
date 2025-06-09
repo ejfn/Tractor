@@ -49,9 +49,9 @@ describe('Smart Combination Generator Performance Tests', () => {
       ...initializeGame(),
       trumpInfo,
       currentTrick: {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       }
@@ -136,9 +136,9 @@ describe('Smart Combination Generator Performance Tests', () => {
       ...initializeGame(),
       trumpInfo,
       currentTrick: {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       }
@@ -192,9 +192,9 @@ describe('Smart Combination Generator Performance Tests', () => {
       ...initializeGame(),
       trumpInfo,
       currentTrick: {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo,
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCombo }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       }

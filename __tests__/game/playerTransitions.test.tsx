@@ -145,9 +145,11 @@ describe('Player Transitions', () => {
     
     // Setup a trick in progress
     mockState.currentTrick = {
-      leadingPlayerId: PlayerId.Bot1,
-      leadingCombo: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)],
       plays: [
+        {
+          playerId: PlayerId.Bot1,
+          cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)]
+        },
         {
           playerId: PlayerId.Human,
           cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
@@ -227,9 +229,11 @@ describe('Player Transitions', () => {
     
     // Set up current trick
     mockState.currentTrick = {
-      leadingPlayerId: PlayerId.Bot2,
-      leadingCombo: [createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)],
       plays: [
+        {
+          playerId: PlayerId.Bot2,
+          cards: [createMockCard('hearts_k_1', Suit.Hearts, Rank.King, 10)]
+        },
         {
           playerId: PlayerId.Human,
           cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]

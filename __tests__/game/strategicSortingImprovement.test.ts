@@ -1,6 +1,6 @@
-import { getValidCombinations, initializeGame, calculateCardStrategicValue } from '../../src/game/gameLogic';
-import { PlayerId, Rank, Suit, GamePhase, JokerType } from '../../src/types';
+import { calculateCardStrategicValue, getValidCombinations, initializeGame } from '../../src/game/gameLogic';
 import type { Card } from '../../src/types';
+import { GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
 
 describe('Strategic Sorting Improvement Test', () => {
   it('should preserve point cards and trump cards in mixed combinations', () => {
@@ -31,8 +31,6 @@ describe('Strategic Sorting Improvement Test', () => {
     ];
 
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: leadingCards,
       plays: [{ playerId: PlayerId.Human, cards: leadingCards }],
       points: 0,
       winningPlayerId: PlayerId.Human,
@@ -111,8 +109,6 @@ describe('Strategic Sorting Improvement Test', () => {
     ];
 
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: leadingCards,
       plays: [{ playerId: PlayerId.Human, cards: leadingCards }],
       points: 0,
       winningPlayerId: PlayerId.Human,
@@ -159,8 +155,6 @@ describe('Strategic Sorting Improvement Test', () => {
   it('should have consistent strategic value calculation across modes', () => {
     // Test our shared strategic value function
     const trumpInfo = {
-      
-      
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
     };

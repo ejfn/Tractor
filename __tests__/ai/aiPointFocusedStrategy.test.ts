@@ -2,7 +2,7 @@ import {
   createPointFocusedContext,
   createTrumpConservationStrategy,
   selectEarlyGameLeadingPlay,
-} from '../../src/ai/aiPointFocusedStrategy';
+} from '../../src/ai/leading/pointFocusedStrategy';
 import {
   Card,
   Suit,
@@ -125,9 +125,9 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const gameState = createTestGameState({
         tricks: [
           {
-            leadingPlayerId: PlayerId.Bot1,
-            leadingCombo: [createTestCard(Suit.Hearts, Rank.Five, 5)],
-            plays: [],
+            plays: [
+              { playerId: PlayerId.Bot1, cards: [createTestCard(Suit.Hearts, Rank.Five, 5)] }
+            ],
             winningPlayerId: PlayerId.Bot1,
             points: 15, // Opponent got points
           },
@@ -145,16 +145,16 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const gameState = createTestGameState({
         tricks: [
           {
-            leadingPlayerId: PlayerId.Human,
-            leadingCombo: [createTestCard(Suit.Hearts, Rank.King, 10)],
-            plays: [],
+            plays: [
+              { playerId: PlayerId.Human, cards: [createTestCard(Suit.Hearts, Rank.King, 10)] }
+            ],
             winningPlayerId: PlayerId.Human,
             points: 25, // Team A got good points
           },
           {
-            leadingPlayerId: PlayerId.Bot2,
-            leadingCombo: [createTestCard(Suit.Spades, Rank.Ten, 10)],
-            plays: [],
+            plays: [
+              { playerId: PlayerId.Bot2, cards: [createTestCard(Suit.Spades, Rank.Ten, 10)] }
+            ],
             winningPlayerId: PlayerId.Bot2,
             points: 30, // Team A got more points
           },

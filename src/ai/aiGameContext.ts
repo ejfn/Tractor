@@ -82,7 +82,7 @@ export function analyzeTrickWinner(
   }
 
   const currentWinner =
-    currentTrick.winningPlayerId || currentTrick.leadingPlayerId;
+    currentTrick.winningPlayerId || currentTrick.plays[0]?.playerId;
   const currentPlayer = gameState.players.find((p) => p.id === playerId);
   if (!currentPlayer) {
     throw new Error(`Player ${playerId} not found`);
@@ -165,12 +165,12 @@ function canPlayerBeatCurrentWinner(
     (play: any) => play.playerId === winningPlayerId,
   );
   const currentWinnerCards =
-    winningPlay?.cards || currentTrick.leadingCombo || [];
+    winningPlay?.cards || currentTrick.plays[0]?.cards || [];
 
   if (currentWinnerCards.length === 0) return false;
 
   // Get the suit to follow
-  const leadingSuit = currentTrick.leadingCombo?.[0]?.suit;
+  const leadingSuit = currentTrick.plays[0]?.cards[0]?.suit;
   if (!leadingSuit) return false;
 
   // Find cards that can follow the leading suit
@@ -266,8 +266,8 @@ function determineIfShouldPlayConservatively(
 
     // Special case: Last player (4th position) should maximize point contribution
     const currentTrick = gameState.currentTrick;
-    if (currentTrick && currentTrick.plays.length === 2) {
-      // This is the 4th player (last to play)
+    if (currentTrick && currentTrick.plays.length === 3) {
+      // This is the 4th player (last to play) - plays[0]=leader, plays[1]=2nd, plays[2]=3rd, current=4th
       // Focus on optimal point contribution rather than conservation
       return false;
     }
@@ -361,28 +361,44 @@ export function getTrickPosition(
 ): TrickPosition {
   const { currentTrick } = gameState;
 
-  if (!currentTrick || currentTrick.plays.length === 0) {
+  if (!currentTrick) {
     // Player is leading
     return TrickPosition.First;
   }
 
-  // Calculate current player's position
-  // Leader is position 1, so next player is position 2, etc.
-  // When plays.length === 1, current player should be position 2 (Second)
-  const currentPlayerPosition = currentTrick.plays.length + 1;
+  // Check if this player has already played in the trick
+  const playerPlayIndex = currentTrick.plays.findIndex(
+    (play) => play.playerId === playerId,
+  );
 
-  // Determine position based on current player position
-  switch (currentPlayerPosition) {
+  if (playerPlayIndex !== -1) {
+    // Player has already played, return their actual position
+    switch (playerPlayIndex) {
+      case 0:
+        return TrickPosition.First; // Leader
+      case 1:
+        return TrickPosition.Second;
+      case 2:
+        return TrickPosition.Third;
+      case 3:
+        return TrickPosition.Fourth;
+      default:
+        return TrickPosition.First; // Fallback
+    }
+  }
+
+  // Player hasn't played yet, determine their upcoming position
+  switch (currentTrick.plays.length) {
+    case 0:
+      return TrickPosition.First; // First player (leader)
     case 1:
-      return TrickPosition.First; // Should not happen since we check for no plays above
+      return TrickPosition.Second; // Second player (first follower)
     case 2:
-      return TrickPosition.Second;
+      return TrickPosition.Third; // Third player (second follower)
     case 3:
-      return TrickPosition.Third;
-    case 4:
-      return TrickPosition.Fourth;
+      return TrickPosition.Fourth; // Fourth player (third follower)
     default:
-      return TrickPosition.First;
+      return TrickPosition.First; // Fallback
   }
 }
 
@@ -610,9 +626,10 @@ export function isTrickWorthFighting(
     0,
   );
 
-  // Add points from leading combo
+  // Add points from leading combo (plays[0])
   const leadingPoints =
-    currentTrick.leadingCombo?.reduce((sum, card) => sum + card.points, 0) || 0;
+    currentTrick.plays[0]?.cards?.reduce((sum, card) => sum + card.points, 0) ||
+    0;
 
   const totalTrickPoints = trickPoints + leadingPoints;
 

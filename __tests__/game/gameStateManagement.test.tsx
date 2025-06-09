@@ -97,9 +97,11 @@ describe('Game State Management', () => {
     // Setup mock game state
     const mockState = createMockGameState();
     mockState.currentTrick = {
-      leadingPlayerId: PlayerId.Human,
-      leadingCombo: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)],
       plays: [
+        {
+          playerId: PlayerId.Human,
+          cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
+        },
         {
           playerId: PlayerId.Bot1,
           cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)]

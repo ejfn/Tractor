@@ -407,9 +407,9 @@ export function evaluateTrickPlay(
   playerHand: Card[],
 ): TrickPlayResult {
   // Extract trick context
-  const leadingCombo = currentTrick.leadingCombo;
-  const leadingSuit = leadingCombo[0]?.suit;
-  const leadingComboType = getComboType(leadingCombo);
+  const leadingCards = currentTrick.plays[0]?.cards || [];
+  const leadingSuit = leadingCards[0]?.suit;
+  const leadingComboType = getComboType(leadingCards);
   const proposedComboType = getComboType(proposedPlay);
 
   // Get current winning combo
@@ -471,14 +471,14 @@ export function evaluateTrickPlay(
  */
 function getCurrentWinningCombo(trick: Trick): Card[] {
   if (!trick.winningPlayerId) {
-    return trick.leadingCombo; // Leader is winning by default
+    return trick.plays[0]?.cards || []; // Leader is winning by default
   }
 
   // Find the winning play
   const winningPlay = trick.plays.find(
     (play) => play.playerId === trick.winningPlayerId,
   );
-  return winningPlay ? winningPlay.cards : trick.leadingCombo;
+  return winningPlay ? winningPlay.cards : trick.plays[0]?.cards || [];
 }
 
 // Note: Using existing getComboType function defined later in file
@@ -1605,12 +1605,7 @@ export const compareCardCombos = (
 export const calculateTrickPoints = (trick: Trick): number => {
   let points = 0;
 
-  // Add points from leading combo
-  trick.leadingCombo.forEach((card) => {
-    points += card.points;
-  });
-
-  // Add points from other plays
+  // Add points from all plays (including leader at plays[0])
   trick.plays.forEach((play) => {
     play.cards.forEach((card) => {
       points += card.points;
@@ -1643,19 +1638,19 @@ export const getValidCombinations = (
   const { currentTrick, trumpInfo } = gameState;
 
   // If no current trick, player is leading - all combinations are valid
-  if (!currentTrick || !currentTrick.leadingCombo) {
+  if (!currentTrick || !currentTrick.plays[0]?.cards) {
     return identifyCombos(playerHand, trumpInfo);
   }
 
   // Get all possible combinations from player's hand
   const allCombos = identifyCombos(playerHand, trumpInfo);
-  const leadingCombo = currentTrick.leadingCombo;
-  const leadingLength = leadingCombo.length;
+  const leadingCards = currentTrick.plays[0].cards;
+  const leadingLength = leadingCards.length;
 
   // ISSUE #104 PROPER FIX: Context-aware combo filtering
-  const leadingSuit = getLeadingSuit(leadingCombo);
-  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
-  const leadingComboType = getComboType(leadingCombo);
+  const leadingSuit = getLeadingSuit(leadingCards);
+  const isLeadingTrump = leadingCards.some((card) => isTrump(card, trumpInfo));
+  const leadingComboType = getComboType(leadingCards);
 
   // Check if player has cards of the led suit/trump
   const playerHasMatchingCards = isLeadingTrump
@@ -1670,26 +1665,28 @@ export const getValidCombinations = (
       return false;
     }
 
-    // CRITICAL: When out of suit, reject same combo types from other NON-TRUMP suits
+    // CRITICAL: When out of suit, reject certain combo types from other NON-TRUMP suits
     if (!playerHasMatchingCards && combo.type === leadingComboType) {
       // Player is out of suit/trump and this is a "proper" combo of the same type
       // BUT: Allow trump combos even when out of led suit (trump beats non-trump)
       const comboIsTrump = combo.cards.some((card) => isTrump(card, trumpInfo));
       if (!comboIsTrump) {
-        // This is a non-trump combo of the same type - force mixed combinations instead
-        return false;
+        // FIXED: Only reject non-trump PAIRS and TRACTORS when out of suit
+        // Singles should always be allowed when out of suit (basic Tractor rule)
+        if (combo.type !== ComboType.Single) {
+          return false;
+        }
       }
     }
 
-    return isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo);
+    return isValidPlay(combo.cards, leadingCards, playerHand, trumpInfo);
   });
 
-  // Always generate mixed combinations as additional strategic options
-  const mixedCombos = generateMixedCombinations(
-    playerHand,
-    leadingCombo,
-    trumpInfo,
-  );
+  // Generate mixed combinations as additional strategic options ONLY if needed
+  const mixedCombos =
+    validCombos.length > 0
+      ? []
+      : generateMixedCombinations(playerHand, leadingCards, trumpInfo);
 
   // Combine proper combos with mixed combos for full strategic options
   const allValidCombos = [...validCombos, ...mixedCombos];
@@ -1715,13 +1712,13 @@ export const getValidCombinations = (
  */
 const generateMixedCombinations = (
   playerHand: Card[],
-  leadingCombo: Card[],
+  leadingCards: Card[],
   trumpInfo: TrumpInfo,
 ): Combo[] => {
-  const leadingLength = leadingCombo.length;
+  const leadingLength = leadingCards.length;
   const validMixedCombos: Combo[] = [];
-  const leadingSuit = getLeadingSuit(leadingCombo);
-  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+  const leadingSuit = getLeadingSuit(leadingCards);
+  const isLeadingTrump = leadingCards.some((card) => isTrump(card, trumpInfo));
 
   // Smart Combination Generator - eliminates exponential complexity
   // Uses hierarchical filtering and pattern-based generation
@@ -1907,7 +1904,7 @@ const generateMixedCombinations = (
   // Try optimal construction first - with validation retry
   const optimalCombo = constructOptimalCombination();
   if (optimalCombo) {
-    if (isValidPlay(optimalCombo, leadingCombo, playerHand, trumpInfo)) {
+    if (isValidPlay(optimalCombo, leadingCards, playerHand, trumpInfo)) {
       validMixedCombos.push({
         type: ComboType.Single,
         cards: optimalCombo,
@@ -1960,7 +1957,7 @@ const generateMixedCombinations = (
 
       if (
         simpleCombo.length === leadingLength &&
-        isValidPlay(simpleCombo, leadingCombo, playerHand, trumpInfo)
+        isValidPlay(simpleCombo, leadingCards, playerHand, trumpInfo)
       ) {
         validMixedCombos.push({
           type: ComboType.Single,
@@ -1980,7 +1977,7 @@ const generateMixedCombinations = (
 
   // Sort combinations by strategic value (weakest combinations first for better disposal)
   const sortedCombinations = allCombinations
-    .filter((cards) => isValidPlay(cards, leadingCombo, playerHand, trumpInfo))
+    .filter((cards) => isValidPlay(cards, leadingCards, playerHand, trumpInfo))
     .sort((a, b) => {
       const valueA = a.reduce(
         (sum, card) =>
@@ -2017,10 +2014,22 @@ const generateMixedCombinations = (
 
   // CRITICAL SAFETY: Ensure we always return at least one valid combination
   if (validMixedCombos.length === 0) {
+    console.warn(
+      "No valid mixed combinations found, entering fallback logic:",
+      {
+        playerHandSize: playerHand.length,
+        leadingCards: leadingCards.map((c) => c.joker || `${c.rank}${c.suit}`),
+        leadingSuit,
+        isLeadingTrump,
+        spadesInHand: playerHand
+          .filter((c) => c.suit === "Spades")
+          .map((c) => `${c.rank}${c.suit}`),
+      },
+    );
     // Guaranteed fallback: Find any valid combination through systematic search
     const guaranteedCombo = findGuaranteedValidCombination(
       playerHand,
-      leadingCombo,
+      leadingCards,
       trumpInfo,
       leadingLength,
     );
@@ -2038,10 +2047,14 @@ const generateMixedCombinations = (
         "CRITICAL: Emergency fallback in generateMixedCombinations",
         {
           playerHand: playerHand.map((c) => c.joker || `${c.rank}${c.suit}`),
-          leadingCombo: leadingCombo.map(
+          leadingCards: leadingCards.map(
             (c) => c.joker || `${c.rank}${c.suit}`,
           ),
           trumpInfo,
+          leadingSuit,
+          isLeadingTrump,
+          leadingLength,
+          guaranteedComboLength: guaranteedCombo.length,
         },
       );
 

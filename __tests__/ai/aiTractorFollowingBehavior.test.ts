@@ -51,9 +51,9 @@ describe('AI Tractor Following Behavior', () => {
     ];
     
     gameState.currentTrick = {
-      leadingCombo: leadingTractor,
-      plays: [],
-      leadingPlayerId: PlayerId.Human,
+      plays: [
+        { playerId: PlayerId.Human, cards: leadingTractor }
+      ],
       winningPlayerId: PlayerId.Human,
       points: 10
     };
@@ -131,9 +131,9 @@ describe('AI Tractor Following Behavior', () => {
     ];
     
     gameState.currentTrick = {
-      leadingCombo: leadingTractor,
-      plays: [],
-      leadingPlayerId: PlayerId.Human,
+      plays: [
+        { playerId: PlayerId.Human, cards: leadingTractor }
+      ],
       winningPlayerId: PlayerId.Human,
       points: 10
     };
@@ -190,9 +190,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };
@@ -239,9 +239,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };
@@ -291,9 +291,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingTrumpTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingTrumpTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };
@@ -340,9 +340,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingTrumpTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingTrumpTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };
@@ -393,9 +393,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };
@@ -448,9 +448,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };
@@ -493,9 +493,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingTrumpTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingTrumpTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };
@@ -556,9 +556,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingTrumpTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingTrumpTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };
@@ -621,9 +621,9 @@ describe('AI Tractor Following Behavior', () => {
       ];
       
       gameState.currentTrick = {
-        leadingCombo: leadingHighTrumpTractor,
-        plays: [],
-        leadingPlayerId: PlayerId.Human,
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingHighTrumpTractor }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0
       };

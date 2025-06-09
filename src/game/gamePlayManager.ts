@@ -37,12 +37,12 @@ export function processPlay(
   //    (but only in testing or after the UI has shown the result)
   const isTrickComplete =
     newState.currentTrick &&
-    newState.currentTrick.plays.length === newState.players.length - 1;
+    newState.currentTrick.plays.length === newState.players.length;
 
   // Check if current player is the winner of the last completed trick
   const currentWinner =
     newState.currentTrick?.winningPlayerId ||
-    newState.currentTrick?.leadingPlayerId;
+    newState.currentTrick?.plays[0]?.playerId;
   const isWinner =
     currentWinner &&
     newState.players[newState.currentPlayerIndex]?.id === currentWinner;
@@ -54,11 +54,14 @@ export function processPlay(
       (player) => player.hand.length === comboLength,
     );
 
-    // For the first player, create new trick and don't add to plays array
+    // Create new trick with leader as plays[0]
     newState.currentTrick = {
-      leadingPlayerId: currentPlayer.id,
-      leadingCombo: [...cards],
-      plays: [],
+      plays: [
+        {
+          playerId: currentPlayer.id,
+          cards: [...cards],
+        },
+      ],
       winningPlayerId: currentPlayer.id, // Initially, the leading player is winning
       points: 0,
       isFinalTrick: willBeFinalTrick, // Track if this is the final trick
@@ -67,16 +70,17 @@ export function processPlay(
     // First player is leading the trick
   } else if (newState.currentTrick) {
     // Trick exists - add to plays array
-    // Make sure we never add the leading player to the plays array
-    // This prevents the duplicate cards issue
-    if (currentPlayer.id === newState.currentTrick.leadingPlayerId) {
-      // This is the leading player playing again - this should never happen in a normal game
-      // Log an error but continue processing
+    // Check if this is a duplicate play (should never happen)
+    const existingPlay = newState.currentTrick.plays.find(
+      (play) => play.playerId === currentPlayer.id,
+    );
+    if (existingPlay) {
+      // This player is playing again - this should never happen in a normal game
       console.error(
-        `Warning: Leading player ${currentPlayer.id} is playing again in the same trick`,
+        `Warning: Player ${currentPlayer.id} is playing again in the same trick`,
       );
     } else {
-      // Add non-leading plays to the plays array
+      // Add play to the plays array
       newState.currentTrick.plays.push({
         playerId: currentPlayer.id,
         cards: [...cards],
@@ -96,7 +100,7 @@ export function processPlay(
           cards,
           newState.currentTrick,
           newState.trumpInfo,
-          [...currentPlayerHand, ...cards], // Include played cards for validation
+          currentPlayerHand, // Player's current hand (cards not yet removed)
         );
 
         if (trickResult.canBeat) {
@@ -124,20 +128,20 @@ export function processPlay(
 
   // Check for final trick using the tracked property
   const willBeCompletedTrick = newState.currentTrick
-    ? newState.currentTrick.plays.length === newState.players.length - 1
+    ? newState.currentTrick.plays.length === newState.players.length
     : false;
   const isThisFinalTrick =
     willBeCompletedTrick &&
     newState.currentTrick &&
     (newState.currentTrick as any).isFinalTrick;
 
-  // Check if this completes a trick - should be plays.length = players.length-1
-  // Since the leading player's cards are in leadingCombo, not in the plays array
+  // Check if this completes a trick - should be plays.length = players.length
+  // Since all players including leader are now in the plays array
   if (willBeCompletedTrick && newState.currentTrick) {
     // winningPlayerId is already being tracked throughout the trick, so we can use it directly
     const winningPlayerId =
       newState.currentTrick.winningPlayerId ||
-      newState.currentTrick.leadingPlayerId;
+      newState.currentTrick.plays[0]?.playerId;
 
     // Add points to the winning team
     const trickWinningPlayer = newState.players.find(
@@ -215,13 +219,13 @@ export function processPlay(
   // Return appropriate result based on whether trick was completed
   if (
     newState.currentTrick &&
-    newState.currentTrick.plays.length === newState.players.length - 1
+    newState.currentTrick.plays.length === newState.players.length
   ) {
     // Trick was completed - return the previously saved result
     const completedTrick = newState.tricks[newState.tricks.length - 1];
     const winningPlayerId =
       newState.currentTrick.winningPlayerId ||
-      newState.currentTrick.leadingPlayerId;
+      newState.currentTrick.plays[0]?.playerId;
 
     return {
       newState,
@@ -276,7 +280,7 @@ export function getAIMoveWithErrorHandling(state: GameState): {
 
       // Emergency fallback: play cards to match the combo length
       if (currentPlayer.hand.length > 0) {
-        const comboLength = state.currentTrick?.leadingCombo?.length || 1;
+        const comboLength = state.currentTrick?.plays[0]?.cards?.length || 1;
         const cardsToPlay = currentPlayer.hand.slice(
           0,
           Math.min(comboLength, currentPlayer.hand.length),
@@ -326,7 +330,7 @@ export function validatePlay(state: GameState, cards: Card[]): boolean {
     // Player is following - must match the leading combo
     return isValidPlay(
       cards,
-      state.currentTrick.leadingCombo,
+      state.currentTrick.plays[0]?.cards || [],
       currentPlayer.hand,
       state.trumpInfo,
     );

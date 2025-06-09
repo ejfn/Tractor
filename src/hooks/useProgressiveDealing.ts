@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { GameState, GamePhase, PlayerId } from "../types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { dealNextCard, isDealingComplete } from "../game/gameLogic";
 import {
-  makeTrumpDeclaration,
-  getPlayerDeclarationOptions,
   finalizeTrumpDeclaration,
+  getPlayerDeclarationOptions,
+  makeTrumpDeclaration,
 } from "../game/trumpDeclarationManager";
-import { getAITrumpDeclarationDecision } from "../ai/aiTrumpDeclarationStrategy";
+import { GamePhase, GameState, PlayerId } from "../types";
+import { getAITrumpDeclaration } from "../ai/aiLogic";
 
 interface UseProgressiveDealingProps {
   gameState: GameState | null;
@@ -133,7 +133,7 @@ export function useProgressiveDealing({
 
         if (aiOptions.length > 0) {
           // Get AI's decision on whether to declare
-          const decision = getAITrumpDeclarationDecision(
+          const decision = getAITrumpDeclaration(
             currentState,
             aiPlayer.id as PlayerId,
           );

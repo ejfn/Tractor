@@ -1,8 +1,48 @@
 import { getValidCombinations } from "../game/gameLogic";
 import { Card, GameState, GamePhase, PlayerId } from "../types";
-import { createAIStrategy } from "./aiStrategy";
-import { selectAIKittySwapCards } from "./aiKittySwapStrategy";
+import { makeAIPlay } from "./aiStrategy";
+import { selectAIKittySwapCards } from "./kittySwap/kittySwapStrategy";
+import {
+  getAITrumpDeclarationDecision,
+  AIDeclarationDecision,
+} from "./trumpDeclaration/trumpDeclarationStrategy";
 import { sortCards } from "../utils/cardSorting";
+
+/**
+ * AI Logic - Unified Entry Point for All AI Operations
+ *
+ * This module serves as the single entry point for all AI functionality in the Tractor game.
+ * It provides three main functions that handle all AI decision-making:
+ *
+ * 1. getAIMove() - Card play decisions during game play
+ * 2. getAIKittySwap() - Kitty management decisions
+ * 3. getAITrumpDeclaration() - Trump declaration decisions during dealing
+ *
+ * All external code should interact with AI through these functions only.
+ */
+
+// Export the AIDeclarationDecision type for external use
+export type { AIDeclarationDecision };
+
+/**
+ * Main AI trump declaration logic - decides whether to declare trump during dealing
+ *
+ * Strategic Approach:
+ * - Hand quality analysis with suit length prioritization
+ * - Timing optimization based on dealing progress
+ * - Override strategy for competitive declarations
+ * - Team coordination and positioning consideration
+ *
+ * @param gameState Current game state during dealing phase
+ * @param playerId ID of the AI player making the declaration decision
+ * @returns Declaration decision with confidence and reasoning
+ */
+export const getAITrumpDeclaration = (
+  gameState: GameState,
+  playerId: PlayerId,
+): AIDeclarationDecision => {
+  return getAITrumpDeclarationDecision(gameState, playerId);
+};
 
 /**
  * Main AI kitty swap logic - selects 8 cards to put back into kitty
@@ -73,16 +113,17 @@ export const getAIKittySwap = (
 };
 
 /**
- * Main AI player logic - selects cards to play for a given AI player
+ * Main AI card play logic - selects cards to play during game play
  *
- * This function handles:
- * - Card combination generation from player's hand
- * - Valid play filtering based on current trick rules
- * - Strategy delegation to sophisticated 4-phase AI system
+ * Strategic Approach:
+ * - 4-phase AI intelligence with memory and historical analysis
+ * - 4-priority decision chain: Team coordination → Opponent blocking → Trick contention → Strategic disposal
+ * - Position-based strategy optimization (leading vs following positions 2,3,4)
+ * - Advanced combination analysis and trump conservation
  *
- * @param gameState Current game state
+ * @param gameState Current game state during play phase
  * @param playerId ID of the AI player making the move
- * @returns Array of cards to play
+ * @returns Array of cards to play, sorted for consistent presentation
  */
 export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
   const player = gameState.players.find((p) => p.id === playerId);
@@ -110,7 +151,7 @@ export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
         "Game bug detected: AI cannot make a valid move. Please restart and report this issue.",
       debugInfo: `Player ${playerId} has ${player.hand.length} cards but no valid combinations found`,
       playerHand: player.hand.map((c) => `${c.rank}${c.suit}`),
-      leadingCombo: gameState.currentTrick?.leadingCombo?.map(
+      leadingCombo: gameState.currentTrick?.plays[0]?.cards?.map(
         (c) => `${c.rank}${c.suit}`,
       ),
       trumpInfo: gameState.trumpInfo,
@@ -130,8 +171,7 @@ export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
   }
 
   // Delegate all strategic decisions to the AI strategy layer
-  const strategy = createAIStrategy();
-  const selectedCards = strategy.makePlay(gameState, player, validCombos);
+  const selectedCards = makeAIPlay(gameState, player, validCombos);
 
   // Sort selected cards for consistent visual presentation
   return sortCards(selectedCards, gameState.trumpInfo);

@@ -42,8 +42,6 @@ describe('Bot 3 Trump Following Decision Tree Bug', () => {
 
     // Set up the trick state: Bot 1 leads Q♦, Bot 2 plays 2♥ (now winning)
     gameState.currentTrick = {
-      leadingPlayerId: PlayerId.Bot1,
-      leadingCombo: [{ id: 'q-diamonds', rank: Rank.Queen, suit: Suit.Diamonds, points: 0 }],
       plays: [
         {
           playerId: PlayerId.Bot1,

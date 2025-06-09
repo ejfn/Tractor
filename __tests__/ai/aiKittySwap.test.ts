@@ -1,6 +1,6 @@
 import {
   selectAIKittySwapCards,
-} from "../../src/ai/aiKittySwapStrategy";
+} from "../../src/ai/kittySwap/kittySwapStrategy";
 import { getAIKittySwap } from "../../src/ai/aiLogic";
 import { Card, GameState, PlayerId, GamePhase, Suit, Rank } from "../../src/types";
 import { isTrump } from "../../src/game/gameLogic";

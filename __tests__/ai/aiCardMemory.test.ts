@@ -49,14 +49,15 @@ describe('AI Card Memory System - Phase 3', () => {
   const createTestTrick = (
     leadingPlayerId: PlayerId,
     leadingCards: Card[],
-    plays: Array<{ playerId: PlayerId; cards: Card[] }>,
+    followingPlays: Array<{ playerId: PlayerId; cards: Card[] }> = [],
   ): Trick => ({
-    leadingPlayerId,
-    leadingCombo: leadingCards,
-    plays,
+    plays: [
+      { playerId: leadingPlayerId, cards: leadingCards },
+      ...followingPlays,
+    ],
     winningPlayerId: leadingPlayerId,
     points: leadingCards.reduce((sum, card) => sum + card.points, 0) +
-           plays.reduce((sum, play) => sum + play.cards.reduce((cardSum, card) => cardSum + card.points, 0), 0),
+           followingPlays.reduce((sum, play) => sum + play.cards.reduce((cardSum, card) => cardSum + card.points, 0), 0),
   });
 
   describe('createCardMemory', () => {
@@ -120,9 +121,8 @@ describe('AI Card Memory System - Phase 3', () => {
 
     it('should handle current trick in progress', () => {
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [createTestCard(Rank.Queen, Suit.Spades)],
         plays: [
+          { playerId: PlayerId.Human, cards: [createTestCard(Rank.Queen, Suit.Spades)] },
           { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Jack, Suit.Spades)] },
         ],
         winningPlayerId: PlayerId.Human, // Human's Queen beats Bot1's Jack

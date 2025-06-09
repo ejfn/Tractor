@@ -63,7 +63,7 @@ export function useAITurns(
     // Check if current trick is complete but not cleared
     const currentTrickComplete =
       gameState.currentTrick &&
-      gameState.currentTrick.plays.length === gameState.players.length - 1;
+      gameState.currentTrick.plays.length === gameState.players.length;
 
     // Block if we're showing trick result, have a completed trick waiting, trick is complete, or round is complete
     // This helps prevent "thinking of next trick round is showing before trick result disappears"
@@ -94,7 +94,7 @@ export function useAITurns(
     // Also check if currentTrick is complete (but not cleared yet)
     const trickComplete =
       gameState.currentTrick &&
-      gameState.currentTrick.plays.length === gameState.players.length - 1;
+      gameState.currentTrick.plays.length === gameState.players.length;
 
     const botReady =
       (gameState.gamePhase === GamePhase.Playing ||
@@ -222,7 +222,7 @@ export function useAITurns(
     // Check if the current trick is complete but not cleared
     const currentTrickComplete =
       gameState.currentTrick &&
-      gameState.currentTrick.plays.length === gameState.players.length - 1;
+      gameState.currentTrick.plays.length === gameState.players.length;
 
     // Block processing if showing trick result, round complete, trick is complete, or not in playing/kittyswap phase
     if (

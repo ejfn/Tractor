@@ -17,32 +17,139 @@ The Tractor AI system implements **sophisticated strategic decision-making** wit
 
 ---
 
+## Modular AI Architecture
+
+The AI system has been completely **modularized into 22 specialized components** organized by functional domain for optimal maintainability and strategic coherence.
+
+### **Architectural Organization**
+
+```
+src/ai/
+├── Core System (4 modules)
+│   ├── aiLogic.ts              # Public API and game rule compliance
+│   ├── aiStrategy.ts           # Core decision-making coordination  
+│   ├── aiGameContext.ts        # Game state analysis and context creation
+│   └── aiCardMemory.ts         # Phase 3 memory system and tracking
+├── Following Strategies (10 modules)
+│   ├── followingStrategy.ts    # Main 4-priority decision chain
+│   ├── fourthPlayerStrategy.ts # Perfect information 4th player logic
+│   ├── opponentBlocking.ts     # Strategic opponent countering
+│   ├── pointContribution.ts    # Memory-enhanced point management
+│   ├── secondPlayerStrategy.ts # Early follower tactical decisions
+│   ├── strategicDisposal.ts    # Hierarchical card disposal
+│   ├── teammateSupport.ts      # Team coordination and support
+│   ├── thirdPlayerRiskAnalysis.ts # Risk assessment for 3rd player
+│   ├── thirdPlayerStrategy.ts  # Mid-trick positioning strategy
+│   └── trickContention.ts      # Optimal winning combo selection
+├── Leading Strategies (3 modules)
+│   ├── leadingStrategy.ts      # Main leading decision logic
+│   ├── firstPlayerLeadingAnalysis.ts # Strategic leading analysis
+│   └── pointFocusedStrategy.ts # Memory-enhanced point collection
+├── Analysis Modules (2 modules)
+│   ├── advancedCombinations.ts # Complex combination analysis
+│   └── comboAnalysis.ts        # Combo evaluation and ranking
+├── Specialized Systems (3 modules)
+│   ├── kittySwap/
+│   │   └── kittySwapStrategy.ts # Trump-aware suit elimination
+│   ├── trumpDeclaration/
+│   │   └── trumpDeclarationStrategy.ts # Sophisticated declaration timing
+│   └── utils/
+│       └── aiHelpers.ts        # Common AI utility functions
+```
+
+### **Modular Benefits**
+
+**Functional Coherence:**
+- **Following Module**: 10 specialized modules for position-based following strategies
+- **Leading Module**: 3 modules for strategic leading decisions and analysis
+- **Analysis Module**: 2 modules for combination evaluation and advanced analysis
+- **Core System**: 4 modules for fundamental AI operations and memory
+
+**Development Advantages:**
+- **Single Responsibility**: Each module has one clear purpose and domain
+- **Easy Testing**: Modular structure enables targeted unit testing
+- **Clean Dependencies**: Clear import relationships between modules
+- **Logical Organization**: Related functionality grouped together
+- **Reduced Complexity**: Large files split into manageable, focused modules
+
+**Strategic Architecture:**
+- **Domain Separation**: Following strategies separate from leading strategies
+- **Position-Specific Logic**: Specialized modules for different trick positions
+- **Memory Integration**: Memory system cleanly integrated across all modules
+- **Trump Management**: Hierarchical trump logic consistently applied
+
+### **Key Architectural Principles**
+
+**4-Priority Decision Chain**: All following modules use unified priority structure:
+1. **Team Coordination** → `teammateSupport.ts`
+2. **Opponent Blocking** → `opponentBlocking.ts`  
+3. **Trick Contention** → `trickContention.ts`
+4. **Strategic Disposal** → `strategicDisposal.ts`
+
+**Position-Based Intelligence**: Specialized logic for each trick position:
+- **2nd Player** → `secondPlayerStrategy.ts` (early influence)
+- **3rd Player** → `thirdPlayerStrategy.ts` + `thirdPlayerRiskAnalysis.ts` (tactical decisions)
+- **4th Player** → `fourthPlayerStrategy.ts` (perfect information)
+
+**Memory-Enhanced Decisions**: Phase 3 memory system integrated throughout:
+- **Point Management** → `pointContribution.ts` (guaranteed winners)
+- **Leading Strategy** → `pointFocusedStrategy.ts` (memory-enhanced leading)
+- **Disposal Logic** → `strategicDisposal.ts` (conservation hierarchy)
+
+---
+
 ## Decision Framework
 
-The AI follows a **5-level decision framework** that ensures consistent strategic behavior across all game situations:
+The AI follows a **modular decision framework** with specialized modules handling each strategic component:
 
 ```mermaid
 flowchart TD
-    Start([🎯 AI Following Turn]) --> Historical{📈 Historical Analysis<br/>Available?}
-    Historical -->|Yes ≥3 tricks| Phase4[🧠 PRIORITY 0: Historical Insights<br/>Counter-strategies & Predictions]
-    Historical -->|No| P1{🤝 PRIORITY 1<br/>Teammate Winning?}
+    Start([🎯 AI Turn Begins]) --> Logic[🎮 aiLogic.ts<br/>Public API & Rule Compliance]
+    Logic --> Strategy[🧠 aiStrategy.ts<br/>Core Decision Coordination]
+    Strategy --> Context[📊 aiGameContext.ts<br/>Game State Analysis]
+    Context --> Memory[💾 aiCardMemory.ts<br/>Phase 3 Memory System]
     
-    Phase4 --> P1
-    P1 -->|Yes| Memory{🧠 Have Guaranteed<br/>Point Cards?}
-    Memory -->|Yes| SmartContribute[🎁 SMART CONTRIBUTE<br/>Memory-Enhanced Point Cards]
-    Memory -->|No| Contribute[🎁 TRADITIONAL CONTRIBUTE<br/>10s > Kings > 5s]
+    Memory --> Leading{🎲 Leading or<br/>Following?}
     
+    Leading -->|Leading| LeadingMods[🎯 Leading Modules]
+    Leading -->|Following| FollowingMods[🤝 Following Modules]
+    
+    LeadingMods --> LeadStrategy[leadingStrategy.ts<br/>Main Leading Logic]
+    LeadingMods --> FirstAnalysis[firstPlayerLeadingAnalysis.ts<br/>Strategic Analysis]
+    LeadingMods --> PointFocus[pointFocusedStrategy.ts<br/>Memory-Enhanced Collection]
+    
+    FollowingMods --> FollowStrategy[followingStrategy.ts<br/>4-Priority Decision Chain]
+    FollowStrategy --> P1{🤝 PRIORITY 1<br/>Teammate Winning?}
+    
+    P1 -->|Yes| TeamSupport[teammateSupport.ts<br/>🎁 Team Coordination]
     P1 -->|No| P2{⚔️ PRIORITY 2<br/>Opponent Winning?}
-    P2 -->|Yes| Block[🛡️ BLOCK/BEAT<br/>Strategic Opposition]
+    P2 -->|Yes| OpponentBlock[opponentBlocking.ts<br/>🛡️ Strategic Opposition]
     P2 -->|No| P3{💰 PRIORITY 3<br/>Can Win ≥5 Points?}
-    P3 -->|Yes| Contest[⚡ CONTEST<br/>Fight for Trick]
-    P3 -->|No| P4[🗑️ PRIORITY 4<br/>Strategic Disposal]
+    P3 -->|Yes| TrickContest[trickContention.ts<br/>⚡ Contest Trick]
+    P3 -->|No| StrategicDisp[strategicDisposal.ts<br/>🗑️ Hierarchical Disposal]
     
-    SmartContribute --> Execute[✅ Execute Move]
-    Contribute --> Execute
-    Block --> Execute
-    Contest --> Execute
-    P4 --> Execute
+    FollowingMods --> PositionMods[🎯 Position-Specific Modules]
+    PositionMods --> Second[secondPlayerStrategy.ts<br/>Early Influence]
+    PositionMods --> Third[thirdPlayerStrategy.ts<br/>Tactical Decisions]
+    PositionMods --> ThirdRisk[thirdPlayerRiskAnalysis.ts<br/>Risk Assessment]
+    PositionMods --> Fourth[fourthPlayerStrategy.ts<br/>Perfect Information]
+    
+    Memory --> Analysis[🔍 Analysis Modules]
+    Analysis --> AdvCombo[advancedCombinations.ts<br/>Complex Analysis]
+    Analysis --> ComboAnalysis[comboAnalysis.ts<br/>Combo Evaluation]
+    
+    Strategy --> Specialized[⚙️ Specialized Systems]
+    Specialized --> KittySwap[kittySwapStrategy.ts<br/>Trump-Aware Elimination]
+    Specialized --> TrumpDecl[trumpDeclarationStrategy.ts<br/>Declaration Timing]
+    Specialized --> AIHelpers[aiHelpers.ts<br/>Utility Functions]
+    
+    TeamSupport --> Execute[✅ Execute Move]
+    OpponentBlock --> Execute
+    TrickContest --> Execute
+    StrategicDisp --> Execute
+    LeadStrategy --> Execute
+    FirstAnalysis --> Execute
+    PointFocus --> Execute
 ```
 
 ### **Priority Levels**
@@ -234,6 +341,7 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 - **Standard Decisions** - ~300ms for most scenarios
 - **Full Analysis** - <400ms with complete intelligence active
 - **Minimal Overhead** - Historical analysis adds only ~30ms when sufficient data available
+- **Modular Efficiency** - 22 specialized modules eliminate redundant calculations and improve decision speed
 
 ### **Strategic Effectiveness**
 
@@ -248,6 +356,7 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 - **Tactical Variety** - Unpredictable decisions through adaptive intelligence
 - **Fair Competition** - Challenging but beatable opponent
 - **Educational Value** - Demonstrates advanced Tractor/Shengji strategy
+- **Maintainable Codebase** - Modular architecture enables rapid feature development and bug fixes
 
 ---
 
@@ -270,7 +379,7 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 
 ## Summary
 
-The Tractor AI system delivers **sophisticated strategic gameplay** through comprehensive intelligence and adaptive learning:
+The Tractor AI system delivers **sophisticated strategic gameplay** through comprehensive intelligence, modular architecture, and adaptive learning:
 
 ### **Core Capabilities**
 
@@ -280,19 +389,25 @@ The Tractor AI system delivers **sophisticated strategic gameplay** through comp
 - **Position-Based Intelligence** - Specialized logic for all 4 trick positions
 - **Historical Adaptation** - Opponent modeling and behavioral counter-strategies
 
+**Modular Architecture:**
+- **22 Specialized Modules** - Organized by functional domain for optimal maintainability
+- **4-Priority Decision Chain** - Conflict-free strategic decision making across all following modules
+- **Domain Separation** - Clean separation between following, leading, analysis, and specialized systems
+- **Single Responsibility** - Each module has one clear purpose and strategic focus
+
 **Decision Framework:**
-- **5-Level Priority System** - Conflict-free strategic decision making
-- **Team Coordination** - Optimal cooperation with human teammates
+- **5-Level Priority System** - Unified approach across all AI decision points
+- **Team Coordination** - Optimal cooperation with human teammates via specialized modules
 - **Advanced Trump Management** - Hierarchical conservation and strategic deployment
-- **Strategic Disposal** - Multi-level card safety prioritization
+- **Strategic Disposal** - Multi-level card safety prioritization with conservation values
 
-**Performance:**
+**Performance & Maintainability:**
 - **Fast Response Times** - <400ms decision time with full analysis
-- **Adaptive Learning** - Improves strategy based on opponent patterns
-- **Fair Challenge** - Challenging yet beatable opponent
-- **Educational Value** - Demonstrates advanced Tractor/Shengji strategy
+- **Modular Efficiency** - Specialized modules eliminate redundant calculations
+- **Easy Testing** - Modular structure enables comprehensive unit testing
+- **Rapid Development** - Clean architecture supports quick feature additions and bug fixes
 
-The AI system successfully balances **strategic sophistication** with **enjoyable gameplay**, creating a challenging opponent that provides engaging long-term play through intelligent decision-making and continuous adaptation.
+The AI system successfully balances **strategic sophistication** with **enjoyable gameplay** and **maintainable code architecture**, creating a challenging opponent that provides engaging long-term play through intelligent decision-making, continuous adaptation, and a robust foundation for future enhancements.
 
 ---
 

@@ -2,7 +2,6 @@ import { getAIMove } from '../../src/ai/aiLogic';
 import { createIsolatedGameState } from '../helpers/testIsolation';
 import { Card, Suit, Rank, PlayerId, TrumpInfo, JokerType } from '../../src/types';
 import { createGameContext } from "../../src/ai/aiGameContext";
-import { AIStrategyImplementation } from "../../src/ai/aiStrategy";
 import {
   TrickPosition,
   PointPressure,
@@ -33,9 +32,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup trick with Human leading strong card (teammate to Bot2)
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Spades, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] }
+        ], // No followers have played yet - Bot2 is about to be first follower
         winningPlayerId: PlayerId.Human,
         points: 0,
       };
@@ -73,9 +72,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup trick with Human leading moderate card
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: 'lead-nine', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: 'lead-nine', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0,
       };
@@ -112,9 +111,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup trick with Bot2 teammate (Human) leading weak card
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: 'lead-four', rank: Rank.Four, suit: Suit.Hearts, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: 'lead-four', rank: Rank.Four, suit: Suit.Hearts, points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0,
       };
@@ -154,9 +153,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup trick with Bot1 (opponent to Bot2) leading strong card
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -193,9 +192,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup trick with Bot3 (opponent) leading moderate card
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3,
-        leadingCombo: [{ id: 'lead-jack', rank: Rank.Jack, suit: Suit.Spades, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot3, cards: [{ id: 'lead-jack', rank: Rank.Jack, suit: Suit.Spades, points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Bot3,
         points: 0,
       };
@@ -231,9 +230,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup trick with Bot1 (opponent) leading non-trump
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [{ id: 'lead-king', rank: Rank.King, suit: Suit.Spades, points: 10 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-king', rank: Rank.King, suit: Suit.Spades, points: 10 }] }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 10,
       };
@@ -273,9 +272,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup trick showing opponent's hand strength through their lead
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3,
-        leadingCombo: [{ id: 'lead-high', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot3, cards: [{ id: 'lead-high', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Bot3,
         points: 0,
       };
@@ -312,9 +311,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup where second player can influence what 3rd/4th players face
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: 'lead-ten', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Human, cards: [{ id: 'lead-ten', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }] }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 10,
       };
@@ -352,9 +351,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // Setup where good positioning can help later players
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [{ id: 'lead-queen', rank: Rank.Queen, suit: Suit.Clubs, points: 0 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-queen', rank: Rank.Queen, suit: Suit.Clubs, points: 0 }] }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
@@ -389,12 +388,15 @@ describe('2nd Player Strategy Tests', () => {
       
       // Scenario where blocking opponent could be valuable
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot3,
-        leadingCombo: [
-          { id: 'lead-pair-1', rank: Rank.King, suit: Suit.Spades, points: 10 },
-          { id: 'lead-pair-2', rank: Rank.King, suit: Suit.Spades, points: 10 }
+        plays: [
+          { 
+            playerId: PlayerId.Bot3, 
+            cards: [
+              { id: 'lead-pair-1', rank: Rank.King, suit: Suit.Spades, points: 10 },
+              { id: 'lead-pair-2', rank: Rank.King, suit: Suit.Spades, points: 10 }
+            ]
+          }
         ],
-        plays: [],
         winningPlayerId: PlayerId.Bot3,
         points: 20,
       };
@@ -434,9 +436,9 @@ describe('2nd Player Strategy Tests', () => {
       
       // High-value trick scenario
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Bot1,
-        leadingCombo: [{ id: 'lead-king', rank: Rank.King, suit: Suit.Hearts, points: 10 }],
-        plays: [],
+        plays: [
+          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-king', rank: Rank.King, suit: Suit.Hearts, points: 10 }] }
+        ],
         winningPlayerId: PlayerId.Bot1,
         points: 10,
       };
@@ -471,10 +473,15 @@ describe('2nd Player Strategy Tests', () => {
       
       // Scenario where coordination with later positions matters
       gameState.currentTrick = {
-        leadingPlayerId: PlayerId.Human,
-        leadingCombo: [{ id: 'lead-pair-1', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 },
-                      { id: 'lead-pair-2', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 }],
-        plays: [],
+        plays: [
+          { 
+            playerId: PlayerId.Human, 
+            cards: [
+              { id: 'lead-pair-1', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 },
+              { id: 'lead-pair-2', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 }
+            ]
+          }
+        ],
         winningPlayerId: PlayerId.Human,
         points: 0,
       };

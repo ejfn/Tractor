@@ -59,9 +59,9 @@ describe('Pair Follow With Singles', () => {
     ];
     
     mockState.currentTrick = {
-      leadingCombo: leadingPair,
-      plays: [],
-      leadingPlayerId: PlayerId.Bot1,
+      plays: [
+        { playerId: PlayerId.Bot1, cards: leadingPair }
+      ],
       winningPlayerId: PlayerId.Bot1,
       points: 20  // Two kings = 20 points
     };
@@ -96,9 +96,9 @@ describe('Pair Follow With Singles', () => {
     ];
     
     mockState.currentTrick = {
-      leadingCombo: leadingPair,
-      plays: [],
-      leadingPlayerId: PlayerId.Bot1,
+      plays: [
+        { playerId: PlayerId.Bot1, cards: leadingPair }
+      ],
       winningPlayerId: PlayerId.Bot1,
       points: 20  // Two kings = 20 points
     };

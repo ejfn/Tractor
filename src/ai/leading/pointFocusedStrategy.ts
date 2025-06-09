@@ -11,8 +11,8 @@ import {
   PointCardStrategy,
   TrumpTiming,
   Rank,
-} from "../types";
-import { isTrump, isPointCard } from "../game/gameLogic";
+} from "../../types";
+import { isTrump, isPointCard } from "../../game/gameLogic";
 
 /**
  * Enhanced Point-Focused AI Strategy Implementation
