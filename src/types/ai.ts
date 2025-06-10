@@ -1,6 +1,7 @@
 // AI strategy and intelligence types
 
-import { Card, Combo, PlayerId, Suit, TrumpInfo } from "./core";
+import { PlayerId } from "./core";
+import { Card, Suit, TrumpInfo, Combo } from "./card";
 
 // AI Strategy Enhancement Types
 export enum TrickPosition {
@@ -48,7 +49,7 @@ export interface PositionStrategy {
   disruptionFocus: number; // How much to focus on disrupting opponents
 }
 
-export interface GameContext {
+export interface GameContextBase {
   isAttackingTeam: boolean; // Is this AI on the attacking team?
   currentPoints: number; // Points collected by attacking team so far
   pointsNeeded: number; // Points needed to win (usually 80)
@@ -56,10 +57,13 @@ export interface GameContext {
   trickPosition: TrickPosition; // Position in current trick
   pointPressure: PointPressure; // Urgency level based on point progress
   playStyle: PlayStyle; // Current strategic approach
-  memoryContext?: MemoryContext; // Phase 3: Memory-based decision context
-  memoryStrategy?: MemoryBasedStrategy; // Phase 3: Memory-enhanced strategy
   trickWinnerAnalysis?: TrickWinnerAnalysis; // Real-time trick winner analysis
   trumpInfo?: TrumpInfo; // Enhanced: Trump information for card analysis
+}
+
+export interface GameContext extends GameContextBase {
+  memoryContext?: MemoryContext; // Phase 3: Memory-based decision context
+  memoryStrategy?: MemoryBasedStrategy; // Phase 3: Memory-enhanced strategy
 }
 
 export interface ComboAnalysis {
@@ -307,3 +311,17 @@ export interface TacticalAdjustment {
   magnitude: number; // 0-1 how much to adjust
   context: string[]; // Situations where this adjustment applies
 }
+
+// Play pattern analysis types
+export interface PlayPatterns {
+  trumpUsage: number; // 0-1 frequency of trump usage
+  pointFocus: number; // 0-1 focus on point collection
+}
+
+// Player context for AI analysis
+export interface PlayerContext {
+  id: string;
+  team: string;
+}
+
+// Game context for AI analysis - moved to proper location above

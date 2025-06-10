@@ -1,8 +1,7 @@
 import { getAIKittySwap } from "../../src/ai/aiLogic";
 import { putbackKittyCards } from "../../src/game/kittyManager";
-import { finalizeTrumpDeclaration } from "../../src/game/trumpDeclarationManager";
+import { finalizeTrumpDeclaration } from "../../src/game/dealingAndDeclaration";
 import { GameState, PlayerId, GamePhase, Card, Suit, Rank } from "../../src/types";
-import { createCard } from "../helpers/cards";
 import { createGameState } from "../helpers/gameStates";
 
 describe("Bot Kitty Swap Bug", () => {
@@ -20,13 +19,13 @@ describe("Bot Kitty Swap Bug", () => {
     // Give all players 25 cards each (normal 2-deck Tractor distribution)
     gameState.players.forEach((player, index) => {
       player.hand = Array(25).fill(null).map((_, cardIndex) => 
-        createCard(Suit.Hearts, Rank.Two, `${player.id}-card-${cardIndex}`)
+        Card.createCard(Suit.Hearts, Rank.Two, 0)
       );
     });
 
     // Create kitty with 8 cards
     gameState.kittyCards = Array(8).fill(null).map((_, index) => 
-      createCard(Suit.Spades, Rank.Three, `kitty-card-${index}`)
+      Card.createCard(Suit.Spades, Rank.Three, 0)
     );
   });
 

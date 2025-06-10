@@ -1,6 +1,5 @@
-import { identifyCombos } from '../../src/game/gameLogic';
-import { ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
-import { createCard } from '../helpers';
+import { identifyCombos } from '../../src/game/comboDetection';
+import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
 
 describe('Invalid Cross-Suit Pair Bug Fix', () => {
   test('should NOT create pair from different suit trump rank cards', () => {
@@ -11,8 +10,8 @@ describe('Invalid Cross-Suit Pair Bug Fix', () => {
 
     // Create cards: 2♥ and 2♦ (both trump rank, different suits)
     const cards = [
-      createCard(Suit.Hearts, Rank.Two), // 2♥ - trump rank card
-      createCard(Suit.Diamonds, Rank.Two), // 2♦ - trump rank card
+      Card.createCard(Suit.Hearts, Rank.Two, 0), // 2♥ - trump rank card
+      Card.createCard(Suit.Diamonds, Rank.Two, 0), // 2♦ - trump rank card
     ];
 
     const combos = identifyCombos(cards, trumpInfo);
@@ -38,8 +37,8 @@ describe('Invalid Cross-Suit Pair Bug Fix', () => {
 
     // Create cards: two identical 2♥ cards
     const cards = [
-      createCard(Suit.Hearts, Rank.Two), // 2♥ - trump rank card
-      createCard(Suit.Hearts, Rank.Two), // 2♥ - identical trump rank card
+      Card.createCard(Suit.Hearts, Rank.Two, 0), // 2♥ - trump rank card
+      Card.createCard(Suit.Hearts, Rank.Two, 1), // 2♥ - identical trump rank card
     ];
 
     const combos = identifyCombos(cards, trumpInfo);
@@ -67,10 +66,10 @@ describe('Invalid Cross-Suit Pair Bug Fix', () => {
 
     // Mix of trump rank cards and trump suit cards
     const cards = [
-      createCard(Suit.Hearts, Rank.King), // K♥ - trump rank card
-      createCard(Suit.Diamonds, Rank.King), // K♦ - trump rank card (different suit)
-      createCard(Suit.Clubs, Rank.Ace), // A♣ - trump suit card
-      createCard(Suit.Clubs, Rank.Ace), // A♣ - identical trump suit card
+      Card.createCard(Suit.Hearts, Rank.King, 0), // K♥ - trump rank card
+      Card.createCard(Suit.Diamonds, Rank.King, 0), // K♦ - trump rank card (different suit)
+      Card.createCard(Suit.Clubs, Rank.Ace, 0), // A♣ - trump suit card
+      Card.createCard(Suit.Clubs, Rank.Ace, 1), // A♣ - identical trump suit card
     ];
 
     const combos = identifyCombos(cards, trumpInfo);

@@ -1,6 +1,6 @@
 import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { Card, Player, TrumpInfo, GamePhase } from "../types";
+import { Card, Player, TrumpInfo, GamePhase, Trick } from "../types";
 import HumanHandAnimated from "./HumanHandAnimated";
 import ThinkingIndicator from "./ThinkingIndicator";
 import { sharedStyles } from "../styles/sharedStyles";
@@ -16,14 +16,14 @@ interface HumanPlayerViewProps {
   isValidPlay?: boolean;
   trumpInfo: TrumpInfo;
   showTrickResult?: boolean;
-  lastCompletedTrick?: any;
+  lastCompletedTrick?: Trick;
   thinkingDots: {
     dot1: Animated.Value;
     dot2: Animated.Value;
     dot3: Animated.Value;
   };
   currentPlayerIndex?: number;
-  currentTrick?: any;
+  currentTrick?: Trick;
   isRoundStartingPlayer?: boolean;
   gamePhase?: GamePhase;
   onKittySwap?: () => void;
@@ -87,7 +87,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
         canPlay={canPlay}
         isValidPlay={isValidPlay}
         showTrickResult={showTrickResult}
-        lastCompletedTrick={lastCompletedTrick}
+        lastCompletedTrick={lastCompletedTrick || undefined}
         gamePhase={gamePhase}
         onKittySwap={onKittySwap}
       />

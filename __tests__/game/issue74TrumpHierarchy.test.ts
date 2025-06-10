@@ -1,6 +1,5 @@
-import { compareCardCombos } from '../../src/game/gameLogic';
-import { Suit, Rank, TrumpInfo } from '../../src/types';
-import { createCard } from '../helpers/cards';
+import { compareCardCombos } from '../../src/game/playProcessing';
+import { Card, Rank, Suit, TrumpInfo } from '../../src/types';
 
 /**
  * Test for issue #74: Trump rank pair should win trump suit pair
@@ -26,10 +25,10 @@ describe('Issue #74: Trump Hierarchy Bug Fix', () => {
     };
     
     // Create the exact cards from the issue
-    const diamonds2_1 = createCard(Suit.Diamonds, Rank.Two);   // Trump rank in trump suit
-    const diamonds2_2 = createCard(Suit.Diamonds, Rank.Two);   
-    const diamonds9_1 = createCard(Suit.Diamonds, Rank.Nine);  // Trump suit card
-    const diamonds9_2 = createCard(Suit.Diamonds, Rank.Nine);  
+    const diamonds2_1 = Card.createCard(Suit.Diamonds, Rank.Two, 0);   // Trump rank in trump suit
+    const diamonds2_2 = Card.createCard(Suit.Diamonds, Rank.Two, 0);   
+    const diamonds9_1 = Card.createCard(Suit.Diamonds, Rank.Nine, 0);  // Trump suit card
+    const diamonds9_2 = Card.createCard(Suit.Diamonds, Rank.Nine, 0);  
     
     const trumpRankPair = [diamonds2_1, diamonds2_2];  // 2♦-2♦ 
     const trumpSuitPair = [diamonds9_1, diamonds9_2];  // 9♦-9♦
@@ -49,10 +48,10 @@ describe('Issue #74: Trump Hierarchy Bug Fix', () => {
       trumpSuit: Suit.Hearts 
     };
     
-    const hearts5_1 = createCard(Suit.Hearts, Rank.Five);    // Trump rank in trump suit (highest)
-    const hearts5_2 = createCard(Suit.Hearts, Rank.Five);    
-    const hearts10_1 = createCard(Suit.Hearts, Rank.Ten);    // Trump suit card (lower)
-    const hearts10_2 = createCard(Suit.Hearts, Rank.Ten);    
+    const hearts5_1 = Card.createCard(Suit.Hearts, Rank.Five, 0);    // Trump rank in trump suit (highest)
+    const hearts5_2 = Card.createCard(Suit.Hearts, Rank.Five, 0);    
+    const hearts10_1 = Card.createCard(Suit.Hearts, Rank.Ten, 0);    // Trump suit card (lower)
+    const hearts10_2 = Card.createCard(Suit.Hearts, Rank.Ten, 0);    
     
     const trumpRankPair = [hearts5_1, hearts5_2];    // 5♥-5♥
     const trumpSuitPair = [hearts10_1, hearts10_2];  // 10♥-10♥
@@ -71,10 +70,10 @@ describe('Issue #74: Trump Hierarchy Bug Fix', () => {
       trumpSuit: Suit.Spades 
     };
     
-    const spades2_1 = createCard(Suit.Spades, Rank.Two);    // Trump suit card
-    const spades2_2 = createCard(Suit.Spades, Rank.Two);    
-    const heartsA_1 = createCard(Suit.Hearts, Rank.Ace);    // Trump rank in other suit
-    const heartsA_2 = createCard(Suit.Hearts, Rank.Ace);    
+    const spades2_1 = Card.createCard(Suit.Spades, Rank.Two, 0);    // Trump suit card
+    const spades2_2 = Card.createCard(Suit.Spades, Rank.Two, 0);    
+    const heartsA_1 = Card.createCard(Suit.Hearts, Rank.Ace, 0);    // Trump rank in other suit
+    const heartsA_2 = Card.createCard(Suit.Hearts, Rank.Ace, 0);    
     
     const trumpSuitPair = [spades2_1, spades2_2];   // 2♠-2♠ (trump suit)
     const trumpRankPair = [heartsA_1, heartsA_2];   // A♥-A♥ (trump rank in other suit)

@@ -1,6 +1,8 @@
-import { GameState, Rank, GamePhase, RoundResult, TeamId } from "../types";
-import { initializeGame } from "./gameLogic";
-import { initializeTrumpDeclarationState } from "../utils/gameInitialization";
+import {
+  initializeGame,
+  initializeTrumpDeclarationState,
+} from "../utils/gameInitialization";
+import { GamePhase, GameState, Rank, RoundResult, TeamId } from "../types";
 
 /**
  * Prepares the game state for the next round using round result information
@@ -219,10 +221,9 @@ export function endRound(state: GameState): RoundResult {
     finalPoints = points;
 
     if (kittyInfo) {
-      pointsBreakdown =
-        kittyBonus > 0
-          ? `\n(${trickPoints} + ${kittyInfo.kittyPoints} × ${kittyInfo.kittyBonus!.multiplier} kitty bonus)`
-          : ``;
+      pointsBreakdown = kittyInfo.kittyBonus
+        ? `\n(${trickPoints} + ${kittyInfo.kittyPoints} × ${kittyInfo.kittyBonus.multiplier} kitty bonus)`
+        : ``;
     }
 
     // Attacking team needs 80+ points to win

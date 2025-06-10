@@ -1,7 +1,8 @@
-import { GameState, Card, Player, Rank, Suit, GamePhase } from "../../src/types";
-import { initializeGame, dealCards } from '../../src/game/gameLogic';
-import { processPlay } from '../../src/game/gamePlayManager';
-import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { dealCards } from '../../src/game/dealingAndDeclaration';
+import { getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
+import { Card, GamePhase, GameState, JokerType, Rank, Suit } from "../../src/types";
+import { initializeGame } from '../../src/utils/gameInitialization';
+import { moveCardToPosition } from '../helpers/cards';
 
 describe('Card Count Equality', () => {
   let gameState: GameState;
@@ -73,29 +74,23 @@ describe('Card Count Equality', () => {
       const cardsLost = initialCounts[0] - afterCounts[0];
       expect(cardsLost).toBeGreaterThan(0);
       expect(cardsLost).toBeLessThanOrEqual(4); // Max combo size
-      
-      console.log(`Trick ${trickNum}: Each player lost ${cardsLost} cards. Counts: ${afterCounts.join(', ')}`);
     }
   });
   
   it('handles human winning and leading next trick', () => {
-    // Create fresh game state
+    // Create fresh isolated game state
     let state = initializeGame();
+    
+    // Ensure human gets Big Joker by moving it to deck position 0 (human gets dealt first)
+    moveCardToPosition(state.deck, card => card.joker === JokerType.Big, 0);
+    
     state = dealCards(state);
     state.gamePhase = GamePhase.Playing;
     state.trumpInfo.trumpSuit = Suit.Spades;
     
-    // Arrange the first trick so human wins
-    // Give human highest card (BJ)
-    const bigJoker: Card = {
-      id: 'joker_big_0',
-      points: 0,
-      joker: 'Big' as any
-    };
-    
-    // Replace human's first card with big joker
-    state.players[0].hand[0] = bigJoker;
-    let trickResult = processPlay(state, [bigJoker]);
+    // Human should now have Big Joker as first card
+    const winningCard = state.players[0].hand[0];
+    let trickResult = processPlay(state, [winningCard]);
     state = trickResult.newState;
     
     // Bot plays  
@@ -145,6 +140,16 @@ describe('Card Count Equality', () => {
   it('maintains counts when different combo types are played', () => {
     // Start fresh with a new game to ensure no state interference
     let state = initializeGame();
+    
+    // Create pair cards that will be positioned for human player
+    const pairCard1 = Card.createCard(Suit.Hearts, Rank.Seven, 0);
+    const pairCard2 = Card.createCard(Suit.Hearts, Rank.Seven, 1);
+    
+    // Ensure human gets a pair by moving 7♥ cards to positions 4 and 8 (human gets 0,4,8,12,16...)
+    // Avoid position 0 since human plays hand[0] in first trick
+    moveCardToPosition(state.deck, pairCard1, 4);
+    moveCardToPosition(state.deck, pairCard2, 8);
+    
     state = dealCards(state);
     state.gamePhase = GamePhase.Playing;
     state.trumpInfo.trumpSuit = Suit.Spades;
@@ -176,29 +181,12 @@ describe('Card Count Equality', () => {
       state.currentPlayerIndex = 0;
     }
     
-    // Find or create a pair for the human player
+    // Find the arranged 7♥ pair cards in human's hand
     const human = state.players[0];
-    let pairCards: Card[] = [];
+    const card1InHand = human.hand.find(card => card.id === pairCard1.id);
+    const card2InHand = human.hand.find(card => card.id === pairCard2.id);
     
-    // Look for existing pairs
-    for (let i = 0; i < human.hand.length - 1; i++) {
-      if (human.hand[i].rank === human.hand[i+1].rank && 
-          human.hand[i].suit === human.hand[i+1].suit) {
-        pairCards = [human.hand[i], human.hand[i+1]];
-        break;
-      }
-    }
-    
-    // If no pairs found, create one
-    if (pairCards.length === 0) {
-      const firstCard = human.hand[0];
-      const identicalCard: Card = {
-        ...firstCard,
-        id: firstCard.id + '_copy'
-      };
-      human.hand[1] = identicalCard;
-      pairCards = [human.hand[0], human.hand[1]];
-    }
+    const pairCards = [card1InHand!, card2InHand!];
     
     // Human plays pair
     const pairResult = processPlay(state, pairCards);

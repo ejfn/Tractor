@@ -1,18 +1,14 @@
 import { getAIMove } from "../../src/ai/aiLogic";
-import { initializeGame } from "../../src/game/gameLogic";
-import { 
-  GameState, 
-  PlayerId, 
-  Rank, 
-  Suit, 
+
+import {
+  Card,
   GamePhase,
   JokerType,
-  ComboType 
+  PlayerId,
+  Rank,
+  Suit
 } from "../../src/types";
-import { 
-  createCard, 
-  createJoker 
-} from "../helpers";
+import { initializeGame } from "../../src/utils/gameInitialization";
 
 describe("Trump Conservation - Avoid Wasting Big Trump", () => {
   describe("Following Trump Pairs When Can't Form Pairs", () => {
@@ -31,16 +27,14 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
         plays: [
           {
             playerId: PlayerId.Human,
-            cards: [
-              createCard(Suit.Spades, Rank.Two), // Trump rank in trump suit
-              createCard(Suit.Spades, Rank.Two), // Trump rank in trump suit (pair)
-            ]
+            cards:   Card.createPair(Suit.Spades, Rank.Two)
+            
           },
           {
             playerId: PlayerId.Bot1,
             cards: [
-              createCard(Suit.Hearts, Rank.Two), // Trump rank in off-suit
-              createCard(Suit.Clubs, Rank.Two),  // Trump rank in off-suit
+              Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank in off-suit
+              Card.createCard(Suit.Clubs, Rank.Two, 0),  // Trump rank in off-suit
             ]
           }
         ],
@@ -51,12 +45,12 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
       // Give Bot2 trump cards but NO pairs (forced to play trump singles)
       const bot2 = gameState.players[2];
       bot2.hand = [
-        createJoker(JokerType.Big),         // Valuable trump - should NOT be played
-        createJoker(JokerType.Small),       // Valuable trump - should NOT be played
-        createCard(Suit.Hearts, Rank.Two),  // Trump rank - should NOT be played
-        createCard(Suit.Spades, Rank.Three), // Weak trump suit card - SHOULD be played
-        createCard(Suit.Spades, Rank.Four),  // Weak trump suit card - alternative choice
-        createCard(Suit.Hearts, Rank.King),  // Non-trump card
+        Card.createJoker(JokerType.Big, 0),         // Valuable trump - should NOT be played
+        Card.createJoker(JokerType.Small, 0),       // Valuable trump - should NOT be played
+        Card.createCard(Suit.Hearts, Rank.Two, 0),  // Trump rank - should NOT be played
+        Card.createCard(Suit.Spades, Rank.Three, 0), // Weak trump suit card - SHOULD be played
+        Card.createCard(Suit.Spades, Rank.Four, 0),  // Weak trump suit card - alternative choice
+        Card.createCard(Suit.Hearts, Rank.King, 0),  // Non-trump card
       ];
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot2);
@@ -113,28 +107,25 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
           {
             playerId: PlayerId.Human,
             cards: [
-              createCard(Suit.Hearts, Rank.Three), // Trump suit tractor
-              createCard(Suit.Hearts, Rank.Three),
-              createCard(Suit.Hearts, Rank.Four),
-              createCard(Suit.Hearts, Rank.Four),
+              ...Card.createPair(Suit.Hearts, Rank.Three), // Trump suit tractor
+              ...Card.createPair(Suit.Hearts, Rank.Four)
             ]
           },
           {
             playerId: PlayerId.Bot1,
             cards: [
-              createJoker(JokerType.Big),
-              createJoker(JokerType.Small),
-              createCard(Suit.Hearts, Rank.Two),
-              createCard(Suit.Hearts, Rank.Two),
+              Card.createJoker(JokerType.Big, 0),
+              Card.createJoker(JokerType.Small, 0),
+              ...Card.createPair(Suit.Hearts, Rank.Two),
             ]
           },
           {
             playerId: PlayerId.Bot2,
             cards: [
-              createCard(Suit.Hearts, Rank.Five),
-              createCard(Suit.Hearts, Rank.Six),
-              createCard(Suit.Hearts, Rank.Seven),
-              createCard(Suit.Hearts, Rank.Eight),
+              Card.createCard(Suit.Hearts, Rank.Five, 0),
+              Card.createCard(Suit.Hearts, Rank.Six, 0),
+              Card.createCard(Suit.Hearts, Rank.Seven, 0),
+              Card.createCard(Suit.Hearts, Rank.Eight, 0),
             ]
           }
         ],
@@ -145,13 +136,13 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
       // Give Bot3 mixed cards with valuable trump but no trump combinations
       const bot3 = gameState.players[3];
       bot3.hand = [
-        createJoker(JokerType.Big),           // Valuable trump
-        createCard(Suit.Clubs, Rank.Two),    // Trump rank in off-suit
-        createCard(Suit.Hearts, Rank.Ace),   // Trump suit high card
-        createCard(Suit.Spades, Rank.Seven), // Non-trump safe card
-        createCard(Suit.Clubs, Rank.Nine),   // Non-trump safe card
-        createCard(Suit.Diamonds, Rank.Jack), // Non-trump safe card
-        createCard(Suit.Spades, Rank.Queen),  // Non-trump safe card
+        Card.createJoker(JokerType.Big, 0),           // Valuable trump
+        Card.createCard(Suit.Clubs, Rank.Two, 0),    // Trump rank in off-suit
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),   // Trump suit high card
+        Card.createCard(Suit.Spades, Rank.Seven, 0), // Non-trump safe card
+        Card.createCard(Suit.Clubs, Rank.Nine, 0),   // Non-trump safe card
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0), // Non-trump safe card
+        Card.createCard(Suit.Spades, Rank.Queen, 0),  // Non-trump safe card
       ];
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot3);
@@ -184,7 +175,7 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
         plays: [
           {
             playerId: PlayerId.Human,
-            cards: [createJoker(JokerType.Big)]
+            cards: [Card.createJoker(JokerType.Big, 0)]
           }
         ],
         winningPlayerId: PlayerId.Human,
@@ -194,12 +185,12 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
       // Give Bot1 ONLY trump cards with mixed conservation values
       const bot1 = gameState.players[1];
       bot1.hand = [
-        createJoker(JokerType.Big),           // Conservation value: 100
-        createJoker(JokerType.Small),         // Conservation value: 90  
-        createCard(Suit.Diamonds, Rank.Two), // Conservation value: 80
-        createCard(Suit.Hearts, Rank.Two),   // Conservation value: 70
-        createCard(Suit.Diamonds, Rank.Ace), // Conservation value: 60
-        createCard(Suit.Diamonds, Rank.Three), // Conservation value: 5 - WEAKEST
+        Card.createJoker(JokerType.Big, 0),           // Conservation value: 100
+        Card.createJoker(JokerType.Small, 0),         // Conservation value: 90  
+        Card.createCard(Suit.Diamonds, Rank.Two, 0), // Conservation value: 80
+        Card.createCard(Suit.Hearts, Rank.Two, 0),   // Conservation value: 70
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0), // Conservation value: 60
+        Card.createCard(Suit.Diamonds, Rank.Three, 0), // Conservation value: 5 - WEAKEST
       ];
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);

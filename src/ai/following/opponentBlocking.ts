@@ -8,8 +8,10 @@ import {
   PositionStrategy,
   Rank,
   TrumpInfo,
+  TrickWinnerAnalysis,
 } from "../../types";
-import { isTrump, getComboType } from "../../game/gameLogic";
+import { isTrump } from "../../game/gameHelpers";
+import { getComboType } from "../../game/comboDetection";
 import {
   selectOptimalWinningCombo,
   selectAggressiveBeatPlay,
@@ -28,7 +30,7 @@ import {
 export function handleOpponentWinning(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
-  trickWinner: any,
+  trickWinner: TrickWinnerAnalysis,
   trumpInfo: TrumpInfo,
   gameState: GameState,
 ): Card[] | null {

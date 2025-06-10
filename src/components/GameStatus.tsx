@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, StyleSheet, Text, View, TextStyle } from "react-native";
 import { GamePhase, Suit, Team, TrumpInfo } from "../types";
 
 const getSuitSymbol = (suit: Suit): string => {
@@ -17,7 +17,7 @@ const getSuitSymbol = (suit: Suit): string => {
   }
 };
 
-const getSuitColorStyle = (suit: Suit, styles: any) => {
+const getSuitColorStyle = (suit: Suit, styles: Record<string, TextStyle>) => {
   return suit === Suit.Hearts || suit === Suit.Diamonds
     ? styles.redSuit
     : styles.blackSuit;
@@ -75,7 +75,7 @@ const AnimatedProgressBar: React.FC<{
 const RollingNumber: React.FC<{
   value: number;
   isAttackingTeam: boolean;
-  style?: any;
+  style?: TextStyle;
 }> = ({ value, isAttackingTeam, style }) => {
   const [displayValue, setDisplayValue] = useState(value);
   const [previousValue, setPreviousValue] = useState(value);
@@ -241,11 +241,15 @@ const GameStatus: React.FC<GameStatusProps> = ({
                   <RollingNumber
                     value={team.points}
                     isAttackingTeam={!team.isDefending}
-                    style={[
-                      styles.statValue,
-                      styles.pointsValue,
-                      team.points >= 80 ? styles.winningPoints : null,
-                    ]}
+                    style={
+                      team.points >= 80
+                        ? {
+                            ...styles.statValue,
+                            ...styles.pointsValue,
+                            ...styles.winningPoints,
+                          }
+                        : { ...styles.statValue, ...styles.pointsValue }
+                    }
                   />
                 </View>
               )}

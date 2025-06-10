@@ -1,6 +1,7 @@
 import {
   Card,
   ComboType,
+  DeckId,
   JokerType,
   Rank,
   Suit,
@@ -10,54 +11,6 @@ import {
 // CARD CREATION UTILITIES
 // ============================================================================
 
-/**
- * Creates a standard playing card with automatic point calculation
- */
-export const createCard = (suit: Suit, rank: Rank, id?: string): Card => {
-  let points = 0;
-  if (rank === Rank.Five) points = 5;
-  if (rank === Rank.Ten || rank === Rank.King) points = 10;
-  
-  return { 
-    suit, 
-    rank, 
-    id: id || `${suit.toLowerCase()}_${rank.toLowerCase()}_${Math.random().toString(36).substring(7)}`, 
-    points 
-  };
-};
-
-/**
- * Creates a joker card
- */
-export const createJoker = (type: JokerType, id?: string): Card => ({
-  joker: type,
-  id: id || `${type.toLowerCase()}_joker_${Math.random().toString(36).substring(7)}`,
-  points: 0,
-  suit: undefined,
-  rank: undefined
-});
-
-/**
- * Creates multiple cards quickly using a shorthand notation
- * @param specs Array of [suit, rank] or [suit, rank, id] tuples
- */
-export const createCards = (specs: Array<[Suit, Rank] | [Suit, Rank, string]>): Card[] => {
-  return specs.map(spec => {
-    const [suit, rank, id] = spec;
-    return createCard(suit, rank, id);
-  });
-};
-
-/**
- * Creates a pair of identical cards (same suit and rank)
- */
-export const createPair = (suit: Suit, rank: Rank, baseId?: string): Card[] => {
-  const base = baseId || `${suit.toLowerCase()}_${rank.toLowerCase()}`;
-  return [
-    createCard(suit, rank, `${base}_1`),
-    createCard(suit, rank, `${base}_2`)
-  ];
-};
 
 /**
  * Creates a tractor (consecutive pairs of same suit)
@@ -70,7 +23,7 @@ export const createTractor = (suit: Suit, startRank: Rank, length: number = 2): 
   for (let i = 0; i < length; i++) {
     const rank = ranks[startIndex + i];
     if (rank) {
-      cards.push(...createPair(suit, rank));
+      cards.push(...Card.createPair(suit, rank));
     }
   }
   
@@ -78,29 +31,86 @@ export const createTractor = (suit: Suit, startRank: Rank, length: number = 2): 
 };
 
 // ============================================================================
+// DECK MANIPULATION UTILITIES
+// ============================================================================
+
+/**
+ * Moves a specified card to a specified position in a deck
+ * Useful for creating deterministic test scenarios where specific cards need to be at specific positions
+ * 
+ * @param deck - The deck to modify (will be modified in-place)
+ * @param cardMatcher - Function that returns true for the card to move, or a card object to match by ID
+ * @param targetPosition - The position where the card should be moved (0-based index)
+ * @returns The modified deck (same reference as input)
+ * 
+ * @example
+ * // Move Big Joker to position 0 (human gets first card)
+ * moveCardToPosition(deck, card => card.joker === JokerType.Big, 0);
+ * 
+ * // Move a specific card to position 4
+ * const specificCard = Card.createCard(Suit.Hearts, Rank.Seven, 0);
+ * moveCardToPosition(deck, specificCard, 4);
+ */
+export const moveCardToPosition = (
+  deck: Card[], 
+  cardMatcher: Card | ((card: Card) => boolean), 
+  targetPosition: number
+): Card[] => {
+  if (targetPosition < 0 || targetPosition >= deck.length) {
+    throw new Error(`Target position ${targetPosition} is out of bounds for deck of length ${deck.length}`);
+  }
+
+  // Convert card object to matcher function
+  const matcher = typeof cardMatcher === 'function' 
+    ? cardMatcher 
+    : (card: Card) => card.id === cardMatcher.id;
+
+  // Find the card to move
+  const sourceIndex = deck.findIndex(matcher);
+  if (sourceIndex === -1) {
+    throw new Error('Card not found in deck');
+  }
+
+  // If already at target position, no need to move
+  if (sourceIndex === targetPosition) {
+    return deck;
+  }
+
+  // Remove card from current position
+  const [cardToMove] = deck.splice(sourceIndex, 1);
+  
+  // Insert at target position
+  deck.splice(targetPosition, 0, cardToMove);
+  
+  return deck;
+};
+
+
+// ============================================================================
 // COMMON TEST DATA
 // ============================================================================
 
 /**
  * Predefined test data for common scenarios
+ * Uses Card class directly - no unnecessary wrappers
  */
 export const testData = {
   // Standard cards for testing
   cards: {
-    spadesAce: createCard(Suit.Spades, Rank.Ace, 'spades_ace_1'),
-    heartsFive: createCard(Suit.Hearts, Rank.Five, 'hearts_five_1'),
-    clubsKing: createCard(Suit.Clubs, Rank.King, 'clubs_king_1'),
-    diamondsTen: createCard(Suit.Diamonds, Rank.Ten, 'diamonds_ten_1'),
-    bigJoker: createJoker(JokerType.Big, 'big_joker_1'),
-    smallJoker: createJoker(JokerType.Small, 'small_joker_1')
+    spadesAce: Card.createCard(Suit.Spades, Rank.Ace, 0),
+    heartsFive: Card.createCard(Suit.Hearts, Rank.Five, 0),
+    clubsKing: Card.createCard(Suit.Clubs, Rank.King, 0),
+    diamondsTen: Card.createCard(Suit.Diamonds, Rank.Ten, 0),
+    bigJoker: Card.createJoker(JokerType.Big, 0),
+    smallJoker: Card.createJoker(JokerType.Small, 0)
   },
 
   // Standard pairs for testing
   pairs: {
-    spadesAces: createPair(Suit.Spades, Rank.Ace),
-    heartsTwos: createPair(Suit.Hearts, Rank.Two),
-    clubsKings: createPair(Suit.Clubs, Rank.King),
-    diamondsFives: createPair(Suit.Diamonds, Rank.Five)
+    spadesAces: Card.createPair(Suit.Spades, Rank.Ace),
+    heartsTwos: Card.createPair(Suit.Hearts, Rank.Two),
+    clubsKings: Card.createPair(Suit.Clubs, Rank.King),
+    diamondsFives: Card.createPair(Suit.Diamonds, Rank.Five)
   },
 
   // Standard tractors for testing
@@ -110,3 +120,21 @@ export const testData = {
     clubsFiveSixSeven: createTractor(Suit.Clubs, Rank.Five, 3)
   }
 };
+
+// ============================================================================
+// MIGRATION NOTE
+// ============================================================================
+
+/**
+ * OLD HELPERS REMOVED:
+ * - createCard() - use Card.createCard() directly
+ * - createJoker() - use Card.createJoker() directly
+ * - createCards() - use Card.createCard() directly in tests
+ * 
+ * SIMPLE REPLACEMENT:
+ * Old: createCard(Suit.Hearts, Rank.Ace, 'some_id')
+ * New: Card.createCard(Suit.Hearts, Rank.Ace, 0)
+ * 
+ * OLD PATTERN: Random IDs, complex wrappers, duplication
+ * NEW PATTERN: Direct Card class usage, deterministic DeckIds (0|1)
+ */

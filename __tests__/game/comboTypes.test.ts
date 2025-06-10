@@ -1,20 +1,16 @@
+import { describe, expect, test } from '@jest/globals';
+import { compareCards } from '../../src/game/cardComparison';
+import { getComboType, identifyCombos } from '../../src/game/comboDetection';
+import { isTrump } from '../../src/game/gameHelpers';
 import {
-  identifyCombos,
-  getComboType,
-  isTrump,
-  compareCards
-} from '../../src/game/gameLogic';
-import {
-  Suit, 
-  Rank, 
-  JokerType,
+  Card,
   ComboType,
+  JokerType,
+  Rank,
+  Suit,
   TrumpInfo
 } from "../../src/types";
-import { describe, test, expect } from '@jest/globals';
 import {
-  createCard,
-  createJoker,
   createTrumpScenarios,
   testData
 } from "../helpers";
@@ -27,7 +23,7 @@ describe('Combo Type Identification Tests', () => {
     test('Every card should be identifiable as a Single', () => {
       // Use predefined test cards
       const aceOfSpades = testData.cards.spadesAce;
-      const twoOfHearts = createCard(Suit.Hearts, Rank.Two);
+      const twoOfHearts = Card.createCard(Suit.Hearts, Rank.Two, 0);
       const bigJoker = testData.cards.bigJoker;
       
       // Test with individual cards
@@ -50,8 +46,8 @@ describe('Combo Type Identification Tests', () => {
     });
     
     test('getComboType should identify Singles', () => {
-      const card = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
-      expect(getComboType([card])).toBe(ComboType.Single);
+      const card = Card.createCard(Suit.Hearts, Rank.Ace, 0);
+      expect(getComboType([card], trumpInfo)).toBe(ComboType.Single);
     });
   });
 
@@ -59,7 +55,7 @@ describe('Combo Type Identification Tests', () => {
     test('Should identify pairs of the same rank', () => {
       // Use predefined pair and additional card
       const [kingHearts1, kingHearts2] = testData.pairs.clubsKings; // Use any pair, just need structure
-      const queenHearts = createCard(Suit.Hearts, Rank.Queen);
+      const queenHearts = Card.createCard(Suit.Hearts, Rank.Queen, 0);
       
       // Test with a valid pair
       const validPairHand = [kingHearts1, kingHearts2, queenHearts];
@@ -78,15 +74,12 @@ describe('Combo Type Identification Tests', () => {
     test('getComboType should identify Pairs', () => {
       const heartsAces = testData.pairs.spadesAces; // Use predefined pair
       
-      expect(getComboType(heartsAces)).toBe(ComboType.Pair);
+      expect(getComboType(heartsAces, trumpInfo)).toBe(ComboType.Pair);
     });
     
     test('Joker pairs should be identified', () => {
       // Create pair of same jokers using helper
-      const smallJokerPair = [
-        createJoker(JokerType.Small, 'small_joker_1'),
-        createJoker(JokerType.Small, 'small_joker_2')
-      ];
+      const smallJokerPair = Card.createJokerPair(JokerType.Small);
 
       const combos = identifyCombos(smallJokerPair, trumpInfo);
 
@@ -94,7 +87,7 @@ describe('Combo Type Identification Tests', () => {
       expect(combos.length).toBe(3);
 
       // Test that getComboType would correctly identify a pair of jokers if given directly
-      expect(getComboType(smallJokerPair)).toBe(ComboType.Pair);
+      expect(getComboType(smallJokerPair, trumpInfo)).toBe(ComboType.Pair);
     });
     
     test('Different jokers should not form a pair', () => {
@@ -113,25 +106,23 @@ describe('Combo Type Identification Tests', () => {
 
   describe('Tractor Combos', () => {
     test('Joker tractor: SJ-SJ-BJ-BJ conceptually forms a tractor', () => {
-      // Create joker pairs
-      const smallJoker1 = createJoker(JokerType.Small, 'small_joker_1');
-      const smallJoker2 = createJoker(JokerType.Small, 'small_joker_2');
-      const bigJoker1 = createJoker(JokerType.Big, 'big_joker_1');
-      const bigJoker2 = createJoker(JokerType.Big, 'big_joker_2');
+      // Create joker pairs using convenience methods
+      const smallJokerPair = Card.createJokerPair(JokerType.Small);
+      const bigJokerPair = Card.createJokerPair(JokerType.Big);
 
       // Create the joker tractor hand
-      const jokerTractor = [smallJoker1, smallJoker2, bigJoker1, bigJoker2];
+      const jokerTractor = [...smallJokerPair, ...bigJokerPair];
 
       // Jokers should be identified as trumps
-      expect(isTrump(smallJoker1, trumpInfo)).toBe(true);
-      expect(isTrump(bigJoker1, trumpInfo)).toBe(true);
+      expect(isTrump(smallJokerPair[0], trumpInfo)).toBe(true);
+      expect(isTrump(bigJokerPair[0], trumpInfo)).toBe(true);
 
       // NOTE: In the current implementation, getComboType doesn't handle joker tractors
       // because jokers don't have ranks, but in the game rules this would be a valid tractor
 
       // Verify we can identify individual joker pairs
-      expect(getComboType([smallJoker1, smallJoker2])).toBe(ComboType.Pair);
-      expect(getComboType([bigJoker1, bigJoker2])).toBe(ComboType.Pair);
+      expect(getComboType(smallJokerPair, trumpInfo)).toBe(ComboType.Pair);
+      expect(getComboType(bigJokerPair, trumpInfo)).toBe(ComboType.Pair);
 
       // This test documents that in Shengji rules, SJ-SJ-BJ-BJ is supposed to be the highest tractor,
       // even though our current implementation doesn't identify it as one
@@ -139,25 +130,23 @@ describe('Combo Type Identification Tests', () => {
     
     test('Should identify tractor (consecutive pairs of same suit)', () => {
       // Create cards for a tractor: 7-7-8-8 of Hearts
-      const heart7a = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1');
-      const heart7b = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2');
-      const heart8a = createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1');
-      const heart8b = createCard(Suit.Hearts, Rank.Eight, 'hearts_8_2');
+      const heart7pair = Card.createPair(Suit.Hearts, Rank.Seven);
+      const heart8pair = Card.createPair(Suit.Hearts, Rank.Eight);
       
       // Hand with the tractor cards
-      const hand = [heart7a, heart7b, heart8a, heart8b];
+      const hand = [...heart7pair, ...heart8pair];
       
       // This function is a placeholder in the original code so it won't find tractors
       // For testing purposes, we'll directly test the getComboType function
-      expect(getComboType(hand)).toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Tractor);
     });
     
     test('Should identify tractor 6♦-6♦-5♦-5♦ in all possible card orderings', () => {
       // Create cards for a tractor: 5-5-6-6 of Diamonds
-      const d6a = createCard(Suit.Diamonds, Rank.Six, 'diamonds_6_1');
-      const d6b = createCard(Suit.Diamonds, Rank.Six, 'diamonds_6_2');
-      const d5a = createCard(Suit.Diamonds, Rank.Five, 'diamonds_5_1');
-      const d5b = createCard(Suit.Diamonds, Rank.Five, 'diamonds_5_2');
+      const d6pair = Card.createPair(Suit.Diamonds, Rank.Six);
+      const d5pair = Card.createPair(Suit.Diamonds, Rank.Five);
+      const [d6a, d6b] = d6pair;
+      const [d5a, d5b] = d5pair;
       
       // All possible permutations of 4 cards
       const allOrderings = [
@@ -190,50 +179,44 @@ describe('Combo Type Identification Tests', () => {
       // All orderings should be recognized as tractors
       allOrderings.forEach((ordering, index) => {
         const orderString = ordering.map(c => c.rank === Rank.Five ? '5' : '6').join('');
-        expect(getComboType(ordering)).toBe(ComboType.Tractor);
+        expect(getComboType(ordering, trumpInfo)).toBe(ComboType.Tractor);
       });
     });
     
     test('Non-consecutive pairs should not form a tractor', () => {
       // Create cards for non-consecutive pairs: 5-5-9-9 of Hearts
-      const heart5a = createCard(Suit.Hearts, Rank.Five, 'hearts_5_1');
-      const heart5b = createCard(Suit.Hearts, Rank.Five, 'hearts_5_2');
-      const heart9a = createCard(Suit.Hearts, Rank.Nine, 'hearts_9_1');
-      const heart9b = createCard(Suit.Hearts, Rank.Nine, 'hearts_9_2');
+      const heart5pair = Card.createPair(Suit.Hearts, Rank.Five);
+      const heart9pair = Card.createPair(Suit.Hearts, Rank.Nine);
       
       // Non-consecutive pairs
-      const nonConsecutivePairs = [heart5a, heart5b, heart9a, heart9b];
+      const nonConsecutivePairs = [...heart5pair, ...heart9pair];
       
       // Should not be identified as a tractor
-      expect(getComboType(nonConsecutivePairs)).not.toBe(ComboType.Tractor);
+      expect(getComboType(nonConsecutivePairs, trumpInfo)).not.toBe(ComboType.Tractor);
     });
     
     test('Consecutive pairs of different suits should not form a tractor', () => {
       // Create cards for consecutive pairs of different suits: 7-7 Hearts, 8-8 Spades
-      const heart7a = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1');
-      const heart7b = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2');
-      const spade8a = createCard(Suit.Spades, Rank.Eight, 'spades_8_1');
-      const spade8b = createCard(Suit.Spades, Rank.Eight, 'spades_8_2');
+      const heart7pair = Card.createPair(Suit.Hearts, Rank.Seven);
+      const spade8pair = Card.createPair(Suit.Spades, Rank.Eight);
       
       // Consecutive pairs but different suits
-      const mixedSuitPairs = [heart7a, heart7b, spade8a, spade8b];
+      const mixedSuitPairs = [...heart7pair, ...spade8pair];
       
       // Should not be identified as a tractor
-      expect(getComboType(mixedSuitPairs)).not.toBe(ComboType.Tractor);
+      expect(getComboType(mixedSuitPairs, trumpInfo)).not.toBe(ComboType.Tractor);
     });
     
     test('Pair at the rank boundary (A-A-2-2) should not form a tractor', () => {
       // Create cards for A-A-2-2 of the same suit
-      const aceA = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
-      const aceB = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2');
-      const twoA = createCard(Suit.Hearts, Rank.Two, 'hearts_2_1');
-      const twoB = createCard(Suit.Hearts, Rank.Two, 'hearts_2_2');
+      const acePair = Card.createPair(Suit.Hearts, Rank.Ace);
+      const twoPair = Card.createPair(Suit.Hearts, Rank.Two);
 
       // Ace and Two pairs (non-consecutive in rank order)
-      const aceTwoPairs = [aceA, aceB, twoA, twoB];
+      const aceTwoPairs = [...acePair, ...twoPair];
 
       // Should not be identified as a tractor
-      expect(getComboType(aceTwoPairs)).not.toBe(ComboType.Tractor);
+      expect(getComboType(aceTwoPairs, trumpInfo)).not.toBe(ComboType.Tractor);
     });
 
     test('Trump cards of different levels should not form a tractor', () => {
@@ -248,16 +231,14 @@ describe('Combo Type Identification Tests', () => {
       };
 
       // Create the cards
-      const spade2a = createCard(Suit.Spades, Rank.Two, 'spades_2_1');
-      const spade2b = createCard(Suit.Spades, Rank.Two, 'spades_2_2');
-      const spade3a = createCard(Suit.Spades, Rank.Three, 'spades_3_1');
-      const spade3b = createCard(Suit.Spades, Rank.Three, 'spades_3_2');
+      const spade2pair = Card.createPair(Suit.Spades, Rank.Two);
+      const spade3pair = Card.createPair(Suit.Spades, Rank.Three);
 
-      const hand = [spade2a, spade2b, spade3a, spade3b];
+      const hand = [...spade2pair, ...spade3pair];
 
       // Check if these cards are trumps
-      expect(isTrump(spade2a, trumpInfo3)).toBe(true); // Trump suit
-      expect(isTrump(spade3a, trumpInfo3)).toBe(true); // Trump rank
+      expect(isTrump(spade2pair[0], trumpInfo3)).toBe(true); // Trump suit
+      expect(isTrump(spade3pair[0], trumpInfo3)).toBe(true); // Trump rank
 
       // When we run identifyCombos, it should not find a tractor
       const combos = identifyCombos(hand, trumpInfo3);
@@ -280,20 +261,18 @@ describe('Combo Type Identification Tests', () => {
       };
       
       // Create 7-7-8-8 of Hearts (the trump suit)
-      const heart7a = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1');
-      const heart7b = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2');
-      const heart8a = createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1');
-      const heart8b = createCard(Suit.Hearts, Rank.Eight, 'hearts_8_2');
+      const heart7pair = Card.createPair(Suit.Hearts, Rank.Seven);
+      const heart8pair = Card.createPair(Suit.Hearts, Rank.Eight);
       
-      const hand = [heart7a, heart7b, heart8a, heart8b];
+      const hand = [...heart7pair, ...heart8pair];
       
       // Verify these are all trump cards
-      expect(isTrump(heart7a, trumpInfoHearts)).toBe(true);
-      expect(isTrump(heart8a, trumpInfoHearts)).toBe(true);
+      expect(isTrump(heart7pair[0], trumpInfoHearts)).toBe(true);
+      expect(isTrump(heart8pair[0], trumpInfoHearts)).toBe(true);
       
       // They should still form a tractor even though they're trump cards
       // because they're all in the same trump category (trump suit)
-      expect(getComboType(hand)).toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfoHearts)).toBe(ComboType.Tractor);
     });
     
     test('Trump tractors should beat non-trump tractors', () => {
@@ -305,37 +284,33 @@ describe('Combo Type Identification Tests', () => {
       };
       
       // Create a tractor in Hearts (trump)
-      const heart3a = createCard(Suit.Hearts, Rank.Three, 'hearts_3_1');
-      const heart3b = createCard(Suit.Hearts, Rank.Three, 'hearts_3_2');
-      const heart4a = createCard(Suit.Hearts, Rank.Four, 'hearts_4_1');
-      const heart4b = createCard(Suit.Hearts, Rank.Four, 'hearts_4_2');
+      const heart3pair = Card.createPair(Suit.Hearts, Rank.Three);
+      const heart4pair = Card.createPair(Suit.Hearts, Rank.Four);
       
       // Create a higher tractor in Spades (non-trump)
-      const spadeQa = createCard(Suit.Spades, Rank.Queen, 'spades_q_1');
-      const spadeQb = createCard(Suit.Spades, Rank.Queen, 'spades_q_2');
-      const spadeKa = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const spadeKb = createCard(Suit.Spades, Rank.King, 'spades_k_2');
+      const spadeQpair = Card.createPair(Suit.Spades, Rank.Queen);
+      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
       
-      const trumpTractor = [heart3a, heart3b, heart4a, heart4b];
-      const nonTrumpTractor = [spadeQa, spadeQb, spadeKa, spadeKb];
+      const trumpTractor = [...heart3pair, ...heart4pair];
+      const nonTrumpTractor = [...spadeQpair, ...spadeKpair];
       
       // Both should be tractors
-      expect(getComboType(trumpTractor)).toBe(ComboType.Tractor);
-      expect(getComboType(nonTrumpTractor)).toBe(ComboType.Tractor);
+      expect(getComboType(trumpTractor, trumpInfoHearts)).toBe(ComboType.Tractor);
+      expect(getComboType(nonTrumpTractor, trumpInfoHearts)).toBe(ComboType.Tractor);
       
       // Compare individual cards to verify that trump beats non-trump
-      expect(compareCards(heart3a, spadeQa, trumpInfoHearts)).toBeGreaterThan(0);
-      expect(compareCards(heart4a, spadeKa, trumpInfoHearts)).toBeGreaterThan(0);
+      expect(compareCards(heart3pair[0], spadeQpair[0], trumpInfoHearts)).toBeGreaterThan(0);
+      expect(compareCards(heart4pair[0], spadeKpair[0], trumpInfoHearts)).toBeGreaterThan(0);
     });
   });
 
   describe('Edge Cases and Special Combos', () => {
     test('Trump cards should be correctly identified', () => {
       // Create trump cards: 2 of Spades (trump rank + suit), 2 of Hearts (trump rank)
-      const trumpRankAndSuit = createCard(Suit.Spades, Rank.Two, 'spades_2_1');
-      const trumpRankOnly = createCard(Suit.Hearts, Rank.Two, 'hearts_2_1');
-      const trumpSuitOnly = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const nonTrump = createCard(Suit.Hearts, Rank.King, 'hearts_k_1');
+      const trumpRankAndSuit = Card.createCard(Suit.Spades, Rank.Two, 0);
+      const trumpRankOnly = Card.createCard(Suit.Hearts, Rank.Two, 0);
+      const trumpSuitOnly = Card.createCard(Suit.Spades, Rank.King, 0);
+      const nonTrump = Card.createCard(Suit.Hearts, Rank.King, 0);
       
       // Check trump status
       expect(isTrump(trumpRankAndSuit, trumpInfo)).toBe(true);
@@ -353,19 +328,17 @@ describe('Combo Type Identification Tests', () => {
       };
 
       // Create pairs of 2s from different suits (all are trump due to rank)
-      const club2a = createCard(Suit.Clubs, Rank.Two, 'clubs_2_1');
-      const club2b = createCard(Suit.Clubs, Rank.Two, 'clubs_2_2');
-      const diamond2a = createCard(Suit.Diamonds, Rank.Two, 'diamonds_2_1');
-      const diamond2b = createCard(Suit.Diamonds, Rank.Two, 'diamonds_2_2');
+      const club2pair = Card.createPair(Suit.Clubs, Rank.Two);
+      const diamond2pair = Card.createPair(Suit.Diamonds, Rank.Two);
 
-      const hand = [club2a, club2b, diamond2a, diamond2b];
+      const hand = [...club2pair, ...diamond2pair];
 
       // Verify these are all trump cards
-      expect(isTrump(club2a, trumpInfo2)).toBe(true);
-      expect(isTrump(diamond2a, trumpInfo2)).toBe(true);
+      expect(isTrump(club2pair[0], trumpInfo2)).toBe(true);
+      expect(isTrump(diamond2pair[0], trumpInfo2)).toBe(true);
 
       // They should not form a tractor
-      expect(getComboType(hand)).not.toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).not.toBe(ComboType.Tractor);
 
       // They should be identified as separate pairs in identifyCombos
       const combos = identifyCombos(hand, trumpInfo2);
@@ -379,19 +352,17 @@ describe('Combo Type Identification Tests', () => {
 
     test('Joker combinations with trump cards should not form tractors', () => {
       // Create a mix of jokers and trump cards
-      const smallJoker1 = createJoker(JokerType.Small, 'small_joker_1');
-      const smallJoker2 = createJoker(JokerType.Small, 'small_joker_2');
-      const spade2a = createCard(Suit.Spades, Rank.Two, 'spades_2_1');
-      const spade2b = createCard(Suit.Spades, Rank.Two, 'spades_2_2');
+      const smallJokerPair = Card.createJokerPair(JokerType.Small);
+      const spade2pair = Card.createPair(Suit.Spades, Rank.Two);
 
-      const hand = [smallJoker1, smallJoker2, spade2a, spade2b];
+      const hand = [...smallJokerPair, ...spade2pair];
 
       // All are trump cards
-      expect(isTrump(smallJoker1, trumpInfo)).toBe(true);
-      expect(isTrump(spade2a, trumpInfo)).toBe(true);
+      expect(isTrump(smallJokerPair[0], trumpInfo)).toBe(true);
+      expect(isTrump(spade2pair[0], trumpInfo)).toBe(true);
 
       // They should not form a tractor
-      expect(getComboType(hand)).not.toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).not.toBe(ComboType.Tractor);
 
       // When we run identifyCombos, it should not find a tractor
       const combos = identifyCombos(hand, trumpInfo);
@@ -401,10 +372,8 @@ describe('Combo Type Identification Tests', () => {
 
     test('A-A-2-2 combination with 2 as trump rank should not form a tractor', () => {
       // Create A-A-2-2 in Hearts with 2 as trump rank
-      const heart2a = createCard(Suit.Hearts, Rank.Two, 'hearts_2_1');
-      const heart2b = createCard(Suit.Hearts, Rank.Two, 'hearts_2_2');
-      const heartAa = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
-      const heartAb = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2');
+      const heart2pair = Card.createPair(Suit.Hearts, Rank.Two);
+      const heartApair = Card.createPair(Suit.Hearts, Rank.Ace);
 
       const trumpInfo2: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -412,14 +381,14 @@ describe('Combo Type Identification Tests', () => {
         
       };
 
-      const hand = [heartAa, heartAb, heart2a, heart2b];
+      const hand = [...heartApair, ...heart2pair];
 
       // Verify 2 is trump, Ace is not
-      expect(isTrump(heart2a, trumpInfo2)).toBe(true);
-      expect(isTrump(heartAa, trumpInfo2)).toBe(false);
+      expect(isTrump(heart2pair[0], trumpInfo2)).toBe(true);
+      expect(isTrump(heartApair[0], trumpInfo2)).toBe(false);
 
       // They should not form a tractor
-      expect(getComboType(hand)).not.toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).not.toBe(ComboType.Tractor);
 
       // When we run identifyCombos, it should not find a tractor
       const combos = identifyCombos(hand, trumpInfo2);
@@ -429,11 +398,10 @@ describe('Combo Type Identification Tests', () => {
 
     test('Mixed hand should identify all valid combos', () => {
       // Create a complex hand with various combos
-      const spadeK1 = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const spadeK2 = createCard(Suit.Spades, Rank.King, 'spades_k_2');
-      const heart7 = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1');
-      const diamond9 = createCard(Suit.Diamonds, Rank.Nine, 'diamonds_9_1');
-      const smallJoker = createJoker(JokerType.Small, 'small_joker_1');
+      const [spadeK1, spadeK2] = Card.createPair(Suit.Spades, Rank.King);
+      const heart7 = Card.createCard(Suit.Hearts, Rank.Seven, 0);
+      const diamond9 = Card.createCard(Suit.Diamonds, Rank.Nine, 0);
+      const smallJoker = Card.createJoker(JokerType.Small, 0);
 
       const mixedHand = [spadeK1, spadeK2, heart7, diamond9, smallJoker];
       const combos = identifyCombos(mixedHand, trumpInfo);
@@ -448,16 +416,16 @@ describe('Combo Type Identification Tests', () => {
       const pairCombos = combos.filter(c => c.type === ComboType.Pair);
       expect(pairCombos.length).toBe(1);
       expect(pairCombos[0].cards.map(c => c.id)).toEqual(
-        expect.arrayContaining(['spades_k_1', 'spades_k_2'])
+        expect.arrayContaining(['Spades_K_0', 'Spades_K_1'])
       );
     });
 
     test('Cards in a suit should be grouped together', () => {
       // Create three cards of the same suit and one of a different suit
-      const club5 = createCard(Suit.Clubs, Rank.Five, 'clubs_5_1');
-      const club7 = createCard(Suit.Clubs, Rank.Seven, 'clubs_7_1');
-      const club9 = createCard(Suit.Clubs, Rank.Nine, 'clubs_9_1');
-      const heartA = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
+      const club5 = Card.createCard(Suit.Clubs, Rank.Five, 0);
+      const club7 = Card.createCard(Suit.Clubs, Rank.Seven, 0);
+      const club9 = Card.createCard(Suit.Clubs, Rank.Nine, 0);
+      const heartA = Card.createCard(Suit.Hearts, Rank.Ace, 0);
 
       const hand = [club5, heartA, club7, club9];
       const combos = identifyCombos(hand, trumpInfo);
@@ -471,98 +439,78 @@ describe('Combo Type Identification Tests', () => {
   describe('Longer Tractor Validation', () => {
     test('Should identify 6-card tractor (A-A-K-K-Q-Q)', () => {
       // Create cards for a 6-card tractor: A-A-K-K-Q-Q of Spades
-      const spadeAa = createCard(Suit.Spades, Rank.Ace, 'spades_a_1');
-      const spadeAb = createCard(Suit.Spades, Rank.Ace, 'spades_a_2');
-      const spadeKa = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const spadeKb = createCard(Suit.Spades, Rank.King, 'spades_k_2');
-      const spadeQa = createCard(Suit.Spades, Rank.Queen, 'spades_q_1');
-      const spadeQb = createCard(Suit.Spades, Rank.Queen, 'spades_q_2');
+      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
+      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
+      const spadeQpair = Card.createPair(Suit.Spades, Rank.Queen);
       
-      const hand = [spadeAa, spadeAb, spadeKa, spadeKb, spadeQa, spadeQb];
+      const hand = [...spadeApair, ...spadeKpair, ...spadeQpair];
       
       // Should be identified as a tractor
-      expect(getComboType(hand)).toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Tractor);
     });
 
     test('Should identify 8-card tractor (4 consecutive pairs)', () => {
       // Create cards for an 8-card tractor: 5-5-6-6-7-7-8-8 of Hearts
-      const heart5a = createCard(Suit.Hearts, Rank.Five, 'hearts_5_1');
-      const heart5b = createCard(Suit.Hearts, Rank.Five, 'hearts_5_2');
-      const heart6a = createCard(Suit.Hearts, Rank.Six, 'hearts_6_1');
-      const heart6b = createCard(Suit.Hearts, Rank.Six, 'hearts_6_2');
-      const heart7a = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1');
-      const heart7b = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2');
-      const heart8a = createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1');
-      const heart8b = createCard(Suit.Hearts, Rank.Eight, 'hearts_8_2');
+      const heart5pair = Card.createPair(Suit.Hearts, Rank.Five);
+      const heart6pair = Card.createPair(Suit.Hearts, Rank.Six);
+      const heart7pair = Card.createPair(Suit.Hearts, Rank.Seven);
+      const heart8pair = Card.createPair(Suit.Hearts, Rank.Eight);
       
-      const hand = [heart5a, heart5b, heart6a, heart6b, heart7a, heart7b, heart8a, heart8b];
+      const hand = [...heart5pair, ...heart6pair, ...heart7pair, ...heart8pair];
       
       // Should be identified as a tractor
-      expect(getComboType(hand)).toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Tractor);
     });
 
     test('Should identify 10-card tractor (5 consecutive pairs)', () => {
       // Create cards for a 10-card tractor: 3-3-4-4-5-5-6-6-7-7 of Clubs
-      const club3a = createCard(Suit.Clubs, Rank.Three, 'clubs_3_1');
-      const club3b = createCard(Suit.Clubs, Rank.Three, 'clubs_3_2');
-      const club4a = createCard(Suit.Clubs, Rank.Four, 'clubs_4_1');
-      const club4b = createCard(Suit.Clubs, Rank.Four, 'clubs_4_2');
-      const club5a = createCard(Suit.Clubs, Rank.Five, 'clubs_5_1');
-      const club5b = createCard(Suit.Clubs, Rank.Five, 'clubs_5_2');
-      const club6a = createCard(Suit.Clubs, Rank.Six, 'clubs_6_1');
-      const club6b = createCard(Suit.Clubs, Rank.Six, 'clubs_6_2');
-      const club7a = createCard(Suit.Clubs, Rank.Seven, 'clubs_7_1');
-      const club7b = createCard(Suit.Clubs, Rank.Seven, 'clubs_7_2');
+      const club3pair = Card.createPair(Suit.Clubs, Rank.Three);
+      const club4pair = Card.createPair(Suit.Clubs, Rank.Four);
+      const club5pair = Card.createPair(Suit.Clubs, Rank.Five);
+      const club6pair = Card.createPair(Suit.Clubs, Rank.Six);
+      const club7pair = Card.createPair(Suit.Clubs, Rank.Seven);
       
-      const hand = [club3a, club3b, club4a, club4b, club5a, club5b, club6a, club6b, club7a, club7b];
+      const hand = [...club3pair, ...club4pair, ...club5pair, ...club6pair, ...club7pair];
       
       // Should be identified as a tractor
-      expect(getComboType(hand)).toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Tractor);
     });
 
     test('Should NOT identify 6-card combo with non-consecutive pairs', () => {
       // Create cards with non-consecutive pairs: A-A-K-K-J-J (missing Queen)
-      const spadeAa = createCard(Suit.Spades, Rank.Ace, 'spades_a_1');
-      const spadeAb = createCard(Suit.Spades, Rank.Ace, 'spades_a_2');
-      const spadeKa = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const spadeKb = createCard(Suit.Spades, Rank.King, 'spades_k_2');
-      const spadeJa = createCard(Suit.Spades, Rank.Jack, 'spades_j_1');
-      const spadeJb = createCard(Suit.Spades, Rank.Jack, 'spades_j_2');
+      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
+      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
+      const spadeJpair = Card.createPair(Suit.Spades, Rank.Jack);
       
-      const hand = [spadeAa, spadeAb, spadeKa, spadeKb, spadeJa, spadeJb];
+      const hand = [...spadeApair, ...spadeKpair, ...spadeJpair];
       
       // Should NOT be identified as a tractor
-      expect(getComboType(hand)).toBe(ComboType.Single);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Single);
     });
 
     test('Should NOT identify 6-card combo with mixed suits', () => {
       // Create cards with consecutive pairs but mixed suits: A♠-A♠-K♠-K♠-Q♥-Q♥
-      const spadeAa = createCard(Suit.Spades, Rank.Ace, 'spades_a_1');
-      const spadeAb = createCard(Suit.Spades, Rank.Ace, 'spades_a_2');
-      const spadeKa = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const spadeKb = createCard(Suit.Spades, Rank.King, 'spades_k_2');
-      const heartQa = createCard(Suit.Hearts, Rank.Queen, 'hearts_q_1');
-      const heartQb = createCard(Suit.Hearts, Rank.Queen, 'hearts_q_2');
+      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
+      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
+      const heartQpair = Card.createPair(Suit.Hearts, Rank.Queen);
       
-      const hand = [spadeAa, spadeAb, spadeKa, spadeKb, heartQa, heartQb];
+      const hand = [...spadeApair, ...spadeKpair, ...heartQpair];
       
       // Should NOT be identified as a tractor
-      expect(getComboType(hand)).toBe(ComboType.Single);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Single);
     });
 
     test('Should NOT identify 6-card combo with unpaired cards', () => {
       // Create cards with some singles: A-A-K-K-Q-J (Queen and Jack not paired)
-      const spadeAa = createCard(Suit.Spades, Rank.Ace, 'spades_a_1');
-      const spadeAb = createCard(Suit.Spades, Rank.Ace, 'spades_a_2');
-      const spadeKa = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const spadeKb = createCard(Suit.Spades, Rank.King, 'spades_k_2');
-      const spadeQ = createCard(Suit.Spades, Rank.Queen, 'spades_q_1');
-      const spadeJ = createCard(Suit.Spades, Rank.Jack, 'spades_j_1');
+      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
+      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
+      const spadeQ = Card.createCard(Suit.Spades, Rank.Queen, 0);
+      const spadeJ = Card.createCard(Suit.Spades, Rank.Jack, 0);
       
-      const hand = [spadeAa, spadeAb, spadeKa, spadeKb, spadeQ, spadeJ];
+      const hand = [...spadeApair, ...spadeKpair, spadeQ, spadeJ];
       
       // Should NOT be identified as a tractor
-      expect(getComboType(hand)).toBe(ComboType.Single);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Single);
     });
 
     test('Should handle edge case with Ace-King-Queen trump tractor', () => {
@@ -573,51 +521,44 @@ describe('Combo Type Identification Tests', () => {
         
       };
       
-      const heartAa = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
-      const heartAb = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_2');
-      const heartKa = createCard(Suit.Hearts, Rank.King, 'hearts_k_1');
-      const heartKb = createCard(Suit.Hearts, Rank.King, 'hearts_k_2');
-      const heartQa = createCard(Suit.Hearts, Rank.Queen, 'hearts_q_1');
-      const heartQb = createCard(Suit.Hearts, Rank.Queen, 'hearts_q_2');
+      const heartApair = Card.createPair(Suit.Hearts, Rank.Ace);
+      const heartKpair = Card.createPair(Suit.Hearts, Rank.King);
+      const heartQpair = Card.createPair(Suit.Hearts, Rank.Queen);
       
-      const hand = [heartAa, heartAb, heartKa, heartKb, heartQa, heartQb];
+      const hand = [...heartApair, ...heartKpair, ...heartQpair];
       
       // Verify all are trump cards
-      expect(isTrump(heartAa, trumpInfoHearts)).toBe(true);
-      expect(isTrump(heartKa, trumpInfoHearts)).toBe(true);
-      expect(isTrump(heartQa, trumpInfoHearts)).toBe(true);
+      expect(isTrump(heartApair[0], trumpInfoHearts)).toBe(true);
+      expect(isTrump(heartKpair[0], trumpInfoHearts)).toBe(true);
+      expect(isTrump(heartQpair[0], trumpInfoHearts)).toBe(true);
       
       // Should still be identified as a tractor even in trump suit
-      expect(getComboType(hand)).toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Tractor);
     });
 
     test('Should handle odd number of cards (not valid tractor)', () => {
       // Create 5 cards that would be a tractor if they were paired
-      const spadeAa = createCard(Suit.Spades, Rank.Ace, 'spades_a_1');
-      const spadeAb = createCard(Suit.Spades, Rank.Ace, 'spades_a_2');
-      const spadeKa = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const spadeKb = createCard(Suit.Spades, Rank.King, 'spades_k_2');
-      const spadeQ = createCard(Suit.Spades, Rank.Queen, 'spades_q_1');
+      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
+      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
+      const spadeQ = Card.createCard(Suit.Spades, Rank.Queen, 0);
       
-      const hand = [spadeAa, spadeAb, spadeKa, spadeKb, spadeQ];
+      const hand = [...spadeApair, ...spadeKpair, spadeQ];
       
       // Should NOT be identified as a tractor (odd number of cards)
-      expect(getComboType(hand)).toBe(ComboType.Single);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Single);
     });
 
     test('Should handle 3-card groups (not valid tractor)', () => {
       // Create cards where one rank has 3 cards: A-A-A-K-K-Q
-      const spadeAa = createCard(Suit.Spades, Rank.Ace, 'spades_a_1');
-      const spadeAb = createCard(Suit.Spades, Rank.Ace, 'spades_a_2');
-      const spadeAc = createCard(Suit.Spades, Rank.Ace, 'spades_a_3');
-      const spadeKa = createCard(Suit.Spades, Rank.King, 'spades_k_1');
-      const spadeKb = createCard(Suit.Spades, Rank.King, 'spades_k_2');
-      const spadeQ = createCard(Suit.Spades, Rank.Queen, 'spades_q_1');
+      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
+      const spadeAextra = Card.createCard(Suit.Spades, Rank.Ace, 0);
+      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
+      const spadeQ = Card.createCard(Suit.Spades, Rank.Queen, 0);
       
-      const hand = [spadeAa, spadeAb, spadeAc, spadeKa, spadeKb, spadeQ];
+      const hand = [...spadeApair, spadeAextra, ...spadeKpair, spadeQ];
       
       // Should NOT be identified as a tractor (not all pairs)
-      expect(getComboType(hand)).toBe(ComboType.Single);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Single);
     });
   });
 });

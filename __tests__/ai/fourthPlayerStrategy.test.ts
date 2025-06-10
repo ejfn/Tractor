@@ -1,5 +1,5 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { createIsolatedGameState } from '../helpers/testIsolation';
+import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, TrumpInfo } from '../../src/types';
 import { 
   GameState, 
@@ -7,7 +7,6 @@ import {
   PointPressure,
   PlayStyle 
 } from '../../src/types';
-import { createCard } from '../helpers/cards';
 import { getTrickPosition } from '../../src/ai/aiGameContext';
 
 describe('4th Player Strategy Tests', () => {
@@ -15,7 +14,7 @@ describe('4th Player Strategy Tests', () => {
   describe('Point Card Prioritization', () => {
     
     it('should prioritize 10s over Kings over 5s when partner is winning', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -25,29 +24,11 @@ describe('4th Player Strategy Tests', () => {
       gameState.trumpInfo = trumpInfo;
       
       // Create trick scenario where partner (Bot 1) is winning
-      const leadingCard: Card = {
-        id: 'spades-3-1',
-        suit: Suit.Spades,
-        rank: Rank.Three,
-        joker: undefined,
-        points: 0
-      };
+      const leadingCard: Card = Card.createCard(Suit.Spades, Rank.Three, 0);
       
-      const bot1WinningCard: Card = {
-        id: 'spades-ace-1',
-        suit: Suit.Spades,
-        rank: Rank.Ace,
-        joker: undefined,
-        points: 0
-      };
+      const bot1WinningCard: Card = Card.createCard(Suit.Spades, Rank.Ace, 0);
       
-      const bot2Card: Card = {
-        id: 'spades-4-1', 
-        suit: Suit.Spades,
-        rank: Rank.Four,
-        joker: undefined,
-        points: 0
-      };
+      const bot2Card: Card = Card.createCard(Suit.Spades, Rank.Four, 0);
       
       gameState.currentTrick = {
         plays: [
@@ -65,27 +46,9 @@ describe('4th Player Strategy Tests', () => {
       
       // Test case 1: 10 should be prioritized over King and 5
       gameState.players[3].hand = [
-        {
-          id: 'spades-5-1',
-          suit: Suit.Spades,
-          rank: Rank.Five,
-          joker: undefined,
-          points: 5
-        },
-        {
-          id: 'spades-king-1',
-          suit: Suit.Spades,
-          rank: Rank.King,
-          joker: undefined,
-          points: 10
-        },
-        {
-          id: 'spades-10-1',
-          suit: Suit.Spades,
-          rank: Rank.Ten,
-          joker: undefined,
-          points: 10
-        }
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0)
       ];
       
       let aiMove = getAIMove(gameState, fourthPlayerId);
@@ -95,27 +58,9 @@ describe('4th Player Strategy Tests', () => {
       
       // Test case 2: King should be prioritized over 5 when no 10
       gameState.players[3].hand = [
-        {
-          id: 'spades-5-1',
-          suit: Suit.Spades,
-          rank: Rank.Five,
-          joker: undefined,
-          points: 5
-        },
-        {
-          id: 'spades-king-1',
-          suit: Suit.Spades,
-          rank: Rank.King,
-          joker: undefined,
-          points: 10
-        },
-        {
-          id: 'spades-6-1',
-          suit: Suit.Spades,
-          rank: Rank.Six,
-          joker: undefined,
-          points: 0
-        }
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 0)
       ];
       
       aiMove = getAIMove(gameState, fourthPlayerId);
@@ -124,7 +69,7 @@ describe('4th Player Strategy Tests', () => {
     });
 
     it('should avoid point cards when opponent is winning', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -134,29 +79,11 @@ describe('4th Player Strategy Tests', () => {
       gameState.trumpInfo = trumpInfo;
       
       // Create trick scenario where opponent (Bot 2) is winning
-      const leadingCard: Card = {
-        id: 'spades-3-1',
-        suit: Suit.Spades,
-        rank: Rank.Three,
-        joker: undefined,
-        points: 0
-      };
+      const leadingCard: Card = Card.createCard(Suit.Spades, Rank.Three, 0);
       
-      const bot1Card: Card = {
-        id: 'spades-4-1', 
-        suit: Suit.Spades,
-        rank: Rank.Four,
-        joker: undefined,
-        points: 0
-      };
+      const bot1Card: Card = Card.createCard(Suit.Spades, Rank.Four, 0);
       
-      const bot2WinningCard: Card = {
-        id: 'spades-ace-1',
-        suit: Suit.Spades,
-        rank: Rank.Ace,
-        joker: undefined,
-        points: 0
-      };
+      const bot2WinningCard: Card = Card.createCard(Suit.Spades, Rank.Ace, 0);
       
       // Set up trick with opponent (Bot 2) winning
       gameState.currentTrick = {
@@ -176,50 +103,14 @@ describe('4th Player Strategy Tests', () => {
       // Create Bot 3's hand with both point cards and non-point cards
       const bot3Hand: Card[] = [
         // Point cards
-        {
-          id: 'spades-5-1',
-          suit: Suit.Spades,
-          rank: Rank.Five,
-          joker: undefined,
-          points: 5  // Point card
-        },
-        {
-          id: 'spades-10-1',
-          suit: Suit.Spades,
-          rank: Rank.Ten,
-          joker: undefined,
-          points: 10  // Point card
-        },
-        {
-          id: 'spades-king-1',
-          suit: Suit.Spades,
-          rank: Rank.King,
-          joker: undefined,
-          points: 10  // Point card
-        },
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.King, 0),
         // Non-point cards
-        {
-          id: 'spades-6-1',
-          suit: Suit.Spades,
-          rank: Rank.Six,
-          joker: undefined,
-          points: 0
-        },
-        {
-          id: 'spades-7-1',
-          suit: Suit.Spades,
-          rank: Rank.Seven,
-          joker: undefined,
-          points: 0
-        },
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
         // Other cards
-        {
-          id: 'clubs-8-1',
-          suit: Suit.Clubs,
-          rank: Rank.Eight,
-          joker: undefined,
-          points: 0
-        }
+        Card.createCard(Suit.Clubs, Rank.Eight, 0)
       ];
       
       gameState.players[3].hand = bot3Hand;
@@ -252,7 +143,7 @@ describe('4th Player Strategy Tests', () => {
     });
     
     it('should play conservative cards when no point cards available and partner winning', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -266,33 +157,15 @@ describe('4th Player Strategy Tests', () => {
         plays: [
           { 
             playerId: PlayerId.Human, 
-            cards: [{
-              id: 'clubs-3-1',
-              suit: Suit.Clubs,
-              rank: Rank.Three,
-              joker: undefined,
-              points: 0
-            }]
+            cards: [Card.createCard(Suit.Clubs, Rank.Three, 0)]
           },
           { 
             playerId: PlayerId.Bot1, 
-            cards: [{
-              id: 'clubs-ace-1',
-              suit: Suit.Clubs,
-              rank: Rank.Ace,
-              joker: undefined,
-              points: 0
-            }]
+            cards: [Card.createCard(Suit.Clubs, Rank.Ace, 0)]
           },
           { 
             playerId: PlayerId.Bot2, 
-            cards: [{
-              id: 'clubs-4-1',
-              suit: Suit.Clubs,
-              rank: Rank.Four,
-              joker: undefined,
-              points: 0
-            }]
+            cards: [Card.createCard(Suit.Clubs, Rank.Four, 0)]
           }
         ],
         winningPlayerId: PlayerId.Bot1, // Bot1 (Bot3's partner) winning
@@ -303,27 +176,9 @@ describe('4th Player Strategy Tests', () => {
       
       // Bot 3 hand with only non-point cards
       const bot3Hand: Card[] = [
-        {
-          id: 'clubs-6-1',
-          suit: Suit.Clubs,
-          rank: Rank.Six,
-          joker: undefined,
-          points: 0
-        },
-        {
-          id: 'clubs-7-1',
-          suit: Suit.Clubs,
-          rank: Rank.Seven,
-          joker: undefined,
-          points: 0
-        },
-        {
-          id: 'clubs-8-1',
-          suit: Suit.Clubs,
-          rank: Rank.Eight,
-          joker: undefined,
-          points: 0
-        }
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
+        Card.createCard(Suit.Clubs, Rank.Eight, 0)
       ];
       
       gameState.players[3].hand = bot3Hand;
@@ -346,7 +201,7 @@ describe('4th Player Strategy Tests', () => {
     const fourthPlayerId = PlayerId.Bot3; // Bot3 is 4th chronological player (TrickPosition.Fourth) in test scenarios
 
     beforeEach(() => {
-      gameState = createIsolatedGameState();
+      gameState = initializeGame();
       trumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
@@ -361,9 +216,9 @@ describe('4th Player Strategy Tests', () => {
       // Test when Bot3 is about to play as 4th player (3 players have played so far)
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Seven)] },
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Seven, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Eight, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Nine, 0)] }
         ],
         winningPlayerId: PlayerId.Bot2,
         points: 0
@@ -378,9 +233,9 @@ describe('4th Player Strategy Tests', () => {
       // Set up trick with teammate (Bot1) winning
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Three)] },
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Ace)] }, // Partner wins strongly
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Four)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Three, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] }, // Partner wins strongly
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Four, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1, // Bot3's teammate
         points: 0
@@ -388,10 +243,10 @@ describe('4th Player Strategy Tests', () => {
 
       // Give Bot3 hand with point cards including guaranteed winners
       gameState.players[3].hand = [
-        createCard(Suit.Spades, Rank.King), // King of same suit - high value (10 pts)
-        createCard(Suit.Spades, Rank.Ten),  // Ten of same suit - high value (10 pts)
-        createCard(Suit.Spades, Rank.Five), // Five of same suit - medium value (5 pts)
-        createCard(Suit.Clubs, Rank.Six)    // Non-point alternative (0 pts)
+        Card.createCard(Suit.Spades, Rank.King, 0), // King of same suit - high value (10 pts)
+        Card.createCard(Suit.Spades, Rank.Ten, 0),  // Ten of same suit - high value (10 pts)
+        Card.createCard(Suit.Spades, Rank.Five, 0), // Five of same suit - medium value (5 pts)
+        Card.createCard(Suit.Clubs, Rank.Six, 0)    // Non-point alternative (0 pts)
       ];
 
       const aiMove = getAIMove(gameState, fourthPlayerId);
@@ -410,9 +265,9 @@ describe('4th Player Strategy Tests', () => {
       // Set up trick with teammate winning with trump
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Three)] },
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Two)] }, // Trump rank in trump suit
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Four)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Three, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Two, 0)] }, // Trump rank in trump suit
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Four, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1,
         points: 0
@@ -420,9 +275,9 @@ describe('4th Player Strategy Tests', () => {
 
       // Give Bot3 hand with multiple point cards
       gameState.players[3].hand = [
-        createCard(Suit.Spades, Rank.King),
-        createCard(Suit.Spades, Rank.Ten),
-        createCard(Suit.Clubs, Rank.Seven)
+        Card.createCard(Suit.Spades, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Clubs, Rank.Seven, 0)
       ];
 
       const aiMove = getAIMove(gameState, fourthPlayerId);
@@ -436,9 +291,9 @@ describe('4th Player Strategy Tests', () => {
       // Set up opponent winning scenario with NON-trump lead so player has choice
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Ace)] }, // Human leads non-trump Spades
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Four)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Five)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] }, // Human leads non-trump Spades
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Four, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Five, 0)] }
         ],
         winningPlayerId: PlayerId.Human,
         points: 5
@@ -446,10 +301,10 @@ describe('4th Player Strategy Tests', () => {
 
       // Give Bot3 hand with only point cards and trump (no Spades to force choice)
       gameState.players[3].hand = [
-        createCard(Suit.Hearts, Rank.Three), // Trump (worst option)
-        createCard(Suit.Clubs, Rank.King), // Non-trump point card (10 pts)
-        createCard(Suit.Clubs, Rank.Five),  // Lower point non-trump (5 pts)
-        createCard(Suit.Diamonds, Rank.Ace) // Non-trump Ace (0 pts but valuable)
+        Card.createCard(Suit.Hearts, Rank.Three, 0), // Trump (worst option)
+        Card.createCard(Suit.Clubs, Rank.King, 0), // Non-trump point card (10 pts)
+        Card.createCard(Suit.Clubs, Rank.Five, 0),  // Lower point non-trump (5 pts)
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0) // Non-trump Ace (0 pts but valuable)
       ];
 
       const aiMove = getAIMove(gameState, fourthPlayerId);
@@ -470,7 +325,7 @@ describe('4th Player Strategy Tests', () => {
     const fourthPlayerId = PlayerId.Bot3;
 
     beforeEach(() => {
-      gameState = createIsolatedGameState();
+      gameState = initializeGame();
       trumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
@@ -483,9 +338,9 @@ describe('4th Player Strategy Tests', () => {
       // Set up neutral trick scenario
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Seven)] },
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Six)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Seven, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Eight, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Six, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1,
         points: 0
@@ -493,10 +348,10 @@ describe('4th Player Strategy Tests', () => {
 
       // Give Bot3 strategic choices
       gameState.players[3].hand = [
-        createCard(Suit.Spades, Rank.Nine),   // Can win but low value
-        createCard(Suit.Spades, Rank.Ace),    // Strong card to conserve
-        createCard(Suit.Clubs, Rank.Three),   // Weak disposal card
-        createCard(Suit.Hearts, Rank.Four)    // Trump to avoid
+        Card.createCard(Suit.Spades, Rank.Nine, 0),   // Can win but low value
+        Card.createCard(Suit.Spades, Rank.Ace, 0),    // Strong card to conserve
+        Card.createCard(Suit.Clubs, Rank.Three, 0),   // Weak disposal card
+        Card.createCard(Suit.Hearts, Rank.Four, 0)    // Trump to avoid
       ];
 
       const aiMove = getAIMove(gameState, fourthPlayerId);
@@ -513,9 +368,9 @@ describe('4th Player Strategy Tests', () => {
       // Set up valuable trick scenario
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.King)] },
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Ten)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Five)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.King, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Ten, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Five, 0)] }
         ],
         winningPlayerId: PlayerId.Human,
         points: 25 // High value trick
@@ -523,9 +378,9 @@ describe('4th Player Strategy Tests', () => {
 
       // Give Bot3 guaranteed winner
       gameState.players[3].hand = [
-        createCard(Suit.Spades, Rank.Ace),    // Guaranteed winner
-        createCard(Suit.Clubs, Rank.Three),   // Weak alternative
-        createCard(Suit.Diamonds, Rank.Four)  // Weak alternative
+        Card.createCard(Suit.Spades, Rank.Ace, 0),    // Guaranteed winner
+        Card.createCard(Suit.Clubs, Rank.Three, 0),   // Weak alternative
+        Card.createCard(Suit.Diamonds, Rank.Four, 0)  // Weak alternative
       ];
 
       const aiMove = getAIMove(gameState, fourthPlayerId);
@@ -542,7 +397,7 @@ describe('4th Player Strategy Tests', () => {
     const fourthPlayerId = PlayerId.Bot3;
 
     beforeEach(() => {
-      gameState = createIsolatedGameState();
+      gameState = initializeGame();
       trumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
@@ -556,9 +411,9 @@ describe('4th Player Strategy Tests', () => {
       // Use a 0-point trick to trigger strategic disposal path
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Clubs, Rank.Seven)] },
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Clubs, Rank.Eight)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Clubs, Rank.Nine)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Eight, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Clubs, Rank.Nine, 0)] }
         ],
         winningPlayerId: PlayerId.Bot2,
         points: 0
@@ -569,10 +424,10 @@ describe('4th Player Strategy Tests', () => {
       gameState.tricks = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [createCard(Suit.Clubs, Rank.Ace)] },
-            { playerId: PlayerId.Bot2, cards: [createCard(Suit.Clubs, Rank.King)] },
-            { playerId: PlayerId.Bot3, cards: [createCard(Suit.Clubs, Rank.Queen)] },
-            { playerId: PlayerId.Human, cards: [createCard(Suit.Clubs, Rank.Jack)] }
+            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Ace, 0)] },
+            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Clubs, Rank.King, 0)] },
+            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Clubs, Rank.Queen, 0)] },
+            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Clubs, Rank.Jack, 0)] }
           ],
           winningPlayerId: PlayerId.Bot1,
           points: 10
@@ -581,9 +436,9 @@ describe('4th Player Strategy Tests', () => {
 
       // Give Bot3 a card that should be guaranteed winner due to memory
       gameState.players[3].hand = [
-        createCard(Suit.Clubs, Rank.Ten), // Should be guaranteed since A,K,Q,J played
-        createCard(Suit.Clubs, Rank.Six),  // Lower alternative  
-        createCard(Suit.Diamonds, Rank.Three) // Off-suit option
+        Card.createCard(Suit.Clubs, Rank.Ten, 0), // Should be guaranteed since A,K,Q,J played
+        Card.createCard(Suit.Clubs, Rank.Six, 0),  // Lower alternative  
+        Card.createCard(Suit.Diamonds, Rank.Three, 0) // Off-suit option
       ];
 
       const aiMove = getAIMove(gameState, fourthPlayerId);
@@ -601,7 +456,7 @@ describe('4th Player Strategy Tests', () => {
     const fourthPlayerId = PlayerId.Bot3;
 
     beforeEach(() => {
-      gameState = createIsolatedGameState();
+      gameState = initializeGame();
       trumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
@@ -614,9 +469,9 @@ describe('4th Player Strategy Tests', () => {
       // Set up minimal scenario
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Seven)] },
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Seven, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Eight, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Nine, 0)] }
         ],
         winningPlayerId: PlayerId.Bot2,
         points: 0
@@ -624,7 +479,7 @@ describe('4th Player Strategy Tests', () => {
 
       // Give Bot3 single card
       gameState.players[3].hand = [
-        createCard(Suit.Spades, Rank.Three)
+        Card.createCard(Suit.Spades, Rank.Three, 0)
       ];
 
       const aiMove = getAIMove(gameState, fourthPlayerId);
@@ -640,17 +495,17 @@ describe('4th Player Strategy Tests', () => {
       
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createCard(Suit.Spades, Rank.Seven)] },
-          { playerId: PlayerId.Bot1, cards: [createCard(Suit.Spades, Rank.Eight)] },
-          { playerId: PlayerId.Bot2, cards: [createCard(Suit.Spades, Rank.Nine)] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Seven, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Eight, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Nine, 0)] }
         ],
         winningPlayerId: PlayerId.Bot2,
         points: 0
       };
 
       gameState.players[3].hand = [
-        createCard(Suit.Spades, Rank.King),
-        createCard(Suit.Spades, Rank.Four)
+        Card.createCard(Suit.Spades, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 0)
       ];
 
       const aiMove = getAIMove(gameState, fourthPlayerId);

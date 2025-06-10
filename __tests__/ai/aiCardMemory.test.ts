@@ -5,17 +5,19 @@ import {
   enhanceGameContextWithMemory,
 } from '../../src/ai/aiCardMemory';
 import {
-  GameState,
-  CardMemory,
-  MemoryContext,
-  MemoryBasedStrategy,
-  Suit,
-  Rank,
-  PlayerId,
-  GamePhase,
-  TrumpInfo,
   Card,
+  GameState,
+  GameContextBase,
+  GameContext,
+  MemoryContext,
+  PlayerId,
+  PlayStyle,
+  PointPressure,
+  Rank,
+  Suit,
   Trick,
+  TrickPosition,
+  TrumpInfo
 } from "../../src/types";
 import { createTestCardsGameState } from '../helpers/gameStates';
 
@@ -34,17 +36,6 @@ describe('AI Card Memory System - Phase 3', () => {
     gameState.trumpInfo = trumpInfo;
   });
 
-  const createTestCard = (
-    rank: Rank,
-    suit: Suit,
-    points: number = 0,
-    deckId: number = 0,
-  ): Card => ({
-    rank,
-    suit,
-    id: `${rank}_${suit}_${deckId}`,
-    points,
-  });
 
   const createTestTrick = (
     leadingPlayerId: PlayerId,
@@ -78,11 +69,11 @@ describe('AI Card Memory System - Phase 3', () => {
       // Add a completed trick
       const trick = createTestTrick(
         PlayerId.Human,
-        [createTestCard(Rank.King, Suit.Diamonds, 10)],
+        [Card.createCard(Suit.Diamonds, Rank.King, 0)],
         [
-          { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Ace, Suit.Diamonds)] },
-          { playerId: PlayerId.Bot2, cards: [createTestCard(Rank.Two, Suit.Hearts)] }, // Trump
-          { playerId: PlayerId.Bot3, cards: [createTestCard(Rank.Five, Suit.Clubs, 5)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Ace, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Two, 0)] }, // Trump
+          { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Clubs, Rank.Five, 0)] },
         ]
       );
       
@@ -101,10 +92,10 @@ describe('AI Card Memory System - Phase 3', () => {
     it('should track player-specific information', () => {
       const trick = createTestTrick(
         PlayerId.Human,
-        [createTestCard(Rank.King, Suit.Diamonds, 10)],
+        [Card.createCard(Suit.Diamonds, Rank.King, 0)],
         [
-          { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Three, Suit.Diamonds)] },
-          { playerId: PlayerId.Bot2, cards: [createTestCard(Rank.Two, Suit.Hearts)] }, // Trump
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Three, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Two, 0)] }, // Trump
         ]
       );
       
@@ -122,8 +113,8 @@ describe('AI Card Memory System - Phase 3', () => {
     it('should handle current trick in progress', () => {
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [createTestCard(Rank.Queen, Suit.Spades)] },
-          { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Jack, Suit.Spades)] },
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Jack, 0)] },
         ],
         winningPlayerId: PlayerId.Human, // Human's Queen beats Bot1's Jack
         points: 0,
@@ -141,10 +132,10 @@ describe('AI Card Memory System - Phase 3', () => {
       // Add some played cards
       const trick = createTestTrick(
         PlayerId.Human,
-        [createTestCard(Rank.King, Suit.Diamonds, 10)],
+        [Card.createCard(Suit.Diamonds, Rank.King, 0)],
         [
-          { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Ace, Suit.Diamonds)] },
-          { playerId: PlayerId.Bot2, cards: [createTestCard(Rank.Two, Suit.Hearts)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Ace, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Two, 0)] },
         ]
       );
       
@@ -162,10 +153,10 @@ describe('AI Card Memory System - Phase 3', () => {
       const tricks = [
         createTestTrick(
           PlayerId.Human,
-          [createTestCard(Rank.Two, Suit.Hearts)], // Trump
+          [Card.createCard(Suit.Hearts, Rank.Two, 0)], // Trump
           [
-            { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Two, Suit.Spades)] }, // Trump rank
-            { playerId: PlayerId.Bot2, cards: [createTestCard(Rank.Three, Suit.Hearts)] }, // Trump suit
+            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Two, 0)] }, // Trump rank
+            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] }, // Trump suit
           ]
         ),
       ];
@@ -269,14 +260,14 @@ describe('AI Card Memory System - Phase 3', () => {
 
   describe('enhanceGameContextWithMemory', () => {
     it('should integrate memory context into game context', () => {
-      const baseContext = {
+      const baseContext: GameContextBase = {
         isAttackingTeam: true,
         currentPoints: 30,
         pointsNeeded: 80,
         cardsRemaining: 25,
-        trickPosition: 'first' as any,
-        pointPressure: 'MEDIUM' as any,
-        playStyle: 'Balanced' as any,
+        trickPosition: TrickPosition.First,
+        pointPressure: PointPressure.MEDIUM,
+        playStyle: PlayStyle.Balanced,
       };
 
       const memory = createCardMemory(gameState);
@@ -285,31 +276,36 @@ describe('AI Card Memory System - Phase 3', () => {
       expect(enhancedContext).toMatchObject(baseContext);
       expect(enhancedContext.memoryContext).toBeDefined();
       expect(enhancedContext.memoryStrategy).toBeDefined();
-      expect(enhancedContext.memoryContext.cardsRemaining).toBeGreaterThan(0);
-      expect(enhancedContext.memoryStrategy.riskLevel).toBeGreaterThanOrEqual(0);
-      expect(enhancedContext.memoryStrategy.riskLevel).toBeLessThanOrEqual(1);
+      expect(enhancedContext.memoryContext!.cardsRemaining).toBeGreaterThan(0);
+      expect(enhancedContext.memoryStrategy!.riskLevel).toBeGreaterThanOrEqual(0);
+      expect(enhancedContext.memoryStrategy!.riskLevel).toBeLessThanOrEqual(1);
     });
 
     it('should preserve all original context properties', () => {
-      const baseContext = {
+      const baseContext: GameContextBase = {
         isAttackingTeam: false,
         currentPoints: 65,
         pointsNeeded: 80,
         cardsRemaining: 12,
-        trickPosition: 'fourth' as any,
-        pointPressure: 'HIGH' as any,
-        playStyle: 'Desperate' as any,
-        customProperty: 'test',
+        trickPosition: TrickPosition.Fourth,
+        pointPressure: PointPressure.HIGH,
+        playStyle: PlayStyle.Desperate,
       };
 
       const memory = createCardMemory(gameState);
       const enhancedContext = enhanceGameContextWithMemory(baseContext, memory, gameState);
 
+      // Should preserve all original context properties
       expect(enhancedContext.isAttackingTeam).toBe(false);
       expect(enhancedContext.currentPoints).toBe(65);
       expect(enhancedContext.pointsNeeded).toBe(80);
       expect(enhancedContext.cardsRemaining).toBe(12);
-      expect(enhancedContext.customProperty).toBe('test');
+      expect(enhancedContext.trickPosition).toBe(TrickPosition.Fourth);
+      expect(enhancedContext.pointPressure).toBe(PointPressure.HIGH);
+      expect(enhancedContext.playStyle).toBe(PlayStyle.Desperate);
+      // Should add memory context and strategy
+      expect(enhancedContext.memoryContext).toBeDefined();
+      expect(enhancedContext.memoryStrategy).toBeDefined();
     });
   });
 
@@ -318,10 +314,10 @@ describe('AI Card Memory System - Phase 3', () => {
       // Create a trick where Bot1 leads with a trump
       const trick = createTestTrick(
         PlayerId.Bot1,
-        [createTestCard(Rank.Two, Suit.Hearts)], // Trump lead
+        [Card.createCard(Suit.Hearts, Rank.Two, 0)], // Trump lead
         [
-          { playerId: PlayerId.Human, cards: [createTestCard(Rank.King, Suit.Hearts, 10)] },
-          { playerId: PlayerId.Bot2, cards: [createTestCard(Rank.Ace, Suit.Hearts)] },
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
         ]
       );
       
@@ -352,18 +348,18 @@ describe('AI Card Memory System - Phase 3', () => {
       const tricks = [
         createTestTrick(
           PlayerId.Human,
-          [createTestCard(Rank.Three, Suit.Spades)],
-          [{ playerId: PlayerId.Bot1, cards: [createTestCard(Rank.King, Suit.Spades, 10)] }]
+          [Card.createCard(Suit.Spades, Rank.Three, 0)],
+          [{ playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.King, 0)] }]
         ),
         createTestTrick(
           PlayerId.Human,
-          [createTestCard(Rank.Four, Suit.Clubs)],
-          [{ playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Five, Suit.Clubs, 5)] }]
+          [Card.createCard(Suit.Clubs, Rank.Four, 0)],
+          [{ playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Five, 0)] }]
         ),
         createTestTrick(
           PlayerId.Human,
-          [createTestCard(Rank.Six, Suit.Diamonds)],
-          [{ playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Seven, Suit.Diamonds)] }]
+          [Card.createCard(Suit.Diamonds, Rank.Six, 0)],
+          [{ playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Seven, 0)] }]
         ),
       ];
       
@@ -380,9 +376,9 @@ describe('AI Card Memory System - Phase 3', () => {
     it('should calculate card probabilities for remaining cards', () => {
       const trick = createTestTrick(
         PlayerId.Human,
-        [createTestCard(Rank.King, Suit.Diamonds, 10)],
+        [Card.createCard(Suit.Diamonds, Rank.King, 0)],
         [
-          { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Ace, Suit.Diamonds)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Ace, 0)] },
         ]
       );
       
@@ -429,11 +425,11 @@ describe('AI Card Memory System - Phase 3', () => {
       const tricks = Array.from({ length: 10 }, (_, i) => 
         createTestTrick(
           PlayerId.Human,
-          [createTestCard(Rank.Three, Suit.Spades)],
+          [Card.createCard(Suit.Spades, Rank.Three, 0)],
           [
-            { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Four, Suit.Spades)] },
-            { playerId: PlayerId.Bot2, cards: [createTestCard(Rank.Five, Suit.Spades, 5)] },
-            { playerId: PlayerId.Bot3, cards: [createTestCard(Rank.Six, Suit.Spades)] },
+            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Four, 0)] },
+            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Five, 0)] },
+            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Spades, Rank.Six, 0)] },
           ]
         )
       );
@@ -448,9 +444,9 @@ describe('AI Card Memory System - Phase 3', () => {
     it('should maintain consistency across multiple memory operations', () => {
       const trick = createTestTrick(
         PlayerId.Human,
-        [createTestCard(Rank.King, Suit.Diamonds, 10)],
+        [Card.createCard(Suit.Diamonds, Rank.King, 0)],
         [
-          { playerId: PlayerId.Bot1, cards: [createTestCard(Rank.Ace, Suit.Diamonds)] },
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Ace, 0)] },
         ]
       );
       

@@ -1,14 +1,11 @@
-import { identifyCombos } from '../../src/game/gameLogic';
-import { validatePlay } from '../../src/game/gamePlayManager';
+import { identifyCombos } from '../../src/game/comboDetection';
+import { validatePlay } from '../../src/game/playProcessing';
+import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
 import { createFullGameStateWithTricks } from '../helpers';
-import { Rank, Suit, ComboType, TrumpInfo } from '../../src/types';
 
 describe('Tractor Length Bug Fix', () => {
   const createDiamondCards = (ranks: Rank[]) => {
-    return ranks.flatMap(rank => [
-      { id: `${rank}_${Suit.Diamonds}_1`, rank, suit: Suit.Diamonds, points: 0 },
-      { id: `${rank}_${Suit.Diamonds}_2`, rank, suit: Suit.Diamonds, points: 0 }
-    ]);
+    return ranks.flatMap(rank => Card.createPair(Suit.Diamonds, rank));
   };
 
   const trumpInfo: TrumpInfo = {

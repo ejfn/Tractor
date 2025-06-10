@@ -24,19 +24,7 @@ import {
   TeamId,
 } from "../../src/types";
 
-// Test utilities
-const createTestCard = (suit: Suit, rank: Rank, points: number = 0): Card => ({
-  id: `${suit}_${rank}`,
-  suit,
-  rank,
-  points,
-});
-
-const createTestJoker = (jokerType: JokerType): Card => ({
-  id: `joker_${jokerType}`,
-  joker: jokerType,
-  points: 0,
-});
+// Using Card class static methods
 
 const createTestTrumpInfo = (trumpRank: Rank = Rank.Two, trumpSuit?: Suit): TrumpInfo => ({
   trumpRank,
@@ -108,10 +96,10 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const gameState = createTestGameState({
         tricks: [], // No tricks played yet
         players: [
-          { ...createTestGameState().players[0], hand: Array(13).fill(createTestCard(Suit.Hearts, Rank.Ace)) },
-          { ...createTestGameState().players[1], hand: Array(13).fill(createTestCard(Suit.Spades, Rank.King)) },
-          { ...createTestGameState().players[2], hand: Array(13).fill(createTestCard(Suit.Clubs, Rank.Queen)) },
-          { ...createTestGameState().players[3], hand: Array(13).fill(createTestCard(Suit.Diamonds, Rank.Jack)) },
+          { ...createTestGameState().players[0], hand: Array(13).fill(Card.createCard(Suit.Hearts, Rank.Ace, 0)) },
+          { ...createTestGameState().players[1], hand: Array(13).fill(Card.createCard(Suit.Spades, Rank.King, 0)) },
+          { ...createTestGameState().players[2], hand: Array(13).fill(Card.createCard(Suit.Clubs, Rank.Queen, 0)) },
+          { ...createTestGameState().players[3], hand: Array(13).fill(Card.createCard(Suit.Diamonds, Rank.Jack, 0)) },
         ],
       });
       
@@ -126,7 +114,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         tricks: [
           {
             plays: [
-              { playerId: PlayerId.Bot1, cards: [createTestCard(Suit.Hearts, Rank.Five, 5)] }
+              { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] }
             ],
             winningPlayerId: PlayerId.Bot1,
             points: 15, // Opponent got points
@@ -146,14 +134,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         tricks: [
           {
             plays: [
-              { playerId: PlayerId.Human, cards: [createTestCard(Suit.Hearts, Rank.King, 10)] }
+              { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] }
             ],
             winningPlayerId: PlayerId.Human,
             points: 25, // Team A got good points
           },
           {
             plays: [
-              { playerId: PlayerId.Bot2, cards: [createTestCard(Suit.Spades, Rank.Ten, 10)] }
+              { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Ten, 0)] }
             ],
             winningPlayerId: PlayerId.Bot2,
             points: 30, // Team A got more points
@@ -173,24 +161,24 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         players: [
           {
             ...createTestGameState().players[0],
-            hand: [createTestCard(Suit.Hearts, Rank.Ace)], // Human with non-point card
+            hand: [Card.createCard(Suit.Hearts, Rank.Ace, 0)], // Human with non-point card
           },
           {
             ...createTestGameState().players[1],
-            hand: [createTestCard(Suit.Spades, Rank.Seven)],
+            hand: [Card.createCard(Suit.Spades, Rank.Seven, 0)],
           },
           {
             ...createTestGameState().players[2], // Partner with many point cards
             hand: [
-              createTestCard(Suit.Hearts, Rank.Five, 5),
-              createTestCard(Suit.Hearts, Rank.Ten, 10),
-              createTestCard(Suit.Hearts, Rank.King, 10),
-              createTestCard(Suit.Spades, Rank.Five, 5),
+              Card.createCard(Suit.Hearts, Rank.Five, 0),
+              Card.createCard(Suit.Hearts, Rank.Ten, 0),
+              Card.createCard(Suit.Hearts, Rank.King, 0),
+              Card.createCard(Suit.Spades, Rank.Five, 0),
             ],
           },
           {
             ...createTestGameState().players[3],
-            hand: [createTestCard(Suit.Clubs, Rank.Eight)],
+            hand: [Card.createCard(Suit.Clubs, Rank.Eight, 0)],
           },
         ],
       });
@@ -218,10 +206,10 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       // Create game state with realistic hand sizes
       const gameState = createTestGameState({
         players: [
-          { ...createTestGameState().players[0], hand: Array(10).fill(createTestCard(Suit.Hearts, Rank.Ace)) },
-          { ...createTestGameState().players[1], hand: Array(10).fill(createTestCard(Suit.Spades, Rank.King)) },
-          { ...createTestGameState().players[2], hand: Array(10).fill(createTestCard(Suit.Clubs, Rank.Queen)) },
-          { ...createTestGameState().players[3], hand: Array(10).fill(createTestCard(Suit.Diamonds, Rank.Jack)) },
+          { ...createTestGameState().players[0], hand: Array(10).fill(Card.createCard(Suit.Hearts, Rank.Ace, 0)) },
+          { ...createTestGameState().players[1], hand: Array(10).fill(Card.createCard(Suit.Spades, Rank.King, 0)) },
+          { ...createTestGameState().players[2], hand: Array(10).fill(Card.createCard(Suit.Clubs, Rank.Queen, 0)) },
+          { ...createTestGameState().players[3], hand: Array(10).fill(Card.createCard(Suit.Diamonds, Rank.Jack, 0)) },
         ],
       });
       const trumpInfo = createTestTrumpInfo();
@@ -285,17 +273,17 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
           value: 14,
         },
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Spades, Rank.Seven)],
+          cards: [Card.createCard(Suit.Spades, Rank.Seven, 0)],
           value: 7,
         },
         {
           type: ComboType.Single,
-          cards: [createTestJoker(JokerType.Big)], // Trump
+          cards: [Card.createJoker(JokerType.Big, 0)], // Trump
           value: 16,
         },
       ];
@@ -324,14 +312,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
           value: 14,
         },
         {
           type: ComboType.Pair,
           cards: [
-            createTestCard(Suit.Spades, Rank.King, 10),
-            createTestCard(Suit.Spades, Rank.King, 10),
+            Card.createCard(Suit.Spades, Rank.King, 0),
+            Card.createCard(Suit.Spades, Rank.King, 0),
           ],
           value: 26,
         },
@@ -361,14 +349,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Queen)],
+          cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)],
           value: 12,
         },
         {
           type: ComboType.Pair,
           cards: [
-            createTestCard(Suit.Spades, Rank.King, 10),
-            createTestCard(Suit.Spades, Rank.King, 10),
+            Card.createCard(Suit.Spades, Rank.King, 0),
+            Card.createCard(Suit.Spades, Rank.King, 0),
           ],
           value: 26,
         },
@@ -398,7 +386,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
           value: 14,
         },
       ];
@@ -425,14 +413,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Ace)], // Non-trump Ace
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)], // Non-trump Ace
           value: 14,
         },
         {
           type: ComboType.Pair,
           cards: [
-            createTestCard(Suit.Clubs, Rank.King), // Trump suit King pair - should be filtered out
-            createTestCard(Suit.Clubs, Rank.King),
+            Card.createCard(Suit.Clubs, Rank.King, 0), // Trump suit King pair - should be filtered out
+            Card.createCard(Suit.Clubs, Rank.King, 0),
           ],
           value: 26,
         },
@@ -457,7 +445,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       // Should select Hearts Ace since it's non-trump (Spades Ace pair filtered out as trump)
       expect(selected).toEqual({
         type: ComboType.Single,
-        cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+        cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
         value: 14,
       });
     });
@@ -466,17 +454,17 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Spades, Rank.Ace)], // Trump suit Ace - should be avoided
+          cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)], // Trump suit Ace - should be avoided
           value: 14,
         },
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Ace)], // Non-trump Ace - should be preferred
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)], // Non-trump Ace - should be preferred
           value: 14,
         },
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Spades, Rank.King)], // Trump suit King - should be avoided
+          cards: [Card.createCard(Suit.Spades, Rank.King, 0)], // Trump suit King - should be avoided
           value: 13,
         },
       ];
@@ -500,7 +488,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       // Should select Hearts Ace since it's non-trump (Spades cards filtered out as trump)
       expect(selected).toEqual({
         type: ComboType.Single,
-        cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+        cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
         value: 14,
       });
     });
@@ -509,12 +497,12 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Ace)], // Non-trump Ace - should be selected
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)], // Non-trump Ace - should be selected
           value: 14,
         },
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Diamonds, Rank.King)], // Non-trump King
+          cards: [Card.createCard(Suit.Diamonds, Rank.King, 0)], // Non-trump King
           value: 13,
         },
       ];
@@ -538,7 +526,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       // Should select Hearts Ace since it's non-trump and highest priority
       expect(selected).toEqual({
         type: ComboType.Single,
-        cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+        cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
         value: 14,
       });
     });
@@ -547,12 +535,12 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.King, 10)],
+          cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
           value: 13,
         },
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Spades, Rank.Ace)],
+          cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)],
           value: 14,
         },
       ];
@@ -581,14 +569,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       const validCombos = [
         {
           type: ComboType.Single,
-          cards: [createTestCard(Suit.Hearts, Rank.Ace)],
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
           value: 14,
         },
         {
           type: ComboType.Pair,
           cards: [
-            createTestCard(Suit.Spades, Rank.Ace),
-            createTestCard(Suit.Spades, Rank.Ace),
+            Card.createCard(Suit.Spades, Rank.Ace, 0),
+            Card.createCard(Suit.Spades, Rank.Ace, 0),
           ],
           value: 28,
         },
@@ -638,23 +626,23 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         players: [
           {
             ...createTestGameState().players[0],
-            hand: [createTestCard(Suit.Hearts, Rank.Ace)], // Human - good lead card
+            hand: [Card.createCard(Suit.Hearts, Rank.Ace, 0)], // Human - good lead card
           },
           {
             ...createTestGameState().players[1],
-            hand: [createTestCard(Suit.Hearts, Rank.Seven)], // Opponent
+            hand: [Card.createCard(Suit.Hearts, Rank.Seven, 0)], // Opponent
           },
           {
             ...createTestGameState().players[2], // Partner with point cards
             hand: [
-              createTestCard(Suit.Hearts, Rank.King, 10),
-              createTestCard(Suit.Hearts, Rank.Ten, 10),
-              createTestCard(Suit.Spades, Rank.Five, 5),
+              Card.createCard(Suit.Hearts, Rank.King, 0),
+              Card.createCard(Suit.Hearts, Rank.Ten, 0),
+              Card.createCard(Suit.Spades, Rank.Five, 0),
             ],
           },
           {
             ...createTestGameState().players[3],
-            hand: [createTestCard(Suit.Hearts, Rank.Eight)], // Opponent
+            hand: [Card.createCard(Suit.Hearts, Rank.Eight, 0)], // Opponent
           },
         ],
       });

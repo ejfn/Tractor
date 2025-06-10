@@ -1,5 +1,6 @@
+import { dealNextCard, getDealingProgress } from "../../src/game/dealingAndDeclaration";
 import { GameState } from "../../src/types";
-import { initializeGame, dealNextCard, getDealingProgress } from "../../src/game/gameLogic";
+import { initializeGame } from "../../src/utils/gameInitialization";
 
 /**
  * Tests for dealing progress count fix (Issue #115)

@@ -1,6 +1,5 @@
-import { evaluateTrickPlay, TrickPlayResult } from '../../src/game/gameLogic';
-import { createCard } from '../helpers/cards';
-import { Suit, Rank, ComboType, PlayerId } from '../../src/types';
+import { evaluateTrickPlay } from '../../src/game/cardComparison';
+import { Card, PlayerId, Rank, Suit } from '../../src/types';
 
 describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
   const trumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two,  };
@@ -9,8 +8,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
     test('A♣-A♣ should NOT beat 4♦-4♦ when 4♦-4♦ leads', () => {
       // Set up trick where 4♦-4♦ is leading
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 1),
       ];
 
       const currentTrick = {
@@ -26,15 +25,15 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
 
       // Try to follow with A♣-A♣
       const proposedPlay = [
-        createCard(Suit.Clubs, Rank.Ace, '1'),
-        createCard(Suit.Clubs, Rank.Ace, '2'),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 1),
       ];
 
       // Player hand that's void in diamonds (so play is legal)
       const playerHand = [
         ...proposedPlay,
-        createCard(Suit.Spades, Rank.Seven, '1'),
-        createCard(Suit.Hearts, Rank.Eight, '2'),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Eight, 1),
       ];
 
       const result = evaluateTrickPlay(proposedPlay, currentTrick, trumpInfo, playerHand);
@@ -47,8 +46,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
     test('4♦-4♦ should beat A♣-A♣ when A♣-A♣ leads', () => {
       // Set up trick where A♣-A♣ is leading
       const leadingCombo = [
-        createCard(Suit.Clubs, Rank.Ace, '1'),
-        createCard(Suit.Clubs, Rank.Ace, '2'),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 1),
       ];
 
       const currentTrick = {
@@ -64,15 +63,15 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
 
       // Try to follow with 4♦-4♦
       const proposedPlay = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 1),
       ];
 
       // Player hand that's void in clubs (so play is legal)
       const playerHand = [
         ...proposedPlay,
-        createCard(Suit.Spades, Rank.Seven, '1'),
-        createCard(Suit.Hearts, Rank.Eight, '2'),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Eight, 1),
       ];
 
       const result = evaluateTrickPlay(proposedPlay, currentTrick, trumpInfo, playerHand);
@@ -86,8 +85,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
   describe('Same Suit Comparisons (Should Work)', () => {
     test('A♠-A♠ should beat 4♠-4♠ when 4♠-4♠ leads', () => {
       const leadingCombo = [
-        createCard(Suit.Spades, Rank.Four, '1'),
-        createCard(Suit.Spades, Rank.Four, '2'),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 1),
       ];
 
       const currentTrick = {
@@ -102,11 +101,11 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       };
 
       const proposedPlay = [
-        createCard(Suit.Spades, Rank.Ace, '1'),
-        createCard(Suit.Spades, Rank.Ace, '2'),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 1),
       ];
 
-      const playerHand = [...proposedPlay, createCard(Suit.Hearts, Rank.Seven, '1')];
+      const playerHand = [...proposedPlay, Card.createCard(Suit.Hearts, Rank.Seven, 0)];
 
       const result = evaluateTrickPlay(proposedPlay, currentTrick, trumpInfo, playerHand);
 
@@ -118,8 +117,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
   describe('Trump Scenarios', () => {
     test('Trump pair should beat non-trump pair regardless of suits', () => {
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Ace, '1'),
-        createCard(Suit.Diamonds, Rank.Ace, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+        Card.createCard(Suit.Diamonds, Rank.Ace, 1),
       ];
 
       const currentTrick = {
@@ -135,11 +134,11 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
 
       // Trump pair (Hearts are trump)
       const proposedPlay = [
-        createCard(Suit.Hearts, Rank.Three, '1'),
-        createCard(Suit.Hearts, Rank.Three, '2'),
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+        Card.createCard(Suit.Hearts, Rank.Three, 1),
       ];
 
-      const playerHand = [...proposedPlay, createCard(Suit.Spades, Rank.Seven, '1')];
+      const playerHand = [...proposedPlay, Card.createCard(Suit.Spades, Rank.Seven, 0)];
 
       const result = evaluateTrickPlay(proposedPlay, currentTrick, trumpInfo, playerHand);
 
@@ -151,8 +150,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
   describe('Follow Suit Rules', () => {
     test('Must follow suit when you have the led suit', () => {
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 1),
       ];
 
       const currentTrick = {
@@ -167,15 +166,15 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       };
 
       const proposedPlay = [
-        createCard(Suit.Clubs, Rank.Ace, '1'),
-        createCard(Suit.Clubs, Rank.Ace, '2'),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 1),
       ];
 
       // Player has diamonds - must follow suit
       const playerHand = [
         ...proposedPlay,
-        createCard(Suit.Diamonds, Rank.Seven, '1'),
-        createCard(Suit.Diamonds, Rank.Seven, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 1),
       ];
 
       const result = evaluateTrickPlay(proposedPlay, currentTrick, trumpInfo, playerHand);
@@ -186,8 +185,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
 
     test('Can play different suit when void in led suit', () => {
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 1),
       ];
 
       const currentTrick = {
@@ -202,15 +201,15 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       };
 
       const proposedPlay = [
-        createCard(Suit.Clubs, Rank.Ace, '1'),
-        createCard(Suit.Clubs, Rank.Ace, '2'),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 1),
       ];
 
       // Player void in diamonds
       const playerHand = [
         ...proposedPlay,
-        createCard(Suit.Spades, Rank.Seven, '1'),
-        createCard(Suit.Hearts, Rank.Eight, '2'),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Eight, 1),
       ];
 
       const result = evaluateTrickPlay(proposedPlay, currentTrick, trumpInfo, playerHand);
@@ -222,7 +221,7 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
 
   describe('Combo Type Matching', () => {
     test('Must match combo type - pair vs single', () => {
-      const leadingCombo = [createCard(Suit.Diamonds, Rank.Four, '1')]; // Single
+      const leadingCombo = [Card.createCard(Suit.Diamonds, Rank.Four, 0)]; // Single
 
       const currentTrick = {
         plays: [
@@ -236,8 +235,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
       };
 
       const proposedPlay = [
-        createCard(Suit.Clubs, Rank.Ace, '1'),
-        createCard(Suit.Clubs, Rank.Ace, '2'),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 1),
       ]; // Pair
 
       const playerHand = [...proposedPlay];
@@ -253,8 +252,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
     test('Later player beats earlier player who beat leader', () => {
       // Player 1 leads 4♦-4♦, Player 2 plays 7♦-7♦ (now winning)
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 1),
       ];
 
       const currentTrick = {
@@ -264,8 +263,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
           {
             playerId: PlayerId.Bot2,
             cards: [
-              createCard(Suit.Diamonds, Rank.Seven, '1'),
-              createCard(Suit.Diamonds, Rank.Seven, '2'),
+              Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+              Card.createCard(Suit.Diamonds, Rank.Seven, 1),
             ],
           },
         ],
@@ -275,8 +274,8 @@ describe('evaluateTrickPlay - Context-Aware Trick Evaluation', () => {
 
       // Player 3 tries A♦-A♦
       const proposedPlay = [
-        createCard(Suit.Diamonds, Rank.Ace, '1'),
-        createCard(Suit.Diamonds, Rank.Ace, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+        Card.createCard(Suit.Diamonds, Rank.Ace, 1),
       ];
 
       const playerHand = [...proposedPlay];

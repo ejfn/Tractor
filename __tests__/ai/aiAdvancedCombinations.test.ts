@@ -1,44 +1,30 @@
 import {
   analyzeHandCombinations,
-  performAdvancedCombinationAnalysis,
   createCombinationStrategy,
+  performAdvancedCombinationAnalysis,
   selectOptimalCombination,
 } from '../../src/ai/analysis/advancedCombinations';
 import {
   Card,
-  Suit,
-  Rank,
-  JokerType,
-  ComboType,
-  ComboStrength,
-  TrumpInfo,
-  GameState,
-  GameContext,
-  CombinationPotential,
   CombinationContext,
-  TrickPosition,
-  PointPressure,
+  CombinationPotential,
+  ComboType,
+  GameContext,
+  GamePhase,
+  GameState,
   PlayStyle,
   PlayerId,
   PlayerName,
+  PointPressure,
+  Rank,
+  Suit,
   TeamId,
-  GamePhase,
+  TrickPosition,
+  TrumpInfo
 } from "../../src/types";
-import { identifyCombos } from '../../src/game/gameLogic';
 
-// Test utilities
-const createTestCard = (suit: Suit, rank: Rank, points: number = 0): Card => ({
-  id: `${suit}_${rank}`,
-  suit,
-  rank,
-  points,
-});
 
-const createTestJoker = (jokerType: JokerType): Card => ({
-  id: `joker_${jokerType}`,
-  joker: jokerType,
-  points: 0,
-});
+// Test utilities - using Card class directly
 
 const createTestTrumpInfo = (trumpRank: Rank = Rank.Two, trumpSuit?: Suit): TrumpInfo => ({
   trumpRank,
@@ -107,12 +93,9 @@ describe('Phase 4: Advanced Combination Logic', () => {
   describe('analyzeHandCombinations', () => {
     it('should analyze a hand with dominant tractor potential', () => {
       const cards = [
-        createTestCard(Suit.Hearts, Rank.Two, 0),
-        createTestCard(Suit.Hearts, Rank.Two, 0),
-        createTestCard(Suit.Hearts, Rank.Three, 0),
-        createTestCard(Suit.Hearts, Rank.Three, 0),
-        createTestCard(Suit.Hearts, Rank.Four, 0),
-        createTestCard(Suit.Hearts, Rank.Four, 0),
+        ...Card.createPair(Suit.Hearts, Rank.Two),
+        ...Card.createPair(Suit.Hearts, Rank.Three),
+        ...Card.createPair(Suit.Hearts, Rank.Four),
       ];
       
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Hearts);
@@ -130,10 +113,10 @@ describe('Phase 4: Advanced Combination Logic', () => {
 
     it('should analyze a hand with weak combination potential', () => {
       const cards = [
-        createTestCard(Suit.Spades, Rank.Five, 5),
-        createTestCard(Suit.Clubs, Rank.Seven, 0),
-        createTestCard(Suit.Diamonds, Rank.Nine, 0),
-        createTestCard(Suit.Hearts, Rank.Jack, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
+        Card.createCard(Suit.Diamonds, Rank.Nine, 0),
+        Card.createCard(Suit.Hearts, Rank.Jack, 0),
       ];
       
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Hearts);
@@ -150,10 +133,9 @@ describe('Phase 4: Advanced Combination Logic', () => {
 
     it('should count point combinations correctly', () => {
       const cards = [
-        createTestCard(Suit.Hearts, Rank.Five, 5),
-        createTestCard(Suit.Hearts, Rank.Five, 5),
-        createTestCard(Suit.Spades, Rank.Ten, 10),
-        createTestCard(Suit.Spades, Rank.King, 10),
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.King, 0),
       ];
       
       const trumpInfo = createTestTrumpInfo();
@@ -169,10 +151,8 @@ describe('Phase 4: Advanced Combination Logic', () => {
   describe('performAdvancedCombinationAnalysis', () => {
     it('should analyze a trump tractor as high effectiveness', () => {
       const cards = [
-        createTestCard(Suit.Hearts, Rank.Two, 0),
-        createTestCard(Suit.Hearts, Rank.Two, 0),
-        createTestCard(Suit.Hearts, Rank.Three, 0),
-        createTestCard(Suit.Hearts, Rank.Three, 0),
+        ...Card.createPair(Suit.Hearts, Rank.Two),
+        ...Card.createPair(Suit.Hearts, Rank.Three),
       ];
       
       const combo = { type: ComboType.Tractor, cards, value: 100 };
@@ -189,7 +169,7 @@ describe('Phase 4: Advanced Combination Logic', () => {
     });
 
     it('should analyze a weak single as low effectiveness', () => {
-      const cards = [createTestCard(Suit.Clubs, Rank.Seven, 0)];
+      const cards = [Card.createCard(Suit.Clubs, Rank.Seven, 0)];
       const combo = { type: ComboType.Single, cards, value: 10 };
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Hearts);
       const gameState = createTestGameState();
@@ -203,7 +183,7 @@ describe('Phase 4: Advanced Combination Logic', () => {
     });
 
     it('should adjust timing based on game context', () => {
-      const cards = [createTestCard(Suit.Hearts, Rank.Ace, 0)];
+      const cards = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
       const combo = { type: ComboType.Single, cards, value: 50 };
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Hearts);
       const gameState = createTestGameState();
@@ -281,12 +261,9 @@ describe('Phase 4: Advanced Combination Logic', () => {
 
   describe('selectOptimalCombination', () => {
     it('should select optimal combination from available options', () => {
-      const cards1 = [createTestCard(Suit.Hearts, Rank.Ace, 0)];
-      const cards2 = [
-        createTestCard(Suit.Hearts, Rank.Two, 0),
-        createTestCard(Suit.Hearts, Rank.Two, 0),
-      ];
-      const cards3 = [createTestCard(Suit.Clubs, Rank.Seven, 0)];
+      const cards1 = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
+      const cards2 = Card.createPair(Suit.Hearts, Rank.Two);
+      const cards3 = [Card.createCard(Suit.Clubs, Rank.Seven, 0)];
       
       const combos = [
         { type: ComboType.Single, cards: cards1, value: 50 },
@@ -337,14 +314,8 @@ describe('Phase 4: Advanced Combination Logic', () => {
     });
 
     it('should prefer trump combinations in aggressive contexts', () => {
-      const trumpCards = [
-        createTestCard(Suit.Hearts, Rank.Two, 0),
-        createTestCard(Suit.Hearts, Rank.Two, 0),
-      ];
-      const regularCards = [
-        createTestCard(Suit.Spades, Rank.King, 10),
-        createTestCard(Suit.Spades, Rank.King, 10),
-      ];
+      const trumpCards = Card.createPair(Suit.Hearts, Rank.Two);
+      const regularCards = Card.createPair(Suit.Spades, Rank.King);
       
       const combos = [
         { type: ComboType.Pair, cards: trumpCards, value: 80 },
@@ -376,7 +347,7 @@ describe('Phase 4: Advanced Combination Logic', () => {
 
   describe('Integration with Memory System', () => {
     it('should integrate memory context in combination selection', () => {
-      const cards = [createTestCard(Suit.Hearts, Rank.Ace, 0)];
+      const cards = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
       const combo = { type: ComboType.Single, cards, value: 50 };
       
       const memoryContext = {
@@ -411,7 +382,7 @@ describe('Phase 4: Advanced Combination Logic', () => {
     });
 
     it('should handle high uncertainty memory contexts', () => {
-      const cards = [createTestCard(Suit.Hearts, Rank.King, 10)];
+      const cards = [Card.createCard(Suit.Hearts, Rank.King, 0)];
       const combo = { type: ComboType.Single, cards, value: 40 };
       
       const memoryContext = {
@@ -444,7 +415,7 @@ describe('Phase 4: Advanced Combination Logic', () => {
       const trumpInfo = createTestTrumpInfo();
       const gameState = createTestGameState();
       
-      const cards = [createTestCard(Suit.Hearts, Rank.Ace, 0)];
+      const cards = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
       const combo = { type: ComboType.Single, cards, value: 50 };
       
       const analysis = performAdvancedCombinationAnalysis(combo, trumpInfo, gameState, context);
@@ -458,7 +429,7 @@ describe('Phase 4: Advanced Combination Logic', () => {
       const trumpInfo = createTestTrumpInfo();
       const gameState = createTestGameState();
       
-      const cards = [createTestCard(Suit.Hearts, Rank.Ace, 0)];
+      const cards = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
       const combo = { type: ComboType.Single, cards, value: 50 };
       
       const analysis = performAdvancedCombinationAnalysis(combo, trumpInfo, gameState, context);
@@ -484,7 +455,7 @@ describe('Phase 4: Advanced Combination Logic', () => {
     });
 
     it('should handle missing memory context gracefully', () => {
-      const cards = [createTestCard(Suit.Hearts, Rank.Ace, 0)];
+      const cards = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
       const combo = { type: ComboType.Single, cards, value: 50 };
       
       const context = createTestGameContext(); // No memory context
@@ -498,7 +469,7 @@ describe('Phase 4: Advanced Combination Logic', () => {
     });
 
     it('should handle invalid combinations gracefully', () => {
-      const cards = [createTestCard(Suit.Hearts, Rank.Ace, 0)];
+      const cards = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
       const combo = { type: ComboType.Tractor, cards, value: 10 }; // Invalid: single card as tractor
       
       const trumpInfo = createTestTrumpInfo();

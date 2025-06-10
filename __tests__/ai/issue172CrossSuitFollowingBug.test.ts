@@ -12,18 +12,6 @@ import { getAIMove } from '../../src/ai/aiLogic';
 import { createBasicGameState } from '../helpers';
 import { PlayerId, GamePhase, Suit, Rank, Card, JokerType } from '../../src/types';
 
-// Helper function to create cards
-const createCardWithPoints = (suit: Suit, rank: Rank, id: string): Card => {
-  let points = 0;
-  if (rank === Rank.Five) points = 5;
-  if (rank === Rank.Ten || rank === Rank.King) points = 10;
-  return { suit, rank, id, points };
-};
-
-const createJoker = (type: JokerType, id: string): Card => {
-  return { joker: type, id, points: 0 };
-};
-
 describe('Issue #172: AI Cross-Suit Following Bug', () => {
   
   test('AI should not play cross-suit cards when same-suit pair following is possible', () => {
@@ -35,8 +23,8 @@ describe('Issue #172: AI Cross-Suit Following Bug', () => {
         {
           playerId: PlayerId.Human,
           cards: [
-            createCardWithPoints(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-            createCardWithPoints(Suit.Hearts, Rank.Seven, 'hearts_7_2')
+            Card.createCard(Suit.Hearts, Rank.Seven, 0),
+            Card.createCard(Suit.Hearts, Rank.Seven, 1)
           ]
         }
       ],
@@ -46,14 +34,14 @@ describe('Issue #172: AI Cross-Suit Following Bug', () => {
 
     // Give AI Bot1 multiple hearts including pairs
     gameState.players[1].hand = [
-      createCardWithPoints(Suit.Hearts, Rank.Five, 'hearts_5_1'),   // Hearts available
-      createCardWithPoints(Suit.Hearts, Rank.Five, 'hearts_5_2'),   // Hearts pair available
-      createCardWithPoints(Suit.Hearts, Rank.Nine, 'hearts_9_1'),   // More hearts
-      createCardWithPoints(Suit.Hearts, Rank.Queen, 'hearts_q_1'),  // More hearts
-      createCardWithPoints(Suit.Spades, Rank.Eight, 'spades_8_1'),  // Other suit
-      createCardWithPoints(Suit.Spades, Rank.Eight, 'spades_8_2'),  // Other suit pair
-      createCardWithPoints(Suit.Clubs, Rank.King, 'clubs_k_1'),     // Other suit
-      createCardWithPoints(Suit.Diamonds, Rank.Ace, 'diamonds_a_1') // Other suit
+      Card.createCard(Suit.Hearts, Rank.Five, 0),   // Hearts available
+      Card.createCard(Suit.Hearts, Rank.Five, 1),   // Hearts pair available
+      Card.createCard(Suit.Hearts, Rank.Nine, 0),   // More hearts
+      Card.createCard(Suit.Hearts, Rank.Queen, 0),  // More hearts
+      Card.createCard(Suit.Spades, Rank.Eight, 0),  // Other suit
+      Card.createCard(Suit.Spades, Rank.Eight, 1),  // Other suit pair
+      Card.createCard(Suit.Clubs, Rank.King, 0),     // Other suit
+      Card.createCard(Suit.Diamonds, Rank.Ace, 0) // Other suit
     ];
 
     gameState.currentPlayerIndex = 1; // Bot1's turn to follow
@@ -84,8 +72,8 @@ describe('Issue #172: AI Cross-Suit Following Bug', () => {
         {
           playerId: PlayerId.Human,
           cards: [
-            createCardWithPoints(Suit.Hearts, Rank.King, 'hearts_k_1'),
-            createCardWithPoints(Suit.Hearts, Rank.King, 'hearts_k_2')
+            Card.createCard(Suit.Hearts, Rank.King, 0),
+            Card.createCard(Suit.Hearts, Rank.King, 1)
           ]
         }
       ],
@@ -95,12 +83,12 @@ describe('Issue #172: AI Cross-Suit Following Bug', () => {
 
     // AI bot with insufficient hearts for pair but has some hearts
     gameState.players[1].hand = [
-      createCardWithPoints(Suit.Hearts, Rank.Three, 'hearts_3_1'),   // Only one heart rank available
-      createCardWithPoints(Suit.Hearts, Rank.Seven, 'hearts_7_1'),   // Different heart rank
-      createCardWithPoints(Suit.Spades, Rank.Ten, 'spades_10_1'),    // Other suit pair
-      createCardWithPoints(Suit.Spades, Rank.Ten, 'spades_10_2'),    // Other suit pair
-      createCardWithPoints(Suit.Clubs, Rank.Queen, 'clubs_q_1'),     // Other suit
-      createCardWithPoints(Suit.Diamonds, Rank.Ace, 'diamonds_a_1')  // Other suit
+      Card.createCard(Suit.Hearts, Rank.Three, 0),   // Only one heart rank available
+      Card.createCard(Suit.Hearts, Rank.Seven, 0),   // Different heart rank
+      Card.createCard(Suit.Spades, Rank.Ten, 0),    // Other suit pair
+      Card.createCard(Suit.Spades, Rank.Ten, 1),    // Other suit pair
+      Card.createCard(Suit.Clubs, Rank.Queen, 0),     // Other suit
+      Card.createCard(Suit.Diamonds, Rank.Ace, 0)  // Other suit
     ];
 
     gameState.currentPlayerIndex = 1; // Bot1's turn to follow
@@ -128,8 +116,8 @@ describe('Issue #172: AI Cross-Suit Following Bug', () => {
         {
           playerId: PlayerId.Human,
           cards: [
-            createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
-            createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_2')
+            Card.createCard(Suit.Hearts, Rank.Ace, 0),
+            Card.createCard(Suit.Hearts, Rank.Ace, 1)
           ]
         }
       ],
@@ -139,12 +127,12 @@ describe('Issue #172: AI Cross-Suit Following Bug', () => {
 
     // AI bot with NO hearts - can use other suits
     gameState.players[1].hand = [
-      createCardWithPoints(Suit.Spades, Rank.Ten, 'spades_10_1'),    // Other suit pair
-      createCardWithPoints(Suit.Spades, Rank.Ten, 'spades_10_2'),    // Other suit pair
-      createCardWithPoints(Suit.Clubs, Rank.Queen, 'clubs_q_1'),     // Other suit
-      createCardWithPoints(Suit.Diamonds, Rank.King, 'diamonds_k_1'), // Other suit
-      createCardWithPoints(Suit.Spades, Rank.Five, 'spades_5_1'),    // Other suit
-      createCardWithPoints(Suit.Clubs, Rank.Jack, 'clubs_j_1')       // Other suit
+      Card.createCard(Suit.Spades, Rank.Ten, 0),    // Other suit pair
+      Card.createCard(Suit.Spades, Rank.Ten, 1),    // Other suit pair
+      Card.createCard(Suit.Clubs, Rank.Queen, 0),     // Other suit
+      Card.createCard(Suit.Diamonds, Rank.King, 0), // Other suit
+      Card.createCard(Suit.Spades, Rank.Five, 0),    // Other suit
+      Card.createCard(Suit.Clubs, Rank.Jack, 0)       // Other suit
     ];
 
     gameState.currentPlayerIndex = 1; // Bot1's turn to follow
@@ -177,8 +165,8 @@ describe('Issue #172: AI Cross-Suit Following Bug', () => {
         {
           playerId: PlayerId.Human,
           cards: [
-            createCardWithPoints(Suit.Diamonds, Rank.Nine, 'diamonds_9_1'),
-            createCardWithPoints(Suit.Diamonds, Rank.Nine, 'diamonds_9_2')
+            Card.createCard(Suit.Diamonds, Rank.Nine, 0),
+            Card.createCard(Suit.Diamonds, Rank.Nine, 1)
           ]
         }
       ],
@@ -188,13 +176,13 @@ describe('Issue #172: AI Cross-Suit Following Bug', () => {
 
     // AI with multiple options including same-suit pair
     gameState.players[1].hand = [
-      createCardWithPoints(Suit.Diamonds, Rank.Jack, 'diamonds_j_1'),  // Diamond available
-      createCardWithPoints(Suit.Diamonds, Rank.Jack, 'diamonds_j_2'),  // Diamond pair available
-      createCardWithPoints(Suit.Diamonds, Rank.Queen, 'diamonds_q_1'), // More diamonds
-      createCardWithPoints(Suit.Hearts, Rank.Eight, 'hearts_8_1'),     // Other suit pair
-      createCardWithPoints(Suit.Hearts, Rank.Eight, 'hearts_8_2'),     // Other suit pair
-      createCardWithPoints(Suit.Spades, Rank.King, 'spades_k_1'),      // Other suit
-      createCardWithPoints(Suit.Clubs, Rank.Ace, 'clubs_a_1')         // Other suit
+      Card.createCard(Suit.Diamonds, Rank.Jack, 0),  // Diamond available
+      Card.createCard(Suit.Diamonds, Rank.Jack, 1),  // Diamond pair available
+      Card.createCard(Suit.Diamonds, Rank.Queen, 0), // More diamonds
+      Card.createCard(Suit.Hearts, Rank.Eight, 0),     // Other suit pair
+      Card.createCard(Suit.Hearts, Rank.Eight, 1),     // Other suit pair
+      Card.createCard(Suit.Spades, Rank.King, 0),      // Other suit
+      Card.createCard(Suit.Clubs, Rank.Ace, 0)         // Other suit
     ];
 
     gameState.currentPlayerIndex = 1; // Bot1's turn to follow

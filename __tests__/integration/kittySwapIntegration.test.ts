@@ -1,8 +1,6 @@
-import { finalizeTrumpDeclaration } from "../../src/game/trumpDeclarationManager";
-import { GameState, PlayerId, GamePhase } from "../../src/types";
+import { finalizeTrumpDeclaration } from "../../src/game/dealingAndDeclaration";
+import { Card, GameState, PlayerId, GamePhase, Suit, Rank } from "../../src/types";
 import { createGameState } from "../helpers/gameStates";
-import { createCard } from "../helpers/cards";
-import { Suit, Rank } from "../../src/types";
 
 describe("Bot Kitty Swap Integration", () => {
   test("should handle complete flow when bot becomes round starting player", () => {
@@ -15,13 +13,13 @@ describe("Bot Kitty Swap Integration", () => {
     // Give all players proper hands (17 cards each)
     gameState.players.forEach((player, index) => {
       player.hand = Array(17).fill(null).map((_, cardIndex) => 
-        createCard(Suit.Hearts, Rank.Two, `${player.id}-card-${cardIndex}`)
+        Card.createCard(Suit.Hearts, Rank.Two, 0)
       );
     });
 
     // Create kitty with 8 cards
     gameState.kittyCards = Array(8).fill(null).map((_, index) => 
-      createCard(Suit.Spades, Rank.Three, `kitty-card-${index}`)
+      Card.createCard(Suit.Spades, Rank.Three, 0)
     );
 
     // Simulate the GameScreenController logic: when dealing completes, finalize trump declaration
@@ -62,13 +60,13 @@ describe("Bot Kitty Swap Integration", () => {
     // Give all players proper hands
     gameState.players.forEach((player, index) => {
       player.hand = Array(17).fill(null).map((_, cardIndex) => 
-        createCard(Suit.Hearts, Rank.Two, `${player.id}-card-${cardIndex}`)
+        Card.createCard(Suit.Hearts, Rank.Two, 0)
       );
     });
 
     // Create kitty with 8 cards
     gameState.kittyCards = Array(8).fill(null).map((_, index) => 
-      createCard(Suit.Spades, Rank.Three, `kitty-card-${index}`)
+      Card.createCard(Suit.Spades, Rank.Three, 0)
     );
 
     // Simulate the GameScreenController logic
@@ -103,13 +101,13 @@ describe("Bot Kitty Swap Integration", () => {
     // Give all players proper hands
     gameState.players.forEach((player, index) => {
       player.hand = Array(17).fill(null).map((_, cardIndex) => 
-        createCard(Suit.Hearts, Rank.Two, `${player.id}-card-${cardIndex}`)
+        Card.createCard(Suit.Hearts, Rank.Two, 0)
       );
     });
 
     // Create kitty with 8 cards
     gameState.kittyCards = Array(8).fill(null).map((_, index) => 
-      createCard(Suit.Spades, Rank.Three, `kitty-card-${index}`)
+      Card.createCard(Suit.Spades, Rank.Three, 0)
     );
 
     const finalizedState = finalizeTrumpDeclaration(gameState);

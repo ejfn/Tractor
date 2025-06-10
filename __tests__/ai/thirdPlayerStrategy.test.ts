@@ -1,28 +1,19 @@
-import { getAIMove } from '../../src/ai/aiLogic';
-import { createIsolatedGameState } from '../helpers/testIsolation';
-import { Card, Suit, Rank, PlayerId, TrumpInfo } from '../../src/types';
 import { createGameContext } from "../../src/ai/aiGameContext";
+import { getAIMove } from '../../src/ai/aiLogic';
 import {
-  TrickPosition,
-  PointPressure,
-  GamePhase,
-  GameState,
-  PlayStyle,
-  ComboStrength,
-  ComboType,
-  Combo,
-  ThirdPlayerAnalysis,
-  CombinationContext,
-} from "../../src/types";
+  Card, GamePhase,
+  GameState, JokerType, PlayerId, Rank, Suit, TrickPosition, TrumpInfo
+} from '../../src/types';
 import { createTestCardsGameState } from "../helpers/gameStates";
-import { createMockPlayer, createMockTrick } from "../helpers/mocks";
+import { createMockTrick } from "../helpers/mocks";
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('3rd Player Strategy Tests', () => {
   
   describe('Point Card Prioritization', () => {
     
     it('should prioritize 10s over Kings over 5s when partner leads and wins', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -32,29 +23,11 @@ describe('3rd Player Strategy Tests', () => {
       gameState.trumpInfo = trumpInfo;
       
       // Create trick scenario where human (Bot2's partner) is leading and winning
-      const humanLeadingCard: Card = {
-        id: 'spades-ace-1',
-        suit: Suit.Spades,
-        rank: Rank.Ace,
-        joker: undefined,
-        points: 0
-      };
+      const humanLeadingCard: Card = Card.createCard(Suit.Spades, Rank.Ace, 0);
       
-      const bot1Card: Card = {
-        id: 'spades-4-1', 
-        suit: Suit.Spades,
-        rank: Rank.Four,
-        joker: undefined,
-        points: 0
-      };
+      const bot1Card: Card = Card.createCard(Suit.Spades, Rank.Four, 0);
 
-      const bot3Card: Card = {
-        id: 'spades-3-1',
-        suit: Suit.Spades,
-        rank: Rank.Three,
-        joker: undefined,
-        points: 0
-      };
+      const bot3Card: Card = Card.createCard(Suit.Spades, Rank.Three, 0);
       
       // Set up trick with human leading and winning (Bot2's partner)
       // Bot2 will be in second position (Human leads, Bot1 plays, then Bot2)
@@ -73,27 +46,9 @@ describe('3rd Player Strategy Tests', () => {
       
       // Create Bot 2's hand with point cards
       const bot2Hand: Card[] = [
-        {
-          id: 'spades-5-1',
-          suit: Suit.Spades,
-          rank: Rank.Five,
-          joker: undefined,
-          points: 5
-        },
-        {
-          id: 'spades-king-1',
-          suit: Suit.Spades,
-          rank: Rank.King,
-          joker: undefined,
-          points: 10
-        },
-        {
-          id: 'spades-10-1',
-          suit: Suit.Spades,
-          rank: Rank.Ten,
-          joker: undefined,
-          points: 10
-        }
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0)
       ];
       
       gameState.players[2].hand = bot2Hand;
@@ -118,7 +73,7 @@ describe('3rd Player Strategy Tests', () => {
     });
 
     it('should contribute strategically when teammate has moderate lead strength', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -128,21 +83,9 @@ describe('3rd Player Strategy Tests', () => {
       gameState.trumpInfo = trumpInfo;
       
       // Create trick scenario with teammate having moderate lead (King, not Ace)
-      const humanLeadingCard: Card = {
-        id: 'spades-king-1',
-        suit: Suit.Spades,
-        rank: Rank.King,
-        joker: undefined,
-        points: 10 // King has points
-      };
+      const humanLeadingCard: Card = Card.createCard(Suit.Spades, Rank.King, 0);
       
-      const bot1Card: Card = {
-        id: 'spades-7-1', 
-        suit: Suit.Spades,
-        rank: Rank.Seven,
-        joker: undefined,
-        points: 0
-      };
+      const bot1Card: Card = Card.createCard(Suit.Spades, Rank.Seven, 0);
       
       // Set up trick with human leading with King (moderate strength)
       gameState.currentTrick = {
@@ -160,20 +103,8 @@ describe('3rd Player Strategy Tests', () => {
       
       // Create Bot 2's hand with point cards
       const bot2Hand: Card[] = [
-        {
-          id: 'spades-10-1',
-          suit: Suit.Spades,
-          rank: Rank.Ten,
-          joker: undefined,
-          points: 10
-        },
-        {
-          id: 'spades-8-1',
-          suit: Suit.Spades,
-          rank: Rank.Eight,
-          joker: undefined,
-          points: 0
-        }
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 0)
       ];
       
       gameState.players[2].hand = bot2Hand;
@@ -190,7 +121,7 @@ describe('3rd Player Strategy Tests', () => {
     });
 
     it('should avoid contributing valuable cards when teammate lead is vulnerable', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -200,21 +131,9 @@ describe('3rd Player Strategy Tests', () => {
       gameState.trumpInfo = trumpInfo;
       
       // Create trick scenario with weak teammate lead
-      const humanLeadingCard: Card = {
-        id: 'spades-9-1',
-        suit: Suit.Spades,
-        rank: Rank.Nine,
-        joker: undefined,
-        points: 0
-      };
+      const humanLeadingCard: Card = Card.createCard(Suit.Spades, Rank.Nine, 0);
       
-      const bot1Card: Card = {
-        id: 'spades-7-1', 
-        suit: Suit.Spades,
-        rank: Rank.Seven,
-        joker: undefined,
-        points: 0
-      };
+      const bot1Card: Card = Card.createCard(Suit.Spades, Rank.Seven, 0);
       
       // Set up trick with human leading with weak card (9)
       gameState.currentTrick = {
@@ -232,27 +151,9 @@ describe('3rd Player Strategy Tests', () => {
       
       // Create Bot 2's hand with point cards and low cards
       const bot2Hand: Card[] = [
-        {
-          id: 'spades-10-1',
-          suit: Suit.Spades,
-          rank: Rank.Ten,
-          joker: undefined,
-          points: 10
-        },
-        {
-          id: 'spades-6-1',
-          suit: Suit.Spades,
-          rank: Rank.Six,
-          joker: undefined,
-          points: 0
-        },
-        {
-          id: 'spades-8-1',
-          suit: Suit.Spades,
-          rank: Rank.Eight,
-          joker: undefined,
-          points: 0
-        }
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 0)
       ];
       
       gameState.players[2].hand = bot2Hand;
@@ -302,7 +203,7 @@ describe('3rd Player Strategy Tests', () => {
     it('should trigger tactical context in advanced combinations', () => {
       // Setup trick with teammate winning
       const trick = createMockTrick(PlayerId.Bot2, [
-        { id: "bj1", joker: "Big", points: 0 } as Card,
+        Card.createJoker(JokerType.Big, 0),
       ]);
       gameState.currentTrick = trick;
 
@@ -327,15 +228,15 @@ describe('3rd Player Strategy Tests', () => {
     it('should use enhanced point contribution for strong teammate leads', () => {
       // Setup: Strong teammate lead with Big Joker
       const trick = createMockTrick(PlayerId.Bot2, [
-        { id: "bj1", joker: "Big", points: 0 } as Card,
+        Card.createJoker(JokerType.Big, 0),
       ]);
       gameState.currentTrick = trick;
 
       // Human player (3rd position) hand with point cards
       const humanPlayer = gameState.players.find(p => p.id === PlayerId.Human)!;
       humanPlayer.hand = [
-        { id: "10h1", suit: Suit.Hearts, rank: Rank.Ten, points: 10 } as Card,
-        { id: "5s1", suit: Suit.Spades, rank: Rank.Five, points: 5 } as Card,
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
       ];
 
       gameState.currentPlayerIndex = 0; // Human's turn
@@ -351,14 +252,14 @@ describe('3rd Player Strategy Tests', () => {
     it('should use strategic point contribution for moderate teammate leads', () => {
       // Setup: Moderate teammate lead
       const trick = createMockTrick(PlayerId.Bot2, [
-        { id: "kh1", suit: Suit.Hearts, rank: Rank.King, points: 10 } as Card,
+        Card.createCard(Suit.Hearts, Rank.King, 0),
       ]);
       gameState.currentTrick = trick;
 
       const humanPlayer = gameState.players.find(p => p.id === PlayerId.Human)!;
       humanPlayer.hand = [
-        { id: "10c1", suit: Suit.Clubs, rank: Rank.Ten, points: 10 } as Card,
-        { id: "7s1", suit: Suit.Spades, rank: Rank.Seven, points: 0 } as Card,
+        Card.createCard(Suit.Clubs, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
       ];
 
       gameState.currentPlayerIndex = 0; // Human's turn

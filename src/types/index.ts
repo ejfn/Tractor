@@ -3,6 +3,9 @@
 // Core types
 export * from "./core";
 
+// Card types
+export * from "./card";
+
 // Trump declaration types
 export * from "./trumpDeclaration";
 

@@ -11,8 +11,9 @@ import {
   PointCardStrategy,
   TrumpTiming,
   Rank,
+  Player,
 } from "../../types";
-import { isTrump, isPointCard } from "../../game/gameLogic";
+import { isTrump, isPointCard } from "../../game/gameHelpers";
 
 /**
  * Enhanced Point-Focused AI Strategy Implementation
@@ -299,7 +300,10 @@ function determineTrumpTiming(
   return pointGap > 20 ? TrumpTiming.Control : TrumpTiming.Preserve;
 }
 
-function checkPartnerPointEscape(gameState: GameState, player: any): boolean {
+function checkPartnerPointEscape(
+  gameState: GameState,
+  player: Player,
+): boolean {
   const partner = gameState.players.find(
     (p) => p.team === player.team && p.id !== player.id,
   );

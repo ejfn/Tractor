@@ -1,5 +1,6 @@
+import { dealNextCard } from "../../src/game/dealingAndDeclaration";
 import { GameState, PlayerId } from "../../src/types";
-import { initializeGame, dealNextCard } from "../../src/game/gameLogic";
+import { initializeGame } from "../../src/utils/gameInitialization";
 
 /**
  * Tests for dealing start player logic (Issue #115)

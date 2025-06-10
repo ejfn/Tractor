@@ -7,8 +7,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card as CardType, Player, TrumpInfo, GamePhase } from "../types";
-import { isTrump } from "../game/gameLogic";
+import { isTrump } from "../game/gameHelpers";
+import {
+  Card as CardType,
+  GamePhase,
+  Player,
+  Trick,
+  TrumpInfo,
+} from "../types";
 import { sortCards } from "../utils/cardSorting";
 import AnimatedCardComponent from "./AnimatedCard";
 
@@ -22,7 +28,7 @@ interface HumanHandAnimatedProps {
   canPlay?: boolean;
   isValidPlay?: boolean;
   showTrickResult?: boolean;
-  lastCompletedTrick?: any;
+  lastCompletedTrick?: Trick;
   gamePhase?: GamePhase;
   onKittySwap?: () => void;
 }

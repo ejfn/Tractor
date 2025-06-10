@@ -1,5 +1,5 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { createIsolatedGameState } from '../helpers/testIsolation';
+import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, TrumpInfo, JokerType } from '../../src/types';
 import { createGameContext } from "../../src/ai/aiGameContext";
 import {
@@ -21,7 +21,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Teammate Leading Response', () => {
     
     it('should contribute point cards when teammate leads with strong card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -33,7 +33,7 @@ describe('2nd Player Strategy Tests', () => {
       // Setup trick with Human leading strong card (teammate to Bot2)
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] }
         ], // No followers have played yet - Bot2 is about to be first follower
         winningPlayerId: PlayerId.Human,
         points: 0,
@@ -41,10 +41,10 @@ describe('2nd Player Strategy Tests', () => {
 
       // Bot2 second to play with point cards available
       const aiBotHand: Card[] = [
-        { id: 'king-spades', rank: Rank.King, suit: Suit.Spades, points: 10 },   // Point card same suit
-        { id: '10-spades', rank: Rank.Ten, suit: Suit.Spades, points: 10 },     // Point card same suit
-        { id: '7-spades', rank: Rank.Seven, suit: Suit.Spades, points: 0 },     // Safe same suit
-        { id: '3-hearts', rank: Rank.Three, suit: Suit.Hearts, points: 0 },     // Trump
+        Card.createCard(Suit.Spades, Rank.King, 0),   // Point card same suit
+        Card.createCard(Suit.Spades, Rank.Ten, 0),     // Point card same suit
+        Card.createCard(Suit.Spades, Rank.Seven, 0),     // Safe same suit
+        Card.createCard(Suit.Hearts, Rank.Three, 0),     // Trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -62,7 +62,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should play conservatively when teammate leads with moderate card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -73,17 +73,17 @@ describe('2nd Player Strategy Tests', () => {
       // Setup trick with Human leading moderate card
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: 'lead-nine', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Diamonds, Rank.Nine, 0)] }
         ],
         winningPlayerId: PlayerId.Human,
         points: 0,
       };
 
       const aiBotHand: Card[] = [
-        { id: 'king-diamonds', rank: Rank.King, suit: Suit.Diamonds, points: 10 }, // High point card
-        { id: '8-diamonds', rank: Rank.Eight, suit: Suit.Diamonds, points: 0 },    // Safe card
-        { id: '5-diamonds', rank: Rank.Five, suit: Suit.Diamonds, points: 5 },     // Small point card
-        { id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },          // Strong off-suit
+        Card.createCard(Suit.Diamonds, Rank.King, 0), // High point card
+        Card.createCard(Suit.Diamonds, Rank.Eight, 0),    // Safe card
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),     // Small point card
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),          // Strong off-suit
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -101,7 +101,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should provide strategic support when teammate leads with weak card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -112,17 +112,17 @@ describe('2nd Player Strategy Tests', () => {
       // Setup trick with Bot2 teammate (Human) leading weak card
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: 'lead-four', rank: Rank.Four, suit: Suit.Hearts, points: 0 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Four, 0)] }
         ],
         winningPlayerId: PlayerId.Human,
         points: 0,
       };
 
       const aiBotHand: Card[] = [
-        { id: 'ace-hearts', rank: Rank.Ace, suit: Suit.Hearts, points: 0 },      // Strong same suit
-        { id: 'queen-hearts', rank: Rank.Queen, suit: Suit.Hearts, points: 0 },  // Medium strong
-        { id: '6-hearts', rank: Rank.Six, suit: Suit.Hearts, points: 0 },        // Low card
-        { id: '2-spades', rank: Rank.Two, suit: Suit.Spades, points: 0 },        // Trump
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),      // Strong same suit
+        Card.createCard(Suit.Hearts, Rank.Queen, 0),  // Medium strong
+        Card.createCard(Suit.Hearts, Rank.Six, 0),        // Low card
+        Card.createCard(Suit.Spades, Rank.Two, 0),        // Trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -143,7 +143,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Opponent Leading Response', () => {
     
     it('should block opponent with defensive play when opponent leads strong card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -154,17 +154,17 @@ describe('2nd Player Strategy Tests', () => {
       // Setup trick with Bot1 (opponent to Bot2) leading strong card
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }] }
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Ace, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
 
       const aiBotHand: Card[] = [
-        { id: 'king-clubs', rank: Rank.King, suit: Suit.Clubs, points: 10 },     // Point card same suit
-        { id: '8-clubs', rank: Rank.Eight, suit: Suit.Clubs, points: 0 },        // Safe same suit
-        { id: '5-clubs', rank: Rank.Five, suit: Suit.Clubs, points: 5 },         // Small point
-        { id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 },        // Trump
+        Card.createCard(Suit.Clubs, Rank.King, 0),     // Point card same suit
+        Card.createCard(Suit.Clubs, Rank.Eight, 0),        // Safe same suit
+        Card.createCard(Suit.Clubs, Rank.Five, 0),         // Small point
+        Card.createCard(Suit.Hearts, Rank.Two, 0),        // Trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -182,7 +182,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should setup strategic positioning when opponent leads moderate card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -193,17 +193,17 @@ describe('2nd Player Strategy Tests', () => {
       // Setup trick with Bot3 (opponent) leading moderate card
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot3, cards: [{ id: 'lead-jack', rank: Rank.Jack, suit: Suit.Spades, points: 0 }] }
+          { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Spades, Rank.Jack, 0)] }
         ],
         winningPlayerId: PlayerId.Bot3,
         points: 0,
       };
 
       const aiBotHand: Card[] = [
-        { id: 'queen-spades', rank: Rank.Queen, suit: Suit.Spades, points: 0 },   // Could beat opponent
-        { id: '10-spades', rank: Rank.Ten, suit: Suit.Spades, points: 10 },       // Point card
-        { id: '7-spades', rank: Rank.Seven, suit: Suit.Spades, points: 0 },       // Setup card
-        { id: 'ace-diamonds', rank: Rank.Ace, suit: Suit.Diamonds, points: 0 },   // Trump suit (not trump rank)
+        Card.createCard(Suit.Spades, Rank.Queen, 0),   // Could beat opponent
+        Card.createCard(Suit.Spades, Rank.Ten, 0),       // Point card
+        Card.createCard(Suit.Spades, Rank.Seven, 0),       // Setup card
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),   // Trump suit (not trump rank)
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -220,7 +220,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should try to beat opponent when holding trump and opponent leads non-trump', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -231,17 +231,17 @@ describe('2nd Player Strategy Tests', () => {
       // Setup trick with Bot1 (opponent) leading non-trump
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-king', rank: Rank.King, suit: Suit.Spades, points: 10 }] }
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.King, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1,
         points: 10,
       };
 
       const aiBotHand: Card[] = [
-        { id: '3-hearts', rank: Rank.Three, suit: Suit.Hearts, points: 0 },       // Weak trump suit card
-        { id: '2-clubs', rank: Rank.Two, suit: Suit.Clubs, points: 0 },          // Trump rank off-suit
-        { id: 'small-joker', joker: JokerType.Small, points: 0 },                        // Strong trump
-        { id: '6-diamonds', rank: Rank.Six, suit: Suit.Diamonds, points: 0 },    // Non-trump
+        Card.createCard(Suit.Hearts, Rank.Three, 0),       // Weak trump suit card
+        Card.createCard(Suit.Clubs, Rank.Two, 0),          // Trump rank off-suit
+        Card.createJoker(JokerType.Small, 0),                        // Strong trump
+        Card.createCard(Suit.Diamonds, Rank.Six, 0),    // Non-trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -262,7 +262,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Information Advantage Analysis', () => {
     
     it('should leverage information from leader play for strategic decisions', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -273,17 +273,17 @@ describe('2nd Player Strategy Tests', () => {
       // Setup trick showing opponent's hand strength through their lead
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot3, cards: [{ id: 'lead-high', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }] }
+          { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] }
         ],
         winningPlayerId: PlayerId.Bot3,
         points: 0,
       };
 
       const aiBotHand: Card[] = [
-        { id: 'king-hearts', rank: Rank.King, suit: Suit.Hearts, points: 10 },    // Second highest
-        { id: 'queen-hearts', rank: Rank.Queen, suit: Suit.Hearts, points: 0 },   // Third highest
-        { id: '9-hearts', rank: Rank.Nine, suit: Suit.Hearts, points: 0 },        // Safe
-        { id: '2-clubs', rank: Rank.Two, suit: Suit.Clubs, points: 0 },           // Trump
+        Card.createCard(Suit.Hearts, Rank.King, 0),    // Second highest
+        Card.createCard(Suit.Hearts, Rank.Queen, 0),   // Third highest
+        Card.createCard(Suit.Hearts, Rank.Nine, 0),        // Safe
+        Card.createCard(Suit.Clubs, Rank.Two, 0),           // Trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -301,7 +301,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should coordinate with future positions based on leader analysis', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -312,16 +312,16 @@ describe('2nd Player Strategy Tests', () => {
       // Setup where second player can influence what 3rd/4th players face
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: 'lead-ten', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Diamonds, Rank.Ten, 0)] }
         ],
         winningPlayerId: PlayerId.Human,
         points: 10,
       };
 
       const aiBotHand: Card[] = [
-        { id: 'ace-diamonds', rank: Rank.Ace, suit: Suit.Diamonds, points: 0 },    // Could take lead
-        { id: 'jack-diamonds', rank: Rank.Jack, suit: Suit.Diamonds, points: 0 },  // Medium strength
-        { id: '7-diamonds', rank: Rank.Seven, suit: Suit.Diamonds, points: 0 },    // Conservative
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),    // Could take lead
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0),  // Medium strength
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),    // Conservative
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -341,7 +341,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Setup and Blocking Strategies', () => {
     
     it('should maximize setup opportunities for 3rd and 4th players', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -352,16 +352,16 @@ describe('2nd Player Strategy Tests', () => {
       // Setup where good positioning can help later players
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-queen', rank: Rank.Queen, suit: Suit.Clubs, points: 0 }] }
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Queen, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
       };
 
       const aiBotHand: Card[] = [
-        { id: 'king-clubs', rank: Rank.King, suit: Suit.Clubs, points: 10 },      // Could beat and win trick
-        { id: 'jack-clubs', rank: Rank.Jack, suit: Suit.Clubs, points: 0 },       // Setup for later players
-        { id: '8-clubs', rank: Rank.Eight, suit: Suit.Clubs, points: 0 },         // Conservative setup
+        Card.createCard(Suit.Clubs, Rank.King, 0),      // Could beat and win trick
+        Card.createCard(Suit.Clubs, Rank.Jack, 0),       // Setup for later players
+        Card.createCard(Suit.Clubs, Rank.Eight, 0),         // Conservative setup
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -378,7 +378,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should calculate blocking potential against opponent advantages', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -391,10 +391,7 @@ describe('2nd Player Strategy Tests', () => {
         plays: [
           { 
             playerId: PlayerId.Bot3, 
-            cards: [
-              { id: 'lead-pair-1', rank: Rank.King, suit: Suit.Spades, points: 10 },
-              { id: 'lead-pair-2', rank: Rank.King, suit: Suit.Spades, points: 10 }
-            ]
+            cards: Card.createPair(Suit.Spades, Rank.King)
           }
         ],
         winningPlayerId: PlayerId.Bot3,
@@ -402,10 +399,9 @@ describe('2nd Player Strategy Tests', () => {
       };
 
       const aiBotHand: Card[] = [
-        { id: 'ace-spades-1', rank: Rank.Ace, suit: Suit.Spades, points: 0 },     // Could form pair
-        { id: 'ace-spades-2', rank: Rank.Ace, suit: Suit.Spades, points: 0 },     // Could form pair
-        { id: 'queen-spades', rank: Rank.Queen, suit: Suit.Spades, points: 0 },   // Single
-        { id: '9-spades', rank: Rank.Nine, suit: Suit.Spades, points: 0 },        // Weak
+        ...Card.createPair(Suit.Spades, Rank.Ace),     // Could form pair
+        Card.createCard(Suit.Spades, Rank.Queen, 0),   // Single
+        Card.createCard(Suit.Spades, Rank.Nine, 0),        // Weak
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -426,7 +422,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Response Strategy Adaptation', () => {
     
     it('should adapt response based on trick point value', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -437,16 +433,16 @@ describe('2nd Player Strategy Tests', () => {
       // High-value trick scenario
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-king', rank: Rank.King, suit: Suit.Hearts, points: 10 }] }
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1,
         points: 10,
       };
 
       const aiBotHand: Card[] = [
-        { id: 'ace-hearts', rank: Rank.Ace, suit: Suit.Hearts, points: 0 },       // Could beat opponent
-        { id: '7-hearts', rank: Rank.Seven, suit: Suit.Hearts, points: 0 },       // Safe play
-        { id: '2-clubs', rank: Rank.Two, suit: Suit.Clubs, points: 0 },           // Trump
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),       // Could beat opponent
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),       // Safe play
+        Card.createCard(Suit.Clubs, Rank.Two, 0),           // Trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -463,7 +459,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should consider coordination value in response strategy', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -476,10 +472,7 @@ describe('2nd Player Strategy Tests', () => {
         plays: [
           { 
             playerId: PlayerId.Human, 
-            cards: [
-              { id: 'lead-pair-1', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 },
-              { id: 'lead-pair-2', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 }
-            ]
+            cards: Card.createPair(Suit.Diamonds, Rank.Nine)
           }
         ],
         winningPlayerId: PlayerId.Human,
@@ -487,10 +480,9 @@ describe('2nd Player Strategy Tests', () => {
       };
 
       const aiBotHand: Card[] = [
-        { id: '10-diamonds-1', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }, // Point card
-        { id: '10-diamonds-2', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }, // Point card  
-        { id: '8-diamonds', rank: Rank.Eight, suit: Suit.Diamonds, points: 0 },   // Single
-        { id: '6-diamonds', rank: Rank.Six, suit: Suit.Diamonds, points: 0 },     // Single
+        ...Card.createPair(Suit.Diamonds, Rank.Ten), // Point card pair
+        Card.createCard(Suit.Diamonds, Rank.Eight, 0),   // Single
+        Card.createCard(Suit.Diamonds, Rank.Six, 0),     // Single
       ];
 
       gameState.players[2].hand = aiBotHand;

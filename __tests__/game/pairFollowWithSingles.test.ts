@@ -1,20 +1,20 @@
-import { Card, GameState, Player, Rank, Suit, Team, Trick, PlayerId, PlayerName, GamePhase, TeamId } from "../../src/types";
-import { isValidPlay, identifyCombos } from '../../src/game/gameLogic';
+import { identifyCombos } from "../../src/game/comboDetection";
+import { isValidPlay } from "../../src/game/playValidation";
+import { Card, DeckId, GamePhase, GameState, Player, PlayerId, PlayerName, Rank, Suit, TeamId } from "../../src/types";
 
 describe('Pair Follow With Singles', () => {
   let mockState: GameState;
   let humanPlayer: Player;
-  let cardId = 0;
+  let deckId = 0;
   
-  const createCard = (suit: Suit, rank: Rank): Card => ({
-    id: `card-${cardId++}`,
-    suit,
-    rank,
-    points: rank === Rank.King || rank === Rank.Ten ? 10 : rank === Rank.Five ? 5 : 0
-  });
+  const getNextDeckId = (): 0 | 1 => {
+    const id = deckId % 2;
+    deckId++;
+    return id as DeckId;
+  };
   
   beforeEach(() => {
-    cardId = 0;
+    deckId = 0;
     
     // Create basic game state
     humanPlayer = {
@@ -54,8 +54,8 @@ describe('Pair Follow With Singles', () => {
   test('player can select two different cards of same suit when following a pair', () => {
     // AI leads with a pair of hearts
     const leadingPair: Card[] = [
-      createCard(Suit.Hearts, Rank.King),
-      createCard(Suit.Hearts, Rank.King)
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      Card.createCard(Suit.Hearts, Rank.King, 1)
     ];
     
     mockState.currentTrick = {
@@ -67,9 +67,9 @@ describe('Pair Follow With Singles', () => {
     };
     
     // Human has two different hearts (not a pair)
-    const heartQueen = createCard(Suit.Hearts, Rank.Queen);
-    const heartJack = createCard(Suit.Hearts, Rank.Jack);
-    const spadeAce = createCard(Suit.Spades, Rank.Ace);
+    const heartQueen = Card.createCard(Suit.Hearts, Rank.Queen, getNextDeckId());
+    const heartJack = Card.createCard(Suit.Hearts, Rank.Jack, getNextDeckId());
+    const spadeAce = Card.createCard(Suit.Spades, Rank.Ace, getNextDeckId());
     
     humanPlayer.hand = [heartQueen, heartJack, spadeAce];
     
@@ -91,8 +91,8 @@ describe('Pair Follow With Singles', () => {
   test('player must play all hearts when they have some but not enough for pair', () => {
     // AI leads with a pair of hearts
     const leadingPair: Card[] = [
-      createCard(Suit.Hearts, Rank.King),
-      createCard(Suit.Hearts, Rank.King)
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      Card.createCard(Suit.Hearts, Rank.King, 1)
     ];
     
     mockState.currentTrick = {
@@ -104,9 +104,9 @@ describe('Pair Follow With Singles', () => {
     };
     
     // Human has only one heart
-    const heartQueen = createCard(Suit.Hearts, Rank.Queen);
-    const spadeAce = createCard(Suit.Spades, Rank.Ace);
-    const clubKing = createCard(Suit.Clubs, Rank.King);
+    const heartQueen = Card.createCard(Suit.Hearts, Rank.Queen, getNextDeckId());
+    const spadeAce = Card.createCard(Suit.Spades, Rank.Ace, getNextDeckId());
+    const clubKing = Card.createCard(Suit.Clubs, Rank.King, getNextDeckId());
     
     humanPlayer.hand = [heartQueen, spadeAce, clubKing];
     
@@ -134,10 +134,10 @@ describe('Pair Follow With Singles', () => {
   
   test('identifies available plays correctly when following pair', () => {
     // Human has various cards including some hearts
-    const heartQueen = createCard(Suit.Hearts, Rank.Queen);
-    const heartJack = createCard(Suit.Hearts, Rank.Jack);
-    const heart10 = createCard(Suit.Hearts, Rank.Ten);
-    const spadeAce = createCard(Suit.Spades, Rank.Ace);
+    const heartQueen = Card.createCard(Suit.Hearts, Rank.Queen, getNextDeckId());
+    const heartJack = Card.createCard(Suit.Hearts, Rank.Jack, getNextDeckId());
+    const heart10 = Card.createCard(Suit.Hearts, Rank.Ten, getNextDeckId());
+    const spadeAce = Card.createCard(Suit.Spades, Rank.Ace, getNextDeckId());
     
     humanPlayer.hand = [heartQueen, heartJack, heart10, spadeAce];
     

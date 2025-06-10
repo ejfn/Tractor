@@ -9,6 +9,7 @@ import {
   GamePhaseStrategy,
   GameState,
   TrumpInfo,
+  MemoryContext,
 } from "../../types";
 import {
   createPointFocusedContext,
@@ -17,7 +18,7 @@ import {
 import { analyzeCombo } from "../aiGameContext";
 import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
 import { getRankValue } from "../analysis/comboAnalysis";
-import { isTrump } from "../../game/gameLogic";
+import { isTrump } from "../../game/gameHelpers";
 
 /**
  * Leading Strategy - Main leading logic and first position tactics
@@ -213,7 +214,7 @@ export function selectSafeLeadCombo(
 // Helper functions that will be extracted from main file
 function selectBiggestRemainingCombo(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-  memoryContext: any,
+  memoryContext: MemoryContext,
   trumpInfo: TrumpInfo,
 ): Card[] | null {
   // This will be moved from the main file

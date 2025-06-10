@@ -1,7 +1,6 @@
-import { initializeGame } from '../../src/game/gameLogic';
-import { makeTrumpDeclaration } from '../../src/game/trumpDeclarationManager';
-import { DeclarationType, PlayerId, Rank, Suit, JokerType } from '../../src/types';
-import { createCard } from '../helpers/cards';
+import { makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
+import { Card, DeclarationType, JokerType, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Joker Pair Trump Suit Rules', () => {
   let gameState: any;
@@ -16,10 +15,7 @@ describe('Joker Pair Trump Suit Rules', () => {
       rank: Rank.Two,
       suit: Suit.None, // Joker pairs use Suit.None
       type: DeclarationType.BigJokerPair,
-      cards: [
-        { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker1' },
-        { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker2' }
-      ]
+      cards: Card.createJokerPair(JokerType.Big)
     };
 
     const newState = makeTrumpDeclaration(gameState, PlayerId.Bot1, bigJokerDeclaration);
@@ -36,10 +32,7 @@ describe('Joker Pair Trump Suit Rules', () => {
       rank: Rank.Two,
       suit: Suit.None, // Joker pairs use Suit.None
       type: DeclarationType.SmallJokerPair,
-      cards: [
-        { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Small, points: 0, id: 'smallJoker1' },
-        { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Small, points: 0, id: 'smallJoker2' }
-      ]
+      cards: Card.createJokerPair(JokerType.Small)
     };
 
     const newState = makeTrumpDeclaration(gameState, PlayerId.Bot2, smallJokerDeclaration);
@@ -56,7 +49,7 @@ describe('Joker Pair Trump Suit Rules', () => {
       rank: Rank.Two,
       suit: Suit.Clubs,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      cards: Card.createPair(Suit.Clubs, Rank.Two)
     };
 
     const newState = makeTrumpDeclaration(gameState, PlayerId.Human, regularDeclaration);
@@ -73,7 +66,7 @@ describe('Joker Pair Trump Suit Rules', () => {
       rank: Rank.Two,
       suit: Suit.Hearts,
       type: DeclarationType.Single,
-      cards: [createCard(Suit.Hearts, Rank.Two)]
+      cards: [Card.createCard(Suit.Hearts, Rank.Two, 0)]
     };
 
     let state = makeTrumpDeclaration(gameState, PlayerId.Human, regularDeclaration);
@@ -84,10 +77,7 @@ describe('Joker Pair Trump Suit Rules', () => {
       rank: Rank.Two,
       suit: Suit.None, // Joker pairs use Suit.None
       type: DeclarationType.BigJokerPair,
-      cards: [
-        { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker1' },
-        { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker2' }
-      ]
+      cards: Card.createJokerPair(JokerType.Big)
     };
 
     state = makeTrumpDeclaration(state, PlayerId.Bot1, jokerDeclaration);
@@ -111,10 +101,7 @@ describe('Joker Pair Trump Suit Rules', () => {
       rank: Rank.Two,
       suit: Suit.None, // Joker pairs use Suit.None
       type: DeclarationType.BigJokerPair,
-      cards: [
-        { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker1' },
-        { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker2' }
-      ]
+      cards: Card.createJokerPair(JokerType.Big)
     };
 
     const newState = makeTrumpDeclaration(gameState, PlayerId.Bot1, bigJokerDeclaration);

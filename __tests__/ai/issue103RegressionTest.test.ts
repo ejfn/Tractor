@@ -1,7 +1,7 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { initializeGame } from '../../src/game/gameLogic';
-import { PlayerId, Rank, Suit, GamePhase, JokerType } from '../../src/types';
-import type { GameState, Card } from '../../src/types';
+
+import { Card, GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', () => {
   it('should reproduce Issue #103: AI plays rank card when it cannot beat the winning card', () => {
@@ -19,19 +19,15 @@ describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', ()
     };
 
     // SCENARIO: Someone leads Big Joker (unbeatable)
-    const leadingCard: Card = {
-      id: 'big-joker-lead',
-      joker: JokerType.Big,
-      points: 0
-    };
+    const leadingCard: Card = Card.createJoker(JokerType.Big, 0);
 
     // AI Bot has trump rank cards that CANNOT beat Big Joker
     const aiBotHand: Card[] = [
-      { id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank off-suit - CANNOT beat Big Joker (VALUABLE - should preserve)
-      { id: '2-clubs', rank: Rank.Two, suit: Suit.Clubs, points: 0 },  // Trump rank off-suit - CANNOT beat Big Joker (VALUABLE - should preserve)  
-      { id: '3-spades', rank: Rank.Three, suit: Suit.Spades, points: 0 }, // Weak trump suit (SHOULD PLAY THIS)
-      { id: '4-spades', rank: Rank.Four, suit: Suit.Spades, points: 0 },   // Weak trump suit
-      { id: 'ace-diamonds', rank: Rank.Ace, suit: Suit.Diamonds, points: 0 }, // Non-trump
+      Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank off-suit - CANNOT beat Big Joker (VALUABLE - should preserve)
+      Card.createCard(Suit.Clubs, Rank.Two, 0),  // Trump rank off-suit - CANNOT beat Big Joker (VALUABLE - should preserve)  
+      Card.createCard(Suit.Spades, Rank.Three, 0), // Weak trump suit (SHOULD PLAY THIS)
+      Card.createCard(Suit.Spades, Rank.Four, 0),   // Weak trump suit
+      Card.createCard(Suit.Diamonds, Rank.Ace, 0), // Non-trump
     ];
     gameState.players[1].hand = aiBotHand;
 
@@ -97,19 +93,14 @@ describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', ()
     };
 
     // Opponent leads 3♥ (trump rank in trump suit)
-    const leadingCard: Card = {
-      id: '3-hearts-lead',
-      rank: Rank.Three,
-      suit: Suit.Hearts,
-      points: 0
-    };
+    const leadingCard: Card = Card.createCard(Suit.Hearts, Rank.Three, 0);
 
     // AI has rank cards and weak trump
     const aiBotHand: Card[] = [
-      { id: '3-spades', rank: Rank.Three, suit: Suit.Spades, points: 0 }, // Trump rank off-suit (VALUABLE)
-      { id: '3-clubs', rank: Rank.Three, suit: Suit.Clubs, points: 0 },  // Trump rank off-suit (VALUABLE)
-      { id: '4-hearts', rank: Rank.Four, suit: Suit.Hearts, points: 0 }, // Weak trump suit (SHOULD PLAY)
-      { id: '5-hearts', rank: Rank.Five, suit: Suit.Hearts, points: 5 }, // Trump suit with points
+      Card.createCard(Suit.Spades, Rank.Three, 0), // Trump rank off-suit (VALUABLE)
+      Card.createCard(Suit.Clubs, Rank.Three, 0),  // Trump rank off-suit (VALUABLE)
+      Card.createCard(Suit.Hearts, Rank.Four, 0), // Weak trump suit (SHOULD PLAY)
+      Card.createCard(Suit.Hearts, Rank.Five, 0), // Trump suit with points
     ];
     gameState.players[2].hand = aiBotHand;
 

@@ -14,17 +14,25 @@ import {
 import { createComponentTestGameState } from "../helpers";
 
 // Mock dependencies
-jest.mock('../../src/game/gameLogic', () => ({
-  initializeGame: jest.fn(),
+jest.mock('../../src/game/comboDetection', () => ({
   identifyCombos: jest.fn(),
-  isValidPlay: jest.fn(),
-  isTrump: jest.fn(),
-  humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
-const mockInitializeGame = require('../../src/game/gameLogic').initializeGame;
+jest.mock('../../src/game/playProcessing', () => ({
+  isValidPlay: jest.fn(),
+}));
 
-jest.mock('../../src/game/gamePlayManager', () => ({
+jest.mock('../../src/game/gameHelpers', () => ({
+  isTrump: jest.fn(),
+}));
+
+jest.mock('../../src/utils/gameInitialization', () => ({
+  initializeGame: jest.fn(),
+}));
+
+const mockInitializeGame = require('../../src/utils/gameInitialization').initializeGame;
+
+jest.mock('../../src/game/playProcessing', () => ({
   processPlay: jest.fn(),
   validatePlay: jest.fn()
 }));
@@ -68,22 +76,6 @@ const TestComponent: React.FC<{ onStateChange?: (state: any) => void }> = ({ onS
   );
 };
 
-// Helper functions
-const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card => ({
-  id,
-  suit,
-  rank,
-  points
-});
-
-const createMockJoker = (id: string, type: JokerType, points = 0): Card => ({
-  id,
-  joker: type,
-  points,
-  suit: undefined,
-  rank: undefined
-});
-
 // Use shared utility for component testing game state
 const createMockGameState = createComponentTestGameState;
 
@@ -100,19 +92,19 @@ describe('Game State Management', () => {
       plays: [
         {
           playerId: PlayerId.Human,
-          cards: [createMockCard('spades_5_1', Suit.Spades, Rank.Five, 5)]
+          cards: [Card.createCard(Suit.Spades, Rank.Five, 0)]
         },
         {
           playerId: PlayerId.Bot1,
-          cards: [createMockCard('diamonds_3_1', Suit.Diamonds, Rank.Three)]
+          cards: [Card.createCard(Suit.Diamonds, Rank.Three, 0)]
         },
         {
           playerId: PlayerId.Bot2,
-          cards: [createMockCard('spades_2_1', Suit.Spades, Rank.Two)]
+          cards: [Card.createCard(Suit.Spades, Rank.Two, 0)]
         },
         {
           playerId: PlayerId.Bot3,
-          cards: [createMockCard('clubs_4_1', Suit.Clubs, Rank.Four)]
+          cards: [Card.createCard(Suit.Clubs, Rank.Four, 0)]
         }
       ],
       points: 5,
@@ -150,7 +142,7 @@ describe('Game State Management', () => {
 
   test('initializes game state correctly', async () => {
     const mockState = createMockGameState();
-    const mockInitializeGame = require('../../src/game/gameLogic').initializeGame;
+    const mockInitializeGame = require('../../src/utils/gameInitialization').initializeGame;
     mockInitializeGame.mockReturnValue(mockState);
 
     const { getByTestId } = render(<TestComponent />);
@@ -165,7 +157,7 @@ describe('Game State Management', () => {
     const mockState = createMockGameState();
     mockState.gamePhase = GamePhase.Playing;
     
-    const mockInitializeGame = require('../../src/game/gameLogic').initializeGame;
+    const mockInitializeGame = require('../../src/utils/gameInitialization').initializeGame;
     mockInitializeGame.mockReturnValue(mockState);
 
     let currentHookState: any = null;
@@ -185,7 +177,8 @@ describe('Game State Management', () => {
 
     await waitFor(() => {
       expect(currentHookState.selectedCards).toHaveLength(1);
-      expect(currentHookState.selectedCards[0].id).toBe('spades_5_1');
+      expect(currentHookState.selectedCards[0].suit).toBe(Suit.Spades);
+      expect(currentHookState.selectedCards[0].rank).toBe(Rank.Five);
     });
   });
 });

@@ -1,7 +1,6 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { initializeGame } from '../../src/game/gameLogic';
-import { PlayerId, GamePhase, Suit, Rank } from '../../src/types';
-import { createCard } from '../helpers/cards';
+import { Card, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 /**
  * Test for issue #61 comment: AI playing Ace after leading Ace
@@ -24,15 +23,15 @@ describe('Issue #61: AI Bad Ace Following', () => {
     
     // Give Bot1 an Ace and some small cards
     bot1Player.hand = [
-      createCard(Suit.Spades, Rank.Ace),      // Ace that AI shouldn't waste
-      createCard(Suit.Spades, Rank.Three),    // Small card (better choice)
-      createCard(Suit.Spades, Rank.Four),     // Small card (better choice)
-      createCard(Suit.Hearts, Rank.Six),      // Random trump
-      createCard(Suit.Clubs, Rank.Nine)       // Random card
+      Card.createCard(Suit.Spades, Rank.Ace, 0),      // Ace that AI shouldn't waste
+      Card.createCard(Suit.Spades, Rank.Three, 0),    // Small card (better choice)
+      Card.createCard(Suit.Spades, Rank.Four, 0),     // Small card (better choice)
+      Card.createCard(Suit.Hearts, Rank.Six, 0),      // Random trump
+      Card.createCard(Suit.Clubs, Rank.Nine, 0)       // Random card
     ];
     
     // Opponent (Human) leads with an Ace of Spades - this is unbeatable!
-    const leadingAce = createCard(Suit.Spades, Rank.Ace);
+    const leadingAce = Card.createCard(Suit.Spades, Rank.Ace, 0);
     
     gameState.currentTrick = {
       plays: [
@@ -85,14 +84,14 @@ describe('Issue #61: AI Bad Ace Following', () => {
     
     // Give Bot1 an Ace and other cards
     bot1Player.hand = [
-      createCard(Suit.Spades, Rank.Ace),      // Ace that can win
-      createCard(Suit.Spades, Rank.Three),    // Small card
-      createCard(Suit.Hearts, Rank.Six),      // Random trump
-      createCard(Suit.Clubs, Rank.Nine)       // Random card
+      Card.createCard(Suit.Spades, Rank.Ace, 0),      // Ace that can win
+      Card.createCard(Suit.Spades, Rank.Three, 0),    // Small card
+      Card.createCard(Suit.Hearts, Rank.Six, 0),      // Random trump
+      Card.createCard(Suit.Clubs, Rank.Nine, 0)       // Random card
     ];
     
     // Opponent leads with King (beatable with Ace)
-    const leadingKing = createCard(Suit.Spades, Rank.King);
+    const leadingKing = Card.createCard(Suit.Spades, Rank.King, 0);
     
     gameState.currentTrick = {
       plays: [
@@ -129,18 +128,18 @@ describe('Issue #61: AI Bad Ace Following', () => {
     
     // Give Bot1 an Ace pair and some small pairs
     bot1Player.hand = [
-      createCard(Suit.Spades, Rank.Ace),      // Ace pair that shouldn't be wasted
-      createCard(Suit.Spades, Rank.Ace),      
-      createCard(Suit.Spades, Rank.Three),    // Small pair (better choice)
-      createCard(Suit.Spades, Rank.Three),    
-      createCard(Suit.Hearts, Rank.Six),      // Trump
-      createCard(Suit.Clubs, Rank.Nine)       // Random card
+      Card.createCard(Suit.Spades, Rank.Ace, 0),      // Ace pair that shouldn't be wasted
+      Card.createCard(Suit.Spades, Rank.Ace, 0),      
+      Card.createCard(Suit.Spades, Rank.Three, 0),    // Small pair (better choice)
+      Card.createCard(Suit.Spades, Rank.Three, 0),    
+      Card.createCard(Suit.Hearts, Rank.Six, 0),      // Trump
+      Card.createCard(Suit.Clubs, Rank.Nine, 0)       // Random card
     ];
     
     // Opponent leads with Ace pair (unbeatable!)
     const leadingAcePair = [
-      createCard(Suit.Spades, Rank.Ace),
-      createCard(Suit.Spades, Rank.Ace)
+      Card.createCard(Suit.Spades, Rank.Ace, 0),
+      Card.createCard(Suit.Spades, Rank.Ace, 0)
     ];
     
     gameState.currentTrick = {
@@ -190,16 +189,16 @@ describe('Issue #61: AI Bad Ace Following', () => {
     
     // Give Bot3 an Ace and small cards
     bot3Player.hand = [
-      createCard(Suit.Spades, Rank.Ace),      // Ace that shouldn't be wasted
-      createCard(Suit.Spades, Rank.Four),     // Small card (better choice)
-      createCard(Suit.Hearts, Rank.Six),      // Trump
-      createCard(Suit.Clubs, Rank.Nine)       // Random card
+      Card.createCard(Suit.Spades, Rank.Ace, 0),      // Ace that shouldn't be wasted
+      Card.createCard(Suit.Spades, Rank.Four, 0),     // Small card (better choice)
+      Card.createCard(Suit.Hearts, Rank.Six, 0),      // Trump
+      Card.createCard(Suit.Clubs, Rank.Nine, 0)       // Random card
     ];
     
     // Create trick where Human led Ace, others followed, now Bot3 plays last
-    const leadingAce = createCard(Suit.Spades, Rank.Ace);
-    const bot1Play = createCard(Suit.Spades, Rank.King);  // Bot1 played King
-    const bot2Play = createCard(Suit.Spades, Rank.Queen); // Bot2 played Queen
+    const leadingAce = Card.createCard(Suit.Spades, Rank.Ace, 0);
+    const bot1Play = Card.createCard(Suit.Spades, Rank.King, 0);  // Bot1 played King
+    const bot2Play = Card.createCard(Suit.Spades, Rank.Queen, 0); // Bot2 played Queen
     
     gameState.currentTrick = {
       plays: [

@@ -1,7 +1,7 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { initializeGame } from '../../src/game/gameLogic';
-import { PlayerId, Rank, Suit, ComboType, GamePhase } from '../../src/types';
-import type { GameState, Card } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
+import { PlayerId, Rank, Suit, ComboType, GamePhase, Card } from '../../src/types';
+import type { GameState } from '../../src/types';
 
 describe('Bot 3 Trump Following Decision Tree Bug', () => {
   test('Bot 3 should play weakest trump when opponent (Bot 2) is winning trump trick', () => {
@@ -17,27 +17,27 @@ describe('Bot 3 Trump Following Decision Tree Bug', () => {
     // Set up specific hands to reproduce the scenario
     // Bot 1: Has Q♦ (leads this)
     gameState.players[1].hand = [
-      { id: 'q-diamonds', rank: Rank.Queen, suit: Suit.Diamonds, points: 0 }
+      Card.createCard(Suit.Diamonds, Rank.Queen, 0)
     ];
 
     // Bot 2: Has 2♥ (trump rank off-suit - will win the trick)
     gameState.players[2].hand = [
-      { id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 }
+      Card.createCard(Suit.Hearts, Rank.Two, 0)
     ];
 
     // Bot 3: Has multiple trump options including weak trump suit cards
     const bot3Hand: Card[] = [
-      { id: '2-clubs', rank: Rank.Two, suit: Suit.Clubs, points: 0 }, // Trump rank off-suit (valuable)
-      { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 }, // Weakest trump suit
-      { id: '4-diamonds', rank: Rank.Four, suit: Suit.Diamonds, points: 0 }, // Weak trump suit
-      { id: '5-diamonds', rank: Rank.Five, suit: Suit.Diamonds, points: 5 }, // Trump suit with points
+      Card.createCard(Suit.Clubs, Rank.Two, 0), // Trump rank off-suit (valuable)
+      Card.createCard(Suit.Diamonds, Rank.Three, 0), // Weakest trump suit
+      Card.createCard(Suit.Diamonds, Rank.Four, 0), // Weak trump suit
+      Card.createCard(Suit.Diamonds, Rank.Five, 0), // Trump suit with points
     ];
     gameState.players[3].hand = bot3Hand;
 
     // Human: Has various cards
     gameState.players[0].hand = [
-      { id: '6-diamonds', rank: Rank.Six, suit: Suit.Diamonds, points: 0 },
-      { id: '7-diamonds', rank: Rank.Seven, suit: Suit.Diamonds, points: 0 },
+      Card.createCard(Suit.Diamonds, Rank.Six, 0),
+      Card.createCard(Suit.Diamonds, Rank.Seven, 0),
     ];
 
     // Set up the trick state: Bot 1 leads Q♦, Bot 2 plays 2♥ (now winning)
@@ -45,11 +45,11 @@ describe('Bot 3 Trump Following Decision Tree Bug', () => {
       plays: [
         {
           playerId: PlayerId.Bot1,
-          cards: [{ id: 'q-diamonds', rank: Rank.Queen, suit: Suit.Diamonds, points: 0 }],
+          cards: [Card.createCard(Suit.Diamonds, Rank.Queen, 0)],
         },
         {
           playerId: PlayerId.Bot2,
-          cards: [{ id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 }],
+          cards: [Card.createCard(Suit.Hearts, Rank.Two, 0)],
         }
       ],
       points: 0,
@@ -89,8 +89,8 @@ describe('Bot 3 Trump Following Decision Tree Bug', () => {
     };
 
     const cards = [
-      { id: '2-clubs', rank: Rank.Two, suit: Suit.Clubs, points: 0 }, // Trump rank off-suit
-      { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 }, // Weak trump suit
+      Card.createCard(Suit.Clubs, Rank.Two, 0), // Trump rank off-suit
+      Card.createCard(Suit.Diamonds, Rank.Three, 0), // Weak trump suit
     ];
 
     // This test will help us verify the conservation values are calculated correctly

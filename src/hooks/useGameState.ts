@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { initializeGame } from "../game/gameLogic";
+import { initializeGame } from "../utils/gameInitialization";
 import { putbackKittyCards, validateKittySwap } from "../game/kittyManager";
-import { processPlay, validatePlay } from "../game/gamePlayManager";
+import { processPlay, validatePlay } from "../game/playProcessing";
 import { endRound, prepareNextRound } from "../game/gameRoundManager";
-import { Card, GamePhase, GameState, RoundResult } from "../types";
+import { Card, GamePhase, GameState, RoundResult, Trick } from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import { sortCards } from "../utils/cardSorting";
 import {
@@ -16,7 +16,7 @@ import {
 interface TrickCompletionData {
   winnerId: string;
   points: number;
-  completedTrick: any; // Using any to avoid circular dependencies
+  completedTrick: Trick;
   timestamp: number;
 }
 
@@ -338,9 +338,10 @@ export function useGameState() {
 
       // When a trick is completed, the winning player becomes the next player to lead
       // Derive the winning player index from currentTrick.winningPlayerId
-      const winningPlayerIndex = gameState.currentTrick?.winningPlayerId
+      const currentTrick = gameState.currentTrick;
+      const winningPlayerIndex = currentTrick?.winningPlayerId
         ? gameState.players.findIndex(
-            (p) => p.id === gameState.currentTrick!.winningPlayerId,
+            (p) => p.id === currentTrick.winningPlayerId,
           )
         : -1;
 

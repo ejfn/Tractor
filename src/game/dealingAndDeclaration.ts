@@ -1,13 +1,231 @@
-import { GameState, PlayerId, Suit, GamePhase } from "../types";
+import {
+  Card,
+  DeclarationOpportunity,
+  DealingProgress,
+  GamePhase,
+  GameState,
+  PlayerId,
+  Suit,
+  canOverrideDeclaration,
+  detectPossibleDeclarations,
+} from "../types";
 import { pickupKittyCards } from "./kittyManager";
 import { initializeTrumpDeclarationState } from "../utils/gameInitialization";
 import {
   TrumpDeclaration,
   DeclarationType,
-  canOverrideDeclaration,
   validateDeclarationCards,
-  detectPossibleDeclarations,
 } from "../types/trumpDeclaration";
+
+/**
+ * Dealing and Trump Declaration Module
+ *
+ * Unified module handling the entire dealing phase including:
+ * - Progressive card dealing
+ * - Trump declaration opportunities and validation
+ * - Declaration window management
+ * - Transition to next game phase
+ */
+
+// ================================
+// PROGRESSIVE DEALING FUNCTIONS
+// ================================
+
+// Deal cards to players (original all-at-once dealing for backward compatibility)
+export const dealCards = (state: GameState): GameState => {
+  const newState = { ...state };
+  const { players, deck } = newState;
+
+  // Calculate cards per player (leaving 8 for kitty in a 4-player game)
+  const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
+
+  players.forEach((player, index) => {
+    const startIdx = index * cardsPerPlayer;
+    player.hand = deck.slice(startIdx, startIdx + cardsPerPlayer);
+  });
+
+  // Set kitty cards (bottom 8 cards)
+  newState.kittyCards = deck.slice(deck.length - 8);
+
+  // Update game phase - start with dealing for progressive dealing system
+  newState.gamePhase = GamePhase.Dealing;
+
+  return newState;
+};
+
+// Progressive dealing with trump declaration opportunities
+export const dealNextCard = (state: GameState): GameState => {
+  const newState = { ...state };
+  const { players, deck } = newState;
+
+  // Initialize dealing state if not present
+  if (!newState.dealingState) {
+    const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
+    // Round 1 always starts from human player (index 0), round 2+ uses roundStartingPlayerIndex
+    const startingPlayerIndex =
+      newState.roundNumber === 1
+        ? 0 // Round 1 always starts from human
+        : newState.roundStartingPlayerIndex; // Round 2+ uses round starting player
+
+    // Set up kitty cards (last 8 cards from deck) - CRITICAL for progressive dealing
+    newState.kittyCards = deck.slice(deck.length - 8);
+
+    newState.dealingState = {
+      cardsPerPlayer,
+      currentRound: 0,
+      currentDealingPlayerIndex: startingPlayerIndex,
+      startingDealingPlayerIndex: startingPlayerIndex,
+      totalRounds: cardsPerPlayer,
+      completed: false,
+      kittyDealt: false,
+      paused: false,
+      pauseReason: undefined,
+      lastDealtCard: undefined,
+    };
+  }
+
+  const dealingState = newState.dealingState;
+
+  // Check if dealing is paused
+  if (dealingState.paused) {
+    return newState; // No changes when paused
+  }
+
+  // Check if dealing is complete
+  if (isDealingComplete(newState)) {
+    dealingState.completed = true;
+    return newState; // No more cards to deal
+  }
+
+  // Calculate current dealt cards count
+  const totalCardsInHands = players.reduce(
+    (sum, player) => sum + player.hand.length,
+    0,
+  );
+  const maxCardsToPlayers =
+    Math.floor((deck.length - 8) / players.length) * players.length;
+
+  // Deal next card
+  const currentPlayer = players[dealingState.currentDealingPlayerIndex];
+  if (currentPlayer && totalCardsInHands < maxCardsToPlayers) {
+    const cardToDeal = deck[totalCardsInHands];
+    currentPlayer.hand.push(cardToDeal);
+
+    // Store reference to last dealt card
+    dealingState.lastDealtCard = cardToDeal;
+
+    // Move to next player for next card
+    dealingState.currentDealingPlayerIndex =
+      (dealingState.currentDealingPlayerIndex + 1) % players.length;
+
+    // Check if we completed a round of dealing to all players
+    const newTotalCards = totalCardsInHands + 1;
+    if (newTotalCards % players.length === 0) {
+      dealingState.currentRound++;
+    }
+  }
+
+  return newState;
+};
+
+// Check if dealing is complete
+export const isDealingComplete = (state: GameState): boolean => {
+  if (!state.dealingState) return false;
+
+  const { players, deck } = state;
+  const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
+  const totalCardsToPlayer = cardsPerPlayer * players.length;
+
+  // Calculate current cards dealt by counting cards in hands
+  const totalCardsInHands = players.reduce(
+    (sum, player) => sum + player.hand.length,
+    0,
+  );
+
+  return totalCardsInHands >= totalCardsToPlayer;
+};
+
+// Get dealing progress
+export const getDealingProgress = (state: GameState): DealingProgress => {
+  if (!state.dealingState) {
+    return { current: 0, total: 0 };
+  }
+
+  const { players, deck } = state;
+  const cardsPerPlayer = Math.floor((deck.length - 8) / players.length);
+  const totalCardsToPlayer = cardsPerPlayer * players.length;
+
+  // Calculate current cards dealt by counting cards in hands
+  const totalCardsInHands = players.reduce(
+    (sum, player) => sum + player.hand.length,
+    0,
+  );
+
+  return {
+    current: totalCardsInHands,
+    total: totalCardsToPlayer,
+  };
+};
+
+// Check for trump declaration opportunities
+export const checkDeclarationOpportunities = (
+  state: GameState,
+): DeclarationOpportunity[] => {
+  if (!state.dealingState || !state.dealingState.lastDealtCard) {
+    return [];
+  }
+
+  const opportunities: DeclarationOpportunity[] = [];
+
+  // Check each player for trump declaration opportunities
+  state.players.forEach((player) => {
+    const playerOpportunities = getPlayerDeclarationOptions(state, player.id);
+    if (playerOpportunities.length > 0) {
+      opportunities.push(...playerOpportunities);
+    }
+  });
+
+  return opportunities;
+};
+
+// Get the last dealt card
+export const getLastDealtCard = (state: GameState): Card | undefined => {
+  return state.dealingState?.lastDealtCard;
+};
+
+// Pause dealing (for human trump declarations)
+export const pauseDealing = (state: GameState, reason: string): GameState => {
+  const newState = { ...state };
+  if (newState.dealingState) {
+    newState.dealingState.paused = true;
+    newState.dealingState.pauseReason = reason;
+  }
+  return newState;
+};
+
+// Resume dealing after declaration decisions
+export const resumeDealing = (state: GameState): GameState => {
+  const newState = { ...state };
+  if (newState.dealingState) {
+    newState.dealingState.paused = false;
+    newState.dealingState.pauseReason = undefined;
+  }
+  return newState;
+};
+
+// Check if dealing is currently paused
+export const isDealingPaused = (state: GameState): boolean => {
+  return state.dealingState?.paused ?? false;
+};
+
+// Get the reason why dealing is paused
+export const getDealingPauseReason = (state: GameState): string | undefined => {
+  return state.dealingState?.pauseReason;
+};
+
+// ================================
+// TRUMP DECLARATION FUNCTIONS
+// ================================
 
 /**
  * Make a trump declaration during the dealing phase
@@ -100,7 +318,7 @@ export function makeTrumpDeclaration(
 export function getPlayerDeclarationOptions(
   gameState: GameState,
   playerId: PlayerId,
-): { type: DeclarationType; cards: any[]; suit: any }[] {
+): DeclarationOpportunity[] {
   const player = gameState.players.find((p) => p.id === playerId);
   if (!player) {
     return [];
@@ -211,35 +429,6 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     newState.gamePhase = GamePhase.Playing;
     return newState;
   }
-}
-
-/**
- * Get the current trump declaration status for display
- */
-export function getTrumpDeclarationStatus(gameState: GameState): {
-  hasDeclaration: boolean;
-  declarer?: PlayerId;
-  type?: DeclarationType;
-  suit?: any;
-  declarationCount: number;
-} {
-  const declarationState = gameState.trumpDeclarationState;
-
-  if (!declarationState?.currentDeclaration) {
-    return {
-      hasDeclaration: false,
-      declarationCount: declarationState?.declarationHistory.length || 0,
-    };
-  }
-
-  const current = declarationState.currentDeclaration;
-  return {
-    hasDeclaration: true,
-    declarer: current.playerId,
-    type: current.type,
-    suit: current.suit,
-    declarationCount: declarationState.declarationHistory.length,
-  };
 }
 
 /**

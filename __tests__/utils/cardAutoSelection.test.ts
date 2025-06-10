@@ -4,16 +4,16 @@ import {
   getAutoSelectedCards
 } from '../../src/utils/cardAutoSelection';
 import { Card, Suit, Rank, TrumpInfo, JokerType, ComboType } from "../../src/types";
-import { createCard, createJoker, createPair, createTrumpInfo } from "../helpers";
+import { createTrumpInfo } from "../helpers";
 
 describe('Card Auto-Selection Utils', () => {
   describe('findPairCards', () => {
     test('should find regular pair cards', () => {
       const hand = [
-        createCard(Suit.Hearts, Rank.King, 'hk1'),
-        createCard(Suit.Hearts, Rank.King, 'hk2'),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Clubs, Rank.Five),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 1),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Five, 0),
       ];
       
       const targetCard = hand[0]; // First King of Hearts
@@ -26,10 +26,10 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should find joker pairs', () => {
       const hand = [
-        createJoker(JokerType.Small, 'sj1'),
-        createJoker(JokerType.Small, 'sj2'),
-        createJoker(JokerType.Big),
-        createCard(Suit.Hearts, Rank.Ace),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1),
+        Card.createJoker(JokerType.Big, 0),
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),
       ];
       
       const targetCard = hand[0]; // First Small Joker
@@ -42,9 +42,9 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should return only target card if no pairs exist', () => {
       const hand = [
-        createCard(Suit.Hearts, Rank.King),
-        createCard(Suit.Spades, Rank.Queen),
-        createCard(Suit.Clubs, Rank.Ace),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
       
       const targetCard = hand[0];
@@ -56,9 +56,9 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should not include cards of same rank but different suit', () => {
       const hand = [
-        createCard(Suit.Hearts, Rank.King),
-        createCard(Suit.Spades, Rank.King), // Same rank, different suit
-        createCard(Suit.Clubs, Rank.Ace),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.King, 0), // Same rank, different suit
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
       
       const targetCard = hand[0];
@@ -74,9 +74,9 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should find regular tractor (consecutive pairs)', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Seven),
-        ...createPair(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
       
       const targetCard = hand[0]; // Seven of Hearts
@@ -91,11 +91,11 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should find joker tractor', () => {
       const hand = [
-        createJoker(JokerType.Small, 'sj1'),
-        createJoker(JokerType.Small, 'sj2'),
-        createJoker(JokerType.Big, 'bj1'),
-        createJoker(JokerType.Big, 'bj2'),
-        createCard(Suit.Hearts, Rank.Ace),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1),
+        Card.createJoker(JokerType.Big, 0),
+        Card.createJoker(JokerType.Big, 1),
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),
       ];
       
       const targetCard = hand[0]; // Small Joker
@@ -108,9 +108,9 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should return empty array for non-consecutive pairs', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Seven),
-        ...createPair(Suit.Hearts, Rank.Nine), // Gap - no Eight
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Nine), // Gap - no Eight
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
       
       const targetCard = hand[0]; // Seven of Hearts
@@ -121,8 +121,8 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should return empty array for different suits', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Seven),
-        ...createPair(Suit.Spades, Rank.Eight), // Different suit
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight), // Different suit
       ];
       
       const targetCard = hand[0]; // Seven of Hearts
@@ -133,10 +133,10 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should find longer tractors', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Five),
-        ...createPair(Suit.Hearts, Rank.Six),
-        ...createPair(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
       
       const targetCard = hand[0]; // Five of Hearts
@@ -154,7 +154,7 @@ describe('Card Auto-Selection Utils', () => {
     const trumpInfo = createTrumpInfo(Rank.Two, Suit.Spades);
 
     test('should toggle off already selected card', () => {
-      const hand = [createCard(Suit.Hearts, Rank.King)];
+      const hand = [Card.createCard(Suit.Hearts, Rank.King, 0)];
       const currentSelection = [hand[0]];
       
       const result = getAutoSelectedCards(
@@ -166,8 +166,8 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should auto-select pair when leading', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.King),
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.King),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
       
       const result = getAutoSelectedCards(
@@ -181,9 +181,9 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should auto-select tractor when leading', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Seven),
-        ...createPair(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
       
       const result = getAutoSelectedCards(
@@ -195,11 +195,11 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should auto-select pair when tapping card that can form pair while following pair', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.King),
-        createCard(Suit.Hearts, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.King),
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),
       ];
       
-      const leadingCombo = createPair(Suit.Spades, Rank.Queen);
+      const leadingCombo = Card.createPair(Suit.Spades, Rank.Queen);
       
       // Click on the first King - should auto-select both Kings
       const result = getAutoSelectedCards(
@@ -213,14 +213,14 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should auto-select tractor when tapping card that can form tractor while following tractor', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Seven),
-        ...createPair(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Hearts, Rank.Nine),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
+        Card.createCard(Suit.Hearts, Rank.Nine, 0),
       ];
       
       const leadingCombo = [
-        ...createPair(Suit.Spades, Rank.King),
-        ...createPair(Suit.Spades, Rank.Ace)
+        ...Card.createPair(Suit.Spades, Rank.King),
+        ...Card.createPair(Suit.Spades, Rank.Ace)
       ];
       
       // Click on Seven of Hearts - should auto-select the 7-7-8-8 tractor
@@ -233,9 +233,9 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should select single card when no combinations available', () => {
       const hand = [
-        createCard(Suit.Hearts, Rank.King),
-        createCard(Suit.Spades, Rank.Queen),
-        createCard(Suit.Clubs, Rank.Ace),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
       
       const result = getAutoSelectedCards(
@@ -247,9 +247,9 @@ describe('Card Auto-Selection Utils', () => {
     });
 
     test('should handle trump declaration mode by appending to selection', () => {
-      const hand = [createCard(Suit.Hearts, Rank.Two)];
+      const hand = [Card.createCard(Suit.Hearts, Rank.Two, 0)];
       const trumpInfoUndeclared = createTrumpInfo(Rank.Two, undefined);
-      const existingSelection = [createCard(Suit.Spades, Rank.King)];
+      const existingSelection = [Card.createCard(Suit.Spades, Rank.King, 0)];
       
       const result = getAutoSelectedCards(
         hand[0], hand, existingSelection, true, undefined, trumpInfoUndeclared
@@ -262,10 +262,10 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should append auto-selected pair to existing selection', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.King),
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.King),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
-      const existingSelection = [createCard(Suit.Clubs, Rank.Queen)];
+      const existingSelection = [Card.createCard(Suit.Clubs, Rank.Queen, 0)];
       
       const result = getAutoSelectedCards(
         hand[0], hand, existingSelection, true, undefined, trumpInfo
@@ -279,11 +279,11 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should append auto-selected tractor to existing selection', () => {
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Seven),
-        ...createPair(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
-      const existingSelection = [createCard(Suit.Clubs, Rank.Queen)];
+      const existingSelection = [Card.createCard(Suit.Clubs, Rank.Queen, 0)];
       
       const result = getAutoSelectedCards(
         hand[0], hand, existingSelection, true, undefined, trumpInfo
@@ -299,8 +299,8 @@ describe('Card Auto-Selection Utils', () => {
     });
 
     test('should not add duplicate cards when appending', () => {
-      const pairCards = createPair(Suit.Hearts, Rank.King);
-      const hand = [...pairCards, createCard(Suit.Spades, Rank.Ace)];
+      const pairCards = Card.createPair(Suit.Hearts, Rank.King);
+      const hand = [...pairCards, Card.createCard(Suit.Spades, Rank.Ace, 0)];
       const existingSelection = [pairCards[1]]; // Already have second card of pair
       
       const result = getAutoSelectedCards(
@@ -314,11 +314,11 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should fall back to single selection when following pair but clicked card cannot form pair', () => {
       const hand = [
-        createCard(Suit.Hearts, Rank.King),
-        createCard(Suit.Spades, Rank.Queen),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 0),
       ];
       
-      const leadingCombo = createPair(Suit.Clubs, Rank.Ace);
+      const leadingCombo = Card.createPair(Suit.Clubs, Rank.Ace);
       
       // Click on King of Hearts - no pair available, should select single card
       const result = getAutoSelectedCards(
@@ -331,14 +331,14 @@ describe('Card Auto-Selection Utils', () => {
 
     test('should fall back to single selection when following tractor but clicked card cannot form tractor', () => {
       const hand = [
-        createCard(Suit.Hearts, Rank.King),
-        createCard(Suit.Spades, Rank.Queen),
-        createCard(Suit.Clubs, Rank.Ace),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
       
       const leadingCombo = [
-        ...createPair(Suit.Spades, Rank.King),
-        ...createPair(Suit.Spades, Rank.Ace)
+        ...Card.createPair(Suit.Spades, Rank.King),
+        ...Card.createPair(Suit.Spades, Rank.Ace)
       ];
       
       // Click on King of Hearts - no tractor available, should select single card
@@ -353,17 +353,17 @@ describe('Card Auto-Selection Utils', () => {
     test('should auto-select 6-card tractor when following 6-card tractor', () => {
       // Hand with A(S)-A(S)-K(S)-K(S)-Q(S)-Q(S) tractor
       const hand = [
-        ...createPair(Suit.Spades, Rank.Ace),
-        ...createPair(Suit.Spades, Rank.King),
-        ...createPair(Suit.Spades, Rank.Queen),
-        createCard(Suit.Hearts, Rank.Two),
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.King),
+        ...Card.createPair(Suit.Spades, Rank.Queen),
+        Card.createCard(Suit.Hearts, Rank.Two, 0),
       ];
       
       // Leading combo is a 6-card tractor (3 consecutive pairs)
       const leadingCombo = [
-        ...createPair(Suit.Hearts, Rank.Ten),
-        ...createPair(Suit.Hearts, Rank.Jack),
-        ...createPair(Suit.Hearts, Rank.Queen)
+        ...Card.createPair(Suit.Hearts, Rank.Ten),
+        ...Card.createPair(Suit.Hearts, Rank.Jack),
+        ...Card.createPair(Suit.Hearts, Rank.Queen)
       ];
       
       // Click on Ace of Spades - should auto-select the full 6-card tractor
@@ -381,10 +381,10 @@ describe('Card Auto-Selection Utils', () => {
     test('should auto-select 6-card tractor when leading with 6-card tractor available', () => {
       // Hand with A(S)-A(S)-K(S)-K(S)-Q(S)-Q(S) tractor  
       const hand = [
-        ...createPair(Suit.Spades, Rank.Ace),
-        ...createPair(Suit.Spades, Rank.King),
-        ...createPair(Suit.Spades, Rank.Queen),
-        createCard(Suit.Hearts, Rank.Two),
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.King),
+        ...Card.createPair(Suit.Spades, Rank.Queen),
+        Card.createCard(Suit.Hearts, Rank.Two, 0),
       ];
       
       // When leading, click on any card in the tractor - should auto-select all 6 cards
@@ -402,19 +402,19 @@ describe('Card Auto-Selection Utils', () => {
     test('should auto-select 8-card tractor when following 8-card tractor', () => {
       // Hand with 5-5-6-6-7-7-8-8 of Hearts tractor
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Five),
-        ...createPair(Suit.Hearts, Rank.Six),
-        ...createPair(Suit.Hearts, Rank.Seven),
-        ...createPair(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
       
       // Leading combo is an 8-card tractor (4 consecutive pairs)
       const leadingCombo = [
-        ...createPair(Suit.Clubs, Rank.Nine),
-        ...createPair(Suit.Clubs, Rank.Ten),
-        ...createPair(Suit.Clubs, Rank.Jack),
-        ...createPair(Suit.Clubs, Rank.Queen)
+        ...Card.createPair(Suit.Clubs, Rank.Nine),
+        ...Card.createPair(Suit.Clubs, Rank.Ten),
+        ...Card.createPair(Suit.Clubs, Rank.Jack),
+        ...Card.createPair(Suit.Clubs, Rank.Queen)
       ];
       
       // Click on Five of Hearts - should auto-select the full 8-card tractor
@@ -433,16 +433,16 @@ describe('Card Auto-Selection Utils', () => {
     test('should NOT auto-select when hand tractor length does not match leading combo', () => {
       // Hand with only 4-card tractor (7-7-8-8)
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Seven),
-        ...createPair(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
       
       // Leading combo is a 6-card tractor (3 consecutive pairs)
       const leadingCombo = [
-        ...createPair(Suit.Clubs, Rank.Nine),
-        ...createPair(Suit.Clubs, Rank.Ten),
-        ...createPair(Suit.Clubs, Rank.Jack)
+        ...Card.createPair(Suit.Clubs, Rank.Nine),
+        ...Card.createPair(Suit.Clubs, Rank.Ten),
+        ...Card.createPair(Suit.Clubs, Rank.Jack)
       ];
       
       // Click on Seven of Hearts - cannot match 6-card tractor with 4-card tractor
@@ -458,12 +458,12 @@ describe('Card Auto-Selection Utils', () => {
     test('should auto-select longest available tractor when leading', () => {
       // Hand with 3-3-4-4-5-5-6-6-7-7 (10-card tractor)
       const hand = [
-        ...createPair(Suit.Diamonds, Rank.Three),
-        ...createPair(Suit.Diamonds, Rank.Four),
-        ...createPair(Suit.Diamonds, Rank.Five),
-        ...createPair(Suit.Diamonds, Rank.Six),
-        ...createPair(Suit.Diamonds, Rank.Seven),
-        createCard(Suit.Hearts, Rank.King),
+        ...Card.createPair(Suit.Diamonds, Rank.Three),
+        ...Card.createPair(Suit.Diamonds, Rank.Four),
+        ...Card.createPair(Suit.Diamonds, Rank.Five),
+        ...Card.createPair(Suit.Diamonds, Rank.Six),
+        ...Card.createPair(Suit.Diamonds, Rank.Seven),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
       ];
       
       // When leading, click on any card in the tractor - should auto-select all 10 cards
@@ -483,12 +483,12 @@ describe('Card Auto-Selection Utils', () => {
     test('should append longer tractor to existing selection', () => {
       // Hand with 6-card tractor
       const hand = [
-        ...createPair(Suit.Spades, Rank.Ace),
-        ...createPair(Suit.Spades, Rank.King),
-        ...createPair(Suit.Spades, Rank.Queen),
-        createCard(Suit.Hearts, Rank.Two),
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.King),
+        ...Card.createPair(Suit.Spades, Rank.Queen),
+        Card.createCard(Suit.Hearts, Rank.Two, 0),
       ];
-      const existingSelection = [createCard(Suit.Clubs, Rank.Nine)];
+      const existingSelection = [Card.createCard(Suit.Clubs, Rank.Nine, 0)];
       
       // When leading, click on tractor card with existing selection
       const result = getAutoSelectedCards(
@@ -513,17 +513,17 @@ describe('Card Auto-Selection Utils', () => {
       
       // Hand with A♥-A♥-K♥-K♥-Q♥-Q♥ (trump suit tractor)
       const hand = [
-        ...createPair(Suit.Hearts, Rank.Ace),
-        ...createPair(Suit.Hearts, Rank.King),
-        ...createPair(Suit.Hearts, Rank.Queen),
-        createCard(Suit.Spades, Rank.Jack),
+        ...Card.createPair(Suit.Hearts, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.King),
+        ...Card.createPair(Suit.Hearts, Rank.Queen),
+        Card.createCard(Suit.Spades, Rank.Jack, 0),
       ];
       
       // Leading combo is a 6-card non-trump tractor
       const leadingCombo = [
-        ...createPair(Suit.Clubs, Rank.Nine),
-        ...createPair(Suit.Clubs, Rank.Ten),
-        ...createPair(Suit.Clubs, Rank.Jack)
+        ...Card.createPair(Suit.Clubs, Rank.Nine),
+        ...Card.createPair(Suit.Clubs, Rank.Ten),
+        ...Card.createPair(Suit.Clubs, Rank.Jack)
       ];
       
       // Click on Ace of Hearts - should auto-select the trump tractor

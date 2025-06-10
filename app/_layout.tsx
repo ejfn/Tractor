@@ -72,7 +72,7 @@ export default function RootLayout() {
           },
           headerTintColor: "#FFFFFF", // White text for header
           headerTitleAlign: "center", // Center the header title
-          headerTitle: (props: any) => <HeaderTitle />,
+          headerTitle: () => <HeaderTitle />,
           // Ensure header has no back button or other elements that would take space
           headerLeft: () => null,
           headerRight: () => null,

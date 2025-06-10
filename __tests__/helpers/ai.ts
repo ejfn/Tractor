@@ -1,9 +1,11 @@
 import {
+  AdvancedComboPattern,
   Card,
+  CombinationAnalysis,
+  CombinationContext,
   ComboStrength,
   ComboType,
   GameContext,
-  GamePhase,
   GamePhaseStrategy,
   MemoryContext,
   PlayerId,
@@ -11,16 +13,10 @@ import {
   PointCardStrategy,
   PointFocusedContext,
   PointPressure,
-  Rank,
-  Suit,
   TrickPosition,
-  TrumpTiming,
-  AdvancedComboPattern,
-  CombinationAnalysis,
-  CombinationContext,
   TrickWinnerAnalysis,
+  TrumpTiming
 } from '../../src/types';
-import { createCard, createPair, createTractor } from './cards';
 
 // ============================================================================
 // AI TESTING UTILITIES

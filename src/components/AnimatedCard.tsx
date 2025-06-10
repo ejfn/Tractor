@@ -1,12 +1,18 @@
 import React, { useEffect } from "react";
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
-import { Card as CardType, Suit, JokerType } from "../types";
+import { Card as CardType, JokerType, Suit } from "../types";
 
 interface CardProps {
   card: CardType;
@@ -17,7 +23,7 @@ interface CardProps {
   isTrump?: boolean;
   delay?: number;
   scale?: number; // Add scale prop for bot cards
-  style?: any; // Add style prop for additional styling
+  style?: ViewStyle; // Add style prop for additional styling
   onAnimationComplete?: () => void; // Add callback for animation completion - properly typed as function
   disabled?: boolean; // Add disabled prop for trump declaration mode
 }
@@ -558,7 +564,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     // Performance optimizations
     backfaceVisibility: "hidden",
-    // @ts-ignore - These are valid React Native style properties
+    // @ts-expect-error - These are valid React Native style properties
     shouldRasterizeIOS: true, // iOS performance optimization
     renderToHardwareTextureAndroid: true, // Android performance optimization
     overflow: "hidden",
@@ -572,7 +578,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     // Performance optimizations for card back too
     backfaceVisibility: "hidden",
-    // @ts-ignore - These are valid React Native style properties
     shouldRasterizeIOS: true,
     renderToHardwareTextureAndroid: true,
   },

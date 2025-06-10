@@ -1,6 +1,5 @@
-import { identifyCombos } from '../../src/game/gameLogic';
-import { ComboType, JokerType, PlayerId, Rank, Suit, TrumpInfo } from '../../src/types';
-import { createCard } from '../helpers';
+import { identifyCombos } from '../../src/game/comboDetection';
+import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
 
 describe('Invalid Trump Rank Pair Bug', () => {
   test('should NOT create pair from different suit trump rank cards', () => {
@@ -12,8 +11,8 @@ describe('Invalid Trump Rank Pair Bug', () => {
 
     // Create cards: 2♥ and 2♦ (both trump rank, different suits)
     const cards = [
-      createCard(Suit.Hearts, Rank.Two), // 2♥ - trump rank card
-      createCard(Suit.Diamonds, Rank.Two), // 2♦ - trump rank card
+      Card.createCard(Suit.Hearts, Rank.Two, 0), // 2♥ - trump rank card
+      Card.createCard(Suit.Diamonds, Rank.Two, 0), // 2♦ - trump rank card
     ];
 
     const combos = identifyCombos(cards, trumpInfo);
@@ -52,8 +51,8 @@ describe('Invalid Trump Rank Pair Bug', () => {
 
     // Create cards: two 2♥ cards (identical)
     const cards = [
-      createCard(Suit.Hearts, Rank.Two), // 2♥ - trump rank card
-      createCard(Suit.Hearts, Rank.Two), // 2♥ - identical trump rank card
+      Card.createCard(Suit.Hearts, Rank.Two, 0), // 2♥ - trump rank card
+      Card.createCard(Suit.Hearts, Rank.Two, 1), // 2♥ - identical trump rank card
     ];
 
     const combos = identifyCombos(cards, trumpInfo);
@@ -86,8 +85,8 @@ describe('Invalid Trump Rank Pair Bug', () => {
 
     // Create cards: two 3♠ cards (trump suit cards)
     const cards = [
-      createCard(Suit.Spades, Rank.Three), // 3♠ - trump suit card
-      createCard(Suit.Spades, Rank.Three), // 3♠ - identical trump suit card
+      Card.createCard(Suit.Spades, Rank.Three, 0), // 3♠ - trump suit card
+      Card.createCard(Suit.Spades, Rank.Three, 1), // 3♠ - identical trump suit card
     ];
 
     const combos = identifyCombos(cards, trumpInfo);

@@ -6,7 +6,7 @@ import {
   Trick,
   ComboType,
 } from "../types";
-import { identifyCombos } from "./gameLogic";
+import { identifyCombos } from "./comboDetection";
 
 /**
  * Picks up kitty cards for the round starting player

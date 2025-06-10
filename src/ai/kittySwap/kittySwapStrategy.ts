@@ -6,7 +6,7 @@ import {
   GamePhase,
   ComboStrength,
 } from "../../types";
-import { isTrump, calculateCardStrategicValue } from "../../game/gameLogic";
+import { isTrump, calculateCardStrategicValue } from "../../game/gameHelpers";
 
 /**
  * Advanced AI Kitty Swap Strategy - Sophisticated approach with suit elimination and strategic analysis
@@ -228,7 +228,8 @@ function analyzeSuitForElimination(
   // Extra penalty for suits with multiple pairs (potential tractors)
   const suitPairCounts: { [suit: string]: number } = {};
   pairs.forEach((pair) => {
-    const suit = pair[0].suit!;
+    const suit = pair[0].suit;
+    if (!suit) return; // Skip cards without suit
     suitPairCounts[suit] = (suitPairCounts[suit] || 0) + 1;
   });
   Object.values(suitPairCounts).forEach((pairCount) => {
@@ -346,11 +347,16 @@ function findTractors(pairs: Card[][]): Card[][] {
     "A",
   ];
   const pairsByRank = pairs
-    .map((pair) => ({
-      rank: pair[0].rank!,
-      cards: pair,
-      rankIndex: rankOrder.indexOf(pair[0].rank!),
-    }))
+    .map((pair) => {
+      if (!pair[0].rank) {
+        throw new Error("findTractors: Pair contains card without rank");
+      }
+      return {
+        rank: pair[0].rank,
+        cards: pair,
+        rankIndex: rankOrder.indexOf(pair[0].rank),
+      };
+    })
     .sort((a, b) => a.rankIndex - b.rankIndex);
 
   const tractors: Card[][] = [];
@@ -748,8 +754,13 @@ function selectPairPreservingDisposal(
       // Sort small pairs by rank (weakest first: 3s before 4s before 6s, etc.)
       const rankOrder = ["3", "4", "6", "7", "8", "9"];
       const sortedSmallPairs = smallPairs.sort((a, b) => {
-        const aIndex = rankOrder.indexOf(a[0].rank!);
-        const bIndex = rankOrder.indexOf(b[0].rank!);
+        if (!a[0].rank || !b[0].rank) {
+          throw new Error(
+            "selectPairPreservingDisposal: Pair contains card without rank",
+          );
+        }
+        const aIndex = rankOrder.indexOf(a[0].rank);
+        const bIndex = rankOrder.indexOf(b[0].rank);
         return aIndex - bIndex;
       });
 
@@ -860,7 +871,10 @@ export function getAIKittySwapDecision(
     combinationsPreserved: number;
   };
 } {
-  const player = gameState.players.find((p) => p.id === playerId)!;
+  const player = gameState.players.find((p) => p.id === playerId);
+  if (!player) {
+    throw new Error(`getAIKittySwapDecision: Player ${playerId} not found`);
+  }
   const { trumpInfo } = gameState;
   const hand = player.hand;
 

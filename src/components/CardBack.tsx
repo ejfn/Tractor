@@ -1,10 +1,10 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TransformsStyle } from "react-native";
 
 interface CardBackProps {
   width?: number;
   height?: number;
-  transform?: any[];
+  transform?: TransformsStyle["transform"];
 }
 
 /**

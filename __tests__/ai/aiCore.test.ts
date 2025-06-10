@@ -12,7 +12,7 @@ import {
 import { getAIMove } from '../../src/ai/aiLogic';
 import { makeAIPlay } from '../../src/ai/aiStrategy';
 import { createGameContext, analyzeTrickWinner } from "../../src/ai/aiGameContext";
-import { createBasicGameState, createGameState, createTrick, createCard } from "../helpers";
+import { createBasicGameState, createGameState, createTrick } from "../helpers";
 
 /**
  * Comprehensive AI Core Tests
@@ -28,16 +28,9 @@ import { createBasicGameState, createGameState, createTrick, createCard } from "
 // Use shared utility for basic AI testing game state
 const createMockGameState = createBasicGameState;
 
-// Helper function to create cards
-const createCardWithPoints = (suit: Suit, rank: Rank, id: string): Card => {
-  let points = 0;
-  if (rank === Rank.Five) points = 5;
-  if (rank === Rank.Ten || rank === Rank.King) points = 10;
-  return { suit, rank, id, points };
-};
-
-const createJoker = (type: JokerType, id: string): Card => {
-  return { joker: type, id, points: 0 };
+// Helper function to create jokers (Card.createCard handles points automatically)
+const createJoker = (type: JokerType, deckId: 0 | 1 = 0): Card => {
+  return Card.createJoker(type, deckId);
 };
 
 describe('AI Core Functionality', () => {
@@ -48,9 +41,9 @@ describe('AI Core Functionality', () => {
         
         // Give AI1 some cards
         gameState.players[1].hand = [
-          createCardWithPoints(Suit.Hearts, Rank.Six, 'hearts_6_1'),
-          createCardWithPoints(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-          createCardWithPoints(Suit.Spades, Rank.Three, 'spades_3_1')
+          Card.createCard(Suit.Hearts, Rank.Six, 0),
+          Card.createCard(Suit.Hearts, Rank.Seven, 0),
+          Card.createCard(Suit.Spades, Rank.Three, 0)
         ];
         
         gameState.currentPlayerIndex = 1; // AI1's turn
@@ -77,7 +70,7 @@ describe('AI Core Functionality', () => {
           plays: [
             {
               playerId: PlayerId.Human,
-              cards: [createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)]
             }
           ],
           winningPlayerId: PlayerId.Human,
@@ -86,9 +79,9 @@ describe('AI Core Functionality', () => {
         
         // Give AI1 cards including a heart
         gameState.players[1].hand = [
-          createCardWithPoints(Suit.Hearts, Rank.Six, 'hearts_6_1'),
-          createCardWithPoints(Suit.Spades, Rank.Seven, 'spades_7_1'),
-          createCardWithPoints(Suit.Clubs, Rank.Three, 'clubs_3_1')
+          Card.createCard(Suit.Hearts, Rank.Six, 0),
+          Card.createCard(Suit.Spades, Rank.Seven, 0),
+          Card.createCard(Suit.Clubs, Rank.Three, 0)
         ];
         
         gameState.currentPlayerIndex = 1; // AI1's turn
@@ -108,7 +101,7 @@ describe('AI Core Functionality', () => {
           plays: [
             {
               playerId: PlayerId.Human,
-              cards: [createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)]
             }
           ],
           winningPlayerId: PlayerId.Human,
@@ -117,9 +110,9 @@ describe('AI Core Functionality', () => {
         
         // Give AI1 cards with NO hearts (forced to play off-suit)
         gameState.players[1].hand = [
-          createCardWithPoints(Suit.Spades, Rank.Seven, 'spades_7_1'),
-          createCardWithPoints(Suit.Clubs, Rank.Three, 'clubs_3_1'),
-          createCardWithPoints(Suit.Diamonds, Rank.Two, 'diamonds_2_1')
+          Card.createCard(Suit.Spades, Rank.Seven, 0),
+          Card.createCard(Suit.Clubs, Rank.Three, 0),
+          Card.createCard(Suit.Diamonds, Rank.Two, 0)
         ];
         
         gameState.currentPlayerIndex = 1; // AI1's turn
@@ -141,10 +134,7 @@ describe('AI Core Functionality', () => {
           plays: [
             {
               playerId: PlayerId.Human,
-              cards: [
-                createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1'),
-                createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_2')
-              ]
+              cards: Card.createPair(Suit.Hearts, Rank.Ace)
             }
           ],
           winningPlayerId: PlayerId.Human,
@@ -153,10 +143,9 @@ describe('AI Core Functionality', () => {
         
         // Give AI1 a pair of hearts
         gameState.players[1].hand = [
-          createCardWithPoints(Suit.Hearts, Rank.Six, 'hearts_6_1'),
-          createCardWithPoints(Suit.Hearts, Rank.Six, 'hearts_6_2'),
-          createCardWithPoints(Suit.Spades, Rank.Seven, 'spades_7_1'),
-          createCardWithPoints(Suit.Clubs, Rank.Three, 'clubs_3_1')
+          ...Card.createPair(Suit.Hearts, Rank.Six),
+          Card.createCard(Suit.Spades, Rank.Seven, 0),
+          Card.createCard(Suit.Clubs, Rank.Three, 0)
         ];
         
         gameState.currentPlayerIndex = 1; // AI1's turn
@@ -178,7 +167,7 @@ describe('AI Core Functionality', () => {
           plays: [
             {
               playerId: PlayerId.Human,
-              cards: [createCardWithPoints(Suit.Hearts, Rank.Ace, 'hearts_a_1')]
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)]
             }
           ],
           winningPlayerId: PlayerId.Human,
@@ -207,10 +196,7 @@ describe('AI Core Functionality', () => {
           plays: [
             {
               playerId: PlayerId.Human,
-              cards: [
-                createCardWithPoints(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
-                createCardWithPoints(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
-              ]
+              cards: Card.createPair(Suit.Diamonds, Rank.Eight)
             }
           ],
           winningPlayerId: PlayerId.Human,
@@ -219,10 +205,10 @@ describe('AI Core Functionality', () => {
 
         // Give AI1 one diamond and several spades
         gameState.players[1].hand = [
-          createCardWithPoints(Suit.Diamonds, Rank.Ten, 'diamonds_10_1'),
-          createCardWithPoints(Suit.Spades, Rank.Two, 'spades_2_1'),
-          createCardWithPoints(Suit.Spades, Rank.Three, 'spades_3_1'),
-          createCardWithPoints(Suit.Spades, Rank.Four, 'spades_4_1')
+          Card.createCard(Suit.Diamonds, Rank.Ten, 0),
+          Card.createCard(Suit.Spades, Rank.Two, 0),
+          Card.createCard(Suit.Spades, Rank.Three, 0),
+          Card.createCard(Suit.Spades, Rank.Four, 0)
         ];
 
         gameState.currentPlayerIndex = 1; // AI1's turn
@@ -248,10 +234,7 @@ describe('AI Core Functionality', () => {
           plays: [
             {
               playerId: PlayerId.Human,
-              cards: [
-                createCardWithPoints(Suit.Diamonds, Rank.Eight, 'diamonds_8_1'),
-                createCardWithPoints(Suit.Diamonds, Rank.Eight, 'diamonds_8_2')
-              ]
+              cards: Card.createPair(Suit.Diamonds, Rank.Eight)
             }
           ],
           winningPlayerId: PlayerId.Human,
@@ -260,10 +243,9 @@ describe('AI Core Functionality', () => {
 
         // Give AI1 a pair of diamonds and some other cards
         gameState.players[1].hand = [
-          createCardWithPoints(Suit.Diamonds, Rank.Ten, 'diamonds_10_1'),
-          createCardWithPoints(Suit.Diamonds, Rank.Ten, 'diamonds_10_2'),
-          createCardWithPoints(Suit.Spades, Rank.Two, 'spades_2_1'),
-          createCardWithPoints(Suit.Spades, Rank.Three, 'spades_3_1')
+          ...Card.createPair(Suit.Diamonds, Rank.Ten),
+          Card.createCard(Suit.Spades, Rank.Two, 0),
+          Card.createCard(Suit.Spades, Rank.Three, 0)
         ];
 
         gameState.currentPlayerIndex = 1; // AI1's turn
@@ -286,21 +268,21 @@ describe('AI Core Functionality', () => {
         const gameState = createMockGameState();
         // Give AI1 some cards
         gameState.players[1].hand = [
-          createCardWithPoints(Suit.Hearts, Rank.Six, 'hearts_6_1'),
-          createCardWithPoints(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-          createCardWithPoints(Suit.Spades, Rank.Three, 'spades_3_1')
+          Card.createCard(Suit.Hearts, Rank.Six, 0),
+          Card.createCard(Suit.Hearts, Rank.Seven, 0),
+          Card.createCard(Suit.Spades, Rank.Three, 0)
         ];
         
         // Create a simple valid combo for testing
         const validCombos = [
           {
             type: ComboType.Single,
-            cards: [createCardWithPoints(Suit.Hearts, Rank.Six, 'hearts_6_1')],
+            cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)],
             value: 6
           },
           {
             type: ComboType.Single,
-            cards: [createCardWithPoints(Suit.Hearts, Rank.Seven, 'hearts_7_1')],
+            cards: [Card.createCard(Suit.Hearts, Rank.Seven, 0)],
             value: 7
           }
         ];
@@ -321,9 +303,9 @@ describe('AI Core Functionality', () => {
         gameState.currentTrick = {
           plays: [
             // Human leads with Ace
-            { playerId: PlayerId.Human, cards: [createCardWithPoints(Suit.Clubs, Rank.Ace, 'clubs_ace_1')] },
+            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Clubs, Rank.Ace, 0)] },
             // Bot1 (opponent) has played
-            { playerId: PlayerId.Bot1, cards: [createCardWithPoints(Suit.Clubs, Rank.Three, 'clubs_3_1')] }
+            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Three, 0)] }
           ],
           winningPlayerId: PlayerId.Human, // Human is winning with Ace
           points: 0,
@@ -334,9 +316,9 @@ describe('AI Core Functionality', () => {
         
         // Bot2 has point cards available
         gameState.players[2].hand = [
-          createCardWithPoints(Suit.Clubs, Rank.King, 'clubs_king_1'), // 10 points
-          createCardWithPoints(Suit.Clubs, Rank.Ten, 'clubs_ten_1'),  // 10 points
-          createCardWithPoints(Suit.Clubs, Rank.Four, 'clubs_4_1'),   // 0 points
+          Card.createCard(Suit.Clubs, Rank.King, 0), // 10 points
+          Card.createCard(Suit.Clubs, Rank.Ten, 0),  // 10 points
+          Card.createCard(Suit.Clubs, Rank.Four, 0),   // 0 points
         ];
 
         // Get AI move for Bot2
@@ -368,11 +350,11 @@ describe('AI Core Functionality', () => {
         // Setup: Human leads, Bot2 (teammate) is currently winning
         const trick = createTrick(
           PlayerId.Human,
-          [createCard(Suit.Spades, Rank.Seven)],
+          [Card.createCard(Suit.Spades, Rank.Seven, 0)],
           [
             {
               playerId: PlayerId.Bot1,
-              cards: [createCard(Suit.Spades, Rank.Six)],
+              cards: [Card.createCard(Suit.Spades, Rank.Six, 0)],
             },
           ],
           10,
@@ -396,17 +378,17 @@ describe('AI Core Functionality', () => {
         // Give human player cards that can beat the opponent
         const humanPlayer = gameState.players.find(p => p.id === PlayerId.Human)!;
         humanPlayer.hand = [
-          createCard(Suit.Hearts, Rank.Ace), // Can beat the King
-          createCard(Suit.Spades, Rank.Three), // Other cards
+          Card.createCard(Suit.Hearts, Rank.Ace, 0), // Can beat the King
+          Card.createCard(Suit.Spades, Rank.Three, 0), // Other cards
         ];
 
         const trick = createTrick(
           PlayerId.Human,
-          [createCard(Suit.Hearts, Rank.Seven)],
+          [Card.createCard(Suit.Hearts, Rank.Seven, 0)],
           [
             {
               playerId: PlayerId.Bot1,
-              cards: [createCard(Suit.Hearts, Rank.King)], // 10 points
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)], // 10 points
             },
           ],
           10,
@@ -429,11 +411,11 @@ describe('AI Core Functionality', () => {
         // Setup: Human is currently winning their own led trick
         const trick = createTrick(
           PlayerId.Human,
-          [createCard(Suit.Clubs, Rank.Ace)],
+          [Card.createCard(Suit.Clubs, Rank.Ace, 0)],
           [
             {
               playerId: PlayerId.Bot1,
-              cards: [createCard(Suit.Clubs, Rank.Six)],
+              cards: [Card.createCard(Suit.Clubs, Rank.Six, 0)],
             },
           ],
           0,
@@ -456,7 +438,7 @@ describe('AI Core Functionality', () => {
       it("should include trick winner analysis in game context", () => {
         const trick = createTrick(
           PlayerId.Bot1,
-          [createCard(Suit.Hearts, Rank.King)], // 10 points
+          [Card.createCard(Suit.Hearts, Rank.King, 0)], // 10 points
           [],
           10,
           PlayerId.Bot1
@@ -478,18 +460,18 @@ describe('AI Core Functionality', () => {
         // Setup game where Bot2 (teammate) is winning with points
         const humanPlayer = gameState.players.find(p => p.id === PlayerId.Human)!;
         humanPlayer.hand = [
-          createCard(Suit.Hearts, Rank.King), // 10 points - valuable
-          createCard(Suit.Hearts, Rank.Three), // 0 points - safe
-          createCard(Suit.Hearts, Rank.Four), // 0 points - safe
+          Card.createCard(Suit.Hearts, Rank.King, 0), // 10 points - valuable
+          Card.createCard(Suit.Hearts, Rank.Three, 0), // 0 points - safe
+          Card.createCard(Suit.Hearts, Rank.Four, 0), // 0 points - safe
         ];
 
         const trick = createTrick(
           PlayerId.Bot1,
-          [createCard(Suit.Hearts, Rank.Seven)],
+          [Card.createCard(Suit.Hearts, Rank.Seven, 0)],
           [
             {
               playerId: PlayerId.Bot2, // Teammate
-              cards: [createCard(Suit.Hearts, Rank.Ace)], // Winning
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)], // Winning
             },
           ],
           15,
@@ -512,13 +494,13 @@ describe('AI Core Functionality', () => {
         // Setup game where opponent is winning with significant points
         const humanPlayer = gameState.players.find(p => p.id === PlayerId.Human)!;
         humanPlayer.hand = [
-          createCard(Suit.Hearts, Rank.Three), // Low card
-          createCard(Suit.Hearts, Rank.Ace), // Can beat opponent
+          Card.createCard(Suit.Hearts, Rank.Three, 0), // Low card
+          Card.createCard(Suit.Hearts, Rank.Ace, 0), // Can beat opponent
         ];
 
         const trick = createTrick(
           PlayerId.Bot1, // Opponent
-          [createCard(Suit.Hearts, Rank.King)], // 10 points
+          [Card.createCard(Suit.Hearts, Rank.King, 0)], // 10 points
           [],
           10,
           PlayerId.Bot1 // Opponent winning
@@ -539,13 +521,13 @@ describe('AI Core Functionality', () => {
         // Setup: Opponent winning but no significant points
         const humanPlayer = gameState.players.find(p => p.id === PlayerId.Human)!;
         humanPlayer.hand = [
-          createCard(Suit.Hearts, Rank.Three), // Low safe card
-          createCard(Suit.Hearts, Rank.Ace), // Valuable card
+          Card.createCard(Suit.Hearts, Rank.Three, 0), // Low safe card
+          Card.createCard(Suit.Hearts, Rank.Ace, 0), // Valuable card
         ];
 
         const trick = createTrick(
           PlayerId.Bot1, // Opponent
-          [createCard(Suit.Hearts, Rank.Seven)], // No points
+          [Card.createCard(Suit.Hearts, Rank.Seven, 0)], // No points
           [],
           0, // No points at stake
           PlayerId.Bot1 // Opponent winning
@@ -568,7 +550,7 @@ describe('AI Core Functionality', () => {
         // Human + Bot2 vs Bot1 + Bot3
         const trick = createTrick(
           PlayerId.Bot2, // Teammate
-          [createCard(Suit.Spades, Rank.Ace)],
+          [Card.createCard(Suit.Spades, Rank.Ace, 0)],
           [],
           5,
           PlayerId.Bot2
@@ -586,15 +568,15 @@ describe('AI Core Functionality', () => {
         // Multi-player trick with point collection
         const trick = createTrick(
           PlayerId.Human,
-          [createCard(Suit.Diamonds, Rank.Five)], // 5 points
+          [Card.createCard(Suit.Diamonds, Rank.Five, 0)], // 5 points
           [
             {
               playerId: PlayerId.Bot1, // Opponent
-              cards: [createCard(Suit.Diamonds, Rank.King)], // 10 points, currently winning
+              cards: [Card.createCard(Suit.Diamonds, Rank.King, 0)], // 10 points, currently winning
             },
             {
               playerId: PlayerId.Bot2, // Teammate
-              cards: [createCard(Suit.Diamonds, Rank.Six)], // Low card
+              cards: [Card.createCard(Suit.Diamonds, Rank.Six, 0)], // Low card
             },
           ],
           15, // Total points (5 + 10)
@@ -625,7 +607,7 @@ describe('AI Core Functionality', () => {
       it("should handle trick with only leader played", () => {
         const trick = createTrick(
           PlayerId.Human,
-          [createCard(Suit.Hearts, Rank.Ten)], // 10 points
+          [Card.createCard(Suit.Hearts, Rank.Ten, 0)], // 10 points
           [], // No other players have played yet
           10,
           PlayerId.Human // Self is currently winning

@@ -6,19 +6,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { getDealingProgress, isDealingComplete } from "../game/gameLogic";
 import {
   getPlayerDeclarationOptions,
-  getTrumpDeclarationStatus,
-} from "../game/trumpDeclarationManager";
-import { Card, DeclarationType, GameState, PlayerId } from "../types";
+  getDealingProgress,
+  isDealingComplete,
+} from "../game/dealingAndDeclaration";
+import { Card, DeclarationType, GameState, PlayerId, Suit } from "../types";
 
 interface ExpandableTrumpDeclarationProps {
   gameState: GameState;
   onDeclaration: (declaration: {
     type: DeclarationType;
     cards: Card[];
-    suit: any;
+    suit: Suit;
   }) => void;
   onContinue: () => void;
   onPause: () => void;
@@ -38,7 +38,8 @@ export function ExpandableTrumpDeclaration({
 
   // Get all the data we need
   const dealingProgress = getDealingProgress(gameState);
-  const declarationStatus = getTrumpDeclarationStatus(gameState);
+  const currentDeclaration =
+    gameState.trumpDeclarationState?.currentDeclaration;
   const isComplete = isDealingComplete(gameState);
 
   // Get human player's declaration options
@@ -100,7 +101,11 @@ export function ExpandableTrumpDeclaration({
     });
   };
 
-  const handleDeclaration = (declaration: any) => {
+  const handleDeclaration = (declaration: {
+    type: DeclarationType;
+    cards: Card[];
+    suit: Suit;
+  }) => {
     setIsCollapsing(true);
     setIsExpanded(false);
     Animated.timing(animatedHeight, {
@@ -157,12 +162,12 @@ export function ExpandableTrumpDeclaration({
       )}
 
       {/* Current declaration - only show when not expanded */}
-      {declarationStatus.hasDeclaration && !isExpanded && (
+      {currentDeclaration && !isExpanded && (
         <Text style={styles.declarationText}>
-          {getPlayerDisplayName(declarationStatus.declarer!)} leads:{" "}
+          {getPlayerDisplayName(currentDeclaration.playerId)} leads:{" "}
           {getDeclarationDisplay(
-            declarationStatus.type!,
-            declarationStatus.suit,
+            currentDeclaration.type,
+            currentDeclaration.suit,
           )}
         </Text>
       )}
@@ -186,11 +191,11 @@ export function ExpandableTrumpDeclaration({
         {/* Current declaration leader */}
         <View style={styles.currentDeclaration}>
           <Text style={styles.currentDeclarationText}>
-            {declarationStatus.hasDeclaration
+            {currentDeclaration
               ? `Trump Declaration: ${getDeclarationDisplay(
-                  declarationStatus.type!,
-                  declarationStatus.suit,
-                )} by ${getPlayerDisplayName(declarationStatus.declarer!)}`
+                  currentDeclaration.type,
+                  currentDeclaration.suit,
+                )} by ${getPlayerDisplayName(currentDeclaration.playerId)}`
               : "No trump declarations made"}
           </Text>
         </View>
@@ -278,7 +283,10 @@ function getPlayerDisplayName(playerId: string): string {
   }
 }
 
-function getDeclarationButtonDisplay(type: DeclarationType, suit: any): string {
+function getDeclarationButtonDisplay(
+  type: DeclarationType,
+  suit: Suit,
+): string {
   const suitEmoji = getSuitEmoji(suit);
 
   switch (type) {
@@ -295,7 +303,7 @@ function getDeclarationButtonDisplay(type: DeclarationType, suit: any): string {
   }
 }
 
-function getSuitEmoji(suit: any): string {
+function getSuitEmoji(suit: Suit): string {
   switch (suit) {
     case "Hearts":
       return "♥";
@@ -325,7 +333,7 @@ function getDeclarationDescription(type: DeclarationType): string {
   }
 }
 
-function getDeclarationDisplay(type: DeclarationType, suit: any): string {
+function getDeclarationDisplay(type: DeclarationType, suit: Suit): string {
   const suitDisplay = getSuitDisplay(suit);
 
   switch (type) {
@@ -342,7 +350,7 @@ function getDeclarationDisplay(type: DeclarationType, suit: any): string {
   }
 }
 
-function getSuitDisplay(suit: any): string {
+function getSuitDisplay(suit: Suit): string {
   switch (suit) {
     case "Hearts":
       return "Hearts";

@@ -1,6 +1,6 @@
 // Phase 4: Advanced Combination Logic Types
 
-import { ComboType, Card } from "./core";
+import { ComboType, Card } from "./card";
 import { ComboStrength } from "./ai";
 
 export enum CombinationPotential {

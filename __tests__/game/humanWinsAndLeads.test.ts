@@ -1,13 +1,10 @@
-import { GameState, Rank, Card, Suit, PlayerId, PlayerName, GamePhase } from "../../src/types";
-import { processPlay } from '../../src/game/gamePlayManager';
-import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
-import { describe, test, expect } from '@jest/globals';
-import { withIsolatedState } from '../helpers/testIsolation';
-import { createCard } from '../helpers/cards';
+import { describe, expect, test } from '@jest/globals';
+import { getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
+import { Card, DeckId, GamePhase, Rank, Suit } from "../../src/types";
 import { createGameState, givePlayerCards } from '../helpers/gameStates';
 
 describe('Human Wins and Leads Bug', () => {
-  test('Human wins first trick and leads second', withIsolatedState(() => {
+  test('Human wins first trick and leads second', () => {
     // Create a deterministic game state where human is guaranteed to win first trick
     let gameState = createGameState({
       gamePhase: GamePhase.Playing,
@@ -15,18 +12,22 @@ describe('Human Wins and Leads Bug', () => {
     });
 
     // Give human high cards guaranteed to win
+    // Create unique cards by varying suit, rank, and deck ID to ensure ALL cards have unique IDs
+    const suits = [Suit.Clubs, Suit.Diamonds, Suit.Hearts, Suit.Spades];
+    const ranks = [Rank.Three, Rank.Four, Rank.Five, Rank.Six, Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen];
+    
     gameState = givePlayerCards(gameState, 0, [
-      createCard(Suit.Spades, Rank.Ace),
-      createCard(Suit.Hearts, Rank.Ace),
-      createCard(Suit.Spades, Rank.King),
-      createCard(Suit.Hearts, Rank.King),
-      ...Array.from({length: 21}, (_, i) => createCard(Suit.Clubs, Rank.Nine))
+      Card.createCard(Suit.Spades, Rank.Ace, 0),
+      Card.createCard(Suit.Hearts, Rank.Ace, 0),
+      Card.createCard(Suit.Spades, Rank.King, 0),
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      ...Array.from({length: 21}, (_, i) => Card.createCard(suits[i % 4], ranks[i % 10], i % 2 as DeckId))
     ]);
 
     // Give AI players lower cards that cannot beat the human's aces
-    gameState = givePlayerCards(gameState, 1, Array.from({length: 25}, (_, i) => createCard(Suit.Clubs, Rank.Seven)));
-    gameState = givePlayerCards(gameState, 2, Array.from({length: 25}, (_, i) => createCard(Suit.Clubs, Rank.Eight)));
-    gameState = givePlayerCards(gameState, 3, Array.from({length: 25}, (_, i) => createCard(Suit.Clubs, Rank.Six)));
+    gameState = givePlayerCards(gameState, 1, Array.from({length: 25}, (_, i) => Card.createCard(suits[i % 4], ranks[i % 10], i % 2 as DeckId)));
+    gameState = givePlayerCards(gameState, 2, Array.from({length: 25}, (_, i) => Card.createCard(suits[(i+1) % 4], ranks[(i+1) % 10], i % 2 as DeckId)));
+    gameState = givePlayerCards(gameState, 3, Array.from({length: 25}, (_, i) => Card.createCard(suits[(i+2) % 4], ranks[(i+2) % 10], i % 2 as DeckId)));
     
     let state = gameState;
     
@@ -35,6 +36,7 @@ describe('Human Wins and Leads Bug', () => {
     
     // Human plays Ace of Spades
     const humanAce = [state.players[0].hand[0]]; // Ace of Spades
+    
     let result = processPlay(state, humanAce);
     state = result.newState;
     
@@ -74,5 +76,5 @@ describe('Human Wins and Leads Bug', () => {
     expect(cardCountsBefore[3] - cardCountsAfter[3]).toBe(0); // Bot 3 lost 0 cards
     
     console.log('Test completed successfully - no card count anomalies detected');
-  }));
+  });
 });

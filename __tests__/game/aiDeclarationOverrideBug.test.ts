@@ -1,8 +1,8 @@
-import { initializeGame } from '../../src/game/gameLogic';
-import { makeTrumpDeclaration } from '../../src/game/trumpDeclarationManager';
+
 import { getAITrumpDeclarationDecision } from '../../src/ai/trumpDeclaration/trumpDeclarationStrategy';
-import { DeclarationType, PlayerId, Rank, Suit } from '../../src/types';
-import { createCard } from '../helpers/cards';
+import { makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
+import { Card, DeclarationType, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('AI Declaration Override Bug', () => {
   let gameState: any;
@@ -17,23 +17,20 @@ describe('AI Declaration Override Bug', () => {
 
     // Give human a trump rank pair in Clubs
     humanPlayer.hand = [
-      createCard(Suit.Clubs, Rank.Two), 
-      createCard(Suit.Clubs, Rank.Two),
-      createCard(Suit.Hearts, Rank.Ace)
+      ...Card.createPair(Suit.Clubs, Rank.Two),
+      Card.createCard(Suit.Hearts, Rank.Ace, 0)
     ];
 
     // Give Bot1 a trump rank pair in Diamonds (equal strength)
     bot1Player.hand = [
-      createCard(Suit.Diamonds, Rank.Two), 
-      createCard(Suit.Diamonds, Rank.Two),
-      createCard(Suit.Spades, Rank.Queen)
+      ...Card.createPair(Suit.Diamonds, Rank.Two),
+      Card.createCard(Suit.Spades, Rank.Queen, 0)
     ];
 
     // Give Bot2 a trump rank pair in Hearts (equal strength)
     bot2Player.hand = [
-      createCard(Suit.Hearts, Rank.Two), 
-      createCard(Suit.Hearts, Rank.Two),
-      createCard(Suit.Spades, Rank.King)
+      ...Card.createPair(Suit.Hearts, Rank.Two),
+      Card.createCard(Suit.Spades, Rank.King, 0)
     ];
   });
 
@@ -43,7 +40,7 @@ describe('AI Declaration Override Bug', () => {
       rank: Rank.Two,
       suit: Suit.Clubs,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      cards: Card.createPair(Suit.Clubs, Rank.Two)
     };
 
     let newState = makeTrumpDeclaration(gameState, PlayerId.Human, humanDeclaration);
@@ -88,13 +85,13 @@ describe('AI Declaration Override Bug', () => {
       rank: Rank.Two,
       suit: Suit.Clubs,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      cards: Card.createPair(Suit.Clubs, Rank.Two)
     };
 
     const newState = makeTrumpDeclaration(gameState, PlayerId.Human, humanDeclaration);
     
     // Import the function to test it directly
-    const { getPlayerDeclarationOptions } = require('../../src/game/trumpDeclarationManager');
+    const { getPlayerDeclarationOptions } = require('../../src/game/dealingAndDeclaration');
     
     const bot1Options = getPlayerDeclarationOptions(newState, PlayerId.Bot1);
     const bot2Options = getPlayerDeclarationOptions(newState, PlayerId.Bot2);
@@ -113,7 +110,7 @@ describe('AI Declaration Override Bug', () => {
       rank: Rank.Two,
       suit: Suit.Diamonds,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Diamonds, Rank.Two), createCard(Suit.Diamonds, Rank.Two)]
+      cards: Card.createPair(Suit.Diamonds, Rank.Two)
     };
 
     const stateAfterBot1 = makeTrumpDeclaration(gameState, PlayerId.Bot1, bot1Declaration);
@@ -124,14 +121,14 @@ describe('AI Declaration Override Bug', () => {
     });
 
     // Now check if the progressive dealing would allow Bot2 to declare
-    const { checkDeclarationOpportunities } = require('../../src/game/gameLogic');
+    const { checkDeclarationOpportunities } = require('../../src/game/dealingAndDeclaration');
     const opportunities = checkDeclarationOpportunities(stateAfterBot1);
     
-    console.log('Opportunities after Bot1:', Array.from(opportunities.entries()));
+    console.log('Opportunities after Bot1:', opportunities);
 
     // Bot2 should have NO opportunities after Bot1's equal strength declaration
-    const bot2Opportunities = opportunities.get(PlayerId.Bot2);
-    expect(bot2Opportunities || []).toHaveLength(0);
+    const bot2Opportunities = opportunities.filter((opp: any) => opp.playerId === PlayerId.Bot2);
+    expect(bot2Opportunities).toHaveLength(0);
 
     // Double-check with getAITrumpDeclarationDecision
     const bot2DecisionAfter = getAITrumpDeclarationDecision(stateAfterBot1, PlayerId.Bot2);
@@ -145,7 +142,7 @@ describe('AI Declaration Override Bug', () => {
         rank: Rank.Two,
         suit: Suit.Hearts,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Hearts, Rank.Two), createCard(Suit.Hearts, Rank.Two)]
+        cards: Card.createPair(Suit.Hearts, Rank.Two)
       };
 
       makeTrumpDeclaration(stateAfterBot1, PlayerId.Bot2, bot2Declaration);
@@ -212,16 +209,14 @@ describe('AI Declaration Override Bug', () => {
 
     // Give Bot1 exactly 2♦-2♦ pair
     bot1Player.hand = [
-      createCard(Suit.Diamonds, Rank.Two), 
-      createCard(Suit.Diamonds, Rank.Two),
-      createCard(Suit.Spades, Rank.Queen)
+      ...Card.createPair(Suit.Diamonds, Rank.Two),
+      Card.createCard(Suit.Spades, Rank.Queen, 0)
     ];
 
     // Give Bot2 exactly 2♣-2♣ pair  
     bot2Player.hand = [
-      createCard(Suit.Clubs, Rank.Two), 
-      createCard(Suit.Clubs, Rank.Two),
-      createCard(Suit.Hearts, Rank.King)
+      ...Card.createPair(Suit.Clubs, Rank.Two),
+      Card.createCard(Suit.Hearts, Rank.King, 0)
     ];
 
     // Bot1 declares first (2♦-2♦)
@@ -229,7 +224,7 @@ describe('AI Declaration Override Bug', () => {
       rank: Rank.Two,
       suit: Suit.Diamonds,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Diamonds, Rank.Two), createCard(Suit.Diamonds, Rank.Two)]
+      cards: Card.createPair(Suit.Diamonds, Rank.Two)
     };
 
     const stateAfterBot1 = makeTrumpDeclaration(gameState, PlayerId.Bot1, bot1Declaration);
@@ -240,7 +235,7 @@ describe('AI Declaration Override Bug', () => {
       rank: Rank.Two,
       suit: Suit.Clubs,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      cards: Card.createPair(Suit.Clubs, Rank.Two)
     };
 
     expect(() => {

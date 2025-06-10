@@ -20,8 +20,15 @@ import {
   AdaptiveStrategyRecommendation,
   PlayerId,
   Trick,
+  DeckId,
+  BehaviorPhaseProfile,
+  PlayPatterns,
+  LeadingBehaviorProfile,
+  PlayerContext,
+  GameContextBase,
+  GameContext,
 } from "../types";
-import { isTrump } from "../game/gameLogic";
+import { isTrump } from "../game/gameHelpers";
 
 /**
  * Phase 3: Card Memory & Counting System
@@ -81,17 +88,19 @@ export function createCardMemory(gameState: GameState): CardMemory {
  * Analyzes a completed trick to extract card information and patterns
  */
 function analyzeCompletedTrick(
-  trick: any,
+  trick: Trick,
   memory: CardMemory,
   trumpInfo: TrumpInfo,
 ): void {
   // Track all plays including leader at plays[0]
-  trick.plays.forEach((play: any, index: number) => {
-    const position = index === 0 ? "leading" : "following";
-    play.cards.forEach((card: Card) => {
-      processPlayedCard(card, play.playerId, memory, trumpInfo, position);
-    });
-  });
+  trick.plays.forEach(
+    (play: { playerId: string; cards: Card[] }, index: number) => {
+      const position = index === 0 ? "leading" : "following";
+      play.cards.forEach((card: Card) => {
+        processPlayedCard(card, play.playerId, memory, trumpInfo, position);
+      });
+    },
+  );
 
   memory.tricksAnalyzed++;
 }
@@ -100,17 +109,19 @@ function analyzeCompletedTrick(
  * Analyzes the current trick in progress
  */
 function analyzeCurrentTrick(
-  trick: any,
+  trick: Trick,
   memory: CardMemory,
   trumpInfo: TrumpInfo,
 ): void {
   // Track all plays made so far including leader at plays[0]
-  trick.plays.forEach((play: any, index: number) => {
-    const position = index === 0 ? "leading" : "following";
-    play.cards.forEach((card: Card) => {
-      processPlayedCard(card, play.playerId, memory, trumpInfo, position);
-    });
-  });
+  trick.plays.forEach(
+    (play: { playerId: string; cards: Card[] }, index: number) => {
+      const position = index === 0 ? "leading" : "following";
+      play.cards.forEach((card: Card) => {
+        processPlayedCard(card, play.playerId, memory, trumpInfo, position);
+      });
+    },
+  );
 }
 
 /**
@@ -471,25 +482,14 @@ function generateFullDeck(): Card[] {
   for (let deck = 0; deck < 2; deck++) {
     suits.forEach((suit) => {
       ranks.forEach((rank) => {
-        const points =
-          rank === Rank.Five
-            ? 5
-            : rank === Rank.Ten || rank === Rank.King
-              ? 10
-              : 0;
-        cards.push({
-          suit,
-          rank,
-          id: `${rank}_${suit}_${deck}`,
-          points,
-        });
+        cards.push(Card.createCard(suit, rank, deck as DeckId));
       });
     });
 
     // Jokers
     cards.push(
-      { joker: JokerType.Small, id: `small_joker_${deck}`, points: 0 },
-      { joker: JokerType.Big, id: `big_joker_${deck}`, points: 0 },
+      Card.createJoker(JokerType.Small, deck as DeckId),
+      Card.createJoker(JokerType.Big, deck as DeckId),
     );
   }
 
@@ -691,7 +691,7 @@ function analyzeOpponentLeadingPattern(
  */
 function createTeamCoordinationPattern(
   tricks: Trick[],
-  players: any[],
+  players: PlayerContext[],
 ): TeamCoordinationPattern {
   let supportCount = 0;
   let blockingCount = 0;
@@ -745,7 +745,7 @@ function createTeamCoordinationPattern(
  */
 function createAdaptiveBehaviorDetection(
   tricks: Trick[],
-  players: any[],
+  players: PlayerContext[],
 ): AdaptiveBehaviorDetection {
   const midpoint = Math.floor(tricks.length / 2);
   const earlyTricks = tricks.slice(0, midpoint);
@@ -774,7 +774,7 @@ function createAdaptiveBehaviorDetection(
  */
 function createRoundProgressionPattern(
   tricks: Trick[],
-  players: any[],
+  players: PlayerContext[],
   trumpInfo: TrumpInfo,
 ): RoundProgressionPattern {
   const trickCount = tricks.length;
@@ -802,7 +802,7 @@ function createRoundProgressionPattern(
  */
 function identifyTrickSequencePatterns(
   tricks: Trick[],
-  players: any[],
+  players: PlayerContext[],
 ): TrickSequencePattern[] {
   const patterns: TrickSequencePattern[] = [];
 
@@ -939,7 +939,7 @@ function createDefaultLeadingPattern(): OpponentLeadingPattern {
 function analyzeSituationalBehavior(
   tricks: Trick[],
   trumpInfo: TrumpInfo,
-): Record<string, any> {
+): Record<string, LeadingBehaviorProfile> {
   // Simplified implementation
   return {
     early_game: {
@@ -977,7 +977,7 @@ function analyzeBlocking(
   return currentCards.length > 0; // Placeholder logic
 }
 
-function analyzePlayPatterns(tricks: Trick[]): any {
+function analyzePlayPatterns(tricks: Trick[]): PlayPatterns {
   // Simplified pattern analysis
   if (tricks.length === 0) {
     return {
@@ -995,8 +995,8 @@ function analyzePlayPatterns(tricks: Trick[]): any {
 }
 
 function calculateBehaviorConsistency(
-  earlyPatterns: any,
-  latePatterns: any,
+  earlyPatterns: PlayPatterns,
+  latePatterns: PlayPatterns,
 ): number {
   // Handle case where patterns might be undefined or have NaN values
   const trumpDiff = Math.abs(
@@ -1013,7 +1013,10 @@ function calculateBehaviorConsistency(
   return Math.max(0, Math.min(1, consistency));
 }
 
-function analyzeBehaviorPhase(tricks: Trick[], trumpInfo: TrumpInfo): any {
+function analyzeBehaviorPhase(
+  tricks: Trick[],
+  trumpInfo: TrumpInfo,
+): BehaviorPhaseProfile {
   if (tricks.length === 0) {
     return {
       riskTolerance: 0.5,
@@ -1046,7 +1049,11 @@ function calculateRoundConsistency(
   return 0.7; // Placeholder
 }
 
-function isSetupPattern(current: Trick, next: Trick, players: any[]): boolean {
+function isSetupPattern(
+  current: Trick,
+  next: Trick,
+  players: PlayerContext[],
+): boolean {
   // Simplified setup pattern detection
   const currentWinner = players.find((p) => p.id === current.winningPlayerId);
   const nextLeader = players.find((p) => p.id === next.plays[0]?.playerId);
@@ -1092,10 +1099,10 @@ function determinePrimaryGoal(
  * Integrates memory-based insights into existing game context
  */
 export function enhanceGameContextWithMemory(
-  baseContext: any,
+  baseContext: GameContextBase,
   memory: CardMemory,
   gameState: GameState,
-): any {
+): GameContext {
   const memoryContext = createMemoryContext(memory, gameState);
   const memoryStrategy = createMemoryStrategy(memory, memoryContext, gameState);
 
@@ -1110,10 +1117,10 @@ export function enhanceGameContextWithMemory(
  * Enhanced version that includes historical analysis
  */
 export function enhanceGameContextWithHistoricalMemory(
-  baseContext: any,
+  baseContext: GameContextBase,
   memory: CardMemory,
   gameState: GameState,
-): any {
+): GameContext {
   const enhancedMemoryContext = createEnhancedMemoryContext(memory, gameState);
   const memoryStrategy = createMemoryStrategy(
     memory,

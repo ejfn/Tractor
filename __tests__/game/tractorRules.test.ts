@@ -1,6 +1,6 @@
-import { Card, GameState, Player, Rank, Suit, Team, Trick, PlayerId, PlayerName, GamePhase, ComboType, TrumpInfo, TeamId, JokerType } from "../../src/types";
-import { isValidPlay, identifyCombos, getValidCombinations } from '../../src/game/gameLogic';
-import { createCard, createJoker } from '../helpers/cards';
+import { identifyCombos } from "../../src/game/comboDetection";
+import { isValidPlay } from "../../src/game/playValidation";
+import { Card, ComboType, GamePhase, GameState, JokerType, Player, PlayerId, PlayerName, Rank, Suit, TeamId, TrumpInfo } from "../../src/types";
 
 /**
  * Comprehensive Tractor Rules Tests
@@ -25,10 +25,8 @@ import { createCard, createJoker } from '../helpers/cards';
 describe('Tractor Rules', () => {
   let mockState: GameState;
   let humanPlayer: Player;
-  let cardId = 0;
   
   beforeEach(() => {
-    cardId = 0;
     
     humanPlayer = {
       id: PlayerId.Human,
@@ -70,27 +68,21 @@ describe('Tractor Rules', () => {
       
       // Leading tractor: 7♠-7♠-8♠-8♠
       const leadingTractor = [
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_2'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_1'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight)
       ];
       
       // Player hand with matching tractor: 9♠-9♠-10♠-10♠
       const playerHand = [
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_1'),
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_2'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s_1'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s_2'),
-        createCard(Suit.Hearts, Rank.King, 'hand_hk')
+        ...Card.createPair(Suit.Spades, Rank.Nine),
+        ...Card.createPair(Suit.Spades, Rank.Ten),
+        Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
       
       // Player plays matching tractor
       const playerPlay = [
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_1'),
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_2'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s_1'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s_2')
+        ...Card.createPair(Suit.Spades, Rank.Nine),
+        ...Card.createPair(Suit.Spades, Rank.Ten)
       ];
       
       const isValid = isValidPlay(playerPlay, leadingTractor, playerHand, trumpInfo);
@@ -102,27 +94,23 @@ describe('Tractor Rules', () => {
       
       // Leading tractor: 7♠-7♠-8♠-8♠ (2 pairs)
       const leadingTractor = [
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_2'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_1'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight)
       ];
       
       // Player hand with only 1 pair + singles in Spades
       const playerHand = [
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_1'),
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_2'), // Only 1 pair
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s'),
-        createCard(Suit.Spades, Rank.Jack, 'hand_js'),
-        createCard(Suit.Hearts, Rank.King, 'hand_hk')
+        ...Card.createPair(Suit.Spades, Rank.Nine), // Only 1 pair
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Jack, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
       
       // Player must use all pairs + singles from Spades
       const validPlay = [
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_1'),
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_2'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s'),
-        createCard(Suit.Spades, Rank.Jack, 'hand_js')
+        ...Card.createPair(Suit.Spades, Rank.Nine),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Jack, 0)
       ];
       
       const isValid = isValidPlay(validPlay, leadingTractor, playerHand, trumpInfo);
@@ -130,10 +118,9 @@ describe('Tractor Rules', () => {
       
       // Invalid: using cards from other suits when Spades available
       const invalidPlay = [
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_1'),
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_2'),
-        createCard(Suit.Hearts, Rank.King, 'hand_hk'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s')
+        ...Card.createPair(Suit.Spades, Rank.Nine),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0)
       ];
       
       const isInvalid = isValidPlay(invalidPlay, leadingTractor, playerHand, trumpInfo);
@@ -145,27 +132,23 @@ describe('Tractor Rules', () => {
       
       // Leading tractor: 7♠-7♠-8♠-8♠
       const leadingTractor = [
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_2'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_1'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight)
       ];
       
       // Player hand with NO Spades
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Nine, 'hand_9h_1'),
-        createCard(Suit.Hearts, Rank.Nine, 'hand_9h_2'),
-        createCard(Suit.Clubs, Rank.Ten, 'hand_10c'),
-        createCard(Suit.Diamonds, Rank.Jack, 'hand_jd'),
-        createCard(Suit.Hearts, Rank.King, 'hand_hk')
+        ...Card.createPair(Suit.Hearts, Rank.Nine),
+        Card.createCard(Suit.Clubs, Rank.Ten, 0),
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
       
       // Player can play any 4 cards (mixed suits allowed)
       const validPlay = [
-        createCard(Suit.Hearts, Rank.Nine, 'hand_9h_1'),
-        createCard(Suit.Hearts, Rank.Nine, 'hand_9h_2'),
-        createCard(Suit.Clubs, Rank.Ten, 'hand_10c'),
-        createCard(Suit.Diamonds, Rank.Jack, 'hand_jd')
+        ...Card.createPair(Suit.Hearts, Rank.Nine),
+        Card.createCard(Suit.Clubs, Rank.Ten, 0),
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0)
       ];
       
       const isValid = isValidPlay(validPlay, leadingTractor, playerHand, trumpInfo);
@@ -179,27 +162,21 @@ describe('Tractor Rules', () => {
       
       // Leading trump tractor: 5♥-5♥-6♥-6♥ (trump suit)
       const leadingTrumpTractor = [
-        createCard(Suit.Hearts, Rank.Five, 'lead_5h_1'),
-        createCard(Suit.Hearts, Rank.Five, 'lead_5h_2'),
-        createCard(Suit.Hearts, Rank.Six, 'lead_6h_1'),
-        createCard(Suit.Hearts, Rank.Six, 'lead_6h_2')
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six)
       ];
       
       // Player hand with trump rank pairs
       const playerHand = [
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_1'),  // Trump rank pair
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_2'),
-        createCard(Suit.Clubs, Rank.Two, 'hand_2c_1'),   // Trump rank pair
-        createCard(Suit.Clubs, Rank.Two, 'hand_2c_2'),
-        createCard(Suit.Diamonds, Rank.King, 'hand_kd')
+        ...Card.createPair(Suit.Spades, Rank.Two),  // Trump rank pair
+        ...Card.createPair(Suit.Clubs, Rank.Two),   // Trump rank pair
+        Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
       
       // Player can use trump rank pairs to follow trump tractor
       const validPlay = [
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_1'),
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_2'),
-        createCard(Suit.Clubs, Rank.Two, 'hand_2c_1'),
-        createCard(Suit.Clubs, Rank.Two, 'hand_2c_2')
+        ...Card.createPair(Suit.Spades, Rank.Two),
+        ...Card.createPair(Suit.Clubs, Rank.Two)
       ];
       
       const isValid = isValidPlay(validPlay, leadingTrumpTractor, playerHand, trumpInfo);
@@ -211,33 +188,24 @@ describe('Tractor Rules', () => {
       
       // Leading trump tractor: 3 consecutive pairs (6 cards)
       const leadingTrumpTractor = [
-        createCard(Suit.Hearts, Rank.Five, 'lead_5h_1'),
-        createCard(Suit.Hearts, Rank.Five, 'lead_5h_2'),
-        createCard(Suit.Hearts, Rank.Six, 'lead_6h_1'),
-        createCard(Suit.Hearts, Rank.Six, 'lead_6h_2'),
-        createCard(Suit.Hearts, Rank.Seven, 'lead_7h_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'lead_7h_2')
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six),
+        ...Card.createPair(Suit.Hearts, Rank.Seven)
       ];
       
       // Player hand with mixed trump types
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_1'),  // Trump suit pair
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_2'),
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_1'),    // Trump rank pair
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_2'),
-        createJoker(JokerType.Small, 'hand_sj_1'),          // Joker pair
-        createJoker(JokerType.Small, 'hand_sj_2'),
-        createCard(Suit.Diamonds, Rank.King, 'hand_kd')
+        ...Card.createPair(Suit.Hearts, Rank.Three),  // Trump suit pair
+        ...Card.createPair(Suit.Spades, Rank.Two),    // Trump rank pair
+        ...Card.createJokerPair(JokerType.Small),     // Joker pair
+        Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
       
       // Player can use all trump pairs (3 types × 2 cards = 6 cards)
       const validPlay = [
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_1'),
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_2'),
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_1'),
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_2'),
-        createJoker(JokerType.Small, 'hand_sj_1'),
-        createJoker(JokerType.Small, 'hand_sj_2')
+        ...Card.createPair(Suit.Hearts, Rank.Three),
+        ...Card.createPair(Suit.Spades, Rank.Two),
+        ...Card.createJokerPair(JokerType.Small)
       ];
       
       const isValid = isValidPlay(validPlay, leadingTrumpTractor, playerHand, trumpInfo);
@@ -249,27 +217,21 @@ describe('Tractor Rules', () => {
       
       // Leading trump tractor: 2 pairs
       const leadingTrumpTractor = [
-        createCard(Suit.Hearts, Rank.Five, 'lead_5h_1'),
-        createCard(Suit.Hearts, Rank.Five, 'lead_5h_2'),
-        createCard(Suit.Hearts, Rank.Six, 'lead_6h_1'),
-        createCard(Suit.Hearts, Rank.Six, 'lead_6h_2')
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six)
       ];
       
       // Player hand with joker pairs
       const playerHand = [
-        createJoker(JokerType.Big, 'hand_bj_1'),      // Big Joker pair
-        createJoker(JokerType.Big, 'hand_bj_2'),
-        createJoker(JokerType.Small, 'hand_sj_1'),    // Small Joker pair
-        createJoker(JokerType.Small, 'hand_sj_2'),
-        createCard(Suit.Diamonds, Rank.King, 'hand_kd')
+        ...Card.createJokerPair(JokerType.Big),      // Big Joker pair
+        ...Card.createJokerPair(JokerType.Small),    // Small Joker pair
+        Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
       
       // Player can use joker pairs as trump pairs
       const validPlay = [
-        createJoker(JokerType.Big, 'hand_bj_1'),
-        createJoker(JokerType.Big, 'hand_bj_2'),
-        createJoker(JokerType.Small, 'hand_sj_1'),
-        createJoker(JokerType.Small, 'hand_sj_2')
+        ...Card.createJokerPair(JokerType.Big),
+        ...Card.createJokerPair(JokerType.Small)
       ];
       
       const isValid = isValidPlay(validPlay, leadingTrumpTractor, playerHand, trumpInfo);
@@ -283,10 +245,8 @@ describe('Tractor Rules', () => {
       
       // Valid tractor: consecutive pairs
       const consecutivePairs = [
-        createCard(Suit.Spades, Rank.Seven, 'tractor_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'tractor_7s_2'),
-        createCard(Suit.Spades, Rank.Eight, 'tractor_8s_1'),
-        createCard(Suit.Spades, Rank.Eight, 'tractor_8s_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight)
       ];
       
       const combos = identifyCombos(consecutivePairs, trumpInfo);
@@ -301,10 +261,8 @@ describe('Tractor Rules', () => {
       
       // Invalid tractor: non-consecutive pairs (7♠-7♠, 9♠-9♠)
       const nonConsecutivePairs = [
-        createCard(Suit.Spades, Rank.Seven, 'pair1_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'pair1_7s_2'),
-        createCard(Suit.Spades, Rank.Nine, 'pair2_9s_1'),
-        createCard(Suit.Spades, Rank.Nine, 'pair2_9s_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Nine)
       ];
       
       const combos = identifyCombos(nonConsecutivePairs, trumpInfo);
@@ -320,10 +278,8 @@ describe('Tractor Rules', () => {
       
       // Special trump tractor: Small Joker pair + Big Joker pair
       const jokerTractor = [
-        createJoker(JokerType.Small, 'sj_1'),
-        createJoker(JokerType.Small, 'sj_2'),
-        createJoker(JokerType.Big, 'bj_1'),
-        createJoker(JokerType.Big, 'bj_2')
+        ...Card.createJokerPair(JokerType.Small),
+        ...Card.createJokerPair(JokerType.Big)
       ];
       
       const combos = identifyCombos(jokerTractor, trumpInfo);
@@ -338,10 +294,8 @@ describe('Tractor Rules', () => {
       
       // Invalid: pairs from different suits
       const mixedSuitPairs = [
-        createCard(Suit.Spades, Rank.Seven, 'spades_7_1'),
-        createCard(Suit.Spades, Rank.Seven, 'spades_7_2'),
-        createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1'),
-        createCard(Suit.Hearts, Rank.Eight, 'hearts_8_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight)
       ];
       
       const combos = identifyCombos(mixedSuitPairs, trumpInfo);
@@ -359,18 +313,16 @@ describe('Tractor Rules', () => {
       
       // Leading tractor
       const leadingTractor = [
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_2'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_1'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight)
       ];
       
       // Player with exactly 4 cards, all Spades
       const minimalHand = [
-        createCard(Suit.Spades, Rank.Three, 'hand_3s'),
-        createCard(Suit.Spades, Rank.Four, 'hand_4s'),
-        createCard(Suit.Spades, Rank.Five, 'hand_5s'),
-        createCard(Suit.Spades, Rank.Six, 'hand_6s')
+        Card.createCard(Suit.Spades, Rank.Three, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 0)
       ];
       
       // Must play all Spades cards
@@ -385,19 +337,16 @@ describe('Tractor Rules', () => {
       
       // Leading tractor
       const leadingTractor = [
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_2'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_1'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight)
       ];
       
       // Player hand with various options
       const playerHand = [
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_1'),
-        createCard(Suit.Spades, Rank.Nine, 'hand_9s_2'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s'),
-        createCard(Suit.Spades, Rank.Jack, 'hand_js'),
-        createCard(Suit.Hearts, Rank.King, 'hand_hk')
+        ...Card.createPair(Suit.Spades, Rank.Nine),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Jack, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
       
       // Get valid combinations for tractor following
@@ -423,33 +372,24 @@ describe('Tractor Rules', () => {
       
       // Leading 3-pair tractor (6 cards)
       const threePairTractor = [
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'lead_7s_2'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_1'),
-        createCard(Suit.Spades, Rank.Eight, 'lead_8s_2'),
-        createCard(Suit.Spades, Rank.Nine, 'lead_9s_1'),
-        createCard(Suit.Spades, Rank.Nine, 'lead_9s_2')
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight),
+        ...Card.createPair(Suit.Spades, Rank.Nine)
       ];
       
       // Player with sufficient Spades pairs
       const playerHand = [
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s_1'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s_2'),
-        createCard(Suit.Spades, Rank.Jack, 'hand_js_1'),
-        createCard(Suit.Spades, Rank.Jack, 'hand_js_2'),
-        createCard(Suit.Spades, Rank.Queen, 'hand_qs_1'),
-        createCard(Suit.Spades, Rank.Queen, 'hand_qs_2'),
-        createCard(Suit.Hearts, Rank.King, 'hand_hk')
+        ...Card.createPair(Suit.Spades, Rank.Ten),
+        ...Card.createPair(Suit.Spades, Rank.Jack),
+        ...Card.createPair(Suit.Spades, Rank.Queen),
+        Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
       
       // Player can form responding 3-pair tractor
       const validPlay = [
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s_1'),
-        createCard(Suit.Spades, Rank.Ten, 'hand_10s_2'),
-        createCard(Suit.Spades, Rank.Jack, 'hand_js_1'),
-        createCard(Suit.Spades, Rank.Jack, 'hand_js_2'),
-        createCard(Suit.Spades, Rank.Queen, 'hand_qs_1'),
-        createCard(Suit.Spades, Rank.Queen, 'hand_qs_2')
+        ...Card.createPair(Suit.Spades, Rank.Ten),
+        ...Card.createPair(Suit.Spades, Rank.Jack),
+        ...Card.createPair(Suit.Spades, Rank.Queen)
       ];
       
       const isValid = isValidPlay(validPlay, threePairTractor, playerHand, trumpInfo);
@@ -461,29 +401,22 @@ describe('Tractor Rules', () => {
       
       // Leading trump tractor
       const leadingTrumpTractor = [
-        createCard(Suit.Hearts, Rank.Five, 'lead_5h_1'),
-        createCard(Suit.Hearts, Rank.Five, 'lead_5h_2'),
-        createCard(Suit.Hearts, Rank.Six, 'lead_6h_1'),
-        createCard(Suit.Hearts, Rank.Six, 'lead_6h_2')
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six)
       ];
       
       // Player has both trump and non-trump pairs
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_1'),    // Trump suit pair
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_2'),
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_1'),      // Trump rank pair
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_2'),
-        createCard(Suit.Clubs, Rank.Ace, 'hand_ac_1'),       // Non-trump pair
-        createCard(Suit.Clubs, Rank.Ace, 'hand_ac_2'),
-        createCard(Suit.Diamonds, Rank.King, 'hand_kd')
+        ...Card.createPair(Suit.Hearts, Rank.Three),    // Trump suit pair
+        ...Card.createPair(Suit.Spades, Rank.Two),      // Trump rank pair
+        ...Card.createPair(Suit.Clubs, Rank.Ace),       // Non-trump pair
+        Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
       
       // Valid: using trump pairs
       const trumpPairPlay = [
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_1'),
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_2'),
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_1'),
-        createCard(Suit.Spades, Rank.Two, 'hand_2s_2')
+        ...Card.createPair(Suit.Hearts, Rank.Three),
+        ...Card.createPair(Suit.Spades, Rank.Two)
       ];
       
       const isValidTrump = isValidPlay(trumpPairPlay, leadingTrumpTractor, playerHand, trumpInfo);
@@ -491,10 +424,8 @@ describe('Tractor Rules', () => {
       
       // Invalid: mixing trump with non-trump when sufficient trump pairs available
       const mixedPlay = [
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_1'),
-        createCard(Suit.Hearts, Rank.Three, 'hand_3h_2'),
-        createCard(Suit.Clubs, Rank.Ace, 'hand_ac_1'),
-        createCard(Suit.Clubs, Rank.Ace, 'hand_ac_2')
+        ...Card.createPair(Suit.Hearts, Rank.Three),
+        ...Card.createPair(Suit.Clubs, Rank.Ace)
       ];
       
       const isValidMixed = isValidPlay(mixedPlay, leadingTrumpTractor, playerHand, trumpInfo);

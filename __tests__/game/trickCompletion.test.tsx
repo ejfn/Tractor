@@ -3,7 +3,7 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { View, Text, Button } from 'react-native';
 import { useTrickResults } from '../../src/hooks/useTrickResults';
 import { useGameState } from '../../src/hooks/useGameState';
-import { processPlay } from '../../src/game/gamePlayManager';
+import { processPlay } from '../../src/game/playProcessing';
 import { createComponentTestGameState } from "../helpers";
 import { 
   GameState, 
@@ -15,15 +15,21 @@ import {
 } from "../../src/types";
 
 // Mock dependencies
-jest.mock('../../src/game/gameLogic', () => ({
-  ...jest.requireActual('../../src/game/gameLogic'),
+jest.mock('../../src/game/gameHelpers', () => ({
+  ...jest.requireActual('../../src/game/gameHelpers'),
   isTrump: jest.fn(),
-  identifyCombos: jest.fn(),
-  isValidPlay: jest.fn(),
-  humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
-jest.mock('../../src/game/gamePlayManager');
+jest.mock('../../src/game/comboDetection', () => ({
+  ...jest.requireActual('../../src/game/comboDetection'),
+  identifyCombos: jest.fn(),
+}));
+
+jest.mock('../../src/game/playProcessing', () => ({
+  ...jest.requireActual('../../src/game/playProcessing'),
+  isValidPlay: jest.fn(),
+  processPlay: jest.fn(),
+}));
 
 
 jest.mock('../../src/game/gameRoundManager', () => ({
@@ -141,12 +147,8 @@ const TestComponent: React.FC<{
 };
 
 // Helper to create mock cards
-const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card => ({
-  id,
-  suit,
-  rank,
-  points
-});
+const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card => 
+  Card.createCard(suit, rank, 0);
 
 const createMockGameState = (currentPlayerIndex = 0): GameState => {
   const state = createComponentTestGameState();

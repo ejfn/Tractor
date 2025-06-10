@@ -1,5 +1,6 @@
 import {
   Card,
+  DeckId,
   GamePhase,
   GameState,
   JokerType,
@@ -19,40 +20,20 @@ export const createDeck = (): Card[] => {
 
   // Create 2 decks with all suits and ranks
   for (let deckNum = 0; deckNum < 2; deckNum++) {
-    // Regular cards (exclude Suit.None which is only for trump declarations)
+    // Regular cards (exclude Suit.None and Rank.None which are only for jokers)
     Object.values(Suit)
       .filter((suit) => suit !== Suit.None)
       .forEach((suit) => {
-        Object.values(Rank).forEach((rank) => {
-          // Calculate points: 5s = 5, 10s and Ks = 10, others = 0
-          let points = 0;
-          if (rank === Rank.Five) {
-            points = 5;
-          } else if (rank === Rank.Ten || rank === Rank.King) {
-            points = 10;
-          }
-
-          deck.push({
-            suit,
-            rank,
-            id: `${suit}_${rank}_${deckNum}`,
-            points,
+        Object.values(Rank)
+          .filter((rank) => rank !== Rank.None)
+          .forEach((rank) => {
+            deck.push(Card.createCard(suit, rank, deckNum as DeckId));
           });
-        });
       });
 
     // Add jokers
-    deck.push({
-      joker: JokerType.Small,
-      id: `Small_Joker_${deckNum}`,
-      points: 0,
-    });
-
-    deck.push({
-      joker: JokerType.Big,
-      id: `Big_Joker_${deckNum}`,
-      points: 0,
-    });
+    deck.push(Card.createJoker(JokerType.Small, deckNum as DeckId));
+    deck.push(Card.createJoker(JokerType.Big, deckNum as DeckId));
   }
 
   return deck;

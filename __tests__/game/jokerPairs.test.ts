@@ -1,79 +1,41 @@
-import { 
-  getComboType, 
-  identifyCombos, 
-  isTrump 
-} from '../../src/game/gameLogic';
-import { 
-  Card, 
-  ComboType, 
-  JokerType, 
-  Rank, 
-  Suit 
+import { getComboType, identifyCombos } from "../../src/game/comboDetection";
+import {
+  Card,
+  ComboType,
+  JokerType,
+  Rank,
+  Suit
 } from "../../src/types";
 
-// Test data
-const smallJoker1: Card = { 
-  joker: JokerType.Small, 
-  id: 'Small_Joker_1', 
-  points: 0 
-};
-
-const smallJoker2: Card = { 
-  joker: JokerType.Small, 
-  id: 'Small_Joker_2', 
-  points: 0 
-};
-
-const bigJoker1: Card = { 
-  joker: JokerType.Big, 
-  id: 'Big_Joker_1', 
-  points: 0 
-};
-
-const bigJoker2: Card = { 
-  joker: JokerType.Big, 
-  id: 'Big_Joker_2', 
-  points: 0 
-};
-
-const aceHearts1: Card = { 
-  suit: Suit.Hearts, 
-  rank: Rank.Ace, 
-  id: 'Hearts_A_1', 
-  points: 0 
-};
-
-const aceHearts2: Card = { 
-  suit: Suit.Hearts, 
-  rank: Rank.Ace, 
-  id: 'Hearts_A_2', 
-  points: 0 
-};
+// Test data using Card class convenience methods
+const [smallJoker1, smallJoker2] = Card.createJokerPair(JokerType.Small);
+const [bigJoker1, bigJoker2] = Card.createJokerPair(JokerType.Big);
+const [aceHearts1, aceHearts2] = Card.createPair(Suit.Hearts, Rank.Ace);
 
 describe('Joker Pair Tests', () => {
   const trumpInfo = {
     trumpRank: Rank.Two,
-    
+    trumpSuit: Suit.Spades
   };
 
   test('Small Joker Pair is recognized as a Pair', () => {
-    const result = getComboType([smallJoker1, smallJoker2]);
+    const result = getComboType([smallJoker1, smallJoker2], trumpInfo);
     expect(result).toBe(ComboType.Pair);
   });
 
   test('Big Joker Pair is recognized as a Pair', () => {
-    const result = getComboType([bigJoker1, bigJoker2]);
+    const result = getComboType([bigJoker1, bigJoker2], trumpInfo);
     expect(result).toBe(ComboType.Pair);
   });
 
   test('Small and Big Joker is NOT a Pair', () => {
-    const result = getComboType([smallJoker1, bigJoker1]);
+    const result = getComboType([smallJoker1, bigJoker1], trumpInfo);
     expect(result).not.toBe(ComboType.Pair);
   });
 
   test('SJ-SJ-BJ-BJ is recognized as a Tractor', () => {
     // This is the special high-level tractor combination
-    const result = getComboType([smallJoker1, smallJoker2, bigJoker1, bigJoker2]);
+    const result = getComboType([smallJoker1, smallJoker2, bigJoker1, bigJoker2], trumpInfo);
     expect(result).toBe(ComboType.Tractor);
   });
 

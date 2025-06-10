@@ -1,19 +1,18 @@
 import {
-  prepareNextRound,
-  endRound
+  endRound,
+  prepareNextRound
 } from '../../src/game/gameRoundManager';
-import { 
-  GameState, 
-  Rank, 
-  Suit, 
-  Card,
+import {
+  Rank,
+  Suit,
   TeamId
 } from "../../src/types";
+import { initializeGame } from '../../src/utils/gameInitialization';
 import { createFullGameStateWithTricks } from "../helpers";
-import * as gameLogic from '../../src/game/gameLogic';
 
 // Mock dependencies
-jest.mock('../../src/game/gameLogic', () => ({
+jest.mock('../../src/utils/gameInitialization', () => ({
+  ...jest.requireActual('../../src/utils/gameInitialization'),
   initializeGame: jest.fn()
 }));
 
@@ -37,7 +36,7 @@ describe('gameRoundManager', () => {
         joker: undefined
       }));
       
-      (gameLogic.initializeGame as jest.Mock).mockReturnValue({
+      (initializeGame as jest.Mock).mockReturnValue({
         deck: mockDeck
       });
       
@@ -93,7 +92,7 @@ describe('gameRoundManager', () => {
       expect(result.dealingState).toBeUndefined();
       
       // Verify initializeGame was called
-      expect(gameLogic.initializeGame).toHaveBeenCalled();
+      expect(initializeGame).toHaveBeenCalled();
     });
   });
 

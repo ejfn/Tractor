@@ -13,12 +13,10 @@ import {
   TrumpInfo,
   TrickWinnerAnalysis,
   Rank,
+  Trick,
 } from "../types";
-import {
-  isTrump,
-  compareCards,
-  calculateCardStrategicValue,
-} from "../game/gameLogic";
+import { isTrump, calculateCardStrategicValue } from "../game/gameHelpers";
+import { compareCards } from "../game/cardComparison";
 import { createCardMemory, enhanceGameContextWithMemory } from "./aiCardMemory";
 
 /**
@@ -152,7 +150,7 @@ function isTeammate(
 function canPlayerBeatCurrentWinner(
   gameState: GameState,
   playerId: string,
-  currentTrick: any,
+  currentTrick: Trick,
 ): boolean {
   // Simplified implementation - checks if player has trump cards when current winner is non-trump
   // or higher cards when current winner is same suit
@@ -162,7 +160,7 @@ function canPlayerBeatCurrentWinner(
   // Get current winner's cards directly from the trick
   const winningPlayerId = currentTrick.winningPlayerId;
   const winningPlay = currentTrick.plays.find(
-    (play: any) => play.playerId === winningPlayerId,
+    (play) => play.playerId === winningPlayerId,
   );
   const currentWinnerCards =
     winningPlay?.cards || currentTrick.plays[0]?.cards || [];
@@ -179,7 +177,7 @@ function canPlayerBeatCurrentWinner(
   );
 
   // Simplified logic: if current winner played non-trump, check if we have trump or higher cards
-  const currentWinnerHasTrump = currentWinnerCards.some((card: Card) =>
+  const currentWinnerHasTrump = currentWinnerCards.some((card) =>
     isTrump(card, gameState.trumpInfo),
   );
 

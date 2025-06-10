@@ -1,13 +1,11 @@
-import { initializeGame } from '../../src/game/gameLogic';
 import {
-  makeTrumpDeclaration,
-  getPlayerDeclarationOptions,
-  getTrumpDeclarationStatus,
   areDeclarationsAllowed,
-  finalizeTrumpDeclaration
-} from '../../src/game/trumpDeclarationManager';
-import { DeclarationType, PlayerId, Rank, Suit } from '../../src/types';
-import { createCard } from '../helpers/cards';
+  finalizeTrumpDeclaration,
+  getPlayerDeclarationOptions,
+  makeTrumpDeclaration
+} from '../../src/game/dealingAndDeclaration';
+import { Card, DeclarationType, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Trump Declaration Manager', () => {
   let gameState: any;
@@ -21,16 +19,16 @@ describe('Trump Declaration Manager', () => {
 
     // Give human a trump rank single
     humanPlayer.hand = [
-      createCard(Suit.Spades, Rank.Two), // Trump rank
-      createCard(Suit.Hearts, Rank.Ace),
-      createCard(Suit.Clubs, Rank.King)
+      Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank
+      Card.createCard(Suit.Hearts, Rank.Ace, 0),
+      Card.createCard(Suit.Clubs, Rank.King, 0)
     ];
 
     // Give Bot1 a trump rank pair
     bot1Player.hand = [
-      createCard(Suit.Hearts, Rank.Two), // Trump rank
-      createCard(Suit.Hearts, Rank.Two), // Trump rank pair
-      createCard(Suit.Spades, Rank.Queen)
+      Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank
+      Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank pair
+      Card.createCard(Suit.Spades, Rank.Queen, 0)
     ];
   });
 
@@ -53,7 +51,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, Rank.Two)]
+        cards: [Card.createCard(Suit.Spades, Rank.Two, 0)]
       };
 
       const newState = makeTrumpDeclaration(gameState, PlayerId.Human, declaration);
@@ -69,7 +67,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, Rank.Ace)] // Wrong rank
+        cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] // Wrong rank
       };
 
       expect(() => {
@@ -83,7 +81,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, Rank.Two)]
+        cards: [Card.createCard(Suit.Spades, Rank.Two, 0)]
       };
 
       let newState = makeTrumpDeclaration(gameState, PlayerId.Human, singleDeclaration);
@@ -93,7 +91,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Hearts,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Hearts, Rank.Two), createCard(Suit.Hearts, Rank.Two)]
+        cards: [Card.createCard(Suit.Hearts, Rank.Two, 0), Card.createCard(Suit.Hearts, Rank.Two, 0)]
       };
 
       newState = makeTrumpDeclaration(newState, PlayerId.Bot1, pairDeclaration);
@@ -110,7 +108,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Hearts,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Hearts, Rank.Two), createCard(Suit.Hearts, Rank.Two)]
+        cards: [Card.createCard(Suit.Hearts, Rank.Two, 0), Card.createCard(Suit.Hearts, Rank.Two, 0)]
       };
 
       const newState = makeTrumpDeclaration(gameState, PlayerId.Bot1, pairDeclaration);
@@ -120,7 +118,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, Rank.Two)]
+        cards: [Card.createCard(Suit.Spades, Rank.Two, 0)]
       };
 
       expect(() => {
@@ -134,7 +132,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Clubs,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+        cards: [Card.createCard(Suit.Clubs, Rank.Two, 0), Card.createCard(Suit.Clubs, Rank.Two, 0)]
       };
 
       const newState = makeTrumpDeclaration(gameState, PlayerId.Human, firstPairDeclaration);
@@ -144,7 +142,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Diamonds,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Diamonds, Rank.Two), createCard(Suit.Diamonds, Rank.Two)]
+        cards: [Card.createCard(Suit.Diamonds, Rank.Two, 0), Card.createCard(Suit.Diamonds, Rank.Two, 0)]
       };
 
       expect(() => {
@@ -156,9 +154,9 @@ describe('Trump Declaration Manager', () => {
       // Setup: Give Bot1 a pair of 2♦ 
       const bot1Player = gameState.players.find((p: any) => p.id === PlayerId.Bot1);
       bot1Player.hand = [
-        createCard(Suit.Diamonds, Rank.Two), 
-        createCard(Suit.Diamonds, Rank.Two), 
-        createCard(Suit.Spades, Rank.Queen)
+        Card.createCard(Suit.Diamonds, Rank.Two, 0), 
+        Card.createCard(Suit.Diamonds, Rank.Two, 0), 
+        Card.createCard(Suit.Spades, Rank.Queen, 0)
       ];
 
       // First declaration: Human plays pair of 2♣
@@ -166,7 +164,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Clubs,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+        cards: [Card.createCard(Suit.Clubs, Rank.Two, 0), Card.createCard(Suit.Clubs, Rank.Two, 0)]
       };
 
       const newState = makeTrumpDeclaration(gameState, PlayerId.Human, firstPairDeclaration);
@@ -199,7 +197,7 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Hearts,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Hearts, Rank.Two), createCard(Suit.Hearts, Rank.Two)]
+        cards: [Card.createCard(Suit.Hearts, Rank.Two, 0), Card.createCard(Suit.Hearts, Rank.Two, 0)]
       };
 
       const newState = makeTrumpDeclaration(gameState, PlayerId.Bot1, pairDeclaration);
@@ -212,10 +210,11 @@ describe('Trump Declaration Manager', () => {
 
   describe('Declaration Status', () => {
     test('should return correct status when no declaration exists', () => {
-      const status = getTrumpDeclarationStatus(gameState);
+      const currentDeclaration = gameState.trumpDeclarationState?.currentDeclaration;
+      const declarationHistory = gameState.trumpDeclarationState?.declarationHistory || [];
 
-      expect(status.hasDeclaration).toBe(false);
-      expect(status.declarationCount).toBe(0);
+      expect(currentDeclaration).toBeUndefined();
+      expect(declarationHistory).toHaveLength(0);
     });
 
     test('should return correct status when declaration exists', () => {
@@ -223,17 +222,18 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, Rank.Two)]
+        cards: [Card.createCard(Suit.Spades, Rank.Two, 0)]
       };
 
       const newState = makeTrumpDeclaration(gameState, PlayerId.Human, declaration);
-      const status = getTrumpDeclarationStatus(newState);
+      const currentDeclaration = newState.trumpDeclarationState?.currentDeclaration;
+      const declarationHistory = newState.trumpDeclarationState?.declarationHistory || [];
 
-      expect(status.hasDeclaration).toBe(true);
-      expect(status.declarer).toBe(PlayerId.Human);
-      expect(status.type).toBe(DeclarationType.Single);
-      expect(status.suit).toBe(Suit.Spades);
-      expect(status.declarationCount).toBe(1);
+      expect(currentDeclaration).toBeDefined();
+      expect(currentDeclaration?.playerId).toBe(PlayerId.Human);
+      expect(currentDeclaration?.type).toBe(DeclarationType.Single);
+      expect(currentDeclaration?.suit).toBe(Suit.Spades);
+      expect(declarationHistory).toHaveLength(1);
     });
   });
 
@@ -243,19 +243,19 @@ describe('Trump Declaration Manager', () => {
         rank: Rank.Two,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, Rank.Two)]
+        cards: [Card.createCard(Suit.Spades, Rank.Two, 0)]
       };
 
       // Set up kitty cards (needed for finalization with trump declarer)
       gameState.kittyCards = [
-        createCard(Suit.Clubs, Rank.Three),
-        createCard(Suit.Clubs, Rank.Four),
-        createCard(Suit.Clubs, Rank.Five),
-        createCard(Suit.Clubs, Rank.Six),
-        createCard(Suit.Diamonds, Rank.Three),
-        createCard(Suit.Diamonds, Rank.Four),
-        createCard(Suit.Diamonds, Rank.Five),
-        createCard(Suit.Diamonds, Rank.Six)
+        Card.createCard(Suit.Clubs, Rank.Three, 0),
+        Card.createCard(Suit.Clubs, Rank.Four, 0),
+        Card.createCard(Suit.Clubs, Rank.Five, 0),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Diamonds, Rank.Three, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),
+        Card.createCard(Suit.Diamonds, Rank.Six, 0)
       ];
 
       let newState = makeTrumpDeclaration(gameState, PlayerId.Human, declaration);

@@ -1,5 +1,7 @@
 // Types for progressive dealing during trump declaration phase
 
+import { Card } from "./card";
+
 export type DealingState = {
   cardsPerPlayer: number; // Number of cards each player should receive
   currentRound: number; // Current dealing round (0-based)
@@ -10,6 +12,7 @@ export type DealingState = {
   kittyDealt: boolean; // Whether kitty cards have been set aside
   paused: boolean; // Whether dealing is currently paused for declarations
   pauseReason?: string; // Reason for pause (e.g., "trump_declaration")
+  lastDealtCard?: Card; // Last card that was dealt (for declaration opportunities)
 };
 
 export type DealingProgress = {

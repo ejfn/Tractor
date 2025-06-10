@@ -1,6 +1,6 @@
-import { isValidPlay } from '../../src/game/gameLogic';
-import { createCard, createTrumpInfo } from '../helpers';
-import { TrumpInfo, Suit, Rank } from '../../src/types';
+import { isValidPlay } from '../../src/game/playValidation';
+import { Card, Rank, Suit, TrumpInfo } from '../../src/types';
+import { createTrumpInfo } from '../helpers';
 
 describe('Issue #126: Same-suit pair preservation when following tractors', () => {
   let trumpInfo: TrumpInfo;
@@ -13,30 +13,25 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
     it('should REJECT breaking same-suit (Hearts) pairs when following Hearts tractor', () => {
       // AI leads 7♥7♥-8♥8♥ (Hearts tractor)
       const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Hearts, Rank.Eight),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
       ];
 
       // Human has 9♥9♥ (Hearts pair) + other cards
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Nine),
-        createCard(Suit.Hearts, Rank.Nine),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Clubs, Rank.King),
-        createCard(Suit.Clubs, Rank.King),
-        createCard(Suit.Diamonds, Rank.Queen),
-        createCard(Suit.Diamonds, Rank.Jack),
+        ...Card.createPair(Suit.Hearts, Rank.Nine),
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Clubs, Rank.King),
+        Card.createCard(Suit.Diamonds, Rank.Queen, 0),
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0),
       ];
 
       // ❌ INVALID: Breaking same-suit (Hearts) pairs
       const invalidPlay = [
-        createCard(Suit.Hearts, Rank.Nine), // Breaks 9♥-9♥ pair
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Clubs, Rank.King),
-        createCard(Suit.Diamonds, Rank.Queen),
+        Card.createCard(Suit.Hearts, Rank.Nine, 0), // Breaks 9♥-9♥ pair
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 0),
+        Card.createCard(Suit.Diamonds, Rank.Queen, 0),
       ];
 
       expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
@@ -44,29 +39,27 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
 
     it('should REJECT breaking Hearts pair when singles available', () => {
       const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Hearts, Rank.Eight),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
       ];
 
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Nine),
-        createCard(Suit.Hearts, Rank.Nine),
-        createCard(Suit.Hearts, Rank.Six),
-        createCard(Suit.Hearts, Rank.Five),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Clubs, Rank.King),
-        createCard(Suit.Clubs, Rank.King),
+        Card.createCard(Suit.Hearts, Rank.Nine, 0),
+        Card.createCard(Suit.Hearts, Rank.Nine, 1),  // Different deck for valid pair
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 1),  // Different deck for valid pair
+        Card.createCard(Suit.Clubs, Rank.King, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 1),  // Different deck for valid pair
       ];
 
       // ❌ INVALID: Breaking Hearts pair when singles available
       const invalidPlay = [
-        createCard(Suit.Hearts, Rank.Nine), // Breaks 9♥-9♥ pair
-        createCard(Suit.Hearts, Rank.Six),
-        createCard(Suit.Hearts, Rank.Five),
-        createCard(Suit.Spades, Rank.Ace),
+        Card.createCard(Suit.Hearts, Rank.Nine, 0), // Breaks 9♥-9♥ pair
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
 
       expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
@@ -74,28 +67,26 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
 
     it('should REJECT breaking pair unnecessarily when excess Hearts available', () => {
       const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Hearts, Rank.Eight),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
       ];
 
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Nine),
-        createCard(Suit.Hearts, Rank.Nine),
-        createCard(Suit.Hearts, Rank.Six),
-        createCard(Suit.Hearts, Rank.Five),
-        createCard(Suit.Hearts, Rank.Four),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Clubs, Rank.King),
+        Card.createCard(Suit.Hearts, Rank.Nine, 0),
+        Card.createCard(Suit.Hearts, Rank.Nine, 1),  // Different deck for valid pair
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 0),
       ];
 
       // ❌ INVALID: Breaking pair unnecessarily
       const invalidPlay = [
-        createCard(Suit.Hearts, Rank.Nine), // Breaks pair unnecessarily
-        createCard(Suit.Hearts, Rank.Six),
-        createCard(Suit.Hearts, Rank.Five),
-        createCard(Suit.Hearts, Rank.Four),
+        Card.createCard(Suit.Hearts, Rank.Nine, 0), // Breaks pair unnecessarily
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
       ];
 
       expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
@@ -103,29 +94,27 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
 
     it('should REJECT breaking Hearts pair when insufficient Hearts total', () => {
       const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Hearts, Rank.Seven),
-        createCard(Suit.Hearts, Rank.Eight),
-        createCard(Suit.Hearts, Rank.Eight),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        ...Card.createPair(Suit.Hearts, Rank.Eight),
       ];
 
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Nine),
-        createCard(Suit.Hearts, Rank.Nine),
-        createCard(Suit.Hearts, Rank.Six),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Clubs, Rank.King),
-        createCard(Suit.Clubs, Rank.King),
-        createCard(Suit.Diamonds, Rank.Queen),
+        Card.createCard(Suit.Hearts, Rank.Nine, 0),
+        Card.createCard(Suit.Hearts, Rank.Nine, 1),  // Different deck for valid pair
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 1),  // Different deck for valid pair
+        Card.createCard(Suit.Clubs, Rank.King, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 1),  // Different deck for valid pair
+        Card.createCard(Suit.Diamonds, Rank.Queen, 0),
       ];
 
       // ❌ INVALID: Breaking Hearts pair when insufficient Hearts total
       const invalidPlay = [
-        createCard(Suit.Hearts, Rank.Nine), // Breaks pair unnecessarily
-        createCard(Suit.Hearts, Rank.Six),
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Clubs, Rank.King),
+        Card.createCard(Suit.Hearts, Rank.Nine, 0), // Breaks pair unnecessarily
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 0),
       ];
 
       expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
@@ -134,41 +123,37 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
 
   describe('Trump combination following (same rules apply)', () => {
     it('should enforce same-suit pair preservation for trump combinations', () => {
-      // Trump rank 2, Spades trump
+      // Trump rank 2, Spades trump - use valid consecutive trump suit tractor
       const leadingCombo = [
-        createCard(Suit.Spades, Rank.Two), // Trump rank in trump suit
-        createCard(Suit.Spades, Rank.Two),
-        createCard(Suit.Spades, Rank.Three), // Trump suit
-        createCard(Suit.Spades, Rank.Three),
+        Card.createCard(Suit.Spades, Rank.Four, 0), // Trump suit
+        Card.createCard(Suit.Spades, Rank.Four, 1),  // Different deck for valid pair
+        Card.createCard(Suit.Spades, Rank.Five, 0), // Trump suit (consecutive)
+        Card.createCard(Suit.Spades, Rank.Five, 1),  // Different deck for valid pair
       ];
 
       const playerHand = [
-        createCard(Suit.Spades, Rank.Four), // Trump suit pair
-        createCard(Suit.Spades, Rank.Four),
-        createCard(Suit.Spades, Rank.Five), // Trump suit single
-        createCard(Suit.Hearts, Rank.Ace),
-        createCard(Suit.Hearts, Rank.King),
-        createCard(Suit.Clubs, Rank.Queen),
-        createCard(Suit.Diamonds, Rank.Jack),
+        Card.createCard(Suit.Spades, Rank.Six, 0), // Trump suit pair
+        Card.createCard(Suit.Spades, Rank.Six, 1),  // Different deck for valid pair
+        Card.createCard(Suit.Spades, Rank.Seven, 0), // Trump suit single
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Clubs, Rank.Queen, 0),
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0),
       ];
 
       // ❌ INVALID: Breaking trump pair when trump is led
       const invalidPlay = [
-        createCard(Suit.Spades, Rank.Four), // Breaks trump pair
-        createCard(Suit.Spades, Rank.Five),
-        createCard(Suit.Hearts, Rank.Ace),
-        createCard(Suit.Hearts, Rank.King),
+        Card.createCard(Suit.Spades, Rank.Six, 0), // Breaks trump pair
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
       ];
 
-      // Note: This test may pass if trump validation logic differs from regular suit logic
-      // The core fix focuses on non-trump same-suit scenarios
+      // Trump pair preservation should work the same as non-trump pair preservation
       const result = isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo);
-      if (result) {
-        console.warn('Trump combination validation differs from regular suit validation - this may be expected behavior');
-      }
       
-      // For now, expect the current behavior until trump logic is clarified
-      expect(result).toBe(true);
+      // Should reject breaking trump pairs unnecessarily, same as non-trump pairs
+      expect(result).toBe(false);
     });
   });
 });
