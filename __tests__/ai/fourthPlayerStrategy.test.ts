@@ -1,5 +1,5 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { createIsolatedGameState } from '../helpers/testIsolation';
+import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, TrumpInfo } from '../../src/types';
 import { 
   GameState, 
@@ -14,7 +14,7 @@ describe('4th Player Strategy Tests', () => {
   describe('Point Card Prioritization', () => {
     
     it('should prioritize 10s over Kings over 5s when partner is winning', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -69,7 +69,7 @@ describe('4th Player Strategy Tests', () => {
     });
 
     it('should avoid point cards when opponent is winning', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -143,7 +143,7 @@ describe('4th Player Strategy Tests', () => {
     });
     
     it('should play conservative cards when no point cards available and partner winning', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -201,7 +201,7 @@ describe('4th Player Strategy Tests', () => {
     const fourthPlayerId = PlayerId.Bot3; // Bot3 is 4th chronological player (TrickPosition.Fourth) in test scenarios
 
     beforeEach(() => {
-      gameState = createIsolatedGameState();
+      gameState = initializeGame();
       trumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
@@ -325,7 +325,7 @@ describe('4th Player Strategy Tests', () => {
     const fourthPlayerId = PlayerId.Bot3;
 
     beforeEach(() => {
-      gameState = createIsolatedGameState();
+      gameState = initializeGame();
       trumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
@@ -397,7 +397,7 @@ describe('4th Player Strategy Tests', () => {
     const fourthPlayerId = PlayerId.Bot3;
 
     beforeEach(() => {
-      gameState = createIsolatedGameState();
+      gameState = initializeGame();
       trumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
@@ -456,7 +456,7 @@ describe('4th Player Strategy Tests', () => {
     const fourthPlayerId = PlayerId.Bot3;
 
     beforeEach(() => {
-      gameState = createIsolatedGameState();
+      gameState = initializeGame();
       trumpInfo = {
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,

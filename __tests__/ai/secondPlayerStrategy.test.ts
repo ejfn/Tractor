@@ -1,5 +1,5 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { createIsolatedGameState } from '../helpers/testIsolation';
+import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, TrumpInfo, JokerType } from '../../src/types';
 import { createGameContext } from "../../src/ai/aiGameContext";
 import {
@@ -21,7 +21,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Teammate Leading Response', () => {
     
     it('should contribute point cards when teammate leads with strong card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -62,7 +62,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should play conservatively when teammate leads with moderate card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -101,7 +101,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should provide strategic support when teammate leads with weak card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -143,7 +143,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Opponent Leading Response', () => {
     
     it('should block opponent with defensive play when opponent leads strong card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -182,7 +182,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should setup strategic positioning when opponent leads moderate card', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -220,7 +220,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should try to beat opponent when holding trump and opponent leads non-trump', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -262,7 +262,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Information Advantage Analysis', () => {
     
     it('should leverage information from leader play for strategic decisions', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -301,7 +301,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should coordinate with future positions based on leader analysis', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -341,7 +341,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Setup and Blocking Strategies', () => {
     
     it('should maximize setup opportunities for 3rd and 4th players', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -378,7 +378,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should calculate blocking potential against opponent advantages', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -422,7 +422,7 @@ describe('2nd Player Strategy Tests', () => {
   describe('Response Strategy Adaptation', () => {
     
     it('should adapt response based on trick point value', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -459,7 +459,7 @@ describe('2nd Player Strategy Tests', () => {
     });
 
     it('should consider coordination value in response strategy', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,

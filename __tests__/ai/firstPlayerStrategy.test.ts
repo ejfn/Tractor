@@ -1,5 +1,5 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { createIsolatedGameState } from '../helpers/testIsolation';
+import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, TrumpInfo, JokerType } from '../../src/types';
 import { createGameContext } from "../../src/ai/aiGameContext";
 import {
@@ -21,7 +21,7 @@ describe('1st Player Strategy Tests', () => {
   describe('Early Game Leading Strategy', () => {
     
     it('should make strategic leading choice in early game probe phase', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -57,7 +57,7 @@ describe('1st Player Strategy Tests', () => {
     });
 
     it('should make strategic choice even with weak trump available', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -89,7 +89,7 @@ describe('1st Player Strategy Tests', () => {
     });
 
     it('should prefer high cards for information gathering in probe phase', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -123,7 +123,7 @@ describe('1st Player Strategy Tests', () => {
   describe('Mid-Game Leading Strategy', () => {
     
     it('should adapt to aggressive strategy in mid-game with point pressure', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -162,7 +162,7 @@ describe('1st Player Strategy Tests', () => {
     });
 
     it('should use control strategy when team has advantage', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -200,7 +200,7 @@ describe('1st Player Strategy Tests', () => {
   describe('Endgame Leading Strategy', () => {
     
     it('should use endgame strategy with few cards remaining', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -238,7 +238,7 @@ describe('1st Player Strategy Tests', () => {
     });
 
     it('should make endgame strategic choice considering all factors', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -280,7 +280,7 @@ describe('1st Player Strategy Tests', () => {
   describe('Trump Management', () => {
     
     it('should make strategic trump management decisions when leading', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -315,7 +315,7 @@ describe('1st Player Strategy Tests', () => {
     });
 
     it('should consider trump pressure when many trumps have been played', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -358,7 +358,7 @@ describe('1st Player Strategy Tests', () => {
   describe('Strategic Depth and Information Gathering', () => {
     
     it('should balance information gathering with hand strength concealment', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,
@@ -391,7 +391,7 @@ describe('1st Player Strategy Tests', () => {
     });
 
     it('should adapt probe strategy based on opponent responses from memory', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       const trumpInfo: TrumpInfo = {
         trumpRank: Rank.Two,

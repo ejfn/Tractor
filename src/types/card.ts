@@ -142,10 +142,10 @@ export class Card {
   }
 
   /**
-   * Create a clone of an existing card with identical properties
+   * Create a clone of this card with identical properties
    */
-  static clone(card: Card): Card {
-    return new Card(card.suit, card.rank, card.joker, card.deckId);
+  clone(): Card {
+    return new Card(this.suit, this.rank, this.joker, this.deckId);
   }
 
   /**

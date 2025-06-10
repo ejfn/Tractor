@@ -6,14 +6,14 @@ import {
 } from '../../src/types';
 import { createTestCardsGameState } from "../helpers/gameStates";
 import { createMockTrick } from "../helpers/mocks";
-import { createIsolatedGameState } from '../helpers/testIsolation';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('3rd Player Strategy Tests', () => {
   
   describe('Point Card Prioritization', () => {
     
     it('should prioritize 10s over Kings over 5s when partner leads and wins', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -73,7 +73,7 @@ describe('3rd Player Strategy Tests', () => {
     });
 
     it('should contribute strategically when teammate has moderate lead strength', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {
@@ -121,7 +121,7 @@ describe('3rd Player Strategy Tests', () => {
     });
 
     it('should avoid contributing valuable cards when teammate lead is vulnerable', () => {
-      const gameState = createIsolatedGameState();
+      const gameState = initializeGame();
       
       // Set up trump info
       const trumpInfo: TrumpInfo = {

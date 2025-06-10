@@ -1,11 +1,11 @@
 import { getAIMove } from '../../src/ai/aiLogic';
 import { isValidPlay } from '../../src/game/playValidation';
-import { createIsolatedGameState } from '../helpers/testIsolation';
+import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, ComboType, TrumpInfo, PlayerId, JokerType } from '../../src/types';
 
 describe('AI Trump Following Behavior', () => {
   it('should show AI correctly choosing trump singles when trump pairs are led', () => {
-    const gameState = createIsolatedGameState();
+    const gameState = initializeGame();
     
     // Set up trump info: Spades trump, rank 2
     const trumpInfo: TrumpInfo = {
@@ -58,7 +58,7 @@ describe('AI Trump Following Behavior', () => {
   });
 
   it('should handle trump pairs when AI has sufficient trump cards', () => {
-    const gameState = createIsolatedGameState();
+    const gameState = initializeGame();
     
     // Set up trump info: Hearts trump, rank 2
     const trumpInfo: TrumpInfo = {

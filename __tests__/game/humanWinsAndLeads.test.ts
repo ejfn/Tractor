@@ -2,10 +2,9 @@ import { describe, expect, test } from '@jest/globals';
 import { getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
 import { Card, DeckId, GamePhase, Rank, Suit } from "../../src/types";
 import { createGameState, givePlayerCards } from '../helpers/gameStates';
-import { withIsolatedState } from '../helpers/testIsolation';
 
 describe('Human Wins and Leads Bug', () => {
-  test('Human wins first trick and leads second', withIsolatedState(() => {
+  test('Human wins first trick and leads second', () => {
     // Create a deterministic game state where human is guaranteed to win first trick
     let gameState = createGameState({
       gamePhase: GamePhase.Playing,
@@ -77,5 +76,5 @@ describe('Human Wins and Leads Bug', () => {
     expect(cardCountsBefore[3] - cardCountsAfter[3]).toBe(0); // Bot 3 lost 0 cards
     
     console.log('Test completed successfully - no card count anomalies detected');
-  }));
+  });
 });

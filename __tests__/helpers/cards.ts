@@ -31,6 +31,62 @@ export const createTractor = (suit: Suit, startRank: Rank, length: number = 2): 
 };
 
 // ============================================================================
+// DECK MANIPULATION UTILITIES
+// ============================================================================
+
+/**
+ * Moves a specified card to a specified position in a deck
+ * Useful for creating deterministic test scenarios where specific cards need to be at specific positions
+ * 
+ * @param deck - The deck to modify (will be modified in-place)
+ * @param cardMatcher - Function that returns true for the card to move, or a card object to match by ID
+ * @param targetPosition - The position where the card should be moved (0-based index)
+ * @returns The modified deck (same reference as input)
+ * 
+ * @example
+ * // Move Big Joker to position 0 (human gets first card)
+ * moveCardToPosition(deck, card => card.joker === JokerType.Big, 0);
+ * 
+ * // Move a specific card to position 4
+ * const specificCard = Card.createCard(Suit.Hearts, Rank.Seven, 0);
+ * moveCardToPosition(deck, specificCard, 4);
+ */
+export const moveCardToPosition = (
+  deck: Card[], 
+  cardMatcher: Card | ((card: Card) => boolean), 
+  targetPosition: number
+): Card[] => {
+  if (targetPosition < 0 || targetPosition >= deck.length) {
+    throw new Error(`Target position ${targetPosition} is out of bounds for deck of length ${deck.length}`);
+  }
+
+  // Convert card object to matcher function
+  const matcher = typeof cardMatcher === 'function' 
+    ? cardMatcher 
+    : (card: Card) => card.id === cardMatcher.id;
+
+  // Find the card to move
+  const sourceIndex = deck.findIndex(matcher);
+  if (sourceIndex === -1) {
+    throw new Error('Card not found in deck');
+  }
+
+  // If already at target position, no need to move
+  if (sourceIndex === targetPosition) {
+    return deck;
+  }
+
+  // Remove card from current position
+  const [cardToMove] = deck.splice(sourceIndex, 1);
+  
+  // Insert at target position
+  deck.splice(targetPosition, 0, cardToMove);
+  
+  return deck;
+};
+
+
+// ============================================================================
 // COMMON TEST DATA
 // ============================================================================
 
