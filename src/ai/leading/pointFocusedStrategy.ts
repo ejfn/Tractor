@@ -148,7 +148,8 @@ export function createTrumpConservationStrategy(
 
 /**
  * Enhanced early-game non-trump leading strategy for point escape
- * Includes integrated Ace-priority logic for optimal early game leading
+ * Includes dynamic highest-rank priority logic for optimal early game leading
+ * Leads with Aces when trump rank is not Ace, leads with Kings when trump rank is Ace
  * IMPORTANT: This strategy focuses on non-trump leading and should not interfere with trump strategies
  */
 export function selectEarlyGameLeadingPlay(
@@ -173,28 +174,31 @@ export function selectEarlyGameLeadingPlay(
     return null; // Defer to trump-optimized strategies
   }
 
-  // STEP 1: Priority for Ace combos - they're guaranteed winners in early game
-  const aceCombos = nonTrumpCombos.filter((combo) =>
-    combo.cards.every((card) => card.rank === Rank.Ace),
+  // STEP 1: Priority for highest non-trump combos - they're guaranteed winners in early game
+  const highestRank = getHighestNonTrumpRank(trumpInfo);
+  const highestRankCombos = nonTrumpCombos.filter((combo) =>
+    combo.cards.every((card) => card.rank === highestRank),
   );
 
-  if (aceCombos.length > 0) {
-    // Sort Ace combos by type preference: pairs > singles
-    const acePairs = aceCombos.filter((combo) => combo.type === ComboType.Pair);
-    const aceSingles = aceCombos.filter(
+  if (highestRankCombos.length > 0) {
+    // Sort highest rank combos by type preference: pairs > singles
+    const highestRankPairs = highestRankCombos.filter(
+      (combo) => combo.type === ComboType.Pair,
+    );
+    const highestRankSingles = highestRankCombos.filter(
       (combo) => combo.type === ComboType.Single,
     );
 
-    // Prefer Ace pairs over Ace singles - they're harder to beat
-    if (acePairs.length > 0) {
-      return acePairs[0];
+    // Prefer pairs over singles - they're harder to beat
+    if (highestRankPairs.length > 0) {
+      return highestRankPairs[0];
     }
-    if (aceSingles.length > 0) {
-      return aceSingles[0];
+    if (highestRankSingles.length > 0) {
+      return highestRankSingles[0];
     }
   }
 
-  // STEP 2: If no Aces, prioritize high cards by combination type and rank strength
+  // STEP 2: If no highest rank cards, prioritize high cards by combination type and rank strength
   // Sort by combo value (which already considers card strength within suit)
   const sortedByStrength = nonTrumpCombos.sort((a, b) => b.value - a.value);
 
@@ -216,6 +220,15 @@ export function selectEarlyGameLeadingPlay(
 }
 
 // Helper Functions
+
+/**
+ * Determines the highest non-trump rank based on current trump rank
+ * When trump rank is Ace, King becomes the highest non-trump card
+ * For all other trump ranks, Ace remains the highest non-trump card
+ */
+function getHighestNonTrumpRank(trumpInfo: TrumpInfo): Rank {
+  return trumpInfo.trumpRank === Rank.Ace ? Rank.King : Rank.Ace;
+}
 
 function determineGamePhase(gameProgress: number): GamePhaseStrategy {
   if (gameProgress <= 0.25) return GamePhaseStrategy.EarlyGame;
