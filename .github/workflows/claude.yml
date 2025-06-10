@@ -5,18 +5,12 @@ on:
     types: [created]
   pull_request_review_comment:
     types: [created]
-  issues:
-    types: [opened, assigned]
-  pull_request_review:
-    types: [submitted]
 
 jobs:
   claude:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      # (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      # (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issue_comment' && github.event.comment.user.login == 'ejfn' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && && github.event.comment.user.login == 'ejfn' contains(github.event.comment.body, '@claude')) ||
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,14 +22,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        cache: 'npm'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Run Claude Code
         id: claude
@@ -44,4 +39,4 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           allowed_tools: "Bash(npm install),Bash(npm run test:*),Bash(npm run typecheck),Bash(npm run lint:*),Bash(npm run qualitycheck),Edit,Replace,NotebookEditCell"
-
+          custom_instructions: "always run qualitycheck before commiting code, ensure no errors, no lint warnings, all tests passed, and create a pull request please"
