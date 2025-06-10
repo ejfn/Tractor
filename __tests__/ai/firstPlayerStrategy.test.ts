@@ -35,10 +35,10 @@ describe('1st Player Strategy Tests', () => {
       
       // AI Bot1 hand with various strategic options
       const aiBotHand: Card[] = [
-        { id: 'ace-spades', rank: Rank.Ace, suit: Suit.Spades, points: 0 },     // Strong non-trump Ace
-        { id: 'king-clubs', rank: Rank.King, suit: Suit.Clubs, points: 10 },    // Point card alternative
-        { id: '7-diamonds', rank: Rank.Seven, suit: Suit.Diamonds, points: 0 }, // Probe card alternative
-        { id: '3-hearts', rank: Rank.Three, suit: Suit.Hearts, points: 0 },     // Weak trump
+        Card.createCard(Suit.Spades, Rank.Ace, 0),     // Strong non-trump Ace
+        Card.createCard(Suit.Clubs, Rank.King, 0),     // Point card alternative
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0), // Probe card alternative
+        Card.createCard(Suit.Hearts, Rank.Three, 0),   // Weak trump
       ];
 
       gameState.players[1].hand = aiBotHand;
@@ -68,9 +68,9 @@ describe('1st Player Strategy Tests', () => {
       gameState.tricks = []; // Early game
       
       const aiBotHand: Card[] = [
-        { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 }, // Weak trump suit card
-        { id: 'king-spades', rank: Rank.King, suit: Suit.Spades, points: 10 },  // Strong non-trump
-        { id: '8-clubs', rank: Rank.Eight, suit: Suit.Clubs, points: 0 },       // Medium non-trump
+        Card.createCard(Suit.Diamonds, Rank.Three, 0), // Weak trump suit card
+        Card.createCard(Suit.Spades, Rank.King, 0),  // Strong non-trump
+        Card.createCard(Suit.Clubs, Rank.Eight, 0),       // Medium non-trump
       ];
 
       gameState.players[1].hand = aiBotHand;
@@ -100,10 +100,10 @@ describe('1st Player Strategy Tests', () => {
       gameState.tricks = []; // Early game probe phase
       
       const aiBotHand: Card[] = [
-        { id: 'queen-hearts', rank: Rank.Queen, suit: Suit.Hearts, points: 0 },  // High card
-        { id: 'jack-spades', rank: Rank.Jack, suit: Suit.Spades, points: 0 },    // Medium high card
-        { id: '6-diamonds', rank: Rank.Six, suit: Suit.Diamonds, points: 0 },    // Low card
-        { id: '4-hearts', rank: Rank.Four, suit: Suit.Hearts, points: 0 },       // Low card
+        Card.createCard(Suit.Hearts, Rank.Queen, 0),  // High card
+        Card.createCard(Suit.Spades, Rank.Jack, 0),    // Medium high card
+        Card.createCard(Suit.Diamonds, Rank.Six, 0),    // Low card
+        Card.createCard(Suit.Hearts, Rank.Four, 0),       // Low card
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -134,17 +134,17 @@ describe('1st Player Strategy Tests', () => {
       // Mid-game scenario with some tricks played
       gameState.tricks = Array(6).fill(null).map((_, i) => ({
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Hearts, points: 10 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] }
         ],
         points: 10,
         winningPlayerId: PlayerId.Human,
       }));
       
       const aiBotHand: Card[] = [
-        { id: '10-hearts', rank: Rank.Ten, suit: Suit.Hearts, points: 10 },      // Point card
-        { id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },       // Strong non-trump
-        { id: '5-diamonds', rank: Rank.Five, suit: Suit.Diamonds, points: 5 },   // Small point card
-        { id: '7-hearts', rank: Rank.Seven, suit: Suit.Hearts, points: 0 },      // Medium card
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),      // Point card
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),       // Strong non-trump
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),   // Small point card
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),      // Medium card
       ];
 
       gameState.players[1].hand = aiBotHand;
@@ -173,16 +173,16 @@ describe('1st Player Strategy Tests', () => {
       // Mid-game with AI team winning some tricks (favorable position)
       gameState.tricks = Array(4).fill(null).map((_, i) => ({
         plays: [
-          { playerId: PlayerId.Bot1, cards: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Spades, points: 10 }] }
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.King, 0)] }
         ],
         points: 10,
         winningPlayerId: i % 2 === 0 ? PlayerId.Bot1 : PlayerId.Bot3, // AI team winning
       }));
       
       const aiBotHand: Card[] = [
-        { id: 'ace-diamonds', rank: Rank.Ace, suit: Suit.Diamonds, points: 0 },  // Control card
-        { id: 'king-clubs', rank: Rank.King, suit: Suit.Clubs, points: 10 },     // Point card
-        { id: '9-spades', rank: Rank.Nine, suit: Suit.Spades, points: 0 },       // Medium card
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),  // Control card
+        Card.createCard(Suit.Clubs, Rank.King, 0),     // Point card
+        Card.createCard(Suit.Spades, Rank.Nine, 0),       // Medium card
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -211,7 +211,7 @@ describe('1st Player Strategy Tests', () => {
       // Endgame scenario
       gameState.tricks = Array(10).fill(null).map((_, i) => ({
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}`, rank: Rank.Seven, suit: Suit.Spades, points: 0 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Seven, 0)] }
         ],
         points: 5,
         winningPlayerId: PlayerId.Human,
@@ -219,8 +219,8 @@ describe('1st Player Strategy Tests', () => {
       
       // Few cards remaining in hands
       const aiBotHand: Card[] = [
-        { id: 'king-diamonds', rank: Rank.King, suit: Suit.Diamonds, points: 10 }, // Critical point card
-        { id: '6-spades', rank: Rank.Six, suit: Suit.Spades, points: 0 },           // Safe card
+        Card.createCard(Suit.Diamonds, Rank.King, 0), // Critical point card
+        Card.createCard(Suit.Spades, Rank.Six, 0),           // Safe card
       ];
 
       gameState.players[1].hand = aiBotHand;
@@ -249,16 +249,16 @@ describe('1st Player Strategy Tests', () => {
       // Late game scenario
       gameState.tricks = Array(8).fill(null).map((_, i) => ({
         plays: [
-          { playerId: PlayerId.Bot2, cards: [{ id: `dummy-${i}`, rank: Rank.Eight, suit: Suit.Clubs, points: 0 }] }
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Clubs, Rank.Eight, 0)] }
         ],
         points: 0,
         winningPlayerId: PlayerId.Bot2,
       }));
       
       const aiBotHand: Card[] = [
-        { id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 },     // Trump rank in trump suit (valuable)
-        { id: 'queen-spades', rank: Rank.Queen, suit: Suit.Spades, points: 0 }, // High non-trump
-        { id: '8-diamonds', rank: Rank.Eight, suit: Suit.Diamonds, points: 0 }, // Medium non-trump
+        Card.createCard(Suit.Hearts, Rank.Two, 0),     // Trump rank in trump suit (valuable)
+        Card.createCard(Suit.Spades, Rank.Queen, 0), // High non-trump
+        Card.createCard(Suit.Diamonds, Rank.Eight, 0), // Medium non-trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -289,10 +289,10 @@ describe('1st Player Strategy Tests', () => {
       gameState.trumpInfo = trumpInfo;
       
       const aiBotHand: Card[] = [
-        { id: 'big-joker-1', joker: JokerType.Big, points: 0 },                         // Highest trump
-        { id: '2-diamonds', rank: Rank.Two, suit: Suit.Diamonds, points: 0 },   // Trump rank in trump suit
-        { id: 'jack-spades', rank: Rank.Jack, suit: Suit.Spades, points: 0 },   // High non-trump
-        { id: '9-clubs', rank: Rank.Nine, suit: Suit.Clubs, points: 0 },        // Medium non-trump
+        Card.createJoker(JokerType.Big, 0),                         // Highest trump
+        Card.createCard(Suit.Diamonds, Rank.Two, 0),   // Trump rank in trump suit
+        Card.createCard(Suit.Spades, Rank.Jack, 0),   // High non-trump
+        Card.createCard(Suit.Clubs, Rank.Nine, 0),        // Medium non-trump
       ];
 
       gameState.players[1].hand = aiBotHand;
@@ -327,10 +327,10 @@ describe('1st Player Strategy Tests', () => {
       gameState.tricks = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [{ id: 'trump-1', joker: JokerType.Small, points: 0 }] },
-            { playerId: PlayerId.Human, cards: [{ id: 'trump-2', joker: JokerType.Big, points: 0 }] },
-            { playerId: PlayerId.Bot2, cards: [{ id: 'trump-3', rank: Rank.Two, suit: Suit.Hearts, points: 0 }] },
-            { playerId: PlayerId.Bot3, cards: [{ id: 'trump-4', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] },
+            { playerId: PlayerId.Bot1, cards: [Card.createJoker(JokerType.Small, 0)] },
+            { playerId: PlayerId.Human, cards: [Card.createJoker(JokerType.Big, 0)] },
+            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Two, 0)] },
+            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] },
           ],
           points: 0,
           winningPlayerId: PlayerId.Human,
@@ -338,9 +338,9 @@ describe('1st Player Strategy Tests', () => {
       ];
       
       const aiBotHand: Card[] = [
-        { id: '2-spades', rank: Rank.Two, suit: Suit.Spades, points: 0 },      // Remaining trump
-        { id: 'ace-hearts', rank: Rank.Ace, suit: Suit.Hearts, points: 0 },    // High non-trump
-        { id: '7-clubs', rank: Rank.Seven, suit: Suit.Clubs, points: 0 },      // Medium non-trump
+        Card.createCard(Suit.Spades, Rank.Two, 0),      // Remaining trump
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),    // High non-trump
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),      // Medium non-trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -368,11 +368,11 @@ describe('1st Player Strategy Tests', () => {
       
       // Early game with mixed hand strength
       const aiBotHand: Card[] = [
-        { id: 'ace-hearts', rank: Rank.Ace, suit: Suit.Hearts, points: 0 },      // Very strong
-        { id: 'king-hearts', rank: Rank.King, suit: Suit.Hearts, points: 10 },   // Strong with points
-        { id: '10-spades', rank: Rank.Ten, suit: Suit.Spades, points: 10 },      // Point card
-        { id: '8-diamonds', rank: Rank.Eight, suit: Suit.Diamonds, points: 0 },  // Medium probe card
-        { id: '5-spades', rank: Rank.Five, suit: Suit.Spades, points: 5 },       // Small point card
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),      // Very strong
+        Card.createCard(Suit.Hearts, Rank.King, 0),   // Strong with points
+        Card.createCard(Suit.Spades, Rank.Ten, 0),      // Point card
+        Card.createCard(Suit.Diamonds, Rank.Eight, 0),  // Medium probe card
+        Card.createCard(Suit.Spades, Rank.Five, 0),       // Small point card
       ];
 
       gameState.players[1].hand = aiBotHand;
@@ -403,10 +403,10 @@ describe('1st Player Strategy Tests', () => {
       gameState.tricks = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [{ id: 'probe-1', rank: Rank.Queen, suit: Suit.Spades, points: 0 }] },
-            { playerId: PlayerId.Human, cards: [{ id: 'response-1', rank: Rank.Three, suit: Suit.Spades, points: 0 }] },
-            { playerId: PlayerId.Bot2, cards: [{ id: 'response-2', rank: Rank.Four, suit: Suit.Spades, points: 0 }] },
-            { playerId: PlayerId.Bot3, cards: [{ id: 'response-3', rank: Rank.Five, suit: Suit.Spades, points: 0 }] },
+            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)] },
+            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Three, 0)] },
+            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Four, 0)] },
+            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Spades, Rank.Five, 0)] },
           ],
           points: 0,
           winningPlayerId: PlayerId.Bot1,
@@ -414,9 +414,9 @@ describe('1st Player Strategy Tests', () => {
       ];
       
       const aiBotHand: Card[] = [
-        { id: 'king-diamonds', rank: Rank.King, suit: Suit.Diamonds, points: 10 }, // Strong lead option
-        { id: 'jack-clubs', rank: Rank.Jack, suit: Suit.Clubs, points: 0 },        // Probe option
-        { id: '9-hearts', rank: Rank.Nine, suit: Suit.Hearts, points: 0 },         // Trump suit (not trump rank)
+        Card.createCard(Suit.Diamonds, Rank.King, 0), // Strong lead option
+        Card.createCard(Suit.Clubs, Rank.Jack, 0),        // Probe option
+        Card.createCard(Suit.Hearts, Rank.Nine, 0),         // Trump suit (not trump rank)
       ];
 
       gameState.players[1].hand = aiBotHand;

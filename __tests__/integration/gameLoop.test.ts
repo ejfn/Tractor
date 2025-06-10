@@ -1,15 +1,13 @@
+import { getAIMove } from '../../src/ai/aiLogic';
+import { processPlay } from '../../src/game/playProcessing';
 import {
+  Card,
   GameState,
   PlayerId,
   Rank,
   Suit
 } from "../../src/types";
-import { getAIMove } from '../../src/ai/aiLogic';
-import {
-  calculateTrickPoints
-} from '../../src/game/gameLogic';
-import { processPlay } from '../../src/game/gamePlayManager';
-import { createCard, createTestCardsGameState } from "../helpers";
+import { createTestCardsGameState } from "../helpers";
 
 // Mock dependencies
 jest.mock('../../src/ai/aiLogic', () => ({
@@ -19,7 +17,6 @@ jest.mock('../../src/ai/aiLogic', () => ({
 // Use shared utility for test cards game state
 const createMockGameState = createTestCardsGameState;
 
-// Use shared createCard function which handles points correctly
 
 describe('Game Loop Tests', () => {
   beforeEach(() => {
@@ -34,7 +31,7 @@ describe('Game Loop Tests', () => {
       plays: [
         {
           playerId: PlayerId.Human,
-          cards: [createCard(Suit.Hearts, Rank.Ace)]
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)]
         }
       ],
       winningPlayerId: PlayerId.Human,
@@ -42,10 +39,10 @@ describe('Game Loop Tests', () => {
     };
     
     // Give AI1 non-heart cards
-    const spadesSevenCard = createCard(Suit.Spades, Rank.Seven);
+    const spadesSevenCard = Card.createCard(Suit.Spades, Rank.Seven, 0);
     gameState.players[1].hand = [
       spadesSevenCard,
-      createCard(Suit.Diamonds, Rank.Ten)
+      Card.createCard(Suit.Diamonds, Rank.Ten, 0)
     ];
     
     gameState.currentPlayerIndex = 1; // AI1's turn
@@ -98,13 +95,13 @@ describe('Game Loop Tests', () => {
     const gameState = createMockGameState();
     
     // Give all players cards for this trick
-    gameState.players[0].hand = [createCard(Suit.Hearts, Rank.Ace)];
-    gameState.players[1].hand = [createCard(Suit.Hearts, Rank.King)];
-    gameState.players[2].hand = [createCard(Suit.Hearts, Rank.Queen)];
-    gameState.players[3].hand = [createCard(Suit.Hearts, Rank.Jack)];
+    gameState.players[0].hand = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
+    gameState.players[1].hand = [Card.createCard(Suit.Hearts, Rank.King, 0)];
+    gameState.players[2].hand = [Card.createCard(Suit.Hearts, Rank.Queen, 0)];
+    gameState.players[3].hand = [Card.createCard(Suit.Hearts, Rank.Jack, 0)];
     
     // Start a trick with player 0 leading
-    const aceCard = createCard(Suit.Hearts, Rank.Ace);
+    const aceCard = Card.createCard(Suit.Hearts, Rank.Ace, 0);
     gameState.currentTrick = {
       plays: [
         {
@@ -124,14 +121,14 @@ describe('Game Loop Tests', () => {
     
     // Process player 1's move using real game logic
     const processPlayer1Move = () => {
-      const move = [createCard(Suit.Hearts, Rank.King)];
+      const move = [Card.createCard(Suit.Hearts, Rank.King, 0)];
       const playResult = processPlay(gameState, move);
       return playResult.newState;
     };
     
     // Process player 2's move using real game logic
     const processPlayer2Move = (state: GameState) => {
-      const move = [createCard(Suit.Hearts, Rank.Queen)];
+      const move = [Card.createCard(Suit.Hearts, Rank.Queen, 0)];
       const playResult = processPlay(state, move);
       return playResult.newState;
     };
@@ -139,7 +136,7 @@ describe('Game Loop Tests', () => {
     // Process player 3's move (completes the trick)
     const processPlayer3Move = (state: GameState) => {
       // Play the Jack of Hearts using real game logic
-      const move = [createCard(Suit.Hearts, Rank.Jack)];
+      const move = [Card.createCard(Suit.Hearts, Rank.Jack, 0)];
       
       // Use real game logic to process the play (this will handle trick completion automatically)
       const playResult = processPlay(state, move);

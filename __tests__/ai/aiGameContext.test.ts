@@ -1,31 +1,31 @@
 import {
-  createGameContext,
-  isPlayerOnAttackingTeam,
-  calculatePointPressure,
-  getTrickPosition,
-  isTrickWorthFighting,
-  determinePlayStyle,
   analyzeCombo,
   analyzeTrickWinner,
+  calculatePointPressure,
+  createGameContext,
+  determinePlayStyle,
   getPositionStrategy,
+  getTrickPosition,
+  isPlayerOnAttackingTeam,
+  isTrickWorthFighting,
 } from "../../src/ai/aiGameContext";
+
 import {
-  PlayerId,
-  TrickPosition,
-  PointPressure,
-  GamePhase,
-  GameState,
-  PlayStyle,
+  Card,
+  Combo,
   ComboStrength,
   ComboType,
-  Combo,
-  Card,
-  TrumpInfo,
+  GamePhase,
+  PlayerId,
+  PlayStyle,
+  PointPressure,
   Rank,
   Suit,
+  TrickPosition,
+  TrumpInfo
 } from "../../src/types";
+import { initializeGame } from "../../src/utils/gameInitialization";
 import { createTestCardsGameState } from "../helpers/gameStates";
-import { initializeGame } from '../../src/game/gameLogic';
 
 describe("AI Game Context", () => {
   let gameState: any;
@@ -96,7 +96,7 @@ describe("AI Game Context", () => {
     it("should return correct positions based on play count", () => {
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: 'lead-card', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] }
         ],
       };
       
@@ -108,14 +108,14 @@ describe("AI Game Context", () => {
       
       // After Bot1 plays - Bot2 is third player
       gameState.currentTrick.plays = [
-        { playerId: PlayerId.Human, cards: [{ id: 'lead-card', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] },
+        { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] },
         { playerId: PlayerId.Bot1, cards: [] }
       ];
       expect(getTrickPosition(gameState, PlayerId.Bot2)).toBe(TrickPosition.Third);
       
       // After Bot1 and Bot2 play - Bot3 is fourth player
       gameState.currentTrick.plays = [
-        { playerId: PlayerId.Human, cards: [{ id: 'lead-card', rank: Rank.Ace, suit: Suit.Spades, points: 0 }] },
+        { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] },
         { playerId: PlayerId.Bot1, cards: [] },
         { playerId: PlayerId.Bot2, cards: [] },
       ];
@@ -160,8 +160,8 @@ describe("AI Game Context", () => {
     beforeEach(() => {
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ points: 5 }] }, // 5 points from leading combo
-          { playerId: PlayerId.Bot1, cards: [{ points: 10 }] }, // 10 points
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] }, // 5 points from leading combo
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Ten, 0)] }, // 10 points
         ],
       };
     });
@@ -176,8 +176,8 @@ describe("AI Game Context", () => {
 
     it("should not consider trick worth fighting with LOW pressure and low points", () => {
       gameState.currentTrick.plays = [
-        { playerId: PlayerId.Human, cards: [{ points: 0 }] },
-        { playerId: PlayerId.Bot1, cards: [{ points: 5 }] }
+        { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] },
+        { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] }
       ];
       
       const context = createGameContext(gameState, PlayerId.Human);
@@ -189,8 +189,8 @@ describe("AI Game Context", () => {
 
     it("should have lower threshold for MEDIUM pressure", () => {
       gameState.currentTrick.plays = [
-        { playerId: PlayerId.Human, cards: [{ points: 0 }] },
-        { playerId: PlayerId.Bot1, cards: [{ points: 10 }] }
+        { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] },
+        { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Ten, 0)] }
       ];
       
       const context = createGameContext(gameState, PlayerId.Human);
@@ -202,8 +202,8 @@ describe("AI Game Context", () => {
 
     it("should have lowest threshold for HIGH pressure", () => {
       gameState.currentTrick.plays = [
-        { playerId: PlayerId.Human, cards: [{ points: 0 }] },
-        { playerId: PlayerId.Bot1, cards: [{ points: 5 }] }
+        { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] },
+        { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] }
       ];
       
       const context = createGameContext(gameState, PlayerId.Human);
@@ -263,19 +263,9 @@ describe("AI Game Context", () => {
       value,
     });
 
-    const createTestCard = (
-      rank: Rank,
-      suit: Suit,
-      points: number = 0,
-    ): Card => ({
-      rank,
-      suit,
-      id: `${rank}_${suit}`,
-      points,
-    });
 
     it('should identify critical trump combo strength', () => {
-      const cards = [createTestCard(Rank.Ace, Suit.Hearts)];
+      const cards = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
       const combo = createTestCombo(cards, ComboType.Single, 90);
       const context = {
         isAttackingTeam: true,
@@ -295,7 +285,7 @@ describe("AI Game Context", () => {
     });
 
     it('should identify weak non-trump combo', () => {
-      const cards = [createTestCard(Rank.Three, Suit.Spades)];
+      const cards = [Card.createCard(Suit.Spades, Rank.Three, 0)];
       const combo = createTestCombo(cards, ComboType.Single, 15);
       const context = {
         isAttackingTeam: false,
@@ -316,7 +306,7 @@ describe("AI Game Context", () => {
     });
 
     it('should calculate point value correctly', () => {
-      const cards = [createTestCard(Rank.King, Suit.Diamonds, 10)];
+      const cards = [Card.createCard(Suit.Diamonds, Rank.King, 0)];
       const combo = createTestCombo(cards, ComboType.Single, 40);
       const context = {
         isAttackingTeam: true,
@@ -336,7 +326,7 @@ describe("AI Game Context", () => {
     });
 
     it('should adjust conservation value for endgame', () => {
-      const cards = [createTestCard(Rank.Queen, Suit.Clubs)];
+      const cards = [Card.createCard(Suit.Clubs, Rank.Queen, 0)];
       const combo = createTestCombo(cards, ComboType.Single, 50);
       const endgameContext = {
         isAttackingTeam: true,
@@ -355,8 +345,8 @@ describe("AI Game Context", () => {
 
     it('should handle tractor disruption potential', () => {
       const cards = [
-        createTestCard(Rank.Jack, Suit.Hearts),
-        createTestCard(Rank.Queen, Suit.Hearts),
+        Card.createCard(Suit.Hearts, Rank.Jack, 0),
+        Card.createCard(Suit.Hearts, Rank.Queen, 0),
       ];
       const combo = createTestCombo(cards, ComboType.Tractor, 70);
       const context = {
@@ -384,7 +374,7 @@ describe("AI Game Context", () => {
       // Set up trick with Bot3 winning (Bot1's partner)
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot3, cards: [{ rank: Rank.Ace, suit: Suit.Spades, id: 'ace_spades', points: 0 }] }
+          { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] }
         ],
         winningPlayerId: PlayerId.Bot3,
         points: 0,
@@ -402,7 +392,7 @@ describe("AI Game Context", () => {
       // Set up trick with Human winning (Bot1's opponent)
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ rank: Rank.King, suit: Suit.Hearts, id: 'king_hearts', points: 10 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] }
         ],
         winningPlayerId: PlayerId.Human,
         points: 10,
@@ -420,7 +410,7 @@ describe("AI Game Context", () => {
       // Set up trick with Bot1 winning
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot1, cards: [{ rank: Rank.Ace, suit: Suit.Hearts, id: 'ace_hearts', points: 0 }] }
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1,
         points: 0,
@@ -437,10 +427,10 @@ describe("AI Game Context", () => {
     it('should track trick points correctly', () => {
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ rank: Rank.Five, suit: Suit.Hearts, id: 'five_hearts', points: 5 }] },
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] },
           {
             playerId: PlayerId.Bot1,
-            cards: [{ rank: Rank.King, suit: Suit.Hearts, id: 'king_hearts', points: 10 }],
+            cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
           },
         ],
         winningPlayerId: PlayerId.Bot1,
@@ -456,7 +446,7 @@ describe("AI Game Context", () => {
     it('should determine strategic decisions', () => {
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ rank: Rank.Seven, suit: Suit.Diamonds, id: 'seven_diamonds', points: 0 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Diamonds, Rank.Seven, 0)] }
         ],
         winningPlayerId: PlayerId.Human,
         points: 0,
@@ -526,7 +516,7 @@ describe("AI Game Context", () => {
         trumpRank: Rank.Two,
       };
 
-      const cards = [{ rank: Rank.Two, suit: Suit.Hearts, id: 'two_hearts', points: 0 }];
+      const cards = [Card.createCard(Suit.Hearts, Rank.Two, 0)];
       const combo = { type: ComboType.Single, cards, value: 30 };
       const context = {
         isAttackingTeam: true,

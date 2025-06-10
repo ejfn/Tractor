@@ -39,9 +39,11 @@ export function selectStrategicDisposal(
 
   // 🎯 4TH PLAYER ENHANCEMENT: Perfect information disposal
   if (context.trickPosition === TrickPosition.Fourth && gameState) {
-    // TODO: Extract selectFourthPlayerOptimalDisposal
-    throw new Error(
-      "selectFourthPlayerOptimalDisposal not yet extracted - coming in next phase",
+    // Use specialized 4th player logic with perfect information
+    return selectFourthPlayerPointAvoidance(
+      comboAnalyses,
+      context,
+      gameState.trumpInfo,
     );
   }
 

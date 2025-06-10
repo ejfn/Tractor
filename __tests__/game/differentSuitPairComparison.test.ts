@@ -1,6 +1,6 @@
-import { compareCards, isValidPlay } from '../../src/game/gameLogic';
-import { createCard } from '../helpers/cards';
-import { Suit, Rank, ComboType } from '../../src/types';
+import { compareCards } from '../../src/game/cardComparison';
+import { isValidPlay } from '../../src/game/playValidation';
+import { Card, ComboType, Rank, Suit } from '../../src/types';
 import { createGameState } from '../helpers/gameStates';
 
 describe('Different Suit Pair Comparison Bug', () => {
@@ -10,10 +10,10 @@ describe('Different Suit Pair Comparison Bug', () => {
   describe('Non-trump pairs from different suits', () => {
     test('A♣-A♣ pair should NOT beat 4♦-4♦ pair (different suits, both non-trump)', () => {
       // Create the cards
-      const aceClubs1 = createCard(Suit.Clubs, Rank.Ace, '1');
-      const aceClubs2 = createCard(Suit.Clubs, Rank.Ace, '2');
-      const fourDiamonds1 = createCard(Suit.Diamonds, Rank.Four, '1');
-      const fourDiamonds2 = createCard(Suit.Diamonds, Rank.Four, '2');
+      const aceClubs1 = Card.createCard(Suit.Clubs, Rank.Ace, 0);
+      const aceClubs2 = Card.createCard(Suit.Clubs, Rank.Ace, 0);
+      const fourDiamonds1 = Card.createCard(Suit.Diamonds, Rank.Four, 0);
+      const fourDiamonds2 = Card.createCard(Suit.Diamonds, Rank.Four, 0);
 
       // Verify neither are trump
       expect(aceClubs1.suit).toBe(Suit.Clubs);
@@ -32,14 +32,14 @@ describe('Different Suit Pair Comparison Bug', () => {
     test('Following different suit pair should be invalid when non-trump', () => {
       // Set up a trick where 4♦-4♦ is led
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
       ];
 
       // Try to follow with A♣-A♣
       const followingCombo = [
-        createCard(Suit.Clubs, Rank.Ace, 'ace_clubs_1'),
-        createCard(Suit.Clubs, Rank.Ace, 'ace_clubs_2'),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       // Mock a game state with this trick
@@ -59,8 +59,8 @@ describe('Different Suit Pair Comparison Bug', () => {
       // Mock player hand that has both the Ace clubs and some diamonds
       const playerHand = [
         ...followingCombo,
-        createCard(Suit.Diamonds, Rank.Seven, 'seven_diamonds_1'), // Has diamonds, so must follow suit
-        createCard(Suit.Diamonds, Rank.Seven, 'seven_diamonds_2'),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0), // Has diamonds, so must follow suit
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
       ];
 
       // This should be INVALID - player has diamonds so must follow diamonds, not play clubs
@@ -77,14 +77,14 @@ describe('Different Suit Pair Comparison Bug', () => {
     test('Following different suit pair should be valid only when void in led suit', () => {
       // Set up a trick where 4♦-4♦ is led
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
       ];
 
       // Try to follow with A♣-A♣
       const followingCombo = [
-        createCard(Suit.Clubs, Rank.Ace, '1'),
-        createCard(Suit.Clubs, Rank.Ace, '2'),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       // Mock a game state with this trick
@@ -104,8 +104,8 @@ describe('Different Suit Pair Comparison Bug', () => {
       // Mock player hand that has NO diamonds (void in led suit)
       const playerHandVoidInDiamonds = [
         ...followingCombo,
-        createCard(Suit.Spades, Rank.Seven, '1'), // No diamonds available
-        createCard(Suit.Hearts, Rank.Eight, '2'),
+        Card.createCard(Suit.Spades, Rank.Seven, 0), // No diamonds available
+        Card.createCard(Suit.Hearts, Rank.Eight, 0),
       ];
 
       // This should be VALID - player void in diamonds, can play any suit
@@ -122,14 +122,14 @@ describe('Different Suit Pair Comparison Bug', () => {
     test('Trump pair should beat non-trump pair regardless of suit', () => {
       // Set up a trick where 4♦-4♦ is led (non-trump)
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
       ];
 
       // Follow with trump pair (Hearts is trump suit)
       const trumpPair = [
-        createCard(Suit.Hearts, Rank.Three, '1'),
-        createCard(Suit.Hearts, Rank.Three, '2'),
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
       ];
 
       // Individual card comparison - trump should beat non-trump
@@ -143,10 +143,10 @@ describe('Different Suit Pair Comparison Bug', () => {
 
   describe('Same suit pair comparisons', () => {
     test('Higher rank pair should beat lower rank pair in same suit', () => {
-      const aceSpades1 = createCard(Suit.Spades, Rank.Ace, '1');
-      const aceSpades2 = createCard(Suit.Spades, Rank.Ace, '2');
-      const fourSpades1 = createCard(Suit.Spades, Rank.Four, '1');
-      const fourSpades2 = createCard(Suit.Spades, Rank.Four, '2');
+      const aceSpades1 = Card.createCard(Suit.Spades, Rank.Ace, 0);
+      const aceSpades2 = Card.createCard(Suit.Spades, Rank.Ace, 0);
+      const fourSpades1 = Card.createCard(Suit.Spades, Rank.Four, 0);
+      const fourSpades2 = Card.createCard(Suit.Spades, Rank.Four, 0);
 
       // Same suit comparison - Ace should beat 4
       const comparison = compareCards(aceSpades1, fourSpades1, trumpInfo);
@@ -156,12 +156,12 @@ describe('Different Suit Pair Comparison Bug', () => {
     test('A♠-A♠ should beat 4♠-4♠ when both are same suit non-trump', () => {
       // This should work correctly - same suit, higher rank wins
       const aceSpadesPair = [
-        createCard(Suit.Spades, Rank.Ace, '1'),
-        createCard(Suit.Spades, Rank.Ace, '2'),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
       ];
       const fourSpadesPair = [
-        createCard(Suit.Spades, Rank.Four, '1'),
-        createCard(Suit.Spades, Rank.Four, '2'),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
       ];
 
       const comparison = compareCards(aceSpadesPair[0], fourSpadesPair[0], trumpInfo);
@@ -175,10 +175,10 @@ describe('Different Suit Pair Comparison Bug', () => {
 
     test('A♣-A♣ should NOT beat 4♥-4♥ when trump suit skipped (both non-trump)', () => {
       // No trump suit declared, so Heart cards are regular
-      const aceClubs1 = createCard(Suit.Clubs, Rank.Ace, '1');
-      const aceClubs2 = createCard(Suit.Clubs, Rank.Ace, '2');
-      const fourHearts1 = createCard(Suit.Hearts, Rank.Four, '1');
-      const fourHearts2 = createCard(Suit.Hearts, Rank.Four, '2');
+      const aceClubs1 = Card.createCard(Suit.Clubs, Rank.Ace, 0);
+      const aceClubs2 = Card.createCard(Suit.Clubs, Rank.Ace, 0);
+      const fourHearts1 = Card.createCard(Suit.Hearts, Rank.Four, 0);
+      const fourHearts2 = Card.createCard(Suit.Hearts, Rank.Four, 0);
 
       // Neither should be trump since trump suit is not declared
       expect(aceClubs1.suit).toBe(Suit.Clubs);
@@ -193,10 +193,10 @@ describe('Different Suit Pair Comparison Bug', () => {
 
     test('2♠-2♠ should beat A♣-A♣ when trump suit skipped (trump rank vs non-trump)', () => {
       // 2s are trump rank, so they're trump even when trump suit is skipped
-      const twoSpades1 = createCard(Suit.Spades, Rank.Two, '1');
-      const twoSpades2 = createCard(Suit.Spades, Rank.Two, '2');
-      const aceClubs1 = createCard(Suit.Clubs, Rank.Ace, '1');
-      const aceClubs2 = createCard(Suit.Clubs, Rank.Ace, '2');
+      const twoSpades1 = Card.createCard(Suit.Spades, Rank.Two, 0);
+      const twoSpades2 = Card.createCard(Suit.Spades, Rank.Two, 0);
+      const aceClubs1 = Card.createCard(Suit.Clubs, Rank.Ace, 0);
+      const aceClubs2 = Card.createCard(Suit.Clubs, Rank.Ace, 0);
 
       // Trump rank (2♠) should beat non-trump (A♣)
       const comparison = compareCards(twoSpades1, aceClubs1, skippedTrumpInfo);
@@ -205,8 +205,8 @@ describe('Different Suit Pair Comparison Bug', () => {
 
     test('2♥-2♥ should be trump when trump suit skipped', () => {
       // Even though no trump suit is declared, 2♥ is still trump rank
-      const twoHearts1 = createCard(Suit.Hearts, Rank.Two, '1');
-      const fourHearts1 = createCard(Suit.Hearts, Rank.Four, '1');
+      const twoHearts1 = Card.createCard(Suit.Hearts, Rank.Two, 0);
+      const fourHearts1 = Card.createCard(Suit.Hearts, Rank.Four, 0);
 
       // 2♥ should be trump (trump rank), but 4♥ should NOT be trump (regular heart)
       const twoHeartsComparison = compareCards(twoHearts1, fourHearts1, skippedTrumpInfo);
@@ -216,14 +216,14 @@ describe('Different Suit Pair Comparison Bug', () => {
     test('Following different suit when trump skipped should follow same rules', () => {
       // Set up a trick where 4♦-4♦ is led
       const leadingCombo = [
-        createCard(Suit.Diamonds, Rank.Four, '1'),
-        createCard(Suit.Diamonds, Rank.Four, '2'),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
       ];
 
       // Try to follow with A♣-A♣ (different suit, both non-trump)
       const followingCombo = [
-        createCard(Suit.Clubs, Rank.Ace, 'ace_clubs_skip_1'),
-        createCard(Suit.Clubs, Rank.Ace, 'ace_clubs_skip_2'),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       const gameStateWithSkippedTrump = {
@@ -242,8 +242,8 @@ describe('Different Suit Pair Comparison Bug', () => {
       // Player hand with diamonds available - must follow suit
       const playerHand = [
         ...followingCombo,
-        createCard(Suit.Diamonds, Rank.Seven, 'seven_diamonds_skip_1'),
-        createCard(Suit.Diamonds, Rank.Seven, 'seven_diamonds_skip_2'),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
       ];
 
       // Should be invalid - must follow diamonds even when trump suit skipped

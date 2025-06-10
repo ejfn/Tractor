@@ -71,11 +71,16 @@ npm test              # Run tests
 │   │   └── trumpDeclarationStrategy.ts # Sophisticated declaration timing
 │   └── utils/             # AI utility functions
 │       └── aiHelpers.ts   # Common AI helper functions
-├── game/                  # Core game logic and management
-│   ├── gameLogic.ts       # Core mechanics, rules, and valid combination detection
-│   ├── gamePlayManager.ts # Card play validation and tricks
+├── game/                  # Core game logic and management (6 focused modules)
+│   ├── cardComparison.ts  # Card comparison and strength evaluation
+│   ├── combinationGeneration.ts # Valid combination generation for AI
+│   ├── comboDetection.ts  # Combination type detection and validation
+│   ├── dealingAndDeclaration.ts # Progressive dealing and trump declaration system
+│   ├── gameHelpers.ts     # Game utility functions and card operations
 │   ├── gameRoundManager.ts # Round management and scoring
 │   ├── kittyManager.ts    # Kitty card management and scoring
+│   ├── playProcessing.ts  # Card play validation and trick processing
+│   ├── tractorLogic.ts    # Tractor formation rules and validation
 │   └── trumpDeclarationManager.ts # Trump declaration system and rules
 ├── utils/                 # True utility functions
 │   ├── cardAutoSelection.ts # Smart card selection logic
@@ -208,6 +213,30 @@ npx eas --version
 
 ## Game Architecture
 
+### Modular Game System
+
+The game logic has been completely **modularized** for optimal maintainability and clear separation of concerns:
+
+**Core Game Modules:**
+- **`playProcessing.ts`** - Unified play processing and validation (merged gamePlayManager + playValidation)
+- **`dealingAndDeclaration.ts`** - Complete dealing and trump declaration system (merged dealingManager + trumpDeclarationManager)
+- **`gameHelpers.ts`** - Consolidated utility functions (merged gameHelpers + gameUtilities)
+- **`gameRoundManager.ts`** - Round management and scoring
+- **`kittyManager.ts`** - Kitty card management and scoring
+
+**Specialized Game Modules:**
+- **`cardComparison.ts`** - Card comparison and strength evaluation
+- **`combinationGeneration.ts`** - Valid combination generation for AI
+- **`comboDetection.ts`** - Combination type detection and validation
+- **`tractorLogic.ts`** - Tractor formation rules and validation
+
+**Modular Benefits:**
+- **Direct Imports**: All AI modules import directly from specific game modules (no re-export hub)
+- **Single Responsibility**: Each module has one clear purpose and manageable size
+- **Clean Dependencies**: Clear import relationships eliminate circular dependency risks
+- **Easy Testing**: Modular structure enables targeted unit testing
+- **IDE Navigation**: Direct imports improve code navigation and refactoring
+
 ### Core Concepts
 
 1. **State Management**
@@ -320,6 +349,217 @@ THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
 
 ## Type Safety and Code Quality
 
+⚠️ **CRITICAL**: This codebase enforces **STRICT TYPE SAFETY** with zero tolerance for unsafe patterns. All TypeScript compilation must pass with **ZERO ERRORS** and **ZERO WARNINGS**.
+
+### Mandatory Parameter Enforcement ⚠️ CRITICAL
+
+**NEVER make parameters optional when they should always be provided!** 
+
+**✅ Correct Pattern - Mandatory Parameters:**
+```typescript
+// GOOD: trumpInfo is always required
+export const getComboType = (cards: Card[], trumpInfo: TrumpInfo): ComboType => {
+  // Implementation
+}
+
+// GOOD: All test calls provide required parameter
+expect(getComboType(pair, trumpInfo)).toBe(ComboType.Pair);
+```
+
+**❌ Incorrect Pattern - False Optionals:**
+```typescript
+// BAD: Making trumpInfo optional when it's always needed
+export const getComboType = (cards: Card[], trumpInfo?: TrumpInfo): ComboType => {
+  // This leads to unsafe assumptions and runtime errors
+}
+
+// BAD: Non-null assertions to work around bad typing
+expect(getComboType(pair, trumpInfo!)).toBe(ComboType.Pair);
+```
+
+**🚨 Rules for Parameter Design:**
+- If a parameter is used in 100% of cases → Make it **MANDATORY**
+- If a parameter has safe defaults → Provide **DEFAULT VALUES**
+- If a parameter is contextual → Use **FUNCTION OVERLOADS**
+- **NEVER use `?:` for parameters that are always provided**
+
+### Interface vs Inline Types ⚠️ CRITICAL
+
+**ALWAYS use defined interfaces instead of inline object types!**
+
+**✅ Correct Pattern - Defined Interfaces:**
+```typescript
+// GOOD: Use existing interface
+function processDeclaration(declaration: TrumpDeclarationStatus): void {
+  // Implementation uses well-defined type
+}
+
+// GOOD: Return proper interface
+function getDeclarationStatus(): TrumpDeclarationStatus {
+  return gameState.trumpDeclarationState?.currentDeclaration;
+}
+```
+
+**❌ Incorrect Pattern - Inline Objects:**
+```typescript
+// BAD: Returning inline object when interface exists
+function getDeclarationStatus(): { suit: Suit; type: string; player: string } {
+  // Duplicates existing TrumpDeclarationStatus interface
+}
+
+// BAD: Using inline types in parameters
+function processDeclaration(declaration: { suit: Suit; type: string }): void {
+  // Should use TrumpDeclarationStatus interface
+}
+```
+
+### Null vs Undefined Discipline ⚠️ CRITICAL
+
+**Be explicit about nullability patterns!**
+
+**✅ Correct Patterns:**
+```typescript
+// GOOD: Explicit about what values are allowed
+function processPlayer(player: Player | null): void {
+  if (player === null) return;
+  // Handle non-null player
+}
+
+// GOOD: Use proper type guards
+function hasCards(hand: Card[] | undefined): hand is Card[] {
+  return hand !== undefined && hand.length > 0;
+}
+```
+
+**❌ Incorrect Patterns:**
+```typescript
+// BAD: Mixing null and undefined without clear pattern
+function processPlayer(player?: Player | null): void {
+  // Confusing - what does undefined vs null mean?
+}
+
+// BAD: Using non-null assertion instead of proper checking
+function processCards(hand?: Card[]): void {
+  hand!.forEach(card => /* unsafe */);
+}
+```
+
+### Enum Filtering for Iterations ⚠️ CRITICAL
+
+**ALWAYS filter out placeholder enum values in iterations!**
+
+**✅ Correct Pattern - Filtered Iterations:**
+```typescript
+// GOOD: Filter out placeholder values
+Object.values(Suit)
+  .filter((suit) => suit !== Suit.None)
+  .forEach((suit) => {
+    // Only process real suits
+  });
+
+Object.values(Rank)
+  .filter((rank) => rank !== Rank.None)
+  .forEach((rank) => {
+    // Only process real ranks
+  });
+```
+
+**❌ Incorrect Pattern - Unfiltered Iterations:**
+```typescript
+// BAD: Includes placeholder values
+Object.values(Suit).forEach((suit) => {
+  // Creates invalid cards with Suit.None
+  deck.push(Card.createCard(suit, rank, deckId));
+});
+
+Object.values(Rank).forEach((rank) => {
+  // Creates invalid cards with Rank.None
+  deck.push(Card.createCard(suit, rank, deckId));
+});
+```
+
+**🚨 Mandatory Enum Filters:**
+- `Suit.None` → Only for jokers, NEVER for deck creation
+- `Rank.None` → Only for jokers, NEVER for deck creation
+- **Always filter placeholder values in iterations**
+
+### Type Assertion Prevention ⚠️ CRITICAL
+
+**AVOID type assertions - fix root type mismatches instead!**
+
+**✅ Correct Pattern - Proper Type Guards:**
+```typescript
+// GOOD: Proper conditional with type guard
+if (!isLeading && leadingCombo && leadingCombo.length > 1 && trumpInfo) {
+  const leadingComboType = getComboType(leadingCombo, trumpInfo);
+  // Safe usage
+}
+
+// GOOD: Explicit validation
+function processGameState(state: GameState | null): void {
+  if (!state) throw new Error('GameState is required');
+  // Proceed with guaranteed non-null state
+}
+```
+
+**❌ Incorrect Pattern - Type Assertions:**
+```typescript
+// BAD: Non-null assertion
+const leadingComboType = getComboType(leadingCombo, trumpInfo!);
+
+// BAD: Type casting
+const gameState = state as GameState;
+
+// BAD: Any type escape hatch
+const result = (someValue as any).doSomething();
+```
+
+### Interface Hierarchy Best Practices ⚠️ CRITICAL
+
+**Design clear inheritance relationships!**
+
+**✅ Correct Pattern - Clean Hierarchy:**
+```typescript
+// GOOD: Clear base interface
+interface GameContextBase {
+  trumpInfo: TrumpInfo;
+  currentPlayer: PlayerId;
+}
+
+// GOOD: Proper extension
+interface GameContext extends GameContextBase {
+  memoryContext: MemoryContext;
+  memoryStrategy: MemoryBasedStrategy;
+}
+```
+
+**❌ Incorrect Pattern - Type Hacks:**
+```typescript
+// BAD: Type intersection hacks
+type GameContext = GameContextBase & { 
+  memoryContext: MemoryContext; 
+  memoryStrategy: MemoryBasedStrategy;
+};
+
+// BAD: Forcing incompatible types
+const context = baseContext as GameContext;
+```
+
+### Quality Gates ⚠️ CRITICAL
+
+**ALL TYPE SAFETY REQUIREMENTS MUST PASS:**
+
+```bash
+npm run qualitycheck  # MUST return with zero errors
+```
+
+**Zero Tolerance Policy:**
+- ✅ **TypeCheck: PASSED** (0 errors) - MANDATORY
+- ✅ **Lint: PASSED** (0 warnings) - MANDATORY  
+- ✅ **Tests: PASSED** (all tests) - MANDATORY
+
+**Any TypeScript compilation error or lint warning blocks development until resolved.**
+
 ### Enum Usage ⚠️ CRITICAL
 
 **ALWAYS USE ENUMS INSTEAD OF MAGIC STRINGS!** The codebase uses TypeScript enums extensively to eliminate magic strings and ensure type safety:
@@ -430,8 +670,8 @@ expect(strategy.pointPressure).toBe('HIGH');
 
 ```typescript
 // Good: Use real initialization + targeted mocking
-jest.mock('../../src/game/gameLogic', () => ({
-  ...jest.requireActual('../../src/game/gameLogic'),
+jest.mock('../../src/game/cardComparison', () => ({
+  ...jest.requireActual('../../src/game/cardComparison'),
   compareCards: jest.fn() // Only mock what you need to control for tests
 }));
 
@@ -683,6 +923,8 @@ if (opponentPattern.aggressivenessLevel > 0.7) {
 
 - ⚠️ **CRITICAL**: Always import and use enums instead of magic strings
 - 🚨 **NO SPECIAL CASE!!!!** - Always prefer general solutions over special case handling. Never add player-specific hacks or special case conditions to solve problems.
+- **Import Strategy**: Use direct module imports instead of re-export hubs for cleaner dependencies
+- **Modular Design**: Keep modules focused (150-300 lines) with single responsibilities
 - Use modular imports from `src/types` index file for clean code
 - Read file references with `file_path:line_number` format
 - Prefer general solutions over special cases
@@ -842,6 +1084,17 @@ These are lessons learned and principles established through development experie
 - **Unified data structures**: Maintain single source of truth for game state - eliminate dual fields that can become inconsistent
 - **Modular AI organization**: Group AI logic by functional domain (following/, leading/, analysis/) rather than mixing strategies
 
+### Type Safety Enforcement
+
+- **Zero tolerance policy**: All TypeScript compilation must pass with 0 errors and 0 warnings - no exceptions
+- **Mandatory parameters**: Never make parameters optional when they're always provided (e.g., `trumpInfo` in `getComboType`)
+- **Interface over inline types**: Always use defined interfaces instead of inline object types for consistency
+- **Proper enum filtering**: Always filter out placeholder values (`Suit.None`, `Rank.None`) in iterations to prevent invalid data
+- **Type assertion elimination**: Avoid type assertions (`!`, `as`) - fix root type mismatches instead with proper type guards
+- **Null vs undefined discipline**: Be explicit about nullability patterns and use consistent approaches
+- **Clean inheritance hierarchies**: Design clear interface relationships instead of type intersection hacks
+- **Parameter audit methodology**: Systematically review all function signatures to ensure proper type safety
+
 ### AI Development Patterns
 
 - **Enum usage**: Always import and use enums instead of magic strings throughout AI code
@@ -854,11 +1107,16 @@ These are lessons learned and principles established through development experie
 
 - **Trick Structure Unification**: Eliminated dual `leadingCombo`/`plays` fields that caused inconsistencies across 100+ files
 - **AI Modularization**: Split monolithic AI files into 22 specialized modules organized by functional domain (following/, leading/, analysis/, etc.)
+- **Game Logic Modularization**: Successfully broke down massive 1,844-line gameLogic.ts into focused, manageable modules
+- **Re-export Hub Elimination**: Removed gameLogic.ts re-export pattern and updated 100+ files to use direct module imports for cleaner dependencies
+- **Comprehensive Type Safety Overhaul**: Systematic elimination of 40+ TypeScript errors through mandatory parameter enforcement, enum filtering fixes, and interface discipline
 - **Systematic Approach**: Large refactoring requires systematic file-by-file updates with comprehensive testing at each step
 - **Test-Driven Validation**: Maintain 100% test coverage during refactoring to catch breaking changes immediately
-- **Critical Bug Discovery**: Major refactoring often reveals hidden bugs (4th player skip, mixed combinations, hierarchical point avoidance)
+- **Critical Bug Discovery**: Major refactoring often reveals hidden bugs (4th player skip, mixed combinations, hierarchical point avoidance, invalid card creation from `Rank.None`)
 - **Performance Optimization**: Consolidating related logic improves performance and eliminates redundant function calls
 - **Type Safety Benefits**: Unified structures improve TypeScript inference and eliminate type casting
+- **Parameter Audit Value**: Systematic review of all function signatures reveals widespread unsafe optional patterns that should be mandatory
+- **Direct Import Benefits**: Eliminating re-export hubs improves IDE navigation, reduces circular dependency risks, and makes import relationships explicit
 
 ### Game Rule Compliance Fixes
 

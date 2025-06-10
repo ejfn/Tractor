@@ -1,17 +1,13 @@
-import {
-  GameState,
-  PlayerId,
-  DeclarationType,
-  Card,
-  Suit,
-  Rank,
-  getDeclarationStrength,
-} from "../../types";
+import { GameState, PlayerId, Card, Suit, Rank } from "../../types";
 import {
   getPlayerDeclarationOptions,
-  getTrumpDeclarationStatus,
-} from "../../game/trumpDeclarationManager";
-import { getDealingProgress } from "../../game/gameLogic";
+  getDealingProgress,
+} from "../../game/dealingAndDeclaration";
+import {
+  DeclarationType,
+  TrumpDeclaration,
+  getDeclarationStrength,
+} from "../../types/trumpDeclaration";
 
 export interface AIDeclarationDecision {
   shouldDeclare: boolean;
@@ -41,7 +37,8 @@ export function getAITrumpDeclarationDecision(
     };
   }
 
-  const currentDeclaration = getTrumpDeclarationStatus(gameState);
+  const currentDeclaration =
+    gameState.trumpDeclarationState?.currentDeclaration;
   const dealingProgress = getDealingProgress(gameState);
   const player = gameState.players.find((p) => p.id === playerId);
 
@@ -113,21 +110,22 @@ export function shouldAIOverrideDeclaration(
   playerId: PlayerId,
   proposedDeclaration: { type: DeclarationType; suit: Suit },
 ): boolean {
-  const currentDeclaration = getTrumpDeclarationStatus(gameState);
+  const currentDeclaration =
+    gameState.trumpDeclarationState?.currentDeclaration;
 
-  if (!currentDeclaration.hasDeclaration) {
+  if (!currentDeclaration) {
     return true; // No current declaration, safe to declare
   }
 
   // Don't override our own declarations unless significantly stronger
-  if (currentDeclaration.declarer === playerId) {
-    const currentStrength = getDeclarationStrength(currentDeclaration.type!);
+  if (currentDeclaration.playerId === playerId) {
+    const currentStrength = getDeclarationStrength(currentDeclaration.type);
     const proposedStrength = getDeclarationStrength(proposedDeclaration.type);
     return proposedStrength > currentStrength + 1; // Need significant improvement
   }
 
   // Override opponent declarations more aggressively
-  const currentStrength = getDeclarationStrength(currentDeclaration.type!);
+  const currentStrength = getDeclarationStrength(currentDeclaration.type);
   const proposedStrength = getDeclarationStrength(proposedDeclaration.type);
 
   // Only override if we have a stronger declaration
@@ -188,10 +186,10 @@ function getDealingProgressMultiplier(progress: {
 }
 
 function getCurrentDeclarationMultiplier(
-  currentDeclaration: any,
+  currentDeclaration: TrumpDeclaration | undefined,
   proposedDeclaration: { type: DeclarationType },
 ): number {
-  if (!currentDeclaration.hasDeclaration) {
+  if (!currentDeclaration) {
     return 1.2; // Strong bonus when no one has declared yet - establish early control
   }
 
@@ -226,7 +224,11 @@ function getHandQualityMultiplier(hand: Card[], trumpRank: Rank): number {
       if (!suitCards.has(card.suit)) {
         suitCards.set(card.suit, []);
       }
-      suitCards.get(card.suit)!.push(card);
+      const suitCardArray = suitCards.get(card.suit);
+      if (!suitCardArray) {
+        throw new Error("evaluateHandQuality: Suit card array not found");
+      }
+      suitCardArray.push(card);
       suitCounts.set(card.suit, (suitCounts.get(card.suit) || 0) + 1);
     }
   });
@@ -336,39 +338,28 @@ function getDeclarationTypeDisplayName(type: DeclarationType): string {
 function generateDecisionReasoning(
   shouldDeclare: boolean,
   declarationType: DeclarationType,
-  currentDeclarationStatus: {
-    hasDeclaration: boolean;
-    declarer?: string;
-    type?: DeclarationType;
-  },
+  currentDeclaration: TrumpDeclaration | undefined,
   dealingProgress: { current: number; total: number },
 ): string {
-  const currentTypeDisplay = currentDeclarationStatus.type
-    ? getDeclarationTypeDisplayName(currentDeclarationStatus.type)
+  const currentTypeDisplay = currentDeclaration
+    ? getDeclarationTypeDisplayName(currentDeclaration.type)
     : "unknown";
   const newTypeDisplay = getDeclarationTypeDisplayName(declarationType);
 
   if (!shouldDeclare) {
-    if (
-      currentDeclarationStatus.hasDeclaration &&
-      currentDeclarationStatus.declarer &&
-      currentDeclarationStatus.type
-    ) {
-      return `Holding back - ${currentDeclarationStatus.declarer} already declared ${currentTypeDisplay}`;
+    if (currentDeclaration) {
+      return `Holding back - ${currentDeclaration.playerId} already declared ${currentTypeDisplay}`;
     } else {
       return `Waiting for better opportunity - only ${newTypeDisplay} available`;
     }
   } else {
-    if (
-      currentDeclarationStatus.hasDeclaration &&
-      currentDeclarationStatus.declarer &&
-      currentDeclarationStatus.type
-    ) {
-      return `Overriding ${currentDeclarationStatus.declarer}'s ${currentTypeDisplay} with ${newTypeDisplay}`;
+    if (currentDeclaration) {
+      return `Overriding ${currentDeclaration.playerId}'s ${currentTypeDisplay} with ${newTypeDisplay}`;
     } else {
-      const progressPercent = Math.round(
-        (dealingProgress.current / dealingProgress.total) * 100,
-      );
+      const progressPercent =
+        dealingProgress.total > 0
+          ? Math.round((dealingProgress.current / dealingProgress.total) * 100)
+          : 0;
       return `Declaring ${newTypeDisplay} early (${progressPercent}% dealt) to establish trump`;
     }
   }

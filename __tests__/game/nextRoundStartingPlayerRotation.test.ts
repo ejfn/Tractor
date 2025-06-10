@@ -1,6 +1,7 @@
-import { GameState, PlayerId, Rank, DeclarationType, Suit, TeamId } from "../../src/types";
-import { prepareNextRound, endRound } from "../../src/game/gameRoundManager";
-import { initializeGame } from "../../src/game/gameLogic";
+
+import { endRound, prepareNextRound } from "../../src/game/gameRoundManager";
+import { DeclarationType, GameState, PlayerId, Rank, Suit, TeamId } from "../../src/types";
+import { initializeGame } from "../../src/utils/gameInitialization";
 
 /**
  * Tests for correct player rotation when starting next round

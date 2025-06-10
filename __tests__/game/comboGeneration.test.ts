@@ -1,24 +1,19 @@
-import {
-  getValidCombinations,
-  identifyCombos,
-  isValidPlay,
-  isTrump,
-  getComboType,
-  calculateCardStrategicValue,
-  initializeGame,
-} from '../../src/game/gameLogic';
+import { getValidCombinations } from '../../src/game/combinationGeneration';
+import { getComboType, identifyCombos } from '../../src/game/comboDetection';
+import { calculateCardStrategicValue, isTrump } from '../../src/game/gameHelpers';
+import { isValidPlay } from '../../src/game/playValidation';
 import {
   Card,
-  Combo,
   ComboType,
+  GamePhase,
   GameState,
-  Rank,
-  Suit,
-  TrumpInfo,
   JokerType,
   PlayerId,
-  GamePhase,
+  Rank,
+  Suit,
+  TrumpInfo
 } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Combo Generation Comprehensive Tests', () => {
   let trumpInfo: TrumpInfo;
@@ -39,13 +34,13 @@ describe('Combo Generation Comprehensive Tests', () => {
   describe('Valid Combo Identification', () => {
     test('should identify singles, pairs, and tractors correctly', () => {
       const hand: Card[] = [
-        { id: '1', rank: Rank.Three, suit: Suit.Hearts, points: 0 },
-        { id: '2', rank: Rank.Four, suit: Suit.Hearts, points: 0 },
-        { id: '3', rank: Rank.Four, suit: Suit.Hearts, points: 0 },
-        { id: '4', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
-        { id: '5', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
-        { id: '6', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-        { id: '7', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 1),
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 1),
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Six, 1),
       ];
 
       const combos = identifyCombos(hand, trumpInfo);
@@ -70,10 +65,10 @@ describe('Combo Generation Comprehensive Tests', () => {
 
     test('should identify joker pairs correctly', () => {
       const hand: Card[] = [
-        { id: '1', joker: JokerType.Small, points: 0 },
-        { id: '2', joker: JokerType.Small, points: 0 },
-        { id: '3', joker: JokerType.Big, points: 0 },
-        { id: '4', joker: JokerType.Big, points: 0 },
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1),
+        Card.createJoker(JokerType.Big, 0),
+        Card.createJoker(JokerType.Big, 1),
       ];
 
       const combos = identifyCombos(hand, trumpInfo);
@@ -95,10 +90,10 @@ describe('Combo Generation Comprehensive Tests', () => {
 
     test('should handle trump rank cards correctly', () => {
       const hand: Card[] = [
-        { id: '1', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank off-suit
-        { id: '2', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank off-suit
-        { id: '3', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Trump rank in trump suit
-        { id: '4', rank: Rank.Three, suit: Suit.Spades, points: 0 }, // Trump suit
+        Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank off-suit
+        Card.createCard(Suit.Hearts, Rank.Two, 1), // Trump rank off-suit
+        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank in trump suit
+        Card.createCard(Suit.Spades, Rank.Three, 0), // Trump suit
       ];
 
       const combos = identifyCombos(hand, trumpInfo);
@@ -115,20 +110,20 @@ describe('Combo Generation Comprehensive Tests', () => {
   describe('Mixed Combo Generation', () => {
     test('should generate trump conservation combos when following trump pairs', () => {
       const playerHand: Card[] = [
-        { id: 'bj1', joker: JokerType.Big, points: 0 }, // Conservation value: 100
-        { id: 'sj1', joker: JokerType.Small, points: 0 }, // Conservation value: 90
-        { id: '2s1', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Conservation value: 80
-        { id: '2h1', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Conservation value: 70
-        { id: '3s1', rank: Rank.Three, suit: Suit.Spades, points: 0 }, // Conservation value: 5
-        { id: '4s1', rank: Rank.Four, suit: Suit.Spades, points: 0 }, // Conservation value: 10
+        Card.createJoker(JokerType.Big, 0), // Conservation value: 100
+        Card.createJoker(JokerType.Small, 0), // Conservation value: 90
+        Card.createCard(Suit.Spades, Rank.Two, 0), // Conservation value: 80
+        Card.createCard(Suit.Hearts, Rank.Two, 0), // Conservation value: 70
+        Card.createCard(Suit.Spades, Rank.Three, 0), // Conservation value: 5
+        Card.createCard(Suit.Spades, Rank.Four, 0), // Conservation value: 10
       ];
 
       gameState.players[0].hand = playerHand;
 
       // Leading combo: trump pair (forcing trump following)
       const leadingTrumpPair: Card[] = [
-        { id: 'lead1', rank: Rank.Five, suit: Suit.Spades, points: 5 },
-        { id: 'lead2', rank: Rank.Five, suit: Suit.Spades, points: 5 },
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 1),
       ];
 
       gameState.currentTrick = {
@@ -171,18 +166,18 @@ describe('Combo Generation Comprehensive Tests', () => {
 
     test('should handle partial suit following correctly', () => {
       const playerHand: Card[] = [
-        { id: '1', rank: Rank.Three, suit: Suit.Hearts, points: 0 }, // Only heart
-        { id: '2', rank: Rank.Four, suit: Suit.Clubs, points: 0 },
-        { id: '3', rank: Rank.Five, suit: Suit.Diamonds, points: 5 },
-        { id: '4', rank: Rank.Six, suit: Suit.Clubs, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Three, 0), // Only heart
+        Card.createCard(Suit.Clubs, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
       ];
 
       gameState.players[0].hand = playerHand;
 
       // Leading combo: Hearts pair (player has only 1 heart)
       const leadingHeartsPair: Card[] = [
-        { id: 'lead1', rank: Rank.Seven, suit: Suit.Hearts, points: 0 },
-        { id: 'lead2', rank: Rank.Seven, suit: Suit.Hearts, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Seven, 1),
       ];
 
       gameState.currentTrick = {
@@ -213,17 +208,17 @@ describe('Combo Generation Comprehensive Tests', () => {
 
     test('should generate valid combos when out of led suit', () => {
       const playerHand: Card[] = [
-        { id: '1', rank: Rank.Four, suit: Suit.Clubs, points: 0 },
-        { id: '2', rank: Rank.Five, suit: Suit.Diamonds, points: 5 },
-        { id: '3', rank: Rank.Six, suit: Suit.Clubs, points: 0 },
-        { id: '4', rank: Rank.Seven, suit: Suit.Diamonds, points: 0 },
+        Card.createCard(Suit.Clubs, Rank.Four, 0),
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
       ];
 
       gameState.players[0].hand = playerHand;
 
       // Leading combo: Hearts (player has no hearts)
       const leadingHearts: Card[] = [
-        { id: 'lead1', rank: Rank.Eight, suit: Suit.Hearts, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Eight, 0),
       ];
 
       gameState.currentTrick = {
@@ -254,18 +249,18 @@ describe('Combo Generation Comprehensive Tests', () => {
   describe('Trump Following Edge Cases', () => {
     test('should handle mixed trump combinations when cannot form proper trump pairs', () => {
       const playerHand: Card[] = [
-        { id: 'bj1', joker: JokerType.Big, points: 0 },
-        { id: '2h1', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank off-suit
-        { id: '3s1', rank: Rank.Three, suit: Suit.Spades, points: 0 }, // Trump suit
-        { id: '7c1', rank: Rank.Seven, suit: Suit.Clubs, points: 0 }, // Non-trump
+        Card.createJoker(JokerType.Big, 0),
+        Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank off-suit
+        Card.createCard(Suit.Spades, Rank.Three, 0), // Trump suit
+        Card.createCard(Suit.Clubs, Rank.Seven, 0), // Non-trump
       ];
 
       gameState.players[0].hand = playerHand;
 
       // Leading trump pair
       const leadingTrumpPair: Card[] = [
-        { id: 'lead1', rank: Rank.Four, suit: Suit.Spades, points: 0 },
-        { id: 'lead2', rank: Rank.Four, suit: Suit.Spades, points: 0 },
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 1),
       ];
 
       gameState.currentTrick = {
@@ -305,21 +300,21 @@ describe('Combo Generation Comprehensive Tests', () => {
 
     test('should handle joker tractor following correctly', () => {
       const playerHand: Card[] = [
-        { id: 'sj1', joker: JokerType.Small, points: 0 },
-        { id: 'sj2', joker: JokerType.Small, points: 0 },
-        { id: 'bj1', joker: JokerType.Big, points: 0 },
-        { id: 'bj2', joker: JokerType.Big, points: 0 },
-        { id: '2s1', rank: Rank.Two, suit: Suit.Spades, points: 0 },
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1),
+        Card.createJoker(JokerType.Big, 0),
+        Card.createJoker(JokerType.Big, 1),
+        Card.createCard(Suit.Spades, Rank.Two, 0),
       ];
 
       gameState.players[0].hand = playerHand;
 
       // Leading joker tractor: SJ-SJ-BJ-BJ
       const leadingJokerTractor: Card[] = [
-        { id: 'lead_sj1', joker: JokerType.Small, points: 0 },
-        { id: 'lead_sj2', joker: JokerType.Small, points: 0 },
-        { id: 'lead_bj1', joker: JokerType.Big, points: 0 },
-        { id: 'lead_bj2', joker: JokerType.Big, points: 0 },
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1),
+        Card.createJoker(JokerType.Big, 0),
+        Card.createJoker(JokerType.Big, 1),
       ];
 
       gameState.currentTrick = {
@@ -352,12 +347,12 @@ describe('Combo Generation Comprehensive Tests', () => {
   describe('Strategic Value Calculation', () => {
     test('should calculate trump conservation values correctly', () => {
       const cards: Card[] = [
-        { id: 'bj', joker: JokerType.Big, points: 0 },
-        { id: 'sj', joker: JokerType.Small, points: 0 },
-        { id: '2s', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Trump rank in trump suit
-        { id: '2h', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank off-suit
-        { id: 'as', rank: Rank.Ace, suit: Suit.Spades, points: 0 }, // Trump suit
-        { id: '3s', rank: Rank.Three, suit: Suit.Spades, points: 0 }, // Weak trump suit
+        Card.createJoker(JokerType.Big, 0),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank in trump suit
+        Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank off-suit
+        Card.createCard(Suit.Spades, Rank.Ace, 0), // Trump suit
+        Card.createCard(Suit.Spades, Rank.Three, 0), // Weak trump suit
       ];
 
       const values = cards.map(card => ({
@@ -381,17 +376,17 @@ describe('Combo Generation Comprehensive Tests', () => {
       expect(values[4].conservation).toBeGreaterThan(values[5].conservation);
       
       // Strategic mode should rank trump cards higher than non-trump for disposal
-      const nonTrumpCard = { id: 'ah', rank: Rank.Ace, suit: Suit.Hearts, points: 0 };
+      const nonTrumpCard = Card.createCard(Suit.Hearts, Rank.Ace, 0);
       const nonTrumpStrategic = calculateCardStrategicValue(nonTrumpCard, trumpInfo, 'strategic');
       expect(values[5].strategic).toBeGreaterThan(nonTrumpStrategic); // Even weak trump > non-trump
     });
 
     test('should prioritize point cards appropriately', () => {
       const cards: Card[] = [
-        { id: '5h', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
-        { id: '10h', rank: Rank.Ten, suit: Suit.Hearts, points: 10 },
-        { id: 'kh', rank: Rank.King, suit: Suit.Hearts, points: 10 },
-        { id: '7h', rank: Rank.Seven, suit: Suit.Hearts, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),
       ];
 
       const strategicValues = cards.map(card => ({
@@ -423,14 +418,14 @@ describe('Combo Generation Comprehensive Tests', () => {
 
     test('should always return at least one valid combo for non-empty hands', () => {
       const playerHand: Card[] = [
-        { id: '1', rank: Rank.Seven, suit: Suit.Clubs, points: 0 },
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
       ];
 
       gameState.players[0].hand = playerHand;
 
       // Any leading combo should result in at least one valid option
       const leadingCombo: Card[] = [
-        { id: 'lead', rank: Rank.Eight, suit: Suit.Hearts, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Eight, 0),
       ];
 
       gameState.currentTrick = {
@@ -452,22 +447,22 @@ describe('Combo Generation Comprehensive Tests', () => {
 
     test('should handle complex tractor requirements', () => {
       const playerHand: Card[] = [
-        { id: '1', rank: Rank.Three, suit: Suit.Hearts, points: 0 },
-        { id: '2', rank: Rank.Three, suit: Suit.Hearts, points: 0 },
-        { id: '3', rank: Rank.Four, suit: Suit.Hearts, points: 0 },
-        { id: '4', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
-        { id: '5', rank: Rank.Six, suit: Suit.Clubs, points: 0 },
-        { id: '6', rank: Rank.Seven, suit: Suit.Clubs, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+        Card.createCard(Suit.Hearts, Rank.Three, 1),
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
       ];
 
       gameState.players[0].hand = playerHand;
 
       // Leading tractor that player cannot match exactly
       const leadingTractor: Card[] = [
-        { id: 'lead1', rank: Rank.Seven, suit: Suit.Diamonds, points: 0 },
-        { id: 'lead2', rank: Rank.Seven, suit: Suit.Diamonds, points: 0 },
-        { id: 'lead3', rank: Rank.Eight, suit: Suit.Diamonds, points: 0 },
-        { id: 'lead4', rank: Rank.Eight, suit: Suit.Diamonds, points: 0 },
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 1),
+        Card.createCard(Suit.Diamonds, Rank.Eight, 0),
+        Card.createCard(Suit.Diamonds, Rank.Eight, 1),
       ];
 
       gameState.currentTrick = {
@@ -502,19 +497,19 @@ describe('Combo Generation Comprehensive Tests', () => {
   describe('Integration with AI Decision Making', () => {
     test('should provide multiple strategic options for AI choice', () => {
       const playerHand: Card[] = [
-        { id: 'bj', joker: JokerType.Big, points: 0 },
-        { id: '2h', rank: Rank.Two, suit: Suit.Hearts, points: 0 },
-        { id: '3s', rank: Rank.Three, suit: Suit.Spades, points: 0 },
-        { id: '4s', rank: Rank.Four, suit: Suit.Spades, points: 0 },
-        { id: '5h', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
-        { id: '7c', rank: Rank.Seven, suit: Suit.Clubs, points: 0 },
+        Card.createJoker(JokerType.Big, 0),
+        Card.createCard(Suit.Hearts, Rank.Two, 0),
+        Card.createCard(Suit.Spades, Rank.Three, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
       ];
 
       gameState.players[0].hand = playerHand;
 
       const leadingCombo: Card[] = [
-        { id: 'lead1', rank: Rank.Six, suit: Suit.Spades, points: 0 },
-        { id: 'lead2', rank: Rank.Six, suit: Suit.Spades, points: 0 },
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
       ];
 
       gameState.currentTrick = {

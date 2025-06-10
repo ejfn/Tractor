@@ -1,8 +1,6 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { initializeGame } from '../../src/game/gameLogic';
-import { PlayerId, Rank, Suit, GamePhase, JokerType } from '../../src/types';
-import type { GameState, Card } from '../../src/types';
-import { createJoker } from '../helpers/cards';
+import { Card, GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 /**
  * Test case for GitHub Issue #176: AI doesn't use all pairs from trump group when following a trump tractor
@@ -28,29 +26,29 @@ describe('Issue #176: AI Trump Pair Disposal Bug', () => {
     // Should use ALL trump pairs starting from weakest when following trump tractor
     bot1Player.hand = [
       // Trump suit pairs (weakest)
-      { id: '3-hearts-1', rank: Rank.Three, suit: Suit.Hearts, points: 0 },
-      { id: '3-hearts-2', rank: Rank.Three, suit: Suit.Hearts, points: 0 },
-      { id: '5-hearts-1', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
-      { id: '5-hearts-2', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
+      Card.createCard(Suit.Hearts, Rank.Three, 0),
+      Card.createCard(Suit.Hearts, Rank.Three, 0),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
       
       // Trump rank pairs (medium strength)
-      { id: '2-spades-1', rank: Rank.Two, suit: Suit.Spades, points: 0 },
-      { id: '2-spades-2', rank: Rank.Two, suit: Suit.Spades, points: 0 },
+      Card.createCard(Suit.Spades, Rank.Two, 0),
+      Card.createCard(Suit.Spades, Rank.Two, 0),
       
       // Joker pairs (strongest)
-      createJoker(JokerType.Small, 'small-joker-1'),
-      createJoker(JokerType.Small, 'small-joker-2'),
+      Card.createJoker(JokerType.Small, 0),
+      Card.createJoker(JokerType.Small, 0),
       
       // Non-trump card
-      { id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
+      Card.createCard(Suit.Clubs, Rank.Ace, 0),
     ];
 
     // Human leads with a trump tractor requiring 4 cards (2 pairs)
     const leadingTrumpTractor = [
-      { id: 'lead-9-hearts-1', rank: Rank.Nine, suit: Suit.Hearts, points: 0 },
-      { id: 'lead-9-hearts-2', rank: Rank.Nine, suit: Suit.Hearts, points: 0 },
-      { id: 'lead-10-hearts-1', rank: Rank.Ten, suit: Suit.Hearts, points: 10 },
-      { id: 'lead-10-hearts-2', rank: Rank.Ten, suit: Suit.Hearts, points: 10 },
+      Card.createCard(Suit.Hearts, Rank.Nine, 0),
+      Card.createCard(Suit.Hearts, Rank.Nine, 0),
+      Card.createCard(Suit.Hearts, Rank.Ten, 0),
+      Card.createCard(Suit.Hearts, Rank.Ten, 0),
     ];
 
     gameState.currentTrick = {
@@ -145,27 +143,27 @@ describe('Issue #176: AI Trump Pair Disposal Bug', () => {
     // Bot2 has exactly 3 trump pairs (6 cards) but they're not consecutive (no tractor)
     bot2Player.hand = [
       // Trump suit pairs
-      { id: '3-spades-1', rank: Rank.Three, suit: Suit.Spades, points: 0 },
-      { id: '3-spades-2', rank: Rank.Three, suit: Suit.Spades, points: 0 },
-      { id: '7-spades-1', rank: Rank.Seven, suit: Suit.Spades, points: 0 },
-      { id: '7-spades-2', rank: Rank.Seven, suit: Suit.Spades, points: 0 },
+      Card.createCard(Suit.Spades, Rank.Three, 0),
+      Card.createCard(Suit.Spades, Rank.Three, 0),
+      Card.createCard(Suit.Spades, Rank.Seven, 0),
+      Card.createCard(Suit.Spades, Rank.Seven, 0),
       
       // Trump rank pair
-      { id: 'ace-hearts-1', rank: Rank.Ace, suit: Suit.Hearts, points: 0 },
-      { id: 'ace-hearts-2', rank: Rank.Ace, suit: Suit.Hearts, points: 0 },
+      Card.createCard(Suit.Hearts, Rank.Ace, 0),
+      Card.createCard(Suit.Hearts, Rank.Ace, 0),
       
       // Non-trump filler
-      { id: 'king-clubs', rank: Rank.King, suit: Suit.Clubs, points: 10 },
+      Card.createCard(Suit.Clubs, Rank.King, 0),
     ];
 
     // Human leads with 3-pair trump tractor (6 cards)
     const leadingTrumpTractor = [
-      { id: 'lead-9-spades-1', rank: Rank.Nine, suit: Suit.Spades, points: 0 },
-      { id: 'lead-9-spades-2', rank: Rank.Nine, suit: Suit.Spades, points: 0 },
-      { id: 'lead-10-spades-1', rank: Rank.Ten, suit: Suit.Spades, points: 10 },
-      { id: 'lead-10-spades-2', rank: Rank.Ten, suit: Suit.Spades, points: 10 },
-      { id: 'lead-jack-spades-1', rank: Rank.Jack, suit: Suit.Spades, points: 0 },
-      { id: 'lead-jack-spades-2', rank: Rank.Jack, suit: Suit.Spades, points: 0 },
+      Card.createCard(Suit.Spades, Rank.Nine, 0),
+      Card.createCard(Suit.Spades, Rank.Nine, 0),
+      Card.createCard(Suit.Spades, Rank.Ten, 0),
+      Card.createCard(Suit.Spades, Rank.Ten, 0),
+      Card.createCard(Suit.Spades, Rank.Jack, 0),
+      Card.createCard(Suit.Spades, Rank.Jack, 0),
     ];
 
     gameState.currentTrick = {
@@ -231,26 +229,26 @@ describe('Issue #176: AI Trump Pair Disposal Bug', () => {
     // Bot3 has multiple trump pair types with clear conservation hierarchy
     bot3Player.hand = [
       // Weakest: Low trump suit pairs
-      { id: '3-diamonds-1', rank: Rank.Three, suit: Suit.Diamonds, points: 0 },
-      { id: '3-diamonds-2', rank: Rank.Three, suit: Suit.Diamonds, points: 0 },
-      { id: '4-diamonds-1', rank: Rank.Four, suit: Suit.Diamonds, points: 0 },
-      { id: '4-diamonds-2', rank: Rank.Four, suit: Suit.Diamonds, points: 0 },
+      Card.createCard(Suit.Diamonds, Rank.Three, 0),
+      Card.createCard(Suit.Diamonds, Rank.Three, 0),
+      Card.createCard(Suit.Diamonds, Rank.Four, 0),
+      Card.createCard(Suit.Diamonds, Rank.Four, 0),
       
       // Medium: Trump rank pairs in off-suits  
-      { id: '2-hearts-1', rank: Rank.Two, suit: Suit.Hearts, points: 0 },
-      { id: '2-hearts-2', rank: Rank.Two, suit: Suit.Hearts, points: 0 },
+      Card.createCard(Suit.Hearts, Rank.Two, 0),
+      Card.createCard(Suit.Hearts, Rank.Two, 0),
       
       // Strongest: Joker pairs
-      createJoker(JokerType.Big, 'big-joker-1'),
-      createJoker(JokerType.Big, 'big-joker-2'),
+      Card.createJoker(JokerType.Big, 0),
+      Card.createJoker(JokerType.Big, 0),
     ];
 
     // Human leads with 2-pair trump tractor
     const leadingTrumpTractor = [
-      { id: 'lead-king-diamonds-1', rank: Rank.King, suit: Suit.Diamonds, points: 10 },
-      { id: 'lead-king-diamonds-2', rank: Rank.King, suit: Suit.Diamonds, points: 10 },
-      { id: 'lead-ace-diamonds-1', rank: Rank.Ace, suit: Suit.Diamonds, points: 0 },
-      { id: 'lead-ace-diamonds-2', rank: Rank.Ace, suit: Suit.Diamonds, points: 0 },
+      Card.createCard(Suit.Diamonds, Rank.King, 0),
+      Card.createCard(Suit.Diamonds, Rank.King, 0),
+      Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+      Card.createCard(Suit.Diamonds, Rank.Ace, 0),
     ];
 
     gameState.currentTrick = {
@@ -319,34 +317,34 @@ describe('Issue #176: AI Trump Pair Disposal Bug', () => {
     // This tests if AI correctly uses ALL pairs before ANY singles
     bot2Player.hand = [
       // Trump suit pairs (should be used first)
-      { id: '3-spades-1', rank: Rank.Three, suit: Suit.Spades, points: 0 },
-      { id: '3-spades-2', rank: Rank.Three, suit: Suit.Spades, points: 0 },
-      { id: '4-spades-1', rank: Rank.Four, suit: Suit.Spades, points: 0 },
-      { id: '4-spades-2', rank: Rank.Four, suit: Suit.Spades, points: 0 },
+      Card.createCard(Suit.Spades, Rank.Three, 0),
+      Card.createCard(Suit.Spades, Rank.Three, 0),
+      Card.createCard(Suit.Spades, Rank.Four, 0),
+      Card.createCard(Suit.Spades, Rank.Four, 0),
       
       // Trump suit singles (should be used to fill remaining slots)
-      { id: '5-spades', rank: Rank.Five, suit: Suit.Spades, points: 5 },
-      { id: '6-spades', rank: Rank.Six, suit: Suit.Spades, points: 0 },
-      { id: '7-spades', rank: Rank.Seven, suit: Suit.Spades, points: 0 },
+      Card.createCard(Suit.Spades, Rank.Five, 0),
+      Card.createCard(Suit.Spades, Rank.Six, 0),
+      Card.createCard(Suit.Spades, Rank.Seven, 0),
       
       // Trump rank pairs (should be avoided if trump suit available)
-      { id: 'king-hearts-1', rank: Rank.King, suit: Suit.Hearts, points: 10 },
-      { id: 'king-hearts-2', rank: Rank.King, suit: Suit.Hearts, points: 10 },
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      Card.createCard(Suit.Hearts, Rank.King, 0),
       
       // Non-trump
-      { id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
+      Card.createCard(Suit.Clubs, Rank.Ace, 0),
     ];
 
     // Human leads with 8-card trump tractor (4 pairs) - Bot2 needs 8 cards but only has 2 pairs
     const leadingTrumpTractor = [
-      { id: 'lead-8-spades-1', rank: Rank.Eight, suit: Suit.Spades, points: 0 },
-      { id: 'lead-8-spades-2', rank: Rank.Eight, suit: Suit.Spades, points: 0 },
-      { id: 'lead-9-spades-1', rank: Rank.Nine, suit: Suit.Spades, points: 0 },
-      { id: 'lead-9-spades-2', rank: Rank.Nine, suit: Suit.Spades, points: 0 },
-      { id: 'lead-10-spades-1', rank: Rank.Ten, suit: Suit.Spades, points: 10 },
-      { id: 'lead-10-spades-2', rank: Rank.Ten, suit: Suit.Spades, points: 10 },
-      { id: 'lead-jack-spades-1', rank: Rank.Jack, suit: Suit.Spades, points: 0 },
-      { id: 'lead-jack-spades-2', rank: Rank.Jack, suit: Suit.Spades, points: 0 },
+      Card.createCard(Suit.Spades, Rank.Eight, 0),
+      Card.createCard(Suit.Spades, Rank.Eight, 0),
+      Card.createCard(Suit.Spades, Rank.Nine, 0),
+      Card.createCard(Suit.Spades, Rank.Nine, 0),
+      Card.createCard(Suit.Spades, Rank.Ten, 0),
+      Card.createCard(Suit.Spades, Rank.Ten, 0),
+      Card.createCard(Suit.Spades, Rank.Jack, 0),
+      Card.createCard(Suit.Spades, Rank.Jack, 0),
     ];
 
     gameState.currentTrick = {

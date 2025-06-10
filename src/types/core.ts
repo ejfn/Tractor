@@ -1,35 +1,7 @@
 // Core game enums and basic types
 import { TrumpDeclarationState } from "./trumpDeclaration";
 import { DealingState } from "./dealing";
-
-export enum Suit {
-  Hearts = "Hearts",
-  Diamonds = "Diamonds",
-  Clubs = "Clubs",
-  Spades = "Spades",
-  None = "None", // For joker pair declarations - no trump suit
-}
-
-export enum Rank {
-  Two = "2",
-  Three = "3",
-  Four = "4",
-  Five = "5",
-  Six = "6",
-  Seven = "7",
-  Eight = "8",
-  Nine = "9",
-  Ten = "10",
-  Jack = "J",
-  Queen = "Q",
-  King = "K",
-  Ace = "A",
-}
-
-export enum JokerType {
-  Small = "Small",
-  Big = "Big",
-}
+import { Card, TrumpInfo, Rank } from "./card";
 
 export enum PlayerId {
   Human = "human",
@@ -59,14 +31,6 @@ export enum GamePhase {
   GameOver = "gameOver",
 }
 
-export type Card = {
-  suit?: Suit;
-  rank?: Rank;
-  joker?: JokerType;
-  id: string; // Unique ID for each card (considering we're using 2 decks)
-  points: number; // Point value of the card (5s = 5, 10s and Ks = 10)
-};
-
 export type Player = {
   id: PlayerId;
   name: PlayerName;
@@ -89,11 +53,7 @@ export type Trick = {
   }[]; // All plays including leader at plays[0]
   winningPlayerId: PlayerId; // Current winner of the trick (starts with plays[0].playerId, updates as stronger plays are made)
   points: number; // Total points in this trick
-};
-
-export type TrumpInfo = {
-  trumpRank: Rank;
-  trumpSuit?: Suit; // undefined = not declared, Suit.None = joker pairs, specific suit = trump rank declarations
+  isFinalTrick?: boolean; // Optional flag to track if this is the final trick of the round
 };
 
 export type GameState = {
@@ -121,19 +81,6 @@ export type GameState = {
       multiplier: number;
     };
   };
-};
-
-// Combination types for valid plays
-export enum ComboType {
-  Single = "Single",
-  Pair = "Pair",
-  Tractor = "Tractor", // Consecutive pairs of same suit
-}
-
-export type Combo = {
-  type: ComboType;
-  cards: Card[];
-  value: number; // Relative hand strength for comparison
 };
 
 /**

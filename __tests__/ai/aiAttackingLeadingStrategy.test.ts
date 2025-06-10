@@ -1,7 +1,6 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { initializeGame } from '../../src/game/gameLogic';
-import { PlayerId, Rank, Suit, GamePhase } from '../../src/types';
-import type { GameState, Card } from '../../src/types';
+import { Card, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Attacking Leading Strategy Bug Test', () => {
   it('should NOT lead with trump suit high cards even in desperate attacking scenarios', () => {
@@ -18,10 +17,10 @@ describe('Attacking Leading Strategy Bug Test', () => {
     // Late game scenario with many opponent wins to trigger desperate mode
     gameState.tricks = Array(10).fill(null).map((_, i) => ({
       plays: [
-        { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}-1`, rank: Rank.King, suit: Suit.Spades, points: 10 }] },
-        { playerId: PlayerId.Bot1, cards: [{ id: `dummy-${i}-2`, rank: Rank.Three, suit: Suit.Spades, points: 0 }] },
-        { playerId: PlayerId.Bot2, cards: [{ id: `dummy-${i}-3`, rank: Rank.Four, suit: Suit.Spades, points: 0 }] },
-        { playerId: PlayerId.Bot3, cards: [{ id: `dummy-${i}-4`, rank: Rank.Five, suit: Suit.Spades, points: 0 }] },
+        { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.King, 0)] },
+        { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Three, 0)] },
+        { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Four, 0)] },
+        { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Spades, Rank.Five, 0)] },
       ],
       points: 10, // High point tricks going to opponents
       winningPlayerId: PlayerId.Human, // Human team winning
@@ -30,14 +29,14 @@ describe('Attacking Leading Strategy Bug Test', () => {
     // AI Bot1 hand designed to trigger desperate attacking strategy
     const aiBotHand: Card[] = [
       // Trump suit high cards that shouldn't be led
-      { id: 'ace-hearts', rank: Rank.Ace, suit: Suit.Hearts, points: 0 },     // A♥ (trump suit)
-      { id: 'king-hearts', rank: Rank.King, suit: Suit.Hearts, points: 10 },   // K♥ (trump suit)
-      { id: '10-hearts', rank: Rank.Ten, suit: Suit.Hearts, points: 10 },      // 10♥ (trump suit)
+      Card.createCard(Suit.Hearts, Rank.Ace, 0),     // A♥ (trump suit)
+      Card.createCard(Suit.Hearts, Rank.King, 0),    // K♥ (trump suit)
+      Card.createCard(Suit.Hearts, Rank.Ten, 0),     // 10♥ (trump suit)
       
       // Lower alternatives
-      { id: '7-spades', rank: Rank.Seven, suit: Suit.Spades, points: 0 },
-      { id: '8-clubs', rank: Rank.Eight, suit: Suit.Clubs, points: 0 },
-      { id: '9-diamonds', rank: Rank.Nine, suit: Suit.Diamonds, points: 0 },
+      Card.createCard(Suit.Spades, Rank.Seven, 0),
+      Card.createCard(Suit.Clubs, Rank.Eight, 0),
+      Card.createCard(Suit.Diamonds, Rank.Nine, 0),
     ];
 
     gameState.players[1].hand = aiBotHand;
@@ -95,7 +94,7 @@ describe('Attacking Leading Strategy Bug Test', () => {
     // 3. Memory strategy suggests trump exhaustion
     gameState.tricks = Array(12).fill(null).map((_, i) => ({
       plays: [
-        { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}-lead`, rank: Rank.Queen, suit: Suit.Spades, points: 0 }] }
+        { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)] }
       ],
       points: 15,
       winningPlayerId: PlayerId.Human, // Opponents winning everything
@@ -103,10 +102,10 @@ describe('Attacking Leading Strategy Bug Test', () => {
 
     // Hand with strong trump suit cards
     const aiBotHand: Card[] = [
-      { id: 'ace-diamonds', rank: Rank.Ace, suit: Suit.Diamonds, points: 0 },
-      { id: 'king-diamonds', rank: Rank.King, suit: Suit.Diamonds, points: 10 },
-      { id: '10-diamonds', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 },
-      { id: '6-spades', rank: Rank.Six, suit: Suit.Spades, points: 0 },
+      Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+      Card.createCard(Suit.Diamonds, Rank.King, 0),
+      Card.createCard(Suit.Diamonds, Rank.Ten, 0),
+      Card.createCard(Suit.Spades, Rank.Six, 0),
     ];
 
     gameState.players[2].hand = aiBotHand;

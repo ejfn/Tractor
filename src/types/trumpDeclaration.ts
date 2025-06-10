@@ -1,5 +1,6 @@
 // Trump declaration types for dealing phase declarations
-import { PlayerId, Rank, Suit, Card, JokerType } from "./core";
+import { PlayerId } from "./core";
+import { Rank, Suit, Card, JokerType } from "./card";
 
 export enum DeclarationType {
   Single = "single", // One card of trump rank
@@ -22,6 +23,12 @@ export type TrumpDeclarationState = {
   declarationHistory: TrumpDeclaration[]; // All declarations made this round
   declarationWindow: boolean; // Whether declarations are currently allowed
 };
+
+export interface DeclarationOpportunity {
+  type: DeclarationType;
+  cards: Card[];
+  suit: Suit;
+}
 
 /**
  * Get numeric strength of declaration type for comparison

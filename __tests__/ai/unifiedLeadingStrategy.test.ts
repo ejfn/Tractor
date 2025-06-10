@@ -1,19 +1,13 @@
 import { getAIMove } from "../../src/ai/aiLogic";
-import { initializeGame } from "../../src/game/gameLogic";
-import { 
-  GameState, 
-  PlayerId, 
-  Rank, 
-  Suit, 
+
+import {
+  Card,
   GamePhase,
-  GamePhaseStrategy 
+  PlayerId,
+  Rank,
+  Suit
 } from "../../src/types";
-import { 
-  createCard, 
-  createGameState, 
-  createPlayer, 
-  createTrumpInfo
-} from "../helpers";
+import { initializeGame } from "../../src/utils/gameInitialization";
 
 describe("Unified Leading Strategy", () => {
   describe("Priority 1: Early Game Ace Leading", () => {
@@ -29,11 +23,11 @@ describe("Unified Leading Strategy", () => {
       // Give Bot1 a hand with non-trump Ace
       const bot1 = gameState.players[1];
       bot1.hand = [
-        createCard(Suit.Hearts, Rank.Ace), // Non-trump Ace - should be played
-        createCard(Suit.Hearts, Rank.King),
-        createCard(Suit.Clubs, Rank.Queen),
-        createCard(Suit.Diamonds, Rank.Jack),
-        createCard(Suit.Hearts, Rank.Ten),
+        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Non-trump Ace - should be played
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Clubs, Rank.Queen, 0),
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0),
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),
       ];
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
@@ -58,11 +52,11 @@ describe("Unified Leading Strategy", () => {
       // Give Bot1 a hand with trump suit Ace
       const bot1 = gameState.players[1];
       bot1.hand = [
-        createCard(Suit.Spades, Rank.Ace), // Trump suit Ace - should NOT be played
-        createCard(Suit.Hearts, Rank.King), // Non-trump King - should be played instead
-        createCard(Suit.Clubs, Rank.Queen),
-        createCard(Suit.Diamonds, Rank.Jack),
-        createCard(Suit.Hearts, Rank.Ten),
+        Card.createCard(Suit.Spades, Rank.Ace, 0), // Trump suit Ace - should NOT be played
+        Card.createCard(Suit.Hearts, Rank.King, 0), // Non-trump King - should be played instead
+        Card.createCard(Suit.Clubs, Rank.Queen, 0),
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0),
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),
       ];
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
@@ -87,11 +81,11 @@ describe("Unified Leading Strategy", () => {
       // Give Bot1 a hand with both Ace pair and single
       const bot1 = gameState.players[1];
       bot1.hand = [
-        createCard(Suit.Hearts, Rank.Ace), // Hearts Ace pair
-        createCard(Suit.Hearts, Rank.Ace), // Hearts Ace pair
-        createCard(Suit.Clubs, Rank.Ace),  // Clubs Ace single
-        createCard(Suit.Diamonds, Rank.King),
-        createCard(Suit.Diamonds, Rank.Queen),
+        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Hearts Ace pair
+        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Hearts Ace pair
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),  // Clubs Ace single
+        Card.createCard(Suit.Diamonds, Rank.King, 0),
+        Card.createCard(Suit.Diamonds, Rank.Queen, 0),
       ];
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
@@ -117,11 +111,11 @@ describe("Unified Leading Strategy", () => {
       // Give Bot1 complex hand with Ace and other high cards
       const bot1 = gameState.players[1];
       bot1.hand = [
-        createCard(Suit.Hearts, Rank.Ace), // Should be selected despite other logic
-        createCard(Suit.Clubs, Rank.Two),  // Trump rank card
-        createCard(Suit.Spades, Rank.King), // Trump suit high card
-        createCard(Suit.Diamonds, Rank.Ten), // Point card
-        createCard(Suit.Hearts, Rank.Five), // Point card
+        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Should be selected despite other logic
+        Card.createCard(Suit.Clubs, Rank.Two, 0),  // Trump rank card
+        Card.createCard(Suit.Spades, Rank.King, 0), // Trump suit high card
+        Card.createCard(Suit.Diamonds, Rank.Ten, 0), // Point card
+        Card.createCard(Suit.Hearts, Rank.Five, 0), // Point card
       ];
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
@@ -168,11 +162,11 @@ describe("Unified Leading Strategy", () => {
       // Give Bot1 hand with various cards but no Aces
       const bot1 = gameState.players[1];
       bot1.hand = [
-        createCard(Suit.Hearts, Rank.Seven), // Safe card
-        createCard(Suit.Clubs, Rank.Eight),  // Safe card
-        createCard(Suit.Diamonds, Rank.Nine), // Safe card
-        createCard(Suit.Hearts, Rank.Ten),   // Point card
-        createCard(Suit.Spades, Rank.King),  // Trump suit high card
+        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Safe card
+        Card.createCard(Suit.Clubs, Rank.Eight, 0),  // Safe card
+        Card.createCard(Suit.Diamonds, Rank.Nine, 0), // Safe card
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),   // Point card
+        Card.createCard(Suit.Spades, Rank.King, 0),  // Trump suit high card
       ];
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);

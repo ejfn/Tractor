@@ -1,13 +1,12 @@
 import {
   Card,
-  GameState,
   GamePhase,
+  GameState,
   PlayerId,
   Rank,
   Suit,
   Trick,
 } from '../../src/types';
-import { createCard } from './cards';
 import { createTrumpInfo } from './trump';
 
 // ============================================================================
@@ -19,19 +18,19 @@ import { createTrumpInfo } from './trump';
  * Note: These are configuration objects, not the actual mock setup
  */
 export const mockConfigs = {
-  gameLogic: {
-    initializeGame: jest.fn(),
+  comboDetection: {
     identifyCombos: jest.fn(),
-    isValidPlay: jest.fn(),
+  },
+  
+  gameHelpers: {
     isTrump: jest.fn(),
-    humanHasTrumpRank: jest.fn().mockReturnValue(false)
   },
   
   aiLogic: {
     getAIMove: jest.fn()
   },
   
-  gamePlayManager: {
+  playProcessing: {
     processPlay: jest.fn(),
     validatePlay: jest.fn(),
     getAIMoveWithErrorHandling: jest.fn()
@@ -138,7 +137,7 @@ export const createLargeGameState = (): GameState => {
     for (let cardIndex = 0; cardIndex < 25; cardIndex++) {
       const suit = allSuits[cardIndex % allSuits.length];
       const rank = allRanks[Math.floor(cardIndex / allSuits.length) % allRanks.length];
-      cards.push(createCard(suit, rank, `player_${playerIndex}_card_${cardIndex}`));
+      cards.push(Card.createCard(suit, rank, 0));
     }
     state = givePlayerCards(state, playerIndex, cards);
   }
@@ -148,11 +147,11 @@ export const createLargeGameState = (): GameState => {
   for (let i = 0; i < 10; i++) {
     tricks.push(createCompletedTrick(
       PlayerId.Human,
-      [createCard(Suit.Hearts, Rank.Three, `trick_${i}_lead`)],
+      [Card.createCard(Suit.Hearts, Rank.Three, 0)],
       [
-        { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Four, `trick_${i}_bot1`)] },
-        { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Five, `trick_${i}_bot2`)] },
-        { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.Six, `trick_${i}_bot3`)] }
+        { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Four, 0)] },
+        { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] },
+        { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)] }
       ],
       PlayerId.Bot3
     ));
@@ -191,7 +190,7 @@ export const createInvalidGameStates = {
   inconsistentTrump: () => {
     const { createGameState } = require('./gameStates');
     return createGameState({
-      trumpInfo: createTrumpInfo(Rank.Two, undefined) // No trump declared
+      trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades) // Inconsistent trump info
     });
   },
 

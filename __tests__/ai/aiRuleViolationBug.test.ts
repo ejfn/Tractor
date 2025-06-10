@@ -1,7 +1,9 @@
 import { GameState, Card, PlayerId, Suit, Rank, TrumpInfo, PlayerName, TeamId } from '../../src/types';
 import { getAIMove } from '../../src/ai/aiLogic';
-import { getValidCombinations, isValidPlay, isTrump } from '../../src/game/gameLogic';
-import { createCard, createGameState, createTrumpInfo } from '../helpers';
+import { getValidCombinations } from '../../src/game/combinationGeneration';
+import { isValidPlay } from '../../src/game/playValidation';
+import { isTrump } from '../../src/game/gameHelpers';
+import { createGameState, createTrumpInfo } from '../helpers';
 
 describe('AI Rule Violation Bug - Issue #95', () => {
   test('AI should not play random singles when it cannot form a pair from leading suit', () => {
@@ -13,18 +15,15 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     };
 
     // Create leading combo: pair of Hearts (non-trump)
-    const leadingCombo = [
-      createCard(Suit.Hearts, Rank.Five, 'h5_1'),
-      createCard(Suit.Hearts, Rank.Five, 'h5_2')
-    ];
+    const leadingCombo = Card.createPair(Suit.Hearts, Rank.Five);
 
     // Create AI hand that has some Hearts but cannot form a pair
     const aiHand = [
-      createCard(Suit.Hearts, Rank.Three, 'h3_1'),    // One Heart (must play)
-      createCard(Suit.Clubs, Rank.Four, 'c4_1'),      // Non-trump, non-Hearts
-      createCard(Suit.Clubs, Rank.Six, 'c6_1'),       // Non-trump, non-Hearts  
-      createCard(Suit.Diamonds, Rank.Seven, 'd7_1'),  // Non-trump, non-Hearts
-      createCard(Suit.Diamonds, Rank.Eight, 'd8_1')   // Non-trump, non-Hearts
+      Card.createCard(Suit.Hearts, Rank.Three, 0),    // One Heart (must play)
+      Card.createCard(Suit.Clubs, Rank.Four, 0),      // Non-trump, non-Hearts
+      Card.createCard(Suit.Clubs, Rank.Six, 0),       // Non-trump, non-Hearts  
+      Card.createCard(Suit.Diamonds, Rank.Seven, 0),  // Non-trump, non-Hearts
+      Card.createCard(Suit.Diamonds, Rank.Eight, 0)   // Non-trump, non-Hearts
     ];
 
     const gameState: GameState = createGameState({
@@ -78,17 +77,13 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     };
 
     // Leading combo: pair of Hearts
-    const leadingCombo = [
-      createCard(Suit.Hearts, Rank.Five, 'h5_1'),
-      createCard(Suit.Hearts, Rank.Five, 'h5_2')
-    ];
+    const leadingCombo = Card.createPair(Suit.Hearts, Rank.Five);
 
     // AI has no Hearts at all - can play any cards
     const aiHand = [
-      createCard(Suit.Clubs, Rank.Four, 'c4_1'),
-      createCard(Suit.Clubs, Rank.Four, 'c4_2'),      // Valid pair option
-      createCard(Suit.Diamonds, Rank.Seven, 'd7_1'),
-      createCard(Suit.Diamonds, Rank.Eight, 'd8_1')
+      ...Card.createPair(Suit.Clubs, Rank.Four),      // Valid pair option
+      Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+      Card.createCard(Suit.Diamonds, Rank.Eight, 0)
     ];
 
     const gameState: GameState = createGameState({
@@ -121,16 +116,13 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     };
 
     // Leading combo: pair of Hearts
-    const leadingCombo = [
-      createCard(Suit.Hearts, Rank.Five, 'h5_1'),
-      createCard(Suit.Hearts, Rank.Five, 'h5_2')
-    ];
+    const leadingCombo = Card.createPair(Suit.Hearts, Rank.Five);
 
     // AI has exactly one Hearts card - must play it plus one other
     const aiHand = [
-      createCard(Suit.Hearts, Rank.Three, 'h3_1'),    // Must play this
-      createCard(Suit.Clubs, Rank.Four, 'c4_1'),      // Can play this as second card
-      createCard(Suit.Diamonds, Rank.Seven, 'd7_1')
+      Card.createCard(Suit.Hearts, Rank.Three, 0),    // Must play this
+      Card.createCard(Suit.Clubs, Rank.Four, 0),      // Can play this as second card
+      Card.createCard(Suit.Diamonds, Rank.Seven, 0)
     ];
 
     const gameState: GameState = createGameState({
@@ -172,19 +164,17 @@ describe('AI Rule Violation Bug - Issue #95', () => {
 
     // Leading combo: tractor in Hearts (requires complex following)
     const leadingCombo = [
-      createCard(Suit.Hearts, Rank.Five, 'h5_1'),
-      createCard(Suit.Hearts, Rank.Five, 'h5_2'),
-      createCard(Suit.Hearts, Rank.Six, 'h6_1'),
-      createCard(Suit.Hearts, Rank.Six, 'h6_2')
+      ...Card.createPair(Suit.Hearts, Rank.Five),
+      ...Card.createPair(Suit.Hearts, Rank.Six)
     ];
 
     // AI has partial Hearts but cannot form tractor - should play all Hearts + other cards
     const aiHand = [
-      createCard(Suit.Hearts, Rank.Three, 'h3_1'),    // Must play
-      createCard(Suit.Hearts, Rank.Seven, 'h7_1'),    // Must play  
-      createCard(Suit.Clubs, Rank.Four, 'c4_1'),      // Can play as 3rd card
-      createCard(Suit.Diamonds, Rank.Eight, 'd8_1'),  // Can play as 4th card
-      createCard(Suit.Diamonds, Rank.Nine, 'd9_1')    // Extra card
+      Card.createCard(Suit.Hearts, Rank.Three, 0),    // Must play
+      Card.createCard(Suit.Hearts, Rank.Seven, 0),    // Must play  
+      Card.createCard(Suit.Clubs, Rank.Four, 0),      // Can play as 3rd card
+      Card.createCard(Suit.Diamonds, Rank.Eight, 0),  // Can play as 4th card
+      Card.createCard(Suit.Diamonds, Rank.Nine, 0)    // Extra card
     ];
 
     const gameState: GameState = createGameState({
@@ -229,17 +219,14 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     };
 
     // Leading combo: trump pair
-    const leadingCombo = [
-      createCard(Suit.Hearts, Rank.King, 'hk_1'),
-      createCard(Suit.Hearts, Rank.King, 'hk_2')
-    ];
+    const leadingCombo = Card.createPair(Suit.Hearts, Rank.King);
 
     // AI has some trump but cannot form pair - complex scenario
     const aiHand = [
-      createCard(Suit.Hearts, Rank.Three, 'h3_1'),    // Trump card (must play)
-      createCard(Suit.Clubs, Rank.Ace, 'ca_1'),       // Trump rank in non-trump suit
-      createCard(Suit.Diamonds, Rank.Four, 'd4_1'),   // Non-trump
-      createCard(Suit.Diamonds, Rank.Five, 'd5_1')    // Non-trump
+      Card.createCard(Suit.Hearts, Rank.Three, 0),    // Trump card (must play)
+      Card.createCard(Suit.Clubs, Rank.Ace, 0),       // Trump rank in non-trump suit
+      Card.createCard(Suit.Diamonds, Rank.Four, 0),   // Non-trump
+      Card.createCard(Suit.Diamonds, Rank.Five, 0)    // Non-trump
     ];
 
     const gameState: GameState = createGameState({

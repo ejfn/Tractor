@@ -1,7 +1,6 @@
-import { GameState, Rank } from "../../src/types";
-import { initializeGame } from '../../src/game/gameLogic';
-import { processPlay } from '../../src/game/gamePlayManager';
-import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+
+import { getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Full Game Simulation', () => {
   test('Play complete game monitoring all card counts', () => {

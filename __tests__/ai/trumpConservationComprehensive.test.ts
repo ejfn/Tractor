@@ -1,8 +1,6 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { initializeGame } from '../../src/game/gameLogic';
-import { PlayerId, Rank, Suit, GamePhase, JokerType } from '../../src/types';
-import type { GameState, Card } from '../../src/types';
-import { createJoker } from '../helpers/cards';
+import { Card, GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () => {
   describe('AI Trump Card Selection When Opponent Winning', () => {
@@ -17,15 +15,15 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       // Bot has multiple trump options: trump rank (valuable) + trump suit (weak)
       const botHand: Card[] = [
-        { id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank off-suit (conservation: 70)
-        { id: '3-spades', rank: Rank.Three, suit: Suit.Spades, points: 0 }, // Weakest trump suit (conservation: 5)
-        { id: '4-spades', rank: Rank.Four, suit: Suit.Spades, points: 0 }, // Weak trump suit (conservation: 10)
-        { id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }, // Non-trump
+        Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank off-suit (conservation: 70)
+        Card.createCard(Suit.Spades, Rank.Three, 0), // Weakest trump suit (conservation: 5)
+        Card.createCard(Suit.Spades, Rank.Four, 0), // Weak trump suit (conservation: 10)
+        Card.createCard(Suit.Clubs, Rank.Ace, 0), // Non-trump
       ];
       gameState.players[1].hand = botHand;
 
       // Opponent is winning with higher trump
-      const smallJoker = createJoker(JokerType.Small, 'small-joker');
+      const smallJoker = Card.createJoker(JokerType.Small, 0);
       gameState.currentTrick = {
         plays: [
           {
@@ -63,15 +61,15 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       // Bot has trump rank in multiple off-suits + weak trump suit cards
       const botHand: Card[] = [
-        { id: '2-spades', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Trump rank (conservation: 70)
-        { id: '2-clubs', rank: Rank.Two, suit: Suit.Clubs, points: 0 }, // Trump rank (conservation: 70)
-        { id: '3-hearts', rank: Rank.Three, suit: Suit.Hearts, points: 0 }, // Weakest trump suit (conservation: 5)
-        { id: '4-hearts', rank: Rank.Four, suit: Suit.Hearts, points: 0 }, // Weak trump suit (conservation: 10)
+        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank (conservation: 70)
+        Card.createCard(Suit.Clubs, Rank.Two, 0), // Trump rank (conservation: 70)
+        Card.createCard(Suit.Hearts, Rank.Three, 0), // Weakest trump suit (conservation: 5)
+        Card.createCard(Suit.Hearts, Rank.Four, 0), // Weak trump suit (conservation: 10)
       ];
       gameState.players[2].hand = botHand;
 
       // Opponent winning with unbeatable trump
-      const bigJoker = createJoker(JokerType.Big, 'big-joker');
+      const bigJoker = Card.createJoker(JokerType.Big, 0);
       gameState.currentTrick = {
         plays: [
           {
@@ -107,10 +105,10 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       // Bot has point cards and trump cards
       const botHand: Card[] = [
-        { id: '5-diamonds', rank: Rank.Five, suit: Suit.Diamonds, points: 5 }, // Trump suit with points (conservation: 15)
-        { id: '10-diamonds', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }, // Trump suit with points (conservation: 40)
-        { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 }, // Weakest trump suit, no points (conservation: 5)
-        { id: '5-hearts', rank: Rank.Five, suit: Suit.Hearts, points: 5 }, // Non-trump point card
+        Card.createCard(Suit.Diamonds, Rank.Five, 0), // Trump suit with points (conservation: 15)
+        Card.createCard(Suit.Diamonds, Rank.Ten, 0), // Trump suit with points (conservation: 40)
+        Card.createCard(Suit.Diamonds, Rank.Three, 0), // Weakest trump suit, no points (conservation: 5)
+        Card.createCard(Suit.Hearts, Rank.Five, 0), // Non-trump point card
       ];
       gameState.players[3].hand = botHand;
 
@@ -119,7 +117,7 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
         plays: [
           {
             playerId: PlayerId.Human,
-            cards: [{ id: '2-diamonds', rank: Rank.Two, suit: Suit.Diamonds, points: 0 }],
+            cards: [Card.createCard(Suit.Diamonds, Rank.Two, 0)],
           }
         ],
         points: 0,
@@ -151,10 +149,10 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       // Bot has multiple low trump suit cards
       const botHand: Card[] = [
-        { id: '3-clubs', rank: Rank.Three, suit: Suit.Clubs, points: 0 }, // Weakest trump suit (conservation: 5)
-        { id: '4-clubs', rank: Rank.Four, suit: Suit.Clubs, points: 0 }, // Weak trump suit (conservation: 10) 
-        { id: '6-clubs', rank: Rank.Six, suit: Suit.Clubs, points: 0 }, // Weak trump suit (conservation: 20)
-        { id: 'ace-hearts', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }, // Trump rank off-suit (conservation: 70)
+        Card.createCard(Suit.Clubs, Rank.Three, 0), // Weakest trump suit (conservation: 5)
+        Card.createCard(Suit.Clubs, Rank.Four, 0), // Weak trump suit (conservation: 10) 
+        Card.createCard(Suit.Clubs, Rank.Six, 0), // Weak trump suit (conservation: 20)
+        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Trump rank off-suit (conservation: 70)
       ];
       gameState.players[1].hand = botHand;
 
@@ -163,7 +161,7 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
         plays: [
           {
             playerId: PlayerId.Bot2,
-            cards: [{ id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }],
+            cards: [Card.createCard(Suit.Clubs, Rank.Ace, 0)],
           }
         ],
         points: 0,
@@ -197,16 +195,14 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       // Bot has trump singles and non-trump pair
       const botHand: Card[] = [
-        { id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank off-suit
-        { id: '3-spades', rank: Rank.Three, suit: Suit.Spades, points: 0 }, // Weak trump suit
-        { id: 'ace-hearts-1', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }, // Non-trump  
-        { id: 'ace-hearts-2', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }, // Non-trump (forms pair)
+        Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump rank off-suit
+        Card.createCard(Suit.Spades, Rank.Three, 0), // Weak trump suit
+        ...Card.createPair(Suit.Hearts, Rank.Ace), // Non-trump pair
       ];
       gameState.players[1].hand = botHand;
 
       // Opponent leads trump pair (must follow with trump)
-      const smallJoker1 = createJoker(JokerType.Small, 'small-joker-1');
-      const smallJoker2 = createJoker(JokerType.Small, 'small-joker-2');
+      const [smallJoker1, smallJoker2] = Card.createJokerPair(JokerType.Small);
       gameState.currentTrick = {
         plays: [
           {
@@ -250,15 +246,15 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       // Bot has only trump cards of various values
       const botHand: Card[] = [
-        { id: 'king-hearts', rank: Rank.King, suit: Suit.Hearts, points: 10 }, // Trump rank in trump suit (conservation: 80)
-        { id: 'king-spades', rank: Rank.King, suit: Suit.Spades, points: 10 }, // Trump rank off-suit (conservation: 70)
-        { id: '3-hearts', rank: Rank.Three, suit: Suit.Hearts, points: 0 }, // Weakest trump suit (conservation: 5)
-        { id: '4-hearts', rank: Rank.Four, suit: Suit.Hearts, points: 0 }, // Weak trump suit (conservation: 10)
+        Card.createCard(Suit.Hearts, Rank.King, 0), // Trump rank in trump suit (conservation: 80)
+        Card.createCard(Suit.Spades, Rank.King, 0), // Trump rank off-suit (conservation: 70)
+        Card.createCard(Suit.Hearts, Rank.Three, 0), // Weakest trump suit (conservation: 5)
+        Card.createCard(Suit.Hearts, Rank.Four, 0), // Weak trump suit (conservation: 10)
       ];
       gameState.players[2].hand = botHand;
 
       // Opponent leads with unbeatable trump
-      const bigJoker2 = createJoker(JokerType.Big, 'big-joker-2');
+      const bigJoker2 = Card.createJoker(JokerType.Big, 0);
       gameState.currentTrick = {
         plays: [
           {
@@ -297,17 +293,17 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       };
 
       // Complex hand with all trump types
-      const bigJokerInHand = createJoker(JokerType.Big, 'big-joker-in-hand');
+      const bigJokerInHand = Card.createJoker(JokerType.Big, 0);
       const botHand: Card[] = [
         bigJokerInHand, // Conservation: 100
-        { id: '2-diamonds', rank: Rank.Two, suit: Suit.Diamonds, points: 0 }, // Conservation: 80  
-        { id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Conservation: 70
-        { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 }, // Conservation: 5 (SHOULD PLAY)
+        Card.createCard(Suit.Diamonds, Rank.Two, 0), // Conservation: 80  
+        Card.createCard(Suit.Hearts, Rank.Two, 0), // Conservation: 70
+        Card.createCard(Suit.Diamonds, Rank.Three, 0), // Conservation: 5 (SHOULD PLAY)
       ];
       gameState.players[3].hand = botHand;
 
       // Opponent winning with maximum trump
-      const smallJokerOpponent = createJoker(JokerType.Small, 'small-joker-opponent');
+      const smallJokerOpponent = Card.createJoker(JokerType.Small, 0);
       gameState.currentTrick = {
         plays: [
           {
@@ -362,14 +358,14 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
         // Create hand with weak trump suit and valuable trump rank off-suit
         const offSuit = trumpSuit === Suit.Hearts ? Suit.Clubs : Suit.Hearts;
         const botHand: Card[] = [
-          { id: `${trumpRank.toLowerCase()}-${offSuit.toLowerCase()}`, rank: trumpRank, suit: offSuit, points: 0 }, // Trump rank off-suit
-          { id: `3-${trumpSuit.toLowerCase()}`, rank: Rank.Three, suit: trumpSuit, points: 0 }, // Weak trump suit
+          Card.createCard(offSuit, trumpRank, 0), // Trump rank off-suit
+          Card.createCard(trumpSuit, Rank.Three, 0), // Weak trump suit
         ];
         
         gameState.players[1].hand = botHand;
 
         // Opponent winning with unbeatable card
-        const bigJokerLoop = createJoker(JokerType.Big, 'big-joker-loop');
+        const bigJokerLoop = Card.createJoker(JokerType.Big, 0);
         gameState.currentTrick = {
             plays: [
             {

@@ -1,5 +1,5 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { isValidPlay } from '../../src/game/gameLogic';
+import { isValidPlay } from '../../src/game/playValidation';
 import { createIsolatedGameState } from '../helpers/testIsolation';
 import { Card, Suit, Rank, ComboType, TrumpInfo, PlayerId, JokerType } from '../../src/types';
 
@@ -17,22 +17,7 @@ describe('AI Trump Following Behavior', () => {
     gameState.trumpInfo = trumpInfo;
     
     // Leading trump pair (6♠-6♠)
-    const leadingTrumpPair: Card[] = [
-      {
-        id: 'spades-6-1',
-        suit: Suit.Spades,
-        rank: Rank.Six,
-        joker: undefined,
-        points: 0
-      },
-      {
-        id: 'spades-6-2', 
-        suit: Suit.Spades,
-        rank: Rank.Six,
-        joker: undefined,
-        points: 0
-      }
-    ];
+    const leadingTrumpPair: Card[] = Card.createPair(Suit.Spades, Rank.Six);
     
     // Set up leading combo
     gameState.currentTrick = {
@@ -49,50 +34,13 @@ describe('AI Trump Following Behavior', () => {
     
     const bot1Hand: Card[] = [
       // Trump singles (Spades) - cannot form pairs
-      {
-        id: 'spades-3-1',
-        suit: Suit.Spades,
-        rank: Rank.Three,
-        joker: undefined,
-        points: 0
-      },
-      {
-        id: 'spades-4-1',
-        suit: Suit.Spades,
-        rank: Rank.Four,
-        joker: undefined,
-        points: 0
-      },
+      Card.createCard(Suit.Spades, Rank.Three, 0),
+      Card.createCard(Suit.Spades, Rank.Four, 0),
       // Attractive non-trump pair (Aces)
-      {
-        id: 'hearts-ace-1',
-        suit: Suit.Hearts,
-        rank: Rank.Ace,
-        joker: undefined,
-        points: 0
-      },
-      {
-        id: 'hearts-ace-2',
-        suit: Suit.Hearts,
-        rank: Rank.Ace,
-        joker: undefined,
-        points: 0
-      },
+      ...Card.createPair(Suit.Hearts, Rank.Ace),
       // Other cards
-      {
-        id: 'clubs-7-1',
-        suit: Suit.Clubs,
-        rank: Rank.Seven,
-        joker: undefined,
-        points: 0
-      },
-      {
-        id: 'diamonds-8-1',
-        suit: Suit.Diamonds,
-        rank: Rank.Eight,
-        joker: undefined,
-        points: 0
-      }
+      Card.createCard(Suit.Clubs, Rank.Seven, 0),
+      Card.createCard(Suit.Diamonds, Rank.Eight, 0)
     ];
     
     gameState.players[bot1Index].hand = bot1Hand;
@@ -122,22 +70,7 @@ describe('AI Trump Following Behavior', () => {
     gameState.trumpInfo = trumpInfo;
     
     // Leading trump pair (3♥-3♥)
-    const leadingTrumpPair: Card[] = [
-      {
-        id: 'hearts-3-1',
-        suit: Suit.Hearts,
-        rank: Rank.Three,
-        joker: undefined,
-        points: 0
-      },
-      {
-        id: 'hearts-3-2', 
-        suit: Suit.Hearts,
-        rank: Rank.Three,
-        joker: undefined,
-        points: 0
-      }
-    ];
+    const leadingTrumpPair: Card[] = Card.createPair(Suit.Hearts, Rank.Three);
     
     // Set up leading combo
     gameState.currentTrick = {
@@ -155,50 +88,12 @@ describe('AI Trump Following Behavior', () => {
     
     const aiHand: Card[] = [
       // Trump cards (Hearts) - has trump pairs available
-      {
-        id: 'hearts-4-1',
-        suit: Suit.Hearts,
-        rank: Rank.Four,
-        joker: undefined,
-        points: 0
-      },
-      {
-        id: 'hearts-4-2',
-        suit: Suit.Hearts, 
-        rank: Rank.Four,
-        joker: undefined,
-        points: 0
-      },
-      {
-        id: 'hearts-5-1',
-        suit: Suit.Hearts,
-        rank: Rank.Five,
-        joker: undefined,
-        points: 5
-      },
+      ...Card.createPair(Suit.Hearts, Rank.Four),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
       // Non-trump pair (Spades) 
-      {
-        id: 'spades-6-1',
-        suit: Suit.Spades,
-        rank: Rank.Six,
-        joker: undefined,
-        points: 0
-      },
-      {
-        id: 'spades-6-2',
-        suit: Suit.Spades,
-        rank: Rank.Six,
-        joker: undefined,
-        points: 0
-      },
+      ...Card.createPair(Suit.Spades, Rank.Six),
       // Other cards
-      {
-        id: 'clubs-7-1',
-        suit: Suit.Clubs,
-        rank: Rank.Seven,
-        joker: undefined,
-        points: 0
-      }
+      Card.createCard(Suit.Clubs, Rank.Seven, 0)
     ];
     
     gameState.players[aiPlayerIndex].hand = aiHand;

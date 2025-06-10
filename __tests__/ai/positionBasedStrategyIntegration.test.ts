@@ -1,7 +1,8 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { initializeGame } from '../../src/game/gameLogic';
-import { PlayerId, Rank, Suit, GamePhase, TrickPosition } from '../../src/types';
-import type { GameState } from '../../src/types';
+
+import type { DeckId } from '../../src/types';
+import { Card, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Position-Based Strategy Integration Tests - First and Second Player Strategies', () => {
   describe('First Player (Leading) Strategy', () => {
@@ -16,11 +17,11 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
 
       // AI Bot1 leading hand with strategic options
       const aiBotHand = [
-        { id: 'ace-spades', rank: Rank.Ace, suit: Suit.Spades, points: 0 },     // Strong non-trump
-        { id: 'king-clubs', rank: Rank.King, suit: Suit.Clubs, points: 10 },    // Point card
-        { id: '7-diamonds', rank: Rank.Seven, suit: Suit.Diamonds, points: 0 }, // Probe card
-        { id: '3-hearts', rank: Rank.Three, suit: Suit.Hearts, points: 0 },     // Weak trump
-        { id: '8-spades', rank: Rank.Eight, suit: Suit.Spades, points: 0 },     // Medium card
+        Card.createCard(Suit.Spades, Rank.Ace, 0),     // Strong non-trump
+        Card.createCard(Suit.Clubs, Rank.King, 0),    // Point card
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0), // Probe card
+        Card.createCard(Suit.Hearts, Rank.Three, 0),     // Weak trump
+        Card.createCard(Suit.Spades, Rank.Eight, 0),     // Medium card
       ];
 
       gameState.players[1].hand = aiBotHand;
@@ -55,16 +56,16 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
       // Simulate mid-game scenario with some tricks played
       gameState.tricks = Array(5).fill(null).map((_, i) => ({
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: `dummy-${i}`, rank: Rank.King, suit: Suit.Spades, points: 10 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.King, i % 2 as DeckId)] }
         ],
         points: 10,
         winningPlayerId: PlayerId.Human,
       }));
 
       const aiBotHand = [
-        { id: 'ace-hearts', rank: Rank.Ace, suit: Suit.Hearts, points: 0 },
-        { id: '10-spades', rank: Rank.Ten, suit: Suit.Spades, points: 10 },
-        { id: '5-clubs', rank: Rank.Five, suit: Suit.Clubs, points: 5 },
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Clubs, Rank.Five, 0),
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -93,7 +94,7 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
       // Setup trick with Human leading (teammate to Bot2)
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Human, cards: [{ id: 'lead-ace', rank: Rank.Ace, suit: Suit.Hearts, points: 0 }] }
+          { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] }
         ],
         winningPlayerId: PlayerId.Human,
         points: 0,
@@ -101,10 +102,10 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
 
       // Bot2 second to play (teammate of Human)
       const aiBotHand = [
-        { id: 'king-hearts', rank: Rank.King, suit: Suit.Hearts, points: 10 },   // Point card same suit
-        { id: '10-hearts', rank: Rank.Ten, suit: Suit.Hearts, points: 10 },     // Point card same suit
-        { id: '7-hearts', rank: Rank.Seven, suit: Suit.Hearts, points: 0 },     // Safe same suit
-        { id: '3-spades', rank: Rank.Three, suit: Suit.Spades, points: 0 },     // Trump
+        Card.createCard(Suit.Hearts, Rank.King, 0),   // Point card same suit
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),     // Point card same suit
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),     // Safe same suit
+        Card.createCard(Suit.Spades, Rank.Three, 0),     // Trump
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -133,7 +134,7 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
       // Setup trick with Bot1 leading (opponent to Bot2)
       gameState.currentTrick = {
         plays: [
-          { playerId: PlayerId.Bot1, cards: [{ id: 'lead-ten', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }] }
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Ten, 0)] }
         ],
         winningPlayerId: PlayerId.Bot1,
         points: 10,
@@ -141,10 +142,10 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
 
       // Bot2 second to play (opponent of Bot1)
       const aiBotHand = [
-        { id: 'ace-diamonds', rank: Rank.Ace, suit: Suit.Diamonds, points: 0 },    // Strong same suit
-        { id: 'king-diamonds', rank: Rank.King, suit: Suit.Diamonds, points: 10 }, // Point card same suit
-        { id: '5-diamonds', rank: Rank.Five, suit: Suit.Diamonds, points: 5 },     // Small point
-        { id: '2-clubs', rank: Rank.Two, suit: Suit.Clubs, points: 0 },           // Trump rank
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),    // Strong same suit
+        Card.createCard(Suit.Diamonds, Rank.King, 0), // Point card same suit
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),     // Small point
+        Card.createCard(Suit.Clubs, Rank.Two, 0),           // Trump rank
       ];
 
       gameState.players[2].hand = aiBotHand;
@@ -176,8 +177,8 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
       };
 
       const aiBotHand = [
-        { id: 'ace-spades', rank: Rank.Ace, suit: Suit.Spades, points: 0 },
-        { id: 'king-clubs', rank: Rank.King, suit: Suit.Clubs, points: 10 },
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 0),
       ];
 
       gameState.players[1].hand = aiBotHand;

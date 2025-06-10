@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Card as CardType, Player, PlayerId, Trick, TrumpInfo } from "../types"; // Using Card as CardType to avoid naming conflict
-import { isTrump } from "../game/gameLogic";
+import { isTrump } from "../game/gameHelpers";
 import {
   ANIMATION_COMPLETION_DELAY,
   CARD_ANIMATION_FALLBACK,
@@ -205,12 +205,11 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
 
       play.cards.forEach((card, idx) => {
         // Each card gets a unique global play order number
-        const cardWithSequence = {
-          ...card,
+        const cardWithSequence = Object.assign(card, {
           playSequence: sequence,
           cardIndex: idx, // Index within this player's combo
           globalPlayOrder: globalPlayOrder++, // Increment for each card played
-        };
+        });
 
         if (pos === "top") topCards.push(cardWithSequence);
         if (pos === "left") leftCards.push(cardWithSequence);

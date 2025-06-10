@@ -1,10 +1,8 @@
-import {
-  getComboType,
-  identifyCombos,
-  isTrump,
-  compareCards,
-  compareCardCombos
-} from '../../src/game/gameLogic';
+
+import { compareCards } from "../../src/game/cardComparison";
+import { identifyCombos } from "../../src/game/comboDetection";
+import { isTrump } from "../../src/game/gameHelpers";
+import { compareCardCombos } from "../../src/game/playProcessing";
 import {
   Card,
   ComboType,
@@ -13,7 +11,6 @@ import {
   Suit,
   TrumpInfo
 } from "../../src/types";
-import { createCard, createJoker } from '../helpers/cards';
 
 /**
  * Comprehensive Trump System Tests
@@ -37,8 +34,8 @@ describe('Trump System', () => {
 
   describe('Trump Pair Formation', () => {
     test('should identify trump rank pairs in trump suit', () => {
-      const fourSpades1 = createCard(Suit.Spades, Rank.Four, 'Spades_4_1');
-      const fourSpades2 = createCard(Suit.Spades, Rank.Four, 'Spades_4_2');
+      const fourSpades1 = Card.createCard(Suit.Spades, Rank.Four, 0);
+      const fourSpades2 = Card.createCard(Suit.Spades, Rank.Four, 1);
       
       const cards = [fourSpades1, fourSpades2];
       const combos = identifyCombos(cards, trumpInfo);
@@ -50,8 +47,8 @@ describe('Trump System', () => {
     });
 
     test('should identify trump rank pairs in non-trump suits', () => {
-      const fourDiamonds1 = createCard(Suit.Diamonds, Rank.Four, 'Diamonds_4_1');
-      const fourDiamonds2 = createCard(Suit.Diamonds, Rank.Four, 'Diamonds_4_2');
+      const fourDiamonds1 = Card.createCard(Suit.Diamonds, Rank.Four, 0);
+      const fourDiamonds2 = Card.createCard(Suit.Diamonds, Rank.Four, 1);
       
       const cards = [fourDiamonds1, fourDiamonds2];
       const combos = identifyCombos(cards, trumpInfo);
@@ -63,8 +60,8 @@ describe('Trump System', () => {
     });
 
     test('should identify Big Joker pairs', () => {
-      const bigJoker1 = createJoker(JokerType.Big, 'BJ1');
-      const bigJoker2 = createJoker(JokerType.Big, 'BJ2');
+      const bigJoker1 = Card.createJoker(JokerType.Big, 0);
+      const bigJoker2 = Card.createJoker(JokerType.Big, 1);
       
       const cards = [bigJoker1, bigJoker2];
       const combos = identifyCombos(cards, trumpInfo);
@@ -76,8 +73,8 @@ describe('Trump System', () => {
     });
 
     test('should identify Small Joker pairs', () => {
-      const smallJoker1 = createJoker(JokerType.Small, 'SJ1');
-      const smallJoker2 = createJoker(JokerType.Small, 'SJ2');
+      const smallJoker1 = Card.createJoker(JokerType.Small, 0);
+      const smallJoker2 = Card.createJoker(JokerType.Small, 1);
       
       const cards = [smallJoker1, smallJoker2];
       const combos = identifyCombos(cards, trumpInfo);
@@ -89,8 +86,8 @@ describe('Trump System', () => {
     });
 
     test('should identify trump rank pairs across suits', () => {
-      const fourSpades = createCard(Suit.Spades, Rank.Four, 'Spades_4');
-      const fourDiamonds = createCard(Suit.Diamonds, Rank.Four, 'Diamonds_4');
+      const fourSpades = Card.createCard(Suit.Spades, Rank.Four, 0);
+      const fourDiamonds = Card.createCard(Suit.Diamonds, Rank.Four, 0);
       
       const cards = [fourSpades, fourDiamonds];
       const combos = identifyCombos(cards, trumpInfo);
@@ -108,8 +105,8 @@ describe('Trump System', () => {
     });
 
     test('should not identify mixed joker pairs', () => {
-      const bigJoker = createJoker(JokerType.Big, 'BJ');
-      const smallJoker = createJoker(JokerType.Small, 'SJ');
+      const bigJoker = Card.createJoker(JokerType.Big, 0);
+      const smallJoker = Card.createJoker(JokerType.Small, 0);
       
       const cards = [bigJoker, smallJoker];
       const combos = identifyCombos(cards, trumpInfo);
@@ -124,11 +121,11 @@ describe('Trump System', () => {
     test('should order trump cards correctly: BJ > SJ > trump rank in trump suit > trump rank in other suits > trump suit cards', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
-      const bigJoker = createJoker(JokerType.Big);
-      const smallJoker = createJoker(JokerType.Small);
-      const twoHearts = createCard(Suit.Hearts, Rank.Two); // Trump rank in trump suit
-      const twoSpades = createCard(Suit.Spades, Rank.Two); // Trump rank in other suit
-      const aceHearts = createCard(Suit.Hearts, Rank.Ace); // Trump suit card
+      const bigJoker = Card.createJoker(JokerType.Big, 0);
+      const smallJoker = Card.createJoker(JokerType.Small, 0);
+      const twoHearts = Card.createCard(Suit.Hearts, Rank.Two, 0); // Trump rank in trump suit
+      const twoSpades = Card.createCard(Suit.Spades, Rank.Two, 0); // Trump rank in other suit
+      const aceHearts = Card.createCard(Suit.Hearts, Rank.Ace, 0); // Trump suit card
       
       // Big Joker > Small Joker
       expect(compareCards(bigJoker, smallJoker, trumpInfo)).toBeGreaterThan(0);
@@ -146,9 +143,9 @@ describe('Trump System', () => {
     test('should handle trump rank cards in different non-trump suits as equal strength', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
-      const twoSpades = createCard(Suit.Spades, Rank.Two);
-      const twoClubs = createCard(Suit.Clubs, Rank.Two);
-      const twoDiamonds = createCard(Suit.Diamonds, Rank.Two);
+      const twoSpades = Card.createCard(Suit.Spades, Rank.Two, 0);
+      const twoClubs = Card.createCard(Suit.Clubs, Rank.Two, 0);
+      const twoDiamonds = Card.createCard(Suit.Diamonds, Rank.Two, 0);
       
       // All trump rank cards in non-trump suits should be equal
       expect(compareCards(twoSpades, twoClubs, trumpInfo)).toBe(0);
@@ -159,9 +156,9 @@ describe('Trump System', () => {
     test('should properly rank trump suit cards by rank', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
-      const aceHearts = createCard(Suit.Hearts, Rank.Ace);
-      const kingHearts = createCard(Suit.Hearts, Rank.King);
-      const threeHearts = createCard(Suit.Hearts, Rank.Three);
+      const aceHearts = Card.createCard(Suit.Hearts, Rank.Ace, 0);
+      const kingHearts = Card.createCard(Suit.Hearts, Rank.King, 0);
+      const threeHearts = Card.createCard(Suit.Hearts, Rank.Three, 0);
       
       // Higher ranks beat lower ranks within trump suit
       expect(compareCards(aceHearts, kingHearts, trumpInfo)).toBeGreaterThan(0);
@@ -174,11 +171,11 @@ describe('Trump System', () => {
     test('should require trump cards when trump is led', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
-      const bigJoker = createJoker(JokerType.Big);
+      const bigJoker = Card.createJoker(JokerType.Big, 0);
       const hand = [
-        createCard(Suit.Hearts, Rank.Ace), // Trump suit card
-        createCard(Suit.Spades, Rank.Two), // Trump rank card
-        createCard(Suit.Clubs, Rank.King), // Non-trump card
+        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Trump suit card
+        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank card
+        Card.createCard(Suit.Clubs, Rank.King, 0), // Non-trump card
         bigJoker
       ];
       
@@ -196,9 +193,9 @@ describe('Trump System', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
       const hand = [
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Clubs, Rank.King),
-        createCard(Suit.Diamonds, Rank.Queen)
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 0),
+        Card.createCard(Suit.Diamonds, Rank.Queen, 0)
       ];
       
       // When player has no trump, they can play any card
@@ -215,11 +212,11 @@ describe('Trump System', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
       const hand = [
-        createCard(Suit.Hearts, Rank.Ace, 'H_A_1'),
-        createCard(Suit.Hearts, Rank.Ace, 'H_A_2'), // Trump pair
-        createCard(Suit.Spades, Rank.Two, 'S_2_1'),
-        createCard(Suit.Spades, Rank.Two, 'S_2_2'), // Trump rank pair
-        createCard(Suit.Clubs, Rank.King, 'C_K')
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),
+        Card.createCard(Suit.Hearts, Rank.Ace, 1), // Trump pair
+        Card.createCard(Suit.Spades, Rank.Two, 0),
+        Card.createCard(Suit.Spades, Rank.Two, 1), // Trump rank pair
+        Card.createCard(Suit.Clubs, Rank.King, 0)
       ];
       
       // Should identify trump pairs correctly
@@ -240,13 +237,13 @@ describe('Trump System', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
       const trumpCards = [
-        createCard(Suit.Hearts, Rank.Three, 'H_3_1'),
-        createCard(Suit.Hearts, Rank.Three, 'H_3_2')
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+        Card.createCard(Suit.Hearts, Rank.Three, 1)
       ];
       
       const nonTrumpCards = [
-        createCard(Suit.Spades, Rank.Ace, 'S_A_1'),
-        createCard(Suit.Spades, Rank.Ace, 'S_A_2')
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 1)
       ];
       
       // Get combo types
@@ -262,13 +259,13 @@ describe('Trump System', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
       const bigJokerCards = [
-        createJoker(JokerType.Big, 'BJ1'),
-        createJoker(JokerType.Big, 'BJ2')
+        Card.createJoker(JokerType.Big, 0),
+        Card.createJoker(JokerType.Big, 1)
       ];
       
       const trumpSuitCards = [
-        createCard(Suit.Hearts, Rank.Ace, 'H_A_1'),
-        createCard(Suit.Hearts, Rank.Ace, 'H_A_2')
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),
+        Card.createCard(Suit.Hearts, Rank.Ace, 1)
       ];
       
       // Get combo types
@@ -285,13 +282,13 @@ describe('Trump System', () => {
       
       // Test Small Joker pair vs Trump rank pair in trump suit
       const smallJokerCards = [
-        createJoker(JokerType.Small, 'SJ1'),
-        createJoker(JokerType.Small, 'SJ2')
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1)
       ];
       
       const trumpRankCards = [
-        createCard(Suit.Hearts, Rank.Two, 'H_2_1'),
-        createCard(Suit.Hearts, Rank.Two, 'H_2_2')
+        Card.createCard(Suit.Hearts, Rank.Two, 0),
+        Card.createCard(Suit.Hearts, Rank.Two, 1)
       ];
       
       // Get combo types
@@ -308,10 +305,10 @@ describe('Trump System', () => {
     test('should handle no trump suit scenario', () => {
       const noSuitTrump: TrumpInfo = { trumpRank: Rank.Two };
       
-      const twoHearts = createCard(Suit.Hearts, Rank.Two);
-      const twoSpades = createCard(Suit.Spades, Rank.Two);
-      const bigJoker = createJoker(JokerType.Big);
-      const aceHearts = createCard(Suit.Hearts, Rank.Ace);
+      const twoHearts = Card.createCard(Suit.Hearts, Rank.Two, 0);
+      const twoSpades = Card.createCard(Suit.Spades, Rank.Two, 0);
+      const bigJoker = Card.createJoker(JokerType.Big, 0);
+      const aceHearts = Card.createCard(Suit.Hearts, Rank.Ace, 0);
       
       // Trump rank cards and jokers should be trump
       expect(isTrump(twoHearts, noSuitTrump)).toBe(true);
@@ -326,9 +323,9 @@ describe('Trump System', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
       // Trump rank in trump suit should be highest trump card (after jokers)
-      const twoHearts = createCard(Suit.Hearts, Rank.Two);
-      const smallJoker = createJoker(JokerType.Small);
-      const aceHearts = createCard(Suit.Hearts, Rank.Ace);
+      const twoHearts = Card.createCard(Suit.Hearts, Rank.Two, 0);
+      const smallJoker = Card.createJoker(JokerType.Small, 0);
+      const aceHearts = Card.createCard(Suit.Hearts, Rank.Ace, 0);
       
       expect(isTrump(twoHearts, trumpInfo)).toBe(true);
       expect(compareCards(smallJoker, twoHearts, trumpInfo)).toBeGreaterThan(0);
@@ -347,7 +344,7 @@ describe('Trump System', () => {
     test('should handle single card trump combinations', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
-      const singleTrump = [createCard(Suit.Hearts, Rank.Two)];
+      const singleTrump = [Card.createCard(Suit.Hearts, Rank.Two, 0)];
       const combos = identifyCombos(singleTrump, trumpInfo);
       const singleCombo = combos.find(combo => combo.type === ComboType.Single);
       
@@ -362,12 +359,12 @@ describe('Trump System', () => {
       const trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
       
       const mixedCards = [
-        createCard(Suit.Hearts, Rank.Two, 'H_2_1'),   // Trump rank in trump suit
-        createCard(Suit.Hearts, Rank.Two, 'H_2_2'),   // Trump rank in trump suit (pair)
-        createCard(Suit.Spades, Rank.Two, 'S_2_1'),   // Trump rank in other suit
-        createCard(Suit.Hearts, Rank.Ace, 'H_A'),     // Trump suit card
-        createCard(Suit.Spades, Rank.Ace, 'S_A'),     // Non-trump card
-        createJoker(JokerType.Small, 'SJ')            // Joker
+        Card.createCard(Suit.Hearts, Rank.Two, 0),   // Trump rank in trump suit
+        Card.createCard(Suit.Hearts, Rank.Two, 1),   // Trump rank in trump suit (pair)
+        Card.createCard(Suit.Spades, Rank.Two, 0),   // Trump rank in other suit
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),     // Trump suit card
+        Card.createCard(Suit.Spades, Rank.Ace, 0),     // Non-trump card
+        Card.createJoker(JokerType.Small, 0)            // Joker
       ];
       
       const combos = identifyCombos(mixedCards.slice(0, 2), trumpInfo);
@@ -385,13 +382,13 @@ describe('Trump System', () => {
       
       // Create a complex scenario with all trump types
       const cards = [
-        createJoker(JokerType.Big, 'BJ'),
-        createJoker(JokerType.Small, 'SJ'),
-        createCard(Suit.Hearts, Rank.Two, 'H_2'),      // Trump rank in trump suit
-        createCard(Suit.Spades, Rank.Two, 'S_2'),      // Trump rank in other suit
-        createCard(Suit.Clubs, Rank.Two, 'C_2'),       // Trump rank in other suit
-        createCard(Suit.Hearts, Rank.Ace, 'H_A'),      // Trump suit high card
-        createCard(Suit.Hearts, Rank.Three, 'H_3'),    // Trump suit low card
+        Card.createJoker(JokerType.Big, 0),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createCard(Suit.Hearts, Rank.Two, 0),      // Trump rank in trump suit
+        Card.createCard(Suit.Spades, Rank.Two, 0),      // Trump rank in other suit
+        Card.createCard(Suit.Clubs, Rank.Two, 0),       // Trump rank in other suit
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),      // Trump suit high card
+        Card.createCard(Suit.Hearts, Rank.Three, 0),    // Trump suit low card
       ];
       
       // Sort by trump strength (highest to lowest)

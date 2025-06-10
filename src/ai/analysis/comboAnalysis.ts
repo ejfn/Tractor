@@ -6,7 +6,7 @@ import {
   Rank,
   TrumpInfo,
 } from "../../types";
-import { isTrump } from "../../game/gameLogic";
+import { isTrump } from "../../game/gameHelpers";
 import {
   getTractorTypeDescription,
   isValidTractor,
@@ -297,6 +297,7 @@ export function analyzeComboStrength(
  */
 export function getRankValue(rank: Rank): number {
   const rankValues: Record<Rank, number> = {
+    [Rank.None]: 0, // For jokers - no rank value
     [Rank.Ace]: 14,
     [Rank.King]: 13,
     [Rank.Queen]: 12,

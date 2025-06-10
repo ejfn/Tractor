@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { dealNextCard, isDealingComplete } from "../game/gameLogic";
+import { getAITrumpDeclaration } from "../ai/aiLogic";
 import {
   finalizeTrumpDeclaration,
   getPlayerDeclarationOptions,
   makeTrumpDeclaration,
-} from "../game/trumpDeclarationManager";
-import { GamePhase, GameState, PlayerId } from "../types";
-import { getAITrumpDeclaration } from "../ai/aiLogic";
+  dealNextCard,
+  isDealingComplete,
+} from "../game/dealingAndDeclaration";
+import {
+  DeclarationOpportunity,
+  GamePhase,
+  GameState,
+  PlayerId,
+} from "../types";
 
 interface UseProgressiveDealingProps {
   gameState: GameState | null;
@@ -40,18 +46,29 @@ export function useProgressiveDealing({
   }, []);
 
   // Create hash of opportunities to detect changes
-  const createOpportunityHash = useCallback((opportunities: any[]) => {
-    return opportunities
-      .map((opp) => `${opp.type}-${opp.suit}`)
-      .sort()
-      .join(",");
-  }, []);
+  const createOpportunityHash = useCallback(
+    (opportunities: DeclarationOpportunity[]) => {
+      return opportunities
+        .map((opp) => `${opp.type}-${opp.suit}`)
+        .sort()
+        .join(",");
+    },
+    [],
+  );
 
   // References for functions to avoid circular dependencies
-  const dealNextCardStepRef = useRef<(currentState: GameState) => void>(null!);
-  const resumeDealingRef = useRef<(stateOverride?: GameState) => void>(null!);
-  const pauseDealingRef = useRef<() => void>(null!);
-  const checkAIDeclarationsRef = useRef<(state: GameState) => boolean>(null!);
+  const dealNextCardStepRef = useRef<(currentState: GameState) => void>(() => {
+    throw new Error("dealNextCardStepRef called before initialization");
+  });
+  const resumeDealingRef = useRef<(stateOverride?: GameState) => void>(() => {
+    throw new Error("resumeDealingRef called before initialization");
+  });
+  const pauseDealingRef = useRef<() => void>(() => {
+    throw new Error("pauseDealingRef called before initialization");
+  });
+  const checkAIDeclarationsRef = useRef<(state: GameState) => boolean>(() => {
+    throw new Error("checkAIDeclarationsRef called before initialization");
+  });
 
   // Deal one card and schedule the next
   const dealNextCardStep = useCallback(
@@ -204,11 +221,11 @@ export function useProgressiveDealing({
     isPausedRef.current = true;
 
     // Update the game state's dealing pause state
-    if (currentStateRef.current) {
+    if (currentStateRef.current && currentStateRef.current.dealingState) {
       const pausedState = {
         ...currentStateRef.current,
         dealingState: {
-          ...currentStateRef.current.dealingState!,
+          ...currentStateRef.current.dealingState,
           paused: true,
           pauseReason: "trump_declaration",
         },
@@ -230,11 +247,13 @@ export function useProgressiveDealing({
           // Clear the pause state in game state
           const resumedState = {
             ...stateToUse,
-            dealingState: {
-              ...stateToUse.dealingState!,
-              paused: false,
-              pauseReason: undefined,
-            },
+            dealingState: stateToUse.dealingState
+              ? {
+                  ...stateToUse.dealingState,
+                  paused: false,
+                  pauseReason: undefined,
+                }
+              : undefined,
           };
 
           currentStateRef.current = resumedState;
@@ -276,7 +295,7 @@ export function useProgressiveDealing({
 
   // Handle human trump declaration
   const handleHumanDeclaration = useCallback(
-    (declaration: any) => {
+    (declaration: DeclarationOpportunity) => {
       if (!gameState) return;
 
       // Reset the opportunities flag and hash immediately to prevent reappearing
@@ -306,10 +325,12 @@ export function useProgressiveDealing({
   // Handle continue without declaration
   const handleContinue = useCallback(() => {
     setShouldShowOpportunities(false);
-    if (gameState) {
+    // Use currentStateRef to get the most up-to-date state
+    const currentState = currentStateRef.current || gameState;
+    if (currentState) {
       setTimeout(() => {
         if (resumeDealingRef.current) {
-          resumeDealingRef.current(gameState);
+          resumeDealingRef.current(currentState);
         }
       }, 250);
     }

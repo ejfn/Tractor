@@ -1,25 +1,18 @@
-import { processPlay } from '../../src/game/gamePlayManager';
+import { processPlay } from '../../src/game/playProcessing';
 import { GameState, Player, Rank, Suit, Card, Team } from "../../src/types";
 import { createRotationTestGameState } from "../helpers";
 
 describe('Counter-clockwise rotation', () => {
-  const createCard = (suit: Suit, rank: Rank, id: string): Card => ({
-    suit,
-    rank,
-    id,
-    points: 0
-  });
-
   const createMockGameState = createRotationTestGameState;
 
   test('Players should rotate counter-clockwise from human perspective', () => {
     const gameState = createMockGameState();
     
     // Give players cards
-    gameState.players[0].hand = [createCard(Suit.Hearts, Rank.Ace, 'h_a_1')];
-    gameState.players[1].hand = [createCard(Suit.Hearts, Rank.King, 'h_k_1')];
-    gameState.players[2].hand = [createCard(Suit.Hearts, Rank.Queen, 'h_q_1')];
-    gameState.players[3].hand = [createCard(Suit.Hearts, Rank.Jack, 'h_j_1')];
+    gameState.players[0].hand = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
+    gameState.players[1].hand = [Card.createCard(Suit.Hearts, Rank.King, 0)];
+    gameState.players[2].hand = [Card.createCard(Suit.Hearts, Rank.Queen, 0)];
+    gameState.players[3].hand = [Card.createCard(Suit.Hearts, Rank.Jack, 0)];
     
     // Human (index 0) plays first
     const result1 = processPlay(gameState, [gameState.players[0].hand[0]]);

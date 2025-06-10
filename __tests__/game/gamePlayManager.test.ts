@@ -1,30 +1,37 @@
-import {
-  GameState,
-  PlayerId,
-  Rank,
-  Suit,
-  GamePhase
-} from "../../src/types";
 import * as aiLogic from '../../src/ai/aiLogic';
-import * as gameLogic from '../../src/game/gameLogic';
+import * as cardComparison from '../../src/game/cardComparison';
+import * as comboDetection from '../../src/game/comboDetection';
 import {
   getAIMoveWithErrorHandling,
   processPlay,
   validatePlay
-} from '../../src/game/gamePlayManager';
+} from '../../src/game/playProcessing';
 import {
-  createCard,
+  Card,
+  GamePhase,
+  GameState,
+  PlayerId,
+  Rank,
+  Suit
+} from "../../src/types";
+import {
   createTestCardsGameState,
   testData
 } from "../helpers";
 import { createGameState } from '../helpers/gameStates';
 
 // Mock dependencies
-jest.mock('../../src/game/gameLogic', () => ({
+jest.mock('../../src/game/comboDetection', () => ({
   identifyCombos: jest.fn(),
-  isValidPlay: jest.fn(),
+  checkSameSuitPairPreservation: jest.fn(),
+  getComboType: jest.fn(),
+}));
+
+jest.mock('../../src/game/cardComparison', () => ({
+  evaluateTrickPlay: jest.fn(),
   compareCardCombos: jest.fn(),
-  evaluateTrickPlay: jest.fn()
+  compareCards: jest.fn(),
+  compareRanks: jest.fn(),
 }));
 
 jest.mock('../../src/ai/aiLogic', () => ({
@@ -39,10 +46,10 @@ const createMockGameState = () => {
   return state;
 };
 
-describe('gamePlayManager', () => {
+describe('playProcessing', () => {
   beforeEach(() => {
     // Setup default mocks
-    (gameLogic.evaluateTrickPlay as jest.Mock).mockReturnValue({
+    (cardComparison.evaluateTrickPlay as jest.Mock).mockReturnValue({
       canBeat: false,
       isLegal: true,
       strength: 50,
@@ -91,7 +98,7 @@ describe('gamePlayManager', () => {
         plays: [
           {
             playerId: PlayerId.Bot3,
-            cards: [createCard(Suit.Clubs, Rank.Four)]
+            cards: [Card.createCard(Suit.Clubs, Rank.Four, 0)]
           },
           {
             playerId: PlayerId.Human,
@@ -99,7 +106,7 @@ describe('gamePlayManager', () => {
           },
           {
             playerId: PlayerId.Bot1,
-            cards: [createCard(Suit.Clubs, Rank.Jack)]
+            cards: [Card.createCard(Suit.Clubs, Rank.Jack, 0)]
           }
         ],
         winningPlayerId: PlayerId.Bot3,
@@ -120,7 +127,7 @@ describe('gamePlayManager', () => {
           // Bot 1 led
           {
             playerId: PlayerId.Bot1,
-            cards: [createCard(Suit.Diamonds, Rank.Three)]
+            cards: [Card.createCard(Suit.Diamonds, Rank.Three, 0)]
           },
           // Human has played 
           {
@@ -130,7 +137,7 @@ describe('gamePlayManager', () => {
           // Bot 2 has played
           {
             playerId: PlayerId.Bot2,
-            cards: [createCard(Suit.Spades, Rank.Two)]
+            cards: [Card.createCard(Suit.Spades, Rank.Two, 0)]
           }
         ],
         points: 5, // 5 points from the Spades 5
@@ -179,7 +186,7 @@ describe('gamePlayManager', () => {
         mockState.currentTrick = null; // Leading a trick
         
         // Mock identifyCombos to return a valid combo
-        (gameLogic.identifyCombos as jest.Mock).mockReturnValue([
+        (comboDetection.identifyCombos as jest.Mock).mockReturnValue([
           { type: 'Single', cards: [mockState.players[0].hand[0]] }
         ]);
       });
@@ -190,7 +197,7 @@ describe('gamePlayManager', () => {
         const result = validatePlay(mockState, cardsToPlay);
         
         // Verify identifyCombos was called with the player's hand
-        expect(gameLogic.identifyCombos).toHaveBeenCalledWith(
+        expect(comboDetection.identifyCombos).toHaveBeenCalledWith(
           mockState.players[0].hand,
           mockState.trumpInfo
         );
@@ -206,27 +213,30 @@ describe('gamePlayManager', () => {
           plays: [
             {
               playerId: PlayerId.Bot3,
-              cards: [createCard(Suit.Clubs, Rank.Four)]
+              cards: [Card.createCard(Suit.Clubs, Rank.Four, 0)]
             }
           ],
           winningPlayerId: PlayerId.Bot3,
           points: 0
         };
         
-        // Mock isValidPlay to return true
-        (gameLogic.isValidPlay as jest.Mock).mockReturnValue(true);
+        // Mock identifyCombos for proper following behavior
+        (comboDetection.identifyCombos as jest.Mock).mockReturnValue([
+          { type: 'Single', cards: [mockState.players[0].hand[1]] } // Clubs King
+        ]);
+        
+        // Mock checkSameSuitPairPreservation to return true
+        (comboDetection.checkSameSuitPairPreservation as jest.Mock).mockReturnValue(true);
       });
 
       test('should validate a play when following a trick', () => {
-        const cardsToPlay = [mockState.players[0].hand[0]]; // Spades 5
+        const cardsToPlay = [mockState.players[0].hand[1]]; // Clubs King (follows suit)
         
         const result = validatePlay(mockState, cardsToPlay);
         
-        // Verify isValidPlay was called with the correct parameters
-        expect(gameLogic.isValidPlay).toHaveBeenCalledWith(
-          cardsToPlay,
-          mockState.currentTrick!.plays[0].cards,
-          mockState.players[0].hand,
+        // Verify identifyCombos was called during validation
+        expect(comboDetection.identifyCombos).toHaveBeenCalledWith(
+          expect.any(Array), // Called with various card arrays during validation
           mockState.trumpInfo
         );
         
@@ -240,7 +250,7 @@ describe('gamePlayManager', () => {
         expect(validatePlay(mockState, [])).toBe(false);
         
         // Setup state to be null
-        expect(validatePlay(null as unknown as GameState, [createCard(Suit.Spades, Rank.Five)])).toBe(false);
+        expect(validatePlay(null as unknown as GameState, [Card.createCard(Suit.Spades, Rank.Five, 0)])).toBe(false);
       });
     });
   });
@@ -518,7 +528,7 @@ describe('gamePlayManager', () => {
     describe('Basic Rank Comparisons', () => {
       beforeEach(() => {
         // Mock evaluateTrickPlay for higher rank beats lower rank scenarios
-        (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
+        (cardComparison.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
           const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
@@ -536,22 +546,22 @@ describe('gamePlayManager', () => {
       test('Should correctly update trick winner using evaluateTrickPlay', () => {
         // Give human some cards including the leading combo
         gameState.players[0].hand = [
-          createCard(Suit.Diamonds, Rank.Four, '1'),
-          createCard(Suit.Diamonds, Rank.Four, '2'),
-          createCard(Suit.Clubs, Rank.King, '1'),
+          Card.createCard(Suit.Diamonds, Rank.Four, 0),
+          Card.createCard(Suit.Diamonds, Rank.Four, 1),
+          Card.createCard(Suit.Clubs, Rank.King, 0),
         ];
 
         // Give Bot1 cards including a stronger combo
         gameState.players[1].hand = [
-          createCard(Suit.Diamonds, Rank.Ace, '1'),
-          createCard(Suit.Diamonds, Rank.Ace, '2'),
-          createCard(Suit.Spades, Rank.King, '1'),
+          Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+          Card.createCard(Suit.Diamonds, Rank.Ace, 1),
+          Card.createCard(Suit.Spades, Rank.King, 0),
         ];
 
         // Human leads with 4♦-4♦
         const humanPlay = [
-          createCard(Suit.Diamonds, Rank.Four, '1'),
-          createCard(Suit.Diamonds, Rank.Four, '2'),
+          Card.createCard(Suit.Diamonds, Rank.Four, 0),
+          Card.createCard(Suit.Diamonds, Rank.Four, 1),
         ];
 
         const result1 = processPlay(gameState, humanPlay);
@@ -562,8 +572,8 @@ describe('gamePlayManager', () => {
 
         // Bot1 follows with A♦-A♦ (should beat 4♦-4♦)
         const bot1Play = [
-          createCard(Suit.Diamonds, Rank.Ace, '1'),
-          createCard(Suit.Diamonds, Rank.Ace, '2'),
+          Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+          Card.createCard(Suit.Diamonds, Rank.Ace, 1),
         ];
 
         const result2 = processPlay(result1.newState, bot1Play);
@@ -575,7 +585,7 @@ describe('gamePlayManager', () => {
 
       test('Should handle trump cards beating non-trump cards', () => {
         // Mock evaluateTrickPlay to return canBeat: true for trump vs non-trump
-        (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
+        (cardComparison.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
           const leadingCard = trick?.plays[0]?.cards[0]; // Updated to use unified structure
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
@@ -590,22 +600,22 @@ describe('gamePlayManager', () => {
 
         // Give human non-trump cards
         gameState.players[0].hand = [
-          createCard(Suit.Diamonds, Rank.Ace, '1'),
-          createCard(Suit.Diamonds, Rank.Ace, '2'),
-          createCard(Suit.Clubs, Rank.King, '1'),
+          Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+          Card.createCard(Suit.Diamonds, Rank.Ace, 1),
+          Card.createCard(Suit.Clubs, Rank.King, 0),
         ];
 
         // Give Bot1 trump cards
         gameState.players[1].hand = [
-          createCard(Suit.Hearts, Rank.Three, '1'), // Trump suit
-          createCard(Suit.Hearts, Rank.Three, '2'), // Trump suit
-          createCard(Suit.Spades, Rank.King, '1'),
+          Card.createCard(Suit.Hearts, Rank.Three, 0), // Trump suit
+          Card.createCard(Suit.Hearts, Rank.Three, 1), // Trump suit
+          Card.createCard(Suit.Spades, Rank.King, 0),
         ];
 
         // Human leads with A♦-A♦ (non-trump pair)
         const humanPlay = [
-          createCard(Suit.Diamonds, Rank.Ace, '1'),
-          createCard(Suit.Diamonds, Rank.Ace, '2'),
+          Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+          Card.createCard(Suit.Diamonds, Rank.Ace, 1),
         ];
 
         const result1 = processPlay(gameState, humanPlay);
@@ -613,8 +623,8 @@ describe('gamePlayManager', () => {
 
         // Bot1 follows with 3♥-3♥ (trump pair should beat non-trump)
         const bot1Play = [
-          createCard(Suit.Hearts, Rank.Three, '1'),
-          createCard(Suit.Hearts, Rank.Three, '2'),
+          Card.createCard(Suit.Hearts, Rank.Three, 0),
+          Card.createCard(Suit.Hearts, Rank.Three, 1),
         ];
 
         const result2 = processPlay(result1.newState, bot1Play);
@@ -625,7 +635,7 @@ describe('gamePlayManager', () => {
 
       test('Should correctly track trick points accumulation', () => {
         // Mock evaluateTrickPlay to return canBeat: true for Ten vs Five
-        (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
+        (cardComparison.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
           const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
@@ -640,23 +650,23 @@ describe('gamePlayManager', () => {
 
         // Give players cards with points
         gameState.players[0].hand = [
-          createCard(Suit.Diamonds, Rank.Five, '1'), // 5 points
-          createCard(Suit.Clubs, Rank.King, '1'), // 10 points
+          Card.createCard(Suit.Diamonds, Rank.Five, 0), // 5 points
+          Card.createCard(Suit.Clubs, Rank.King, 0), // 10 points
         ];
 
         gameState.players[1].hand = [
-          createCard(Suit.Diamonds, Rank.Ten, '1'), // 10 points
-          createCard(Suit.Spades, Rank.King, '1'), // 10 points
+          Card.createCard(Suit.Diamonds, Rank.Ten, 0), // 10 points
+          Card.createCard(Suit.Spades, Rank.King, 0), // 10 points
         ];
 
         // Human leads with 5♦ (5 points)
-        const humanPlay = [createCard(Suit.Diamonds, Rank.Five, '1')];
+        const humanPlay = [Card.createCard(Suit.Diamonds, Rank.Five, 0)];
         const result1 = processPlay(gameState, humanPlay);
         
         expect(result1.newState.currentTrick?.points).toBe(5);
 
         // Bot1 follows with 10♦ (10 points, should win and add to total)
-        const bot1Play = [createCard(Suit.Diamonds, Rank.Ten, '1')];
+        const bot1Play = [Card.createCard(Suit.Diamonds, Rank.Ten, 0)];
         const result2 = processPlay(result1.newState, bot1Play);
         
         expect(result2.newState.currentTrick?.points).toBe(15); // 5 + 10
@@ -665,7 +675,7 @@ describe('gamePlayManager', () => {
 
       test('Should handle cross-suit trump scenarios correctly', () => {
         // Mock evaluateTrickPlay: trump rank should NOT be beaten by trump suit
-        (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
+        (cardComparison.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
           const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
@@ -680,24 +690,24 @@ describe('gamePlayManager', () => {
 
         // Human has no Hearts but has trump rank cards
         gameState.players[0].hand = [
-          createCard(Suit.Spades, Rank.Two, '1'), // Trump rank
-          createCard(Suit.Clubs, Rank.King, '1'),
+          Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank
+          Card.createCard(Suit.Clubs, Rank.King, 0),
         ];
 
         // Bot1 has Hearts trump suit cards
         gameState.players[1].hand = [
-          createCard(Suit.Hearts, Rank.Three, '1'), // Trump suit
-          createCard(Suit.Spades, Rank.King, '1'),
+          Card.createCard(Suit.Hearts, Rank.Three, 0), // Trump suit
+          Card.createCard(Suit.Spades, Rank.King, 0),
         ];
 
         // Human leads with 2♠ (trump rank)
-        const humanPlay = [createCard(Suit.Spades, Rank.Two, '1')];
+        const humanPlay = [Card.createCard(Suit.Spades, Rank.Two, 0)];
         const result1 = processPlay(gameState, humanPlay);
         
         expect(result1.newState.currentTrick?.winningPlayerId).toBe(PlayerId.Human);
 
         // Bot1 follows with 3♥ (trump suit, should lose to trump rank)
-        const bot1Play = [createCard(Suit.Hearts, Rank.Three, '1')];
+        const bot1Play = [Card.createCard(Suit.Hearts, Rank.Three, 0)];
         const result2 = processPlay(result1.newState, bot1Play);
         
         // Trump rank should beat trump suit
@@ -706,7 +716,7 @@ describe('gamePlayManager', () => {
 
       test('Should handle multiple card combination comparisons', () => {
         // Mock evaluateTrickPlay to return canBeat: true for Ace vs Seven
-        (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
+        (cardComparison.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
           const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
@@ -721,21 +731,21 @@ describe('gamePlayManager', () => {
 
         // Setup hands for pair comparison
         gameState.players[0].hand = [
-          createCard(Suit.Spades, Rank.Seven, '1'),
-          createCard(Suit.Spades, Rank.Seven, '2'),
-          createCard(Suit.Clubs, Rank.King, '1'),
+          Card.createCard(Suit.Spades, Rank.Seven, 0),
+          Card.createCard(Suit.Spades, Rank.Seven, 1),
+          Card.createCard(Suit.Clubs, Rank.King, 0),
         ];
 
         gameState.players[1].hand = [
-          createCard(Suit.Spades, Rank.Ace, '1'),
-          createCard(Suit.Spades, Rank.Ace, '2'),
-          createCard(Suit.Clubs, Rank.Queen, '1'),
+          Card.createCard(Suit.Spades, Rank.Ace, 0),
+          Card.createCard(Suit.Spades, Rank.Ace, 1),
+          Card.createCard(Suit.Clubs, Rank.Queen, 0),
         ];
 
         // Human leads with 7♠-7♠
         const humanPlay = [
-          createCard(Suit.Spades, Rank.Seven, '1'),
-          createCard(Suit.Spades, Rank.Seven, '2'),
+          Card.createCard(Suit.Spades, Rank.Seven, 0),
+          Card.createCard(Suit.Spades, Rank.Seven, 1),
         ];
 
         const result1 = processPlay(gameState, humanPlay);
@@ -743,8 +753,8 @@ describe('gamePlayManager', () => {
 
         // Bot1 follows with A♠-A♠ (should beat 7♠-7♠)
         const bot1Play = [
-          createCard(Suit.Spades, Rank.Ace, '1'),
-          createCard(Suit.Spades, Rank.Ace, '2'),
+          Card.createCard(Suit.Spades, Rank.Ace, 0),
+          Card.createCard(Suit.Spades, Rank.Ace, 1),
         ];
 
         const result2 = processPlay(result1.newState, bot1Play);
@@ -755,7 +765,7 @@ describe('gamePlayManager', () => {
 
       test('Should maintain winner through subsequent plays', () => {
         // Mock evaluateTrickPlay to return canBeat: true only for Ace vs Three
-        (gameLogic.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
+        (cardComparison.evaluateTrickPlay as jest.Mock).mockImplementation((cards, trick, trumpInfo, hand) => {
           const playedCard = cards[0];
           const leadingCard = trick?.plays[0]?.cards[0];
           if (!leadingCard) return { canBeat: false, isLegal: true, strength: 50, reason: 'No leading card' };
@@ -771,28 +781,28 @@ describe('gamePlayManager', () => {
         // Give all players cards
         gameState.players.forEach((player, i) => {
           player.hand = [
-            createCard(Suit.Spades, i === 1 ? Rank.Ace : Rank.Three, `${i}_1`),
-            createCard(Suit.Clubs, Rank.King, `${i}_2`),
+            Card.createCard(Suit.Spades, i === 1 ? Rank.Ace : Rank.Three, 0),
+            Card.createCard(Suit.Clubs, Rank.King, 0),
           ];
         });
 
         // Human leads with 3♠
-        const humanPlay = [createCard(Suit.Spades, Rank.Three, '0_1')];
+        const humanPlay = [Card.createCard(Suit.Spades, Rank.Three, 0)];
         let result = processPlay(gameState, humanPlay);
         expect(result.newState.currentTrick?.winningPlayerId).toBe(PlayerId.Human);
 
         // Bot1 plays A♠ (should win)
-        const bot1Play = [createCard(Suit.Spades, Rank.Ace, '1_1')];
+        const bot1Play = [Card.createCard(Suit.Spades, Rank.Ace, 0)];
         result = processPlay(result.newState, bot1Play);
         expect(result.newState.currentTrick?.winningPlayerId).toBe(PlayerId.Bot1);
 
         // Bot2 plays 3♠ (should not win)
-        const bot2Play = [createCard(Suit.Spades, Rank.Three, '2_1')];
+        const bot2Play = [Card.createCard(Suit.Spades, Rank.Three, 1)];
         result = processPlay(result.newState, bot2Play);
         expect(result.newState.currentTrick?.winningPlayerId).toBe(PlayerId.Bot1); // Still Bot1
 
         // Bot3 plays 3♠ (should not win)
-        const bot3Play = [createCard(Suit.Spades, Rank.Three, '3_1')];
+        const bot3Play = [Card.createCard(Suit.Spades, Rank.Three, 0)];
         result = processPlay(result.newState, bot3Play);
         
         // Bot1 should still be the winner after all plays

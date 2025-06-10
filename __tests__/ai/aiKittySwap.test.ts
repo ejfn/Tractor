@@ -1,10 +1,9 @@
+import { getAIKittySwap } from "../../src/ai/aiLogic";
 import {
   selectAIKittySwapCards,
 } from "../../src/ai/kittySwap/kittySwapStrategy";
-import { getAIKittySwap } from "../../src/ai/aiLogic";
-import { Card, GameState, PlayerId, GamePhase, Suit, Rank } from "../../src/types";
-import { isTrump } from "../../src/game/gameLogic";
-import { createCard } from "../helpers/cards";
+import { isTrump } from "../../src/game/gameHelpers";
+import { Card, DeckId, GamePhase, GameState, PlayerId, Rank, Suit } from "../../src/types";
 import { createGameState, givePlayerCards } from "../helpers/gameStates";
 
 // Helper function to create a kitty swap game state
@@ -20,10 +19,10 @@ function createKittySwapGameState(): GameState {
   
   // Add some trump cards (Spades suit + 2s)
   for (let i = 0; i < 8; i++) {
-    bot1Cards.push(createCard(Suit.Spades, Rank.Three, `trump_spades_${i}`));
+    bot1Cards.push(Card.createCard(Suit.Spades, Rank.Three, i % 2 as DeckId));
   }
   for (let i = 0; i < 2; i++) {
-    bot1Cards.push(createCard(Suit.Hearts, Rank.Two, `trump_rank_${i}`));
+    bot1Cards.push(Card.createCard(Suit.Hearts, Rank.Two, i as DeckId));
   }
   
   // Add non-trump cards from other suits
@@ -42,7 +41,7 @@ function createKittySwapGameState(): GameState {
       continue;
     }
     
-    bot1Cards.push(createCard(suit, rank, `nontrump_${suit}_${rank}_${i}`));
+    bot1Cards.push(Card.createCard(suit, rank, i % 2 as DeckId));
     cardIndex++;
   }
   
@@ -130,7 +129,7 @@ describe("AI Kitty Swap Strategy", () => {
       // Create a simple hand with clear non-point options (use Hearts since trump suit is Spades)
       const simpleNonPointCards: Card[] = [];
       for (let i = 0; i < 8; i++) {
-        simpleNonPointCards.push(createCard(Suit.Hearts, Rank.Three, `simple${i}`));
+        simpleNonPointCards.push(Card.createCard(Suit.Hearts, Rank.Three, i % 2 as DeckId));
       }
       
       // Replace some cards to ensure we have non-point options
@@ -173,17 +172,17 @@ describe("AI Kitty Swap Strategy", () => {
       
       // Add 18 trump cards (very long trump suit)
       for (let i = 0; i < 18; i++) {
-        longTrumpHand.push(createCard(Suit.Spades, Rank.Three, `trump${i}`));
+        longTrumpHand.push(Card.createCard(Suit.Spades, Rank.Three, i % 2 as DeckId));
       }
       
       // Add only 7 non-trump cards (insufficient for kitty - need 8)
       for (let i = 0; i < 7; i++) {
-        longTrumpHand.push(createCard(Suit.Hearts, Rank.Four, `nontrump${i}`));
+        longTrumpHand.push(Card.createCard(Suit.Hearts, Rank.Four, i % 2 as DeckId));
       }
       
       // Add 8 more trump cards to reach 33 total (18 + 7 + 8 = 33)
       for (let i = 18; i < 26; i++) {
-        longTrumpHand.push(createCard(Suit.Spades, Rank.Four, `trump${i}`));
+        longTrumpHand.push(Card.createCard(Suit.Spades, Rank.Four, i % 2 as DeckId));
       }
       
       player.hand = longTrumpHand;
@@ -210,26 +209,26 @@ describe("AI Kitty Swap Strategy", () => {
       
       // Add trump cards (preserve these)
       for (let i = 0; i < 8; i++) {
-        strategicHand.push(createCard(Suit.Spades, Rank.Three, `trump${i}`));
+        strategicHand.push(Card.createCard(Suit.Spades, Rank.Three, i % 2 as DeckId));
       }
       
       // Add Hearts with Ace and King (preserve this suit - valuable)
-      strategicHand.push(createCard(Suit.Hearts, Rank.Ace, `hearts_ace`));
-      strategicHand.push(createCard(Suit.Hearts, Rank.King, `hearts_king`)); 
-      strategicHand.push(createCard(Suit.Hearts, Rank.Queen, `hearts_queen`));
+      strategicHand.push(Card.createCard(Suit.Hearts, Rank.Ace, 0));
+      strategicHand.push(Card.createCard(Suit.Hearts, Rank.King, 0)); 
+      strategicHand.push(Card.createCard(Suit.Hearts, Rank.Queen, 0));
       
       // Add Clubs with weak cards (elimination candidate)
-      strategicHand.push(createCard(Suit.Clubs, Rank.Three, `clubs_weak1`));
-      strategicHand.push(createCard(Suit.Clubs, Rank.Four, `clubs_weak2`));
-      strategicHand.push(createCard(Suit.Clubs, Rank.Six, `clubs_weak3`));
+      strategicHand.push(Card.createCard(Suit.Clubs, Rank.Three, 0));
+      strategicHand.push(Card.createCard(Suit.Clubs, Rank.Four, 0));
+      strategicHand.push(Card.createCard(Suit.Clubs, Rank.Six, 0));
       
       // Add Diamonds with weak cards (elimination candidate)  
-      strategicHand.push(createCard(Suit.Diamonds, Rank.Three, `diamonds_weak1`));
-      strategicHand.push(createCard(Suit.Diamonds, Rank.Seven, `diamonds_weak2`));
+      strategicHand.push(Card.createCard(Suit.Diamonds, Rank.Three, 0));
+      strategicHand.push(Card.createCard(Suit.Diamonds, Rank.Seven, 0));
       
       // Add mixed weak cards to reach 33 (need 17 more cards: 8 trump + 3 hearts + 3 clubs + 2 diamonds = 16, need 33 total)
       for (let i = 0; i < 17; i++) {
-        strategicHand.push(createCard(Suit.Hearts, Rank.Eight, `filler${i}`));
+        strategicHand.push(Card.createCard(Suit.Hearts, Rank.Eight, i % 2 as DeckId));
       }
       
       player.hand = strategicHand;
@@ -269,7 +268,7 @@ describe("AI Kitty Swap Strategy", () => {
     test("should validate bot has exactly 33 cards before kitty swap", () => {
       // Give bot only 25 cards (should fail)
       const cards = Array(25).fill(null).map((_, index) => 
-        createCard(Suit.Hearts, Rank.Three, `card-${index}`)
+        Card.createCard(Suit.Hearts, Rank.Three, index % 2 as DeckId)
       );
       gameState = givePlayerCards(gameState, 1, cards);
 
@@ -281,7 +280,7 @@ describe("AI Kitty Swap Strategy", () => {
     test("should validate normal AI kitty swap returns exactly 8 cards", () => {
       // Give bot correct number of cards
       const cards = Array(33).fill(null).map((_, index) => 
-        createCard(Suit.Hearts, Rank.Three, `card-${index}`)
+        Card.createCard(Suit.Hearts, Rank.Three, index % 2 as DeckId)
       );
       gameState = givePlayerCards(gameState, 1, cards);
 
@@ -293,7 +292,7 @@ describe("AI Kitty Swap Strategy", () => {
     test("should validate AI selects cards from player's hand", () => {
       // Give bot correct number of cards
       const cards = Array(33).fill(null).map((_, index) => 
-        createCard(Suit.Hearts, Rank.Three, `card-${index}`)
+        Card.createCard(Suit.Hearts, Rank.Three, index % 2 as DeckId)
       );
       gameState = givePlayerCards(gameState, 1, cards);
 
@@ -311,7 +310,7 @@ describe("AI Kitty Swap Strategy", () => {
     test("should validate remaining cards would be exactly 25", () => {
       // This test validates the arithmetic: 33 - 8 = 25
       const cards = Array(33).fill(null).map((_, index) => 
-        createCard(Suit.Hearts, Rank.Three, `card-${index}`)
+        Card.createCard(Suit.Hearts, Rank.Three, index % 2 as DeckId)
       );
       gameState = givePlayerCards(gameState, 1, cards);
 
@@ -327,7 +326,7 @@ describe("AI Kitty Swap Strategy", () => {
     test("should work correctly with valid 33-card setup", () => {
       // Give bot exactly 33 cards
       const cards = Array(33).fill(null).map((_, index) => 
-        createCard(Suit.Hearts, Rank.Three, `card-${index}`)
+        Card.createCard(Suit.Hearts, Rank.Three, index % 2 as DeckId)
       );
       gameState = givePlayerCards(gameState, 1, cards);
 
@@ -353,14 +352,14 @@ describe("AI Kitty Swap Strategy", () => {
       const trumpOnlyHand: Card[] = [];
       
       // Add high-value trump cards that should be preserved
-      trumpOnlyHand.push(createCard(Suit.Hearts, Rank.Two, "trump_rank_hearts")); // Trump rank in off-suit (conservation: 70)
-      trumpOnlyHand.push(createCard(Suit.Spades, Rank.Two, "trump_rank_spades")); // Trump rank in trump suit (conservation: 80)
-      trumpOnlyHand.push(createCard(Suit.Spades, Rank.Ace, "trump_ace")); // Trump suit Ace (conservation: 60)
-      trumpOnlyHand.push(createCard(Suit.Spades, Rank.King, "trump_king")); // Trump suit King (conservation: 55)
+      trumpOnlyHand.push(Card.createCard(Suit.Hearts, Rank.Two, 0)); // Trump rank in off-suit (conservation: 70)
+      trumpOnlyHand.push(Card.createCard(Suit.Spades, Rank.Two, 0)); // Trump rank in trump suit (conservation: 80)
+      trumpOnlyHand.push(Card.createCard(Suit.Spades, Rank.Ace, 0)); // Trump suit Ace (conservation: 60)
+      trumpOnlyHand.push(Card.createCard(Suit.Spades, Rank.King, 0)); // Trump suit King (conservation: 55)
       
       // Add low-value trump cards that should be disposed
       for (let i = 0; i < 29; i++) {
-        trumpOnlyHand.push(createCard(Suit.Spades, Rank.Three, `trump_weak_${i}`)); // Trump suit 3 (conservation: 5)
+        trumpOnlyHand.push(Card.createCard(Suit.Spades, Rank.Three, i % 2 as DeckId)); // Trump suit 3 (conservation: 5)
       }
       
       player.hand = trumpOnlyHand;
@@ -394,14 +393,12 @@ describe("AI Kitty Swap Strategy", () => {
       const criticalTrumpHand: Card[] = [];
       
       // Add trump pairs (should be preserved)
-      criticalTrumpHand.push(createCard(Suit.Spades, Rank.Queen, "trump_pair_1a"));
-      criticalTrumpHand.push(createCard(Suit.Spades, Rank.Queen, "trump_pair_1b"));
-      criticalTrumpHand.push(createCard(Suit.Spades, Rank.Jack, "trump_pair_2a"));
-      criticalTrumpHand.push(createCard(Suit.Spades, Rank.Jack, "trump_pair_2b"));
+      criticalTrumpHand.push(...Card.createPair(Suit.Spades, Rank.Queen));
+      criticalTrumpHand.push(...Card.createPair(Suit.Spades, Rank.Jack));
       
       // Add non-trump weak cards (should be disposed)
       for (let i = 0; i < 29; i++) {
-        criticalTrumpHand.push(createCard(Suit.Hearts, Rank.Three, `weak_nontrump_${i}`));
+        criticalTrumpHand.push(Card.createCard(Suit.Hearts, Rank.Three, i % 2 as DeckId));
       }
       
       player.hand = criticalTrumpHand;
@@ -428,21 +425,21 @@ describe("AI Kitty Swap Strategy", () => {
       const mixedStrengthHand: Card[] = [];
       
       // Add critical strength cards (should be preserved)
-      mixedStrengthHand.push(createCard(Suit.Hearts, Rank.Two, "critical_trump_rank")); // Critical trump
-      mixedStrengthHand.push(createCard(Suit.Hearts, Rank.Ace, "strong_ace")); // Strong non-trump
-      mixedStrengthHand.push(createCard(Suit.Hearts, Rank.King, "strong_king")); // Strong non-trump
+      mixedStrengthHand.push(Card.createCard(Suit.Hearts, Rank.Two, 0)); // Critical trump
+      mixedStrengthHand.push(Card.createCard(Suit.Hearts, Rank.Ace, 0)); // Strong non-trump
+      mixedStrengthHand.push(Card.createCard(Suit.Hearts, Rank.King, 0)); // Strong non-trump
       
       // Add more weak strength cards to ensure they get selected over medium cards
       for (let i = 0; i < 25; i++) {
-        mixedStrengthHand.push(createCard(Suit.Diamonds, Rank.Seven, `weak_${i}`)); // Weak
+        mixedStrengthHand.push(Card.createCard(Suit.Diamonds, Rank.Seven, i % 2 as DeckId)); // Weak
       }
       
       // Add medium strength cards (point cards) - fewer of them so weak gets priority
-      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Ten, "medium_ten")); // Medium (points)
-      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Five, "medium_five")); // Medium (points)
-      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Nine, "neutral_nine")); // Non-point
-      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Eight, "neutral_eight")); // Non-point
-      mixedStrengthHand.push(createCard(Suit.Clubs, Rank.Six, "neutral_six")); // Non-point
+      mixedStrengthHand.push(Card.createCard(Suit.Clubs, Rank.Ten, 0)); // Medium (points)
+      mixedStrengthHand.push(Card.createCard(Suit.Clubs, Rank.Five, 0)); // Medium (points)
+      mixedStrengthHand.push(Card.createCard(Suit.Clubs, Rank.Nine, 0)); // Non-point
+      mixedStrengthHand.push(Card.createCard(Suit.Clubs, Rank.Eight, 0)); // Non-point
+      mixedStrengthHand.push(Card.createCard(Suit.Clubs, Rank.Six, 0)); // Non-point
       
       player.hand = mixedStrengthHand;
       
@@ -476,18 +473,18 @@ describe("AI Kitty Swap Strategy", () => {
       const suitEliminationHand: Card[] = [];
       
       // Add one suit with high-value trump cards (should NOT be eliminated)
-      suitEliminationHand.push(createCard(Suit.Spades, Rank.Ace, "trump_ace")); // High conservation value
-      suitEliminationHand.push(createCard(Suit.Spades, Rank.King, "trump_king")); // High conservation value
-      suitEliminationHand.push(createCard(Suit.Spades, Rank.Three, "trump_weak")); // Low conservation value
+      suitEliminationHand.push(Card.createCard(Suit.Spades, Rank.Ace, 0)); // High conservation value
+      suitEliminationHand.push(Card.createCard(Suit.Spades, Rank.King, 0)); // High conservation value
+      suitEliminationHand.push(Card.createCard(Suit.Spades, Rank.Three, 0)); // Low conservation value
       
       // Add another suit with weak non-trump cards (should be eliminated)
-      suitEliminationHand.push(createCard(Suit.Clubs, Rank.Seven, "clubs_weak1"));
-      suitEliminationHand.push(createCard(Suit.Clubs, Rank.Eight, "clubs_weak2"));
-      suitEliminationHand.push(createCard(Suit.Clubs, Rank.Nine, "clubs_weak3"));
+      suitEliminationHand.push(Card.createCard(Suit.Clubs, Rank.Seven, 0));
+      suitEliminationHand.push(Card.createCard(Suit.Clubs, Rank.Eight, 0));
+      suitEliminationHand.push(Card.createCard(Suit.Clubs, Rank.Nine, 0));
       
       // Fill with other cards
       for (let i = 0; i < 27; i++) {
-        suitEliminationHand.push(createCard(Suit.Hearts, Rank.Four, `hearts_${i}`));
+        suitEliminationHand.push(Card.createCard(Suit.Hearts, Rank.Four, i % 2 as DeckId));
       }
       
       player.hand = suitEliminationHand;

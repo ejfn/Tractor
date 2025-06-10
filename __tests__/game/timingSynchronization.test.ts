@@ -1,6 +1,6 @@
 import { GameState, Rank } from "../../src/types";
-import { processPlay } from '../../src/game/gamePlayManager';
-import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { processPlay } from '../../src/game/playProcessing';
+import { getAIMoveWithErrorHandling } from '../../src/game/playProcessing';
 import { TRICK_RESULT_DISPLAY_TIME } from '../../src/utils/gameTimings';
 import { createFullyDealtGameState } from '../helpers/gameStates';
 

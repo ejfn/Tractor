@@ -1,15 +1,15 @@
 import { describe, expect, test } from '@jest/globals';
 import {
   processPlay
-} from '../../src/game/gamePlayManager';
+} from '../../src/game/playProcessing';
 import {
+  Card,
   GamePhase,
   PlayerId,
   Rank,
   Suit
 } from "../../src/types";
 import {
-  createCard,
   createGameState,
   createTrumpScenarios,
 } from "../helpers";
@@ -22,7 +22,7 @@ describe('Winning Player ID Tracking During Trick', () => {
     gameState.gamePhase = GamePhase.Playing;
     gameState.currentPlayerIndex = 0; // Human starts
 
-    const leadingCard = createCard(Suit.Hearts, Rank.King, 'hearts_k_1');
+    const leadingCard = Card.createCard(Suit.Hearts, Rank.King, 0);
 
     const result = processPlay(gameState, [leadingCard]);
     
@@ -38,13 +38,13 @@ describe('Winning Player ID Tracking During Trick', () => {
     gameState.currentPlayerIndex = 0; // Human starts
 
     // Human leads with King
-    const leadingCard = createCard(Suit.Hearts, Rank.King, 'hearts_k_1');
+    const leadingCard = Card.createCard(Suit.Hearts, Rank.King, 0);
     let result = processPlay(gameState, [leadingCard]);
     
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Human);
 
     // Bot1 plays Ace (stronger)
-    const strongerCard = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
+    const strongerCard = Card.createCard(Suit.Hearts, Rank.Ace, 0);
     result = processPlay(result.newState, [strongerCard]);
     
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Bot1);
@@ -57,13 +57,13 @@ describe('Winning Player ID Tracking During Trick', () => {
     gameState.currentPlayerIndex = 0; // Human starts
 
     // Human leads with Ace
-    const leadingCard = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
+    const leadingCard = Card.createCard(Suit.Hearts, Rank.Ace, 0);
     let result = processPlay(gameState, [leadingCard]);
     
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Human);
 
     // Bot1 plays King (weaker)
-    const weakerCard = createCard(Suit.Hearts, Rank.King, 'hearts_k_1');
+    const weakerCard = Card.createCard(Suit.Hearts, Rank.King, 0);
     result = processPlay(result.newState, [weakerCard]);
     
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Human); // Should remain Human
@@ -77,13 +77,13 @@ describe('Winning Player ID Tracking During Trick', () => {
     gameState.trumpInfo = trumpInfo; // Set trump info (Spades trump, rank 2)
 
     // Human leads with non-trump Ace
-    const leadingCard = createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1');
+    const leadingCard = Card.createCard(Suit.Hearts, Rank.Ace, 0);
     let result = processPlay(gameState, [leadingCard]);
     
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Human);
 
     // Bot1 plays trump card (stronger than non-trump)
-    const trumpCard = createCard(Suit.Spades, Rank.Three, 'spades_3_1'); // Trump suit
+    const trumpCard = Card.createCard(Suit.Spades, Rank.Three, 0); // Trump suit
     result = processPlay(result.newState, [trumpCard]);
     
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Bot1);
@@ -96,22 +96,22 @@ describe('Winning Player ID Tracking During Trick', () => {
     gameState.currentPlayerIndex = 0; // Human starts
 
     // Human leads with 5
-    const card1 = createCard(Suit.Hearts, Rank.Five, 'hearts_5_1');
+    const card1 = Card.createCard(Suit.Hearts, Rank.Five, 0);
     let result = processPlay(gameState, [card1]);
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Human);
 
     // Bot1 plays 7 (stronger)
-    const card2 = createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1');
+    const card2 = Card.createCard(Suit.Hearts, Rank.Seven, 0);
     result = processPlay(result.newState, [card2]);
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Bot1);
 
     // Bot2 plays King (stronger)
-    const card3 = createCard(Suit.Hearts, Rank.King, 'hearts_k_1');
+    const card3 = Card.createCard(Suit.Hearts, Rank.King, 0);
     result = processPlay(result.newState, [card3]);
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Bot2);
 
     // Bot3 plays 6 (weaker)
-    const card4 = createCard(Suit.Hearts, Rank.Six, 'hearts_6_1');
+    const card4 = Card.createCard(Suit.Hearts, Rank.Six, 0);
     result = processPlay(result.newState, [card4]);
     
     // Trick should be complete and Bot2 should still be the winner
@@ -127,34 +127,22 @@ describe('Winning Player ID Tracking During Trick', () => {
     gameState.trumpInfo = trumpInfo; // Apply trump info (Spades trump)
 
     // Human leads with pair of 5s
-    const leadingPair = [
-      createCard(Suit.Hearts, Rank.Five, 'hearts_5_1'),
-      createCard(Suit.Hearts, Rank.Five, 'hearts_5_2')
-    ];
+    const leadingPair = Card.createPair(Suit.Hearts, Rank.Five);
     let result = processPlay(gameState, leadingPair);
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Human);
 
     // Bot1 plays pair of Kings (stronger pair)
-    const strongerPair = [
-      createCard(Suit.Hearts, Rank.King, 'hearts_k_1'),
-      createCard(Suit.Hearts, Rank.King, 'hearts_k_2')
-    ];
+    const strongerPair = Card.createPair(Suit.Hearts, Rank.King);
     result = processPlay(result.newState, strongerPair);
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Bot1);
 
     // Bot2 plays pair of 7s (weaker pair)
-    const weakerPair = [
-      createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-      createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2')
-    ];
+    const weakerPair = Card.createPair(Suit.Hearts, Rank.Seven);
     result = processPlay(result.newState, weakerPair);
     expect(result.newState.currentTrick!.winningPlayerId).toBe(PlayerId.Bot1); // Should remain Bot1
 
     // Bot3 plays trump pair (should beat non-trump pair)
-    const trumpPair = [
-      createCard(Suit.Spades, Rank.Three, 'spades_3_1'),
-      createCard(Suit.Spades, Rank.Three, 'spades_3_2')
-    ];
+    const trumpPair = Card.createPair(Suit.Spades, Rank.Three);
     result = processPlay(result.newState, trumpPair);
     
     expect(result.trickComplete).toBe(true);
@@ -166,7 +154,7 @@ describe('Winning Player ID Tracking During Trick', () => {
     // This test verifies the type safety of the new mandatory field
     const trick = {
       leadingPlayerId: PlayerId.Human,
-      leadingCombo: [createCard(Suit.Hearts, Rank.Ace, 'hearts_a_1')],
+      leadingCombo: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
       plays: [],
       winningPlayerId: PlayerId.Human, // This field is now mandatory
       points: 0

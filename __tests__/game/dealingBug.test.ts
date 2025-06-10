@@ -1,5 +1,5 @@
-import { Rank } from "../../src/types";
-import { initializeGame, createDeck } from '../../src/game/gameLogic';
+import { Card } from "../../src/types";
+import { createDeck, initializeGame } from "../../src/utils/gameInitialization";
 
 describe('Card Dealing Bug Test', () => {
   test('Check initial card distribution', () => {
@@ -67,10 +67,10 @@ describe('Card Dealing Bug Test', () => {
     const deck = createDeck();
     const shuffledDeck = [...deck]; // Simulate shuffling
     const players = [
-      { name: 'Human', hand: [] as any[] },
-      { name: 'Bot 1', hand: [] as any[] },
-      { name: 'Bot 2', hand: [] as any[] },
-      { name: 'Bot 3', hand: [] as any[] }
+      { name: 'Human', hand: [] as Card[] },
+      { name: 'Bot 1', hand: [] as Card[] },
+      { name: 'Bot 2', hand: [] as Card[] },
+      { name: 'Bot 3', hand: [] as Card[] }
     ];
     
     const cardsPerPlayer = Math.floor((shuffledDeck.length - 8) / players.length);

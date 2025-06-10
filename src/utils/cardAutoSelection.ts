@@ -1,6 +1,6 @@
-import { Card, TrumpInfo, ComboType } from "../types";
-import { getComboType } from "../game/gameLogic";
+import { getComboType } from "../game/comboDetection";
 import { findAllTractors } from "../game/tractorLogic";
+import { Card, ComboType, TrumpInfo } from "../types";
 
 /**
  * Utility functions for smart card auto-selection
@@ -12,23 +12,11 @@ import { findAllTractors } from "../game/tractorLogic";
 export const findPairCards = (targetCard: Card, hand: Card[]): Card[] => {
   const pairs: Card[] = [targetCard];
 
-  // Find joker pairs
-  if (targetCard.joker) {
-    const matchingJokers = hand.filter(
-      (card) => card.joker === targetCard.joker && card.id !== targetCard.id,
-    );
-    pairs.push(...matchingJokers);
-  }
-  // Find regular pairs (same rank and suit)
-  else if (targetCard.rank && targetCard.suit) {
-    const matchingCards = hand.filter(
-      (card) =>
-        card.rank === targetCard.rank &&
-        card.suit === targetCard.suit &&
-        card.id !== targetCard.id,
-    );
-    pairs.push(...matchingCards);
-  }
+  // Find identical cards (proper pair logic)
+  const matchingCards = hand.filter(
+    (card) => card.isIdenticalTo(targetCard) && card.id !== targetCard.id,
+  );
+  pairs.push(...matchingCards);
 
   return pairs;
 };
@@ -101,8 +89,8 @@ export const getAutoSelectedCards = (
   };
 
   // If following a specific combo type, try to match that type ONLY if the clicked card can form it
-  if (!isLeading && leadingCombo && leadingCombo.length > 1) {
-    const leadingComboType = getComboType(leadingCombo);
+  if (!isLeading && leadingCombo && leadingCombo.length > 1 && trumpInfo) {
+    const leadingComboType = getComboType(leadingCombo, trumpInfo);
 
     // Following a pair - auto-select pair only if clicked card can form a pair
     if (leadingComboType === ComboType.Pair && leadingCombo.length === 2) {

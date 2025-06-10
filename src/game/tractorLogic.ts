@@ -30,7 +30,7 @@ export const getTractorRank = (card: Card, trumpInfo: TrumpInfo): number => {
   }
 
   // Regular cards - adjust for trump rank gaps + suit-based offset
-  const baseRankValue = getRankValue(card.rank!);
+  const baseRankValue = getRankValue(card.rank);
   const trumpRankValue = getRankValue(trumpInfo.trumpRank);
 
   // If this card's rank is lower than trump rank, shift it up by 1
@@ -41,7 +41,7 @@ export const getTractorRank = (card: Card, trumpInfo: TrumpInfo): number => {
   }
 
   // Add suit-based offset to prevent cross-suit combinations
-  const suitOffset = getSuitOffset(card.suit!, trumpInfo);
+  const suitOffset = getSuitOffset(card.suit, trumpInfo);
   return adjustedRank + suitOffset;
 };
 
@@ -123,17 +123,35 @@ export const findTractorsInContext = (
     cardsByTractorRank[rank].push(card);
   });
 
-  // Find pairs at each tractor rank level
+  // Find pairs at each tractor rank level using cardId-based identity matching
   const pairs: { rank: number; cards: Card[] }[] = [];
   Object.entries(cardsByTractorRank).forEach(([rank, rankCards]) => {
     if (rankCards.length >= 2) {
-      // Add all possible pairs of this tractor rank
-      for (let i = 0; i < rankCards.length - 1; i += 2) {
-        pairs.push({
-          rank: parseInt(rank),
-          cards: [rankCards[i], rankCards[i + 1]],
-        });
-      }
+      // Group by cardId within the same tractor rank to find truly identical pairs
+      const cardsByIdentity: Record<string, Card[]> = {};
+
+      rankCards.forEach((card) => {
+        const identityKey = card.cardId;
+        if (!cardsByIdentity[identityKey]) {
+          cardsByIdentity[identityKey] = [];
+        }
+        cardsByIdentity[identityKey].push(card);
+      });
+
+      // Only create pairs from cards with identical cardId
+      Object.values(cardsByIdentity).forEach((identicalCards) => {
+        if (identicalCards.length >= 2) {
+          for (let i = 0; i < identicalCards.length - 1; i += 2) {
+            // Verify identity using isIdenticalTo() method
+            if (identicalCards[i].isIdenticalTo(identicalCards[i + 1])) {
+              pairs.push({
+                rank: parseInt(rank),
+                cards: [identicalCards[i], identicalCards[i + 1]],
+              });
+            }
+          }
+        }
+      });
     }
   });
 
@@ -208,7 +226,7 @@ export const getTractorTypeDescription = (
 
   const context = getTractorContext(cards[0], trumpInfo);
   const ranks = cards.map((card) => getTractorRank(card, trumpInfo));
-  const uniqueRanks = [...new Set(ranks)].sort((a, b) => a - b);
+  const uniqueRanks = Array.from(new Set(ranks)).sort((a, b) => a - b);
 
   if (context === "joker") {
     return "Joker tractor";

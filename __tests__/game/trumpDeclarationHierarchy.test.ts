@@ -6,8 +6,7 @@ import {
   validateDeclarationCards,
   detectPossibleDeclarations
 } from '../../src/types/trumpDeclaration';
-import { PlayerId, Rank, Suit, JokerType } from '../../src/types';
-import { createCard } from '../helpers/cards';
+import { Card, PlayerId, Rank, Suit, JokerType } from '../../src/types';
 
 describe('Trump Declaration Hierarchy System', () => {
   const trumpRank = Rank.Two;
@@ -28,7 +27,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, trumpRank)],
+        cards: [Card.createCard(Suit.Spades, trumpRank, 0)],
         timestamp: Date.now()
       };
 
@@ -41,7 +40,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, trumpRank)],
+        cards: [Card.createCard(Suit.Spades, trumpRank, 0)],
         timestamp: Date.now()
       };
 
@@ -51,7 +50,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Spades,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Spades, trumpRank), createCard(Suit.Spades, trumpRank)],
+        cards: Card.createPair(Suit.Spades, trumpRank),
         timestamp: Date.now() + 1
       };
 
@@ -63,7 +62,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Hearts,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Hearts, trumpRank), createCard(Suit.Hearts, trumpRank)],
+        cards: Card.createPair(Suit.Hearts, trumpRank),
         timestamp: Date.now() + 1
       };
 
@@ -76,7 +75,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, trumpRank)],
+        cards: [Card.createCard(Suit.Spades, trumpRank, 0)],
         timestamp: Date.now()
       };
 
@@ -86,7 +85,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Hearts,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Hearts, trumpRank), createCard(Suit.Hearts, trumpRank)],
+        cards: Card.createPair(Suit.Hearts, trumpRank),
         timestamp: Date.now() + 1
       };
 
@@ -98,7 +97,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Spades,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Spades, trumpRank), createCard(Suit.Spades, trumpRank)],
+        cards: Card.createPair(Suit.Spades, trumpRank),
         timestamp: Date.now() + 1
       };
 
@@ -110,7 +109,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Hearts,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Hearts, trumpRank)],
+        cards: [Card.createCard(Suit.Hearts, trumpRank, 0)],
         timestamp: Date.now() + 1
       };
 
@@ -124,7 +123,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Clubs,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Clubs, trumpRank), createCard(Suit.Clubs, trumpRank)],
+        cards: Card.createPair(Suit.Clubs, trumpRank),
         timestamp: Date.now()
       };
 
@@ -134,7 +133,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Diamonds,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Diamonds, trumpRank), createCard(Suit.Diamonds, trumpRank)],
+        cards: Card.createPair(Suit.Diamonds, trumpRank),
         timestamp: Date.now() + 1
       };
 
@@ -146,7 +145,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Spades,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Spades, trumpRank)],
+        cards: [Card.createCard(Suit.Spades, trumpRank, 0)],
         timestamp: Date.now()
       };
 
@@ -155,7 +154,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Hearts,
         type: DeclarationType.Single,
-        cards: [createCard(Suit.Hearts, trumpRank)],
+        cards: [Card.createCard(Suit.Hearts, trumpRank, 0)],
         timestamp: Date.now() + 1
       };
 
@@ -168,7 +167,7 @@ describe('Trump Declaration Hierarchy System', () => {
         rank: trumpRank,
         suit: Suit.Spades,
         type: DeclarationType.Pair,
-        cards: [createCard(Suit.Spades, trumpRank), createCard(Suit.Spades, trumpRank)],
+        cards: Card.createPair(Suit.Spades, trumpRank),
         timestamp: Date.now()
       };
 
@@ -178,8 +177,8 @@ describe('Trump Declaration Hierarchy System', () => {
         suit: Suit.Spades, // Suit doesn't matter for jokers
         type: DeclarationType.BigJokerPair,
         cards: [
-          { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
-          { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 }
+          Card.createJoker(JokerType.Small, 0),
+          Card.createJoker(JokerType.Big, 0)
         ],
         timestamp: Date.now() + 1
       };
@@ -190,53 +189,47 @@ describe('Trump Declaration Hierarchy System', () => {
 
   describe('Declaration Card Validation', () => {
     test('should validate single declarations', () => {
-      const validSingle = [createCard(Suit.Spades, trumpRank)];
+      const validSingle = [Card.createCard(Suit.Spades, trumpRank, 0)];
       expect(validateDeclarationCards(validSingle, DeclarationType.Single, trumpRank)).toBe(true);
 
-      const invalidSingle = [createCard(Suit.Spades, Rank.Three)];
+      const invalidSingle = [Card.createCard(Suit.Spades, Rank.Three, 0)];
       expect(validateDeclarationCards(invalidSingle, DeclarationType.Single, trumpRank)).toBe(false);
 
-      const tooManyCards = [createCard(Suit.Spades, trumpRank), createCard(Suit.Hearts, trumpRank)];
+      const tooManyCards = [Card.createCard(Suit.Spades, trumpRank, 0), Card.createCard(Suit.Hearts, trumpRank, 0)];
       expect(validateDeclarationCards(tooManyCards, DeclarationType.Single, trumpRank)).toBe(false);
     });
 
     test('should validate pair declarations', () => {
       // Valid trump rank pair (same suit)
-      const validPair = [createCard(Suit.Spades, trumpRank), createCard(Suit.Spades, trumpRank)];
+      const validPair = Card.createPair(Suit.Spades, trumpRank);
       expect(validateDeclarationCards(validPair, DeclarationType.Pair, trumpRank)).toBe(true);
 
       // Invalid: different suits
-      const differentSuits = [createCard(Suit.Spades, trumpRank), createCard(Suit.Hearts, trumpRank)];
+      const differentSuits = [Card.createCard(Suit.Spades, trumpRank, 0), Card.createCard(Suit.Hearts, trumpRank, 0)];
       expect(validateDeclarationCards(differentSuits, DeclarationType.Pair, trumpRank)).toBe(false);
 
       // Invalid: wrong rank
-      const wrongRank = [createCard(Suit.Spades, Rank.Three), createCard(Suit.Spades, Rank.Three)];
+      const wrongRank = Card.createPair(Suit.Spades, Rank.Three);
       expect(validateDeclarationCards(wrongRank, DeclarationType.Pair, trumpRank)).toBe(false);
 
       // Invalid: mixed joker pair (game rules: only same jokers make pairs)
       const mixedJokerPair = [
-        { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
-        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 }
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Big, 0)
       ];
       expect(validateDeclarationCards(mixedJokerPair, DeclarationType.Pair, trumpRank)).toBe(false);
     });
 
     test('should validate joker pair declarations', () => {
-      const validBigJokerPair = [
-        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 },
-        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj2', points: 0 }
-      ];
+      const validBigJokerPair = Card.createJokerPair(JokerType.Big);
       expect(validateDeclarationCards(validBigJokerPair, DeclarationType.BigJokerPair, trumpRank)).toBe(true);
 
-      const validSmallJokerPair = [
-        { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 },
-        { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj2', points: 0 }
-      ];
+      const validSmallJokerPair = Card.createJokerPair(JokerType.Small);
       expect(validateDeclarationCards(validSmallJokerPair, DeclarationType.SmallJokerPair, trumpRank)).toBe(true);
 
       const invalidMixed = [
-        createCard(Suit.Spades, trumpRank),
-        { suit: undefined, rank: undefined, joker: JokerType.Small, id: 'sj1', points: 0 }
+        Card.createCard(Suit.Spades, trumpRank, 0),
+        Card.createJoker(JokerType.Small, 0)
       ];
       expect(validateDeclarationCards(invalidMixed, DeclarationType.BigJokerPair, trumpRank)).toBe(false);
     });
@@ -245,12 +238,10 @@ describe('Trump Declaration Hierarchy System', () => {
   describe('Declaration Detection', () => {
     test('should detect possible declarations from hand', () => {
       const hand = [
-        createCard(Suit.Spades, trumpRank),
-        createCard(Suit.Spades, trumpRank),
-        createCard(Suit.Hearts, trumpRank),
-        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj1', points: 0 },
-        { suit: undefined, rank: undefined, joker: JokerType.Big, id: 'bj2', points: 0 },
-        createCard(Suit.Clubs, Rank.Ace)
+        ...Card.createPair(Suit.Spades, trumpRank),
+        Card.createCard(Suit.Hearts, trumpRank, 0),
+        ...Card.createJokerPair(JokerType.Big),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0)
       ];
 
       const declarations = detectPossibleDeclarations(hand, trumpRank);
@@ -272,9 +263,9 @@ describe('Trump Declaration Hierarchy System', () => {
 
     test('should handle hand with no declarable cards', () => {
       const hand = [
-        createCard(Suit.Spades, Rank.Ace),
-        createCard(Suit.Hearts, Rank.King),
-        createCard(Suit.Clubs, Rank.Queen)
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Clubs, Rank.Queen, 0)
       ];
 
       const declarations = detectPossibleDeclarations(hand, trumpRank);

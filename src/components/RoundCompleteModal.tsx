@@ -13,8 +13,8 @@ import AnimatedCardComponent from "./AnimatedCard";
 
 interface RoundCompleteModalProps {
   onNextRound: () => void;
-  fadeAnim?: any;
-  scaleAnim?: any;
+  fadeAnim?: Animated.Value;
+  scaleAnim?: Animated.Value;
   kittyCards?: Card[]; // Kitty cards to display
   roundResult: RoundResult; // Round result containing message and winning team data
 }

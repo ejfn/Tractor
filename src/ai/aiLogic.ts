@@ -1,12 +1,12 @@
-import { getValidCombinations } from "../game/gameLogic";
-import { Card, GameState, GamePhase, PlayerId } from "../types";
+import { getValidCombinations } from "../game/combinationGeneration";
+import { Card, GamePhase, GameState, PlayerId } from "../types";
+import { sortCards } from "../utils/cardSorting";
 import { makeAIPlay } from "./aiStrategy";
 import { selectAIKittySwapCards } from "./kittySwap/kittySwapStrategy";
 import {
-  getAITrumpDeclarationDecision,
   AIDeclarationDecision,
+  getAITrumpDeclarationDecision,
 } from "./trumpDeclaration/trumpDeclarationStrategy";
-import { sortCards } from "../utils/cardSorting";
 
 /**
  * AI Logic - Unified Entry Point for All AI Operations
@@ -163,11 +163,7 @@ export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
       errorInfo,
     );
 
-    const error = new Error(errorInfo.message);
-    (error as any).isUserFriendly = true;
-    (error as any).canReport = true;
-    (error as any).debugInfo = errorInfo;
-    throw error;
+    throw new Error(errorInfo.message);
   }
 
   // Delegate all strategic decisions to the AI strategy layer

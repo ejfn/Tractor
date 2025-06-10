@@ -3,8 +3,8 @@
  * These utilities ensure each test gets fresh, isolated state
  */
 
-import { GameState, Player, Team, Rank, Suit, GamePhase, PlayerId, PlayerName, TeamId } from '../../src/types';
-import { createDeck, shuffleDeck } from '../../src/game/gameLogic';
+import { Card, GamePhase, GameState, Player, PlayerId, PlayerName, Rank, Team, TeamId } from '../../src/types';
+import { createDeck, shuffleDeck } from '../../src/utils/gameInitialization';
 
 /**
  * Creates a completely fresh game state without any shared references
@@ -60,12 +60,7 @@ export const createIsolatedGameState = (): GameState => {
   ];
 
   // Create fresh deck with unique card IDs to prevent reference sharing
-  const timestamp = Date.now();
-  const randomSuffix = Math.random().toString(36).substr(2, 9);
-  const deck = createDeck().map((card, index) => ({
-    ...card,
-    id: `${card.id}_${timestamp}_${randomSuffix}_${index}`, // Ensure unique IDs
-  }));
+  const deck = createDeck().map(Card.clone);
 
   // Create completely isolated game state
   const gameState: GameState = {
@@ -90,15 +85,11 @@ export const createIsolatedGameState = (): GameState => {
   
   gameState.players.forEach((player, index) => {
     const startIdx = index * cardsPerPlayer;
-    player.hand = gameState.deck.slice(startIdx, startIdx + cardsPerPlayer).map(card => ({
-      ...card, // Create new card objects to prevent reference sharing
-    }));
+    player.hand = gameState.deck.slice(startIdx, startIdx + cardsPerPlayer).map(Card.clone);
   });
 
   // Set kitty cards
-  gameState.kittyCards = gameState.deck.slice(gameState.deck.length - 8).map(card => ({
-    ...card,
-  }));
+  gameState.kittyCards = gameState.deck.slice(gameState.deck.length - 8).map(Card.clone);
 
   // Update game phase
   gameState.gamePhase = GamePhase.Dealing;

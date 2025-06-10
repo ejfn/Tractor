@@ -8,7 +8,7 @@ import {
   ThirdPlayerAnalysis,
   Rank,
 } from "../../types";
-import { isTrump } from "../../game/gameLogic";
+import { isTrump } from "../../game/gameHelpers";
 
 /**
  * Third Player Strategy - Position 3 specific optimizations
@@ -46,7 +46,12 @@ export function analyzeThirdPlayerAdvantage(
   }
 
   // Get teammate's winning cards
-  const trickWinner = context.trickWinnerAnalysis!;
+  const trickWinner = context.trickWinnerAnalysis;
+  if (!trickWinner) {
+    throw new Error(
+      "analyzeThirdPlayerAdvantage called without trick winner analysis",
+    );
+  }
   const winnerId = trickWinner.currentWinner;
   const winningPlay = currentTrick.plays.find(
     (play) => play.playerId === winnerId,

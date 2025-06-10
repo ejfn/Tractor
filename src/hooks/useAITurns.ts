@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getAIMoveWithErrorHandling } from "../game/gamePlayManager";
+import { getAIMoveWithErrorHandling } from "../game/playProcessing";
 import { getAIKittySwap } from "../ai/aiLogic";
 import { putbackKittyCards } from "../game/kittyManager";
-import { Card, GamePhase, GameState } from "../types";
+import { Card, GamePhase, GameState, Trick } from "../types";
 import { AI_MOVE_DELAY, AI_KITTY_SWAP_DELAY } from "../utils/gameTimings";
 
 type ProcessPlayFn = (cards: Card[]) => void;
@@ -24,7 +24,7 @@ export function useAITurns(
   processPlay: ProcessPlayFn,
   setGameState: SetGameStateFn,
   showTrickResult: boolean,
-  lastCompletedTrick: any | null, // Using any to match original implementation
+  lastCompletedTrick: Trick | null,
   showRoundComplete: boolean = false, // Optional parameter for round completion
 ) {
   const [waitingForAI, setWaitingForAI] = useState(false);

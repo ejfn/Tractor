@@ -5,7 +5,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![Tests](https://img.shields.io/badge/Tests-654%20Passing-brightgreen?logo=jest)
+![Tests](https://img.shields.io/badge/Tests-657%20Passing-brightgreen?logo=jest)
 ![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
 
 ## What is Tractor?
@@ -47,6 +47,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **React Native Reanimated** - High-performance card animations
 
 **Architectural Highlights:**
+- **Modular Game System**: Focused game modules with direct imports (no re-export hub)
 - **Modular AI System**: 22 specialized modules with 4-phase intelligence organized by functional domain
 - **Unified Trick Structure**: Streamlined game state with plays array for consistent data flow
 - **Consolidated Hook Architecture**: Single-responsibility hooks with minimal interdependencies

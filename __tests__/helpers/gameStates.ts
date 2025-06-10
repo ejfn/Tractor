@@ -1,20 +1,21 @@
+import { dealNextCard } from '../../src/game/dealingAndDeclaration';
 import {
   Card,
-  GameState,
   GamePhase,
+  GameState,
   Player,
   PlayerId,
-  PlayerName,
   Rank,
   Suit,
   Team,
   Trick,
-  TrumpInfo,
+  TrumpInfo
 } from '../../src/types';
-import { createCard, createPair, createTractor, testData } from './cards';
+import { initializeGame } from '../../src/utils/gameInitialization';
+import { createTractor, testData } from './cards';
 import { createStandardPlayers, createStandardTeams } from './players';
-import { createTrumpInfo } from './trump';
 import { createCompletedTrick, createTrick } from './tricks';
+import { createTrumpInfo } from './trump';
 
 // ============================================================================
 // GAME STATE CREATION UTILITIES
@@ -143,17 +144,17 @@ export const createTestCardsGameState = (): GameState => {
   ]);
   
   state = givePlayerCards(state, 1, [
-    createCard(Suit.Diamonds, Rank.Three),
-    createCard(Suit.Clubs, Rank.Jack)
+    Card.createCard(Suit.Diamonds, Rank.Three, 0),
+    Card.createCard(Suit.Clubs, Rank.Jack, 0)
   ]);
   
   state = givePlayerCards(state, 2, [
-    createCard(Suit.Spades, Rank.Two),  // Would be trump if spades declared
-    createCard(Suit.Hearts, Rank.Ace)
+    Card.createCard(Suit.Spades, Rank.Two, 0),  // Would be trump if spades declared
+    Card.createCard(Suit.Hearts, Rank.Ace, 0)
   ]);
   
   state = givePlayerCards(state, 3, [
-    createCard(Suit.Clubs, Rank.Four),
+    Card.createCard(Suit.Clubs, Rank.Four, 0),
     testData.cards.diamondsTen    // 10 points
   ]);
 
@@ -190,23 +191,23 @@ export const createTrumpDeclarationGameState = (): GameState => {
 
   // Give players trump rank cards for declaration testing
   state = givePlayerCards(state, 0, [
-    createCard(Suit.Hearts, Rank.Two),   // Trump rank card
-    createCard(Suit.Spades, Rank.King)
+    Card.createCard(Suit.Hearts, Rank.Two, 0),   // Trump rank card
+    Card.createCard(Suit.Spades, Rank.King, 0)
   ]);
   
   state = givePlayerCards(state, 1, [
-    createCard(Suit.Clubs, Rank.Two),    // Trump rank card
-    createCard(Suit.Diamonds, Rank.Ace)
+    Card.createCard(Suit.Clubs, Rank.Two, 0),    // Trump rank card
+    Card.createCard(Suit.Diamonds, Rank.Ace, 0)
   ]);
   
   state = givePlayerCards(state, 2, [
-    createCard(Suit.Spades, Rank.Two),   // Trump rank card
-    createCard(Suit.Hearts, Rank.Queen)
+    Card.createCard(Suit.Spades, Rank.Two, 0),   // Trump rank card
+    Card.createCard(Suit.Hearts, Rank.Queen, 0)
   ]);
   
   state = givePlayerCards(state, 3, [
-    createCard(Suit.Diamonds, Rank.Two), // Trump rank card
-    createCard(Suit.Clubs, Rank.Jack)
+    Card.createCard(Suit.Diamonds, Rank.Two, 0), // Trump rank card
+    Card.createCard(Suit.Clubs, Rank.Jack, 0)
   ]);
 
   return state;
@@ -229,20 +230,20 @@ export const createFullGameStateWithTricks = (): GameState => {
     PlayerId.Human,
     [testData.cards.heartsFive],
     [
-      { playerId: PlayerId.Bot1, cards: [createCard(Suit.Hearts, Rank.Three)] },
-      { playerId: PlayerId.Bot2, cards: [createCard(Suit.Hearts, Rank.Ace)] },
-      { playerId: PlayerId.Bot3, cards: [createCard(Suit.Hearts, Rank.King)] }
+      { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] },
+      { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
+      { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] }
     ],
     PlayerId.Bot2 // Ace wins
   );
 
   const completedTrick2 = createCompletedTrick(
     PlayerId.Bot2,
-    [createCard(Suit.Clubs, Rank.Queen)],
+    [Card.createCard(Suit.Clubs, Rank.Queen, 0)],
     [
-      { playerId: PlayerId.Bot3, cards: [createCard(Suit.Clubs, Rank.Jack)] },
-      { playerId: PlayerId.Human, cards: [createCard(Suit.Clubs, Rank.Four)] },
-      { playerId: PlayerId.Bot1, cards: [createCard(Suit.Clubs, Rank.Two)] }
+      { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Clubs, Rank.Jack, 0)] },
+      { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Clubs, Rank.Four, 0)] },
+      { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Two, 0)] }
     ],
     PlayerId.Bot2 // Queen wins
   );
@@ -252,22 +253,22 @@ export const createFullGameStateWithTricks = (): GameState => {
   // Give players remaining cards
   state = givePlayerCards(state, 0, [
     testData.cards.clubsKing,
-    createCard(Suit.Diamonds, Rank.Seven)
+    Card.createCard(Suit.Diamonds, Rank.Seven, 0)
   ]);
   
   state = givePlayerCards(state, 1, [
-    createCard(Suit.Spades, Rank.Five),
-    createCard(Suit.Hearts, Rank.Six)
+    Card.createCard(Suit.Spades, Rank.Five, 0),
+    Card.createCard(Suit.Hearts, Rank.Six, 0)
   ]);
   
   state = givePlayerCards(state, 2, [
-    createCard(Suit.Spades, Rank.Ace),
-    createCard(Suit.Diamonds, Rank.Eight)
+    Card.createCard(Suit.Spades, Rank.Ace, 0),
+    Card.createCard(Suit.Diamonds, Rank.Eight, 0)
   ]);
   
   state = givePlayerCards(state, 3, [
-    createCard(Suit.Hearts, Rank.Seven),
-    createCard(Suit.Clubs, Rank.Five)
+    Card.createCard(Suit.Hearts, Rank.Seven, 0),
+    Card.createCard(Suit.Clubs, Rank.Five, 0)
   ]);
 
   return state;
@@ -296,23 +297,23 @@ export const createComponentTestGameState = (): GameState => {
 
   // Give players cards with predictable structure for component testing
   state = givePlayerCards(state, 0, [
-    createCard(Suit.Spades, Rank.Five, 'spades_5_1'),
-    createCard(Suit.Hearts, Rank.King, 'hearts_k_1')
+    Card.createCard(Suit.Spades, Rank.Five, 0),
+    Card.createCard(Suit.Hearts, Rank.King, 0)
   ]);
   
   state = givePlayerCards(state, 1, [
-    createCard(Suit.Diamonds, Rank.Three, 'diamonds_3_1'),
-    createCard(Suit.Clubs, Rank.Jack, 'clubs_j_1')
+    Card.createCard(Suit.Diamonds, Rank.Three, 0),
+    Card.createCard(Suit.Clubs, Rank.Jack, 0)
   ]);
   
   state = givePlayerCards(state, 2, [
-    createCard(Suit.Spades, Rank.Two, 'spades_2_1'),
-    createCard(Suit.Hearts, Rank.Queen, 'hearts_q_1')
+    Card.createCard(Suit.Spades, Rank.Two, 0),
+    Card.createCard(Suit.Hearts, Rank.Queen, 0)
   ]);
   
   state = givePlayerCards(state, 3, [
-    createCard(Suit.Clubs, Rank.Four, 'clubs_4_1'),
-    createCard(Suit.Diamonds, Rank.Six, 'diamonds_6_1')
+    Card.createCard(Suit.Clubs, Rank.Four, 0),
+    Card.createCard(Suit.Diamonds, Rank.Six, 0)
   ]);
 
   return state;
@@ -362,7 +363,7 @@ export const addCardsToPlayer = (
 export const setupTestHands = {
   // Give human a pair
   humanPair: (gameState: GameState, suit: Suit, rank: Rank) => 
-    givePlayerCards(gameState, 0, createPair(suit, rank)),
+    givePlayerCards(gameState, 0, Card.createPair(suit, rank)),
 
   // Give human a tractor
   humanTractor: (gameState: GameState, suit: Suit, startRank: Rank) => 
@@ -370,7 +371,7 @@ export const setupTestHands = {
 
   // Give human trump cards
   humanTrumpCards: (gameState: GameState, trumpSuit: Suit, ranks: Rank[]) => 
-    givePlayerCards(gameState, 0, ranks.map(rank => createCard(trumpSuit, rank))),
+    givePlayerCards(gameState, 0, ranks.map(rank => Card.createCard(trumpSuit, rank, 0))),
 
   // Give all players some cards
   allPlayersCards: (gameState: GameState, cardsPerPlayer: number = 5) => {
@@ -383,7 +384,7 @@ export const setupTestHands = {
       for (let i = 0; i < cardsPerPlayer; i++) {
         const suit = allSuits[cardIndex % allSuits.length];
         const rank = allRanks[Math.floor(cardIndex / allSuits.length) % allRanks.length];
-        cards.push(createCard(suit, rank));
+        cards.push(Card.createCard(suit, rank, 0));
         cardIndex++;
       }
       return givePlayerCards(state, playerIndex, cards);
@@ -398,7 +399,7 @@ export const setupTestHands = {
  */
 export const createFullyDealtGameState = (): GameState => {
   // Import the dealing functions
-  const { initializeGame, dealNextCard, isDealingComplete } = require('../../src/game/gameLogic');
+  const {  isDealingComplete } = require('../../src/game/dealingAndDeclaration');
   
   // Initialize game
   let gameState = initializeGame();

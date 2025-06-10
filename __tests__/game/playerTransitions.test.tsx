@@ -1,23 +1,28 @@
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { render, waitFor, fireEvent } from '@testing-library/react-native';
-import { View, Text, Button } from 'react-native';
-import { useGameState } from '../../src/hooks/useGameState';
+import { Button, Text, View } from 'react-native';
+import { processPlay } from '../../src/game/playProcessing';
 import { useAITurns } from '../../src/hooks/useAITurns';
-import { processPlay } from '../../src/game/gamePlayManager';
-import { createComponentTestGameState } from "../helpers";
-import { 
-  GameState, 
-  Card, 
-  Rank, 
-  Suit,
+import { useGameState } from '../../src/hooks/useGameState';
+import {
+  Card,
+  GameState,
   Player,
   PlayerId,
-  PlayerName,
-  GamePhase
+  Rank,
+  Suit
 } from "../../src/types";
+import { createComponentTestGameState } from "../helpers";
 
 // Mock dependencies
-jest.mock('../../src/game/gamePlayManager', () => ({
+jest.mock('../../src/game/comboDetection', () => ({
+  ...jest.requireActual('../../src/game/comboDetection'),
+  identifyCombos: jest.fn(),
+}));
+
+jest.mock('../../src/game/playProcessing', () => ({
+  ...jest.requireActual('../../src/game/playProcessing'),
+  isValidPlay: jest.fn().mockReturnValue(true),
   processPlay: jest.fn(),
   getAIMoveWithErrorHandling: jest.fn().mockReturnValue({
     cards: [{
@@ -29,12 +34,10 @@ jest.mock('../../src/game/gamePlayManager', () => ({
   }),
   validatePlay: jest.fn().mockReturnValue(true)
 }));
-jest.mock('../../src/game/gameLogic', () => ({
-  ...jest.requireActual('../../src/game/gameLogic'),
-  identifyCombos: jest.fn(),
-  isValidPlay: jest.fn().mockReturnValue(true),
+
+jest.mock('../../src/game/gameHelpers', () => ({
+  ...jest.requireActual('../../src/game/gameHelpers'),
   isTrump: jest.fn(),
-  humanHasTrumpRank: jest.fn().mockReturnValue(false)
 }));
 
 
@@ -61,7 +64,6 @@ interface TestComponentProps {
 const TestComponent: React.FC<TestComponentProps> = ({ initialState, onStateChange }) => {
   const gameStateHook = useGameState();
 
-  // @ts-ignore - Test mock type mismatch
   const aiTurnsHook = useAITurns(
     gameStateHook.gameState,
     gameStateHook.handleProcessPlay,
@@ -122,12 +124,8 @@ const TestComponent: React.FC<TestComponentProps> = ({ initialState, onStateChan
 };
 
 // Helper function to create mock cards
-const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card => ({
-  id,
-  suit,
-  rank,
-  points
-});
+const createMockCard = (id: string, suit: Suit, rank: Rank, points = 0): Card => 
+  Card.createCard(suit, rank, 0);
 
 const createMockGameState = (currentPlayerIndex = 0): GameState => {
   const state = createComponentTestGameState();

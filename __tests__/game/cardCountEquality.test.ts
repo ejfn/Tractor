@@ -1,7 +1,8 @@
-import { GameState, Card, Player, Rank, Suit, GamePhase } from "../../src/types";
-import { initializeGame, dealCards } from '../../src/game/gameLogic';
-import { processPlay } from '../../src/game/gamePlayManager';
-import { getAIMoveWithErrorHandling } from '../../src/game/gamePlayManager';
+import { dealCards } from '../../src/game/dealingAndDeclaration';
+import { getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
+import { initializeGame } from '../../src/utils/gameInitialization';
+import { Card, GamePhase, GameState, JokerType, Suit } from "../../src/types";
+import { createIsolatedGameState } from '../helpers/testIsolation';
 
 describe('Card Count Equality', () => {
   let gameState: GameState;
@@ -79,19 +80,15 @@ describe('Card Count Equality', () => {
   });
   
   it('handles human winning and leading next trick', () => {
-    // Create fresh game state
-    let state = initializeGame();
+    // Create fresh isolated game state
+    let state = createIsolatedGameState();
     state = dealCards(state);
     state.gamePhase = GamePhase.Playing;
     state.trumpInfo.trumpSuit = Suit.Spades;
     
     // Arrange the first trick so human wins
     // Give human highest card (BJ)
-    const bigJoker: Card = {
-      id: 'joker_big_0',
-      points: 0,
-      joker: 'Big' as any
-    };
+    const bigJoker: Card = Card.createJoker(JokerType.Big, 0);
     
     // Replace human's first card with big joker
     state.players[0].hand[0] = bigJoker;
@@ -192,10 +189,9 @@ describe('Card Count Equality', () => {
     // If no pairs found, create one
     if (pairCards.length === 0) {
       const firstCard = human.hand[0];
-      const identicalCard: Card = {
-        ...firstCard,
-        id: firstCard.id + '_copy'
-      };
+      const identicalCard: Card = firstCard.joker 
+        ? Card.createJoker(firstCard.joker, firstCard.deckId === 0 ? 1 : 0)
+        : Card.createCard(firstCard.suit!, firstCard.rank!, firstCard.deckId === 0 ? 1 : 0);
       human.hand[1] = identicalCard;
       pairCards = [human.hand[0], human.hand[1]];
     }

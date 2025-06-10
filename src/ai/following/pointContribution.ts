@@ -9,7 +9,7 @@ import {
   TrickPosition,
   TrumpInfo,
 } from "../../types";
-import { isTrump } from "../../game/gameLogic";
+import { isTrump } from "../../game/gameHelpers";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
 
@@ -54,11 +54,12 @@ export function selectPointContribution(
       const comboType =
         comboAnalysis.combo.type === ComboType.Pair ? "pair" : "single";
       const isBiggestRemaining =
-        context.memoryContext!.cardMemory &&
+        context.memoryContext?.cardMemory &&
+        firstCard.rank &&
         isBiggestRemainingInSuit(
-          context.memoryContext!.cardMemory,
+          context.memoryContext.cardMemory,
           firstCard.suit,
-          firstCard.rank!,
+          firstCard.rank,
           comboType,
         );
 
@@ -106,7 +107,7 @@ export function selectPointContribution(
     const aCard = a.combo.cards[0];
     const bCard = b.combo.cards[0];
 
-    const getPriority = (card: any) => {
+    const getPriority = (card: Card) => {
       if (card.rank === Rank.Ten) return 3;
       if (card.rank === Rank.King) return 2;
       if (card.rank === Rank.Five) return 1;
@@ -147,7 +148,7 @@ export function selectPointContributionCombo(
       const aCard = a.combo.cards[0];
       const bCard = b.combo.cards[0];
 
-      const getPriority = (card: any) => {
+      const getPriority = (card: Card) => {
         if (card.rank === Rank.Ten) return 3;
         if (card.rank === Rank.King) return 2;
         if (card.rank === Rank.Five) return 1;

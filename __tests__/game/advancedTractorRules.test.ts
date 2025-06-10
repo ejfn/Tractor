@@ -5,8 +5,7 @@ import {
   isValidTractor,
   getTractorTypeDescription
 } from '../../src/game/tractorLogic';
-import { ComboType, JokerType, Rank, Suit, TrumpInfo } from '../../src/types';
-import { createCard, createJoker } from '../helpers/cards';
+import { Card, ComboType, JokerType, Rank, Suit, TrumpInfo } from '../../src/types';
 
 /**
  * Advanced Tractor Rules Tests - Issue #177
@@ -24,17 +23,17 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
     const trumpInfo: TrumpInfo = { trumpSuit: Suit.Spades, trumpRank: Rank.Seven };
 
     test('should assign correct tractor ranks for jokers', () => {
-      const bigJoker = createJoker(JokerType.Big, 'bj1');
-      const smallJoker = createJoker(JokerType.Small, 'sj1');
+      const bigJoker = Card.createJoker(JokerType.Big, 0);
+      const smallJoker = Card.createJoker(JokerType.Small, 0);
 
       expect(getTractorRank(bigJoker, trumpInfo)).toBe(1020);
       expect(getTractorRank(smallJoker, trumpInfo)).toBe(1019);
     });
 
     test('should assign correct tractor ranks for trump rank cards', () => {
-      const trumpSuitRank = createCard(Suit.Spades, Rank.Seven, 'trump_suit_7');
-      const offSuitRank1 = createCard(Suit.Hearts, Rank.Seven, 'off_suit_7h');
-      const offSuitRank2 = createCard(Suit.Clubs, Rank.Seven, 'off_suit_7c');
+      const trumpSuitRank = Card.createCard(Suit.Spades, Rank.Seven, 0);
+      const offSuitRank1 = Card.createCard(Suit.Hearts, Rank.Seven, 0);
+      const offSuitRank2 = Card.createCard(Suit.Clubs, Rank.Seven, 0);
 
       expect(getTractorRank(trumpSuitRank, trumpInfo)).toBe(1017); // Trump suit rank
       expect(getTractorRank(offSuitRank1, trumpInfo)).toBe(1016); // Off-suit trump rank
@@ -45,29 +44,29 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo7: TrumpInfo = { trumpSuit: Suit.Spades, trumpRank: Rank.Seven };
       
       // Cards below trump rank (7) should be shifted up by 1, plus Hearts suit offset (100)
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.Three, '3h'), trumpInfo7)).toBe(104); // (3+1) + 100
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.Four, '4h'), trumpInfo7)).toBe(105); // (4+1) + 100
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.Five, '5h'), trumpInfo7)).toBe(106); // (5+1) + 100
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.Six, '6h'), trumpInfo7)).toBe(107); // (6+1) + 100
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.Three, 0), trumpInfo7)).toBe(104); // (3+1) + 100
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.Four, 0), trumpInfo7)).toBe(105); // (4+1) + 100
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.Five, 0), trumpInfo7)).toBe(106); // (5+1) + 100
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.Six, 0), trumpInfo7)).toBe(107); // (6+1) + 100
 
       // Cards above trump rank (7) should remain unchanged, plus Hearts suit offset (100)
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.Eight, '8h'), trumpInfo7)).toBe(108); // 8 + 100
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.Nine, '9h'), trumpInfo7)).toBe(109); // 9 + 100
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.King, 'kh'), trumpInfo7)).toBe(113); // 13 + 100
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.Ace, 'ah'), trumpInfo7)).toBe(114); // 14 + 100
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.Eight, 0), trumpInfo7)).toBe(108); // 8 + 100
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.Nine, 0), trumpInfo7)).toBe(109); // 9 + 100
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.King, 0), trumpInfo7)).toBe(113); // 13 + 100
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.Ace, 0), trumpInfo7)).toBe(114); // 14 + 100
     });
 
     test('should assign correct tractor ranks when trump rank is Ace', () => {
       const trumpInfoAce: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Ace };
       
       // All regular cards below Ace should be shifted up by 1, plus Spades suit offset (0)
-      expect(getTractorRank(createCard(Suit.Spades, Rank.King, 'ks'), trumpInfoAce)).toBe(14); // (13+1) + 0
-      expect(getTractorRank(createCard(Suit.Spades, Rank.Queen, 'qs'), trumpInfoAce)).toBe(13); // (12+1) + 0
-      expect(getTractorRank(createCard(Suit.Spades, Rank.Three, '3s'), trumpInfoAce)).toBe(4); // (3+1) + 0
+      expect(getTractorRank(Card.createCard(Suit.Spades, Rank.King, 0), trumpInfoAce)).toBe(14); // (13+1) + 0
+      expect(getTractorRank(Card.createCard(Suit.Spades, Rank.Queen, 0), trumpInfoAce)).toBe(13); // (12+1) + 0
+      expect(getTractorRank(Card.createCard(Suit.Spades, Rank.Three, 0), trumpInfoAce)).toBe(4); // (3+1) + 0
 
       // Trump rank cards
-      expect(getTractorRank(createCard(Suit.Hearts, Rank.Ace, 'ah'), trumpInfoAce)).toBe(1017); // Trump suit
-      expect(getTractorRank(createCard(Suit.Spades, Rank.Ace, 'as'), trumpInfoAce)).toBe(1016); // Off-suit
+      expect(getTractorRank(Card.createCard(Suit.Hearts, Rank.Ace, 0), trumpInfoAce)).toBe(1017); // Trump suit
+      expect(getTractorRank(Card.createCard(Suit.Spades, Rank.Ace, 0), trumpInfoAce)).toBe(1016); // Off-suit
     });
   });
 
@@ -75,24 +74,24 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
     const trumpInfo: TrumpInfo = { trumpSuit: Suit.Spades, trumpRank: Rank.Seven };
 
     test('should group jokers in joker context', () => {
-      const bigJoker = createJoker(JokerType.Big, 'bj1');
-      const smallJoker = createJoker(JokerType.Small, 'sj1');
+      const bigJoker = Card.createJoker(JokerType.Big, 0);
+      const smallJoker = Card.createJoker(JokerType.Small, 0);
 
       expect(getTractorContext(bigJoker, trumpInfo)).toBe('joker');
       expect(getTractorContext(smallJoker, trumpInfo)).toBe('joker');
     });
 
     test('should group trump rank cards in trump_rank context', () => {
-      const trumpSuitRank = createCard(Suit.Spades, Rank.Seven, 'trump_suit_7');
-      const offSuitRank = createCard(Suit.Hearts, Rank.Seven, 'off_suit_7');
+      const trumpSuitRank = Card.createCard(Suit.Spades, Rank.Seven, 0);
+      const offSuitRank = Card.createCard(Suit.Hearts, Rank.Seven, 0);
 
       expect(getTractorContext(trumpSuitRank, trumpInfo)).toBe('trump_rank');
       expect(getTractorContext(offSuitRank, trumpInfo)).toBe('trump_rank');
     });
 
     test('should group regular cards by suit', () => {
-      const heartCard = createCard(Suit.Hearts, Rank.Six, '6h');
-      const spadeCard = createCard(Suit.Spades, Rank.Eight, '8s');
+      const heartCard = Card.createCard(Suit.Hearts, Rank.Six, 0);
+      const spadeCard = Card.createCard(Suit.Spades, Rank.Eight, 0);
 
       expect(getTractorContext(heartCard, trumpInfo)).toBe(Suit.Hearts);
       expect(getTractorContext(spadeCard, trumpInfo)).toBe(Suit.Spades);
@@ -104,10 +103,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Spades, trumpRank: Rank.Two };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Two, 'trump_2s_1'),
-        createCard(Suit.Spades, Rank.Two, 'trump_2s_2'),
-        createCard(Suit.Hearts, Rank.Two, 'off_2h_1'),
-        createCard(Suit.Hearts, Rank.Two, 'off_2h_2'),
+        Card.createCard(Suit.Spades, Rank.Two, 0),
+        Card.createCard(Suit.Spades, Rank.Two, 1),
+        Card.createCard(Suit.Hearts, Rank.Two, 0),
+        Card.createCard(Suit.Hearts, Rank.Two, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -123,10 +122,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Spades, trumpRank: Rank.Two };
       
       const cards = [
-        createCard(Suit.Hearts, Rank.Two, 'off_2h_1'),
-        createCard(Suit.Hearts, Rank.Two, 'off_2h_2'),
-        createCard(Suit.Clubs, Rank.Two, 'off_2c_1'),
-        createCard(Suit.Clubs, Rank.Two, 'off_2c_2'),
+        Card.createCard(Suit.Hearts, Rank.Two, 0),
+        Card.createCard(Suit.Hearts, Rank.Two, 1),
+        Card.createCard(Suit.Clubs, Rank.Two, 0),
+        Card.createCard(Suit.Clubs, Rank.Two, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -139,12 +138,12 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.King };
       
       const cards = [
-        createCard(Suit.Hearts, Rank.King, 'trump_kh_1'),
-        createCard(Suit.Hearts, Rank.King, 'trump_kh_2'),
-        createCard(Suit.Spades, Rank.King, 'off_ks_1'),
-        createCard(Suit.Spades, Rank.King, 'off_ks_2'),
-        createCard(Suit.Clubs, Rank.King, 'off_kc_1'),
-        createCard(Suit.Clubs, Rank.King, 'off_kc_2'),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 1),
+        Card.createCard(Suit.Spades, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.King, 1),
+        Card.createCard(Suit.Clubs, Rank.King, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -153,12 +152,14 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       expect(tractors[0].cards).toHaveLength(4); // Two pairs: off-suit rank (16) + trump suit rank (17)
       
       // Should include trump suit pair and one off-suit pair
-      const tractorCardIds = tractors[0].cards.map(card => card.id);
-      expect(tractorCardIds).toContain('trump_kh_1');
-      expect(tractorCardIds).toContain('trump_kh_2');
-      // Should contain one of the off-suit pairs (either Spades or Clubs)
-      const hasOffSuitPair = tractorCardIds.includes('off_ks_1') && tractorCardIds.includes('off_ks_2') ||
-                            tractorCardIds.includes('off_kc_1') && tractorCardIds.includes('off_kc_2');
+      const tractorCards = tractors[0].cards;
+      const heartKings = tractorCards.filter(card => card.suit === Suit.Hearts && card.rank === Rank.King);
+      expect(heartKings).toHaveLength(2); // Should have both Hearts King cards
+      
+      // Should contain one off-suit pair (either Spades or Clubs)
+      const spadeKings = tractorCards.filter(card => card.suit === Suit.Spades && card.rank === Rank.King);
+      const clubKings = tractorCards.filter(card => card.suit === Suit.Clubs && card.rank === Rank.King);
+      const hasOffSuitPair = spadeKings.length === 2 || clubKings.length === 2;
       expect(hasOffSuitPair).toBe(true);
     });
   });
@@ -168,10 +169,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Seven };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Six, '6s_1'),
-        createCard(Suit.Spades, Rank.Six, '6s_2'),
-        createCard(Suit.Spades, Rank.Eight, '8s_1'),
-        createCard(Suit.Spades, Rank.Eight, '8s_2'),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -189,14 +190,14 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Seven };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Six, '6s_1'),
-        createCard(Suit.Spades, Rank.Six, '6s_2'),
-        createCard(Suit.Spades, Rank.Eight, '8s_1'),
-        createCard(Suit.Spades, Rank.Eight, '8s_2'),
-        createCard(Suit.Spades, Rank.Nine, '9s_1'),
-        createCard(Suit.Spades, Rank.Nine, '9s_2'),
-        createCard(Suit.Spades, Rank.Ten, '10s_1'),
-        createCard(Suit.Spades, Rank.Ten, '10s_2'),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 1),
+        Card.createCard(Suit.Spades, Rank.Nine, 0),
+        Card.createCard(Suit.Spades, Rank.Nine, 1),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -215,12 +216,12 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Seven };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Five, '5s_1'),
-        createCard(Suit.Spades, Rank.Five, '5s_2'),
-        createCard(Suit.Spades, Rank.Six, '6s_1'),
-        createCard(Suit.Spades, Rank.Six, '6s_2'),
-        createCard(Suit.Spades, Rank.Eight, '8s_1'),
-        createCard(Suit.Spades, Rank.Eight, '8s_2'),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 1),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -239,10 +240,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Five };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Six, '6s_1'),
-        createCard(Suit.Spades, Rank.Six, '6s_2'),
-        createCard(Suit.Spades, Rank.Eight, '8s_1'),
-        createCard(Suit.Spades, Rank.Eight, '8s_2'),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -257,10 +258,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Seven };
       
       const cards = [
-        createJoker(JokerType.Small, 'sj1'),
-        createJoker(JokerType.Small, 'sj2'),
-        createJoker(JokerType.Big, 'bj1'),
-        createJoker(JokerType.Big, 'bj2'),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1),
+        Card.createJoker(JokerType.Big, 0),
+        Card.createJoker(JokerType.Big, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -280,10 +281,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Spades, trumpRank: Rank.Two };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Two, 'trump_2s_1'),
-        createCard(Suit.Spades, Rank.Two, 'trump_2s_2'),
-        createJoker(JokerType.Small, 'sj1'),
-        createJoker(JokerType.Small, 'sj2'),
+        Card.createCard(Suit.Spades, Rank.Two, 0),
+        Card.createCard(Suit.Spades, Rank.Two, 1),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -296,10 +297,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Six, '6s_1'),
-        createCard(Suit.Spades, Rank.Six, '6s_2'),
-        createCard(Suit.Clubs, Rank.Six, '6c_1'),
-        createCard(Suit.Clubs, Rank.Six, '6c_2'),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Clubs, Rank.Six, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -312,10 +313,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Six, '6s_1'),
-        createCard(Suit.Spades, Rank.Six, '6s_2'),
-        createCard(Suit.Clubs, Rank.Seven, '7c_1'),
-        createCard(Suit.Clubs, Rank.Seven, '7c_2'),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
+        Card.createCard(Suit.Clubs, Rank.Seven, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
@@ -328,8 +329,8 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Seven };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Six, '6s_1'),
-        createCard(Suit.Spades, Rank.Six, '6s_2'),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
       ];
 
       expect(isValidTractor(cards, trumpInfo)).toBe(false);
@@ -339,9 +340,9 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Seven };
       
       const cards = [
-        createCard(Suit.Spades, Rank.Six, '6s_1'),
-        createCard(Suit.Spades, Rank.Six, '6s_2'),
-        createCard(Suit.Spades, Rank.Eight, '8s_1'),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
       ];
 
       expect(isValidTractor(cards, trumpInfo)).toBe(false);
@@ -354,10 +355,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfo3: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Three };
       
       const cards3 = [
-        createCard(Suit.Spades, Rank.Two, '2s_1'),
-        createCard(Suit.Spades, Rank.Two, '2s_2'),
-        createCard(Suit.Spades, Rank.Four, '4s_1'),
-        createCard(Suit.Spades, Rank.Four, '4s_2'),
+        Card.createCard(Suit.Spades, Rank.Two, 0),
+        Card.createCard(Suit.Spades, Rank.Two, 1),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 1),
       ];
 
       expect(isValidTractor(cards3, trumpInfo3)).toBe(true); // 2-[3]-4 bridged
@@ -366,10 +367,10 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       const trumpInfoAce: TrumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Ace };
       
       const cardsAce = [
-        createCard(Suit.Spades, Rank.King, 'ks_1'),
-        createCard(Suit.Spades, Rank.King, 'ks_2'),
-        createCard(Suit.Spades, Rank.Queen, 'qs_1'),
-        createCard(Suit.Spades, Rank.Queen, 'qs_2'),
+        Card.createCard(Suit.Spades, Rank.King, 0),
+        Card.createCard(Suit.Spades, Rank.King, 1),
+        Card.createCard(Suit.Spades, Rank.Queen, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 1),
       ];
 
       expect(isValidTractor(cardsAce, trumpInfoAce)).toBe(true); // Q-K consecutive after shift
@@ -380,15 +381,15 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       
       const cards = [
         // Trump rank context - should form tractor
-        createCard(Suit.Hearts, Rank.Seven, 'trump_7h_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'trump_7h_2'),
-        createCard(Suit.Spades, Rank.Seven, 'off_7s_1'),
-        createCard(Suit.Spades, Rank.Seven, 'off_7s_2'),
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Seven, 1),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 1),
         // Regular suit context - should form separate tractor
-        createCard(Suit.Clubs, Rank.Six, '6c_1'),
-        createCard(Suit.Clubs, Rank.Six, '6c_2'),
-        createCard(Suit.Clubs, Rank.Eight, '8c_1'),
-        createCard(Suit.Clubs, Rank.Eight, '8c_2'),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Clubs, Rank.Six, 1),
+        Card.createCard(Suit.Clubs, Rank.Eight, 0),
+        Card.createCard(Suit.Clubs, Rank.Eight, 1),
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);

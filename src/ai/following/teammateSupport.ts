@@ -7,6 +7,7 @@ import {
   Rank,
   TrickPosition,
   TrumpInfo,
+  TrickWinnerAnalysis,
 } from "../../types";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
 import { selectPointContribution } from "./pointContribution";
@@ -31,7 +32,11 @@ export function handleTeammateWinning(
   trumpInfo: TrumpInfo,
   gameState: GameState,
 ): Card[] {
-  const trickWinner = context.trickWinnerAnalysis!;
+  const trickWinner = context.trickWinnerAnalysis;
+  if (!trickWinner) {
+    // No trick winner analysis available, fall back to safe play
+    return selectLowestValueNonPointCombo(comboAnalyses);
+  }
 
   // Position-specific analysis and contribution logic
   switch (context.trickPosition) {
@@ -125,7 +130,7 @@ export function handleTeammateWinning(
  * Determines whether to contribute point cards when teammate is winning
  */
 export function shouldContributePointCards(
-  trickWinner: any,
+  trickWinner: TrickWinnerAnalysis,
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
   gameState?: GameState,
@@ -167,7 +172,7 @@ export function shouldContributePointCards(
  * Analyzes the strength of teammate's current lead
  */
 function analyzeTeammateLeadStrength(
-  trickWinner: any,
+  trickWinner: TrickWinnerAnalysis,
   gameState?: GameState,
 ): "weak" | "moderate" | "very_strong" {
   if (!gameState?.currentTrick) {

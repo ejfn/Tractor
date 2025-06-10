@@ -1,8 +1,7 @@
-import { initializeGame } from '../../src/game/gameLogic';
-import { makeTrumpDeclaration } from '../../src/game/trumpDeclarationManager';
 import { getAITrumpDeclarationDecision } from '../../src/ai/trumpDeclaration/trumpDeclarationStrategy';
-import { DeclarationType, PlayerId, Rank, Suit, JokerType } from '../../src/types';
-import { createCard } from '../helpers/cards';
+import { makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
+import { Card, DeclarationType, JokerType, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('AI Reasoning Bug Fix', () => {
   let gameState: any;
@@ -17,29 +16,26 @@ describe('AI Reasoning Bug Fix', () => {
 
     // Give human a trump rank pair in Clubs
     humanPlayer.hand = [
-      createCard(Suit.Clubs, Rank.Two), 
-      createCard(Suit.Clubs, Rank.Two),
-      createCard(Suit.Hearts, Rank.Ace)
+      ...Card.createPair(Suit.Clubs, Rank.Two),
+      Card.createCard(Suit.Hearts, Rank.Ace, 0)
     ];
 
     // Give Bot1 a trump rank pair in Diamonds (equal strength)
     bot1Player.hand = [
-      createCard(Suit.Diamonds, Rank.Two), 
-      createCard(Suit.Diamonds, Rank.Two),
-      createCard(Suit.Spades, Rank.Queen)
+      ...Card.createPair(Suit.Diamonds, Rank.Two),
+      Card.createCard(Suit.Spades, Rank.Queen, 0)
     ];
 
     // Give Bot2 big joker pairs - force declarations by giving many trump suit cards
     bot2Player.hand = [
-      { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker1' },
-      { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker2' },
-      createCard(Suit.Spades, Rank.King),
-      createCard(Suit.Spades, Rank.Queen),
-      createCard(Suit.Spades, Rank.Jack),
-      createCard(Suit.Spades, Rank.Ten),
-      createCard(Suit.Spades, Rank.Nine),
-      createCard(Suit.Spades, Rank.Eight),
-      createCard(Suit.Spades, Rank.Seven),
+      ...Card.createJokerPair(JokerType.Big),
+      Card.createCard(Suit.Spades, Rank.King, 0),
+      Card.createCard(Suit.Spades, Rank.Queen, 0),
+      Card.createCard(Suit.Spades, Rank.Jack, 0),
+      Card.createCard(Suit.Spades, Rank.Ten, 0),
+      Card.createCard(Suit.Spades, Rank.Nine, 0),
+      Card.createCard(Suit.Spades, Rank.Eight, 0),
+      Card.createCard(Suit.Spades, Rank.Seven, 0),
     ];
   });
 
@@ -49,7 +45,7 @@ describe('AI Reasoning Bug Fix', () => {
       rank: Rank.Two,
       suit: Suit.Clubs,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      cards: Card.createPair(Suit.Clubs, Rank.Two)
     };
 
     const newState = makeTrumpDeclaration(gameState, PlayerId.Human, humanDeclaration);
@@ -112,7 +108,7 @@ describe('AI Reasoning Bug Fix', () => {
       rank: Rank.Two,
       suit: Suit.Clubs,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      cards: Card.createPair(Suit.Clubs, Rank.Two)
     };
 
     const stateWithDeclaration = makeTrumpDeclaration(gameState, PlayerId.Human, humanDeclaration);
@@ -143,7 +139,7 @@ describe('AI Reasoning Bug Fix', () => {
       rank: Rank.Two,
       suit: Suit.Clubs,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Clubs, Rank.Two), createCard(Suit.Clubs, Rank.Two)]
+      cards: Card.createPair(Suit.Clubs, Rank.Two)
     };
 
     const stateAfterHuman = makeTrumpDeclaration(gameState, PlayerId.Human, humanDeclaration);
@@ -154,10 +150,7 @@ describe('AI Reasoning Bug Fix', () => {
         rank: Rank.Two,
         suit: Suit.Spades, // This will be trump suit when Bot2 declares
         type: DeclarationType.BigJokerPair,
-        cards: [
-          { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker1' },
-          { suit: Suit.Spades, rank: Rank.Ace, joker: JokerType.Big, points: 0, id: 'bigJoker2' }
-        ]
+        cards: Card.createJokerPair(JokerType.Big)
       };
 
       const stateAfterBot2 = makeTrumpDeclaration(stateAfterHuman, PlayerId.Bot2, bot2Declaration);

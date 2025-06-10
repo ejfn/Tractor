@@ -8,7 +8,7 @@ import {
   PositionStrategy,
   TrumpInfo,
 } from "../../types";
-import { evaluateTrickPlay } from "../../game/gameLogic";
+import { evaluateTrickPlay } from "../../game/cardComparison";
 
 /**
  * Trick Contention - Strategic trick winning when valuable

@@ -1,9 +1,9 @@
 import Constants from "expo-constants";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, ViewStyle } from "react-native";
 
 interface VersionDisplayProps {
-  style?: any;
+  style?: ViewStyle;
 }
 
 export const VersionDisplay: React.FC<VersionDisplayProps> = ({ style }) => {

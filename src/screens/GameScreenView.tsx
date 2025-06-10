@@ -20,10 +20,11 @@ import {
   Trick,
   GamePhase,
   RoundResult,
+  DeclarationOpportunity,
 } from "../types";
 
 // Utils
-import { validatePlay } from "../game/gamePlayManager";
+import { validatePlay } from "../game/playProcessing";
 import { sortCards } from "../utils/cardSorting";
 
 interface GameScreenViewProps {
@@ -63,7 +64,7 @@ interface GameScreenViewProps {
   onStartNewGame: () => void;
   onNextRound: () => void;
   onAnimationComplete: () => void;
-  onHumanDeclaration: (declaration: any) => void;
+  onHumanDeclaration: (declaration: DeclarationOpportunity) => void;
   onContinue: () => void;
   onManualPause: () => void;
   shouldShowOpportunities: boolean;
@@ -271,10 +272,10 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   isValidPlay={isValidPlay}
                   trumpInfo={gameState.trumpInfo}
                   showTrickResult={showTrickResult}
-                  lastCompletedTrick={lastCompletedTrick}
+                  lastCompletedTrick={lastCompletedTrick || undefined}
                   thinkingDots={thinkingDots}
                   currentPlayerIndex={gameState.currentPlayerIndex}
-                  currentTrick={gameState.currentTrick}
+                  currentTrick={gameState.currentTrick || undefined}
                   isRoundStartingPlayer={isHumanRoundStartingPlayer}
                   gamePhase={gameState.gamePhase}
                   onKittySwap={onKittySwap}

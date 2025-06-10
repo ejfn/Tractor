@@ -1,4 +1,4 @@
-import { Card, JokerType, Rank, TrumpInfo } from "../types";
+import { Card, JokerType, Rank, Trick, TrumpInfo } from "../types";
 
 /**
  * Game Helper Functions
@@ -9,6 +9,7 @@ import { Card, JokerType, Rank, TrumpInfo } from "../types";
 
 // Rank value mapping for numeric comparisons
 const RANK_VALUES: Record<Rank, number> = {
+  [Rank.None]: 0, // For jokers - no rank value
   [Rank.Two]: 2,
   [Rank.Three]: 3,
   [Rank.Four]: 4,
@@ -30,6 +31,7 @@ const RANK_VALUES: Record<Rank, number> = {
  */
 const getTrumpSuitBaseValue = (rank: Rank): number => {
   const trumpSuitValues: Record<Rank, number> = {
+    [Rank.None]: 0, // For jokers - no trump suit value
     [Rank.Three]: 5,
     [Rank.Four]: 10,
     [Rank.Five]: 15,
@@ -95,7 +97,7 @@ export const calculateCardStrategicValue = (
         value += card.suit === trumpInfo.trumpSuit ? 80 : 70; // Trump rank priority
       } else if (card.suit === trumpInfo.trumpSuit) {
         // Trump suit cards get graduated bonuses based on conservation hierarchy
-        value += getTrumpSuitBaseValue(card.rank!);
+        value += getTrumpSuitBaseValue(card.rank);
       }
     } else {
       // Non-trump cards: point cards and Aces are valuable but always < trump
@@ -109,7 +111,7 @@ export const calculateCardStrategicValue = (
       }
 
       // Base rank value for non-trump cards
-      value += RANK_VALUES[card.rank!] || 0;
+      value += RANK_VALUES[card.rank] || 0;
     }
   } else if (mode === "conservation") {
     // Conservation mode: Trump hierarchy for AI strategic decisions
@@ -120,15 +122,15 @@ export const calculateCardStrategicValue = (
     }
     // Trump suit cards (non-rank)
     else if (card.suit === trumpInfo.trumpSuit) {
-      value = getTrumpSuitBaseValue(card.rank!);
+      value = getTrumpSuitBaseValue(card.rank);
     }
     // Non-trump cards
     else {
-      value = RANK_VALUES[card.rank!] || 0;
+      value = RANK_VALUES[card.rank] || 0;
     }
   } else {
     // Combo mode: Basic trump hierarchy for combination comparison
-    value = RANK_VALUES[card.rank!] || 0;
+    value = RANK_VALUES[card.rank] || 0;
 
     // Trump cards have higher value
     if (isTrump(card, trumpInfo)) {
@@ -142,4 +144,27 @@ export const calculateCardStrategicValue = (
   }
 
   return value;
+};
+
+/**
+ * Calculate points in a trick
+ */
+export const calculateTrickPoints = (trick: Trick): number => {
+  let points = 0;
+
+  // Add points from all plays (including leader at plays[0])
+  trick.plays.forEach((play) => {
+    play.cards.forEach((card) => {
+      points += card.points;
+    });
+  });
+
+  return points;
+};
+
+/**
+ * Check if a card is a point card
+ */
+export const isPointCard = (card: Card): boolean => {
+  return card.points > 0;
 };

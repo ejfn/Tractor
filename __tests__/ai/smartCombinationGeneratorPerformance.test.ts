@@ -1,5 +1,6 @@
-import { getValidCombinations, initializeGame } from '../../src/game/gameLogic';
-import { Card, Suit, Rank, TrumpInfo, PlayerId, GameState } from '../../src/types';
+import { getValidCombinations } from '../../src/game/combinationGeneration';
+import { Card, GameState, PlayerId, Rank, Suit, TrumpInfo } from '../../src/types';
+import { createGameState } from '../helpers/gameStates';
 
 describe('Smart Combination Generator Performance Tests', () => {
   it('should handle large trump hands efficiently (performance test)', () => {
@@ -10,43 +11,30 @@ describe('Smart Combination Generator Performance Tests', () => {
 
     // Create a large leading trump tractor: 3♠3♠-4♠4♠-5♠5♠ (3 pairs)
     const leadingCombo: Card[] = [
-      { id: 'spades-3-1', suit: Suit.Spades, rank: Rank.Three, joker: undefined, points: 0 },
-      { id: 'spades-3-2', suit: Suit.Spades, rank: Rank.Three, joker: undefined, points: 0 },
-      { id: 'spades-4-1', suit: Suit.Spades, rank: Rank.Four, joker: undefined, points: 0 },
-      { id: 'spades-4-2', suit: Suit.Spades, rank: Rank.Four, joker: undefined, points: 0 },
-      { id: 'spades-5-1', suit: Suit.Spades, rank: Rank.Five, joker: undefined, points: 5 },
-      { id: 'spades-5-2', suit: Suit.Spades, rank: Rank.Five, joker: undefined, points: 5 },
+      ...Card.createPair(Suit.Spades, Rank.Three),
+      ...Card.createPair(Suit.Spades, Rank.Four),
+      ...Card.createPair(Suit.Spades, Rank.Five),
     ];
 
     // Create a large hand with many trump cards (this used to cause exponential blowup)
     const playerHand: Card[] = [
       // Many trump suit cards
-      { id: 'spades-6-1', suit: Suit.Spades, rank: Rank.Six, joker: undefined, points: 0 },
-      { id: 'spades-6-2', suit: Suit.Spades, rank: Rank.Six, joker: undefined, points: 0 },
-      { id: 'spades-7-1', suit: Suit.Spades, rank: Rank.Seven, joker: undefined, points: 0 },
-      { id: 'spades-7-2', suit: Suit.Spades, rank: Rank.Seven, joker: undefined, points: 0 },
-      { id: 'spades-8-1', suit: Suit.Spades, rank: Rank.Eight, joker: undefined, points: 0 },
-      { id: 'spades-8-2', suit: Suit.Spades, rank: Rank.Eight, joker: undefined, points: 0 },
-      { id: 'spades-9-1', suit: Suit.Spades, rank: Rank.Nine, joker: undefined, points: 0 },
-      { id: 'spades-9-2', suit: Suit.Spades, rank: Rank.Nine, joker: undefined, points: 0 },
-      { id: 'spades-10-1', suit: Suit.Spades, rank: Rank.Ten, joker: undefined, points: 10 },
-      { id: 'spades-10-2', suit: Suit.Spades, rank: Rank.Ten, joker: undefined, points: 10 },
-      { id: 'spades-j-1', suit: Suit.Spades, rank: Rank.Jack, joker: undefined, points: 0 },
-      { id: 'spades-j-2', suit: Suit.Spades, rank: Rank.Jack, joker: undefined, points: 0 },
-      { id: 'spades-q-1', suit: Suit.Spades, rank: Rank.Queen, joker: undefined, points: 0 },
-      { id: 'spades-q-2', suit: Suit.Spades, rank: Rank.Queen, joker: undefined, points: 0 },
-      { id: 'spades-k-1', suit: Suit.Spades, rank: Rank.King, joker: undefined, points: 10 },
-      { id: 'spades-k-2', suit: Suit.Spades, rank: Rank.King, joker: undefined, points: 10 },
-      { id: 'spades-a-1', suit: Suit.Spades, rank: Rank.Ace, joker: undefined, points: 0 },
-      { id: 'spades-a-2', suit: Suit.Spades, rank: Rank.Ace, joker: undefined, points: 0 },
+      ...Card.createPair(Suit.Spades, Rank.Six),
+      ...Card.createPair(Suit.Spades, Rank.Seven),
+      ...Card.createPair(Suit.Spades, Rank.Eight),
+      ...Card.createPair(Suit.Spades, Rank.Nine),
+      ...Card.createPair(Suit.Spades, Rank.Ten),
+      ...Card.createPair(Suit.Spades, Rank.Jack),
+      ...Card.createPair(Suit.Spades, Rank.Queen),
+      ...Card.createPair(Suit.Spades, Rank.King),
+      ...Card.createPair(Suit.Spades, Rank.Ace),
       // Some non-trump cards
-      { id: '4d', suit: Suit.Diamonds, rank: Rank.Four, joker: undefined, points: 0 },
-      { id: '8h', suit: Suit.Hearts, rank: Rank.Eight, joker: undefined, points: 0 },
-      { id: '4c', suit: Suit.Clubs, rank: Rank.Four, joker: undefined, points: 0 },
+      Card.createCard(Suit.Diamonds, Rank.Four, 0),
+      Card.createCard(Suit.Hearts, Rank.Eight, 0),
+      Card.createCard(Suit.Clubs, Rank.Four, 0),
     ];
 
-    const gameState: GameState = {
-      ...initializeGame(),
+    const gameState: GameState = createGameState({
       trumpInfo,
       currentTrick: {
         plays: [
@@ -55,7 +43,7 @@ describe('Smart Combination Generator Performance Tests', () => {
         winningPlayerId: PlayerId.Human,
         points: 0
       }
-    };
+    });
 
     console.log('=== PERFORMANCE TEST ===');
     console.log('Leading: 3♠3♠-4♠4♠-5♠5♠ (6-card trump tractor)');
@@ -98,10 +86,8 @@ describe('Smart Combination Generator Performance Tests', () => {
 
     // Create a 4-card leading combo
     const leadingCombo: Card[] = [
-      { id: 'hearts-3-1', suit: Suit.Hearts, rank: Rank.Three, joker: undefined, points: 0 },
-      { id: 'hearts-3-2', suit: Suit.Hearts, rank: Rank.Three, joker: undefined, points: 0 },
-      { id: 'hearts-4-1', suit: Suit.Hearts, rank: Rank.Four, joker: undefined, points: 0 },
-      { id: 'hearts-4-2', suit: Suit.Hearts, rank: Rank.Four, joker: undefined, points: 0 },
+      ...Card.createPair(Suit.Hearts, Rank.Three),
+      ...Card.createPair(Suit.Hearts, Rank.Four),
     ];
 
     // Create a very large hand (maximum possible)
@@ -114,26 +100,13 @@ describe('Smart Combination Generator Performance Tests', () => {
     
     for (const suit of suits) {
       for (const rank of ranks) {
-        // Add 2 copies of each card
-        playerHand.push({ 
-          id: `card-${cardId++}`, 
-          suit, 
-          rank, 
-          joker: undefined, 
-          points: rank === Rank.Five ? 5 : (rank === Rank.Ten || rank === Rank.King ? 10 : 0)
-        });
-        playerHand.push({ 
-          id: `card-${cardId++}`, 
-          suit, 
-          rank, 
-          joker: undefined, 
-          points: rank === Rank.Five ? 5 : (rank === Rank.Ten || rank === Rank.King ? 10 : 0)
-        });
+        // Add 2 copies of each card (using Card.createPair for convenience)
+        playerHand.push(...Card.createPair(suit, rank));
+        cardId += 2;
       }
     }
 
-    const gameState: GameState = {
-      ...initializeGame(),
+    const gameState: GameState = createGameState({
       trumpInfo,
       currentTrick: {
         plays: [
@@ -142,7 +115,7 @@ describe('Smart Combination Generator Performance Tests', () => {
         winningPlayerId: PlayerId.Human,
         points: 0
       }
-    };
+    });
 
     console.log('=== COMBINATION LIMIT TEST ===');
     console.log(`Player hand size: ${playerHand.length} cards`);
@@ -172,24 +145,23 @@ describe('Smart Combination Generator Performance Tests', () => {
 
     // Single leading card
     const leadingCombo: Card[] = [
-      { id: 'clubs-3', suit: Suit.Clubs, rank: Rank.Three, joker: undefined, points: 0 },
+      Card.createCard(Suit.Clubs, Rank.Three, 0),
     ];
 
     // Hand with mix of valuable and weak trump cards
     const playerHand: Card[] = [
       // Weak trump cards (should be preferred in strategic sampling)
-      { id: 'clubs-4', suit: Suit.Clubs, rank: Rank.Four, joker: undefined, points: 0 },
-      { id: 'clubs-5', suit: Suit.Clubs, rank: Rank.Five, joker: undefined, points: 5 },
+      Card.createCard(Suit.Clubs, Rank.Four, 0),
+      Card.createCard(Suit.Clubs, Rank.Five, 0),
       // Valuable trump cards (should be avoided)
-      { id: 'clubs-ace', suit: Suit.Clubs, rank: Rank.Ace, joker: undefined, points: 0 },
-      { id: 'clubs-king', suit: Suit.Clubs, rank: Rank.King, joker: undefined, points: 10 },
+      Card.createCard(Suit.Clubs, Rank.Ace, 0),
+      Card.createCard(Suit.Clubs, Rank.King, 0),
       // Non-trump cards
-      { id: 'hearts-7', suit: Suit.Hearts, rank: Rank.Seven, joker: undefined, points: 0 },
-      { id: 'diamonds-8', suit: Suit.Diamonds, rank: Rank.Eight, joker: undefined, points: 0 },
+      Card.createCard(Suit.Hearts, Rank.Seven, 0),
+      Card.createCard(Suit.Diamonds, Rank.Eight, 0),
     ];
 
-    const gameState: GameState = {
-      ...initializeGame(),
+    const gameState: GameState = createGameState({
       trumpInfo,
       currentTrick: {
         plays: [
@@ -198,7 +170,7 @@ describe('Smart Combination Generator Performance Tests', () => {
         winningPlayerId: PlayerId.Human,
         points: 0
       }
-    };
+    });
 
     const validCombinations = getValidCombinations(playerHand, gameState);
     

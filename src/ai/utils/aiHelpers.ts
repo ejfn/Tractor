@@ -7,9 +7,11 @@ import {
   GameContext,
   Rank,
   TrumpInfo,
+  TrumpConservationStrategy,
+  PointFocusedContext,
 } from "../../types";
 import { analyzeCombo } from "../aiGameContext";
-import { isTrump } from "../../game/gameLogic";
+import { isTrump } from "../../game/gameHelpers";
 
 /**
  * AI Helpers - Common utility functions for AI strategy
@@ -188,8 +190,8 @@ export function selectMaxDisruptionCombo(
  */
 export function filterByTrumpConservation(
   combos: Combo[],
-  conservation: any, // TrumpConservationStrategy
-  pointContext: any, // PointFocusedContext
+  conservation: TrumpConservationStrategy,
+  pointContext: PointFocusedContext,
   trumpInfo: TrumpInfo,
 ): Combo[] {
   return combos.filter((combo) => {

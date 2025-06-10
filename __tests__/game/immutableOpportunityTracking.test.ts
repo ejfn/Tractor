@@ -1,7 +1,6 @@
-import { initializeGame } from '../../src/game/gameLogic';
-import { makeTrumpDeclaration } from '../../src/game/trumpDeclarationManager';
-import { DeclarationType, PlayerId, Rank, Suit, GamePhase } from '../../src/types';
-import { createCard } from '../helpers/cards';
+import { makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
+import { Card, DeclarationType, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Immutable Opportunity Tracking', () => {
   let gameState: any;
@@ -13,18 +12,16 @@ describe('Immutable Opportunity Tracking', () => {
     // Give human trump rank cards that can form pairs
     const humanPlayer = gameState.players.find((p: any) => p.id === PlayerId.Human);
     humanPlayer.hand = [
-      createCard(Suit.Clubs, Rank.Two), 
-      createCard(Suit.Clubs, Rank.Two),
-      createCard(Suit.Hearts, Rank.Two),
-      createCard(Suit.Hearts, Rank.Ace)
+      ...Card.createPair(Suit.Clubs, Rank.Two),
+      Card.createCard(Suit.Hearts, Rank.Two, 0),
+      Card.createCard(Suit.Hearts, Rank.Ace, 0)
     ];
 
     // Give Bot1 stronger trump cards
     const bot1Player = gameState.players.find((p: any) => p.id === PlayerId.Bot1);
     bot1Player.hand = [
-      createCard(Suit.Diamonds, Rank.Two), 
-      createCard(Suit.Diamonds, Rank.Two),
-      createCard(Suit.Spades, Rank.Queen)
+      ...Card.createPair(Suit.Diamonds, Rank.Two),
+      Card.createCard(Suit.Spades, Rank.Queen, 0)
     ];
   });
 
@@ -69,7 +66,7 @@ describe('Immutable Opportunity Tracking', () => {
       rank: Rank.Two,
       suit: Suit.Diamonds,
       type: DeclarationType.Pair,
-      cards: [createCard(Suit.Diamonds, Rank.Two), createCard(Suit.Diamonds, Rank.Two)]
+      cards: Card.createPair(Suit.Diamonds, Rank.Two)
     };
     
     const stateAfterBot = makeTrumpDeclaration(gameState, PlayerId.Bot1, bot1Declaration);
@@ -109,7 +106,7 @@ describe('Immutable Opportunity Tracking', () => {
       rank: Rank.Two,
       suit: Suit.Spades,
       type: DeclarationType.Single,
-      cards: [createCard(Suit.Spades, Rank.Two)]
+      cards: [Card.createCard(Suit.Spades, Rank.Two, 0)]
     };
     
     makeTrumpDeclaration(gameState, PlayerId.Bot1, bot1Declaration);

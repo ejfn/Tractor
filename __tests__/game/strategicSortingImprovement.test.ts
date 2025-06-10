@@ -1,6 +1,7 @@
-import { calculateCardStrategicValue, getValidCombinations, initializeGame } from '../../src/game/gameLogic';
-import type { Card } from '../../src/types';
-import { GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
+import { getValidCombinations } from "../../src/game/combinationGeneration";
+import { calculateCardStrategicValue } from "../../src/game/gameHelpers";
+import { Card, GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from "../../src/utils/gameInitialization";
 
 describe('Strategic Sorting Improvement Test', () => {
   it('should preserve point cards and trump cards in mixed combinations', () => {
@@ -15,20 +16,17 @@ describe('Strategic Sorting Improvement Test', () => {
 
     // AI hand with point cards that should be preserved
     const aiBotHand: Card[] = [
-      { id: '3-clubs', rank: Rank.Three, suit: Suit.Clubs, points: 0 },    // Weakest
-      { id: '4-clubs', rank: Rank.Four, suit: Suit.Clubs, points: 0 },     // Weak
-      { id: '5-diamonds', rank: Rank.Five, suit: Suit.Diamonds, points: 5 }, // POINT CARD!
-      { id: '10-diamonds', rank: Rank.Ten, suit: Suit.Diamonds, points: 10 }, // POINT CARD!
-      { id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },     // Valuable Ace
+      Card.createCard(Suit.Clubs, Rank.Three, 0),    // Weakest
+      Card.createCard(Suit.Clubs, Rank.Four, 0),     // Weak
+      Card.createCard(Suit.Diamonds, Rank.Five, 0),  // POINT CARD!
+      Card.createCard(Suit.Diamonds, Rank.Ten, 0),   // POINT CARD!
+      Card.createCard(Suit.Clubs, Rank.Ace, 0),      // Valuable Ace
     ];
 
     gameState.players[1].hand = aiBotHand;
 
     // Hearts pair led (AI is out of Hearts)
-    const leadingCards: Card[] = [
-      { id: '6-hearts-1', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-      { id: '6-hearts-2', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-    ];
+    const leadingCards: Card[] = Card.createPair(Suit.Hearts, Rank.Six);
 
     gameState.currentTrick = {
       plays: [{ playerId: PlayerId.Human, cards: leadingCards }],
@@ -93,19 +91,19 @@ describe('Strategic Sorting Improvement Test', () => {
 
     // AI hand with mix of trump and non-trump cards
     const aiBotHand: Card[] = [
-      { id: '3-clubs', rank: Rank.Three, suit: Suit.Clubs, points: 0 },     // Weak non-trump
-      { id: '4-clubs', rank: Rank.Four, suit: Suit.Clubs, points: 0 },      // Weak non-trump
-      { id: '3-spades', rank: Rank.Three, suit: Suit.Spades, points: 0 },   // Weakest trump (value: 5)
-      { id: '2-hearts', rank: Rank.Two, suit: Suit.Hearts, points: 0 },     // Valuable trump rank (value: 70)
-      { id: 'ace-spades', rank: Rank.Ace, suit: Suit.Spades, points: 0 },   // Valuable trump suit (value: 60)
+      Card.createCard(Suit.Clubs, Rank.Three, 0),     // Weak non-trump
+      Card.createCard(Suit.Clubs, Rank.Four, 0),      // Weak non-trump
+      Card.createCard(Suit.Spades, Rank.Three, 0),   // Weakest trump (value: 5)
+      Card.createCard(Suit.Hearts, Rank.Two, 0),     // Valuable trump rank (value: 70)
+      Card.createCard(Suit.Spades, Rank.Ace, 0),   // Valuable trump suit (value: 60)
     ];
 
     gameState.players[1].hand = aiBotHand;
 
     // Hearts pair led (AI is out of Hearts but has trump)
     const leadingCards: Card[] = [
-      { id: '6-hearts-1', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-      { id: '6-hearts-2', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
+      Card.createCard(Suit.Hearts, Rank.Six, 0),
+      Card.createCard(Suit.Hearts, Rank.Six, 0),
     ];
 
     gameState.currentTrick = {
@@ -160,11 +158,11 @@ describe('Strategic Sorting Improvement Test', () => {
     };
 
     const testCards: Card[] = [
-      { id: 'big-joker', joker: JokerType.Big, points: 0 },
-      { id: '2-spades', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Trump rank in trump suit
-      { id: '10-hearts', rank: Rank.Ten, suit: Suit.Hearts, points: 10 }, // Point card
-      { id: 'ace-clubs', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }, // Ace
-      { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 }, // Weak card
+      Card.createJoker(JokerType.Big, 0),
+      Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank in trump suit
+      Card.createCard(Suit.Hearts, Rank.Ten, 0), // Point card
+      Card.createCard(Suit.Clubs, Rank.Ace, 0), // Ace
+      Card.createCard(Suit.Diamonds, Rank.Three, 0), // Weak card
     ];
 
     console.log('\n=== SHARED FUNCTION TEST ===');

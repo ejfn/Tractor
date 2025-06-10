@@ -1,6 +1,5 @@
-import { processPlay } from "../../src/game/gamePlayManager";
-import { GameState, PlayerId, GamePhase, Card, Trick, Suit, Rank } from "../../src/types";
-import { createCard } from "../helpers/cards";
+import { processPlay } from "../../src/game/playProcessing";
+import { Card, DeckId, GamePhase, GameState, PlayerId, Rank, Suit } from "../../src/types";
 import { createGameState } from "../helpers/gameStates";
 
 describe("Kitty Bonus Integration", () => {
@@ -14,10 +13,10 @@ describe("Kitty Bonus Integration", () => {
 
     // Create test cards with points
     testCards = [
-      createCard(Suit.Hearts, Rank.King, "human-king"), // Human - 10 points
-      createCard(Suit.Hearts, Rank.Queen, "bot1-queen"), // Bot1 - 0 points
-      createCard(Suit.Hearts, Rank.Five, "bot2-5"), // Bot2 - 5 points (teammate)
-      createCard(Suit.Hearts, Rank.Jack, "bot3-jack"), // Bot3 - 0 points
+      Card.createCard(Suit.Hearts, Rank.King, 0), // Human - 10 points
+      Card.createCard(Suit.Hearts, Rank.Queen, 0), // Bot1 - 0 points
+      Card.createCard(Suit.Hearts, Rank.Five, 0), // Bot2 - 5 points (teammate)
+      Card.createCard(Suit.Hearts, Rank.Jack, 0), // Bot3 - 0 points
     ];
 
     // Set up players with single cards (final trick)
@@ -28,9 +27,9 @@ describe("Kitty Bonus Integration", () => {
 
     // Create kitty with 25 points (2 Kings + 1 Five)
     gameState.kittyCards = [
-      createCard(Suit.Spades, Rank.King, "kitty-king1"),
-      createCard(Suit.Clubs, Rank.King, "kitty-king2"),
-      createCard(Suit.Diamonds, Rank.Five, "kitty-5"),
+      Card.createCard(Suit.Spades, Rank.King, 0),
+      Card.createCard(Suit.Clubs, Rank.King, 0),
+      Card.createCard(Suit.Diamonds, Rank.Five, 0),
     ];
 
     // Set teams: Human + Bot2 (Team A) vs Bot1 + Bot3 (Team B)
@@ -89,17 +88,17 @@ describe("Kitty Bonus Integration", () => {
   test("should apply 4x kitty bonus when attacking team wins final trick with pairs", () => {
     // Modify cards to create a pair scenario
     const pairCards = [
-      createCard(Suit.Hearts, Rank.King, "human-king1"),
-      createCard(Suit.Hearts, Rank.King, "human-king2"),
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      Card.createCard(Suit.Hearts, Rank.King, 0),
     ];
 
     const botCards = [
-      createCard(Suit.Hearts, Rank.Queen, "bot1-queen1"),
-      createCard(Suit.Hearts, Rank.Queen, "bot1-queen2"),
-      createCard(Suit.Hearts, Rank.Five, "bot2-5-1"),
-      createCard(Suit.Hearts, Rank.Five, "bot2-5-2"),
-      createCard(Suit.Hearts, Rank.Jack, "bot3-jack1"),
-      createCard(Suit.Hearts, Rank.Jack, "bot3-jack2"),
+      Card.createCard(Suit.Hearts, Rank.Queen, 0),
+      Card.createCard(Suit.Hearts, Rank.Queen, 0),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
+      Card.createCard(Suit.Hearts, Rank.Jack, 0),
+      Card.createCard(Suit.Hearts, Rank.Jack, 0),
     ];
 
     // Set up final trick with pairs (each player has 2 cards)
@@ -145,7 +144,7 @@ describe("Kitty Bonus Integration", () => {
 
   test("should NOT apply kitty bonus when defending team wins final trick", () => {
     // Modify the scenario so Bot1 (defending team) wins
-    const strongCard = createCard(Suit.Hearts, Rank.Ace, "bot1-ace");
+    const strongCard = Card.createCard(Suit.Hearts, Rank.Ace, 0);
     gameState.players[1].hand = [strongCard]; // Bot1 gets Ace (strongest)
 
     // Human leads with King
@@ -186,7 +185,7 @@ describe("Kitty Bonus Integration", () => {
     gameState.players.forEach((player, index) => {
       player.hand = [
         testCards[index],
-        createCard(Suit.Spades, Rank.Three, `extra-${index}`),
+        Card.createCard(Suit.Spades, Rank.Three, index % 2 as DeckId),
       ];
     });
 
@@ -247,25 +246,25 @@ describe("Kitty Bonus Integration", () => {
   test("should correctly analyze combo structure for multiplier calculation", () => {
     // Test with tractor (consecutive pairs) - should get 4x multiplier
     const tractorCards = [
-      createCard(Suit.Hearts, Rank.Seven, "human-7-1"),
-      createCard(Suit.Hearts, Rank.Seven, "human-7-2"),
-      createCard(Suit.Hearts, Rank.Eight, "human-8-1"),
-      createCard(Suit.Hearts, Rank.Eight, "human-8-2"),
+      Card.createCard(Suit.Hearts, Rank.Seven, 0),
+      Card.createCard(Suit.Hearts, Rank.Seven, 0),
+      Card.createCard(Suit.Hearts, Rank.Eight, 0),
+      Card.createCard(Suit.Hearts, Rank.Eight, 0),
     ];
 
     const botCards = [
-      createCard(Suit.Hearts, Rank.Six, "bot1-6-1"),
-      createCard(Suit.Hearts, Rank.Six, "bot1-6-2"),
-      createCard(Suit.Hearts, Rank.Five, "bot1-5-1"),
-      createCard(Suit.Hearts, Rank.Five, "bot1-5-2"),
-      createCard(Suit.Hearts, Rank.Four, "bot2-4-1"),
-      createCard(Suit.Hearts, Rank.Four, "bot2-4-2"),
-      createCard(Suit.Hearts, Rank.Three, "bot2-3-1"),
-      createCard(Suit.Hearts, Rank.Three, "bot2-3-2"),
-      createCard(Suit.Hearts, Rank.Two, "bot3-2-1"),
-      createCard(Suit.Hearts, Rank.Two, "bot3-2-2"),
-      createCard(Suit.Hearts, Rank.Ace, "bot3-A-1"),
-      createCard(Suit.Hearts, Rank.Ace, "bot3-A-2"),
+      Card.createCard(Suit.Hearts, Rank.Six, 0),
+      Card.createCard(Suit.Hearts, Rank.Six, 0),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
+      Card.createCard(Suit.Hearts, Rank.Four, 0),
+      Card.createCard(Suit.Hearts, Rank.Four, 0),
+      Card.createCard(Suit.Hearts, Rank.Three, 0),
+      Card.createCard(Suit.Hearts, Rank.Three, 0),
+      Card.createCard(Suit.Hearts, Rank.Two, 0),
+      Card.createCard(Suit.Hearts, Rank.Two, 0),
+      Card.createCard(Suit.Hearts, Rank.Ace, 0),
+      Card.createCard(Suit.Hearts, Rank.Ace, 0),
     ];
 
     // Set up final trick with tractors (each player has 4 cards for tractor)
@@ -312,32 +311,32 @@ describe("Kitty Bonus Integration", () => {
   test("should populate roundEndKittyInfo for display in round result modal", () => {
     // Set up full 8-card kitty for proper test
     gameState.kittyCards = [
-      createCard(Suit.Spades, Rank.King, "kitty-king1"),
-      createCard(Suit.Clubs, Rank.King, "kitty-king2"),
-      createCard(Suit.Diamonds, Rank.Five, "kitty-5"),
-      createCard(Suit.Spades, Rank.Three, "kitty-3-1"),
-      createCard(Suit.Hearts, Rank.Four, "kitty-4-1"),
-      createCard(Suit.Clubs, Rank.Six, "kitty-6-1"),
-      createCard(Suit.Diamonds, Rank.Seven, "kitty-7-1"),
-      createCard(Suit.Spades, Rank.Eight, "kitty-8-1"),
+      Card.createCard(Suit.Spades, Rank.King, 0),
+      Card.createCard(Suit.Clubs, Rank.King, 0),
+      Card.createCard(Suit.Diamonds, Rank.Five, 0),
+      Card.createCard(Suit.Spades, Rank.Three, 0),
+      Card.createCard(Suit.Hearts, Rank.Four, 0),
+      Card.createCard(Suit.Clubs, Rank.Six, 0),
+      Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+      Card.createCard(Suit.Spades, Rank.Eight, 0),
     ];
 
     // Create test cards for pairs
     const kingPair = [
-      createCard(Suit.Hearts, Rank.King, "human-king-1"),
-      createCard(Suit.Hearts, Rank.King, "human-king-2"),
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      Card.createCard(Suit.Hearts, Rank.King, 0),
     ];
     const queenPair = [
-      createCard(Suit.Hearts, Rank.Queen, "bot1-queen-1"),
-      createCard(Suit.Hearts, Rank.Queen, "bot1-queen-2"),
+      Card.createCard(Suit.Hearts, Rank.Queen, 0),
+      Card.createCard(Suit.Hearts, Rank.Queen, 0),
     ];
     const fivePair = [
-      createCard(Suit.Hearts, Rank.Five, "bot2-5-1"),
-      createCard(Suit.Hearts, Rank.Five, "bot2-5-2"),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
+      Card.createCard(Suit.Hearts, Rank.Five, 0),
     ];
     const jackPair = [
-      createCard(Suit.Hearts, Rank.Jack, "bot3-jack-1"),
-      createCard(Suit.Hearts, Rank.Jack, "bot3-jack-2"),
+      Card.createCard(Suit.Hearts, Rank.Jack, 0),
+      Card.createCard(Suit.Hearts, Rank.Jack, 0),
     ];
 
     // Set up players with pairs (final trick scenario)
@@ -376,22 +375,22 @@ describe("Kitty Bonus Integration", () => {
     const testGameState = createGameState();
     testGameState.gamePhase = GamePhase.Playing;
     testGameState.kittyCards = [
-      createCard(Suit.Spades, Rank.King, "kitty-king1"),
-      createCard(Suit.Clubs, Rank.King, "kitty-king2"),
-      createCard(Suit.Diamonds, Rank.Five, "kitty-5"),
-      createCard(Suit.Spades, Rank.Three, "kitty-3-1"),
-      createCard(Suit.Hearts, Rank.Four, "kitty-4-1"),
-      createCard(Suit.Clubs, Rank.Six, "kitty-6-1"),
-      createCard(Suit.Diamonds, Rank.Seven, "kitty-7-1"),
-      createCard(Suit.Spades, Rank.Eight, "kitty-8-1"),
+      Card.createCard(Suit.Spades, Rank.King, 0),
+      Card.createCard(Suit.Clubs, Rank.King, 0),
+      Card.createCard(Suit.Diamonds, Rank.Five, 0),
+      Card.createCard(Suit.Spades, Rank.Three, 0),
+      Card.createCard(Suit.Hearts, Rank.Four, 0),
+      Card.createCard(Suit.Clubs, Rank.Six, 0),
+      Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+      Card.createCard(Suit.Spades, Rank.Eight, 0),
     ];
 
     // Create cards where defending team wins the final trick
     // From debug: Team A is defending (Human + Bot2), Team B is attacking (Bot1 + Bot3)
-    const humanCard = createCard(Suit.Hearts, Rank.King, "human-king");
-    const bot1Card = createCard(Suit.Hearts, Rank.Queen, "bot1-queen"); // Lower card
-    const bot2Card = createCard(Suit.Hearts, Rank.Ace, "bot2-ace"); // Highest card - defending team wins!
-    const bot3Card = createCard(Suit.Hearts, Rank.Jack, "bot3-jack");
+    const humanCard = Card.createCard(Suit.Hearts, Rank.King, 0);
+    const bot1Card = Card.createCard(Suit.Hearts, Rank.Queen, 0); // Lower card
+    const bot2Card = Card.createCard(Suit.Hearts, Rank.Ace, 0); // Highest card - defending team wins!
+    const bot3Card = Card.createCard(Suit.Hearts, Rank.Jack, 0);
 
     // Set up players with single cards (final trick scenario)
     testGameState.players[0].hand = [humanCard]; // Human - Team A (defending)
@@ -427,26 +426,26 @@ describe("Kitty Bonus Integration", () => {
 
   test("should transition to KittySwap phase after dealing completes", () => {
     // Use finalizeTrumpDeclaration to simulate dealing completion
-    const { finalizeTrumpDeclaration } = require("../../src/game/trumpDeclarationManager");
+    const { finalizeTrumpDeclaration } = require("../../src/game/dealingAndDeclaration");
     
     // Create a game state where dealing is complete
     const dealingCompleteState = createGameState();
     dealingCompleteState.gamePhase = GamePhase.Dealing;
     dealingCompleteState.kittyCards = [
-      createCard(Suit.Spades, Rank.King, "kitty-king1"),
-      createCard(Suit.Clubs, Rank.King, "kitty-king2"),
-      createCard(Suit.Diamonds, Rank.Five, "kitty-5"),
-      createCard(Suit.Spades, Rank.Three, "kitty-3-1"),
-      createCard(Suit.Hearts, Rank.Four, "kitty-4-1"),
-      createCard(Suit.Clubs, Rank.Six, "kitty-6-1"),
-      createCard(Suit.Diamonds, Rank.Seven, "kitty-7-1"),
-      createCard(Suit.Spades, Rank.Eight, "kitty-8-1"),
+      Card.createCard(Suit.Spades, Rank.King, 0),
+      Card.createCard(Suit.Clubs, Rank.King, 0),
+      Card.createCard(Suit.Diamonds, Rank.Five, 0),
+      Card.createCard(Suit.Spades, Rank.Three, 0),
+      Card.createCard(Suit.Hearts, Rank.Four, 0),
+      Card.createCard(Suit.Clubs, Rank.Six, 0),
+      Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+      Card.createCard(Suit.Spades, Rank.Eight, 0),
     ];
     
     // All players should have 17 cards (normal hand size for Tractor)
     dealingCompleteState.players.forEach(player => {
       player.hand = Array(17).fill(null).map((_, i) => 
-        createCard(Suit.Hearts, Rank.Two, `${player.id}-card-${i}`)
+        Card.createCard(Suit.Hearts, Rank.Two, i % 2 as DeckId)
       );
     });
 

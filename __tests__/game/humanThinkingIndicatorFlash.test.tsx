@@ -57,8 +57,8 @@ const mockCurrentTrickOngoing = {
   plays: [
     { playerId: PlayerId.Bot2, cards: [] }
   ],
-  points: 5
-  // No winningPlayerId yet - trick is still ongoing
+  points: 5,
+  winningPlayerId: PlayerId.Bot2 // Bot2 currently winning, trick is still ongoing
 };
 
 describe('Human Thinking Indicator Flash Fix', () => {
@@ -79,7 +79,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
         isValidPlay={true}
         trumpInfo={mockTrumpInfo}
         showTrickResult={false}  // Not showing trick result yet
-        lastCompletedTrick={null}  // No completed trick yet
+        lastCompletedTrick={undefined}  // No completed trick yet
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
         currentTrick={mockCurrentTrickHumanWon}  // Trick still exists with human as winner
@@ -106,7 +106,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
         isValidPlay={true}
         trumpInfo={mockTrumpInfo}
         showTrickResult={false}  // Not showing trick result
-        lastCompletedTrick={null}  // No completed trick
+        lastCompletedTrick={undefined}  // No completed trick
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
         currentTrick={mockCurrentTrickOngoing}  // Active trick without human winning yet
@@ -133,10 +133,10 @@ describe('Human Thinking Indicator Flash Fix', () => {
         isValidPlay={true}
         trumpInfo={mockTrumpInfo}
         showTrickResult={true}  // Showing trick result
-        lastCompletedTrick={null}
+        lastCompletedTrick={undefined}
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
-        currentTrick={null}
+        currentTrick={undefined}
       />
     );
 
@@ -160,10 +160,10 @@ describe('Human Thinking Indicator Flash Fix', () => {
         isValidPlay={true}
         trumpInfo={mockTrumpInfo}
         showTrickResult={false}  
-        lastCompletedTrick={null}  
+        lastCompletedTrick={undefined}  
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
-        currentTrick={null}  // No current trick - leading new trick
+        currentTrick={undefined}  // No current trick - leading new trick
         gamePhase={GamePhase.Playing}
       />
     );
@@ -188,7 +188,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
         isValidPlay={true}
         trumpInfo={mockTrumpInfo}
         showTrickResult={false}
-        lastCompletedTrick={null}
+        lastCompletedTrick={undefined}
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={aiPlayerIndex}
         currentTrick={mockCurrentTrickOngoing}  // Ongoing trick, AI's turn initially
@@ -213,7 +213,7 @@ describe('Human Thinking Indicator Flash Fix', () => {
         isValidPlay={true}
         trumpInfo={mockTrumpInfo}
         showTrickResult={false}  // Not showing result YET
-        lastCompletedTrick={null}  // Not set YET
+        lastCompletedTrick={undefined}  // Not set YET
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}  // Human is current
         currentTrick={mockCurrentTrickHumanWon}  // Trick still exists with human as winner
@@ -237,10 +237,10 @@ describe('Human Thinking Indicator Flash Fix', () => {
         isValidPlay={true}
         trumpInfo={mockTrumpInfo}
         showTrickResult={false}  // Not showing result
-        lastCompletedTrick={null}  // Cleared
+        lastCompletedTrick={undefined}  // Cleared
         thinkingDots={mockThinkingDots}
         currentPlayerIndex={humanPlayerIndex}
-        currentTrick={null}  // Trick cleared - starting new trick
+        currentTrick={undefined}  // Trick cleared - starting new trick
         gamePhase={GamePhase.Playing}
       />
     );

@@ -1,6 +1,7 @@
-import { isValidPlay, getComboType, getLeadingSuit } from '../../src/game/gameLogic';
-import { createCard } from '../helpers/cards';
-import { Card, Suit, Rank, ComboType, TrumpInfo, PlayerId } from '../../src/types';
+import { getComboType } from '../../src/game/comboDetection';
+import { getLeadingSuit } from '../../src/game/playProcessing';
+import { isValidPlay } from '../../src/game/playValidation';
+import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
 
 describe('Suit Following Rules Tests', () => {
   const createTestTrumpInfo = (trumpRank: Rank, trumpSuit: Suit): TrumpInfo => ({
@@ -13,10 +14,10 @@ describe('Suit Following Rules Tests', () => {
   describe('Basic Suit Following Rules', () => {
     test('Trump rank in trump suit should be higher than trump rank in other suits', () => {
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
-      const leadingCombo = [createCard(Suit.Hearts, Rank.Three, 'hearts_3_1')];
+      const leadingCombo = [Card.createCard(Suit.Hearts, Rank.Three, 0)];
       const playerHand = [
-        createCard(Suit.Spades, Rank.Two, 'spades_2_1'),
-        createCard(Suit.Hearts, Rank.Two, 'hearts_2_1')
+        Card.createCard(Suit.Spades, Rank.Two, 0),
+        Card.createCard(Suit.Hearts, Rank.Two, 1)
       ];
       
       expect(isValidPlay([playerHand[0]], leadingCombo, playerHand, trumpInfo)).toBe(true);
@@ -24,23 +25,21 @@ describe('Suit Following Rules Tests', () => {
     });
 
     test('getLeadingSuit should return the suit of the first card with a suit', () => {
-      const combo = [createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1')];
+      const combo = [Card.createCard(Suit.Hearts, Rank.Seven, 0)];
       expect(getLeadingSuit(combo)).toBe(Suit.Hearts);
     });
 
     test('getComboType should correctly identify pairs', () => {
-      const pair = [
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2')
-      ];
-      expect(getComboType(pair)).toBe(ComboType.Pair);
+      const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
+      const pair = Card.createPair(Suit.Hearts, Rank.Seven);
+      expect(getComboType(pair, trumpInfo)).toBe(ComboType.Pair);
     });
   });
 
   describe('Leading Rules', () => {
     test('When leading, any valid combo is acceptable', () => {
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
-      const playerHand = [createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1')];
+      const playerHand = [Card.createCard(Suit.Hearts, Rank.Seven, 0)];
       const leadingCombo = null; // Null for leading
       
       expect(isValidPlay([playerHand[0]], leadingCombo, playerHand, trumpInfo)).toBe(true);
@@ -50,14 +49,10 @@ describe('Suit Following Rules Tests', () => {
   describe('Following Rules', () => {
     test('When following, must match the combination length', () => {
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
-      const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_1'),
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_2')
-      ];
+      const leadingCombo = Card.createPair(Suit.Hearts, Rank.Three);
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2'),
-        createCard(Suit.Clubs, Rank.Eight, 'clubs_8_1')
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        Card.createCard(Suit.Clubs, Rank.Eight, 0)
       ];
       
       // Must play 2 cards to match leading pair
@@ -67,15 +62,11 @@ describe('Suit Following Rules Tests', () => {
 
     test('When following a pair, must play a pair of the same suit if available', () => {
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
-      const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_1'),
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_2')
-      ];
+      const leadingCombo = Card.createPair(Suit.Hearts, Rank.Three);
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2'),
-        createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1'),
-        createCard(Suit.Clubs, Rank.Nine, 'clubs_9_1')
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
+        Card.createCard(Suit.Hearts, Rank.Eight, 0),
+        Card.createCard(Suit.Clubs, Rank.Nine, 0)
       ];
       
       // Must use the Hearts pair, not mix suits
@@ -85,14 +76,11 @@ describe('Suit Following Rules Tests', () => {
 
     test('When following and cannot form matching combo, must use all cards of leading suit', () => {
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
-      const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_1'),
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_2')
-      ];
+      const leadingCombo = Card.createPair(Suit.Hearts, Rank.Three);
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'), // Only one Hearts card
-        createCard(Suit.Clubs, Rank.Eight, 'clubs_8_1'),
-        createCard(Suit.Diamonds, Rank.Nine, 'diamonds_9_1')
+        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Only one Hearts card
+        Card.createCard(Suit.Clubs, Rank.Eight, 0),
+        Card.createCard(Suit.Diamonds, Rank.Nine, 0)
       ];
       
       // Must use the Hearts card + one other
@@ -102,14 +90,11 @@ describe('Suit Following Rules Tests', () => {
 
     test('When player has no cards of leading suit, any same-length combo can be played', () => {
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
-      const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_1'),
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_2')
-      ];
+      const leadingCombo = Card.createPair(Suit.Hearts, Rank.Three);
       const playerHand = [
-        createCard(Suit.Clubs, Rank.Seven, 'clubs_7_1'),
-        createCard(Suit.Clubs, Rank.Eight, 'clubs_8_1'),
-        createCard(Suit.Diamonds, Rank.Nine, 'diamonds_9_1')
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
+        Card.createCard(Suit.Clubs, Rank.Eight, 0),
+        Card.createCard(Suit.Diamonds, Rank.Nine, 0)
       ];
       
       // No Hearts cards, so any 2-card combo is valid
@@ -120,17 +105,17 @@ describe('Suit Following Rules Tests', () => {
     test('Must play all cards of leading suit even if not enough for the combo', () => {
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
       const leadingCombo = [
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_1'),
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_2'),
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_3'),
-        createCard(Suit.Hearts, Rank.Three, 'hearts_3_4')
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+        Card.createCard(Suit.Hearts, Rank.Three, 1),
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+        Card.createCard(Suit.Hearts, Rank.Three, 1)
       ]; // 4-card combo
       
       const playerHand = [
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-        createCard(Suit.Hearts, Rank.Eight, 'hearts_8_1'), // Only 2 Hearts cards
-        createCard(Suit.Clubs, Rank.Nine, 'clubs_9_1'),
-        createCard(Suit.Diamonds, Rank.Ten, 'diamonds_10_1')
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Eight, 0), // Only 2 Hearts cards
+        Card.createCard(Suit.Clubs, Rank.Nine, 0),
+        Card.createCard(Suit.Diamonds, Rank.Ten, 0)
       ];
       
       // Must use both Hearts cards + 2 others
@@ -162,56 +147,16 @@ describe('Suit Following Rules Tests', () => {
       };
       
       // Leading Hearts pair (3♥-3♥) - non-trump
-      const leadingHeartsPair: Card[] = [
-        {
-          id: 'hearts-3-1',
-          suit: Suit.Hearts,
-          rank: Rank.Three,
-          joker: undefined,
-          points: 0
-        },
-        {
-          id: 'hearts-3-2', 
-          suit: Suit.Hearts,
-          rank: Rank.Three,
-          joker: undefined,
-          points: 0
-        }
-      ];
+      const leadingHeartsPair: Card[] = Card.createPair(Suit.Hearts, Rank.Three);
       
       // Player hand with ONLY ONE Hearts single + Clubs pair + other cards
       const playerHand: Card[] = [
         // Only ONE Hearts single (leading suit)
-        {
-          id: 'hearts-4-1',
-          suit: Suit.Hearts,
-          rank: Rank.Four,
-          joker: undefined,
-          points: 0
-        },
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
         // Clubs pair (different non-trump suit)
-        {
-          id: 'clubs-6-1',
-          suit: Suit.Clubs,
-          rank: Rank.Six,
-          joker: undefined,
-          points: 0
-        },
-        {
-          id: 'clubs-6-2',
-          suit: Suit.Clubs,
-          rank: Rank.Six,
-          joker: undefined,
-          points: 0
-        },
+        ...Card.createPair(Suit.Clubs, Rank.Six),
         // Other cards
-        {
-          id: 'spades-7-1',
-          suit: Suit.Spades,
-          rank: Rank.Seven,
-          joker: undefined,
-          points: 0
-        }
+        Card.createCard(Suit.Spades, Rank.Seven, 0)
       ];
       
       // TEST: Non-suit pair should be INVALID when suit singles are available
@@ -247,21 +192,18 @@ describe('Suit Following Rules Tests', () => {
       
       // Player has A♠ and Q♠ in hand (both trump cards due to trump suit)
       const playerHand = [
-        createCard(Suit.Spades, Rank.Ace, 'spades_a_1'),
-        createCard(Suit.Spades, Rank.Queen, 'spades_q_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1')
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 0),
+        Card.createCard(Suit.Hearts, Rank.Seven, 0)
       ];
 
       // Leading with a pair of 5♠
-      const leadingCombo = [
-        createCard(Suit.Spades, Rank.Five, 'spades_5_1'),
-        createCard(Suit.Spades, Rank.Five, 'spades_5_2')
-      ];
+      const leadingCombo = Card.createPair(Suit.Spades, Rank.Five);
 
       // Playing A♠-Q♠ (which is not a valid pair, just two singles)
       const playedCards = [
-        createCard(Suit.Spades, Rank.Ace, 'spades_a_1'),
-        createCard(Suit.Spades, Rank.Queen, 'spades_q_1')
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 0)
       ];
 
       // The play is VALID (player has trumps and must play them)
@@ -269,18 +211,14 @@ describe('Suit Following Rules Tests', () => {
 
       // For comparison, a valid pair would NOT be allowed when trump cards are available (Issue #102 fix)
       const validPairHand = [
-        createCard(Suit.Spades, Rank.Ace, 'spades_a_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2')
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        ...Card.createPair(Suit.Hearts, Rank.Seven)
       ];
 
-      const validPairPlay = [
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_1'),
-        createCard(Suit.Hearts, Rank.Seven, 'hearts_7_2')
-      ];
+      const validPairPlay = Card.createPair(Suit.Hearts, Rank.Seven);
 
       // Confirm a proper pair would NOT be allowed when trump cards are available (Issue #102 fix)
-      expect(getComboType(validPairPlay)).toBe(ComboType.Pair);
+      expect(getComboType(validPairPlay, trumpInfo)).toBe(ComboType.Pair);
       expect(isValidPlay(validPairPlay, leadingCombo, validPairHand, trumpInfo)).toBe(false);
     });
   });

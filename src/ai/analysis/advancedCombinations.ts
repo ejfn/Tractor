@@ -13,11 +13,12 @@ import {
   HandCombinationProfile,
   CombinationStrategy,
   PlayerId,
+  ComboAnalysis,
   TrickPosition,
   PointPressure,
   PlayStyle,
 } from "../../types";
-import { identifyCombos } from "../../game/gameLogic";
+import { identifyCombos } from "../../game/comboDetection";
 import { analyzeCombo } from "../aiGameContext";
 
 /**
@@ -101,7 +102,7 @@ export function analyzeHandCombinations(
 
   let trumpCombos = 0;
   let pointCombos = 0;
-  let totalCombinations = combos.length;
+  const totalCombinations = combos.length;
 
   // Analyze combination types and strengths
   const tractorCombos = combos.filter(
@@ -297,7 +298,7 @@ function calculateDominanceLevel(
   context: GameContext,
 ): number {
   let dominanceScore = 0;
-  let totalCombos = combos.length;
+  const totalCombos = combos.length;
 
   combos.forEach((combo) => {
     const analysis = analyzeCombo(combo, trumpInfo, context);
@@ -327,7 +328,7 @@ function calculateDominanceLevel(
 
 function identifyComboPattern(
   combo: Combo,
-  analysis: any,
+  analysis: ComboAnalysis,
   context: GameContext,
 ): AdvancedComboPattern {
   // Determine pattern based on combo type and analysis

@@ -4,11 +4,9 @@ import {
   PlayerId,
   PlayerName,
   Rank,
-  Suit,
   Team,
-  TeamId,
+  TeamId
 } from '../../src/types';
-import { createCard } from './cards';
 
 // ============================================================================
 // PLAYER CREATION UTILITIES

@@ -1,7 +1,6 @@
 import { getAIMove } from '../../src/ai/aiLogic';
-import { initializeGame } from '../../src/game/gameLogic';
-import { PlayerId, Rank, Suit, GamePhase, ComboType } from '../../src/types';
-import type { GameState, Card } from '../../src/types';
+import { Card, ComboType, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
+import { initializeGame } from '../../src/utils/gameInitialization';
 
 describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
   describe('AI Strategy When Following Pair and Out of Suit', () => {
@@ -22,20 +21,16 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       // AI Bot1 hand: Has valuable pair but is out of led suit
       const aiBotHand: Card[] = [
-        { id: 'ace-clubs-1', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }, // Valuable pair
-        { id: 'ace-clubs-2', rank: Rank.Ace, suit: Suit.Clubs, points: 0 }, // Valuable pair
-        { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 }, // Small single
-        { id: '4-spades', rank: Rank.Four, suit: Suit.Spades, points: 0 }, // Small single
-        { id: '6-clubs', rank: Rank.Six, suit: Suit.Clubs, points: 0 }, // Small single
-        { id: '7-clubs', rank: Rank.Seven, suit: Suit.Clubs, points: 0 }, // Other card
+        ...Card.createPair(Suit.Clubs, Rank.Ace), // Valuable pair
+        Card.createCard(Suit.Diamonds, Rank.Three, 0), // Small single
+        Card.createCard(Suit.Spades, Rank.Four, 0), // Small single
+        Card.createCard(Suit.Clubs, Rank.Six, 0), // Small single
+        Card.createCard(Suit.Clubs, Rank.Seven, 0), // Other card
       ];
       gameState.players[1].hand = aiBotHand;
 
       // Someone leads a pair in Hearts (AI is out of Hearts)
-      const leadingCards: Card[] = [
-        { id: '6-hearts-1', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-        { id: '6-hearts-2', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-      ];
+      const leadingCards: Card[] = Card.createPair(Suit.Hearts, Rank.Six);
 
       gameState.currentTrick = {
         plays: [
@@ -86,18 +81,14 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       // AI has trump pair that can beat the trick
       const aiBotHand: Card[] = [
-        { id: '2-spades-1', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Trump rank trump suit pair
-        { id: '2-spades-2', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Trump rank trump suit pair
-        { id: '3-clubs', rank: Rank.Three, suit: Suit.Clubs, points: 0 }, // Weak single
-        { id: '4-clubs', rank: Rank.Four, suit: Suit.Clubs, points: 0 }, // Weak single
+        ...Card.createPair(Suit.Spades, Rank.Two), // Trump rank trump suit pair
+        Card.createCard(Suit.Clubs, Rank.Three, 0), // Weak single
+        Card.createCard(Suit.Clubs, Rank.Four, 0), // Weak single
       ];
       gameState.players[2].hand = aiBotHand;
 
       // Opponent leads valuable pair
-      const leadingCards: Card[] = [
-        { id: 'king-hearts-1', rank: Rank.King, suit: Suit.Hearts, points: 10 },
-        { id: 'king-hearts-2', rank: Rank.King, suit: Suit.Hearts, points: 10 },
-      ];
+      const leadingCards: Card[] = Card.createPair(Suit.Hearts, Rank.King);
 
       gameState.currentTrick = {
         plays: [
@@ -138,18 +129,14 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       // AI Bot3 hand with pairs and singles
       const aiBotHand: Card[] = [
-        { id: 'king-clubs-1', rank: Rank.King, suit: Suit.Clubs, points: 10 }, // Valuable pair
-        { id: 'king-clubs-2', rank: Rank.King, suit: Suit.Clubs, points: 10 }, // Valuable pair
-        { id: '3-hearts', rank: Rank.Three, suit: Suit.Hearts, points: 0 }, // Small single
-        { id: '4-hearts', rank: Rank.Four, suit: Suit.Hearts, points: 0 }, // Small single
+        ...Card.createPair(Suit.Clubs, Rank.King), // Valuable pair
+        Card.createCard(Suit.Hearts, Rank.Three, 0), // Small single
+        Card.createCard(Suit.Hearts, Rank.Four, 0), // Small single
       ];
       gameState.players[3].hand = aiBotHand;
 
       // Teammate Bot1 is winning with moderate cards (not "very strong")
-      const leadingCards: Card[] = [
-        { id: '5-spades-1', rank: Rank.Five, suit: Suit.Spades, points: 5 },
-        { id: '5-spades-2', rank: Rank.Five, suit: Suit.Spades, points: 5 },
-      ];
+      const leadingCards: Card[] = Card.createPair(Suit.Spades, Rank.Five);
 
       gameState.currentTrick = {
         plays: [
@@ -159,10 +146,7 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
           },
           {
             playerId: PlayerId.Bot1, // Teammate
-            cards: [
-              { id: 'queen-spades-1', rank: Rank.Queen, suit: Suit.Spades, points: 0 },
-              { id: 'queen-spades-2', rank: Rank.Queen, suit: Suit.Spades, points: 0 },
-            ]
+            cards: Card.createPair(Suit.Spades, Rank.Queen)
           },
         ],
         points: 10,
@@ -204,18 +188,14 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       // AI has Ace pair but opponent has unbeatable trump pair
       const aiBotHand: Card[] = [
-        { id: 'ace-spades-1', rank: Rank.Ace, suit: Suit.Spades, points: 0 }, // Valuable pair (can't beat trump)
-        { id: 'ace-spades-2', rank: Rank.Ace, suit: Suit.Spades, points: 0 }, // Valuable pair (can't beat trump)
-        { id: '6-clubs', rank: Rank.Six, suit: Suit.Clubs, points: 0 }, // Small single
-        { id: '7-diamonds', rank: Rank.Seven, suit: Suit.Diamonds, points: 0 }, // Small single
+        ...Card.createPair(Suit.Spades, Rank.Ace), // Valuable pair (can't beat trump)
+        Card.createCard(Suit.Clubs, Rank.Six, 0), // Small single
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0), // Small single
       ];
       gameState.players[1].hand = aiBotHand;
 
       // Opponent leads unbeatable trump pair
-      const leadingCards: Card[] = [
-        { id: '2-hearts-1', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank in trump suit
-        { id: '2-hearts-2', rank: Rank.Two, suit: Suit.Hearts, points: 0 }, // Trump rank in trump suit
-      ];
+      const leadingCards: Card[] = Card.createPair(Suit.Hearts, Rank.Two); // Trump rank in trump suit
 
       gameState.currentTrick = {
         plays: [
@@ -268,18 +248,15 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       // AI is out of Hearts
       const aiBotHand: Card[] = [
-        { id: '3-clubs', rank: Rank.Three, suit: Suit.Clubs, points: 0 },
-        { id: '4-diamonds', rank: Rank.Four, suit: Suit.Diamonds, points: 0 },
-        { id: 'ace-clubs-1', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
-        { id: 'ace-clubs-2', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
+        Card.createCard(Suit.Clubs, Rank.Three, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
       gameState.players[1].hand = aiBotHand;
 
       // Hearts pair led
-      const leadingCards: Card[] = [
-        { id: '6-hearts-1', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-        { id: '6-hearts-2', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-      ];
+      const leadingCards: Card[] = Card.createPair(Suit.Hearts, Rank.Six);
 
       gameState.currentTrick = {
         plays: [
@@ -296,7 +273,7 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       gameState.gamePhase = GamePhase.Playing;
 
       // Get valid combinations - should include mixed options
-      const { getValidCombinations } = require('../../src/game/gameLogic');
+      const { getValidCombinations } = require('../../src/game/combinationGeneration');
       const validCombos = getValidCombinations(aiBotHand, gameState);
 
       console.log('=== ISSUE #104 TEST: Singles Allowed, Cross-Suit Pairs Rejected ===');
@@ -341,19 +318,15 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       // AI hand: 5♥, A♣-A♣, 3♦, 4♠ (has Hearts but not enough for pair)
       const aiBotHand: Card[] = [
-        { id: '5-hearts', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
-        { id: 'ace-clubs-1', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
-        { id: 'ace-clubs-2', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
-        { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 },
-        { id: '4-spades', rank: Rank.Four, suit: Suit.Spades, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        ...Card.createPair(Suit.Clubs, Rank.Ace),
+        Card.createCard(Suit.Diamonds, Rank.Three, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
       ];
       gameState.players[1].hand = aiBotHand;
 
       // Hearts pair led
-      const leadingCards: Card[] = [
-        { id: '6-hearts-1', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-        { id: '6-hearts-2', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-      ];
+      const leadingCards: Card[] = Card.createPair(Suit.Hearts, Rank.Six);
 
       gameState.currentTrick = {
         plays: [
@@ -405,17 +378,13 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       // AI hand: Only 5♥, A♣-A♣ (minimal case)
       const aiBotHand: Card[] = [
-        { id: '5-hearts', rank: Rank.Five, suit: Suit.Hearts, points: 5 },
-        { id: 'ace-clubs-1', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
-        { id: 'ace-clubs-2', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
+        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        ...Card.createPair(Suit.Clubs, Rank.Ace),
       ];
       gameState.players[1].hand = aiBotHand;
 
       // Hearts pair led
-      const leadingCards: Card[] = [
-        { id: '6-hearts-1', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-        { id: '6-hearts-2', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-      ];
+      const leadingCards: Card[] = Card.createPair(Suit.Hearts, Rank.Six);
 
       gameState.currentTrick = {
         plays: [
@@ -469,20 +438,15 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       // AI hand: No Hearts, has trump pair and cross-suit pair
       const aiBotHand: Card[] = [
-        { id: 'ace-clubs-1', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
-        { id: 'ace-clubs-2', rank: Rank.Ace, suit: Suit.Clubs, points: 0 },
-        { id: '2-spades-1', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Trump pair
-        { id: '2-spades-2', rank: Rank.Two, suit: Suit.Spades, points: 0 }, // Trump pair
-        { id: '3-diamonds', rank: Rank.Three, suit: Suit.Diamonds, points: 0 },
-        { id: '4-diamonds', rank: Rank.Four, suit: Suit.Diamonds, points: 0 },
+        ...Card.createPair(Suit.Clubs, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.Two), // Trump pair
+        Card.createCard(Suit.Diamonds, Rank.Three, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
       ];
       gameState.players[1].hand = aiBotHand;
 
       // Hearts pair led
-      const leadingCards: Card[] = [
-        { id: '6-hearts-1', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-        { id: '6-hearts-2', rank: Rank.Six, suit: Suit.Hearts, points: 0 },
-      ];
+      const leadingCards: Card[] = Card.createPair(Suit.Hearts, Rank.Six);
 
       gameState.currentTrick = {
         plays: [
@@ -499,7 +463,7 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       gameState.gamePhase = GamePhase.Playing;
 
       // Test valid combinations logic
-      const { getValidCombinations } = require('../../src/game/gameLogic');
+      const { getValidCombinations } = require('../../src/game/combinationGeneration');
       const validCombos = getValidCombinations(aiBotHand, gameState);
 
       console.log('=== EDGE CASE TEST: Trump Pairs vs Cross-Suit Pairs ===');
