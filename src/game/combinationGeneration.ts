@@ -339,17 +339,62 @@ export const generateMixedCombinations = (
     if (requiredSuitCards.length > 0) {
       combo.push(...requiredSuitCards);
 
-      // Get remaining cards sorted by strategic value (weakest first)
-      const remainingCards = playerHand
-        .filter((card) => !combo.some((c) => c.id === card.id))
-        .sort((a, b) => {
-          const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
-          const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
-          return valueA - valueB; // Weakest first
-        });
+      // 🚨 CRITICAL FIX: When following trump leads, must exhaust ALL trump cards before non-trump
+      if (isLeadingTrump) {
+        // For trump leads: Use ALL remaining trump cards before any non-trump cards
+        const allTrumpCards = playerHand.filter((card) =>
+          isTrump(card, trumpInfo),
+        );
+        const remainingTrumpCards = allTrumpCards.filter(
+          (card) => !combo.some((c) => c.id === card.id),
+        );
 
-      const remaining = leadingLength - combo.length;
-      combo.push(...remainingCards.slice(0, remaining));
+        // Add ALL remaining trump cards first
+        combo.push(...remainingTrumpCards);
+
+        // Only if we still need more cards, add non-trump cards
+        if (combo.length < leadingLength) {
+          const nonTrumpCards = playerHand
+            .filter((card) => !isTrump(card, trumpInfo))
+            .filter((card) => !combo.some((c) => c.id === card.id))
+            .sort((a, b) => {
+              const valueA = calculateCardStrategicValue(
+                a,
+                trumpInfo,
+                "strategic",
+              );
+              const valueB = calculateCardStrategicValue(
+                b,
+                trumpInfo,
+                "strategic",
+              );
+              return valueA - valueB; // Weakest first
+            });
+
+          const remaining = leadingLength - combo.length;
+          combo.push(...nonTrumpCards.slice(0, remaining));
+        }
+      } else {
+        // For non-trump leads: Use original logic (strategic value sorting)
+        const remainingCards = playerHand
+          .filter((card) => !combo.some((c) => c.id === card.id))
+          .sort((a, b) => {
+            const valueA = calculateCardStrategicValue(
+              a,
+              trumpInfo,
+              "strategic",
+            );
+            const valueB = calculateCardStrategicValue(
+              b,
+              trumpInfo,
+              "strategic",
+            );
+            return valueA - valueB; // Weakest first
+          });
+
+        const remaining = leadingLength - combo.length;
+        combo.push(...remainingCards.slice(0, remaining));
+      }
 
       return combo.length === leadingLength ? combo : null;
     }
