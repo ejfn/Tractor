@@ -601,6 +601,128 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       expect(selected!.type).toBe(ComboType.Pair); // Should prefer Ace pair
       expect(selected!.cards[0].rank).toBe(Rank.Ace);
     });
+
+    // NEW: Test cases for trump rank Ace scenario
+    it('should lead with Kings when trump rank is Ace (Kings become highest non-trump)', () => {
+      const validCombos = [
+        {
+          type: ComboType.Single,
+          cards: [Card.createCard(Suit.Hearts, Rank.King, 0)], // Now highest non-trump
+          value: 13,
+        },
+        {
+          type: ComboType.Single,
+          cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)], // Lower than King
+          value: 12,
+        },
+        {
+          type: ComboType.Single,
+          cards: [Card.createCard(Suit.Clubs, Rank.Ace, 0)], // Trump rank - should be filtered out
+          value: 14,
+        },
+      ];
+      
+      const trumpInfo = { trumpRank: Rank.Ace }; // Ace is trump rank
+      const pointContext = {
+        gamePhase: GamePhaseStrategy.EarlyGame,
+        pointCardStrategy: PointCardStrategy.Escape,
+        trumpTiming: TrumpTiming.Preserve,
+        teamPointsCollected: 0,
+        opponentPointsCollected: 0,
+        pointCardDensity: 0.3,
+        partnerNeedsPointEscape: false,
+        canWinWithoutPoints: false,
+      };
+      const gameState = createTestGameState();
+      
+      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
+      
+      expect(selected).toBeTruthy();
+      expect(selected!.cards[0].rank).toBe(Rank.King); // Should select King when Ace is trump
+      expect(selected!.cards[0].suit).toBe(Suit.Hearts);
+    });
+
+    it('should prefer King pairs over King singles when trump rank is Ace', () => {
+      const validCombos = [
+        {
+          type: ComboType.Single,
+          cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+          value: 13,
+        },
+        {
+          type: ComboType.Pair,
+          cards: [
+            Card.createCard(Suit.Spades, Rank.King, 0),
+            Card.createCard(Suit.Spades, Rank.King, 1),
+          ],
+          value: 26,
+        },
+        {
+          type: ComboType.Single,
+          cards: [Card.createCard(Suit.Clubs, Rank.Ace, 0)], // Trump rank - should be filtered out
+          value: 14,
+        },
+      ];
+      
+      const trumpInfo = { trumpRank: Rank.Ace }; // Ace is trump rank
+      const pointContext = {
+        gamePhase: GamePhaseStrategy.EarlyGame,
+        pointCardStrategy: PointCardStrategy.Escape,
+        trumpTiming: TrumpTiming.Preserve,
+        teamPointsCollected: 0,
+        opponentPointsCollected: 0,
+        pointCardDensity: 0.3,
+        partnerNeedsPointEscape: false,
+        canWinWithoutPoints: false,
+      };
+      const gameState = createTestGameState();
+      
+      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
+      
+      expect(selected).toBeTruthy();
+      expect(selected!.type).toBe(ComboType.Pair); // Should prefer King pair
+      expect(selected!.cards[0].rank).toBe(Rank.King);
+      expect(selected!.cards[1].rank).toBe(Rank.King);
+    });
+
+    it('should still lead with Aces when trump rank is not Ace (regression test)', () => {
+      const validCombos = [
+        {
+          type: ComboType.Single,
+          cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)], // Highest non-trump
+          value: 14,
+        },
+        {
+          type: ComboType.Single,
+          cards: [Card.createCard(Suit.Spades, Rank.King, 0)], // Lower than Ace
+          value: 13,
+        },
+        {
+          type: ComboType.Single,
+          cards: [Card.createCard(Suit.Clubs, Rank.Two, 0)], // Trump rank - should be filtered out
+          value: 2,
+        },
+      ];
+      
+      const trumpInfo = { trumpRank: Rank.Two }; // Two is trump rank, Ace remains highest non-trump
+      const pointContext = {
+        gamePhase: GamePhaseStrategy.EarlyGame,
+        pointCardStrategy: PointCardStrategy.Escape,
+        trumpTiming: TrumpTiming.Preserve,
+        teamPointsCollected: 0,
+        opponentPointsCollected: 0,
+        pointCardDensity: 0.3,
+        partnerNeedsPointEscape: false,
+        canWinWithoutPoints: false,
+      };
+      const gameState = createTestGameState();
+      
+      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
+      
+      expect(selected).toBeTruthy();
+      expect(selected!.cards[0].rank).toBe(Rank.Ace); // Should still select Ace when Two is trump
+      expect(selected!.cards[0].suit).toBe(Suit.Hearts);
+    });
   });
 
   describe('Integration Tests', () => {
