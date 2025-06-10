@@ -8,9 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Tractor is a React Native Expo app implementing a single-player version of the Chinese card game Shengji (升级), also known as Tractor. It's a trick-taking card game where players work in teams to advance through card ranks from 2 to Ace.
+Tractor is a React Native Expo app implementing a single-player version of the Chinese card game Shengji (升级), also known as Tractor.
 
 **Platform Support:** Mobile-only (iOS and Android). Currently tested on Android only.
+
+*Game details in [Game Rules](docs/GAME_RULES.md) | AI system in [AI System](docs/AI_SYSTEM.md)*
 
 ## Quick Start
 
@@ -32,92 +34,7 @@ npm run typecheck     # Type checking
 npm test              # Run tests
 ```
 
-## Project Structure
-
-```
-/src/
-├── types/                 # Type definitions (modular organization)
-│   ├── index.ts           # Main types re-export file
-│   ├── core.ts            # Core game types and enums
-│   ├── ai.ts              # AI strategy and intelligence types
-│   ├── combinations.ts    # Advanced combination types
-│   └── pointFocused.ts    # Point-focused strategy types
-├── ai/                    # AI modules and strategy logic (22 specialized modules)
-│   ├── aiLogic.ts         # Public AI API and game rule compliance
-│   ├── aiStrategy.ts      # Core AI decision making and strategy implementation
-│   ├── aiGameContext.ts   # Game context analysis
-│   ├── aiCardMemory.ts    # Card memory system (Phase 3)
-│   ├── analysis/          # Advanced analysis modules
-│   │   ├── advancedCombinations.ts # Complex combination analysis
-│   │   └── comboAnalysis.ts # Combo evaluation and ranking
-│   ├── following/         # Position-specific following strategies (10 modules)
-│   │   ├── followingStrategy.ts # Main following logic with 4-priority chain
-│   │   ├── fourthPlayerStrategy.ts # Perfect information 4th player logic
-│   │   ├── opponentBlocking.ts # Strategic opponent countering
-│   │   ├── pointContribution.ts # Memory-enhanced point card management
-│   │   ├── secondPlayerStrategy.ts # Early follower tactical decisions
-│   │   ├── strategicDisposal.ts # Hierarchical card disposal
-│   │   ├── teammateSupport.ts # Team coordination logic
-│   │   ├── thirdPlayerRiskAnalysis.ts # Risk assessment for 3rd player
-│   │   ├── thirdPlayerStrategy.ts # Mid-trick positioning
-│   │   └── trickContention.ts # Optimal winning combo selection
-│   ├── leading/           # Leading player strategies
-│   │   ├── firstPlayerLeadingAnalysis.ts # Strategic leading analysis
-│   │   ├── leadingStrategy.ts # Main leading decision logic
-│   │   └── pointFocusedStrategy.ts # Memory-enhanced point collection
-│   ├── kittySwap/         # Advanced kitty management
-│   │   └── kittySwapStrategy.ts # Trump-strength-aware suit elimination
-│   ├── trumpDeclaration/  # Trump declaration during dealing
-│   │   └── trumpDeclarationStrategy.ts # Sophisticated declaration timing
-│   └── utils/             # AI utility functions
-│       └── aiHelpers.ts   # Common AI helper functions
-├── game/                  # Core game logic and management (6 focused modules)
-│   ├── cardComparison.ts  # Card comparison and strength evaluation
-│   ├── combinationGeneration.ts # Valid combination generation for AI
-│   ├── comboDetection.ts  # Combination type detection and validation
-│   ├── dealingAndDeclaration.ts # Progressive dealing and trump declaration system
-│   ├── gameHelpers.ts     # Game utility functions and card operations
-│   ├── gameRoundManager.ts # Round management and scoring
-│   ├── kittyManager.ts    # Kitty card management and scoring
-│   ├── playProcessing.ts  # Card play validation and trick processing
-│   ├── tractorLogic.ts    # Tractor formation rules and validation
-│   └── trumpDeclarationManager.ts # Trump declaration system and rules
-├── utils/                 # True utility functions
-│   ├── cardAutoSelection.ts # Smart card selection logic
-│   └── gameTimings.ts     # Animation timing constants
-├── hooks/                 # Custom React hooks
-│   ├── useGameState.ts    # Core game state management
-│   ├── useAITurns.ts      # AI turn handling
-│   ├── useProgressiveDealing.ts # Progressive dealing with trump declarations
-│   ├── useTrickResults.ts # Trick completion logic
-│   └── useAnimations.ts   # Card animations
-├── components/            # UI components
-├── screens/               # Screen components
-└── styles/                # Shared styling
-```
-
-```
-/__tests__/
-├── ai/                    # AI module tests and strategy regression tests
-├── game/                  # Game logic tests and validation tests
-├── integration/           # Integration tests and cross-system testing
-├── utils/                 # Utility function tests
-└── helpers/               # Test utilities (modular organization)
-    ├── index.ts           # Main helpers re-export file
-    ├── cards.ts           # Card creation utilities
-    ├── players.ts         # Player and team utilities
-    ├── gameStates.ts      # Game state scenarios
-    ├── trump.ts           # Trump utilities
-    ├── tricks.ts          # Trick utilities
-    ├── ai.ts              # AI testing utilities
-    └── mocks.ts           # Mock setup and assertions
-```
-
-```
-/docs/
-├── AI_SYSTEM.md           # Comprehensive AI intelligence with decision trees
-└── GAME_RULES.md          # Complete rules, quick start, and strategy reference
-```
+*Project structure and architectural highlights detailed in [README.md](README.md)*
 
 ## Development Guidelines
 
@@ -213,139 +130,17 @@ npx eas --version
 
 ## Game Architecture
 
-### Modular Game System
+### Core Architecture Principles
 
-The game logic has been completely **modularized** for optimal maintainability and clear separation of concerns:
+- **Modular Game System**: 22 specialized modules organized by functional domain
+- **Unified Trick Structure**: Single `plays` array eliminates data inconsistencies
+- **Direct Imports**: Clean dependencies without re-export hubs
+- **Pure Computation**: Separation of calculations from state mutations
+- **Type Safety**: Strict TypeScript with zero tolerance for unsafe patterns
 
-**Core Game Modules:**
-- **`playProcessing.ts`** - Unified play processing and validation (merged gamePlayManager + playValidation)
-- **`dealingAndDeclaration.ts`** - Complete dealing and trump declaration system (merged dealingManager + trumpDeclarationManager)
-- **`gameHelpers.ts`** - Consolidated utility functions (merged gameHelpers + gameUtilities)
-- **`gameRoundManager.ts`** - Round management and scoring
-- **`kittyManager.ts`** - Kitty card management and scoring
+*Complete architecture details in [README.md](README.md)*
 
-**Specialized Game Modules:**
-- **`cardComparison.ts`** - Card comparison and strength evaluation
-- **`combinationGeneration.ts`** - Valid combination generation for AI
-- **`comboDetection.ts`** - Combination type detection and validation
-- **`tractorLogic.ts`** - Tractor formation rules and validation
-
-**Modular Benefits:**
-- **Direct Imports**: All AI modules import directly from specific game modules (no re-export hub)
-- **Single Responsibility**: Each module has one clear purpose and manageable size
-- **Clean Dependencies**: Clear import relationships eliminate circular dependency risks
-- **Easy Testing**: Modular structure enables targeted unit testing
-- **IDE Navigation**: Direct imports improve code navigation and refactoring
-
-### Core Concepts
-
-1. **State Management**
-   - Managed through custom hooks in `/src/hooks/`
-   - `GameState` type defines complete game state
-   - State transitions preserve winning player on trick completion
-
-2. **Unified Trick Structure**
-   - **Single Source of Truth**: All tricks use unified `plays` array structure
-   - **Leader Access**: Leading cards accessed via `trick.plays[0].cards` consistently
-   - **Eliminated Dual Fields**: Removed confusing `leadingCombo` field that caused data inconsistencies
-   - **Real-time Winner Tracking**: `winningPlayerId` field tracks current trick winner throughout play
-   - **Consistent Data Flow**: All AI logic, game validation, and UI components use same trick format
-   - **Simplified Debugging**: Single trick structure eliminates confusion and logic errors
-
-3. **Progressive Dealing System**
-   - Cards dealt one-by-one with real-time trump declaration opportunities
-   - AI bots can declare trump during dealing with sophisticated strategy
-   - Human players can pause dealing to declare trump or continue
-   - Declaration hierarchy system with override capabilities
-   - Real-time team role changes in first round based on trump declarer
-
-3. **Card Mechanics**
-   - Suits: Spades ♠, Hearts ♥, Clubs ♣, Diamonds ♦
-   - Special cards: Big Joker, Small Joker
-   - Points: 5s = 5pts, 10s and Kings = 10pts
-   - Trump hierarchy: Big Joker > Small Joker > Trump rank in trump suit > Trump rank in other suits > Trump suit cards
-
-5. **Smart Card Selection**
-   - **Auto-selection**: Tapping a card automatically selects related cards to form optimal combinations
-   - **When leading**: Prioritizes tractors over pairs for better play
-   - **When following**: Auto-selects matching combination type if possible
-   - **Toggle behavior**: Tap selected card again to deselect
-   - **Fallback**: Single card selection when no combinations available
-   - **Implementation**: `cardAutoSelection.ts` utility with combination detection logic
-
-6. **Combination Rules**
-   - **Singles**: Any card
-   - **Pairs**: Two identical cards (same rank AND suit)
-   - **Tractors**: Consecutive pairs of same suit
-   - Special: SJ-SJ-BJ-BJ forms highest tractor
-
-7. **Game Flow**
-   - Phases: dealing → (optional declaring) → playing → scoring → gameOver
-   - Progressive dealing with real-time trump declaration opportunities
-   - Teams alternate between defending and attacking
-   - Trick winner leads next trick
-
-8. **Round Management & UI Timing**
-   - **RoundResult System**: Pure computation approach separating round end calculations from state changes
-   - **Modal Timing Consistency**: Round complete modal displays information from completed round, not next round
-   - **Clean Architecture**: `endRound()` computes results, `prepareNextRound()` applies changes
-   - **State Preservation**: Current game state preserved during modal display using refs
-
-### Implementation Philosophy
-
-- Fail-fast approach for invalid states
-- Centralized timing constants in `gameTimings.ts`
-- No special case handling for specific players
-- Synchronized state transitions
-- Explicit error handling
-- **Pure computation separation**: Round end logic separated from state mutations for clean UI timing
-
-### Timing Constants
-
-```typescript
-// Player move timings
-AI_MOVE_DELAY = 600ms              // AI thinking animation for regular moves
-AI_KITTY_SWAP_DELAY = 1000ms       // AI thinking animation for kitty swap (longer deliberation)
-MOVE_COMPLETION_DELAY = 1000ms     // Time to see played cards
-
-// Trick result display timings
-TRICK_RESULT_DISPLAY_TIME = 1500ms // Trick result display
-ANIMATION_COMPLETION_DELAY = 500ms // Post-animation delay
-
-// Card animation timings
-CARD_ANIMATION_FALLBACK = 1000ms   // Max animation wait
-
-// UI interaction timings
-CARD_SELECTION_DELAY = 250ms       // Human card selection feedback
-ROUND_COMPLETE_BUFFER = 500ms      // Buffer after trick result
-STATE_UPDATE_SYNC_DELAY = 100ms    // State update synchronization
-
-// Animation loop timings
-THINKING_DOTS_INTERVAL = 300ms     // Thinking dots animation loop
-```
-
-## UI Implementation
-
-### Card Rendering
-
-- Human cards: 65x95px (bottom)
-- AI cards: 40x60px (top, left, right)
-- Card backs: 3x3 grid with "T" emblem
-
-### Player Layout (Counter-clockwise play order)
-
-- **Human**: Bottom, no label, -40px overlap
-- **Bot 1**: Right, rotated 270°, -48px vertical overlap
-- **Bot 2**: Top, rotated 180°, -30px horizontal overlap
-- **Bot 3**: Left, rotated 90°, -48px vertical overlap
-
-### Performance Optimizations
-
-- React Native rendering flags enabled
-- Minimal shadows
-- Single AI strategy (no difficulty settings)
-- Mobile-only platform (web support completely removed)
-- Centralized timing for predictable animations
+*Timing constants in `src/utils/gameTimings.ts` | UI layout details available as needed*
 
 ## Type Safety and Code Quality
 
@@ -687,48 +482,16 @@ expect(result.canBeat).toBe(true);
 // Avoid: Large mock objects that duplicate real code
 ```
 
-## Technical Notes
+## Technical Implementation
 
-### Trick Completion Flow
+### Key Implementation Rules
 
-1. All 4 players play cards (with real-time `winningPlayerId` tracking)
-2. Display trick result for 2 seconds using stored `winningPlayerId`
-3. Clear table
-4. Winner leads next trick (determined from `winningPlayerId`)
+- **Unified Trick Structure**: Leading cards accessed via `trick.plays[0].cards`
+- **Real-time Winner Tracking**: `winningPlayerId` field tracks current trick winner
+- **Trump Group Unity**: ALL trump cards treated as same suit for combinations
+- **Pure Computation**: Separate calculations from state mutations
 
-### Card Suit Ordering
-
-Trump suit rotates to first position while maintaining alternating black-red pattern:
-
-- No trump: ♠ ♥ ♣ ♦
-- Hearts trump: ♥ ♣ ♦ ♠
-- Clubs trump: ♣ ♦ ♠ ♥
-- Diamonds trump: ♦ ♠ ♥ ♣
-- Spades trump: ♠ ♥ ♣ ♦
-
-### Trump Group Hierarchy
-
-**Complete trump hierarchy (using rank 2, trump suit Spades as example):**
-
-1. **Big Joker** - Highest trump
-2. **Small Joker** - Second highest
-3. **2♠** - Trump rank in trump suit
-4. **2♥, 2♣, 2♦** - Trump rank in off-suits (equal strength)
-5. **A♠, K♠, Q♠, J♠, 10♠, 9♠, 8♠, 7♠, 6♠, 5♠, 4♠, 3♠** - Trump suit cards
-
-**AI Conservation Values:**
-- BJ(100) > SJ(90) > 2♠(80) > 2♥,2♣,2♦(70) > A♠(60) > K♠(55) > Q♠(50) > J♠(45) > 10♠(40) > 9♠(35) > 8♠(30) > 7♠(25) > 6♠(20) > 5♠(15) > 4♠(10) > **3♠(5)**
-
-**Key Principle:** When forced to follow trump, AI plays weakest available trump (3♠, 4♠) instead of wasting valuable trump rank cards.
-
-### Important Rules
-
-- Different suits never form pairs/tractors
-- Trump combos beat non-trump combos of same type
-- Leading player's cards accessed via `trick.plays[0].cards` (unified structure)
-- Trick plays array contains all player moves in chronological order
-- Real-time `winningPlayerId` field tracks current trick winner
-- Always block AI moves during trick result display
+*Complete game rules and mechanics in [Game Rules](docs/GAME_RULES.md)*
 
 ### Card Comparison Functions ⚠️ CRITICAL
 
@@ -782,142 +545,7 @@ Use evaluateTrickPlay() for cross-suit trick comparisons.
 
 This protection ensures Shengji/Tractor game rule compliance and prevents invalid card comparisons that could lead to incorrect AI decisions or game logic bugs.
 
-## AI Implementation Guidelines (All 4 Phases)
-
-### AI Enum Usage ⚠️ MANDATORY
-
-When working with AI systems, **ALWAYS use the following enums**:
-
-```typescript
-// Context and Strategy
-const context = createGameContext(gameState, playerId);
-if (context.playStyle === PlayStyle.Aggressive) {  // ✅ CORRECT
-  // AI logic here
-}
-
-// Position-based decisions
-if (context.trickPosition === TrickPosition.First) {  // ✅ CORRECT
-  return selectLeadingPlay(combos, trumpInfo, context);
-}
-
-// Point pressure checks
-if (context.pointPressure === PointPressure.HIGH) {  // ✅ CORRECT
-  return selectDesperatePlay(combos);
-}
-
-// Combo strength evaluation
-if (analysis.strength === ComboStrength.Critical) {  // ✅ CORRECT
-  preserveForEndgame = true;
-}
-```
-
-**❌ NEVER do this in AI code:**
-
-```typescript
-// Wrong - magic strings
-if (context.playStyle === 'aggressive') { }          // ❌ BAD
-if (context.trickPosition === 'first') { }           // ❌ BAD  
-if (context.pointPressure === 'HIGH') { }            // ❌ BAD
-if (analysis.strength === 'critical') { }            // ❌ BAD
-```
-
-### AI Memory System Usage
-
-When working with Phase 3 memory features:
-
-```typescript
-// Correct memory pattern usage
-if (pattern.cardType === 'trump') {                   // ✅ String literal OK here
-  pattern.situation = `leading_${pattern.cardType}`;  // ✅ Template literal OK
-}
-
-// Memory strategy checks
-if (memoryStrategy?.endgameOptimal) {                 // ✅ Boolean check
-  return selectEndgameOptimalPlay(combos, context, trumpInfo);
-}
-```
-
-### AI Trump Declaration Strategy
-
-The AI includes sophisticated trump declaration logic during the progressive dealing phase:
-
-- **Hand Quality Analysis**: Evaluates suit length, pairs, and overall trump potential
-- **Timing Optimization**: Adjusts declaration probability based on dealing progress
-- **Override Strategy**: Intelligent decisions on when to override opponent declarations
-- **Strategic Coordination**: Team-aware declaration timing and positioning
-
-### AI Priority Chain Architecture
-
-The AI strategy follows a clean 4-priority decision chain in `selectOptimalFollowPlay()`:
-
-```typescript
-// === PRIORITY 1: TEAM COORDINATION ===
-if (trickWinner?.isTeammateWinning) {
-  return this.handleTeammateWinning(comboAnalyses, context, trumpInfo);
-}
-
-// === PRIORITY 2: OPPONENT BLOCKING ===
-if (trickWinner?.isOpponentWinning) {
-  const response = this.handleOpponentWinning(/* ... */);
-  if (response) return response;
-}
-
-// === PRIORITY 3: TRICK CONTENTION ===
-if (trickAnalysis.canWin && trickAnalysis.shouldContest) {
-  return this.selectOptimalWinningCombo(/* ... */);
-}
-
-// === PRIORITY 4: STRATEGIC DISPOSAL ===
-return this.selectStrategicDisposal(/* ... */);
-```
-
-**Key Guidelines:**
-
-- **Never skip priorities** - each builds on the previous
-- **Use real-time trick winner analysis** via `context.trickWinnerAnalysis`
-- **Enhanced opponent blocking**: Strategic point card management and trump conservation
-- **Point card preservation**: When can't beat opponent, avoid wasting point cards
-- **Trump conservation hierarchy**: Play weak trump suit cards over valuable trump rank cards using conservation values
-- **Low-value trick optimization**: 0-4 point tricks use conservation logic to preserve valuable cards
-- **Opponent blocking thresholds**: High-value (≥10pts), moderate (5-9pts), low-value (0-4pts with conservation)
-- **Only contest tricks ≥5 points** to avoid wasting high cards
-- **Strategic disposal conserves Aces** when tricks can't be won
-
-### AI Phase 4: Historical Analysis Usage
-
-When working with Phase 4 historical analysis features:
-
-```typescript
-// Correct historical analysis integration
-if (gameState.tricks.length >= 3) {
-  const enhancedContext = enhanceGameContextWithHistoricalMemory(
-    context, cardMemory, gameState
-  );
-  
-  const historicalInsights = this.applyHistoricalInsights(
-    enhancedContext, validCombos, trumpInfo, gameState
-  );
-  
-  if (historicalInsights) return historicalInsights;
-}
-
-// Historical pattern usage
-const opponentPattern = trickHistory.opponentLeadingPatterns[PlayerId.Bot1];
-if (opponentPattern.aggressivenessLevel > 0.7) {
-  // Counter aggressive opponent with conservative blocking
-  return selectConservativeBlocking(combos, context);
-}
-```
-
-**Key Phase 4 Guidelines:**
-
-- **Data Threshold**: Historical analysis only activates with ≥3 tricks of data
-- **Graceful Degradation**: Always fall back to Phase 3 memory when insufficient data
-- **Confidence Weighting**: Use reliability scores for strategic recommendations
-- **Performance Optimization**: Minimal overhead (<5% decision time impact)
-- **Opponent Modeling**: Track aggressiveness, suit preferences, team coordination
-- **Adaptive Counter-Strategies**: Adjust play based on detected behavioral patterns
-- **Pattern Recognition**: Analyze leading patterns, coordination history, adaptation trends
+*AI implementation patterns and guidelines detailed in [AI System](docs/AI_SYSTEM.md)*
 
 ## Best Practices
 
@@ -946,120 +574,16 @@ if (opponentPattern.aggressivenessLevel > 0.7) {
 
 ## Hook Architecture
 
-### Progressive Dealing System
+**Single-responsibility hooks with minimal interdependencies:**
+- `useGameState` - Core game state management
+- `useProgressiveDealing` - Unified dealing and trump declarations
+- `useAITurns` - AI turn handling
+- `useTrickResults` - Trick completion and display
+- `useAnimations` - UI animations and timing
 
-The progressive dealing system is managed through a single consolidated hook:
-
-**`useProgressiveDealing.ts`** - Unified dealing and trump declaration system
-- **Progressive dealing**: Card-by-card distribution with configurable speed
-- **Trump declaration detection**: Real-time opportunity detection for humans
-- **AI declaration integration**: Ready for AI trump declaration during dealing
-- **Pause/Resume control**: Unified dealing pause/resume for declarations
-- **State management**: Single source of truth for dealing and declaration state
-
-#### Key Benefits of Consolidation:
-- **Eliminates circular dependencies**: No more inter-hook function calls
-- **Single responsibility**: One hook manages entire dealing lifecycle
-- **Cleaner state management**: Unified dealing and declaration state
-- **Better performance**: Reduced hook complexity and re-renders
-- **Easier maintenance**: Single file for all dealing-related logic
-
-#### Usage Pattern:
-```typescript
-const {
-  // Dealing state
-  isDealingInProgress,
-  shouldShowOpportunities,
-  
-  // Dealing controls
-  startDealing,
-  
-  // Trump declaration handlers
-  handleHumanDeclaration,
-  handleContinue,
-  handleManualPause,
-} = useProgressiveDealing({
-  gameState,
-  setGameState,
-  dealingSpeed: 250,
-});
-```
-
-### Hook Integration
-
-The hooks work together in a coordinated fashion:
-
-1. **`useGameState`**: Core game state and logic management
-2. **`useProgressiveDealing`**: Progressive dealing with trump declarations
-3. **`useAITurns`**: AI turn handling during play phase
-4. **`useTrickResults`**: Trick completion and result display
-5. **`useAnimations`**: UI animations and timing
-
-Each hook has a single, well-defined responsibility with minimal overlap.
-
-## RoundResult System Architecture
-
-### Problem Solved
-
-**Issue**: Team roles were being updated for the next round while the round complete modal was still displaying trump info from the previous round, creating UI inconsistency.
-
-**Root Cause**: `endRound()` was directly mutating game state, causing immediate team role changes before the modal could display consistent information.
-
-### Solution: Pure Computation Approach
-
-The RoundResult system implements clean separation of concerns:
-
-```typescript
-// Pure computation - no side effects
-export function endRound(state: GameState): RoundResult {
-  // Computes round outcomes without modifying state
-  return {
-    gameOver: boolean,
-    gameWinner?: TeamId,
-    roundCompleteMessage: string,
-    attackingTeamWon: boolean,
-    rankChanges: Record<TeamId, Rank>,
-    finalPoints: number,
-    pointsBreakdown: string
-  };
-}
-
-// State mutation - applies computed changes
-export function prepareNextRound(state: GameState, roundResult: RoundResult): GameState {
-  // Applies rank changes, team role switches, and round setup
-}
-```
-
-### UI Timing Flow
-
-```typescript
-// 1. Compute round results without state changes
-const roundResult = endRound(currentState);
-
-// 2. Store results and current state for modal display
-roundResultRef.current = roundResult;
-pendingStateRef.current = currentState; // Preserve current state
-
-// 3. Show modal with consistent information from completed round
-setShowRoundComplete(true);
-
-// 4. After modal dismissal, apply changes for next round
-const nextRoundState = prepareNextRound(pendingStateRef.current, roundResult);
-```
-
-### Benefits Achieved
-
-- **UI Consistency**: Round complete modal displays information from completed round, not next round
-- **Clean Architecture**: Pure computation separated from state mutations
-- **Type Safety**: `RoundResult` type ensures all computed information is captured
-- **Testability**: Easy to test round logic without side effects
-- **Maintainability**: Clear separation of concerns between computation and application
-
-### Implementation Files
-
-- **`src/types/core.ts`**: `RoundResult` type definition
-- **`src/game/gameRoundManager.ts`**: Pure `endRound()` and stateful `prepareNextRound()`
-- **`src/hooks/useGameState.ts`**: UI timing coordination with refs
+**RoundResult System:**
+- Pure computation approach with `endRound()` and `prepareNextRound()`
+- Separates calculations from state mutations for clean UI timing
 
 ## Development Memories
 

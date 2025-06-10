@@ -68,7 +68,9 @@ export function useThinkingDots() {
   const dot3 = useRef(new Animated.Value(1)).current;
 
   // Use a ref to store the animation timers so we can clear them on cleanup
-  const timersRef = useRef<{ [key: string]: number }>({});
+  const timersRef = useRef<{
+    [key: string]: ReturnType<typeof setTimeout>;
+  }>({});
 
   // Helper to clear all timers
   const clearAllTimers = () => {
