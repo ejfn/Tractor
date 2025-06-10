@@ -145,10 +145,32 @@ export function shouldContributePointCards(
     return false; // Can't contribute what we don't have
   }
 
-  // 🎯 4TH PLAYER ENHANCEMENT: Perfect information point contribution
+  // 🎯 4TH PLAYER ENHANCEMENT: Perfect information with trump conservation
   if (context.trickPosition === TrickPosition.Fourth) {
-    // Last player has perfect information - maximize point contribution when teammate winning
-    return true; // Always contribute when teammate winning and we're last
+    // Last player has perfect information - but should be smart about trump conservation
+
+    // Check if we have non-trump point cards available for contribution
+    const nonTrumpPointCards = comboAnalyses.filter(
+      (ca) =>
+        !ca.analysis.isTrump && ca.combo.cards.some((card) => card.points > 0),
+    );
+
+    // If teammate is securely winning and we have non-trump point options, prefer those
+    if (nonTrumpPointCards.length > 0) {
+      return true; // Contribute with non-trump point cards
+    }
+
+    // If only trump point cards available, be more conservative
+    // Only contribute trump when teammate needs significant help or trick is very valuable
+    if (
+      gameState?.currentTrick?.points &&
+      gameState.currentTrick.points >= 15
+    ) {
+      return true; // High value trick - worth using trump points
+    }
+
+    // For low-value tricks, preserve trump even if teammate winning
+    return false; // Conservative trump preservation when teammate securely winning
   }
 
   // For earlier positions: Conservative play when teammate has reasonable lead
