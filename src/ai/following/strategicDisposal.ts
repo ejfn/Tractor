@@ -37,8 +37,25 @@ export function selectStrategicDisposal(
     return sorted[0].combo.cards;
   }
 
-  // 🎯 4TH PLAYER ENHANCEMENT: Perfect information disposal
+  // 🎯 4TH PLAYER ENHANCEMENT: Perfect information disposal with teammate awareness
   if (context.trickPosition === TrickPosition.Fourth && gameState) {
+    // Check if teammate is winning - if so, prioritize trump conservation
+    const trickWinner = context.trickWinnerAnalysis;
+    if (trickWinner?.isTeammateWinning) {
+      // Teammate winning - prioritize trump conservation over everything else
+      const nonTrumpOptions = comboAnalyses.filter(
+        (ca) => !ca.analysis.isTrump,
+      );
+      if (nonTrumpOptions.length > 0) {
+        // Use specialized disposal logic but only consider non-trump cards
+        return selectFourthPlayerPointAvoidance(
+          nonTrumpOptions,
+          context,
+          gameState.trumpInfo,
+        );
+      }
+    }
+
     // Use specialized 4th player logic with perfect information
     return selectFourthPlayerPointAvoidance(
       comboAnalyses,

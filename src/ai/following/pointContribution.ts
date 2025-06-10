@@ -38,6 +38,18 @@ export function selectPointContribution(
     return selectLowestValueNonPointCombo(comboAnalyses);
   }
 
+  // 🎯 4TH PLAYER TRUMP CONSERVATION: Prioritize non-trump point cards
+  if (context?.trickPosition === TrickPosition.Fourth) {
+    const nonTrumpPointCombos = pointCardCombos.filter(
+      (ca) => !ca.analysis.isTrump,
+    );
+
+    // If non-trump point cards are available, prefer them to preserve trump
+    if (nonTrumpPointCombos.length > 0) {
+      pointCardCombos.splice(0, pointCardCombos.length, ...nonTrumpPointCombos);
+    }
+  }
+
   // Memory-enhanced selection: Prioritize biggest remaining point cards
   if (context?.memoryContext?.cardMemory) {
     const guaranteedWinningPointCards: {
