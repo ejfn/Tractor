@@ -1,4 +1,4 @@
-import { Card, Combo, ComboType, JokerType, Suit, TrumpInfo } from "../types";
+import { Card, Combo, ComboType, Suit, TrumpInfo } from "../types";
 import { findAllTractors, isValidTractor } from "./tractorLogic";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
 
@@ -9,9 +9,6 @@ export const identifyCombos = (
 ): Combo[] => {
   const combos: Combo[] = [];
 
-  // Group cards by suit and rank
-  const cardsBySuit = groupCardsBySuit(cards, trumpInfo);
-
   // Look for singles
   cards.forEach((card) => {
     combos.push({
@@ -21,81 +18,27 @@ export const identifyCombos = (
     });
   });
 
-  // Handle joker pairs separately
-  const smallJokers = cards.filter((card) => card.joker === JokerType.Small);
-  const bigJokers = cards.filter((card) => card.joker === JokerType.Big);
+  // Simple pairs: identical cards make pairs!
+  const cardsByIdentity: Record<string, Card[]> = {};
 
-  // Add Small Joker pairs (using cardId for identity matching)
-  if (smallJokers.length >= 2) {
-    for (let i = 0; i < smallJokers.length - 1; i++) {
-      // Verify they are truly identical using cardId
-      if (smallJokers[i].isIdenticalTo(smallJokers[i + 1])) {
-        combos.push({
-          type: ComboType.Pair,
-          cards: [smallJokers[i], smallJokers[i + 1]],
-          value: getCardValue(smallJokers[i], trumpInfo),
-        });
-      }
+  cards.forEach((card) => {
+    const identityKey = card.cardId; // "Hearts_A", "Spades_2", "Small_Joker", etc.
+    if (!cardsByIdentity[identityKey]) {
+      cardsByIdentity[identityKey] = [];
     }
-  }
+    cardsByIdentity[identityKey].push(card);
+  });
 
-  // Add Big Joker pairs (using cardId for identity matching)
-  if (bigJokers.length >= 2) {
-    for (let i = 0; i < bigJokers.length - 1; i++) {
-      // Verify they are truly identical using cardId
-      if (bigJokers[i].isIdenticalTo(bigJokers[i + 1])) {
-        combos.push({
-          type: ComboType.Pair,
-          cards: [bigJokers[i], bigJokers[i + 1]],
-          value: getCardValue(bigJokers[i], trumpInfo),
-        });
-      }
+  // Create pairs from identical cards
+  Object.values(cardsByIdentity).forEach((identicalCards) => {
+    if (identicalCards.length === 2) {
+      // Make exactly one pair from the two identical cards
+      combos.push({
+        type: ComboType.Pair,
+        cards: [identicalCards[0], identicalCards[1]],
+        value: getCardValue(identicalCards[0], trumpInfo),
+      });
     }
-  }
-
-  // NOTE: Special joker tractor SJ-SJ-BJ-BJ is now handled by findAllTractors
-
-  // Look for regular pairs and tractors
-  Object.values(cardsBySuit).forEach((suitCards) => {
-    // Skip the joker group since we've handled jokers separately
-    if (suitCards.length > 0 && suitCards[0].joker) {
-      return;
-    }
-
-    const cardsByRank = groupCardsByRank(suitCards);
-
-    Object.values(cardsByRank).forEach((rankCards) => {
-      // Pairs: Only create pairs from IDENTICAL cards using cardId comparison
-      // This fixes the invalid cross-suit pair bug
-      if (rankCards.length >= 2) {
-        // Use cardId-based grouping for precise identity matching
-        const cardsByIdentity: Record<string, Card[]> = {};
-
-        rankCards.forEach((card) => {
-          const identityKey = card.cardId; // "Hearts_A", "Spades_2", etc.
-          if (!cardsByIdentity[identityKey]) {
-            cardsByIdentity[identityKey] = [];
-          }
-          cardsByIdentity[identityKey].push(card);
-        });
-
-        // Only create pairs from cards with identical cardId
-        Object.values(cardsByIdentity).forEach((identicalCards) => {
-          if (identicalCards.length >= 2) {
-            for (let i = 0; i < identicalCards.length - 1; i++) {
-              // Double-check identity using isIdenticalTo() method
-              if (identicalCards[i].isIdenticalTo(identicalCards[i + 1])) {
-                combos.push({
-                  type: ComboType.Pair,
-                  cards: [identicalCards[i], identicalCards[i + 1]],
-                  value: getCardValue(identicalCards[i], trumpInfo),
-                });
-              }
-            }
-          }
-        });
-      }
-    });
   });
 
   // Look for all types of tractors with unified logic
@@ -103,59 +46,6 @@ export const identifyCombos = (
   combos.push(...tractors);
 
   return combos;
-};
-
-// Group cards by suit (considering trumps)
-export const groupCardsBySuit = (
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-): Record<string, Card[]> => {
-  const cardsBySuit: Record<string, Card[]> = {};
-
-  cards.forEach((card) => {
-    let suitKey = "joker";
-
-    if (card.suit) {
-      // 🚨 CRITICAL RULE: ALL TRUMP CARDS ARE TREATED AS SAME SUIT
-      // Trump group = Jokers + Trump Rank Cards + Trump Suit Cards
-      // Must play ALL trump cards when following trump lead
-
-      if (isTrump(card, trumpInfo)) {
-        // ALL trump cards (trump rank in any suit + trump suit cards) grouped together
-        // This ensures trump rank cards from different suits can form pairs
-        // as required by Tractor rules when following trump leads
-        suitKey = "trump";
-      } else {
-        // Normal non-trump card
-        suitKey = card.suit;
-      }
-    }
-
-    if (!cardsBySuit[suitKey]) {
-      cardsBySuit[suitKey] = [];
-    }
-
-    cardsBySuit[suitKey].push(card);
-  });
-
-  return cardsBySuit;
-};
-
-// Group cards by rank within a suit
-export const groupCardsByRank = (cards: Card[]): Record<string, Card[]> => {
-  const cardsByRank: Record<string, Card[]> = {};
-
-  cards.forEach((card) => {
-    if (!card.rank) return; // Skip jokers
-
-    if (!cardsByRank[card.rank]) {
-      cardsByRank[card.rank] = [];
-    }
-
-    cardsByRank[card.rank].push(card);
-  });
-
-  return cardsByRank;
 };
 
 // Legacy function for backward compatibility
