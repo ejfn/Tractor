@@ -1,4 +1,12 @@
-import { Card, Combo, ComboType, GameState, Suit, TrumpInfo } from "../types";
+import {
+  Card,
+  Combo,
+  ComboType,
+  GameState,
+  Rank,
+  Suit,
+  TrumpInfo,
+} from "../types";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
 import { identifyCombos } from "./comboDetection";
 import { isValidTractor } from "./tractorLogic";
@@ -346,14 +354,81 @@ export const generateMixedCombinations = (
       return combo.length === leadingLength ? combo : null;
     }
 
-    // Step 3: No required suit cards - choose weakest cards overall
-    const allCardsSorted = playerHand.sort((a, b) => {
-      const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
-      const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
-      return valueA - valueB; // Weakest first
+    // Step 3: No required suit cards - choose weakest cards while preserving pairs when strategic
+    // 🚨 FIX: Preserve pairs when no suit available AND no high-value cards to conserve
+
+    // Check if we have high-value cards worth conserving
+    // Only Aces and high-value point cards (10s, Kings) trigger conservation over pair preservation
+    // 5s are lower value and pairs may be more strategically valuable
+    const hasHighValueCards = playerHand.some(
+      (card) => card.rank === Rank.Ace || (card.points && card.points >= 10),
+    );
+
+    // If we have high-value cards, use the original strategy (may break pairs for conservation)
+    if (hasHighValueCards) {
+      const allCardsSorted = playerHand.sort((a, b) => {
+        const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
+        const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
+        return valueA - valueB; // Weakest first
+      });
+      return allCardsSorted.slice(0, leadingLength);
+    }
+
+    // If only low-value cards, prefer singles disposal over breaking pairs
+    // Priority: Singles first, then pairs only if necessary
+
+    // Get all singles (not in pairs) sorted by strategic value (weakest first)
+    const availablePairs = identifyCombos(playerHand, trumpInfo).filter(
+      (combo) => combo.type === ComboType.Pair,
+    );
+
+    const cardsInPairs = new Set();
+    availablePairs.forEach((pair) => {
+      pair.cards.forEach((card) => cardsInPairs.add(card.id));
     });
 
-    return allCardsSorted.slice(0, leadingLength);
+    const availableSingles = playerHand
+      .filter((card) => !cardsInPairs.has(card.id))
+      .sort((a, b) => {
+        const valueA = calculateCardStrategicValue(a, trumpInfo, "strategic");
+        const valueB = calculateCardStrategicValue(b, trumpInfo, "strategic");
+        return valueA - valueB; // Weakest first
+      });
+
+    const selectedCards: Card[] = [];
+
+    // First priority: Use singles (preserve pairs)
+    const singlesNeeded = Math.min(leadingLength, availableSingles.length);
+    selectedCards.push(...availableSingles.slice(0, singlesNeeded));
+
+    // Only if we need more cards after using all singles, break pairs
+    if (selectedCards.length < leadingLength) {
+      const pairsSorted = availablePairs.sort((a, b) => {
+        const valueA = calculateCardStrategicValue(
+          a.cards[0],
+          trumpInfo,
+          "strategic",
+        );
+        const valueB = calculateCardStrategicValue(
+          b.cards[0],
+          trumpInfo,
+          "strategic",
+        );
+        return valueA - valueB; // Weakest pairs first
+      });
+
+      for (const pair of pairsSorted) {
+        if (selectedCards.length + 2 <= leadingLength) {
+          selectedCards.push(...pair.cards);
+        } else if (selectedCards.length + 1 <= leadingLength) {
+          // Need only 1 more card, break the pair
+          selectedCards.push(pair.cards[0]);
+        }
+        if (selectedCards.length >= leadingLength) break;
+      }
+    }
+
+    return selectedCards.length === leadingLength ? selectedCards : null;
   };
 
   // Try optimal construction first - with validation retry
