@@ -34,4 +34,6 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          allowed_tools: "Bash(npm install),Bash(npm run test:*),Bash(npm run typecheck),Bash(npm run lint:*),Bash(npm run qualitycheck),Edit,Replace,NotebookEditCell"
 
