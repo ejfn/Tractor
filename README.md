@@ -5,7 +5,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![Tests](https://img.shields.io/badge/Tests-664%20Passing-brightgreen?logo=jest)
+![Tests](https://img.shields.io/badge/Tests-669%20Passing-brightgreen?logo=jest)
 ![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
 
 ## What is Tractor?
@@ -64,7 +64,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 **Core AI Capabilities:**
 - **🧠 Memory-Enhanced Strategy**: Card tracking with guaranteed winner identification
 - **🎯 4-Priority Decision Chain**: Team coordination → Opponent blocking → Trick contention → Strategic disposal
-- **🃏 Advanced Kitty Management**: Suit elimination strategy with trump conservation
+- **🃏 Streamlined Kitty Management**: Rule-based exclusion strategy with intelligent suit elimination
 - **⚡ Real-Time Trump Declarations**: Hand quality analysis with timing optimization
 - **🛡️ Strategic Conservation**: Trump hierarchy preservation and point card management
 

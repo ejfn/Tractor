@@ -50,7 +50,7 @@ src/ai/
 │   └── comboAnalysis.ts        # Combo evaluation and ranking
 ├── Specialized Systems (3 modules)
 │   ├── kittySwap/
-│   │   └── kittySwapStrategy.ts # Trump-aware suit elimination
+│   │   └── kittySwapStrategy.ts # Rule-based exclusion and suit elimination
 │   ├── trumpDeclaration/
 │   │   └── trumpDeclarationStrategy.ts # Sophisticated declaration timing
 │   └── utils/
@@ -139,7 +139,7 @@ flowchart TD
     Analysis --> ComboAnalysis[comboAnalysis.ts<br/>Combo Evaluation]
     
     Strategy --> Specialized[⚙️ Specialized Systems]
-    Specialized --> KittySwap[kittySwapStrategy.ts<br/>Trump-Aware Elimination]
+    Specialized --> KittySwap[kittySwapStrategy.ts<br/>Rule-Based Exclusion]
     Specialized --> TrumpDecl[trumpDeclarationStrategy.ts<br/>Declaration Timing]
     Specialized --> AIHelpers[aiHelpers.ts<br/>Utility Functions]
     
@@ -254,54 +254,48 @@ Trump Rank in Off-Suits (70) > Trump Suit Cards (A♠:60 → 3♠:5)
 
 ### **Kitty Swap Strategy**
 
-The AI employs **trump-strength-aware suit elimination** with hierarchical conservation analysis when managing the 8-card kitty.
+The AI employs a **streamlined rule-based approach** with clear exclusion principles and intelligent suit elimination when managing the 8-card kitty.
 
-**Enhanced Strategic Framework:**
+**Core Exclusion Rules (Never Dispose):**
+- **No Trump Cards** - All trump cards preserved for strategic advantage
+- **No Biggest Cards** - Aces and Kings always protected regardless of suit
+- **No Tractors** - Consecutive pairs preserved for powerful combinations
+- **No Big Pairs** - Pairs with rank > 7 preserved for strategic value
 
-**Trump Hierarchy Integration:**
-- **Conservation Value Calculation** - Each trump card scored by hierarchy (BJ:100 → 3♠:5)
-- **Never Eliminate Critical Combos** - Suits with Critical/Strong ComboStrength preserved
-- **Trump vs Non-Trump Priorities** - Trump suits penalized by conservation value, not flat rates
-- **Hierarchical Trump Disposal** - When forced, dispose weakest trump suit cards (3♠, 4♠) over valuable trump rank cards
+**Unified Strategy Framework:**
 
-**Trump-Only Disposal Logic:**
-When forced to dispose trump cards (insufficient non-trump options), the AI uses pure conservation hierarchy:
-- **Primary Rule**: Always select weakest trump cards first regardless of pair preservation
-- **Conservation Ranking**: 3♠ (5) < 4♠ (10) < 5♠ (15) < ... < K♠ (55) < A♠ (60) < 2♥ (70) < 2♠ (80)
-- **Implementation**: Direct conservation value sorting replaces pair-preserving logic for trump-only scenarios
-- **Result**: Consistently selects optimal trump disposal (e.g., 8×3♠ instead of 6×3♠ + K♠ + A♠)
+The AI uses a single, clean approach that handles both normal and strong hand scenarios:
 
-**ComboStrength-Based Analysis:**
-- **Critical Strength** - High-value trump (≥80 conservation), never disposed
-- **Strong Strength** - Mid-value trump (≥40 conservation), Aces, Kings
-- **Medium Strength** - Point cards (5s, 10s, Kings in non-trump)
-- **Weak Strength** - Low non-point cards, disposal priority
+1. **Apply Basic Exclusions** - Categorize all cards into disposable vs excluded
+2. **Sufficient Disposables (≥8 cards)**: Use intelligent suit elimination strategy
+3. **Insufficient Disposables (<8 cards)**: Use ALL disposables + value-sorted exclusions
 
-**Strategic Decision Modes:**
+**Intelligent Suit Elimination (≥8 Disposables):**
+- **Trump Strength Evaluation**: Normal (≤9), Strong (10-14), Very Strong (15+)
+- **Suit Elimination Scoring**:
+  - **Prefer Shorter Suits** - 2-6 card suits prioritized for elimination
+  - **Penalize Point Cards** - 10s and 5s avoided (penalty reduced with stronger trump)
+  - **Penalize Kings** - Even disposable Kings avoided when possible
+  - **Bonus Non-Point Suits** - Ideal elimination targets for strategic voids
 
-**SUIT_ELIMINATION Mode:**
-- **Target**: 1-2 weak suits with no Critical/Strong combos
-- **Requirements**: Elimination score > preservation score, no tractors, low trump conservation value
-- **Benefit**: Creates strategic voids for advanced play
-- **Protection**: Filters out Aces, Kings, and point cards during suit elimination fallback
+**Simple Value Selection (<8 Disposables):**
+- **Use ALL disposable cards first** - Every non-valuable card included
+- **Fill remainder from exclusions** - Simple strategic value sorting for remaining slots
+- **Automatic Trump Hierarchy** - Conservation values ensure optimal trump disposal order
 
-**CONSERVATIVE Mode:**
-- **Strategy**: ComboStrength-based disposal prioritization
-- **Order**: Weak → Medium → Strong → Critical (never dispose)
-- **Focus**: Preserve valuable combinations while meeting 8-card requirement
+**Conservation Hierarchy for Trump Disposal:**
+When forced to dispose trump cards, the AI follows strict conservation values:
+- **Weakest Trump First**: 3♠ (5) → 4♠ (10) → 5♠ (15) → ... → K♠ (55) → A♠ (60)
+- **Trump Rank Priority**: Off-suit trump rank (70) vs trump suit trump rank (80)
+- **Joker Protection**: Big Joker (100) and Small Joker (90) never disposed
 
-**EXCEPTIONAL_TRUMP Mode:**
-- **Trigger**: Very long trump (10+ cards) OR strong non-trump combinations
-- **Strategy**: Strategic trump disposal using conservation hierarchy
-- **Safety**: Uses trump-only disposal logic for optimal weak trump selection
-- **Precision**: Guarantees disposal of weakest trump cards when forced
-
-**Advanced Features:**
-- **Trump-Aware Penalties** - Trump suits scored by conservation value rather than card count
-- **Combo Protection** - Never eliminate suits containing pairs or tractors
-- **Strategic Preservation** - Aces and Kings always protected in non-trump suits
-- **Intelligent Trump Disposal** - Conservation hierarchy overrides pair preservation in trump-only scenarios
-- **Consistent Trump Hierarchy** - All trump disposal decisions respect conservation values (3♠→4♠→5♠...)
+**Strategic Advantages:**
+- **Single Function Design** - One streamlined function eliminates duplicate logic
+- **Predictable Logic** - Clear, maintainable rules that avoid edge cases
+- **Value Preservation** - Systematic exclusion ensures optimal card selection
+- **Clean Codebase** - Simplified architecture with no redundant validation
+- **Conservation Hierarchy** - Optimal trump disposal when forced by exceptional hand scenarios
+- **Bug Prevention** - Rule-based approach eliminates previous issues with valuable card disposal
 
 ### **Trump Declaration Strategy**
 
