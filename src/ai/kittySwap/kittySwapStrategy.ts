@@ -1,13 +1,13 @@
+import { identifyCombos } from "../../game/comboDetection";
+import { calculateCardStrategicValue, isTrump } from "../../game/gameHelpers";
 import {
   Card,
+  ComboType,
   GameState,
   PlayerId,
-  TrumpInfo,
   Rank,
-  ComboType,
+  TrumpInfo,
 } from "../../types";
-import { isTrump, calculateCardStrategicValue } from "../../game/gameHelpers";
-import { identifyCombos } from "../../game/comboDetection";
 
 /**
  * AI Kitty Swap Strategy - Simple and Clear Rules
@@ -231,6 +231,9 @@ function selectFromDisposableCards(
   for (const candidate of eliminationCandidates) {
     if (selected.length + candidate.cards.length <= 8) {
       selected.push(...candidate.cards);
+    } else {
+      // If candidate doesn't fit, add its cards back to otherCards pool
+      otherCards.push(...candidate.cards);
     }
   }
 
