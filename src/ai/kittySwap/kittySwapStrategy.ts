@@ -106,8 +106,11 @@ function applyBasicExclusions(
     });
   });
 
-  // 4. Big pairs (rank > 7)
+  // 4. Big pairs (rank >= 5)
   const bigRanks = [
+    Rank.Five,
+    Rank.Six,
+    Rank.Seven,
     Rank.Eight,
     Rank.Nine,
     Rank.Ten,
@@ -165,7 +168,7 @@ function selectFromDisposableCards(
   // Evaluate trump strength in ENTIRE hand to determine elimination strategy
   const allTrumpCards = entireHand.filter((card) => isTrump(card, trumpInfo));
   const trumpStrength =
-    allTrumpCards.length > 14
+    allTrumpCards.length > 12
       ? "very_strong"
       : allTrumpCards.length > 9
         ? "strong"
@@ -181,7 +184,7 @@ function selectFromDisposableCards(
   const otherCards: Card[] = [];
 
   Object.entries(suitGroups).forEach(([suit, cards]) => {
-    if (cards.length <= 6 && cards.length >= 2) {
+    if (cards.length <= 6) {
       const hasPoints = cards.some((card) => card.points > 0);
       const hasKings = cards.some((card) => card.rank === Rank.King);
 
