@@ -7,10 +7,10 @@ import {
   Suit,
   TrumpInfo,
 } from "../types";
-import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
 import { identifyCombos } from "./comboDetection";
-import { isValidTractor } from "./tractorLogic";
+import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
 import { isValidPlay } from "./playValidation";
+import { isValidTractor } from "./tractorLogic";
 
 // Local helper functions to avoid circular dependencies
 
@@ -107,11 +107,12 @@ export const getValidCombinations = (
     return isValidPlay(combo.cards, leadingCards, playerHand, trumpInfo);
   });
 
-  // Generate mixed combinations as additional strategic options ONLY if needed
-  const mixedCombos =
-    validCombos.length > 0
-      ? []
-      : generateMixedCombinations(playerHand, leadingCards, trumpInfo);
+  // Always generate to provide AI with disposal options, even when proper combos exist
+  const mixedCombos = generateMixedCombinations(
+    playerHand,
+    leadingCards,
+    trumpInfo,
+  );
 
   // Combine proper combos with mixed combos for full strategic options
   const allValidCombos = [...validCombos, ...mixedCombos];
