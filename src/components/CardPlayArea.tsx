@@ -91,7 +91,6 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   type CardWithSequence = CardType & {
     playSequence: number; // The order in which the card was played (0 = first, higher = later)
     cardIndex: number; // Index within player's combo (0 = first card in combo)
-    globalPlayOrder: number; // Global counter for absolute play order (for z-index)
   };
 
   // Cards played by position with sequence information
@@ -102,9 +101,6 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
 
   // Track play sequence for each player's play
   const playerSequenceMap: Record<string, number> = {};
-
-  // Global counter to track absolute play order across all players (for z-index)
-  let globalPlayOrder = 0;
 
   // Use a ref to track if we've called the callback for this trick
   const callbackCalledRef = React.useRef(false);
@@ -204,11 +200,9 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       playerSequenceMap[play.playerId] = sequence;
 
       play.cards.forEach((card, idx) => {
-        // Each card gets a unique global play order number
         const cardWithSequence = Object.assign(card, {
           playSequence: sequence,
           cardIndex: idx, // Index within this player's combo
-          globalPlayOrder: globalPlayOrder++, // Increment for each card played
         });
 
         if (pos === "top") topCards.push(cardWithSequence);
@@ -245,8 +239,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   position: "relative",
                   // Horizontal overlapping like human's hand
                   marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                  // Use global play order for z-index, ensuring proper stacking
-                  zIndex: 100 + card.globalPlayOrder, // Higher values appear on top
+                  // Fixed z-index based on player position: top=100, left=200, right=300, bottom=400
+                  zIndex: 100 + card.cardIndex, // Top player cards have lowest z-index
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === "android" &&
                     index === 0 &&
@@ -288,8 +282,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     position: "relative",
                     // Horizontal overlapping like human's hand
                     marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                    // Use global play order for z-index, ensuring proper stacking
-                    zIndex: 100 + card.globalPlayOrder, // Higher values appear on top
+                    // Fixed z-index based on player position: top=100, left=200, right=300, bottom=400
+                    zIndex: 200 + card.cardIndex, // Left player cards
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === "android" &&
                       index === 0 &&
@@ -334,8 +328,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     position: "relative",
                     // Horizontal overlapping like human's hand
                     marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                    // Use global play order for z-index, ensuring proper stacking
-                    zIndex: 100 + card.globalPlayOrder, // Higher values appear on top
+                    // Fixed z-index based on player position: top=100, left=200, right=300, bottom=400
+                    zIndex: 300 + card.cardIndex, // Right player cards
                     // Special Android centering - shift cards slightly if not first
                     ...(Platform.OS === "android" &&
                       index === 0 &&
@@ -376,8 +370,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                   position: "relative",
                   // Horizontal overlapping like human's hand
                   marginLeft: index > 0 ? -45 : 0, // Increased overlap for tighter stack
-                  // Use global play order for z-index, ensuring proper stacking
-                  zIndex: 100 + card.globalPlayOrder, // Higher values appear on top
+                  // Fixed z-index based on player position: top=100, left=200, right=300, bottom=400
+                  zIndex: 400 + card.cardIndex, // Bottom player cards have highest z-index
                   // Special Android centering - shift cards slightly if not first
                   ...(Platform.OS === "android" &&
                     index === 0 &&
