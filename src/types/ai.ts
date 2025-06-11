@@ -73,6 +73,7 @@ export interface ComboAnalysis {
   pointValue: number;
   disruptionPotential: number; // How much this combo can disrupt opponents
   conservationValue: number; // How valuable this combo is to keep
+  isBreakingPair: boolean; // Whether this combo breaks up a valuable pair
 }
 
 // Phase 3: Enhanced Card Memory & Probability System

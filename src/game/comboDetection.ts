@@ -9,15 +9,6 @@ export const identifyCombos = (
 ): Combo[] => {
   const combos: Combo[] = [];
 
-  // Look for singles
-  cards.forEach((card) => {
-    combos.push({
-      type: ComboType.Single,
-      cards: [card],
-      value: getCardValue(card, trumpInfo),
-    });
-  });
-
   // Simple pairs: identical cards make pairs!
   const cardsByIdentity: Record<string, Card[]> = {};
 
@@ -29,7 +20,8 @@ export const identifyCombos = (
     cardsByIdentity[identityKey].push(card);
   });
 
-  // Create pairs from identical cards
+  // Create pairs from identical cards first
+  const pairCards = new Set<string>(); // Track cards that are part of pairs
   Object.values(cardsByIdentity).forEach((identicalCards) => {
     if (identicalCards.length === 2) {
       // Make exactly one pair from the two identical cards
@@ -37,13 +29,31 @@ export const identifyCombos = (
         type: ComboType.Pair,
         cards: [identicalCards[0], identicalCards[1]],
         value: getCardValue(identicalCards[0], trumpInfo),
+        isBreakingPair: false, // Pairs don't break pairs
       });
+      // Mark these cards as part of a pair
+      identicalCards.forEach((card) => pairCards.add(card.id));
     }
+  });
+
+  // Look for singles
+  cards.forEach((card) => {
+    combos.push({
+      type: ComboType.Single,
+      cards: [card],
+      value: getCardValue(card, trumpInfo),
+      isBreakingPair: pairCards.has(card.id), // Single breaks pair if this card is part of a pair
+    });
   });
 
   // Look for all types of tractors with unified logic
   const tractors = findAllTractors(cards, trumpInfo);
-  combos.push(...tractors);
+  // Add isBreakingPair: false to all tractors
+  const tractorsWithBreaking = tractors.map((tractor) => ({
+    ...tractor,
+    isBreakingPair: false, // Tractors don't break pairs
+  }));
+  combos.push(...tractorsWithBreaking);
 
   return combos;
 };

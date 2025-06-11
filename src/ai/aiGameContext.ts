@@ -533,6 +533,13 @@ export function analyzeCombo(
   if (hasPoints) conservationValue += pointValue;
   if (context.cardsRemaining <= 5) conservationValue *= 1.5; // More valuable in endgame
 
+  // Incorporate pair breaking penalty into conservation value
+  const isBreakingPair = combo.isBreakingPair ?? false;
+  if (isBreakingPair) {
+    // Add penalty for breaking pairs - makes this combo less desirable for disposal
+    conservationValue += 50; // Penalty makes pair-breaking combos rank higher (less likely to be chosen for disposal)
+  }
+
   return {
     strength,
     isTrump: isTrumpCombo,
@@ -540,6 +547,7 @@ export function analyzeCombo(
     pointValue,
     disruptionPotential,
     conservationValue,
+    isBreakingPair,
   };
 }
 

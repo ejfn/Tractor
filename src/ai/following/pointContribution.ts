@@ -12,6 +12,7 @@ import {
 import { isTrump } from "../../game/gameHelpers";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
+import { getPointCardPriority } from "../utils/aiHelpers";
 
 /**
  * Point Contribution - Strategic point card selection for team coordination
@@ -119,15 +120,8 @@ export function selectPointContribution(
     const aCard = a.combo.cards[0];
     const bCard = b.combo.cards[0];
 
-    const getPriority = (card: Card) => {
-      if (card.rank === Rank.Ten) return 3;
-      if (card.rank === Rank.King) return 2;
-      if (card.rank === Rank.Five) return 1;
-      return 0;
-    };
-
-    const aPriority = getPriority(aCard);
-    const bPriority = getPriority(bCard);
+    const aPriority = getPointCardPriority(aCard);
+    const bPriority = getPointCardPriority(bCard);
 
     if (aPriority !== bPriority) {
       return bPriority - aPriority; // Higher priority first
@@ -160,15 +154,8 @@ export function selectPointContributionCombo(
       const aCard = a.combo.cards[0];
       const bCard = b.combo.cards[0];
 
-      const getPriority = (card: Card) => {
-        if (card.rank === Rank.Ten) return 3;
-        if (card.rank === Rank.King) return 2;
-        if (card.rank === Rank.Five) return 1;
-        return 0;
-      };
-
-      const aPriority = getPriority(aCard);
-      const bPriority = getPriority(bCard);
+      const aPriority = getPointCardPriority(aCard);
+      const bPriority = getPointCardPriority(bCard);
 
       if (aPriority !== bPriority) {
         return bPriority - aPriority; // Higher priority first

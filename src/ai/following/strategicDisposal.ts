@@ -207,7 +207,7 @@ export function selectLowestValueNonPointCombo(
   );
 
   if (nonPointCombos.length > 0) {
-    // Sort by trump conservation value (lower = less valuable to preserve)
+    // Sort by conservation value (which now includes pair breaking penalty)
     const sorted = nonPointCombos.sort(
       (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
     );
