@@ -36,7 +36,7 @@ describe('3rd Player Strategy Tests', () => {
           { playerId: PlayerId.Human, cards: [humanLeadingCard] },
           { playerId: PlayerId.Bot1, cards: [bot1Card] } // Bot1 plays lower card
         ],
-        points: 0,
+        points: 0, // Ace has 0 points, but teammate is winning strongly
         winningPlayerId: PlayerId.Human // Human is currently winning with Ace
       };
       
@@ -54,21 +54,22 @@ describe('3rd Player Strategy Tests', () => {
       gameState.players[2].hand = bot2Hand;
       
       console.log('=== 3rd Player Partner Leading Test ===');
-      console.log('Human (Bot2\'s partner) leading with A♠ and winning');
-      console.log('Bot2 (3rd player) should prioritize 10♠ over K♠ over 5♠');
+      console.log('Human (Bot2\'s partner) leading with A♠ and winning strongly');
+      console.log('Bot2 (3rd player) should contribute 10♠ to maximize team points');
       
       // Get AI move for 3rd player
       const aiMove = getAIMove(gameState, thirdPlayerId);
       
       console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`));
       
-      // Should prioritize 10♠ (highest priority point card)
-      expect(aiMove[0].rank).toBe(Rank.Ten);
+      // When teammate is winning with strong card (Ace), should contribute 10 points
+      // but prefer Ten over King (both worth 10 points) to preserve the stronger King
+      expect(aiMove[0].rank).toBe(Rank.Ten); // Should play Ten (10 points) not King
       expect(aiMove.length).toBe(1);
       
-      // Verify it's the correct point card
+      // Verify it contributes 10 points but preserves the King for later use
       const selectedCard = aiMove[0];
-      expect(selectedCard.points).toBe(10);
+      expect(selectedCard.points).toBe(10); // Should contribute 10 points
       expect(selectedCard.suit).toBe(Suit.Spades);
     });
 

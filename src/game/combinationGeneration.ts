@@ -476,6 +476,23 @@ export const generateMixedCombinations = (
     return selectedCards.length === leadingLength ? selectedCards : null;
   };
 
+  // Helper function to determine if a combination breaks pairs
+  const determineIsBreakingPair = (cards: Card[]): boolean => {
+    // Get all combos from hand to check which cards are in pairs
+    const allCombos = identifyCombos(playerHand, trumpInfo);
+    const pairCardIds = new Set<string>();
+
+    // Collect all cards that are part of pairs
+    allCombos
+      .filter((combo) => combo.type === ComboType.Pair)
+      .forEach((pair) => {
+        pair.cards.forEach((card) => pairCardIds.add(card.id));
+      });
+
+    // Check if any card in this combination is from a pair
+    return cards.some((card) => pairCardIds.has(card.id));
+  };
+
   // Try optimal construction first - with validation retry
   const optimalCombo = constructOptimalCombination();
   if (optimalCombo) {
@@ -484,6 +501,7 @@ export const generateMixedCombinations = (
         type: ComboType.Single,
         cards: optimalCombo,
         value: calculateCardStrategicValue(optimalCombo[0], trumpInfo, "combo"),
+        isBreakingPair: determineIsBreakingPair(optimalCombo),
       });
     } else {
       // If optimal combo fails validation, try simpler approach
@@ -542,6 +560,7 @@ export const generateMixedCombinations = (
             trumpInfo,
             "combo",
           ),
+          isBreakingPair: determineIsBreakingPair(simpleCombo),
         });
       }
     }
@@ -583,6 +602,7 @@ export const generateMixedCombinations = (
         type: ComboType.Single,
         cards,
         value: calculateCardStrategicValue(cards[0], trumpInfo, "combo"),
+        isBreakingPair: determineIsBreakingPair(cards),
       });
     }
   }
@@ -614,6 +634,7 @@ export const generateMixedCombinations = (
         type: ComboType.Single,
         cards: guaranteedCombo,
         value: 1,
+        isBreakingPair: determineIsBreakingPair(guaranteedCombo),
       });
     } else {
       // Last resort emergency fallback - should be extremely rare
@@ -637,6 +658,7 @@ export const generateMixedCombinations = (
         type: ComboType.Single,
         cards: emergencyCombo,
         value: 1,
+        isBreakingPair: determineIsBreakingPair(emergencyCombo),
       });
     }
   }

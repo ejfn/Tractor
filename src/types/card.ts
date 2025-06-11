@@ -229,4 +229,5 @@ export type Combo = {
   type: ComboType;
   cards: Card[];
   value: number; // Relative hand strength for comparison
+  isBreakingPair?: boolean; // Whether this combo breaks up a valuable pair
 };

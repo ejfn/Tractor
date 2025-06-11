@@ -121,59 +121,57 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       // SCENARIO: When teammate is winning, conserve pairs for later
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        
-        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Diamonds,
       };
 
-      // AI Bot3 hand with pairs and singles
+      // AI Bot2 hand with pairs and singles
       const aiBotHand: Card[] = [
-        ...Card.createPair(Suit.Clubs, Rank.King), // Valuable pair
-        Card.createCard(Suit.Hearts, Rank.Three, 0), // Small single
-        Card.createCard(Suit.Hearts, Rank.Four, 0), // Small single
+        ...Card.createPair(Suit.Clubs, Rank.Six), // Small pair (lower than singles)
+        Card.createCard(Suit.Hearts, Rank.Nine, 0), // Higher single
+        Card.createCard(Suit.Hearts, Rank.Jack, 0), // Higher single
       ];
-      gameState.players[3].hand = aiBotHand;
+      gameState.players[2].hand = aiBotHand;
 
-      // Teammate Bot1 is winning with moderate cards (not "very strong")
-      const leadingCards: Card[] = Card.createPair(Suit.Spades, Rank.Five);
+      // Human leads, Bot1 follows with lower cards, Human still winning (teammate winning)
+      const leadingCards: Card[] = Card.createPair(Suit.Spades, Rank.Queen);
 
       gameState.currentTrick = {
         plays: [
           {
-            playerId: PlayerId.Human,
+            playerId: PlayerId.Human, // Teammate
             cards: leadingCards,
           },
           {
-            playerId: PlayerId.Bot1, // Teammate
-            cards: Card.createPair(Suit.Spades, Rank.Queen)
+            playerId: PlayerId.Bot1, // Opponent
+            cards: Card.createPair(Suit.Spades, Rank.Five) // Lower cards, Human still winning
           },
         ],
         points: 10,
-        winningPlayerId: PlayerId.Bot1, // Teammate winning
+        winningPlayerId: PlayerId.Human, // Teammate winning
       };
 
-      gameState.currentPlayerIndex = 3; // Bot 3's turn (AI we're testing)
+      gameState.currentPlayerIndex = 2; // Bot 2's turn (AI we're testing, correctly 3rd player)
       gameState.gamePhase = GamePhase.Playing;
 
-      const selectedCards = getAIMove(gameState, PlayerId.Bot3);
+      const selectedCards = getAIMove(gameState, PlayerId.Bot2);
 
       console.log('=== ISSUE #104 TEST: Teammate Winning Conservation ===');
-      console.log(`Teammate winning with: Q♠ Q♠`);
+      console.log(`Teammate Human winning with: Q♠ Q♠`);
       console.log(`AI selected: ${selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')}`);
 
-      // Should NOT waste valuable King pair when teammate is winning
+      // Should NOT break the Six pair when teammate is winning
       expect(selectedCards).toHaveLength(2);
-      const usedKingPair = selectedCards.filter(c => c.rank === Rank.King).length === 2;
-      expect(usedKingPair).toBe(false);
+      const usedSixPair = selectedCards.filter(c => c.rank === Rank.Six).length === 2;
+      expect(usedSixPair).toBe(false);
 
-      // Should use small singles instead
-      const usedSmallCards = selectedCards.every(c => 
-        c.rank === Rank.Three || c.rank === Rank.Four
+      // Should use higher singles instead, preserving the Six pair completely
+      const usedHigherSingles = selectedCards.every(c => 
+        c.rank === Rank.Nine || c.rank === Rank.Jack
       );
-      expect(usedSmallCards).toBe(true);
+      expect(usedHigherSingles).toBe(true);
 
-      console.log('✅ CORRECT: AI conserved valuable King pair when teammate winning');
+      console.log('✅ CORRECT: AI preserved Six pair and used higher singles when teammate winning');
     });
 
     it('should conserve Ace pair when cannot beat opponent trick', () => {

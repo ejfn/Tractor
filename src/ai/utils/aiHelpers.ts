@@ -21,6 +21,19 @@ import { isTrump } from "../../game/gameHelpers";
  */
 
 /**
+ * Get strategic priority for point card contribution
+ *
+ * Prioritizes Ten > King > Five even when same point value,
+ * to preserve stronger cards (King) for later use.
+ */
+export function getPointCardPriority(card: Card): number {
+  if (card.rank === Rank.Ten) return 3; // Prefer Ten over King (same points, but preserve King)
+  if (card.rank === Rank.King) return 2;
+  if (card.rank === Rank.Five) return 1;
+  return 0;
+}
+
+/**
  * Check if a player is a teammate based on game context
  */
 export function isTeammate(playerId: string, context: GameContext): boolean {
