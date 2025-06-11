@@ -102,7 +102,6 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   // Track play sequence for each player's play
   const playerSequenceMap: Record<string, number> = {};
 
-
   // Use a ref to track if we've called the callback for this trick
   const callbackCalledRef = React.useRef(false);
 
