@@ -1,0 +1,35 @@
+[
+    {
+        "eventName": "notification_method_used",
+        "metadata": {
+            "configured_channel": "auto",
+            "method_used": "no_method_available",
+            "term": "gnome-terminal",
+            "model": "claude-sonnet-4-20250514",
+            "sessionId": "a3f5d168-0d9f-4a9e-82c4-84239db1ccb6",
+            "userType": "external",
+            "betas": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14",
+            "env": "{\"platform\":\"linux\",\"nodeVersion\":\"v22.15.1\",\"terminal\":\"gnome-terminal\",\"packageManagers\":\"npm\",\"runtimes\":\"node\",\"isRunningWithBun\":false,\"isCi\":false,\"isClaubbit\":false,\"isGithubAction\":false,\"isClaudeCodeAction\":false,\"isClaudeAiAuth\":true,\"version\":\"1.0.21\"}",
+            "entrypoint": "cli"
+        },
+        "user": {
+            "customIDs": {
+                "sessionId": "a3f5d168-0d9f-4a9e-82c4-84239db1ccb6"
+            },
+            "userID": "43f22100ef11921029b9d6806bc458b1fbf3ead612dc92f6a9e93b3bd02e77ec",
+            "appVersion": "1.0.21",
+            "custom": {
+                "userType": "external",
+                "organizationUuid": "b44a1d1c-9f1f-4db7-a11d-1d143c52ce18",
+                "accountUuid": "bdfd02a5-bc0a-4fae-94aa-ba46b49ba405"
+            },
+            "statsigEnvironment": {
+                "tier": "production"
+            }
+        },
+        "time": 1749731948395,
+        "statsigMetadata": {
+            "currentPage": "node://localhost"
+        }
+    }
+]
