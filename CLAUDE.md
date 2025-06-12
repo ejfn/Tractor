@@ -1,4 +1,4 @@
-# CLAUDE.md
+# CLAUDE.md11
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -84,6 +84,7 @@ npm run qualitycheck  # Runs all checks
 ```
 
 **CRITICAL QUALITY REQUIREMENTS:**
+
 - **ALL TESTS MUST PASS**: The main branch has no existing failing tests. Any test failures introduced must be fixed.
 - **NO LINT WARNINGS/ERRORS**: All ESLint warnings and errors must be resolved.
 - **TYPECHECK MUST PASS**: No TypeScript compilation errors allowed.
@@ -148,9 +149,10 @@ npx eas --version
 
 ### Mandatory Parameter Enforcement ⚠️ CRITICAL
 
-**NEVER make parameters optional when they should always be provided!** 
+**NEVER make parameters optional when they should always be provided!**
 
 **✅ Correct Pattern - Mandatory Parameters:**
+
 ```typescript
 // GOOD: trumpInfo is always required
 export const getComboType = (cards: Card[], trumpInfo: TrumpInfo): ComboType => {
@@ -162,6 +164,7 @@ expect(getComboType(pair, trumpInfo)).toBe(ComboType.Pair);
 ```
 
 **❌ Incorrect Pattern - False Optionals:**
+
 ```typescript
 // BAD: Making trumpInfo optional when it's always needed
 export const getComboType = (cards: Card[], trumpInfo?: TrumpInfo): ComboType => {
@@ -173,6 +176,7 @@ expect(getComboType(pair, trumpInfo!)).toBe(ComboType.Pair);
 ```
 
 **🚨 Rules for Parameter Design:**
+
 - If a parameter is used in 100% of cases → Make it **MANDATORY**
 - If a parameter has safe defaults → Provide **DEFAULT VALUES**
 - If a parameter is contextual → Use **FUNCTION OVERLOADS**
@@ -183,6 +187,7 @@ expect(getComboType(pair, trumpInfo!)).toBe(ComboType.Pair);
 **ALWAYS use defined interfaces instead of inline object types!**
 
 **✅ Correct Pattern - Defined Interfaces:**
+
 ```typescript
 // GOOD: Use existing interface
 function processDeclaration(declaration: TrumpDeclarationStatus): void {
@@ -196,6 +201,7 @@ function getDeclarationStatus(): TrumpDeclarationStatus {
 ```
 
 **❌ Incorrect Pattern - Inline Objects:**
+
 ```typescript
 // BAD: Returning inline object when interface exists
 function getDeclarationStatus(): { suit: Suit; type: string; player: string } {
@@ -213,6 +219,7 @@ function processDeclaration(declaration: { suit: Suit; type: string }): void {
 **Be explicit about nullability patterns!**
 
 **✅ Correct Patterns:**
+
 ```typescript
 // GOOD: Explicit about what values are allowed
 function processPlayer(player: Player | null): void {
@@ -227,6 +234,7 @@ function hasCards(hand: Card[] | undefined): hand is Card[] {
 ```
 
 **❌ Incorrect Patterns:**
+
 ```typescript
 // BAD: Mixing null and undefined without clear pattern
 function processPlayer(player?: Player | null): void {
@@ -244,6 +252,7 @@ function processCards(hand?: Card[]): void {
 **ALWAYS filter out placeholder enum values in iterations!**
 
 **✅ Correct Pattern - Filtered Iterations:**
+
 ```typescript
 // GOOD: Filter out placeholder values
 Object.values(Suit)
@@ -260,6 +269,7 @@ Object.values(Rank)
 ```
 
 **❌ Incorrect Pattern - Unfiltered Iterations:**
+
 ```typescript
 // BAD: Includes placeholder values
 Object.values(Suit).forEach((suit) => {
@@ -274,6 +284,7 @@ Object.values(Rank).forEach((rank) => {
 ```
 
 **🚨 Mandatory Enum Filters:**
+
 - `Suit.None` → Only for jokers, NEVER for deck creation
 - `Rank.None` → Only for jokers, NEVER for deck creation
 - **Always filter placeholder values in iterations**
@@ -283,6 +294,7 @@ Object.values(Rank).forEach((rank) => {
 **AVOID type assertions - fix root type mismatches instead!**
 
 **✅ Correct Pattern - Proper Type Guards:**
+
 ```typescript
 // GOOD: Proper conditional with type guard
 if (!isLeading && leadingCombo && leadingCombo.length > 1 && trumpInfo) {
@@ -298,6 +310,7 @@ function processGameState(state: GameState | null): void {
 ```
 
 **❌ Incorrect Pattern - Type Assertions:**
+
 ```typescript
 // BAD: Non-null assertion
 const leadingComboType = getComboType(leadingCombo, trumpInfo!);
@@ -314,6 +327,7 @@ const result = (someValue as any).doSomething();
 **Design clear inheritance relationships!**
 
 **✅ Correct Pattern - Clean Hierarchy:**
+
 ```typescript
 // GOOD: Clear base interface
 interface GameContextBase {
@@ -329,6 +343,7 @@ interface GameContext extends GameContextBase {
 ```
 
 **❌ Incorrect Pattern - Type Hacks:**
+
 ```typescript
 // BAD: Type intersection hacks
 type GameContext = GameContextBase & { 
@@ -349,6 +364,7 @@ npm run qualitycheck  # MUST return with zero errors
 ```
 
 **Zero Tolerance Policy:**
+
 - ✅ **TypeCheck: PASSED** (0 errors) - MANDATORY
 - ✅ **Lint: PASSED** (0 warnings) - MANDATORY  
 - ✅ **Tests: PASSED** (all tests) - MANDATORY
@@ -502,11 +518,13 @@ The codebase provides two distinct functions for card evaluation with strict usa
 **Purpose**: Compare two individual cards within the same suit or trump group
 
 **Valid Usage**:
+
 - ✅ Same suit cards: `compareCards(7♠, A♠, trumpInfo)`
 - ✅ Trump vs non-trump: `compareCards(BigJoker, A♠, trumpInfo)`
 - ✅ Both trump cards: `compareCards(2♠, SmallJoker, trumpInfo)`
 
 **Invalid Usage** (throws error):
+
 - ❌ Different non-trump suits: `compareCards(A♣, 4♦, trumpInfo)`
 - ❌ Cross-suit pair comparison without trick context
 
@@ -517,6 +535,7 @@ The codebase provides two distinct functions for card evaluation with strict usa
 **Purpose**: Evaluate card plays within trick-taking game context
 
 **Usage**:
+
 - ✅ Trick winner determination across different suits
 - ✅ Legal play validation (follow suit, combo type matching)
 - ✅ Cross-suit play evaluation in trick context
@@ -527,17 +546,20 @@ The codebase provides two distinct functions for card evaluation with strict usa
 #### Development Guidelines
 
 **When to use `compareCards`:**
+
 - Sorting cards within the same suit
 - Trump hierarchy evaluation
 - Card strength comparison for same-suit scenarios
 
 **When to use `evaluateTrickPlay`:**
+
 - AI strategy decisions ("Can I beat this trick?")
 - Cross-suit trick evaluation
 - Legal play validation
 - Any trick-taking game logic
 
 **Error Message Guidance:**
+
 ```
 compareCards: Invalid comparison between different non-trump suits: A♣ vs 4♦. 
 Use evaluateTrickPlay() for cross-suit trick comparisons.
@@ -575,6 +597,7 @@ This protection ensures Shengji/Tractor game rule compliance and prevents invali
 ## Hook Architecture
 
 **Single-responsibility hooks with minimal interdependencies:**
+
 - `useGameState` - Core game state management
 - `useProgressiveDealing` - Unified dealing and trump declarations
 - `useAITurns` - AI turn handling
@@ -582,6 +605,7 @@ This protection ensures Shengji/Tractor game rule compliance and prevents invali
 - `useAnimations` - UI animations and timing
 
 **RoundResult System:**
+
 - Pure computation approach with `endRound()` and `prepareNextRound()`
 - Separates calculations from state mutations for clean UI timing
 
