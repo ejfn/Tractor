@@ -4,7 +4,7 @@
         "metadata": {
             "configured_channel": "auto",
             "method_used": "no_method_available",
-            "term": "gnome-terminal",
+            "term": "gnome-terminal-xxx",
             "model": "claude-sonnet-4-20250514",
             "sessionId": "a3f5d168-0d9f-4a9e-82c4-84239db1ccb6",
             "userType": "external",
