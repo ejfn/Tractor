@@ -1,6 +1,5 @@
-import { getComboType } from '../../src/game/comboDetection';
 import { isValidPlay } from '../../src/game/playValidation';
-import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
+import { Card, Rank, Suit, TrumpInfo } from '../../src/types';
 
 describe('FRV-8: Trump Edge Cases', () => {
   const createTestTrumpInfo = (trumpRank: Rank, trumpSuit: Suit): TrumpInfo => ({
@@ -37,20 +36,19 @@ describe('FRV-8: Trump Edge Cases', () => {
     test('FRV-8.2: non-trump pairs should be invalid when trump cards available', () => {
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
       
-      // Leading with a pair of 5♠
+      // Leading with a pair of 5♠ (trump suit)
       const leadingCombo = Card.createPair(Suit.Spades, Rank.Five);
 
-      // For comparison, a valid pair would NOT be allowed when trump cards are available (Issue #102 fix)
-      const validPairHand = [
-        Card.createCard(Suit.Spades, Rank.Ace, 0),
-        ...Card.createPair(Suit.Hearts, Rank.Seven)
+      // Player hand has trump cards available but tries to play non-trump pair
+      const playerHand = [
+        Card.createCard(Suit.Spades, Rank.Ace, 0), // Trump card available
+        ...Card.createPair(Suit.Hearts, Rank.Seven) // Non-trump pair
       ];
 
-      const validPairPlay = Card.createPair(Suit.Hearts, Rank.Seven);
+      const nonTrumpPairPlay = Card.createPair(Suit.Hearts, Rank.Seven);
 
-      // Confirm a proper pair would NOT be allowed when trump cards are available (Issue #102 fix)
-      expect(getComboType(validPairPlay, trumpInfo)).toBe(ComboType.Pair);
-      expect(isValidPlay(validPairPlay, leadingCombo, validPairHand, trumpInfo)).toBe(false);
+      // Should be invalid - must play trump when trump is led and trump cards are available
+      expect(isValidPlay(nonTrumpPairPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
     });
   });
 });

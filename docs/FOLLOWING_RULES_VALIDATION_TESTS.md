@@ -1,8 +1,10 @@
-# Play Validation Test Coverage
+# Following Rules Validation Tests
 
 **Comprehensive documentation of all following validation test scenarios in the Tractor codebase**
 
 *This document catalogs every test scenario that validates following play rules using `isValidPlay()`. These tests ensure the complex Shengji/Tractor game rules are correctly implemented when responding to led combinations.*
+
+**🎯 Test Purity**: All FRV tests focus exclusively on following rules validation using the `isValidPlay()` function. No other game logic functions are tested in these files.
 
 ---
 
@@ -35,7 +37,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | FRV-1.4 | 2 ♥️ | 7♠️ 7♠️ 8♠️ 8♠️ | 9♥️ 9♥️ 10♣️ J♦️ K♥️ | 9♥️ 9♥️ 10♣️ J♦️ | ✅ VALID | Mixed suits when out of leading suit |
 | FRV-1.5 | 2 ♥️ | 5♥️ 5♥️ 6♥️ 6♥️ | 2♠️ 2♠️ 2♣️ 2♣️ K♦️ | 2♠️ 2♠️ 2♣️ 2♣️ | ✅ VALID | Trump rank pairs count as trump |
 | FRV-1.6 | 2 ♥️ | 5♥️ 5♥️ 6♥️ 6♥️ 7♥️ 7♥️ | 3♥️ 3♥️ 2♠️ 2♠️ 🃟 🃟 K♦️ | 3♥️ 3♥️ 2♠️ 2♠️ 🃟 🃟 | ✅ VALID | All trump types unified |
-| FRV-1.7 | 2 ♥️ | 5♥️ 5♥️ 6♥️ 6♥️ | 🃟🃟 🃟🃟 K♦️ | 🃟🃟 🃟🃟 | ✅ VALID | Joker pairs in trump combinations |
+| FRV-1.7 | 2 ♥️ | 5♥️ 5♥️ 6♥️ 6♥️ | 🃏🃏 🃟🃟 K♦️ | 🃏🃏 🃟🃟 | ✅ VALID | Joker pairs in trump combinations |
 | FRV-1.8 | 2 ♥️ | 5♥️ 5♥️ 6♥️ 6♥️ | 3♥️ 3♥️ 2♠️ 2♠️ A♣️ A♣️ K♦️ | 3♥️ 3♥️ 2♠️ 2♠️ | ✅ VALID | Must use trump pairs when available |
 | FRV-1.9 | 2 ♥️ | 5♥️ 5♥️ 6♥️ 6♥️ | 3♥️ 3♥️ 2♠️ 2♠️ A♣️ A♣️ K♦️ | 3♥️ 3♥️ A♣️ A♣️ | ❌ INVALID | Must use trump pairs not non-trump |
 
@@ -71,21 +73,28 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | Test ID | Trump Info | Leading Cards | Player Hand | Attempted Play | Expected | Rule Tested |
 |---------|------------|---------------|-------------|----------------|----------|-------------|
 | FRV-4.1 | 2 ♠️ | 3♥️ 3♥️ | 7♥️ 7♥️ 8♣️ | 7♥️ | ❌ INVALID | Must match combination length |
-| FRV-4.2 | 2 ♠️ | 3♥️ 3♥️ | 7♥️ 7♥️ 8♥️ 9♣️ | 7♥️ 7♥️ | ✅ VALID | Must use same-suit pair when available |
-| FRV-4.3 | 2 ♠️ | 3♥️ 3♥️ | 7♥️ 8♣️ 9♦️ | 7♥️ 8♣️ | ✅ VALID | Must use all leading suit when insufficient |
-| FRV-4.4 | 2 ♠️ | 3♥️ 3♥️ | 7♣️ 8♣️ 9♦️ | 7♣️ 8♣️ | ✅ VALID | Any combo when no leading suit |
-| FRV-4.5 | 2 ♠️ | 3♥️ 3♥️ 3♥️ 3♥️ | 7♥️ 8♥️ 9♣️ 10♦️ | 7♥️ 8♥️ 9♣️ 10♦️ | ✅ VALID | Must use all leading suit cards |
+| FRV-4.2 | 2 ♠️ | 3♥️ 3♥️ | 7♥️ 7♥️ 8♣️ | 7♥️ 7♥️ | ✅ VALID | Two cards valid for pair lead |
+| FRV-4.3 | 2 ♠️ | 3♥️ 3♥️ | 7♥️ 7♥️ 8♥️ 9♣️ | 7♥️ 7♥️ | ✅ VALID | Must use same-suit pair when available |
+| FRV-4.4 | 2 ♠️ | 3♥️ 3♥️ | 7♥️ 7♥️ 8♥️ 9♣️ | 7♥️ 9♣️ | ❌ INVALID | Cannot mix suits when same-suit pair available |
+| FRV-4.5 | 2 ♠️ | 3♥️ 3♥️ | 7♥️ 8♣️ 9♦️ | 7♥️ 8♣️ | ✅ VALID | Must include leading suit when insufficient |
+| FRV-4.6 | 2 ♠️ | 3♥️ 3♥️ | 7♥️ 8♣️ 9♦️ | 8♣️ 9♦️ | ❌ INVALID | Cannot skip leading suit card |
+| FRV-4.7 | 2 ♠️ | 3♥️ 3♥️ | 7♣️ 8♣️ 9♦️ | 7♣️ 8♣️ | ✅ VALID | Clubs combo valid when no Hearts |
+| FRV-4.8 | 2 ♠️ | 3♥️ 3♥️ | 7♣️ 8♣️ 9♦️ | 7♣️ 9♦️ | ✅ VALID | Mixed combo valid when no Hearts |
+| FRV-4.9 | 2 ♠️ | 3♥️ 3♥️ 4♥️ 4♥️ | 7♥️ 8♥️ 9♣️ 10♦️ | 7♥️ 8♥️ 9♣️ 10♦️ | ✅ VALID | Must use all Hearts + fill with others |
+| FRV-4.10 | 2 ♠️ | 3♥️ 3♥️ 4♥️ 4♥️ | 7♥️ 8♥️ 9♣️ 10♦️ | 7♥️ 9♣️ 10♦️ 8♥️ | ✅ VALID | Order doesn't matter if all Hearts included |
+| FRV-4.11 | 2 ♠️ | 3♥️ 3♥️ 4♥️ 4♥️ | 7♥️ 8♥️ 9♣️ 10♦️ | 9♣️ 10♦️ 7♥️ 8♥️ | ✅ VALID | Order variation - all Hearts included |
 
-## 5. Cross-Suit and Mixed Following
+## 5. Pair Following With Singles
 **File**: `__tests__/game/pairFollowWithSingles.test.ts`
 
 **Purpose**: Tests valid scenarios for playing multiple cards of the leading suit when exact pair matching isn't possible.
 
 | Test ID | Trump Info | Leading Cards | Player Hand | Attempted Play | Expected | Rule Tested |
 |---------|------------|---------------|-------------|----------------|----------|-------------|
-| FRV-5.1 | 2 ♠️ | K♥️ K♥️ | Q♥️ J♥️ A♠️ 9♣️ | Q♥️ J♥️ | ✅ VALID | Two different leading suit cards OK |
-| FRV-5.2 | 2 ♠️ | K♥️ K♥️ | Q♥️ A♠️ K♣️ 9♦️ | Q♥️ A♠️ | ✅ VALID | Must include available leading suit |
-| FRV-5.3 | 2 ♠️ | K♥️ K♥️ | Q♥️ A♠️ K♣️ 9♦️ | A♠️ K♣️ | ❌ INVALID | Cannot skip available leading suit |
+| FRV-5.1 | 2 ♠️ | K♥️ K♥️ | Q♥️ J♥️ A♠️ | Q♥️ J♥️ | ✅ VALID | Two different leading suit cards OK |
+| FRV-5.2 | 2 ♠️ | K♥️ K♥️ | Q♥️ A♠️ K♣️ | Q♥️ A♠️ | ✅ VALID | Must include available leading suit |
+| FRV-5.3 | 2 ♠️ | K♥️ K♥️ | Q♥️ A♠️ K♣️ | A♠️ K♣️ | ❌ INVALID | Cannot skip available leading suit |
+| FRV-5.4 | 2 ♠️ | K♥️ K♥️ | Q♥️ J♥️ 10♥️ A♠️ | Q♥️ J♥️ | ✅ VALID | Mixed Hearts valid when no pairs available |
 
 ## 6. Cross-Suit Following Rules
 **File**: `__tests__/game/crossSuitFollowing.test.ts`
@@ -96,7 +105,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 |---------|------------|---------------|-------------|----------------|----------|-------------|
 | FRV-6.1 | 2 ♥️ | 4♦️ 4♦️ | A♣️ A♣️ 7♦️ 7♦️ | A♣️ A♣️ | ❌ INVALID | Must follow suit when available |
 | FRV-6.2 | 2 ♥️ | 4♦️ 4♦️ | A♣️ A♣️ 7♠️ 8♥️ | A♣️ A♣️ | ✅ VALID | Valid when void in led suit |
-| FRV-6.3 | undefined | 4♦️ 4♦️ | A♣️ A♣️ 7♦️ 7♦️ | A♣️ A♣️ | ❌ INVALID | Same rules when trump suit skipped |
+| FRV-6.3 | K 🤡 | 4♦️ 4♦️ | A♣️ A♣️ 7♦️ 7♦️ | A♣️ A♣️ | ❌ INVALID | Same rules when trump suit skipped |
 
 ## 7. Non-Trump Suit Edge Cases
 **File**: `__tests__/game/nonTrumpSuitEdgeCases.test.ts`
@@ -173,17 +182,18 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 - **FRV-2**: `issue207TractorFollowing.test.ts` - Core Tractor Following Rules (4 tests)
 - **FRV-3**: `issue126SameSuitPairPreservation.test.ts` - Same-Suit Pair Preservation (5 tests)
 - **FRV-4**: `suitFollowing.test.ts` - Suit Following Fundamentals (11 tests)
-- **FRV-5**: `pairFollowWithSingles.test.ts` - Cross-Suit and Mixed Following (4 tests)
+- **FRV-5**: `pairFollowWithSingles.test.ts` - Pair Following With Singles (4 tests)
 - **FRV-6**: `crossSuitFollowing.test.ts` - Cross-Suit Following Rules (3 tests)
 - **FRV-7**: `nonTrumpSuitEdgeCases.test.ts` - Non-Trump Suit Edge Cases (2 tests)
 - **FRV-8**: `trumpEdgeCases.test.ts` - Trump Edge Cases (2 tests)
 
 ### **Test Results**
 - **Total FRV Tests**: 40 (all validation tests)
-- **Total Project Tests**: 681
-- **Test Suites**: 91
+- **Total Project Tests**: 692
+- **Test Suites**: 93
 - **Success Rate**: 100%
 - **No Regressions**: All existing functionality preserved
+- **🎯 FRV Purity**: All 8 files now focus exclusively on `isValidPlay()` validation - no other game logic functions tested
 
 ---
 

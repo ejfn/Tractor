@@ -1,4 +1,3 @@
-import { identifyCombos } from "../../src/game/comboDetection";
 import { isValidPlay } from "../../src/game/playValidation";
 import { Card, DeckId, GamePhase, GameState, Player, PlayerId, PlayerName, Rank, Suit, TeamId } from "../../src/types";
 
@@ -158,8 +157,22 @@ describe('FRV-5: Pair Follow With Singles', () => {
     expect(invalidResult).toBe(false);
   });
   
-  test('FRV-5.4: identifies available plays correctly when following pair', () => {
-    // Human has various cards including some hearts
+  test('FRV-5.4: should allow mixed cards when no pairs available in leading suit', () => {
+    // AI leads with a pair of hearts
+    const leadingPair: Card[] = [
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      Card.createCard(Suit.Hearts, Rank.King, 1)
+    ];
+    
+    mockState.currentTrick = {
+      plays: [
+        { playerId: PlayerId.Bot1, cards: leadingPair }
+      ],
+      winningPlayerId: PlayerId.Bot1,
+      points: 20  // Two kings = 20 points
+    };
+    
+    // Human has various cards including some hearts but no heart pairs
     const heartQueen = Card.createCard(Suit.Hearts, Rank.Queen, getNextDeckId());
     const heartJack = Card.createCard(Suit.Hearts, Rank.Jack, getNextDeckId());
     const heart10 = Card.createCard(Suit.Hearts, Rank.Ten, getNextDeckId());
@@ -167,19 +180,16 @@ describe('FRV-5: Pair Follow With Singles', () => {
     
     humanPlayer.hand = [heartQueen, heartJack, heart10, spadeAce];
     
-    // Identify combos in hand
-    const combos = identifyCombos(humanPlayer.hand, mockState.trumpInfo);
+    // Should be valid to play any two hearts when no pairs available
+    const mixedHeartsPlay = [heartQueen, heartJack];
     
-    console.log('Available combos:', combos.map(c => ({
-      type: c.type,
-      suit: c.cards[0].suit,
-      ranks: c.cards.map(card => card.rank)
-    })));
+    const result = isValidPlay(
+      mixedHeartsPlay,
+      leadingPair,
+      humanPlayer.hand,
+      mockState.trumpInfo
+    );
     
-    // Should identify singles but no pairs in hearts
-    const heartCombos = combos.filter(c => c.cards[0].suit === Suit.Hearts);
-    const heartPairs = heartCombos.filter(c => c.type === 'Pair');
-    
-    expect(heartPairs.length).toBe(0); // No pairs in hearts
+    expect(result).toBe(true); // Valid when no pairs available in leading suit
   });
 });

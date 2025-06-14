@@ -115,9 +115,9 @@ describe('FRV-4: Suit Following Fundamentals', () => {
       const leadingCombo = [
         Card.createCard(Suit.Hearts, Rank.Three, 0),
         Card.createCard(Suit.Hearts, Rank.Three, 1),
-        Card.createCard(Suit.Hearts, Rank.Three, 0),
-        Card.createCard(Suit.Hearts, Rank.Three, 1)
-      ]; // 4-card combo
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 1)
+      ]; // 4-card tractor: 3♥3♥-4♥4♥
       
       const playerHand = [
         Card.createCard(Suit.Hearts, Rank.Seven, 0),
@@ -137,9 +137,9 @@ describe('FRV-4: Suit Following Fundamentals', () => {
       const leadingCombo = [
         Card.createCard(Suit.Hearts, Rank.Three, 0),
         Card.createCard(Suit.Hearts, Rank.Three, 1),
-        Card.createCard(Suit.Hearts, Rank.Three, 0),
-        Card.createCard(Suit.Hearts, Rank.Three, 1)
-      ]; // 4-card combo
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 1)
+      ]; // 4-card tractor: 3♥3♥-4♥4♥
       
       const playerHand = [
         Card.createCard(Suit.Hearts, Rank.Seven, 0),
@@ -159,9 +159,9 @@ describe('FRV-4: Suit Following Fundamentals', () => {
       const leadingCombo = [
         Card.createCard(Suit.Hearts, Rank.Three, 0),
         Card.createCard(Suit.Hearts, Rank.Three, 1),
-        Card.createCard(Suit.Hearts, Rank.Three, 0),
-        Card.createCard(Suit.Hearts, Rank.Three, 1)
-      ]; // 4-card combo
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 1)
+      ]; // 4-card tractor: 3♥3♥-4♥4♥
       
       const playerHand = [
         Card.createCard(Suit.Hearts, Rank.Seven, 0),

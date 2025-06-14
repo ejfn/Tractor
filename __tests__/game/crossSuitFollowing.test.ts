@@ -97,17 +97,17 @@ describe('FRV-6: Cross-Suit Following Rules', () => {
       expect(isValid).toBe(true); // Should be true when void in led suit
     });
 
-    test('FRV-6.3: Following different suit when trump skipped should follow same rules', () => {
-      // When trump suit is skipped, only trump rank and jokers are trump
-      const skippedTrumpInfo = { trumpSuit: undefined, trumpRank: Rank.Two };
+    test('FRV-6.3: Following different suit when trump suit skipped should follow same rules', () => {
+      // Trump suit skipped scenario: No trump suit, only trump rank and jokers are trump
+      const skippedTrumpInfo = { trumpSuit: Suit.None, trumpRank: Rank.King };
 
-      // Set up a trick where 4♦-4♦ is led
+      // Set up a trick where 4♦-4♦ is led (non-trump suit)
       const leadingCombo = [
         Card.createCard(Suit.Diamonds, Rank.Four, 0),
         Card.createCard(Suit.Diamonds, Rank.Four, 0),
       ];
 
-      // Try to follow with A♣-A♣ (different suit, both non-trump)
+      // Try to follow with A♣-A♣ (different non-trump suit)
       const followingCombo = [
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
