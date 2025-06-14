@@ -25,7 +25,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 # Following Validation Test Coverage
 
 ## 1. Trump Group Unification Tests
-**File**: `__tests__/game/tractorRules.test.ts`
+**File**: [`__tests__/followingRulesValidation/tractorRules.test.ts`](../__tests__/followingRulesValidation/tractorRules.test.ts)
 
 **Purpose**: Tests that ALL trump cards (jokers, trump rank, trump suit) are treated as unified group when following trump leads.
 
@@ -42,7 +42,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | FRV-1.9 | 2 ♥️ | 5♥️ 5♥️ 6♥️ 6♥️ | 3♥️ 3♥️ 2♠️ 2♠️ A♣️ A♣️ K♦️ | 3♥️ 3♥️ A♣️ A♣️ | ❌ INVALID | Must use trump pairs not non-trump |
 
 ## 2. Core Tractor Following Rules - Issue #207
-**File**: `__tests__/game/issue207TractorFollowing.test.ts`
+**File**: [`__tests__/followingRulesValidation/issue207TractorFollowing.test.ts`](../__tests__/followingRulesValidation/issue207TractorFollowing.test.ts)
 
 **Purpose**: Tests the fundamental rule that when following tractors, players must use ALL available pairs before any singles.
 
@@ -54,7 +54,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | FRV-2.4 | 5 ♥️ | 3♥️ 3♥️ 4♥️ 4♥️ | A♥️ A♥️ 8♥️ 7♥️ 7♥️ 6♥️ 2♣️ | 8♥️ 7♥️ 7♥️ 6♥️ | ❌ INVALID | Must use ALL trump pairs first |
 
 ## 3. Same-Suit Pair Preservation - Issue #126
-**File**: `__tests__/game/issue126SameSuitPairPreservation.test.ts`
+**File**: [`__tests__/followingRulesValidation/issue126SameSuitPairPreservation.test.ts`](../__tests__/followingRulesValidation/issue126SameSuitPairPreservation.test.ts)
 
 **Purpose**: Tests that pairs of the leading suit cannot be broken unnecessarily when following tractor leads.
 
@@ -66,7 +66,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | FRV-3.4 | 2 ♠️ | 4♠️ 4♠️ 5♠️ 5♠️ | 6♠️ 6♠️ 7♠️ 8♠️ 9♦️ 10♣️ | 6♠️ 7♠️ 8♠️ 9♦️ | ❌ INVALID | Rule applies to trump combinations too |
 
 ## 4. Suit Following Fundamentals  
-**File**: `__tests__/game/suitFollowing.test.ts`
+**File**: [`__tests__/followingRulesValidation/suitFollowing.test.ts`](../__tests__/followingRulesValidation/suitFollowing.test.ts)
 
 **Purpose**: Tests basic suit following rules including pair matching and suit exhaustion.
 
@@ -85,7 +85,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | FRV-4.11 | 2 ♠️ | 3♥️ 3♥️ 4♥️ 4♥️ | 7♥️ 8♥️ 9♣️ 10♦️ | 9♣️ 10♦️ 7♥️ 8♥️ | ✅ VALID | Order variation - all Hearts included |
 
 ## 5. Pair Following With Singles
-**File**: `__tests__/game/pairFollowWithSingles.test.ts`
+**File**: [`__tests__/followingRulesValidation/pairFollowWithSingles.test.ts`](../__tests__/followingRulesValidation/pairFollowWithSingles.test.ts)
 
 **Purpose**: Tests valid scenarios for playing multiple cards of the leading suit when exact pair matching isn't possible.
 
@@ -97,7 +97,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | FRV-5.4 | 2 ♠️ | K♥️ K♥️ | Q♥️ J♥️ 10♥️ A♠️ | Q♥️ J♥️ | ✅ VALID | Mixed Hearts valid when no pairs available |
 
 ## 6. Cross-Suit Following Rules
-**File**: `__tests__/game/crossSuitFollowing.test.ts`
+**File**: [`__tests__/followingRulesValidation/crossSuitFollowing.test.ts`](../__tests__/followingRulesValidation/crossSuitFollowing.test.ts)
 
 **Purpose**: Tests cross-suit following rules and void scenarios.
 
@@ -108,7 +108,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | FRV-6.3 | K 🤡 | 4♦️ 4♦️ | A♣️ A♣️ 7♦️ 7♦️ | A♣️ A♣️ | ❌ INVALID | Same rules when trump suit skipped |
 
 ## 7. Non-Trump Suit Edge Cases
-**File**: `__tests__/game/nonTrumpSuitEdgeCases.test.ts`
+**File**: [`__tests__/followingRulesValidation/nonTrumpSuitEdgeCases.test.ts`](../__tests__/followingRulesValidation/nonTrumpSuitEdgeCases.test.ts)
 
 **Purpose**: Tests edge cases when player has limited cards of leading suit.
 
@@ -117,7 +117,7 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 | FRV-7.1 | 2 ♦️ | 3♥️ 3♥️ | 4♥️ 6♣️ 6♣️ 7♠️ | 6♣️ 6♣️ | ❌ INVALID | Must use leading suit when available |
 
 ## 8. Trump Edge Cases
-**File**: `__tests__/game/trumpEdgeCases.test.ts`
+**File**: [`__tests__/followingRulesValidation/trumpEdgeCases.test.ts`](../__tests__/followingRulesValidation/trumpEdgeCases.test.ts)
 
 **Purpose**: Tests complex trump scenarios and edge cases.
 
@@ -162,30 +162,17 @@ The play validation system enforces the complex rules of Tractor/Shengji card ga
 
 ---
 
-## Validation Refactoring Impact
-
-### **Before Refactoring**
-- ❌ Separate trump vs non-trump validation paths
-- ❌ Inconsistent rule application
-- ❌ Trump tractor following bugs
-- ❌ Complex, hard-to-maintain code (~300 lines)
-
-### **After Refactoring** 
-- ✅ Unified validation logic for all suits
-- ✅ Consistent rule application 
-- ✅ Trump tractor following fixed
-- ✅ Simplified, maintainable code (~180 lines)
-- ✅ All 685 tests pass
-
 ### **Test Files Covered**
-- **FRV-1**: `tractorRules.test.ts` - Trump Group Unification Tests (9 tests)
-- **FRV-2**: `issue207TractorFollowing.test.ts` - Core Tractor Following Rules (4 tests)
-- **FRV-3**: `issue126SameSuitPairPreservation.test.ts` - Same-Suit Pair Preservation (5 tests)
-- **FRV-4**: `suitFollowing.test.ts` - Suit Following Fundamentals (11 tests)
-- **FRV-5**: `pairFollowWithSingles.test.ts` - Pair Following With Singles (4 tests)
-- **FRV-6**: `crossSuitFollowing.test.ts` - Cross-Suit Following Rules (3 tests)
-- **FRV-7**: `nonTrumpSuitEdgeCases.test.ts` - Non-Trump Suit Edge Cases (2 tests)
-- **FRV-8**: `trumpEdgeCases.test.ts` - Trump Edge Cases (2 tests)
+**📁 Location**: `__tests__/followingRulesValidation/`
+
+- **FRV-1**: [`tractorRules.test.ts`](../__tests__/followingRulesValidation/tractorRules.test.ts) - Trump Group Unification Tests (9 tests)
+- **FRV-2**: [`issue207TractorFollowing.test.ts`](../__tests__/followingRulesValidation/issue207TractorFollowing.test.ts) - Core Tractor Following Rules (4 tests)
+- **FRV-3**: [`issue126SameSuitPairPreservation.test.ts`](../__tests__/followingRulesValidation/issue126SameSuitPairPreservation.test.ts) - Same-Suit Pair Preservation (5 tests)
+- **FRV-4**: [`suitFollowing.test.ts`](../__tests__/followingRulesValidation/suitFollowing.test.ts) - Suit Following Fundamentals (11 tests)
+- **FRV-5**: [`pairFollowWithSingles.test.ts`](../__tests__/followingRulesValidation/pairFollowWithSingles.test.ts) - Pair Following With Singles (4 tests)
+- **FRV-6**: [`crossSuitFollowing.test.ts`](../__tests__/followingRulesValidation/crossSuitFollowing.test.ts) - Cross-Suit Following Rules (3 tests)
+- **FRV-7**: [`nonTrumpSuitEdgeCases.test.ts`](../__tests__/followingRulesValidation/nonTrumpSuitEdgeCases.test.ts) - Non-Trump Suit Edge Cases (2 tests)
+- **FRV-8**: [`trumpEdgeCases.test.ts`](../__tests__/followingRulesValidation/trumpEdgeCases.test.ts) - Trump Edge Cases (2 tests)
 
 ### **Test Results**
 - **Total FRV Tests**: 40 (all validation tests)
