@@ -147,20 +147,19 @@ describe('Advanced Tractor Rules - Unified Tractor Rank System', () => {
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
-      expect(tractors).toHaveLength(1);
+      expect(tractors).toHaveLength(2); // Should find ALL combinations: K♥K♥+K♠K♠ AND K♥K♥+K♣K♣
+      
+      // Both tractors should be valid
       expect(tractors[0].type).toBe(ComboType.Tractor);
-      expect(tractors[0].cards).toHaveLength(4); // Two pairs: off-suit rank (16) + trump suit rank (17)
+      expect(tractors[0].cards).toHaveLength(4); // Two pairs: trump suit rank + off-suit rank
+      expect(tractors[1].type).toBe(ComboType.Tractor);
+      expect(tractors[1].cards).toHaveLength(4); // Two pairs: trump suit rank + off-suit rank
       
-      // Should include trump suit pair and one off-suit pair
-      const tractorCards = tractors[0].cards;
-      const heartKings = tractorCards.filter(card => card.suit === Suit.Hearts && card.rank === Rank.King);
-      expect(heartKings).toHaveLength(2); // Should have both Hearts King cards
-      
-      // Should contain one off-suit pair (either Spades or Clubs)
-      const spadeKings = tractorCards.filter(card => card.suit === Suit.Spades && card.rank === Rank.King);
-      const clubKings = tractorCards.filter(card => card.suit === Suit.Clubs && card.rank === Rank.King);
-      const hasOffSuitPair = spadeKings.length === 2 || clubKings.length === 2;
-      expect(hasOffSuitPair).toBe(true);
+      // Both tractors should include trump suit pair (Hearts)
+      for (const tractor of tractors) {
+        const heartKings = tractor.cards.filter(card => card.suit === Suit.Hearts && card.rank === Rank.King);
+        expect(heartKings).toHaveLength(2); // Should have both Hearts King cards in each tractor
+      }
     });
   });
 

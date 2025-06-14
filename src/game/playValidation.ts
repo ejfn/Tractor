@@ -104,16 +104,22 @@ export const isValidPlay = (
 
   if (matchingCombos.length > 0) {
     // Must play a matching combo in the relevant suit
-    const isMatchingCombo = matchingCombos.some(
-      (combo) =>
-        combo.cards.length === playedCards.length &&
-        combo.cards.every((card) =>
-          playedCards.some((played) => played.id === card.id),
-        ) &&
-        playedCards.every((played) =>
-          combo.cards.some((card) => card.id === played.id),
-        ),
-    );
+    // Check if played cards exactly match any valid combination (order independent)
+    const isMatchingCombo = matchingCombos.some((combo) => {
+      if (combo.cards.length !== playedCards.length) {
+        return false;
+      }
+
+      // Create frequency maps for both sets of cards
+      const comboCardIds = combo.cards.map((card) => card.id).sort();
+      const playedCardIds = playedCards.map((card) => card.id).sort();
+
+      // Check if both arrays contain exactly the same card IDs
+      return (
+        comboCardIds.length === playedCardIds.length &&
+        comboCardIds.every((id, index) => id === playedCardIds[index])
+      );
+    });
     return isMatchingCombo;
   }
 

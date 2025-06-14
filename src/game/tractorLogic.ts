@@ -25,7 +25,7 @@ export const getTractorRank = (card: Card, trumpInfo: TrumpInfo): number => {
     if (card.suit === trumpInfo.trumpSuit) {
       return 1017; // Trump suit rank - can combine with off-suit ranks
     } else {
-      return 1016; // Off-suit trump rank - can combine with trump suit rank
+      return 1016; // Off-suit trump rank - all get same rank so they DON'T form tractors with each other
     }
   }
 
@@ -158,14 +158,25 @@ export const findTractorsInContext = (
   // Sort pairs by tractor rank
   pairs.sort((a, b) => a.rank - b.rank);
 
-  // Find all possible tractors (including overlapping ones)
+  // Find all possible tractors
   for (let startIdx = 0; startIdx < pairs.length; startIdx++) {
     for (let endIdx = startIdx + 1; endIdx < pairs.length; endIdx++) {
+      // Skip if both are trump rank cards (handled separately)
+      const startCard = pairs[startIdx].cards[0];
+      const endCard = pairs[endIdx].cards[0];
+      if (
+        startCard.rank === trumpInfo.trumpRank &&
+        endCard.rank === trumpInfo.trumpRank
+      ) {
+        continue;
+      }
+
       // Check if pairs from startIdx to endIdx form a consecutive tractor
       let isConsecutive = true;
       for (let i = startIdx; i < endIdx; i++) {
         const currentRank = pairs[i].rank;
         const nextRank = pairs[i + 1].rank;
+
         if (nextRank - currentRank !== 1) {
           isConsecutive = false;
           break;
@@ -182,6 +193,36 @@ export const findTractorsInContext = (
           ...tractorPairs.map((pair) =>
             calculateCardStrategicValue(pair.cards[0], trumpInfo, "combo"),
           ),
+        );
+
+        combos.push({
+          type: ComboType.Tractor,
+          cards: tractorCards,
+          value: value,
+        });
+      }
+    }
+  }
+
+  // Trump rank cross-suit tractors: generate ALL combinations of trump suit + off-suit pairs
+  const trumpRankPairs = pairs.filter(
+    (pair) => pair.cards[0].rank === trumpInfo.trumpRank,
+  );
+  const trumpSuitPairs = trumpRankPairs.filter(
+    (pair) => pair.cards[0].suit === trumpInfo.trumpSuit,
+  );
+  const offSuitPairs = trumpRankPairs.filter(
+    (pair) => pair.cards[0].suit !== trumpInfo.trumpSuit,
+  );
+
+  if (trumpSuitPairs.length > 0 && offSuitPairs.length > 0) {
+    // Each trump suit pair can combine with each off-suit pair
+    for (const trumpPair of trumpSuitPairs) {
+      for (const offSuitPair of offSuitPairs) {
+        const tractorCards = [...trumpPair.cards, ...offSuitPair.cards];
+        const value = Math.max(
+          calculateCardStrategicValue(trumpPair.cards[0], trumpInfo, "combo"),
+          calculateCardStrategicValue(offSuitPair.cards[0], trumpInfo, "combo"),
         );
 
         combos.push({
