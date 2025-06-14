@@ -5,14 +5,15 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-green)
-![Tests](https://img.shields.io/badge/Tests-672%20Passing-brightgreen?logo=jest)
 ![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
+![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ejfn/675aef37358f9f2b3b290cbf79440460/raw/tractor-test-count.json)
 
 ## What is Tractor?
 
 **Tractor** (升级/Shengji) is a challenging Chinese trick-taking card game where strategy and teamwork are essential. You partner with an AI teammate to collect points and advance through card ranks from 2 to Ace.
 
 **Core Gameplay:**
+
 - **Team-based**: You + Bot 2 vs Bot 1 + Bot 3 in strategic cooperation
 - **Rank Progression**: Start at rank 2, advance through ranks by collecting 80+ points per round
 - **Trump Declaration**: Players can declare trump during progressive dealing using pairs or jokers
@@ -20,6 +21,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **Victory Condition**: First team to advance to Ace rank wins the game
 
 **Unique Features:**
+
 - **Progressive Dealing**: Cards dealt one-by-one with real-time trump declaration opportunities
 - **Kitty Management**: Winner receives 8 hidden cards that can provide massive endgame bonuses
 - **Complex Trump Hierarchy**: Big Joker > Small Joker > Trump rank cards > Trump suit cards
@@ -47,6 +49,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **React Native Reanimated** - High-performance card animations
 
 **Architectural Highlights:**
+
 - **Modular Game System**: Focused game modules with direct imports (no re-export hub)
 - **Modular AI System**: 22 specialized modules with 4-phase intelligence organized by functional domain
 - **Unified Trick Structure**: Streamlined game state with plays array for consistent data flow
@@ -62,6 +65,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 **Sophisticated 4-phase AI system** with memory-enhanced decision trees, strategic point management, and intelligent trump conservation.
 
 **Core AI Capabilities:**
+
 - **🧠 Memory-Enhanced Strategy**: Card tracking with guaranteed winner identification
 - **🎯 4-Priority Decision Chain**: Team coordination → Opponent blocking → Trick contention → Strategic disposal
 - **🃏 Streamlined Kitty Management**: Rule-based exclusion strategy with intelligent suit elimination
@@ -69,12 +73,14 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **🛡️ Strategic Conservation**: Trump hierarchy preservation and point card management
 
 **Complete 4-Phase Intelligence:**
+
 - **Phase 1: Foundation** - Perfect rule compliance and basic strategic logic
 - **Phase 2: Strategy** - Point optimization, team coordination, position-based play
 - **Phase 3: Memory** - Card tracking, probability analysis, guaranteed winner detection
 - **Phase 4: Historical** - Opponent modeling, behavioral adaptation, predictive intelligence
 
 **Advanced Features:**
+
 - **Memory-Enhanced Biggest Remaining**: Uses card tracking to identify guaranteed winners
 - **Historical Pattern Recognition**: Analyzes opponent behavior and adapts counter-strategies
 - **Position-Based Intelligence**: Specialized logic for all 4 trick positions (1st/2nd/3rd/4th player)
