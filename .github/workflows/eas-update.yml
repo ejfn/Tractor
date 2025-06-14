@@ -36,8 +36,27 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Run quality checks
-      run: npm run qualitycheck
+    - name: Run quality checks and extract test count
+      id: tests
+      run: |
+        # Run quality checks and capture output
+        npm run qualitycheck 2>&1 | tee test_output.log
+        
+        # Extract test count from Jest output
+        TEST_COUNT=$(grep -o "Tests:[[:space:]]*[0-9]*[[:space:]]*passed" test_output.log | grep -o "[0-9]*" | head -1)
+        echo "test_count=$TEST_COUNT" >> $GITHUB_OUTPUT
+        echo "Extracted test count: $TEST_COUNT"
+
+    - name: Update test count badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: ${{ secrets.GIST_ID }}
+        filename: tractor-test-count.json
+        label: Tests
+        message: ${{ steps.tests.outputs.test_count }} Passing
+        color: brightgreen
+        logo: jest
 
     - name: Setup Expo
       uses: expo/expo-github-action@v8

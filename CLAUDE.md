@@ -585,6 +585,25 @@ This protection ensures Shengji/Tractor game rule compliance and prevents invali
 - Pure computation approach with `endRound()` and `prepareNextRound()`
 - Separates calculations from state mutations for clean UI timing
 
+## Automated Badge System
+
+**Dynamic Test Count Badge**: The README test count badge automatically updates via the EAS workflow using the Dynamic Badges Action.
+
+**How it works:**
+- EAS workflow extracts test count from Jest output during quality checks
+- Dynamic Badges Action updates a GitHub Gist with shield.io endpoint JSON
+- README badge pulls from: `https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ejfn/675aef37358f9f2b3b290cbf79440460/raw/tractor-test-count.json`
+
+**Setup requirements:**
+- `GIST_SECRET`: GitHub token with gist scope (repository secret)
+- `GIST_ID`: GitHub gist ID for badge data storage (repository secret)
+- Public gist with `tractor-test-count.json` filename
+
+**Benefits:**
+- ✅ Zero manual maintenance - badge updates automatically
+- ✅ Always accurate - reflects actual test count from Jest
+- ✅ Real-time updates - badge refreshes after workflow completion
+
 ## Development Memories
 
 These are lessons learned and principles established through development experience on this project.
@@ -592,7 +611,7 @@ These are lessons learned and principles established through development experie
 ### Testing & Debugging
 
 - **Bug reproduction**: When fixing a bug, always try to reproduce it with existing test or a debug test
-- **Test count maintenance**: Always check and update test counts in README.md badges when adding/removing tests
+- **Automated test count badge**: Test count badge automatically updates via EAS workflow using Dynamic Badges Action
 - **Test realism**: Use actual game logic when possible for more realistic test coverage
 - **API evolution**: When improving APIs, update tests to use the new, better patterns instead of creating legacy compatibility wrappers
 
