@@ -92,7 +92,7 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
       expect(selectedTrumpValues.includes(10)).toBe(true);  // Should have 4♠
     });
 
-    it("should prefer non-trump cards over any trump when following trump but can't form proper combinations", () => {
+    it("should use trump conservation hierarchy when following trump and can't form proper combinations", () => {
       // Create game where AI must follow trump but has no trump pairs/tractors
       const gameState = initializeGame();
       
@@ -157,8 +157,18 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
         card.suit === Suit.Hearts
       );
       
-      // Should minimize trump usage (prefer using all non-trump if possible)
-      expect(trumpCardsUsed.length).toBeLessThan(3); // Should try to avoid wasting trump
+      // When following trump tractor, must use ALL available trump cards
+      // Bot3 has: Big Joker, 2♣ (trump rank), A♥ (trump suit) = 3 trump cards
+      expect(trumpCardsUsed.length).toBe(3); // Must use all 3 trump cards
+      
+      // Verify all trump cards are used when following trump
+      const bigJokerUsed = selectedCards.some(card => card.joker === JokerType.Big);
+      const trumpRankUsed = selectedCards.some(card => card.rank === Rank.Two && card.suit === Suit.Clubs);
+      const trumpSuitUsed = selectedCards.some(card => card.suit === Suit.Hearts && card.rank === Rank.Ace);
+      
+      expect(bigJokerUsed).toBe(true); // Must use Big Joker
+      expect(trumpRankUsed).toBe(true); // Must use trump rank
+      expect(trumpSuitUsed).toBe(true); // Must use trump suit card
     });
 
     it("should use trump conservation hierarchy when forced to play only trump cards", () => {

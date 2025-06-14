@@ -48,6 +48,7 @@ export const identifyCombos = (
 
   // Look for all types of tractors with unified logic
   const tractors = findAllTractors(cards, trumpInfo);
+
   // Add isBreakingPair: false to all tractors
   const tractorsWithBreaking = tractors.map((tractor) => ({
     ...tractor,
