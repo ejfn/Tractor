@@ -24,6 +24,7 @@ import { createGameState } from '../helpers/gameStates';
 jest.mock('../../src/game/comboDetection', () => ({
   identifyCombos: jest.fn(),
   checkSameSuitPairPreservation: jest.fn(),
+  checkTractorFollowingPriority: jest.fn(),
   getComboType: jest.fn(),
 }));
 
@@ -227,6 +228,8 @@ describe('playProcessing', () => {
         
         // Mock checkSameSuitPairPreservation to return true
         (comboDetection.checkSameSuitPairPreservation as jest.Mock).mockReturnValue(true);
+        // Mock checkTractorFollowingPriority to return true
+        (comboDetection.checkTractorFollowingPriority as jest.Mock).mockReturnValue(true);
       });
 
       test('should validate a play when following a trick', () => {

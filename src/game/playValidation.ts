@@ -2,6 +2,7 @@ import { Card, ComboType, TrumpInfo } from "../types";
 import {
   identifyCombos,
   checkSameSuitPairPreservation,
+  checkTractorFollowingPriority,
   getComboType,
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
@@ -227,6 +228,18 @@ export const isValidPlay = (
 
     // Issue #126 Fix: Also check same-suit pair preservation
     if (allLeadingSuit) {
+      // Issue #207 Fix: Check tractor following priority (pairs before singles)
+      if (
+        !checkTractorFollowingPriority(
+          playedCards,
+          leadingCombo,
+          playerHand,
+          trumpInfo,
+        )
+      ) {
+        return false;
+      }
+
       return checkSameSuitPairPreservation(
         playedCards,
         leadingCombo,
@@ -285,6 +298,18 @@ export const isValidPlay = (
 
     // Issue #126 Fix: Also check same-suit pair preservation for partial suit following
     if (allPlayedFromHand) {
+      // Issue #207 Fix: Check tractor following priority for partial suit following
+      if (
+        !checkTractorFollowingPriority(
+          playedCards,
+          leadingCombo,
+          playerHand,
+          trumpInfo,
+        )
+      ) {
+        return false;
+      }
+
       return checkSameSuitPairPreservation(
         playedCards,
         leadingCombo,

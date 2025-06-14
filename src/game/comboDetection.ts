@@ -141,3 +141,76 @@ export const checkSameSuitPairPreservation = (
 
   return true; // All same-suit pairs preserved
 };
+
+/**
+ * Check tractor following priority rule: when following tractor/pairs,
+ * must use ALL available pairs before any singles
+ */
+export const checkTractorFollowingPriority = (
+  playedCards: Card[],
+  leadingCombo: Card[],
+  playerHand: Card[],
+  trumpInfo: TrumpInfo,
+): boolean => {
+  // Get leading combo type
+  const leadingType = getComboType(leadingCombo, trumpInfo);
+
+  // Only apply this rule when following pairs or tractors
+  if (leadingType !== ComboType.Pair && leadingType !== ComboType.Tractor) {
+    return true; // Rule doesn't apply to single cards
+  }
+
+  // Local helper function
+  const getLeadingSuit = (combo: Card[]): Suit | undefined => {
+    for (const card of combo) {
+      if (card.suit) {
+        return card.suit;
+      }
+    }
+    return undefined;
+  };
+
+  const leadingSuit = getLeadingSuit(leadingCombo);
+  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+
+  // Get all cards of the leading suit/trump in player's hand
+  const relevantCards = isLeadingTrump
+    ? playerHand.filter((card) => isTrump(card, trumpInfo))
+    : playerHand.filter(
+        (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+      );
+
+  // If player doesn't have enough cards to match leading combo length, rule doesn't apply
+  if (relevantCards.length < leadingCombo.length) {
+    return true;
+  }
+
+  // Get all available pairs in the relevant suit
+  const availablePairs = identifyCombos(relevantCards, trumpInfo)
+    .filter((combo) => combo.type === ComboType.Pair)
+    .map((combo) => combo.cards);
+
+  // If no pairs available, rule doesn't apply
+  if (availablePairs.length === 0) {
+    return true;
+  }
+
+  // Check how many pairs were used in the played cards
+  const usedPairs = availablePairs.filter((pair) =>
+    pair.every((pairCard) =>
+      playedCards.some((played) => played.id === pairCard.id),
+    ),
+  );
+
+  // Check how many pairs could have been used (limited by played cards length)
+  const maxPairsUsable = Math.floor(playedCards.length / 2);
+  const availablePairsCount = availablePairs.length;
+  const expectedPairsUsed = Math.min(maxPairsUsable, availablePairsCount);
+
+  // Must use ALL available pairs before any singles (up to the limit of played cards)
+  if (usedPairs.length < expectedPairsUsed) {
+    return false; // Didn't use all available pairs first
+  }
+
+  return true;
+};
