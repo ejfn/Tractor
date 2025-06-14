@@ -2,7 +2,7 @@ name: EAS Build APK
 
 on:
   release:
-    types: [created]
+    types: [released]
 
 permissions:
   contents: write

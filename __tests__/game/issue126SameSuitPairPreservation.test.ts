@@ -2,7 +2,7 @@ import { isValidPlay } from '../../src/game/playValidation';
 import { Card, Rank, Suit, TrumpInfo } from '../../src/types';
 import { createTrumpInfo } from '../helpers';
 
-describe('Issue #126: Same-suit pair preservation when following tractors', () => {
+describe('FRV-3: Issue #126: Same-suit pair preservation when following tractors', () => {
   let trumpInfo: TrumpInfo;
 
   beforeEach(() => {
@@ -10,7 +10,7 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
   });
 
   describe('Core bug fix: Reject breaking same-suit pairs', () => {
-    it('should REJECT breaking same-suit (Hearts) pairs when following Hearts tractor', () => {
+    test('FRV-3.1: should REJECT breaking same-suit (Hearts) pairs when following Hearts tractor', () => {
       // AI leads 7♥7♥-8♥8♥ (Hearts tractor)
       const leadingCombo = [
         ...Card.createPair(Suit.Hearts, Rank.Seven),
@@ -37,7 +37,7 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
       expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
     });
 
-    it('should REJECT breaking Hearts pair when singles available', () => {
+    test('FRV-3.2: should REJECT breaking Hearts pair when singles available', () => {
       const leadingCombo = [
         ...Card.createPair(Suit.Hearts, Rank.Seven),
         ...Card.createPair(Suit.Hearts, Rank.Eight),
@@ -65,7 +65,7 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
       expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
     });
 
-    it('should REJECT breaking pair unnecessarily when excess Hearts available', () => {
+    test('FRV-3.3: should REJECT breaking pair unnecessarily when excess Hearts available', () => {
       const leadingCombo = [
         ...Card.createPair(Suit.Hearts, Rank.Seven),
         ...Card.createPair(Suit.Hearts, Rank.Eight),
@@ -92,7 +92,7 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
       expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
     });
 
-    it('should REJECT breaking Hearts pair when insufficient Hearts total', () => {
+    test('FRV-3.4: should REJECT breaking Hearts pair when insufficient Hearts total', () => {
       const leadingCombo = [
         ...Card.createPair(Suit.Hearts, Rank.Seven),
         ...Card.createPair(Suit.Hearts, Rank.Eight),
@@ -122,7 +122,7 @@ describe('Issue #126: Same-suit pair preservation when following tractors', () =
   });
 
   describe('Trump combination following (same rules apply)', () => {
-    it('should enforce same-suit pair preservation for trump combinations', () => {
+    test('FRV-3.5: should enforce same-suit pair preservation for trump combinations', () => {
       // Trump rank 2, Spades trump - use valid consecutive trump suit tractor
       const leadingCombo = [
         Card.createCard(Suit.Spades, Rank.Four, 0), // Trump suit

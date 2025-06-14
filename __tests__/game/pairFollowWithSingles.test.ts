@@ -2,7 +2,7 @@ import { identifyCombos } from "../../src/game/comboDetection";
 import { isValidPlay } from "../../src/game/playValidation";
 import { Card, DeckId, GamePhase, GameState, Player, PlayerId, PlayerName, Rank, Suit, TeamId } from "../../src/types";
 
-describe('Pair Follow With Singles', () => {
+describe('FRV-5: Pair Follow With Singles', () => {
   let mockState: GameState;
   let humanPlayer: Player;
   let deckId = 0;
@@ -51,7 +51,7 @@ describe('Pair Follow With Singles', () => {
     };
   });
   
-  test('player can select two different cards of same suit when following a pair', () => {
+  test('FRV-5.1: player can select two different cards of same suit when following a pair', () => {
     // AI leads with a pair of hearts
     const leadingPair: Card[] = [
       Card.createCard(Suit.Hearts, Rank.King, 0),
@@ -88,7 +88,7 @@ describe('Pair Follow With Singles', () => {
     expect(result).toBe(true);
   });
   
-  test('player must play all hearts when they have some but not enough for pair', () => {
+  test('FRV-5.2: player must include heart card when available', () => {
     // AI leads with a pair of hearts
     const leadingPair: Card[] = [
       Card.createCard(Suit.Hearts, Rank.King, 0),
@@ -112,7 +112,6 @@ describe('Pair Follow With Singles', () => {
     
     // Must play the heart plus any other card
     const validPlay = [heartQueen, spadeAce];
-    const invalidPlay = [spadeAce, clubKing]; // Not playing the heart
     
     const validResult = isValidPlay(
       validPlay,
@@ -121,6 +120,34 @@ describe('Pair Follow With Singles', () => {
       mockState.trumpInfo
     );
     
+    expect(validResult).toBe(true);
+  });
+
+  test('FRV-5.3: player cannot skip available heart card', () => {
+    // AI leads with a pair of hearts
+    const leadingPair: Card[] = [
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      Card.createCard(Suit.Hearts, Rank.King, 1)
+    ];
+    
+    mockState.currentTrick = {
+      plays: [
+        { playerId: PlayerId.Bot1, cards: leadingPair }
+      ],
+      winningPlayerId: PlayerId.Bot1,
+      points: 20  // Two kings = 20 points
+    };
+    
+    // Human has only one heart
+    const heartQueen = Card.createCard(Suit.Hearts, Rank.Queen, getNextDeckId());
+    const spadeAce = Card.createCard(Suit.Spades, Rank.Ace, getNextDeckId());
+    const clubKing = Card.createCard(Suit.Clubs, Rank.King, getNextDeckId());
+    
+    humanPlayer.hand = [heartQueen, spadeAce, clubKing];
+    
+    // Cannot skip the heart card
+    const invalidPlay = [spadeAce, clubKing]; // Not playing the heart
+    
     const invalidResult = isValidPlay(
       invalidPlay,
       leadingPair,
@@ -128,11 +155,10 @@ describe('Pair Follow With Singles', () => {
       mockState.trumpInfo
     );
     
-    expect(validResult).toBe(true);
     expect(invalidResult).toBe(false);
   });
   
-  test('identifies available plays correctly when following pair', () => {
+  test('FRV-5.4: identifies available plays correctly when following pair', () => {
     // Human has various cards including some hearts
     const heartQueen = Card.createCard(Suit.Hearts, Rank.Queen, getNextDeckId());
     const heartJack = Card.createCard(Suit.Hearts, Rank.Jack, getNextDeckId());

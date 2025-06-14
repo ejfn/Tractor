@@ -1,7 +1,7 @@
 import { isValidPlay } from '../../src/game/playValidation';
 import { Card, Suit, Rank, TrumpInfo } from '../../src/types';
 
-describe('Issue 207: Tractor Following Validation', () => {
+describe('FRV-2: Issue 207: Tractor Following Validation', () => {
   let trumpInfo: TrumpInfo;
 
   beforeEach(() => {
@@ -11,7 +11,7 @@ describe('Issue 207: Tractor Following Validation', () => {
     };
   });
 
-  it('should reject invalid tractor following when pairs are available but not used', () => {
+  test('FRV-2.1: should reject invalid tractor following when pairs are available but not used', () => {
     // Scenario from issue 207:
     // Trump: 5♥
     // Bot2 leads: 3♦3♦-4♦4♦ (Diamond tractor - 2 pairs)
@@ -68,7 +68,7 @@ describe('Issue 207: Tractor Following Validation', () => {
     expect(isValid).toBe(false);
   });
 
-  it('should accept valid tractor following using all available pairs first', () => {
+  test('FRV-2.2: should accept valid tractor following using all available pairs first', () => {
     // Same scenario but player uses proper tractor following rules
     
     const leadingCombo = [
@@ -110,7 +110,7 @@ describe('Issue 207: Tractor Following Validation', () => {
     expect(isValid).toBe(true);
   });
 
-  it('should accept mixed play when insufficient pairs for full tractor', () => {
+  test('FRV-2.3: should accept mixed play when insufficient pairs for full tractor', () => {
     // Player has only 1 pair but tractor requires 2 pairs
     
     const leadingCombo = [
@@ -149,5 +149,62 @@ describe('Issue 207: Tractor Following Validation', () => {
 
     // Should be VALID because player uses their only available pair
     expect(isValid).toBe(true);
+  });
+
+  test('FRV-2.4: should reject invalid trump tractor following when trump pairs are available but not used', () => {
+    // Trump suit tractor scenario:
+    // Trump: 5♥ (so Hearts is trump suit)
+    // Bot leads: 3♥3♥-4♥4♥ (Heart trump tractor - 2 pairs)
+    // Human has: A♥A♥ (trump pair), 8♥, 7♥, 6♥ (trump singles)
+    // Human attempts: 8♥7♥7♥6♥ - should be INVALID
+
+    const leadingCombo = [
+      Card.createCard(Suit.Hearts, Rank.Three, 0),
+      Card.createCard(Suit.Hearts, Rank.Three, 1),
+      Card.createCard(Suit.Hearts, Rank.Four, 0),
+      Card.createCard(Suit.Hearts, Rank.Four, 1)
+    ];
+
+    const playerHand = [
+      // A♥ trump pair available
+      Card.createCard(Suit.Hearts, Rank.Ace, 0),
+      Card.createCard(Suit.Hearts, Rank.Ace, 1),
+      // Trump singles
+      Card.createCard(Suit.Hearts, Rank.Eight, 0),
+      Card.createCard(Suit.Hearts, Rank.Seven, 0),
+      Card.createCard(Suit.Hearts, Rank.Seven, 1), // Second 7♥ to form potential pair
+      Card.createCard(Suit.Hearts, Rank.Six, 0),
+      // Other cards
+      Card.createCard(Suit.Clubs, Rank.Two, 0)
+    ];
+
+    // Human attempts to play: 8♥7♥7♥6♥ (mixed: singles + pair)
+    const attemptedPlay = [
+      Card.createCard(Suit.Hearts, Rank.Eight, 0),
+      Card.createCard(Suit.Hearts, Rank.Seven, 0),
+      Card.createCard(Suit.Hearts, Rank.Seven, 1),
+      Card.createCard(Suit.Hearts, Rank.Six, 0)
+    ];
+
+    console.log('\n=== Trump Suit Tractor Following Test ===');
+    console.log('Leading combo: 3♥3♥-4♥4♥ (trump tractor with 2 pairs)');
+    console.log('Player hand: A♥A♥, 8♥, 7♥, 7♥, 6♥, 2♣');
+    console.log('Player attempts: 8♥7♥7♥6♥ (mixed: singles + one pair)');
+    console.log('Available A♥A♥ trump pair not used');
+    console.log('Expected: INVALID - must use ALL available trump pairs before trump singles');
+
+    const isValid = isValidPlay(attemptedPlay, leadingCombo, playerHand, trumpInfo);
+
+    console.log('Validation result:', isValid ? 'VALID' : 'INVALID');
+
+    if (isValid) {
+      console.log('❌ BUG CONFIRMED: Allows invalid trump tractor following');
+      console.log('Should reject play that mixes trump singles+pairs when more trump pairs available');
+    } else {
+      console.log('✅ CORRECT: Properly rejects invalid trump tractor following');
+    }
+
+    // Should be INVALID because player has A♥A♥ trump pair available but used mixed singles+pairs instead
+    expect(isValid).toBe(false);
   });
 });
