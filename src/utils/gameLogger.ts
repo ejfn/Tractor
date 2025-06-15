@@ -1,5 +1,3 @@
-import * as fs from "fs";
-import * as path from "path";
 import { PlayerId } from "../types";
 
 /**
@@ -53,16 +51,32 @@ class GameLogger {
   }
 
   private setupLogFiles(): void {
-    // Create logs directory if it doesn't exist
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir, { recursive: true });
-    }
+    // Only setup file logging in test environments (Node.js)
+    if (typeof require !== "undefined") {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const fs = require("fs");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const path = require("path");
 
-    // Set up session-level files
-    this.gameLogFile = path.join(
-      this.logDir,
-      `${this.sessionTimestamp}-game.log`,
-    );
+        // Create logs directory if it doesn't exist
+        if (!fs.existsSync(this.logDir)) {
+          fs.mkdirSync(this.logDir, { recursive: true });
+        }
+
+        // Set up session-level files
+        this.gameLogFile = path.join(
+          this.logDir,
+          `${this.sessionTimestamp}-game.log`,
+        );
+      } catch {
+        // File system not available (React Native environment)
+        this.gameLogFile = "";
+      }
+    } else {
+      // File system not available (React Native environment)
+      this.gameLogFile = "";
+    }
   }
 
   public setLogLevel(level: LogLevel): void {
@@ -94,10 +108,15 @@ class GameLogger {
   }
 
   private writeToFile(content: string, filePath: string): void {
-    try {
-      fs.appendFileSync(filePath, content + "\n");
-    } catch (error) {
-      console.error(`Failed to write to log file ${filePath}:`, error);
+    // Only write to file in test environments (Node.js)
+    if (typeof require !== "undefined" && filePath) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const fs = require("fs");
+        fs.appendFileSync(filePath, content + "\n");
+      } catch (error) {
+        console.error(`Failed to write to log file ${filePath}:`, error);
+      }
     }
   }
 
