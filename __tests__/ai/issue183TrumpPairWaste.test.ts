@@ -1,6 +1,7 @@
 import { getAIMove } from '../../src/ai/aiLogic';
 import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, TrumpInfo, GameState } from '../../src/types';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Issue #183: 4th Player Trump Pair Waste When Teammate Winning', () => {
   let gameState: GameState;
@@ -57,19 +58,22 @@ describe('Issue #183: 4th Player Trump Pair Waste When Teammate Winning', () => 
       Card.createCard(Suit.Clubs, Rank.Four, 0)
     ];
 
-    console.log('=== Issue #183 Test: Trump Pair Waste ===');
-    console.log('Setup:');
-    console.log('- Lead: 7♥-7♥ (pair)');
-    console.log('- Bot1 (teammate): K♥-K♥ (winning)'); 
-    console.log('- Bot2 (opponent): 9♥-9♥ (losing)');
-    console.log('- Bot3 (4th player) has:');
-    console.log('  * Trump pairs: 3♠-3♠, 2♣-2♦ (should preserve)');
-    console.log('  * Hearts pairs: 6♥-6♥, 8♥-8♥ (can use for following)');
-    console.log('Expected: Bot3 should use Hearts pair, NOT trump pair');
+    gameLogger.info('test_trump_pair_waste_setup', {
+      testName: 'Trump Pair Waste',
+      lead: '7♥-7♥ (pair)',
+      teammate: 'K♥-K♥ (winning)',
+      opponent: '9♥-9♥ (losing)',
+      bot3Hand: {
+        trumpPairs: '3♠-3♠, 2♣-2♦ (should preserve)',
+        heartsPairs: '6♥-6♥, 8♥-8♥ (can use for following)'
+      }
+    }, '=== Issue #183 Test: Trump Pair Waste === Expected: Bot3 should use Hearts pair, NOT trump pair');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot3);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
+    gameLogger.info('test_ai_decision', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`).join('-')
+    }, 'AI selected cards for trump pair waste test');
 
     // Verify correct behavior
     expect(aiMove).toHaveLength(2); // Should play a pair to follow pair lead
@@ -120,17 +124,19 @@ describe('Issue #183: 4th Player Trump Pair Waste When Teammate Winning', () => 
       Card.createCard(Suit.Diamonds, Rank.Nine, 0), // Off-suit option
     ];
 
-    console.log('=== Issue #183 Test: Trump Conservation ===');
-    console.log('Setup:');
-    console.log('- Lead: 7♣ (single)');
-    console.log('- Bot1 (teammate): A♠ (trump - secure win)');
-    console.log('- Bot2 (opponent): 4♣ (weak)');
-    console.log('- Bot3 has trump rank pair 2♣-2♥ + disposal options');
-    console.log('Expected: Bot3 should dispose, NOT use trump pair');
+    gameLogger.info('test_trump_conservation_setup', {
+      testName: 'Trump Conservation',
+      lead: '7♣ (single)',
+      teammate: 'A♠ (trump - secure win)',
+      opponent: '4♣ (weak)',
+      bot3Hand: 'trump rank pair 2♣-2♥ + disposal options'
+    }, '=== Issue #183 Test: Trump Conservation === Expected: Bot3 should dispose, NOT use trump pair');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot3);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
+    gameLogger.info('test_ai_decision', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`).join('-')
+    }, 'AI selected cards for trump conservation test');
 
     // Should play single card to follow single lead
     expect(aiMove).toHaveLength(1);
@@ -181,7 +187,10 @@ describe('Issue #183: 4th Player Trump Pair Waste When Teammate Winning', () => 
 
     const aiMove = getAIMove(gameState, PlayerId.Bot3);
 
-    console.log('AI selected for valuable trick vs opponent pair:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
+    gameLogger.info('test_ai_decision', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`).join('-'),
+      context: 'valuable trick vs opponent pair'
+    }, 'AI selected cards for valuable trick scenario');
 
     // When opponent is winning a valuable trick and trump pair can beat them,
     // trump use is justified for team benefit
@@ -242,17 +251,23 @@ describe('Issue #183: 4th Player Trump Pair Waste When Teammate Winning', () => 
       Card.createCard(Suit.Clubs, Rank.Seven, 1),
     ];
 
-    console.log('=== Issue #183 Exact Scenario Test ===');
-    console.log('Setup: Non-trump pair lead, teammate SECURELY winning, 4th player has both trump pairs and following options');
-    console.log('- Lead: 8♣-8♣');
-    console.log('- Bot1 (teammate): A♣-A♣ (securely winning)');
-    console.log('- Bot2 (opponent): 10♣-10♣'); 
-    console.log('- Bot3 has trump pairs (4♠-4♠, 2♥-2♦) AND Clubs pairs (6♣-6♣, 7♣-7♣)');
-    console.log('CRITICAL: Should use Clubs pair to follow, NOT waste trump pair');
+    gameLogger.info('test_exact_scenario_setup', {
+      testName: 'Issue #183 Exact Scenario',
+      setup: 'Non-trump pair lead, teammate SECURELY winning, 4th player has both trump pairs and following options',
+      lead: '8♣-8♣',
+      teammate: 'A♣-A♣ (securely winning)',
+      opponent: '10♣-10♣',
+      bot3Hand: {
+        trumpPairs: '4♠-4♠, 2♥-2♦',
+        clubsPairs: '6♣-6♣, 7♣-7♣'
+      }
+    }, '=== Issue #183 Exact Scenario Test === CRITICAL: Should use Clubs pair to follow, NOT waste trump pair');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot3);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
+    gameLogger.info('test_ai_decision', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`).join('-')
+    }, 'AI selected cards for exact scenario test');
 
     // This is the core issue: when teammate is securely winning with A♣-A♣,
     // the 4th player should NOT waste trump pairs
@@ -264,8 +279,10 @@ describe('Issue #183: 4th Player Trump Pair Waste When Teammate Winning', () => 
     );
     
     if (usedTrump) {
-      console.log('❌ ISSUE REPRODUCED: AI wasted trump pair when teammate was securely winning!');
-      console.log('This is exactly the bug described in Issue #183');
+      gameLogger.error('test_issue_reproduced', {
+        issue: '#183',
+        problem: 'AI wasted trump pair when teammate was securely winning'
+      }, '❌ ISSUE REPRODUCED: This is exactly the bug described in Issue #183');
     }
     
     expect(usedTrump).toBe(false); // Should NOT waste trump when teammate securely winning

@@ -1,13 +1,13 @@
 import {
+  Card,
+  ComboType,
+  GamePhase,
   GameState,
   PlayerId,
-  GamePhase,
-  Card,
   Trick,
-  ComboType,
 } from "../types";
-import { identifyCombos } from "./comboDetection";
 import { gameLogger } from "../utils/gameLogger";
+import { identifyCombos } from "./comboDetection";
 
 /**
  * Picks up kitty cards for the round starting player
@@ -36,17 +36,23 @@ export const pickupKittyCards = (
   // Store reference to the kitty cards for pre-selection
   const kittyCards = [...newState.kittyCards];
 
+  const kittyPoints = kittyCards.reduce((sum, card) => sum + card.points, 0);
+  const logData: Record<string, unknown> = {
+    playerId: roundStartingPlayerId,
+    kittyPoints,
+    playerHandSizeBefore: roundStartingPlayer.hand.length,
+    playerHandSizeAfter: roundStartingPlayer.hand.length + kittyCards.length,
+    roundNumber: newState.roundNumber,
+  };
+
+  if (gameLogger.isPlayerHandsIncluded()) {
+    logData.kittyCards = kittyCards.map((card) => card.getDisplayName());
+  }
+
   gameLogger.debug(
     "kitty_pickup",
-    {
-      playerId: roundStartingPlayerId,
-      kittyCards: kittyCards.map((card) => card.getDisplayName()),
-      kittyPoints: kittyCards.reduce((sum, card) => sum + card.points, 0),
-      playerHandSizeBefore: roundStartingPlayer.hand.length,
-      playerHandSizeAfter: roundStartingPlayer.hand.length + kittyCards.length,
-      roundNumber: newState.roundNumber,
-    },
-    `Player ${roundStartingPlayerId} picked up kitty: ${kittyCards.map((c) => c.getDisplayName()).join(", ")} (${kittyCards.reduce((sum, card) => sum + card.points, 0)} points)`,
+    logData,
+    `Player ${roundStartingPlayerId} picked up kitty: 8 cards (${kittyPoints} points)`,
   );
 
   // Add kitty cards to round starting player's hand
@@ -125,20 +131,28 @@ export const putbackKittyCards = (
   // Put selected cards back to kitty
   newState.kittyCards = [...selectedCards];
 
+  const selectedCardPoints = selectedCards.reduce(
+    (sum, card) => sum + card.points,
+    0,
+  );
+  const swapLogData: Record<string, unknown> = {
+    playerId,
+    selectedCardPoints,
+    playerHandSize: player.hand.length,
+    roundNumber: newState.roundNumber,
+    gamePhaseAfter: GamePhase.Playing,
+  };
+
+  if (gameLogger.isPlayerHandsIncluded()) {
+    swapLogData.selectedCards = selectedCards.map((card) =>
+      card.getDisplayName(),
+    );
+  }
+
   gameLogger.debug(
     "kitty_swap_completed",
-    {
-      playerId,
-      selectedCards: selectedCards.map((card) => card.getDisplayName()),
-      selectedCardPoints: selectedCards.reduce(
-        (sum, card) => sum + card.points,
-        0,
-      ),
-      playerHandSize: player.hand.length,
-      roundNumber: newState.roundNumber,
-      gamePhaseAfter: GamePhase.Playing,
-    },
-    `Player ${playerId} completed kitty swap: put back ${selectedCards.map((c) => c.getDisplayName()).join(", ")} (${selectedCards.reduce((sum, card) => sum + card.points, 0)} points)`,
+    swapLogData,
+    `Player ${playerId} completed kitty swap: put back 8 cards (${selectedCardPoints} points)`,
   );
 
   // Transition to Playing phase

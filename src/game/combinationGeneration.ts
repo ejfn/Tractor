@@ -78,8 +78,8 @@ export const getValidCombinations = (
     !currentTrick.plays[0]?.cards ||
     isWinnerOfCompletedTrick
   ) {
-    gameLogger.debug(
-      "player_leading_new_trick",
+    gameLogger.info(
+      "trick_started",
       {
         playerId: currentPlayer.id,
         reason: !currentTrick

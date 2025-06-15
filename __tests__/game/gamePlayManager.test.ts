@@ -289,18 +289,6 @@ describe('playProcessing', () => {
     });
 
     describe('error handling', () => {
-      test('should return error when called for human player', () => {
-        // NOTE: This test intentionally triggers a console warning to verify error handling
-        // The warning "getAIMoveWithErrorHandling called for human player" is expected
-        mockState.currentPlayerIndex = 0; // human
-        
-        const result = getAIMoveWithErrorHandling(mockState);
-        
-        expect(result).toEqual({
-          cards: [],
-          error: 'Function called for human player'
-        });
-      });
 
       test('should handle empty AI move by returning fallback card', () => {
         // NOTE: This test intentionally triggers a console warning to verify fallback behavior

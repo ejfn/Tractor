@@ -1,6 +1,7 @@
 import { getValidCombinations } from '../../src/game/combinationGeneration';
 import { Card, GameState, PlayerId, Rank, Suit, TrumpInfo } from '../../src/types';
 import { createGameState } from '../helpers/gameStates';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('getValidCombinations Bug Reproduction', () => {
   it('should NEVER return empty array - reproduce the exact bug scenario', () => {
@@ -51,25 +52,30 @@ describe('getValidCombinations Bug Reproduction', () => {
       }
     });
 
-    console.log('=== BUG REPRODUCTION TEST ===');
-    console.log('Leading: 10♠-10♠ (trump pair)');
-    console.log('Player has: 21 cards with only ONE trump (9♠)');
-    console.log('Expected: Must use trump single + another card');
-    console.log('');
+    gameLogger.info('test_bug_reproduction_setup', {
+      leading: '10♠-10♠ (trump pair)',
+      playerCards: '21 cards with only ONE trump (9♠)',
+      expected: 'Must use trump single + another card'
+    }, '=== BUG REPRODUCTION TEST ===');
 
     // This is the line that's failing in the actual game
-    console.log('About to call getValidCombinations...');
+    gameLogger.info('test_function_call', {}, 'About to call getValidCombinations...');
     const validCombinations = getValidCombinations(playerHand, gameState);
-    console.log('getValidCombinations completed');
+    gameLogger.info('test_function_complete', {}, 'getValidCombinations completed');
 
-    console.log('getValidCombinations returned:', validCombinations.length, 'combinations');
+    gameLogger.info('test_function_results', {
+      combinationCount: validCombinations.length
+    }, `getValidCombinations returned: ${validCombinations.length} combinations`);
+    
     if (validCombinations.length === 0) {
-      console.log('🐛 BUG CONFIRMED: getValidCombinations returned empty array!');
-      console.log('This should NEVER happen in Tractor - there should always be a valid play');
+      gameLogger.error('test_bug_confirmed', {}, '🐛 BUG CONFIRMED: getValidCombinations returned empty array!');
+      gameLogger.error('test_bug_explanation', {}, 'This should NEVER happen in Tractor - there should always be a valid play');
     } else {
-      console.log('✅ Valid combinations found:', validCombinations.map(c => 
-        c.cards.map(card => `${card.rank}${card.suit}`).join('-')
-      ));
+      gameLogger.info('test_valid_combinations', {
+        combinations: validCombinations.map(c => 
+          c.cards.map(card => `${card.rank}${card.suit}`).join('-')
+        )
+      }, '✅ Valid combinations found');
     }
 
     // CRITICAL: This should NEVER be empty - there should always be a valid play

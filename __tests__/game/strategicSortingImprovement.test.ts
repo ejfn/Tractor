@@ -2,6 +2,7 @@ import { getValidCombinations } from "../../src/game/combinationGeneration";
 import { calculateCardStrategicValue } from "../../src/game/gameHelpers";
 import { Card, GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from "../../src/utils/gameInitialization";
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Strategic Sorting Improvement Test', () => {
   it('should preserve point cards and trump cards in mixed combinations', () => {
@@ -40,14 +41,14 @@ describe('Strategic Sorting Improvement Test', () => {
     // Get valid combinations
     const validCombos = getValidCombinations(aiBotHand, gameState);
 
-    console.log('=== STRATEGIC SORTING TEST ===');
-    console.log(`AI hand: ${aiBotHand.map(c => `${c.rank}${c.suit}(${c.points}pts)`).join(', ')}`);
-    console.log(`Led: Hearts pair`);
-    console.log(`Valid combinations (${validCombos.length}):`);
+    gameLogger.info('test_strategic_sorting_start', {}, '=== STRATEGIC SORTING TEST ===');
+    gameLogger.info('test_ai_hand', { hand: aiBotHand.map(c => ({ rank: c.rank, suit: c.suit, points: c.points })) }, `AI hand: ${aiBotHand.map(c => `${c.rank}${c.suit}(${c.points}pts)`).join(', ')}`);
+    gameLogger.info('test_led_combo', { ledType: 'Hearts pair' }, `Led: Hearts pair`);
+    gameLogger.info('test_valid_combinations', { count: validCombos.length }, `Valid combinations (${validCombos.length}):`);
 
     validCombos.forEach((combo, i) => {
       const cards = combo.cards.map(c => `${c.rank}${c.suit}(${c.points}pts)`).join(', ');
-      console.log(`  ${i + 1}: [${cards}] - type: ${combo.type}`);
+      gameLogger.info('test_combination_option', { index: i + 1, cards, type: combo.type }, `  ${i + 1}: [${cards}] - type: ${combo.type}`);
     });
 
     // Find the intelligent combo (should prioritize weakest cards)
@@ -57,16 +58,16 @@ describe('Strategic Sorting Improvement Test', () => {
     const selectedCards = intelligentCombo.cards;
     const totalPoints = selectedCards.reduce((sum, card) => sum + (card.points || 0), 0);
 
-    console.log(`\n✅ Intelligent selection: ${selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')}`);
-    console.log(`✅ Total points wasted: ${totalPoints} (should be 0)`);
+    gameLogger.info('test_intelligent_selection', { selectedCards: selectedCards.map(c => ({ rank: c.rank, suit: c.suit })) }, `\n✅ Intelligent selection: ${selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')}`);
+    gameLogger.info('test_points_wasted', { totalPoints }, `✅ Total points wasted: ${totalPoints} (should be 0)`);
 
     const has5 = selectedCards.some(c => c.rank === Rank.Five);
     const has10 = selectedCards.some(c => c.rank === Rank.Ten);
     const hasAce = selectedCards.some(c => c.rank === Rank.Ace);
 
-    console.log(`✅ Preserved 5pts card: ${!has5 ? 'YES' : 'NO'}`);
-    console.log(`✅ Preserved 10pts card: ${!has10 ? 'YES' : 'NO'}`);
-    console.log(`✅ Preserved Ace: ${!hasAce ? 'YES' : 'NO'}`);
+    gameLogger.info('test_preserved_5pts', { preserved: !has5 }, `✅ Preserved 5pts card: ${!has5 ? 'YES' : 'NO'}`);
+    gameLogger.info('test_preserved_10pts', { preserved: !has10 }, `✅ Preserved 10pts card: ${!has10 ? 'YES' : 'NO'}`);
+    gameLogger.info('test_preserved_ace', { preserved: !hasAce }, `✅ Preserved Ace: ${!hasAce ? 'YES' : 'NO'}`);
 
     // Verify the strategic sorting is working
     expect(totalPoints).toBe(0); // Should not waste any point cards
@@ -117,13 +118,13 @@ describe('Strategic Sorting Improvement Test', () => {
 
     const validCombos = getValidCombinations(aiBotHand, gameState);
 
-    console.log('\n=== TRUMP CONSERVATION TEST ===');
-    console.log(`AI hand: ${aiBotHand.map(c => `${c.rank}${c.suit}`).join(', ')}`);
-    console.log(`Valid combinations (${validCombos.length}):`);
+    gameLogger.info('test_trump_conservation_start', {}, '\n=== TRUMP CONSERVATION TEST ===');
+    gameLogger.info('test_trump_ai_hand', { hand: aiBotHand.map(c => ({ rank: c.rank, suit: c.suit })) }, `AI hand: ${aiBotHand.map(c => `${c.rank}${c.suit}`).join(', ')}`);
+    gameLogger.info('test_trump_valid_combinations', { count: validCombos.length }, `Valid combinations (${validCombos.length}):`);
 
     validCombos.forEach((combo, i) => {
       const cards = combo.cards.map(c => `${c.rank}${c.suit}`).join(', ');
-      console.log(`  ${i + 1}: [${cards}] - type: ${combo.type}`);
+      gameLogger.info('test_combination_option', { index: i + 1, cards, type: combo.type }, `  ${i + 1}: [${cards}] - type: ${combo.type}`);
     });
 
     // Should prefer weakest cards over valuable trump cards
@@ -131,7 +132,7 @@ describe('Strategic Sorting Improvement Test', () => {
     expect(intelligentCombo).toBeDefined();
 
     const selectedCards = intelligentCombo.cards;
-    console.log(`\n✅ Intelligent selection: ${selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')}`);
+    gameLogger.info('test_trump_intelligent_selection', { selectedCards: selectedCards.map(c => ({ rank: c.rank, suit: c.suit })) }, `\n✅ Intelligent selection: ${selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')}`);
 
     // Should preserve valuable trump cards (2♥, A♠) and use weak cards (3♣, 4♣)
     const usedValuableTrump = selectedCards.some(c => 
@@ -146,8 +147,8 @@ describe('Strategic Sorting Improvement Test', () => {
     ).length;
     expect(usedWeakNonTrump).toBeGreaterThan(0);
 
-    console.log(`✅ Preserved valuable trump cards: YES`);
-    console.log(`✅ Used weak non-trump cards: ${usedWeakNonTrump > 0 ? 'YES' : 'NO'}`);
+    gameLogger.info('test_trump_preserved', { preserved: true }, `✅ Preserved valuable trump cards: YES`);
+    gameLogger.info('test_weak_cards_used', { usedWeakNonTrump, used: usedWeakNonTrump > 0 }, `✅ Used weak non-trump cards: ${usedWeakNonTrump > 0 ? 'YES' : 'NO'}`);
   });
 
   it('should have consistent strategic value calculation across modes', () => {
@@ -165,13 +166,13 @@ describe('Strategic Sorting Improvement Test', () => {
       Card.createCard(Suit.Diamonds, Rank.Three, 0), // Weak card
     ];
 
-    console.log('\n=== SHARED FUNCTION TEST ===');
+    gameLogger.info('test_shared_function_start', {}, '\n=== SHARED FUNCTION TEST ===');
     testCards.forEach(card => {
       const comboValue = calculateCardStrategicValue(card, trumpInfo, 'combo');
       const conservationValue = calculateCardStrategicValue(card, trumpInfo, 'conservation');
       const strategicValue = calculateCardStrategicValue(card, trumpInfo, 'strategic');
       
-      console.log(`${card.rank || card.joker}${card.suit || ''}: combo=${comboValue}, conservation=${conservationValue}, strategic=${strategicValue}`);
+      gameLogger.info('test_card_values', { card: card.rank || card.joker, suit: card.suit, comboValue, conservationValue, strategicValue }, `${card.rank || card.joker}${card.suit || ''}: combo=${comboValue}, conservation=${conservationValue}, strategic=${strategicValue}`);
     });
 
     // Verify Big Joker has highest values in all modes
@@ -189,6 +190,6 @@ describe('Strategic Sorting Improvement Test', () => {
     const pointCardStrategic = calculateCardStrategicValue(pointCard, trumpInfo, 'strategic');
     expect(pointCardStrategic).toBe(110); // Should include point bonus (10 * 10 = 100) + rank value (10)
 
-    console.log('✅ Shared strategic value function working correctly across all modes');
+    gameLogger.info('test_shared_function_success', {}, '✅ Shared strategic value function working correctly across all modes');
   });
 });

@@ -2,17 +2,18 @@ import { GameState, Card, Rank } from "../../src/types";
 import { processPlay } from '../../src/game/playProcessing';
 import { getAIMoveWithErrorHandling } from '../../src/game/playProcessing';
 import { createFullyDealtGameState } from '../helpers/gameStates';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Human Multi-Card Loss Bug', () => {
   test('Reproduce human losing multiple cards', () => {
     const gameState = createFullyDealtGameState();
     let state = gameState;
     
-    console.log('=== Initial state ===');
-    console.log(`All players have: ${state.players.map(p => p.hand.length).join(', ')} cards`);
+    gameLogger.info('test_initial_state', {}, '=== Initial state ===');
+    gameLogger.info('test_all_players_cards', { cardCounts: state.players.map(p => p.hand.length) }, `All players have: ${state.players.map(p => p.hand.length).join(', ')} cards`);
     
     // Play first trick - Human wins
-    console.log('\n=== TRICK 1 ===');
+    gameLogger.info('test_trick_1_start', {}, '\n=== TRICK 1 ===');
     for (let play = 0; play < 4; play++) {
       const currentPlayer = state.players[state.currentPlayerIndex];
       const cardsBefore = state.players.map(p => p.hand.length);
@@ -21,30 +22,30 @@ describe('Human Multi-Card Loss Bug', () => {
       const result = processPlay(state, cardsToPlay);
       
       const cardsAfter = result.newState.players.map(p => p.hand.length);
-      console.log(`${currentPlayer.name}: ${cardsBefore[state.currentPlayerIndex]} -> ${cardsAfter[state.currentPlayerIndex]}`);
+      gameLogger.info('test_player_card_change', { playerName: currentPlayer.name, before: cardsBefore[state.currentPlayerIndex], after: cardsAfter[state.currentPlayerIndex] }, `${currentPlayer.name}: ${cardsBefore[state.currentPlayerIndex]} -> ${cardsAfter[state.currentPlayerIndex]}`);
       
       state = result.newState;
       
       if (result.trickComplete) {
-        console.log(`Winner: ${result.trickWinnerId}`);
+        gameLogger.info('test_trick_winner', { winnerId: result.trickWinnerId }, `Winner: ${result.trickWinnerId}`);
       }
     }
     
-    console.log(`After trick 1: ${state.players.map(p => p.hand.length).join(', ')}`);
+    gameLogger.info('test_after_trick_1', { cardCounts: state.players.map(p => p.hand.length) }, `After trick 1: ${state.players.map(p => p.hand.length).join(', ')}`);
     
     // Play second trick - focus on human's turn
-    console.log('\n=== TRICK 2 ===');
+    gameLogger.info('test_trick_2_start', {}, '\n=== TRICK 2 ===');
     
     // First play (should be the previous winner)
     const firstPlayer = state.players[state.currentPlayerIndex];
-    console.log(`\nFirst player: ${firstPlayer.name} (index ${state.currentPlayerIndex})`);
-    console.log(`Cards before ALL players: ${state.players.map(p => p.hand.length).join(', ')}`);
+    gameLogger.info('test_first_player', { playerName: firstPlayer.name, playerIndex: state.currentPlayerIndex }, `\nFirst player: ${firstPlayer.name} (index ${state.currentPlayerIndex})`);
+    gameLogger.info('test_cards_before_all', { cardCounts: state.players.map(p => p.hand.length) }, `Cards before ALL players: ${state.players.map(p => p.hand.length).join(', ')}`);
     
     // Get the specific cards the human will play
     let humanCardsToPlay = [];
     if (firstPlayer.isHuman) {
-      console.log(`Human hand size: ${firstPlayer.hand.length}`);
-      console.log(`Human hand sample: ${firstPlayer.hand.slice(0, 5).map(c => `${c.rank}${c.suit || 'JOKER'}`).join(', ')}`);
+      gameLogger.info('test_human_hand_size', { handSize: firstPlayer.hand.length }, `Human hand size: ${firstPlayer.hand.length}`);
+      gameLogger.info('test_human_hand_sample', { handSample: firstPlayer.hand.slice(0, 5).map(c => `${c.rank}${c.suit || 'JOKER'}`).join(', ') }, `Human hand sample: ${firstPlayer.hand.slice(0, 5).map(c => `${c.rank}${c.suit || 'JOKER'}`).join(', ')}`);
       
       // Check if human might play multiple cards (pair, tractor, etc)
       const pairs = [];
@@ -56,7 +57,7 @@ describe('Human Multi-Card Loss Bug', () => {
       }
       
       if (pairs.length > 0) {
-        console.log(`Human has ${pairs.length} pairs`);
+        gameLogger.info('test_human_pairs', { pairCount: pairs.length }, `Human has ${pairs.length} pairs`);
         humanCardsToPlay = pairs[0]; // Play first pair
       } else {
         humanCardsToPlay = [firstPlayer.hand[0]];
@@ -66,15 +67,15 @@ describe('Human Multi-Card Loss Bug', () => {
       humanCardsToPlay = aiMove.error ? [firstPlayer.hand[0]] : aiMove.cards;
     }
     
-    console.log(`Playing ${humanCardsToPlay.length} cards`);
+    gameLogger.info('test_playing_cards', { cardCount: humanCardsToPlay.length }, `Playing ${humanCardsToPlay.length} cards`);
     
     // Process the play with detailed tracking
     const beforeState = JSON.parse(JSON.stringify(state)); // Deep copy for comparison
     const result = processPlay(state, humanCardsToPlay);
     
-    console.log('\nAfter processing play:');
+    gameLogger.info('test_after_processing_play', {}, '\nAfter processing play:');
     const cardsAfter = result.newState.players.map(p => p.hand.length);
-    console.log(`Cards after ALL players: ${cardsAfter.join(', ')}`);
+    gameLogger.info('test_cards_after_all', { cardCounts: cardsAfter }, `Cards after ALL players: ${cardsAfter.join(', ')}`);
     
     // Check each player's card change
     for (let i = 0; i < 4; i++) {
@@ -83,12 +84,12 @@ describe('Human Multi-Card Loss Bug', () => {
       const diff = before - after;
       
       if (diff !== 0) {
-        console.log(`Player ${i} (${state.players[i].name}): lost ${diff} cards`);
+        gameLogger.info('test_player_lost_cards', { playerIndex: i, playerName: state.players[i].name, cardsLost: diff }, `Player ${i} (${state.players[i].name}): lost ${diff} cards`);
         
         if (i === state.currentPlayerIndex && diff !== humanCardsToPlay.length) {
-          console.error(`ERROR: Player ${i} should have lost ${humanCardsToPlay.length} cards but lost ${diff}`);
+          gameLogger.error('test_wrong_card_loss', { playerIndex: i, expected: humanCardsToPlay.length, actual: diff }, `ERROR: Player ${i} should have lost ${humanCardsToPlay.length} cards but lost ${diff}`);
         } else if (i !== state.currentPlayerIndex && diff > 0) {
-          console.error(`ERROR: Player ${i} wasn't playing but lost ${diff} cards`);
+          gameLogger.error('test_unexpected_card_loss', { playerIndex: i, cardsLost: diff }, `ERROR: Player ${i} wasn't playing but lost ${diff} cards`);
         }
       }
     }
@@ -100,25 +101,25 @@ describe('Human Multi-Card Loss Bug', () => {
     const humanLost = humanBefore - humanAfter;
     
     if (humanLost > humanCardsToPlay.length) {
-      console.error(`\nBUG REPRODUCED: Human played ${humanCardsToPlay.length} cards but lost ${humanLost} cards`);
+      gameLogger.error('test_bug_reproduced', { cardsPlayed: humanCardsToPlay.length, cardsLost: humanLost }, `\nBUG REPRODUCED: Human played ${humanCardsToPlay.length} cards but lost ${humanLost} cards`);
       
       // Analyze what happened
-      console.log('\nDebugging info:');
-      console.log(`Current player index: ${state.currentPlayerIndex}`);
-      console.log(`Human player index: ${humanIndex}`);
-      console.log(`Cards played IDs: ${humanCardsToPlay.map(c => c.id).join(', ')}`);
+      gameLogger.info('test_debugging_info', {}, '\nDebugging info:');
+      gameLogger.info('test_current_player_index', { currentPlayerIndex: state.currentPlayerIndex }, `Current player index: ${state.currentPlayerIndex}`);
+      gameLogger.info('test_human_player_index', { humanIndex }, `Human player index: ${humanIndex}`);
+      gameLogger.info('test_cards_played_ids', { cardIds: humanCardsToPlay.map(c => c.id) }, `Cards played IDs: ${humanCardsToPlay.map(c => c.id).join(', ')}`);
       
       // Check the hand differences
       const beforeIds = beforeState.players[humanIndex].hand.map((c: Card) => c.id);
       const afterIds = result.newState.players[humanIndex].hand.map((c: Card) => c.id);
       const lostIds = beforeIds.filter((id: string) => !afterIds.includes(id));
       
-      console.log(`Lost card IDs: ${lostIds.join(', ')}`);
-      console.log(`Expected to lose: ${humanCardsToPlay.map((c: Card) => c.id).join(', ')}`);
+      gameLogger.info('test_lost_card_ids', { lostIds }, `Lost card IDs: ${lostIds.join(', ')}`);
+      gameLogger.info('test_expected_to_lose', { expectedIds: humanCardsToPlay.map((c: Card) => c.id) }, `Expected to lose: ${humanCardsToPlay.map((c: Card) => c.id).join(', ')}`);
       
       const unexpectedLoss = lostIds.filter((id: string) => !humanCardsToPlay.some((c: Card) => c.id === id));
       if (unexpectedLoss.length > 0) {
-        console.error(`UNEXPECTED CARDS LOST: ${unexpectedLoss.join(', ')}`);
+        gameLogger.error('test_unexpected_cards_lost', { unexpectedIds: unexpectedLoss }, `UNEXPECTED CARDS LOST: ${unexpectedLoss.join(', ')}`);
       }
     }
     
@@ -141,20 +142,20 @@ describe('Human Multi-Card Loss Bug', () => {
       const result = processPlay(state, cardsToPlay);
       const cardsAfter = result.newState.players.map(p => p.hand.length);
       
-      console.log(`${currentPlayer.name}: ${cardsBefore[state.currentPlayerIndex]} -> ${cardsAfter[state.currentPlayerIndex]}`);
+      gameLogger.info('test_player_card_change_trick2', { playerName: currentPlayer.name, before: cardsBefore[state.currentPlayerIndex], after: cardsAfter[state.currentPlayerIndex] }, `${currentPlayer.name}: ${cardsBefore[state.currentPlayerIndex]} -> ${cardsAfter[state.currentPlayerIndex]}`);
       
       // Check for anomalies
       for (let i = 0; i < 4; i++) {
         const diff = cardsBefore[i] - cardsAfter[i];
         if (diff > 0 && i !== state.currentPlayerIndex) {
-          console.error(`ERROR: Player ${i} (${state.players[i].name}) lost ${diff} cards but wasn't playing`);
+          gameLogger.error('test_non_playing_player_lost_cards', { playerIndex: i, playerName: state.players[i].name, cardsLost: diff }, `ERROR: Player ${i} (${state.players[i].name}) lost ${diff} cards but wasn't playing`);
         }
       }
       
       state = result.newState;
     }
     
-    console.log(`\nAfter trick 2: ${state.players.map(p => p.hand.length).join(', ')}`);
+    gameLogger.info('test_after_trick_2', { cardCounts: state.players.map(p => p.hand.length) }, `\nAfter trick 2: ${state.players.map(p => p.hand.length).join(', ')}`);
     
     // Final verification
     const finalCounts = state.players.map(p => p.hand.length);
@@ -162,7 +163,7 @@ describe('Human Multi-Card Loss Bug', () => {
     
     finalCounts.forEach((count, idx) => {
       if (count !== expectedCount) {
-        console.error(`ERROR: Player ${idx} (${state.players[idx].name}) has ${count} cards, expected ${expectedCount}`);
+        gameLogger.error('test_final_card_count_error', { playerIndex: idx, playerName: state.players[idx].name, actualCount: count, expectedCount }, `ERROR: Player ${idx} (${state.players[idx].name}) has ${count} cards, expected ${expectedCount}`);
       }
     });
   });

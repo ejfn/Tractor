@@ -1,6 +1,7 @@
 import { getValidCombinations } from '../../src/game/combinationGeneration';
 import { Card, GameState, PlayerId, Rank, Suit, TrumpInfo } from '../../src/types';
 import { createGameState } from '../helpers/gameStates';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Smart Combination Generator Performance Tests', () => {
   it('should handle large trump hands efficiently (performance test)', () => {
@@ -45,12 +46,12 @@ describe('Smart Combination Generator Performance Tests', () => {
       }
     });
 
-    console.log('=== PERFORMANCE TEST ===');
-    console.log('Leading: 3♠3♠-4♠4♠-5♠5♠ (6-card trump tractor)');
-    console.log('Player has: 21 cards with 18 trump cards');
-    console.log('Old algorithm: Exponential complexity O(2^n) - would timeout');
-    console.log('New algorithm: Linear complexity O(n) - should complete quickly');
-    console.log('');
+    gameLogger.info('test_performance', { test: 'large_trump_hands' }, '=== PERFORMANCE TEST ===');
+    gameLogger.info('test_performance', { leading: '3♠3♠-4♠4♠-5♠5♠', type: '6-card trump tractor' }, 'Leading: 3♠3♠-4♠4♠-5♠5♠ (6-card trump tractor)');
+    gameLogger.info('test_performance', { totalCards: 21, trumpCards: 18 }, 'Player has: 21 cards with 18 trump cards');
+    gameLogger.info('test_performance', { algorithm: 'old', complexity: 'O(2^n)', result: 'would timeout' }, 'Old algorithm: Exponential complexity O(2^n) - would timeout');
+    gameLogger.info('test_performance', { algorithm: 'new', complexity: 'O(n)', result: 'should complete quickly' }, 'New algorithm: Linear complexity O(n) - should complete quickly');
+    gameLogger.info('test_performance', {}, '');
 
     // Performance measurement
     const startTime = performance.now();
@@ -58,8 +59,8 @@ describe('Smart Combination Generator Performance Tests', () => {
     const endTime = performance.now();
     const duration = endTime - startTime;
 
-    console.log(`✅ Completed in ${duration.toFixed(2)}ms`);
-    console.log(`Found ${validCombinations.length} valid combinations`);
+    gameLogger.info('test_performance', { duration: duration.toFixed(2), unit: 'ms' }, `✅ Completed in ${duration.toFixed(2)}ms`);
+    gameLogger.info('test_performance', { combinationCount: validCombinations.length }, `Found ${validCombinations.length} valid combinations`);
     
     // Verify performance is reasonable (should be well under 100ms)
     expect(duration).toBeLessThan(100);
@@ -117,17 +118,17 @@ describe('Smart Combination Generator Performance Tests', () => {
       }
     });
 
-    console.log('=== COMBINATION LIMIT TEST ===');
-    console.log(`Player hand size: ${playerHand.length} cards`);
-    console.log('Testing that combination generation is limited to prevent memory issues');
+    gameLogger.info('test_performance', { test: 'combination_limit' }, '=== COMBINATION LIMIT TEST ===');
+    gameLogger.info('test_performance', { handSize: playerHand.length, unit: 'cards' }, `Player hand size: ${playerHand.length} cards`);
+    gameLogger.info('test_performance', { purpose: 'memory_limit_testing' }, 'Testing that combination generation is limited to prevent memory issues');
 
     const startTime = performance.now();
     const validCombinations = getValidCombinations(playerHand, gameState);
     const endTime = performance.now();
     const duration = endTime - startTime;
 
-    console.log(`✅ Completed in ${duration.toFixed(2)}ms`);
-    console.log(`Generated ${validCombinations.length} combinations (limited for performance)`);
+    gameLogger.info('test_performance', { duration: duration.toFixed(2), unit: 'ms' }, `✅ Completed in ${duration.toFixed(2)}ms`);
+    gameLogger.info('test_performance', { combinationCount: validCombinations.length, note: 'limited for performance' }, `Generated ${validCombinations.length} combinations (limited for performance)`);
     
     // Should complete quickly even with large hands
     expect(duration).toBeLessThan(500);
@@ -182,6 +183,6 @@ describe('Smart Combination Generator Performance Tests', () => {
     );
     expect(hasTrampCard).toBe(true);
     
-    console.log('✅ Strategic trump conservation working correctly');
+    gameLogger.info('test_performance', { feature: 'strategic_trump_conservation', status: 'working_correctly' }, '✅ Strategic trump conservation working correctly');
   });
 });

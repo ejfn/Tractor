@@ -1,6 +1,7 @@
 import { GameState, PlayerId, PlayerName, TeamId, Suit, Rank, TrumpInfo } from '../../src/types';
 import { selectAIKittySwapCards } from '../../src/ai/kittySwap/kittySwapStrategy';
 import { Card } from '../../src/types/card';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('AI Kitty Swap Basic Test', () => {
   test('Bot2 should select exactly 8 cards from 33-card hand - 10 runs', () => {
@@ -88,7 +89,7 @@ describe('AI Kitty Swap Basic Test', () => {
 
     // Run the test 10 times to check consistency
     for (let run = 1; run <= 10; run++) {
-      console.log(`\n--- Run ${run} ---`);
+      gameLogger.info('test_kitty_swap_run_start', { run }, `\n--- Run ${run} ---`);
       
       // Test kitty swap selection
       const selectedCards = selectAIKittySwapCards(gameState, PlayerId.Bot2);
@@ -119,13 +120,19 @@ describe('AI Kitty Swap Basic Test', () => {
       expect(selectedHighCards).toHaveLength(0);
 
       // Log the selection for inspection
-      console.log('Selected cards for disposal:', selectedCards.map(card => 
-        `${card.rank}${card.suit === Suit.Hearts ? '♥' : card.suit === Suit.Diamonds ? '♦' : card.suit === Suit.Clubs ? '♣' : '♠'}`
-      ));
+      gameLogger.info('test_kitty_swap_selected_cards', { 
+        run,
+        selectedCards: selectedCards.map(card => 
+          `${card.rank}${card.suit === Suit.Hearts ? '♥' : card.suit === Suit.Diamonds ? '♦' : card.suit === Suit.Clubs ? '♣' : '♠'}`
+        )
+      }, 'Selected cards for disposal:');
 
       // Verify preference for non-point cards
       const selectedPointCards = selectedCards.filter(card => card.points > 0);
-      console.log('Point cards selected:', selectedPointCards.length);
+      gameLogger.info('test_kitty_swap_point_cards_selected', { 
+        run, 
+        pointCardsCount: selectedPointCards.length 
+      }, 'Point cards selected:');
       
       // Should prefer non-point cards when possible
       const availableNonPointCards = bot2Hand.filter(card => 
@@ -135,7 +142,10 @@ describe('AI Kitty Swap Basic Test', () => {
         card.rank !== Rank.Ace && card.rank !== Rank.King // not biggest cards
       ).length;
       
-      console.log('Available non-point disposable cards:', availableNonPointCards);
+      gameLogger.info('test_kitty_swap_available_disposable_cards', { 
+        run, 
+        availableNonPointCards 
+      }, 'Available non-point disposable cards:');
     }
   });
 });

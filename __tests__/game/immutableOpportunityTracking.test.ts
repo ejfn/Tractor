@@ -1,6 +1,7 @@
 import { makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
 import { Card, DeclarationType, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Immutable Opportunity Tracking', () => {
   let gameState: any;
@@ -44,7 +45,7 @@ describe('Immutable Opportunity Tracking', () => {
     ];
     
     const initialHash = createOpportunityHash(initialOpportunities);
-    console.log('Initial opportunity hash:', initialHash);
+    gameLogger.info('test_initial_opportunity_hash', { initialHash }, 'Initial opportunity hash');
     
     // Simulate human decision history tracking
     const humanDecisionHistory = new Set<string>();
@@ -55,7 +56,7 @@ describe('Immutable Opportunity Tracking', () => {
     
     // Human skips declaration - record the decision
     humanDecisionHistory.add(initialHash);
-    console.log('Human skipped - recorded decision for:', initialHash);
+    gameLogger.info('test_human_decision_recorded', { initialHash }, 'Human skipped - recorded decision for');
     
     // Same opportunities appear again (e.g., after dealing more cards) - should NOT show modal
     const hasSeenAfterSkip = humanDecisionHistory.has(initialHash);
@@ -78,14 +79,14 @@ describe('Immutable Opportunity Tracking', () => {
     ];
     
     const newHash = createOpportunityHash(newOpportunities);
-    console.log('New opportunity hash after bot declaration:', newHash);
+    gameLogger.info('test_new_opportunity_hash', { newHash }, 'New opportunity hash after bot declaration');
     
     // This is a NEW opportunity set - should show modal
     const hasSeenNewSet = humanDecisionHistory.has(newHash);
     expect(hasSeenNewSet).toBe(false); // New opportunity set due to bot declaration
     expect(newHash).not.toBe(initialHash); // Confirms opportunities changed
     
-    console.log('✅ Immutable tracking correctly identifies new vs seen opportunity sets');
+    gameLogger.info('test_immutable_tracking_success', {}, 'Immutable tracking correctly identifies new vs seen opportunity sets');
   });
 
   test('should demonstrate bot declaration benefit', () => {
@@ -121,15 +122,15 @@ describe('Immutable Opportunity Tracking', () => {
     const afterHash = createOpportunityHash(afterBotDeclaration);
     
     // In this case opportunities are the same, but in other scenarios they could change
-    console.log('Before bot declaration:', beforeHash);
-    console.log('After bot declaration:', afterHash);
+    gameLogger.info('test_bot_declaration_before', { beforeHash }, 'Before bot declaration');
+    gameLogger.info('test_bot_declaration_after', { afterHash }, 'After bot declaration');
     
     // The key benefit: if bot's declaration changes human's opportunity landscape,
     // the immutable tracking will detect the difference and show the modal again
     expect(typeof beforeHash).toBe('string');
     expect(typeof afterHash).toBe('string');
     
-    console.log('✅ Bot declarations can trigger new human opportunity modals');
+    gameLogger.info('test_bot_declaration_benefit', {}, 'Bot declarations can trigger new human opportunity modals');
   });
 
   test('should demonstrate hash collision resistance', () => {
@@ -157,9 +158,9 @@ describe('Immutable Opportunity Tracking', () => {
     const hash2 = createOpportunityHash(set2);
     const hash3 = createOpportunityHash(set3);
     
-    console.log('Set 1 hash:', hash1);
-    console.log('Set 2 hash:', hash2);
-    console.log('Set 3 hash:', hash3);
+    gameLogger.info('test_hash_set_1', { hash1 }, 'Set 1 hash');
+    gameLogger.info('test_hash_set_2', { hash2 }, 'Set 2 hash');
+    gameLogger.info('test_hash_set_3', { hash3 }, 'Set 3 hash');
     
     // All hashes should be different
     expect(hash1).not.toBe(hash2);
@@ -170,6 +171,6 @@ describe('Immutable Opportunity Tracking', () => {
     const hash1Duplicate = createOpportunityHash(set1);
     expect(hash1).toBe(hash1Duplicate);
     
-    console.log('✅ Opportunity hashing is deterministic and collision-resistant');
+    gameLogger.info('test_hash_collision_resistance', {}, 'Opportunity hashing is deterministic and collision-resistant');
   });
 });

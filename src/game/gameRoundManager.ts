@@ -250,7 +250,7 @@ export function prepareNextRound(
   newState.gamePhase = GamePhase.Dealing;
 
   // Round start logging - after all preparation is complete
-  gameLogger.debug(
+  gameLogger.info(
     "round_start",
     {
       roundNumber: newState.roundNumber,
@@ -444,7 +444,7 @@ export function endRound(state: GameState): RoundResult {
   }
 
   // Round end logging - after all calculations are complete
-  gameLogger.debug(
+  gameLogger.info(
     "round_end",
     {
       roundNumber: state.roundNumber,
@@ -464,6 +464,35 @@ export function endRound(state: GameState): RoundResult {
     },
     `Round ${state.roundNumber} ended: ${attackingTeamWon ? "attacking" : "defending"} team won with ${finalPoints} points${gameOver ? ` - ${gameWinner} wins the game!` : ""}`,
   );
+
+  // Game over logging - after round_end when game is complete
+  if (gameOver && gameWinner) {
+    const trickPoints = attackingTeam?.points || 0;
+    const kittyBonus = state.roundEndKittyInfo?.kittyBonus?.bonusPoints || 0;
+
+    let pointMessage = "";
+    if (finalPoints === 0) {
+      pointMessage = "shut out the attackers (0 points)";
+    } else if (finalPoints < 40) {
+      pointMessage = `held attackers to only ${finalPoints} points`;
+    } else {
+      pointMessage = `defended with attackers getting ${finalPoints}/80 points`;
+    }
+
+    gameLogger.info(
+      "game_over",
+      {
+        winner: gameWinner,
+        roundNumber: state.roundNumber,
+        finalPoints,
+        trickPoints,
+        kittyBonus,
+        winCondition: "ace_defense",
+        pointMessage,
+      },
+      `Game over! Team ${gameWinner} wins by successfully defending Ace rank with ${finalPoints} points`,
+    );
+  }
 
   return {
     gameOver,

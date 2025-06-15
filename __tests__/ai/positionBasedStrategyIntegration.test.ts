@@ -3,6 +3,7 @@ import { getAIMove } from '../../src/ai/aiLogic';
 import type { DeckId } from '../../src/types';
 import { Card, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Position-Based Strategy Integration Tests - First and Second Player Strategies', () => {
   describe('First Player (Leading) Strategy', () => {
@@ -42,7 +43,7 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
       expect(!(selectedCard.suit === Suit.Hearts && selectedCard.rank === Rank.Three)).toBe(true);
       
       // Should prefer strategic non-trump or probe plays
-      console.log(`First player leading strategy selected: ${selectedCard.rank}${selectedCard.suit?.charAt(0)}`);
+      gameLogger.info('test_first_player_leading', { selectedCard: `${selectedCard.rank}${selectedCard.suit?.charAt(0)}` }, `First player leading strategy selected: ${selectedCard.rank}${selectedCard.suit?.charAt(0)}`);
     });
 
     it('should adapt strategy based on game phase', () => {
@@ -78,7 +79,7 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
       expect(selectedCards).toHaveLength(1);
       expect(selectedCards[0]).toBeDefined();
       
-      console.log(`Mid-game first player strategy selected: ${selectedCards[0].rank}${selectedCards[0].suit?.charAt(0)}`);
+      gameLogger.info('test_mid_game_first_player', { selectedCard: `${selectedCards[0].rank}${selectedCards[0].suit?.charAt(0)}` }, `Mid-game first player strategy selected: ${selectedCards[0].rank}${selectedCards[0].suit?.charAt(0)}`);
     });
   });
 
@@ -120,7 +121,7 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
       
       // Should use second player strategy (teammate analysis)
       const selectedCard = selectedCards[0];
-      console.log(`Second player teammate response: ${selectedCard.rank}${selectedCard.suit?.charAt(0)} (points: ${selectedCard.points})`);
+      gameLogger.info('test_second_player_teammate', { selectedCard: `${selectedCard.rank}${selectedCard.suit?.charAt(0)}`, points: selectedCard.points }, `Second player teammate response: ${selectedCard.rank}${selectedCard.suit?.charAt(0)} (points: ${selectedCard.points})`);
     });
 
     it('should respond differently to opponent leader', () => {
@@ -160,7 +161,7 @@ describe('Position-Based Strategy Integration Tests - First and Second Player St
       
       // Should use second player strategy (opponent blocking)
       const selectedCard = selectedCards[0];
-      console.log(`Second player opponent response: ${selectedCard.rank}${selectedCard.suit?.charAt(0)} (points: ${selectedCard.points})`);
+      gameLogger.info('test_second_player_opponent', { selectedCard: `${selectedCard.rank}${selectedCard.suit?.charAt(0)}`, points: selectedCard.points }, `Second player opponent response: ${selectedCard.rank}${selectedCard.suit?.charAt(0)} (points: ${selectedCard.points})`);
     });
   });
 

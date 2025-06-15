@@ -2,6 +2,7 @@ import { describe, expect, test } from '@jest/globals';
 import { getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
 import { Card, DeckId, GamePhase, Rank, Suit } from "../../src/types";
 import { createGameState, givePlayerCards } from '../helpers/gameStates';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Human Wins and Leads Bug', () => {
   test('Human wins first trick and leads second', () => {
@@ -32,7 +33,7 @@ describe('Human Wins and Leads Bug', () => {
     let state = gameState;
     
     // Play first trick - human leads with Ace of Spades (guaranteed to win with no trump)
-    console.log('=== First Trick (Human leads and wins) ===');
+    gameLogger.info('test_first_trick_start', {}, '=== First Trick (Human leads and wins) ===');
     
     // Human plays Ace of Spades
     const humanAce = [state.players[0].hand[0]]; // Ace of Spades
@@ -58,7 +59,7 @@ describe('Human Wins and Leads Bug', () => {
     // Verify human leads the second trick
     expect(state.currentPlayerIndex).toBe(0); // Human should be leading
     
-    console.log('=== Second Trick (Human leads again) ===');
+    gameLogger.info('test_second_trick_start', {}, '=== Second Trick (Human leads again) ===');
     
     // Human plays another card (Ace of Hearts)
     const humanSecondCard = [state.players[0].hand[0]]; // Ace of Hearts
@@ -75,6 +76,6 @@ describe('Human Wins and Leads Bug', () => {
     expect(cardCountsBefore[2] - cardCountsAfter[2]).toBe(0); // Bot 2 lost 0 cards  
     expect(cardCountsBefore[3] - cardCountsAfter[3]).toBe(0); // Bot 3 lost 0 cards
     
-    console.log('Test completed successfully - no card count anomalies detected');
+    gameLogger.info('test_completion_success', { cardCountsBefore, cardCountsAfter }, 'Test completed successfully - no card count anomalies detected');
   });
 });

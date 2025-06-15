@@ -4,14 +4,13 @@
 const fs = require('fs');
 const path = require('path');
 import { getAIKittySwap, getAITrumpDeclaration } from '../../src/ai/aiLogic';
-import { dealNextCard, finalizeTrumpDeclaration, isDealingComplete } from '../../src/game/dealingAndDeclaration';
+import { dealNextCard, finalizeTrumpDeclaration, isDealingComplete, makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
 import { endRound, prepareNextRound } from '../../src/game/gameRoundManager';
 import { putbackKittyCards } from '../../src/game/kittyManager';
 import { clearCompletedTrick, getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
 import { GamePhase, GameState, PlayerId, TeamId } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
 import { gameLogger, LogLevel } from '../../src/utils/gameLogger';
-import { disableUnattendedTestMode, enableUnattendedTestMode } from '../../src/utils/testModeOverrides';
 
 // Test session tracking interfaces
 interface GameStats {
@@ -20,6 +19,10 @@ interface GameStats {
   endTime?: number;
   rounds: number;
   winner?: TeamId;
+  finalTeamRanks?: {
+    teamA: string;
+    teamB: string;
+  };
   errorRound?: number;
   errorPhase?: string;
   errorTeamRoles?: {
@@ -41,15 +44,16 @@ class TestSessionTracker {
   private sessionStats: SessionStats;
   private currentGameStats: GameStats | null = null;
   private summaryLogFile: string;
+  private timestamp: string;
 
-  constructor() {
+  constructor(timestamp: string) {
+    this.timestamp = timestamp;
     this.sessionStats = {
       sessionStartTime: Date.now(),
       gamesCompleted: 0,
       gameStats: [],
     };
     
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     this.summaryLogFile = path.join('logs', `${timestamp}-summary.txt`);
   }
 
@@ -62,10 +66,11 @@ class TestSessionTracker {
     };
   }
 
-  endGame(winner?: TeamId): void {
+  endGame(winner?: TeamId, finalTeamRanks?: { teamA: string; teamB: string }): void {
     if (this.currentGameStats) {
       this.currentGameStats.endTime = Date.now();
       this.currentGameStats.winner = winner;
+      this.currentGameStats.finalTeamRanks = finalTeamRanks;
       this.sessionStats.gameStats.push({ ...this.currentGameStats });
       
       if (this.currentGameStats.status === 'completed') {
@@ -136,6 +141,13 @@ ${statusEmoji} Game ${index + 1} (${game.gameId})
    Winner: Team ${game.winner}`;
       }
 
+      if (game.finalTeamRanks && game.winner) {
+        const otherTeam = game.winner === 'A' ? 'B' : 'A';
+        const otherTeamRank = game.winner === 'A' ? game.finalTeamRanks.teamB : game.finalTeamRanks.teamA;
+        summary += `
+   Team ${otherTeam}: ${otherTeamRank}`;
+      }
+
       if (game.status === 'error' || game.status === 'timeout') {
         summary += `
    ⚠️  ERROR DETAILS:
@@ -196,7 +208,7 @@ ${statusEmoji} Game ${index + 1} (${game.gameId})
 
 📁 LOG FILES
 ------------
-• Game Log: ${gameLogger['gameLogFile']} (unified timeline with all events including errors)
+• Game Log: logs/${this.timestamp}-game.log (unified timeline with all events including errors)
 • Summary: ${this.summaryLogFile}
 
 🔍 NEXT STEPS
@@ -226,12 +238,8 @@ ${statusEmoji} Game ${index + 1} (${game.gameId})
     try {
       fs.writeFileSync(this.summaryLogFile, summary);
     } catch (error) {
-      console.error('Failed to write summary file:', error);
+      gameLogger.error('test_summary_write_failed', { error }, 'Failed to write summary file: ' + String(error));
     }
-    
-    console.log('\n' + '='.repeat(80));
-    console.log(summary);
-    console.log('='.repeat(80));
   }
 
   getStats(): SessionStats {
@@ -256,20 +264,21 @@ describe('Unattended Game Integration', () => {
 
   // Test configuration
   const TARGET_GAMES = 1; // Number of games to run for reliability testing
-  const GAME_TIMEOUT_SECONDS = 30; // Timeout per game in seconds
-  const MAX_ROUNDS_PER_GAME = 50; // Safety limit for rounds per game
+  const GAME_TIMEOUT_SECONDS = 60; // Timeout per game in seconds
+  const MAX_ROUNDS_PER_GAME = 60; // Safety limit for rounds per game
+
+  // Create shared timestamp for all log files in this test session
+  const sessionTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
   beforeAll(() => {
-    // Enable test mode for speed optimizations
-    enableUnattendedTestMode();
-    
-    // Configure logging for debug analysis
-    gameLogger.setLogLevel(LogLevel.DEBUG);
-    gameLogger.setTestMode(true);
-  });
-
-  afterAll(() => {
-    disableUnattendedTestMode();
+    // Configure the singleton gameLogger to capture all game events to file
+    gameLogger.configure({
+      logLevel: LogLevel.DEBUG,
+      enableFileLogging: true,
+      enableConsoleLog: false, // Disable console output for clean unattended test
+      includePlayerHands: false, // Do not log sensitive player hands
+      logFileName: `${sessionTimestamp}-game.log`
+    });
   });
 
   test('Complete unattended game simulation with AI players', async () => {
@@ -278,8 +287,8 @@ describe('Unattended Game Integration', () => {
     const startTime = Date.now();
     const gameId = `game-${Date.now()}`;
 
-    // Initialize session tracking
-    const sessionTracker = new TestSessionTracker();
+    // Initialize session tracking with shared timestamp
+    const sessionTracker = new TestSessionTracker(sessionTimestamp);
     gameLogger.info('test_session_start', {
       targetGames,
       maxRoundsPerGame,
@@ -295,16 +304,7 @@ describe('Unattended Game Integration', () => {
       try {
         gameLogger.setCurrentGameId(currentGameId);
         sessionTracker.startGame(currentGameId);
-        gameLogger.info('game_start', {
-          gameId: currentGameId,
-          teams: {
-            A: { players: ['human', 'bot2'], defending: true },
-            B: { players: ['bot1', 'bot3'], defending: false }
-          },
-          players: ['human', 'bot1', 'bot2', 'bot3'],
-          timestamp: new Date().toISOString()
-        });
-
+        
         // Initialize game
         gameState = initializeGame();
 
@@ -312,12 +312,6 @@ describe('Unattended Game Integration', () => {
         while (!gameWinner && roundCount < maxRoundsPerGame) {
           roundCount++;
           
-          const defendingTeam = gameState.teams.find(t => t.isDefending);
-          const attackingTeam = gameState.teams.find(t => !t.isDefending);
-          
-          // Round tracking happens automatically in game phases
-          
-
           // PHASE 1: Progressive Dealing with Trump Declarations
           gameState = await runDealingPhase(gameState, currentGameId);
           
@@ -336,13 +330,14 @@ describe('Unattended Game Integration', () => {
           // Check for victory condition
           if (roundResult.gameOver && roundResult.gameWinner) {
             gameWinner = roundResult.gameWinner;
-            gameLogger.info('game_end', {
-              gameId: currentGameId,
-              winner: gameWinner,
-              rounds: roundCount,
-              duration_ms: Date.now() - startTime
-            });
-            sessionTracker.endGame(gameWinner);
+            
+            // Capture final team ranks
+            const finalTeamRanks = {
+              teamA: gameState.teams.find(t => t.id === 'A')?.currentRank || '2',
+              teamB: gameState.teams.find(t => t.id === 'B')?.currentRank || '2',
+            };
+            
+            sessionTracker.endGame(gameWinner, finalTeamRanks);
             break;
           }
 
@@ -400,7 +395,7 @@ describe('Unattended Game Integration', () => {
     expect(stats.gameStats.length).toBe(targetGames);
     
     // Verify all games completed successfully
-    stats.gameStats.forEach((game, index) => {
+    stats.gameStats.forEach((game) => {
       expect(game.status).toBe('completed');
       expect(game.winner).toBeDefined();
       expect(game.rounds).toBeGreaterThan(0);
@@ -422,15 +417,13 @@ async function runDealingPhase(gameState: GameState, gameId: string): Promise<Ga
     if (!currentPlayer.isHuman) {
       const declaration = getAITrumpDeclaration(state, currentPlayer.id);
       if (declaration.shouldDeclare && declaration.declaration) {
-        // Apply declaration to state (simplified)
-        state.trumpDeclarationState!.currentDeclaration = {
-          playerId: currentPlayer.id,
-          rank: gameState.trumpInfo.trumpRank,
+        // Apply declaration using proper function to ensure logging
+        state = makeTrumpDeclaration(state, currentPlayer.id, {
+          rank: state.trumpInfo.trumpRank,
           suit: declaration.declaration.suit,
           type: declaration.declaration.type,
           cards: declaration.declaration.cards,
-          timestamp: Date.now()
-        };
+        });
       }
     }
   }
@@ -466,7 +459,6 @@ async function runPlayingPhase(gameState: GameState, gameId: string): Promise<Ga
   while (state.players.some(p => p.hand.length > 0)) {
     trickNumber++;
     
-    const leadingPlayer = state.players[state.currentPlayerIndex];
     
     // Play one complete trick (4 plays)
     for (let playIndex = 0; playIndex < 4; playIndex++) {

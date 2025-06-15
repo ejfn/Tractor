@@ -7,6 +7,7 @@ import {
 import { createTestCardsGameState } from "../helpers/gameStates";
 import { createMockTrick } from "../helpers/mocks";
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('3rd Player Strategy Tests', () => {
   
@@ -53,14 +54,25 @@ describe('3rd Player Strategy Tests', () => {
       
       gameState.players[2].hand = bot2Hand;
       
-      console.log('=== 3rd Player Partner Leading Test ===');
-      console.log('Human (Bot2\'s partner) leading with A♠ and winning strongly');
-      console.log('Bot2 (3rd player) should contribute 10♠ to maximize team points');
+      gameLogger.info('test_third_player_setup', { 
+        scenario: 'partner_leading',
+        leader: 'Human',
+        leadCard: 'A♠',
+        position: '3rd_player'
+      }, '=== 3rd Player Partner Leading Test ===');
+      gameLogger.info('test_third_player_context', {
+        situation: 'Human (Bot2\'s partner) leading with A♠ and winning strongly'
+      }, 'Human (Bot2\'s partner) leading with A♠ and winning strongly');
+      gameLogger.info('test_third_player_expectation', {
+        expectation: 'Bot2 (3rd player) should contribute 10♠ to maximize team points'
+      }, 'Bot2 (3rd player) should contribute 10♠ to maximize team points');
       
       // Get AI move for 3rd player
       const aiMove = getAIMove(gameState, thirdPlayerId);
       
-      console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`));
+      gameLogger.info('test_ai_decision', {
+        selectedCards: aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`)
+      }, 'AI selected: ' + aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`).join(', '));
       
       // When teammate is winning with strong card (Ace), should contribute 10 points
       // but prefer Ten over King (both worth 10 points) to preserve the stronger King

@@ -3,6 +3,7 @@ import { processPlay } from '../../src/game/playProcessing';
 import { getAIMoveWithErrorHandling } from '../../src/game/playProcessing';
 import { TRICK_RESULT_DISPLAY_TIME } from '../../src/utils/gameTimings';
 import { createFullyDealtGameState } from '../helpers/gameStates';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 // Helper to simulate async timing
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -12,7 +13,7 @@ describe('Timing Synchronization Tests', () => {
     const gameState = createFullyDealtGameState();
     let state = gameState;
     
-    console.log('=== Testing timing synchronization ===');
+    gameLogger.info('test_timing_sync_start', {}, 'Testing timing synchronization');
     
     // Track state changes
     const stateHistory: { time: number, event: string, currentPlayerIndex: number, cardCounts: number[] }[] = [];
@@ -45,7 +46,7 @@ describe('Timing Synchronization Tests', () => {
       logState(`After play ${play + 1}`, state);
       
       if (result.trickComplete) {
-        console.log(`Trick complete! Winner: ${result.trickWinnerId}`);
+        gameLogger.info('test_trick_complete', { winnerId: result.trickWinnerId }, `Trick complete! Winner: ${result.trickWinnerId}`);
         logState('Trick complete', state);
         
         // Simulate what happens in the real game:
@@ -67,7 +68,7 @@ describe('Timing Synchronization Tests', () => {
         
         // Start next trick
         const nextPlayer = state.players[state.currentPlayerIndex];
-        console.log(`\nNext trick starts with ${nextPlayer.name}`);
+        gameLogger.info('test_next_trick_start', { playerName: nextPlayer.name }, `Next trick starts with ${nextPlayer.name}`);
       }
     }
     
@@ -88,13 +89,18 @@ describe('Timing Synchronization Tests', () => {
     logState('After second trick play', state);
     
     // Analyze the history
-    console.log('\n=== State History ===');
+    gameLogger.info('test_state_history_header', {}, 'State History');
     stateHistory.forEach(entry => {
-      console.log(`${entry.time}ms: ${entry.event} - Player ${entry.currentPlayerIndex}, Cards: ${entry.cardCounts.join(',')}`);
+      gameLogger.info('test_state_history_entry', { 
+        time: entry.time, 
+        event: entry.event, 
+        currentPlayerIndex: entry.currentPlayerIndex, 
+        cardCounts: entry.cardCounts 
+      }, `${entry.time}ms: ${entry.event} - Player ${entry.currentPlayerIndex}, Cards: ${entry.cardCounts.join(',')}`);
     });
     
     // Check for anomalies
-    console.log('\n=== Anomaly Check ===');
+    gameLogger.info('test_anomaly_check_header', {}, 'Anomaly Check');
     for (let i = 1; i < stateHistory.length; i++) {
       const prev = stateHistory[i - 1];
       const curr = stateHistory[i];
@@ -102,14 +108,23 @@ describe('Timing Synchronization Tests', () => {
       // Check for unequal card counts
       const uniqueCounts = new Set(curr.cardCounts);
       if (uniqueCounts.size > 1) {
-        console.error(`Unequal card counts at ${curr.time}ms (${curr.event}): ${curr.cardCounts.join(',')}`);
+        gameLogger.error('test_unequal_card_counts', { 
+          time: curr.time, 
+          event: curr.event, 
+          cardCounts: curr.cardCounts 
+        }, `Unequal card counts at ${curr.time}ms (${curr.event}): ${curr.cardCounts.join(',')}`);
       }
       
       // Check for unexpected card loss
       for (let j = 0; j < 4; j++) {
         const cardLoss = prev.cardCounts[j] - curr.cardCounts[j];
         if (cardLoss > 0 && !curr.event.includes('After play')) {
-          console.error(`Player ${j} lost ${cardLoss} cards unexpectedly between "${prev.event}" and "${curr.event}"`);
+          gameLogger.error('test_unexpected_card_loss', { 
+            playerId: j, 
+            cardLoss: cardLoss, 
+            prevEvent: prev.event, 
+            currEvent: curr.event 
+          }, `Player ${j} lost ${cardLoss} cards unexpectedly between "${prev.event}" and "${curr.event}"`);
         }
       }
     }
@@ -119,7 +134,7 @@ describe('Timing Synchronization Tests', () => {
     const gameState = createFullyDealtGameState();
     let state = gameState;
     
-    console.log('\n=== Testing state mutations ===');
+    gameLogger.info('test_state_mutations_start', {}, 'Testing state mutations');
     
     // Play to complete a trick
     for (let play = 0; play < 4; play++) {
@@ -150,13 +165,13 @@ describe('Timing Synchronization Tests', () => {
         const currentCardCounts = originalState.players.map(p => p.hand.length);
         
         if (JSON.stringify(originalCardCounts) !== JSON.stringify(currentCardCounts)) {
-          console.error('ERROR: Original state was mutated during async operation!');
-          console.error(`  Original counts: ${originalCardCounts.join(',')}`);
-          console.error(`  Current counts: ${currentCardCounts.join(',')}`);
+          gameLogger.error('test_state_mutation_detected', {}, 'ERROR: Original state was mutated during async operation!');
+          gameLogger.error('test_original_card_counts', { originalCardCounts }, `  Original counts: ${originalCardCounts.join(',')}`);
+          gameLogger.error('test_current_card_counts', { currentCardCounts }, `  Current counts: ${currentCardCounts.join(',')}`);
         }
         
         if (originalState.currentPlayerIndex !== originalPlayerIndex) {
-          console.error('ERROR: Original currentPlayerIndex was mutated!');
+          gameLogger.error('test_player_index_mutation', {}, 'ERROR: Original currentPlayerIndex was mutated!');
         }
       } else {
         state = result.newState;

@@ -8,6 +8,7 @@ import {
   Trick,
 } from '../../src/types';
 import { createTrumpInfo } from './trump';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 // ============================================================================
 // MOCK SETUP UTILITIES
@@ -107,7 +108,7 @@ export const measurePerformance = async <T>(
   const duration = end - start;
   
   if (duration > 100) {
-    console.warn(`${label} took ${duration.toFixed(2)}ms - consider optimization`);
+    gameLogger.warn("test_performance_warning", { label, duration }, `${label} took ${duration.toFixed(2)}ms - consider optimization`);
   }
   
   return { result, duration };

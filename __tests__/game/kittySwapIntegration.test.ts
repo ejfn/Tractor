@@ -1,6 +1,7 @@
 import { finalizeTrumpDeclaration } from "../../src/game/dealingAndDeclaration";
 import { Card, GameState, PlayerId, GamePhase, Suit, Rank } from "../../src/types";
 import { createGameState } from "../helpers/gameStates";
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe("Bot Kitty Swap Integration", () => {
   test("should handle complete flow when bot becomes round starting player", () => {
@@ -44,10 +45,14 @@ describe("Bot Kitty Swap Integration", () => {
     // 5. Kitty should still contain the original cards (they stay for scoring)
     expect(finalizedState.kittyCards).toHaveLength(8);
 
-    console.log("✅ Bot kitty swap flow test completed successfully");
-    console.log(`Bot1 hand size: ${finalizedState.players[1].hand.length}`);
-    console.log(`Current player: ${finalizedState.players[finalizedState.currentPlayerIndex].id}`);
-    console.log(`Game phase: ${finalizedState.gamePhase}`);
+    gameLogger.info('test_bot_kitty_swap_success', { 
+      handSize: finalizedState.players[1].hand.length,
+      currentPlayer: finalizedState.players[finalizedState.currentPlayerIndex].id,
+      gamePhase: finalizedState.gamePhase
+    }, "✅ Bot kitty swap flow test completed successfully");
+    gameLogger.debug('test_bot1_hand_size', { handSize: finalizedState.players[1].hand.length }, `Bot1 hand size: ${finalizedState.players[1].hand.length}`);
+    gameLogger.debug('test_current_player', { currentPlayer: finalizedState.players[finalizedState.currentPlayerIndex].id }, `Current player: ${finalizedState.players[finalizedState.currentPlayerIndex].id}`);
+    gameLogger.debug('test_game_phase', { gamePhase: finalizedState.gamePhase }, `Game phase: ${finalizedState.gamePhase}`);
   });
 
   test("should handle flow when human is round starting player", () => {
@@ -88,7 +93,7 @@ describe("Bot Kitty Swap Integration", () => {
     expect(finalizedState.players[2].hand).toHaveLength(17); // Bot2
     expect(finalizedState.players[3].hand).toHaveLength(17); // Bot3
 
-    console.log("✅ Human kitty swap flow test completed successfully");
+    gameLogger.debug('test_human_kitty_swap_success', {}, "✅ Human kitty swap flow test completed successfully");
   });
 
   test("should work with different bot as round starting player", () => {
@@ -120,6 +125,6 @@ describe("Bot Kitty Swap Integration", () => {
     expect(finalizedState.players[1].hand).toHaveLength(17); // Bot1
     expect(finalizedState.players[2].hand).toHaveLength(17); // Bot2
 
-    console.log("✅ Bot3 kitty swap flow test completed successfully");
+    gameLogger.debug('test_bot3_kitty_swap_success', {}, "✅ Bot3 kitty swap flow test completed successfully");
   });
 });

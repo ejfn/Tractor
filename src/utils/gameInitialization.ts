@@ -136,7 +136,7 @@ export const initializeGame = (): GameState => {
   };
 
   // Log game initialization
-  gameLogger.debug(
+  gameLogger.info(
     "game_initialized",
     {
       roundNumber: gameState.roundNumber,

@@ -2,6 +2,7 @@ import { GameState, Rank, Player, Card } from "../../src/types";
 import { processPlay } from '../../src/game/playProcessing';
 import { getAIMoveWithErrorHandling } from '../../src/game/playProcessing';
 import { createFullyDealtGameState } from '../helpers/gameStates';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Final Card Count Verification', () => {
   test('Bot 3 maintains correct card count throughout extended gameplay', () => {
@@ -12,7 +13,7 @@ describe('Final Card Count Verification', () => {
     for (let trickNum = 0; trickNum < 10; trickNum++) {
       const trickStartCounts = state.players.map((p: Player) => p.hand.length);
       
-      console.log(`\nTrick ${trickNum + 1} starting with counts: ${trickStartCounts.join(', ')}`);
+      gameLogger.info('test_trick_start', { trickNum: trickNum + 1, cardCounts: trickStartCounts }, `\nTrick ${trickNum + 1} starting with counts: ${trickStartCounts.join(', ')}`);
       
       // Play all 4 players
       for (let playNum = 0; playNum < 4; playNum++) {
@@ -47,7 +48,7 @@ describe('Final Card Count Verification', () => {
         }
         
         if (result.trickComplete) {
-          console.log(`  Trick won by ${result.trickWinnerId}`);
+          gameLogger.info('test_trick_winner', { trickWinnerId: result.trickWinnerId }, `  Trick won by ${result.trickWinnerId}`);
         }
       }
       
@@ -56,26 +57,26 @@ describe('Final Card Count Verification', () => {
       const uniqueCounts = new Set(trickEndCounts);
       
       if (uniqueCounts.size > 1) {
-        console.error(`ERROR: Unequal card counts after trick ${trickNum + 1}`);
-        console.error(`Counts: ${trickEndCounts.join(', ')}`);
+        gameLogger.error('test_card_count_imbalance', { trickNum: trickNum + 1, cardCounts: trickEndCounts }, `ERROR: Unequal card counts after trick ${trickNum + 1}`);
+        gameLogger.error('test_card_count_details', { cardCounts: trickEndCounts }, `Counts: ${trickEndCounts.join(', ')}`);
         
         // Show which players have different counts
         const expectedCount = trickEndCounts[0];
         state.players.forEach((player: Player, idx: number) => {
           if (player.hand.length !== expectedCount) {
-            console.error(`  ${player.name} has ${player.hand.length} cards, expected ${expectedCount}`);
+            gameLogger.error('test_player_count_mismatch', { playerName: player.name, actualCount: player.hand.length, expectedCount }, `  ${player.name} has ${player.hand.length} cards, expected ${expectedCount}`);
           }
         });
         
         throw new Error('Card count imbalance detected');
       }
       
-      console.log(`  Trick ${trickNum + 1} complete. All players have ${trickEndCounts[0]} cards.`);
+      gameLogger.info('test_trick_complete', { trickNum: trickNum + 1, cardCount: trickEndCounts[0] }, `  Trick ${trickNum + 1} complete. All players have ${trickEndCounts[0]} cards.`);
     }
     
     // Final verification
     const finalCounts = state.players.map((p: Player) => p.hand.length);
-    console.log(`\nFinal card counts after 10 tricks: ${finalCounts.join(', ')}`);
+    gameLogger.info('test_final_verification', { finalCounts }, `\nFinal card counts after 10 tricks: ${finalCounts.join(', ')}`);
     
     expect(new Set(finalCounts).size).toBe(1);
     expect(finalCounts[3]).toBe(finalCounts[0]); // Bot 3 has same as Human
@@ -102,7 +103,7 @@ describe('Final Card Count Verification', () => {
       }
     });
     
-    console.log(`Bot 3 has ${state.players[bot3Index].hand.filter((c: Card) => c.rank === Rank.Ace).length} aces`);
+    gameLogger.info('test_bot3_aces', { bot3AceCount: state.players[bot3Index].hand.filter((c: Card) => c.rank === Rank.Ace).length }, `Bot 3 has ${state.players[bot3Index].hand.filter((c: Card) => c.rank === Rank.Ace).length} aces`);
     
     // Play a trick
     let winners: string[] = [];
@@ -123,9 +124,9 @@ describe('Final Card Count Verification', () => {
       
       if (result.trickComplete) {
         winners.push(result.trickWinnerId!);
-        console.log(`Trick winner: ${result.trickWinnerId}`);
-        console.log(`Next player should be: ${result.trickWinnerId}`);
-        console.log(`Next player is: ${state.players[state.currentPlayerIndex].name}`);
+        gameLogger.info('test_trick_winner_verification', { trickWinnerId: result.trickWinnerId }, `Trick winner: ${result.trickWinnerId}`);
+        gameLogger.info('test_expected_next_player', { expectedNextPlayer: result.trickWinnerId }, `Next player should be: ${result.trickWinnerId}`);
+        gameLogger.info('test_actual_next_player', { actualNextPlayer: state.players[state.currentPlayerIndex].name }, `Next player is: ${state.players[state.currentPlayerIndex].name}`);
         
         // Verify winner is the next player
         expect(state.players[state.currentPlayerIndex].id).toBe(result.trickWinnerId);

@@ -9,6 +9,7 @@ import {
   Suit
 } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe("Trump Conservation - Avoid Wasting Big Trump", () => {
   describe("Following Trump Pairs When Can't Form Pairs", () => {
@@ -56,12 +57,20 @@ describe("Trump Conservation - Avoid Wasting Big Trump", () => {
       const selectedCards = getAIMove(gameState, PlayerId.Bot2);
 
       // Debug: Log what was selected
-      console.log("Selected cards:", selectedCards.map(card => ({
+      gameLogger.info('test_trump_conservation_selected', { 
+        selectedCards: selectedCards.map(card => ({
+          suit: card.suit,
+          rank: card.rank,
+          joker: card.joker,
+          points: card.points
+        }))
+      }, "Selected cards: " + JSON.stringify(selectedCards.map(card => ({
         suit: card.suit,
         rank: card.rank,
         joker: card.joker,
         points: card.points
-      })));
+      }))));
+
 
 
       // Should select 2 cards (to match leading pair type)

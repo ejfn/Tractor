@@ -29,18 +29,29 @@ export interface LogEntry {
   message?: string;
 }
 
+export interface GameLoggerConfig {
+  logLevel?: LogLevel;
+  enableFileLogging?: boolean;
+  enableConsoleLog?: boolean;
+  includePlayerHands?: boolean;
+  logFileName?: string;
+  gameId?: string;
+}
+
 class GameLogger {
   private static instance: GameLogger;
   private logLevel: LogLevel = LogLevel.INFO;
   private logDir: string = "logs";
-  private sessionTimestamp: string;
   private gameLogFile: string = "";
-  private isTestMode: boolean = false;
+  private enableFileLogging: boolean = false;
+  private enableConsoleLog: boolean = true;
+  private includePlayerHands: boolean = true;
   private currentGameId: string | null = null;
 
-  constructor() {
-    this.sessionTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    this.setupLogFiles();
+  constructor(config?: GameLoggerConfig) {
+    if (config) {
+      this.configure(config);
+    }
   }
 
   public static getInstance(): GameLogger {
@@ -51,8 +62,8 @@ class GameLogger {
   }
 
   private setupLogFiles(): void {
-    // Only setup file logging in test environments (Node.js)
-    if (typeof require !== "undefined") {
+    // Only setup file logging in test environments (Node.js) and when enabled
+    if (typeof require !== "undefined" && this.enableFileLogging) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const fs = require("fs");
@@ -64,18 +75,15 @@ class GameLogger {
           fs.mkdirSync(this.logDir, { recursive: true });
         }
 
-        // Set up session-level files
-        this.gameLogFile = path.join(
-          this.logDir,
-          `${this.sessionTimestamp}-game.log`,
-        );
+        // Ensure gameLogFile has full path if it's just a filename
+        if (this.gameLogFile && !path.isAbsolute(this.gameLogFile)) {
+          this.gameLogFile = path.join(this.logDir, this.gameLogFile);
+        }
       } catch {
         // File system not available (React Native environment)
         this.gameLogFile = "";
+        this.enableFileLogging = false;
       }
-    } else {
-      // File system not available (React Native environment)
-      this.gameLogFile = "";
     }
   }
 
@@ -83,12 +91,42 @@ class GameLogger {
     this.logLevel = level;
   }
 
-  public setTestMode(enabled: boolean): void {
-    this.isTestMode = enabled;
-  }
-
   public setCurrentGameId(gameId: string | null): void {
     this.currentGameId = gameId;
+  }
+
+  public isPlayerHandsIncluded(): boolean {
+    return this.includePlayerHands;
+  }
+
+  public configure(config: GameLoggerConfig): void {
+    if (config.logLevel !== undefined) {
+      this.logLevel = config.logLevel;
+    }
+
+    if (config.gameId !== undefined) {
+      this.currentGameId = config.gameId;
+    }
+
+    if (config.enableConsoleLog !== undefined) {
+      this.enableConsoleLog = config.enableConsoleLog;
+    }
+
+    if (config.includePlayerHands !== undefined) {
+      this.includePlayerHands = config.includePlayerHands;
+    }
+
+    if (config.enableFileLogging) {
+      this.enableFileLogging = true;
+      if (config.logFileName) {
+        this.gameLogFile = config.logFileName;
+      } else {
+        // Generate default filename when file logging is enabled
+        const sessionTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        this.gameLogFile = `${sessionTimestamp}-game.log`;
+      }
+      this.setupLogFiles();
+    }
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -108,8 +146,8 @@ class GameLogger {
   }
 
   private writeToFile(content: string, filePath: string): void {
-    // Only write to file in test environments (Node.js)
-    if (typeof require !== "undefined" && filePath) {
+    // Only write to file when file logging is enabled and in Node.js environment
+    if (typeof require !== "undefined" && this.enableFileLogging && filePath) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const fs = require("fs");
@@ -137,13 +175,15 @@ class GameLogger {
       message,
     };
 
-    // Write structured JSON to main log file (includes all levels including errors)
-    if (this.isTestMode) {
+    // Write structured JSON to main log file when file logging is enabled
+    if (this.enableFileLogging && this.gameLogFile) {
       this.writeToFile(JSON.stringify(logEntry), this.gameLogFile);
     }
 
-    // Console output with formatting
-    this.logToConsole(logEntry);
+    // Console output with formatting (if enabled)
+    if (this.enableConsoleLog) {
+      this.logToConsole(logEntry);
+    }
   }
 
   private logToConsole(entry: LogEntry): void {
@@ -194,10 +234,13 @@ class GameLogger {
   }
 }
 
-// Export singleton instance
+// Export class for creating isolated instances in tests
+export { GameLogger };
+
+// Export singleton instance for normal app usage (backward compatibility)
 export const gameLogger = GameLogger.getInstance();
 
-// Export static methods for convenience
+// Export static methods for convenience (operate on singleton instance)
 export const debug = (event: string, data?: unknown, message?: string) =>
   gameLogger.debug(event, data, message);
 export const info = (event: string, data?: unknown, message?: string) =>

@@ -1,6 +1,7 @@
 import { getAIMove } from '../../src/ai/aiLogic';
 import { Card, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Attacking Leading Strategy Bug Test', () => {
   it('should NOT lead with trump suit high cards even in desperate attacking scenarios', () => {
@@ -44,27 +45,27 @@ describe('Attacking Leading Strategy Bug Test', () => {
     gameState.gamePhase = GamePhase.Playing;
     gameState.currentTrick = null; // Leading
 
-    console.log('=== ATTACKING LEADING STRATEGY TEST ===');
-    console.log(`Trump suit: Hearts`);
-    console.log(`AI Bot1 (attacking team): ${aiBotHand.map(c => `${c.rank}${c.suit === Suit.Hearts ? '♥' : c.suit === Suit.Spades ? '♠' : c.suit === Suit.Clubs ? '♣' : '♦'}`).join(', ')}`);
-    console.log(`Game: Late game, 100 points to opponents (desperate scenario)`);
-    console.log(`Expected: Desperate attacking strategy with potential trump priority`);
+    gameLogger.info('test_attacking_leading_setup', {}, '=== ATTACKING LEADING STRATEGY TEST ===');
+    gameLogger.info('test_trump_suit_info', { trumpSuit: 'Hearts' }, 'Trump suit: Hearts');
+    gameLogger.info('test_ai_hand_info', { playerId: 'Bot1', team: 'attacking', hand: aiBotHand.map(c => `${c.rank}${c.suit === Suit.Hearts ? '♥' : c.suit === Suit.Spades ? '♠' : c.suit === Suit.Clubs ? '♣' : '♦'}`) }, `AI Bot1 (attacking team): ${aiBotHand.map(c => `${c.rank}${c.suit === Suit.Hearts ? '♥' : c.suit === Suit.Spades ? '♠' : c.suit === Suit.Clubs ? '♣' : '♦'}`).join(', ')}`);
+    gameLogger.info('test_game_scenario', { gameStage: 'late', opponentPoints: 100, scenario: 'desperate' }, 'Game: Late game, 100 points to opponents (desperate scenario)');
+    gameLogger.info('test_expected_strategy', { strategyType: 'desperate_attacking', trumpPriority: 'potential' }, 'Expected: Desperate attacking strategy with potential trump priority');
 
     const selectedCards = getAIMove(gameState, PlayerId.Bot1);
     const selectedCard = selectedCards[0];
     const cardDisplay = `${selectedCard.rank}${selectedCard.suit === Suit.Hearts ? '♥' : selectedCard.suit === Suit.Spades ? '♠' : selectedCard.suit === Suit.Clubs ? '♣' : '♦'}`;
     
-    console.log(`AI selected: ${cardDisplay}`);
+    gameLogger.info('test_ai_decision', { selectedCard: cardDisplay, playerId: 'Bot1' }, `AI selected: ${cardDisplay}`);
 
     // Check if AI led with trump suit high card
     const ledTrumpSuitHighCard = selectedCard.suit === Suit.Hearts && 
       (selectedCard.rank === Rank.Ace || selectedCard.rank === Rank.King || selectedCard.rank === Rank.Ten);
 
     if (ledTrumpSuitHighCard) {
-      console.log('❌ BUG CONFIRMED: Attacking strategy led with trump suit high card!');
-      console.log('This is likely from selectByStrength with preferTrump: true in desperate mode');
+      gameLogger.info('test_bug_detection', { bugType: 'trump_suit_high_card_lead', confirmed: true }, '❌ BUG CONFIRMED: Attacking strategy led with trump suit high card!');
+      gameLogger.info('test_bug_analysis', { likelySource: 'selectByStrength', preferTrump: true, mode: 'desperate' }, 'This is likely from selectByStrength with preferTrump: true in desperate mode');
     } else {
-      console.log('✅ GOOD: Even desperate attacking strategy avoided trump suit high cards');
+      gameLogger.info('test_strategy_validation', { result: 'good', strategyType: 'desperate_attacking', avoidedTrumpHigh: true }, '✅ GOOD: Even desperate attacking strategy avoided trump suit high cards');
     }
 
     // Enhanced AI may strategically use trump suit high cards in desperate attacking scenarios
@@ -113,27 +114,27 @@ describe('Attacking Leading Strategy Bug Test', () => {
     gameState.gamePhase = GamePhase.Playing;
     gameState.currentTrick = null;
 
-    console.log('\n=== DESPERATE + TRUMP PRIORITY TEST ===');
-    console.log(`Trump suit: Diamonds`);
-    console.log(`AI hand: ${aiBotHand.map(c => `${c.rank}${c.suit === Suit.Diamonds ? '♦' : c.suit === Suit.Spades ? '♠' : '?'}`).join(', ')}`);
-    console.log(`Conditions: Late game, attacking team losing badly (180 points to opponents)`);
+    gameLogger.info('test_desperate_trump_priority_setup', {}, '\n=== DESPERATE + TRUMP PRIORITY TEST ===');
+    gameLogger.info('test_trump_suit_info', { trumpSuit: 'Diamonds' }, 'Trump suit: Diamonds');
+    gameLogger.info('test_ai_hand_info', { playerId: 'Bot2', hand: aiBotHand.map(c => `${c.rank}${c.suit === Suit.Diamonds ? '♦' : c.suit === Suit.Spades ? '♠' : '?'}`) }, `AI hand: ${aiBotHand.map(c => `${c.rank}${c.suit === Suit.Diamonds ? '♦' : c.suit === Suit.Spades ? '♠' : '?'}`).join(', ')}`);
+    gameLogger.info('test_game_conditions', { gameStage: 'late', team: 'attacking', status: 'losing_badly', opponentPoints: 180 }, 'Conditions: Late game, attacking team losing badly (180 points to opponents)');
 
     const selectedCards = getAIMove(gameState, PlayerId.Bot2);
     const selectedCard = selectedCards[0];
     const cardDisplay = `${selectedCard.rank}${selectedCard.suit === Suit.Diamonds ? '♦' : selectedCard.suit === Suit.Spades ? '♠' : '?'}`;
     
-    console.log(`AI selected: ${cardDisplay}`);
+    gameLogger.info('test_ai_decision', { selectedCard: cardDisplay, playerId: 'Bot2' }, `AI selected: ${cardDisplay}`);
 
     const ledTrumpHigh = selectedCard.suit === Suit.Diamonds && 
       (selectedCard.rank === Rank.Ace || selectedCard.rank === Rank.King || selectedCard.rank === Rank.Ten);
 
     if (ledTrumpHigh) {
-      console.log('❌ ISSUE: selectByStrength with preferTrump:true led trump suit high card');
-      console.log('Source: PlayStyle.Desperate + trumpPriority path in selectAttackingLeadPlay');
+      gameLogger.info('test_issue_detection', { issueType: 'trump_suit_high_card_lead', source: 'selectByStrength', preferTrump: true }, '❌ ISSUE: selectByStrength with preferTrump:true led trump suit high card');
+      gameLogger.info('test_issue_source', { playStyle: 'Desperate', path: 'trumpPriority', function: 'selectAttackingLeadPlay' }, 'Source: PlayStyle.Desperate + trumpPriority path in selectAttackingLeadPlay');
     } else {
-      console.log('✅ Protected: Even with trump priority, avoided trump suit high cards');
+      gameLogger.info('test_protection_validation', { result: 'protected', trumpPriority: true, avoidedTrumpHigh: true }, '✅ Protected: Even with trump priority, avoided trump suit high cards');
     }
 
-    console.log(`Led trump suit high card: ${ledTrumpHigh}`);
+    gameLogger.info('test_final_result', { ledTrumpSuitHighCard: ledTrumpHigh }, `Led trump suit high card: ${ledTrumpHigh}`);
   });
 });

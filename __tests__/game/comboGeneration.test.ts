@@ -14,6 +14,7 @@ import {
   TrumpInfo
 } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Combo Generation Comprehensive Tests', () => {
   let trumpInfo: TrumpInfo;
@@ -152,13 +153,13 @@ describe('Combo Generation Comprehensive Tests', () => {
         calculateCardStrategicValue(card, trumpInfo, 'conservation')
       );
       
-      console.log('Trump conservation combo values:', usedConservationValues);
+      gameLogger.info('test_trump_conservation_values', { usedConservationValues }, 'Trump conservation combo values: ' + JSON.stringify(usedConservationValues));
       
       // Should use trump pairs with lowest total conservation value
       // The test should accept that jokers might be used if they form the optimal pair combination
       // but the priority should be given to non-joker trump pairs when possible
       const totalConservationValue = usedConservationValues.reduce((sum, val) => sum + val, 0);
-      console.log('Total conservation value:', totalConservationValue);
+      gameLogger.info('test_total_conservation_value', { totalConservationValue }, 'Total conservation value: ' + totalConservationValue);
       
       // Either use trump suit pairs (3♠ + 4♠ = 15) or other optimal low-value trump pairs
       // Don't strictly reject jokers since they're now properly recognized as trump pairs
@@ -294,7 +295,7 @@ describe('Combo Generation Comprehensive Tests', () => {
       
       // Should prefer trump suit cards over Big Joker when possible
       if (usedTrumpSuit) {
-        console.log('Correctly prioritized trump suit card over Big Joker');
+        gameLogger.info('test_trump_prioritization', { usedTrumpSuit, usedBigJoker }, 'Correctly prioritized trump suit card over Big Joker');
       }
     });
 
@@ -361,7 +362,7 @@ describe('Combo Generation Comprehensive Tests', () => {
         strategic: calculateCardStrategicValue(card, trumpInfo, 'strategic'),
       }));
 
-      console.log('Trump hierarchy values:', values);
+      gameLogger.info('test_trump_hierarchy_values', { values }, 'Trump hierarchy values: ' + JSON.stringify(values));
 
       // Big Joker should have highest conservation value
       expect(values[0].conservation).toBe(100);
@@ -489,7 +490,7 @@ describe('Combo Generation Comprehensive Tests', () => {
       });
 
       if (comboWithPair) {
-        console.log('Correctly used available pair in tractor following');
+        gameLogger.info('test_pair_usage_in_tractor', { comboWithPair: comboWithPair.cards.length }, 'Correctly used available pair in tractor following');
       }
     });
   });

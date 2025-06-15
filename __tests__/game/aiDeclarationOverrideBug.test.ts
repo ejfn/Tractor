@@ -3,6 +3,7 @@ import { getAITrumpDeclarationDecision } from '../../src/ai/trumpDeclaration/tru
 import { makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
 import { Card, DeclarationType, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('AI Declaration Override Bug', () => {
   let gameState: any;
@@ -47,7 +48,7 @@ describe('AI Declaration Override Bug', () => {
     
     // Now check what Bot1 thinks it can do
     const bot1Decision = getAITrumpDeclarationDecision(newState, PlayerId.Bot1);
-    console.log('Bot1 decision:', bot1Decision);
+    gameLogger.info('test_ai_declaration_bot1_decision', { playerId: PlayerId.Bot1, decision: bot1Decision }, 'Bot1 decision:');
 
     // Bot1 should NOT be able to declare (equal strength)
     expect(bot1Decision.shouldDeclare).toBe(false);
@@ -70,8 +71,8 @@ describe('AI Declaration Override Bug', () => {
     const bot1Decision = getAITrumpDeclarationDecision(gameState, PlayerId.Bot1);
     const bot2Decision = getAITrumpDeclarationDecision(gameState, PlayerId.Bot2);
 
-    console.log('Bot1 initial decision:', bot1Decision);
-    console.log('Bot2 initial decision:', bot2Decision);
+    gameLogger.info('test_ai_declaration_bot1_initial', { playerId: PlayerId.Bot1, decision: bot1Decision }, 'Bot1 initial decision:');
+    gameLogger.info('test_ai_declaration_bot2_initial', { playerId: PlayerId.Bot2, decision: bot2Decision }, 'Bot2 initial decision:');
 
     // Most of the time, AI won't declare with pairs due to random factors
     // This test mainly verifies the AI logic handles multiple players correctly
@@ -96,8 +97,8 @@ describe('AI Declaration Override Bug', () => {
     const bot1Options = getPlayerDeclarationOptions(newState, PlayerId.Bot1);
     const bot2Options = getPlayerDeclarationOptions(newState, PlayerId.Bot2);
 
-    console.log('Bot1 options after human pair:', bot1Options);
-    console.log('Bot2 options after human pair:', bot2Options);
+    gameLogger.info('test_ai_declaration_bot1_options', { playerId: PlayerId.Bot1, options: bot1Options }, 'Bot1 options after human pair:');
+    gameLogger.info('test_ai_declaration_bot2_options', { playerId: PlayerId.Bot2, options: bot2Options }, 'Bot2 options after human pair:');
 
     // Both bots should have NO valid options (their pairs are equal strength)
     expect(bot1Options).toHaveLength(0);
@@ -115,16 +116,16 @@ describe('AI Declaration Override Bug', () => {
 
     const stateAfterBot1 = makeTrumpDeclaration(gameState, PlayerId.Bot1, bot1Declaration);
 
-    console.log('State after Bot1 declared:', {
+    gameLogger.info('test_ai_declaration_state_after_bot1', {
       currentDeclaration: stateAfterBot1.trumpDeclarationState?.currentDeclaration,
       trumpSuit: stateAfterBot1.trumpInfo.trumpSuit
-    });
+    }, 'State after Bot1 declared:');
 
     // Now check if the progressive dealing would allow Bot2 to declare
     const { checkDeclarationOpportunities } = require('../../src/game/dealingAndDeclaration');
     const opportunities = checkDeclarationOpportunities(stateAfterBot1);
     
-    console.log('Opportunities after Bot1:', opportunities);
+    gameLogger.info('test_ai_declaration_opportunities', { opportunities }, 'Opportunities after Bot1:');
 
     // Bot2 should have NO opportunities after Bot1's equal strength declaration
     const bot2Opportunities = opportunities.filter((opp: any) => opp.playerId === PlayerId.Bot2);
@@ -132,7 +133,7 @@ describe('AI Declaration Override Bug', () => {
 
     // Double-check with getAITrumpDeclarationDecision
     const bot2DecisionAfter = getAITrumpDeclarationDecision(stateAfterBot1, PlayerId.Bot2);
-    console.log('Bot2 decision after Bot1:', bot2DecisionAfter);
+    gameLogger.info('test_ai_declaration_bot2_after_bot1', { playerId: PlayerId.Bot2, decision: bot2DecisionAfter }, 'Bot2 decision after Bot1:');
     
     expect(bot2DecisionAfter.shouldDeclare).toBe(false);
 
@@ -151,7 +152,7 @@ describe('AI Declaration Override Bug', () => {
       fail('Bot2 should not be able to override Bot1 pair with another pair!');
     } catch (error: any) {
       // This is expected - the declaration should fail
-      console.log('Bot2 declaration correctly failed:', error.message);
+      gameLogger.info('test_ai_declaration_bot2_failed', { playerId: PlayerId.Bot2, errorMessage: error.message }, 'Bot2 declaration correctly failed:');
       expect(error.message).toContain('Declaration cannot override current declaration');
     }
   });
@@ -163,8 +164,8 @@ describe('AI Declaration Override Bug', () => {
     const bot1InitialDecision = getAITrumpDeclarationDecision(gameState, PlayerId.Bot1);
     const bot2InitialDecision = getAITrumpDeclarationDecision(gameState, PlayerId.Bot2);
     
-    console.log('Bot1 initial decision:', bot1InitialDecision);
-    console.log('Bot2 initial decision:', bot2InitialDecision);
+    gameLogger.info('test_ai_declaration_concurrent_bot1', { playerId: PlayerId.Bot1, decision: bot1InitialDecision }, 'Bot1 initial decision:');
+    gameLogger.info('test_ai_declaration_concurrent_bot2', { playerId: PlayerId.Bot2, decision: bot2InitialDecision }, 'Bot2 initial decision:');
     
     // If both decide to declare based on the same state...
     if (bot1InitialDecision.shouldDeclare && bot1InitialDecision.declaration &&
@@ -178,7 +179,7 @@ describe('AI Declaration Override Bug', () => {
         cards: bot1InitialDecision.declaration.cards,
       });
 
-      console.log('Bot1 successfully declared');
+      gameLogger.info('test_ai_declaration_bot1_success', { playerId: PlayerId.Bot1 }, 'Bot1 successfully declared');
 
       // Now Bot2 tries to declare with the SAME declaration it decided on earlier
       // (simulating the race condition where Bot2's decision was made with stale state)
@@ -193,12 +194,12 @@ describe('AI Declaration Override Bug', () => {
         // If we get here, THIS IS THE BUG!
         fail('Bot2 should not be able to override Bot1 with equal strength!');
       } catch (error: any) {
-        console.log('Bot2 declaration correctly failed:', error.message);
+        gameLogger.info('test_ai_declaration_bot2_race_failed', { playerId: PlayerId.Bot2, errorMessage: error.message }, 'Bot2 declaration correctly failed:');
         expect(error.message).toContain('Declaration cannot override current declaration');
       }
       
     } else {
-      console.log('Both bots did not decide to declare initially, no race condition to test');
+      gameLogger.info('test_ai_declaration_no_race', { bot1ShouldDeclare: bot1InitialDecision.shouldDeclare, bot2ShouldDeclare: bot2InitialDecision.shouldDeclare }, 'Both bots did not decide to declare initially, no race condition to test');
     }
   });
 
@@ -228,7 +229,7 @@ describe('AI Declaration Override Bug', () => {
     };
 
     const stateAfterBot1 = makeTrumpDeclaration(gameState, PlayerId.Bot1, bot1Declaration);
-    console.log('Bot1 declared 2♦-2♦');
+    gameLogger.info('test_ai_declaration_exact_scenario_bot1', { playerId: PlayerId.Bot1, suit: Suit.Diamonds, rank: Rank.Two }, 'Bot1 declared 2♦-2♦');
 
     // Now Bot2 attempts to override with 2♣-2♣ (should fail!)
     const bot2Declaration = {
@@ -242,11 +243,11 @@ describe('AI Declaration Override Bug', () => {
       makeTrumpDeclaration(stateAfterBot1, PlayerId.Bot2, bot2Declaration);
     }).toThrow('Declaration cannot override current declaration');
 
-    console.log('✅ 2♣-2♣ correctly failed to override 2♦-2♦');
+    gameLogger.info('test_ai_declaration_override_prevented', { fromSuit: Suit.Clubs, toSuit: Suit.Diamonds, rank: Rank.Two }, '✅ 2♣-2♣ correctly failed to override 2♦-2♦');
 
     // Let's also test the AI decision logic to make sure it wouldn't even try
     const bot2Decision = getAITrumpDeclarationDecision(stateAfterBot1, PlayerId.Bot2);
-    console.log('Bot2 AI decision after Bot1 declared:', bot2Decision);
+    gameLogger.info('test_ai_declaration_bot2_final_decision', { playerId: PlayerId.Bot2, decision: bot2Decision }, 'Bot2 AI decision after Bot1 declared:');
     
     expect(bot2Decision.shouldDeclare).toBe(false);
     expect(bot2Decision.reasoning).toContain('No valid declaration options available');

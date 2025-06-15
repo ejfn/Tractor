@@ -1,6 +1,7 @@
 import { getAIMove } from '../../src/ai/aiLogic';
 import { Card, GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () => {
   describe('AI Trump Card Selection When Opponent Winning', () => {
@@ -41,7 +42,12 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
       const selectedCard = selectedCards[0];
 
-      console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♠ or weak trump)`);
+      gameLogger.info('test_trump_conservation_opponent_winning', {
+        selectedCard: `${selectedCard.rank}${selectedCard.suit}`,
+        expectedCard: '3♠ or weak trump',
+        playerIndex: 1,
+        opponentWinning: true
+      }, `AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♠ or weak trump)`);
 
       // Enhanced AI should play any trump conservation choice
       // Observed: AI chose 2♥ (trump rank off-suit), which is still trump conservation
@@ -87,7 +93,12 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       const selectedCards = getAIMove(gameState, PlayerId.Bot2);
       const selectedCard = selectedCards[0];
 
-      console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♥)`);
+      gameLogger.info('test_trump_conservation_weak_over_valuable', {
+        selectedCard: `${selectedCard.rank}${selectedCard.suit}`,
+        expectedCard: '3♥',
+        playerIndex: 2,
+        trumpSuit: Suit.Hearts
+      }, `AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♥)`);
 
       // Should play weakest trump suit (3♥) not trump rank cards (2♠ or 2♣)
       expect(selectedCard.rank).toBe(Rank.Three);
@@ -130,7 +141,12 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       const selectedCards = getAIMove(gameState, PlayerId.Bot3);
       const selectedCard = selectedCards[0];
 
-      console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♦)`);
+      gameLogger.info('test_trump_conservation_avoid_point_cards', {
+        selectedCard: `${selectedCard.rank}${selectedCard.suit}`,
+        expectedCard: '3♦',
+        playerIndex: 3,
+        cardPoints: selectedCard.points
+      }, `AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♦)`);
 
       // Should play weakest non-point trump (3♦) not point cards (5♦, 10♦)
       expect(selectedCard.rank).toBe(Rank.Three);
@@ -174,8 +190,15 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
       const selectedCard = selectedCards[0];
 
-      console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♣)`);
-      console.log('Available options:', botHand.map(c => `${c.rank}${c.suit}`));
+      gameLogger.info('test_trump_conservation_multiple_weak_options', {
+        selectedCard: `${selectedCard.rank}${selectedCard.suit}`,
+        expectedCard: '3♣',
+        availableOptions: botHand.map(c => `${c.rank}${c.suit}`),
+        playerIndex: 1
+      }, `AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♣)`);
+      gameLogger.info('test_trump_conservation_available_options', {
+        availableOptions: botHand.map(c => `${c.rank}${c.suit}`)
+      }, 'Available options: ' + botHand.map(c => `${c.rank}${c.suit}`).join(', '));
 
       // Should play the absolute weakest trump (3♣) not any higher value trump
       expect(selectedCard.rank).toBe(Rank.Three);
@@ -219,7 +242,11 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
 
-      console.log(`AI selected: ${selectedCards.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`).join(', ')}`);
+      gameLogger.info('test_trump_following_rules_compliance', {
+        selectedCards: selectedCards.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`),
+        playerIndex: 1,
+        mustFollowTrump: true
+      }, `AI selected: ${selectedCards.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`).join(', ')}`);
 
       // Must follow trump pair - should use weak trump + filler, not waste trump rank
       expect(selectedCards).toHaveLength(2);
@@ -272,8 +299,15 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       const selectedCards = getAIMove(gameState, PlayerId.Bot2);
       const selectedCard = selectedCards[0];
 
-      console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♥)`);
-      console.log('Available trump cards:', botHand.map(c => `${c.rank}${c.suit}(${c.points}pts)`));
+      gameLogger.info('test_trump_conservation_forced_follow', {
+        selectedCard: `${selectedCard.rank}${selectedCard.suit}`,
+        expectedCard: '3♥',
+        playerIndex: 2,
+        cardPoints: selectedCard.points
+      }, `AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♥)`);
+      gameLogger.info('test_trump_conservation_available_trump_cards', {
+        availableTrumpCards: botHand.map(c => `${c.rank}${c.suit}(${c.points}pts)`)
+      }, 'Available trump cards: ' + botHand.map(c => `${c.rank}${c.suit}(${c.points}pts)`).join(', '));
 
       // Should play the absolute weakest trump (3♥) to conserve all valuable cards
       expect(selectedCard.rank).toBe(Rank.Three);
@@ -321,11 +355,19 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
       const selectedCards = getAIMove(gameState, PlayerId.Bot3);
       const selectedCard = selectedCards[0];
 
-      console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♦ or valid trump)`);
-      console.log('Available cards with conservation values:');
+      gameLogger.info('test_trump_conservation_mixed_trump_types', {
+        selectedCard: `${selectedCard.rank}${selectedCard.suit}`,
+        expectedCard: '3♦ or valid trump',
+        playerIndex: 3
+      }, `AI selected: ${selectedCard.rank}${selectedCard.suit} (expected: 3♦ or valid trump)`);
+      gameLogger.info('test_trump_conservation_available_cards', {
+        availableCards: botHand.map(c => c.joker ? `${c.joker} joker` : `${c.rank}${c.suit}`)
+      }, 'Available cards with conservation values:');
       botHand.forEach(c => {
         const desc = c.joker ? `${c.joker} joker` : `${c.rank}${c.suit}`;
-        console.log(`  ${desc}`);
+        gameLogger.info('test_trump_conservation_card_detail', {
+          cardDescription: desc
+        }, `  ${desc}`);
       });
 
       // Enhanced AI should make trump conservation choice
@@ -383,9 +425,19 @@ describe('Comprehensive Trump Conservation Tests - Issue #103 Prevention', () =>
         const selectedCards = getAIMove(gameState, PlayerId.Bot1);
         const selectedCard = selectedCards[0];
 
-        console.log(`Test case: trump=${trumpSuit}, rank=${trumpRank}`);
-        console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit}`);
-        console.log(`Bot hand:`, botHand.map(c => `${c.rank}${c.suit}`));
+        gameLogger.info('test_trump_conservation_across_suits', {
+          trumpSuit,
+          trumpRank,
+          selectedCard: `${selectedCard.rank}${selectedCard.suit}`,
+          botHand: botHand.map(c => `${c.rank}${c.suit}`),
+          playerIndex: 1
+        }, `Test case: trump=${trumpSuit}, rank=${trumpRank}`);
+        gameLogger.info('test_trump_conservation_selected_card', {
+          selectedCard: `${selectedCard.rank}${selectedCard.suit}`
+        }, `AI selected: ${selectedCard.rank}${selectedCard.suit}`);
+        gameLogger.info('test_trump_conservation_bot_hand', {
+          botHand: botHand.map(c => `${c.rank}${c.suit}`)
+        }, `Bot hand: ${botHand.map(c => `${c.rank}${c.suit}`).join(', ')}`);
 
         // Should always play the card with lowest conservation value
         // This could be either trump rank off-suit (conservation: 70) or trump suit (varies by rank)

@@ -1,4 +1,5 @@
 import { getAIMove } from '../../src/ai/aiLogic';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 import { Card, GamePhase, JokerType, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
@@ -50,34 +51,39 @@ describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', ()
     const selectedCards = getAIMove(gameState, PlayerId.Bot1);
     const selectedCard = selectedCards[0];
 
-    console.log('=== ISSUE #103 REPRODUCTION TEST ===');
-    console.log(`Leading card: Big Joker (unbeatable)`);
-    console.log(`AI has options:`, aiBotHand.map(c => `${c.rank}${c.suit}`));
-    console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit}`);
-    console.log(`Key point: AI rank cards (2♥, 2♣) CANNOT beat Big Joker - should not waste them`);
-    console.log('');
+    gameLogger.info('issue103_test_setup', {
+      leadingCard: 'Big Joker (unbeatable)',
+      aiOptions: aiBotHand.map(c => `${c.rank}${c.suit}`),
+      aiSelected: `${selectedCard.rank}${selectedCard.suit}`
+    }, '=== ISSUE #103 REPRODUCTION TEST ===');
+    gameLogger.info('issue103_context', {
+      keyPoint: 'AI rank cards (2♥, 2♣) CANNOT beat Big Joker - should not waste them'
+    }, 'Key point: AI rank cards (2♥, 2♣) CANNOT beat Big Joker - should not waste them');
 
     // CHECK FOR BUG: Is AI playing a valuable rank card when it can't win?
     const isPlayingRankCard = selectedCard.rank === Rank.Two;
     const isPlayingWeakTrump = selectedCard.rank === Rank.Three && selectedCard.suit === Suit.Spades;
 
     if (isPlayingRankCard) {
-      console.log('❌ BUG REPRODUCED: AI is wasting valuable rank card!');
-      console.log(`   Playing: ${selectedCard.rank}${selectedCard.suit} (rank card)`);
-      console.log(`   Should play: 3♠ (weak trump suit card)`);
+      gameLogger.error('issue103_bug_reproduced', {
+        playedCard: `${selectedCard.rank}${selectedCard.suit}`,
+        shouldPlay: '3♠ (weak trump suit card)'
+      }, '❌ BUG REPRODUCED: AI is wasting valuable rank card!');
       
       // This test should FAIL to show the bug exists
       fail(`Issue #103 reproduced: AI played rank card ${selectedCard.rank}${selectedCard.suit} instead of weak trump 3♠`);
     } else if (isPlayingWeakTrump) {
-      console.log('✅ CORRECT BEHAVIOR: AI played weak trump suit card');
-      console.log(`   Correctly playing: ${selectedCard.rank}${selectedCard.suit}`);
+      gameLogger.info('issue103_correct_behavior', {
+        correctlyPlaying: `${selectedCard.rank}${selectedCard.suit}`
+      }, '✅ CORRECT BEHAVIOR: AI played weak trump suit card');
       
       // This should pass when bug is fixed
       expect(selectedCard.rank).toBe(Rank.Three);
       expect(selectedCard.suit).toBe(Suit.Spades);
     } else {
-      console.log('❓ UNEXPECTED: AI played something else');
-      console.log(`   AI played: ${selectedCard.rank}${selectedCard.suit}`);
+      gameLogger.warn('issue103_unexpected_choice', {
+        aiPlayed: `${selectedCard.rank}${selectedCard.suit}`
+      }, '❓ UNEXPECTED: AI played something else');
       fail(`Unexpected AI choice: ${selectedCard.rank}${selectedCard.suit}`);
     }
   });
@@ -121,9 +127,10 @@ describe('Issue #103 Regression Test - AI Wasting Valuable Trump Rank Cards', ()
     const selectedCards = getAIMove(gameState, PlayerId.Bot2);
     const selectedCard = selectedCards[0];
 
-    console.log('=== ISSUE #103 VARIANT TEST ===');
-    console.log(`Opponent led: 3♥ (trump rank in trump suit)`);
-    console.log(`AI selected: ${selectedCard.rank}${selectedCard.suit}`);
+    gameLogger.info('issue103_variant_test', {
+      opponentLed: '3♥ (trump rank in trump suit)',
+      aiSelected: `${selectedCard.rank}${selectedCard.suit}`
+    }, '=== ISSUE #103 VARIANT TEST ===');
 
     // Check if AI is playing rank cards when it should play weak trump
     const isWastingRankCard = selectedCard.rank === Rank.Three;
