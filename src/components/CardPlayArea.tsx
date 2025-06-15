@@ -12,7 +12,7 @@ interface CardPlayAreaProps {
   currentTrick: Trick | null;
   players: Player[];
   trumpInfo: TrumpInfo;
-  winningPlayerId?: string;
+  winningPlayerId?: PlayerId;
   onAnimationComplete?: () => void; // Explicitly typed as function
   lastCompletedTrick?: Trick | null; // Add the lastCompletedTrick prop
 }
@@ -148,7 +148,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   // Animation handling managed by completion callbacks
 
   // Check if a player is winning
-  const isWinning = (playerId: string) => {
+  const isWinning = (playerId: PlayerId) => {
     return playerId === winningPlayerId;
   };
 
@@ -169,7 +169,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
 
   // Find player positions by ID
   const getPlayerPosition = (
-    playerId: string,
+    playerId: PlayerId,
   ): "top" | "left" | "right" | "bottom" => {
     // This mapping assumes players are in a fixed order:
     // ai3 = left, ai2 = top, ai1 = right, human = bottom
@@ -249,7 +249,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     }),
                   // Simple border for winning cards (works on Android)
                   ...(isWinning(
-                    players.find((p) => p.id === PlayerId.Bot2)?.id || "",
+                    players.find((p) => p.id === PlayerId.Bot2)?.id as PlayerId,
                   ) && {
                     borderWidth: 2,
                     borderColor: "#FFC107",
@@ -292,7 +292,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       }),
                     // Simple border for winning cards (works on Android)
                     ...(isWinning(
-                      players.find((p) => p.id === PlayerId.Bot3)?.id || "",
+                      players.find((p) => p.id === PlayerId.Bot3)
+                        ?.id as PlayerId,
                     ) && {
                       borderWidth: 2,
                       borderColor: "#FFC107",
@@ -338,7 +339,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       }),
                     // Simple border for winning cards (works on Android)
                     ...(isWinning(
-                      players.find((p) => p.id === PlayerId.Bot1)?.id || "",
+                      players.find((p) => p.id === PlayerId.Bot1)
+                        ?.id as PlayerId,
                     ) && {
                       borderWidth: 2,
                       borderColor: "#FFC107",
@@ -379,7 +381,9 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       marginLeft: 15, // Smaller shift for tighter centering
                     }),
                   // Simple border for winning cards (works on Android)
-                  ...(isWinning(players.find((p) => p.isHuman)?.id || "") && {
+                  ...(isWinning(
+                    players.find((p) => p.isHuman)?.id as PlayerId,
+                  ) && {
                     borderWidth: 2,
                     borderColor: "#FFC107",
                     backgroundColor: "rgba(255, 255, 255, 0.9)",

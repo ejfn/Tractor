@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Trick } from "../types";
+import { PlayerId, Trick } from "../types";
 import {
   TRICK_RESULT_DISPLAY_TIME,
   STATE_UPDATE_SYNC_DELAY,
@@ -11,10 +11,10 @@ import {
  */
 export function useTrickResults() {
   const [showTrickResult, setShowTrickResult] = useState(false);
-  const [lastTrickWinnerId, setLastTrickWinnerId] = useState("");
+  const [lastTrickWinnerId, setLastTrickWinnerId] = useState("" as PlayerId);
   const [lastTrickPoints, setLastTrickPoints] = useState(0);
   const [lastCompletedTrick, setLastCompletedTrick] = useState<
-    (Trick & { winningPlayerId?: string }) | null
+    (Trick & { winningPlayerId?: PlayerId }) | null
   >(null);
   const [isTransitioningTricks, setIsTransitioningTricks] = useState(false);
 
@@ -88,9 +88,9 @@ export function useTrickResults() {
 
   // Handle a completed trick - simplified to just show result
   const handleTrickCompletion = (
-    winnerId: string,
+    winnerId: PlayerId,
     points: number,
-    trick: Trick & { winningPlayerId?: string },
+    trick: Trick & { winningPlayerId?: PlayerId },
   ) => {
     // Store values for the trick result
     setLastTrickWinnerId(winnerId);

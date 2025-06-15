@@ -37,9 +37,9 @@ interface GameScreenViewProps {
   gameOver: boolean;
   winner: "A" | "B" | null;
   waitingForAI: boolean;
-  waitingPlayerId: string;
+  waitingPlayerId: PlayerId;
   showTrickResult: boolean;
-  lastTrickWinnerId: string;
+  lastTrickWinnerId: PlayerId;
   lastTrickPoints: number;
   lastCompletedTrick: (Trick & { winningPlayerId?: string }) | null;
   showRoundComplete: boolean;
@@ -152,7 +152,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
     selectedCards.length > 0 && validatePlay(gameState, selectedCards);
 
   // Team ID for each player
-  const getPlayerTeam = (playerId: string) => {
+  const getPlayerTeam = (playerId: PlayerId) => {
     const player = gameState.players.find((p) => p.id === playerId);
     if (!player) return undefined;
     return gameState.teams.find((t) => t.id === player.team);
