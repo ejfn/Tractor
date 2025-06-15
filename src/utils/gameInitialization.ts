@@ -13,6 +13,7 @@ import {
   TeamId,
   TrumpDeclarationState,
 } from "../types";
+import { gameLogger } from "./gameLogger";
 
 // Create a new deck of cards (2 decks for Shengji)
 export const createDeck = (): Card[] => {
@@ -133,6 +134,25 @@ export const initializeGame = (): GameState => {
     roundStartingPlayerIndex: 0, // Round 1 starts with Human (index 0)
     gamePhase: GamePhase.Dealing,
   };
+
+  // Log the start of round 1
+  gameLogger.debug(
+    "round_start",
+    {
+      roundNumber: gameState.roundNumber,
+      defendingTeam: gameState.teams.find((t) => t.isDefending)?.id,
+      attackingTeam: gameState.teams.find((t) => !t.isDefending)?.id,
+      roundStartingPlayer:
+        gameState.players[gameState.roundStartingPlayerIndex]?.id,
+      trumpRank: gameState.trumpInfo.trumpRank,
+      teamRanks: gameState.teams.map((team) => ({
+        teamId: team.id,
+        currentRank: team.currentRank,
+        isDefending: team.isDefending,
+      })),
+    },
+    `Round ${gameState.roundNumber} started: ${gameState.teams.find((t) => t.isDefending)?.id} defending, ${gameState.teams.find((t) => !t.isDefending)?.id} attacking, trump rank ${gameState.trumpInfo.trumpRank}`,
+  );
 
   return gameState;
   // Don't initialize dealing state here - let dealNextCard() handle it properly

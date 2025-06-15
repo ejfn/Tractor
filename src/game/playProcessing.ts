@@ -18,6 +18,8 @@ import { calculateKittyBonusInfo } from "./kittyManager";
 import { isTrump } from "./gameHelpers";
 import { identifyCombos, getComboType } from "./comboDetection";
 import { isValidPlay } from "./playValidation";
+import { gameLogger } from "../utils/gameLogger";
+import { isUnattendedTestMode } from "../utils/testModeOverrides";
 
 /**
  * Play Processing Module
@@ -265,6 +267,19 @@ export function processPlay(
       isFinalTrick: willBeFinalTrick, // Track if this is the final trick
     };
 
+    gameLogger.debug(
+      "trick_started",
+      {
+        leadingPlayer: currentPlayer.id,
+        leadingCards: cards.map((card) => card.getDisplayName()),
+        comboLength: cards.length,
+        trickNumber: newState.tricks.length + 1,
+        isFinalTrick: willBeFinalTrick,
+        roundNumber: newState.roundNumber,
+      },
+      `Trick ${newState.tricks.length + 1} started by ${currentPlayer.id}: ${cards.map((c) => c.getDisplayName()).join(", ")}${willBeFinalTrick ? " (FINAL TRICK)" : ""}`,
+    );
+
     // First player is leading the trick
   } else if (newState.currentTrick) {
     // Trick exists - add to plays array
@@ -274,7 +289,12 @@ export function processPlay(
     );
     if (existingPlay) {
       // This player is playing again - this should never happen in a normal game
-      console.error(
+      gameLogger.error(
+        "duplicate_play_error",
+        {
+          playerId: currentPlayer.id,
+          trickNumber: newState.tricks.length + 1,
+        },
         `Warning: Player ${currentPlayer.id} is playing again in the same trick`,
       );
     } else {
@@ -303,13 +323,32 @@ export function processPlay(
 
         if (trickResult.canBeat) {
           // Current play beats the current winner
+          const previousWinner = newState.currentTrick.winningPlayerId;
           newState.currentTrick.winningPlayerId = currentPlayer.id;
+
+          gameLogger.debug(
+            "trick_leader_changed",
+            {
+              newLeader: currentPlayer.id,
+              previousLeader: previousWinner,
+              playedCards: cards.map((card) => card.getDisplayName()),
+              trickNumber: newState.tricks.length + 1,
+              roundNumber: newState.roundNumber,
+            },
+            `Trick ${newState.tricks.length + 1}: ${currentPlayer.id} takes lead with ${cards.map((c) => c.getDisplayName()).join(", ")}`,
+          );
         }
       }
     }
   } else {
     // This should never happen - no current trick but not starting new one
-    console.error(
+    gameLogger.error(
+      "invalid_trick_state",
+      {
+        playerId: currentPlayer.id,
+        currentPlayerIndex: state.currentPlayerIndex,
+        tricksCompleted: state.tricks.length,
+      },
       `Invalid state: no currentTrick for player ${currentPlayer.id}`,
     );
     return {
@@ -340,6 +379,22 @@ export function processPlay(
     const winningPlayerId =
       newState.currentTrick.winningPlayerId ||
       newState.currentTrick.plays[0]?.playerId;
+
+    gameLogger.debug(
+      "trick_completed",
+      {
+        trickNumber: newState.tricks.length + 1,
+        winningPlayer: winningPlayerId,
+        trickPoints: newState.currentTrick.points,
+        isFinalTrick: isThisFinalTrick,
+        allPlays: newState.currentTrick.plays.map((play) => ({
+          playerId: play.playerId,
+          cards: play.cards.map((card) => card.getDisplayName()),
+        })),
+        roundNumber: newState.roundNumber,
+      },
+      `Trick ${newState.tricks.length + 1} completed: ${winningPlayerId} wins with ${newState.currentTrick.points} points${isThisFinalTrick ? " (FINAL TRICK)" : ""}`,
+    );
 
     // Add points to the winning team
     const trickWinningPlayer = newState.players.find(
@@ -373,6 +428,23 @@ export function processPlay(
                   }
                 : undefined,
           };
+
+          gameLogger.debug(
+            "final_trick_kitty_bonus",
+            {
+              winningPlayer: winningPlayerId,
+              winningTeam: winningTeam.id,
+              kittyCards: newState.kittyCards.map((card) =>
+                card.getDisplayName(),
+              ),
+              kittyPoints: kittyInfo.kittyPoints,
+              finalTrickType: kittyInfo.finalTrickType,
+              multiplier: kittyInfo.multiplier,
+              bonusPoints: kittyInfo.bonusPoints,
+              roundNumber: newState.roundNumber,
+            },
+            `Final trick kitty bonus: ${winningTeam.id} gets ${kittyInfo.bonusPoints} bonus (${kittyInfo.kittyPoints} × ${kittyInfo.multiplier} for ${kittyInfo.finalTrickType})`,
+          );
 
           // NOTE: Kitty bonus points are NOT added to team.points here
           // They will be added during round completion (gameRoundManager.endRound)
@@ -454,7 +526,13 @@ export function getAIMoveWithErrorHandling(state: GameState): {
 
     // Safety check to ensure we have a valid current player
     if (!currentPlayer) {
-      console.error(
+      gameLogger.error(
+        "invalid_current_player",
+        {
+          currentPlayerIndex: state.currentPlayerIndex,
+          totalPlayers: state.players.length,
+          gamePhase: state.gamePhase,
+        },
         `Invalid currentPlayerIndex: ${state.currentPlayerIndex} for ${state.players.length} players`,
       );
       return {
@@ -463,9 +541,16 @@ export function getAIMoveWithErrorHandling(state: GameState): {
       };
     }
 
-    // Safety check to ensure the current player is an AI
-    if (currentPlayer.isHuman) {
-      console.warn("getAIMoveWithErrorHandling called for human player");
+    // Safety check to ensure the current player is an AI (except in unattended test mode)
+    if (currentPlayer.isHuman && !isUnattendedTestMode()) {
+      gameLogger.warn(
+        "ai_called_for_human",
+        {
+          playerId: currentPlayer.id,
+          currentPlayerIndex: state.currentPlayerIndex,
+        },
+        "getAIMoveWithErrorHandling called for human player",
+      );
       return { cards: [], error: "Function called for human player" };
     }
 
@@ -474,7 +559,15 @@ export function getAIMoveWithErrorHandling(state: GameState): {
 
     // Validate that we received a valid move
     if (!aiMove || aiMove.length === 0) {
-      console.warn(`AI player ${currentPlayer.id} returned an empty move`);
+      gameLogger.warn(
+        "ai_empty_move",
+        {
+          playerId: currentPlayer.id,
+          handSize: currentPlayer.hand.length,
+          trickNumber: state.tricks.length + 1,
+        },
+        `AI player ${currentPlayer.id} returned an empty move`,
+      );
 
       // Emergency fallback: play cards to match the combo length
       if (currentPlayer.hand.length > 0) {
@@ -493,14 +586,111 @@ export function getAIMoveWithErrorHandling(state: GameState): {
       }
     }
 
+    // CRITICAL: Validate AI move using isValidPlay() guard
+    const leadingCards = state.currentTrick?.plays[0]?.cards || null;
+    const isValidMove = isValidPlay(
+      aiMove,
+      leadingCards,
+      currentPlayer.hand,
+      state.trumpInfo,
+    );
+
+    if (!isValidMove) {
+      // Log error for invalid AI move
+      gameLogger.error(
+        "ai_invalid_move",
+        {
+          playerId: currentPlayer.id,
+          aiMove: aiMove.map((card) => card.getDisplayName()),
+          trickNumber: state.tricks.length + 1,
+          roundNumber: state.roundNumber,
+        },
+        `AI player ${currentPlayer.id} attempted invalid move: ${aiMove.map((c) => c.getDisplayName()).join(", ")}`,
+      );
+
+      // Log detailed debug information for investigation
+      gameLogger.debug(
+        "ai_invalid_move_details",
+        {
+          playerId: currentPlayer.id,
+          playerHand: currentPlayer.hand
+            .slice()
+            .sort((a, b) => a.id.localeCompare(b.id))
+            .map((card) => card.getDisplayName()),
+          playerHandSize: currentPlayer.hand.length,
+          aiMove: aiMove.map((card) => card.getDisplayName()),
+          currentTrick: state.currentTrick
+            ? {
+                plays: state.currentTrick.plays.map((play) => ({
+                  playerId: play.playerId,
+                  cards: play.cards.map((card) => card.getDisplayName()),
+                })),
+                winningPlayerId: state.currentTrick.winningPlayerId,
+                points: state.currentTrick.points,
+                isFinalTrick: state.currentTrick.isFinalTrick,
+              }
+            : null,
+          leadingCards:
+            leadingCards?.map((card) => card.getDisplayName()) || [],
+          trumpInfo: {
+            trumpRank: state.trumpInfo.trumpRank,
+            trumpSuit: state.trumpInfo.trumpSuit,
+          },
+          trickNumber: state.tricks.length + 1,
+          roundNumber: state.roundNumber,
+        },
+        `Invalid AI move details for ${currentPlayer.id}`,
+      );
+
+      // Return both cards (to continue game) and error (for test detection)
+      return {
+        cards: aiMove,
+        error: `Invalid AI move: ${aiMove.map((c) => c.getDisplayName()).join(", ")}`,
+      };
+    }
+
     return { cards: aiMove };
   } catch (error) {
-    console.error("Error in AI move logic:", error);
+    gameLogger.error(
+      "ai_move_error",
+      {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        currentPlayerIndex: state.currentPlayerIndex,
+        gamePhase: state.gamePhase,
+      },
+      "Error in AI move logic",
+    );
     return {
       cards: [],
       error: `Error generating AI move: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
+}
+
+/**
+ * Clear completed trick and set winner as next player
+ * @param state Current game state
+ * @returns Updated game state with cleared trick
+ */
+export function clearCompletedTrick(state: GameState): GameState {
+  if (!state.currentTrick) {
+    return state;
+  }
+
+  // Find winning player index from currentTrick.winningPlayerId
+  const winningPlayerId = state.currentTrick.winningPlayerId;
+  const winningPlayerIndex = winningPlayerId
+    ? state.players.findIndex((p) => p.id === winningPlayerId)
+    : -1;
+
+  // Create new state with currentTrick cleared and winner as next player
+  return {
+    ...state,
+    currentTrick: null,
+    currentPlayerIndex:
+      winningPlayerIndex >= 0 ? winningPlayerIndex : state.currentPlayerIndex,
+  };
 }
 
 /**

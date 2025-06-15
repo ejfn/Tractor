@@ -283,6 +283,7 @@ describe('playProcessing', () => {
         
         expect(result).toEqual({
           cards: aiMove,
+          error: "Invalid AI move: 3♦",
         });
       });
     });

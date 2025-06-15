@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { initializeGame } from "../utils/gameInitialization";
 import { putbackKittyCards, validateKittySwap } from "../game/kittyManager";
-import { processPlay, validatePlay } from "../game/playProcessing";
+import {
+  processPlay,
+  validatePlay,
+  clearCompletedTrick,
+} from "../game/playProcessing";
 import { endRound, prepareNextRound } from "../game/gameRoundManager";
 import {
   Card,
@@ -341,28 +345,8 @@ export function useGameState() {
   // Function to clear trick after result is displayed
   const handleTrickResultComplete = () => {
     if (gameState) {
-      // Now safe to clear currentTrick from game state
-
-      // When a trick is completed, the winning player becomes the next player to lead
-      // Derive the winning player index from currentTrick.winningPlayerId
-      const currentTrick = gameState.currentTrick;
-      const winningPlayerIndex = currentTrick?.winningPlayerId
-        ? gameState.players.findIndex(
-            (p) => p.id === currentTrick.winningPlayerId,
-          )
-        : -1;
-
-      // Create a new state copy with currentTrick set to null and player index set to the winner
-      const newState = {
-        ...gameState,
-        currentTrick: null,
-        currentPlayerIndex:
-          winningPlayerIndex >= 0
-            ? winningPlayerIndex
-            : gameState.currentPlayerIndex,
-      };
-
-      // Update the state
+      // Use the utility function to clear completed trick and set winner as next player
+      const newState = clearCompletedTrick(gameState);
       setGameState(newState);
 
       // The useAITurns hook will detect the currentPlayerIndex change and trigger AI moves automatically

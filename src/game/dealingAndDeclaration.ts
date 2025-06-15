@@ -16,6 +16,7 @@ import {
   DeclarationType,
   validateDeclarationCards,
 } from "../types/trumpDeclaration";
+import { gameLogger } from "../utils/gameLogger";
 
 /**
  * Dealing and Trump Declaration Module
@@ -82,6 +83,21 @@ export const dealNextCard = (state: GameState): GameState => {
       pauseReason: undefined,
       lastDealtCard: undefined,
     };
+
+    // Log dealing phase start
+    gameLogger.debug(
+      "dealing_start",
+      {
+        roundNumber: newState.roundNumber,
+        cardsPerPlayer,
+        totalRounds: cardsPerPlayer,
+        startingPlayerIndex,
+        startingPlayer: newState.players[startingPlayerIndex]?.id,
+        deckSize: deck.length,
+        kittySize: newState.kittyCards.length,
+      },
+      `Dealing started for round ${newState.roundNumber}: ${cardsPerPlayer} cards per player, starting with ${newState.players[startingPlayerIndex]?.id}`,
+    );
   }
 
   const dealingState = newState.dealingState;
@@ -274,6 +290,27 @@ export function makeTrumpDeclaration(
   newState.trumpDeclarationState.currentDeclaration = fullDeclaration;
   newState.trumpDeclarationState.declarationHistory.push(fullDeclaration);
 
+  // Log the trump declaration with detailed information
+  gameLogger.debug(
+    "trump_declared",
+    {
+      playerId,
+      declarationType: fullDeclaration.type,
+      suit: fullDeclaration.suit,
+      rank: fullDeclaration.rank,
+      cards: fullDeclaration.cards.map((card) => card.getDisplayName()),
+      roundNumber: newState.roundNumber,
+      dealingProgress: getDealingProgress(newState),
+      previousDeclaration:
+        newState.trumpDeclarationState.declarationHistory.length > 1
+          ? newState.trumpDeclarationState.declarationHistory[
+              newState.trumpDeclarationState.declarationHistory.length - 2
+            ]
+          : null,
+    },
+    `Trump declared by ${playerId}: ${fullDeclaration.type} with ${fullDeclaration.cards.map((c) => c.getDisplayName()).join(", ")}`,
+  );
+
   // Update trump info if this is a valid declaration
   // For joker pairs (Suit.None), keep trump suit as None (no specific trump suit)
   if (fullDeclaration.suit === Suit.None) {
@@ -305,6 +342,20 @@ export function makeTrumpDeclaration(
       if (declarerIndex !== -1) {
         newState.roundStartingPlayerIndex = declarerIndex;
         newState.currentPlayerIndex = declarerIndex; // Set current player immediately to prevent UI timing issues
+
+        gameLogger.debug(
+          "team_roles_updated",
+          {
+            playerId,
+            declarerTeam,
+            defendingTeamId: declarerTeam,
+            attackingTeamId: newState.teams.find((t) => t.id !== declarerTeam)
+              ?.id,
+            roundStartingPlayerIndex: declarerIndex,
+            roundNumber: newState.roundNumber,
+          },
+          `Round 1: Trump declarer ${playerId} team ${declarerTeam} now defending, will start round`,
+        );
       }
     }
   }
@@ -392,6 +443,30 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
   if (newState.trumpDeclarationState?.currentDeclaration) {
     const finalDeclaration = newState.trumpDeclarationState.currentDeclaration;
 
+    gameLogger.debug(
+      "trump_finalized",
+      {
+        finalDeclaration: {
+          playerId: finalDeclaration.playerId,
+          type: finalDeclaration.type,
+          suit: finalDeclaration.suit,
+          rank: finalDeclaration.rank,
+          cards: finalDeclaration.cards.map((card) => card.getDisplayName()),
+        },
+        trumpInfo: {
+          trumpRank: newState.trumpInfo.trumpRank,
+          trumpSuit:
+            finalDeclaration.suit === Suit.None
+              ? Suit.None
+              : finalDeclaration.suit,
+        },
+        roundNumber: newState.roundNumber,
+        totalDeclarations:
+          newState.trumpDeclarationState.declarationHistory.length,
+      },
+      `Trump finalized: ${finalDeclaration.type} by ${finalDeclaration.playerId}, trump is ${finalDeclaration.suit === Suit.None ? "jokers only" : finalDeclaration.suit}`,
+    );
+
     // Apply the final trump declaration to trumpInfo
     // Handle Suit.None the same way as during declaration
     if (finalDeclaration.suit === Suit.None) {
@@ -401,6 +476,18 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     }
   } else {
     // No one declared trump during dealing - set to Suit.None (no trump game)
+    gameLogger.debug(
+      "no_trump_declared",
+      {
+        trumpInfo: {
+          trumpRank: newState.trumpInfo.trumpRank,
+          trumpSuit: Suit.None,
+        },
+        roundNumber: newState.roundNumber,
+      },
+      "No trump declared during dealing, default to no trump game",
+    );
+
     newState.trumpInfo.trumpSuit = Suit.None;
   }
 

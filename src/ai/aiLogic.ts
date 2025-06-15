@@ -1,6 +1,7 @@
 import { getValidCombinations } from "../game/combinationGeneration";
 import { Card, GamePhase, GameState, PlayerId } from "../types";
 import { sortCards } from "../utils/cardSorting";
+import { gameLogger } from "../utils/gameLogger";
 import { makeAIPlay } from "./aiStrategy";
 import { selectAIKittySwapCards } from "./kittySwap/kittySwapStrategy";
 import {
@@ -133,11 +134,15 @@ export const getAIMove = (gameState: GameState, playerId: PlayerId): Card[] => {
 
   // Handle empty hand case (should never happen - indicates game flow bug)
   if (player.hand.length === 0) {
-    console.warn("AI asked to play with empty hand - game flow bug", {
-      playerId,
-      gamePhase: gameState.gamePhase,
-      currentPlayerIndex: gameState.currentPlayerIndex,
-    });
+    gameLogger.warn(
+      "ai_empty_hand_bug",
+      {
+        playerId,
+        gamePhase: gameState.gamePhase,
+        currentPlayerIndex: gameState.currentPlayerIndex,
+      },
+      "AI asked to play with empty hand - game flow bug",
+    );
     return []; // Safety fallback
   }
 
@@ -158,9 +163,10 @@ export const getAIMove = (gameState: GameState, playerId: PlayerId): Card[] => {
       gamePhase: gameState.gamePhase,
     };
 
-    console.error(
-      "GAME BUG: No valid combinations found for AI with cards",
+    gameLogger.error(
+      "ai_no_valid_combinations",
       errorInfo,
+      "GAME BUG: No valid combinations found for AI with cards",
     );
 
     throw new Error(errorInfo.message);
