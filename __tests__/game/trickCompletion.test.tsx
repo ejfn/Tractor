@@ -138,7 +138,7 @@ const TestComponent: React.FC<{
             points: 10
           };
           
-          trickResultsHook.handleTrickCompletion('test-winner-id', 10, mockCompletedTrick);
+          trickResultsHook.handleTrickCompletion(PlayerId.Human, 10, mockCompletedTrick);
           trickResultsHook.setLastCompletedTrick(mockCompletedTrick);
         }}
       />
@@ -237,7 +237,7 @@ describe('Trick Completion Flow', () => {
     await waitFor(() => {
       const latestState = stateHistory[stateHistory.length - 1];
       expect(latestState.trickResults.showTrickResult).toBe(true);
-      expect(latestState.trickResults.lastTrickWinnerId).toBe('test-winner-id');
+      expect(latestState.trickResults.lastTrickWinnerId).toBe(PlayerId.Human);
       expect(latestState.trickResults.lastTrickPoints).toBe(10);
       expect(latestState.trickResults.lastCompletedTrick).toBeTruthy();
     });

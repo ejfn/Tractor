@@ -41,22 +41,23 @@ describe("AI Game Context", () => {
   });
 
   describe("isPlayerOnAttackingTeam", () => {
-    it("should correctly identify Team A players (Human + Bot2) as attacking on odd rounds", () => {
-      gameState.roundNumber = 1; // Odd round - Team A attacks
+    it("should correctly identify Team B players (Bot1 + Bot3) as attacking with default team setup", () => {
+      // Default: Team A defending, Team B attacking
+      expect(isPlayerOnAttackingTeam(gameState, PlayerId.Human)).toBe(false);
+      expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot2)).toBe(false);
+      expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot1)).toBe(true);
+      expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot3)).toBe(true);
+    });
+
+    it("should correctly identify Team A players (Human + Bot2) as attacking when team roles switch", () => {
+      // Switch team roles: Team A attacking, Team B defending
+      gameState.teams[0].isDefending = false; // Team A now attacking
+      gameState.teams[1].isDefending = true;  // Team B now defending
       
       expect(isPlayerOnAttackingTeam(gameState, PlayerId.Human)).toBe(true);
       expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot2)).toBe(true);
       expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot1)).toBe(false);
       expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot3)).toBe(false);
-    });
-
-    it("should correctly identify Team B players (Bot1 + Bot3) as attacking on even rounds", () => {
-      gameState.roundNumber = 2; // Even round - Team B attacks
-      
-      expect(isPlayerOnAttackingTeam(gameState, PlayerId.Human)).toBe(false);
-      expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot2)).toBe(false);
-      expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot1)).toBe(true);
-      expect(isPlayerOnAttackingTeam(gameState, PlayerId.Bot3)).toBe(true);
     });
   });
 
@@ -128,10 +129,10 @@ describe("AI Game Context", () => {
 
   describe("createGameContext", () => {
     it("should create complete game context for attacking team player", () => {
-      gameState.roundNumber = 1; // Team A attacks
+      // Default: Team B attacking, so use Bot1 (Team B)
       gameState.currentTrick = null;
       
-      const context = createGameContext(gameState, PlayerId.Human);
+      const context = createGameContext(gameState, PlayerId.Bot1);
       
       expect(context.isAttackingTeam).toBe(true);
       expect(context.currentPoints).toBe(0); // Placeholder value
@@ -142,10 +143,10 @@ describe("AI Game Context", () => {
     });
 
     it("should create complete game context for defending team player", () => {
-      gameState.roundNumber = 1; // Team A attacks, so Bot1 defends
+      // Default: Team A defending, so use Human (Team A)
       gameState.currentTrick = null;
       
-      const context = createGameContext(gameState, PlayerId.Bot1);
+      const context = createGameContext(gameState, PlayerId.Human);
       
       expect(context.isAttackingTeam).toBe(false);
       expect(context.currentPoints).toBe(0); // Placeholder value

@@ -125,7 +125,7 @@ export const getAIKittySwap = (
  * @param playerId ID of the AI player making the move
  * @returns Array of cards to play, sorted for consistent presentation
  */
-export const getAIMove = (gameState: GameState, playerId: string): Card[] => {
+export const getAIMove = (gameState: GameState, playerId: PlayerId): Card[] => {
   const player = gameState.players.find((p) => p.id === playerId);
   if (!player) {
     throw new Error(`AI player with ID ${playerId} not found`);

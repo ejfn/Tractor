@@ -268,7 +268,7 @@ export function ExpandableTrumpDeclaration({
 }
 
 // Helper functions
-function getPlayerDisplayName(playerId: string): string {
+function getPlayerDisplayName(playerId: PlayerId): string {
   switch (playerId) {
     case PlayerId.Human:
       return "You";

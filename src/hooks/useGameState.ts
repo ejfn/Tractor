@@ -3,7 +3,14 @@ import { initializeGame } from "../utils/gameInitialization";
 import { putbackKittyCards, validateKittySwap } from "../game/kittyManager";
 import { processPlay, validatePlay } from "../game/playProcessing";
 import { endRound, prepareNextRound } from "../game/gameRoundManager";
-import { Card, GamePhase, GameState, RoundResult, Trick } from "../types";
+import {
+  Card,
+  GamePhase,
+  GameState,
+  PlayerId,
+  RoundResult,
+  Trick,
+} from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import { sortCards } from "../utils/cardSorting";
 import {
@@ -14,7 +21,7 @@ import {
 
 // Interface for trick completion data
 interface TrickCompletionData {
-  winnerId: string;
+  winnerId: PlayerId;
   points: number;
   completedTrick: Trick;
   timestamp: number;

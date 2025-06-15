@@ -25,7 +25,7 @@ import { createCardMemory, enhanceGameContextWithMemory } from "./aiCardMemory";
 
 export function createGameContext(
   gameState: GameState,
-  playerId: string,
+  playerId: PlayerId,
 ): GameContext {
   const isAttackingTeam = isPlayerOnAttackingTeam(gameState, playerId);
   const currentPoints = getCurrentAttackingPoints(gameState);
@@ -70,7 +70,7 @@ export function createGameContext(
  */
 export function analyzeTrickWinner(
   gameState: GameState,
-  playerId: string,
+  playerId: PlayerId,
 ): TrickWinnerAnalysis {
   const currentTrick = gameState.currentTrick;
 
@@ -135,8 +135,8 @@ export function analyzeTrickWinner(
  */
 function isTeammate(
   gameState: GameState,
-  playerId1: string,
-  playerId2: string,
+  playerId1: PlayerId,
+  playerId2: PlayerId,
 ): boolean {
   const player1 = gameState.players.find((p) => p.id === playerId1);
   const player2 = gameState.players.find((p) => p.id === playerId2);
@@ -149,7 +149,7 @@ function isTeammate(
  */
 function canPlayerBeatCurrentWinner(
   gameState: GameState,
-  playerId: string,
+  playerId: PlayerId,
   currentTrick: Trick,
 ): boolean {
   // Simplified implementation - checks if player has trump cards when current winner is non-trump
@@ -221,7 +221,7 @@ function determineIfShouldTryToBeat(
   trickPoints: number,
   canBeatCurrentWinner: boolean,
   gameState: GameState,
-  playerId: string,
+  playerId: PlayerId,
 ): boolean {
   // Don't try to beat teammate
   if (isTeammateWinning) return false;
@@ -248,7 +248,7 @@ function determineIfShouldPlayConservatively(
   isTeammateWinning: boolean,
   trickPoints: number,
   gameState: GameState,
-  playerId: string,
+  playerId: PlayerId,
 ): boolean {
   // If teammate is winning, decide between conservative play vs point contribution
   if (isTeammateWinning) {
@@ -301,41 +301,42 @@ function determineIfShouldPlayConservatively(
 /**
  * Determines if a player is on the attacking team
  * Team A (Human + Bot2) vs Team B (Bot1 + Bot3)
- * The attacking team is determined by who has the current trump rank
+ * The attacking team is determined by which team is NOT defending in the current round
  */
 export function isPlayerOnAttackingTeam(
   gameState: GameState,
-  playerId: string,
+  playerId: PlayerId,
 ): boolean {
-  // In Shengji, the attacking team is determined by trump rank progression
-  // For simplicity, we'll use the current round's defending team info
-  // Team A (Human + Bot2) attacks when it's their turn to advance rank
+  // Find the player's team
+  const player = gameState.players.find((p) => p.id === playerId);
+  if (!player) {
+    throw new Error(`Player ${playerId} not found in game state`);
+  }
 
-  // Find which team should be attacking this round based on round number
-  // This is a simplified approach - in real Shengji it's more complex
-  const roundNumber = gameState.roundNumber;
-  const isTeamATurn = roundNumber % 2 === 1; // Team A attacks on odd rounds
+  // Find the team data for this player
+  const playerTeam = gameState.teams.find((team) => team.id === player.team);
+  if (!playerTeam) {
+    throw new Error(`Team ${player.team} not found for player ${playerId}`);
+  }
 
-  // Team A: Human (player 0) + Bot2 (player 2)
-  // Team B: Bot1 (player 1) + Bot3 (player 3)
-  const teamAPlayers = [PlayerId.Human, PlayerId.Bot2];
-  const isTeamAPlayer = teamAPlayers.includes(playerId as PlayerId);
-
-  // Player is attacking if they're on the team whose turn it is to attack
-  return isTeamAPlayer === isTeamATurn;
+  // Attacking team is the team that is NOT defending
+  return !playerTeam.isDefending;
 }
 
 /**
  * Calculates total points collected by the attacking team so far
  */
 export function getCurrentAttackingPoints(gameState: GameState): number {
-  // In the current implementation, we need to check team tricks
-  // For now, return 0 as a placeholder - this would need integration
-  // with the existing scoring system
+  // Find the attacking team (the team that is NOT defending)
+  const attackingTeam = gameState.teams.find((team) => !team.isDefending);
 
-  // TODO: Integrate with actual scoring system in gameRoundManager.ts
-  // This should sum up points from all tricks won by attacking team
-  return 0;
+  if (!attackingTeam) {
+    throw new Error("No attacking team found in game state");
+  }
+
+  // Return the current points accumulated by the attacking team
+  // This includes points from all completed tricks won by the attacking team
+  return attackingTeam.points;
 }
 
 /**
@@ -355,7 +356,7 @@ export function calculateCardsRemaining(gameState: GameState): number {
  */
 export function getTrickPosition(
   gameState: GameState,
-  playerId: string,
+  playerId: PlayerId,
 ): TrickPosition {
   const { currentTrick } = gameState;
 

@@ -12,6 +12,7 @@ import {
   TrumpTiming,
   Rank,
   Player,
+  PlayerId,
 } from "../../types";
 import { isTrump, isPointCard } from "../../game/gameHelpers";
 
@@ -26,7 +27,7 @@ import { isTrump, isPointCard } from "../../game/gameHelpers";
  */
 export function createPointFocusedContext(
   gameState: GameState,
-  playerId: string,
+  playerId: PlayerId,
   baseContext: GameContext,
 ): PointFocusedContext {
   const player = gameState.players.find((p) => p.id === playerId);

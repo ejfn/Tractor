@@ -94,7 +94,7 @@ function analyzeCompletedTrick(
 ): void {
   // Track all plays including leader at plays[0]
   trick.plays.forEach(
-    (play: { playerId: string; cards: Card[] }, index: number) => {
+    (play: { playerId: PlayerId; cards: Card[] }, index: number) => {
       const position = index === 0 ? "leading" : "following";
       play.cards.forEach((card: Card) => {
         processPlayedCard(card, play.playerId, memory, trumpInfo, position);
@@ -115,7 +115,7 @@ function analyzeCurrentTrick(
 ): void {
   // Track all plays made so far including leader at plays[0]
   trick.plays.forEach(
-    (play: { playerId: string; cards: Card[] }, index: number) => {
+    (play: { playerId: PlayerId; cards: Card[] }, index: number) => {
       const position = index === 0 ? "leading" : "following";
       play.cards.forEach((card: Card) => {
         processPlayedCard(card, play.playerId, memory, trumpInfo, position);
@@ -129,7 +129,7 @@ function analyzeCurrentTrick(
  */
 function processPlayedCard(
   card: Card,
-  playerId: string,
+  playerId: PlayerId,
   memory: CardMemory,
   trumpInfo: TrumpInfo,
   position: "leading" | "following",

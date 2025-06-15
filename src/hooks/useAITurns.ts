@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getAIMoveWithErrorHandling } from "../game/playProcessing";
 import { getAIKittySwap } from "../ai/aiLogic";
 import { putbackKittyCards } from "../game/kittyManager";
-import { Card, GamePhase, GameState, Trick } from "../types";
+import { Card, GamePhase, GameState, PlayerId, Trick } from "../types";
 import { AI_MOVE_DELAY, AI_KITTY_SWAP_DELAY } from "../utils/gameTimings";
 
 type ProcessPlayFn = (cards: Card[]) => void;
@@ -29,7 +29,9 @@ export function useAITurns(
 ) {
   const [waitingForAI, setWaitingForAI] = useState(false);
   // Track which AI we're waiting for
-  const [waitingPlayerId, setWaitingPlayerId] = useState<string>("");
+  const [waitingPlayerId, setWaitingPlayerId] = useState<PlayerId>(
+    "" as PlayerId,
+  );
 
   const lastProcessedTurnRef = useRef<{
     playerIndex: number;
@@ -41,7 +43,7 @@ export function useAITurns(
     if (!gameState) {
       console.error("handleAIMove: gameState is null");
       setWaitingForAI(false);
-      setWaitingPlayerId("");
+      setWaitingPlayerId("" as PlayerId);
       return;
     }
 
@@ -56,7 +58,7 @@ export function useAITurns(
     ) {
       // Duplicate AI move detected, ignoring
       setWaitingForAI(false);
-      setWaitingPlayerId("");
+      setWaitingPlayerId("" as PlayerId);
       return;
     }
 
@@ -75,7 +77,7 @@ export function useAITurns(
     ) {
       // AI move blocked while trick result is showing, trick complete, or round complete
       setWaitingForAI(false);
-      setWaitingPlayerId("");
+      setWaitingPlayerId("" as PlayerId);
       return;
     }
 
@@ -109,7 +111,7 @@ export function useAITurns(
       );
 
       setWaitingForAI(false);
-      setWaitingPlayerId("");
+      setWaitingPlayerId("" as PlayerId);
       return;
     }
 
@@ -135,14 +137,14 @@ export function useAITurns(
 
           // Reset waiting state
           setWaitingForAI(false);
-          setWaitingPlayerId("");
+          setWaitingPlayerId("" as PlayerId);
           return;
         } else {
           console.error(
             `AI ${currentPlayer.name} returned invalid kitty swap: ${selectedCards.length} cards`,
           );
           setWaitingForAI(false);
-          setWaitingPlayerId("");
+          setWaitingPlayerId("" as PlayerId);
           return;
         }
       }
@@ -160,7 +162,7 @@ export function useAITurns(
 
         // Reset waiting state
         setWaitingForAI(false);
-        setWaitingPlayerId("");
+        setWaitingPlayerId("" as PlayerId);
 
         // Throw error immediately without delay
         throw new Error(
@@ -179,13 +181,13 @@ export function useAITurns(
         // Immediately reset the thinking indicator after processing the play
         // The player will change, so we don't need to wait
         setWaitingForAI(false);
-        setWaitingPlayerId("");
+        setWaitingPlayerId("" as PlayerId);
       } else {
         console.warn(`AI ${currentPlayer.name} returned empty move`);
 
         // Reset waiting state
         setWaitingForAI(false);
-        setWaitingPlayerId("");
+        setWaitingPlayerId("" as PlayerId);
 
         // Throw error immediately without delay
         throw new Error(
@@ -199,7 +201,7 @@ export function useAITurns(
 
       // Reset waiting state
       setWaitingForAI(false);
-      setWaitingPlayerId("");
+      setWaitingPlayerId("" as PlayerId);
 
       // Throw error immediately without delay
       throw new Error(
@@ -242,7 +244,7 @@ export function useAITurns(
     if (currentPlayer.isHuman) {
       if (waitingForAI) {
         setWaitingForAI(false);
-        setWaitingPlayerId("");
+        setWaitingPlayerId("" as PlayerId);
       }
       return;
     }
@@ -285,7 +287,7 @@ export function useAITurns(
       waitingForAI
     ) {
       setWaitingForAI(false);
-      setWaitingPlayerId("");
+      setWaitingPlayerId("" as PlayerId);
     }
   }, [gameState, gameState?.gamePhase, waitingForAI]);
 
@@ -293,7 +295,7 @@ export function useAITurns(
   useEffect(() => {
     return () => {
       setWaitingForAI(false);
-      setWaitingPlayerId("");
+      setWaitingPlayerId("" as PlayerId);
     };
   }, []);
 

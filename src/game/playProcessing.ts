@@ -3,6 +3,7 @@ import {
   Card,
   ComboType,
   GameState,
+  PlayerId,
   Suit,
   Team,
   Trick,
@@ -212,7 +213,7 @@ export function processPlay(
 ): {
   newState: GameState;
   trickComplete: boolean;
-  trickWinnerId?: string;
+  trickWinnerId?: PlayerId;
   trickPoints?: number;
   completedTrick?: Trick;
 } {

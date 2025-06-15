@@ -5,6 +5,7 @@ import {
   ComboStrength,
   ComboType,
   GameContext,
+  PlayerId,
   Rank,
   TrumpInfo,
   TrumpConservationStrategy,
@@ -36,7 +37,7 @@ export function getPointCardPriority(card: Card): number {
 /**
  * Check if a player is a teammate based on game context
  */
-export function isTeammate(playerId: string, context: GameContext): boolean {
+export function isTeammate(playerId: PlayerId, context: GameContext): boolean {
   // In Shengji, Human + Bot2 vs Bot1 + Bot3
   // This is a simplified check - in practice you'd check the game state for team assignments
   const humanTeam = ["human", "bot2"];
