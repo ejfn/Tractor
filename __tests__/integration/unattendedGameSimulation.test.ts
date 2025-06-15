@@ -1,7 +1,8 @@
 
 
-import * as fs from 'fs';
-import * as path from 'path';
+// Dynamic imports for Node.js modules (test environment only)
+const fs = require('fs');
+const path = require('path');
 import { getAIKittySwap, getAITrumpDeclaration } from '../../src/ai/aiLogic';
 import { dealNextCard, finalizeTrumpDeclaration, isDealingComplete } from '../../src/game/dealingAndDeclaration';
 import { endRound, prepareNextRound } from '../../src/game/gameRoundManager';
