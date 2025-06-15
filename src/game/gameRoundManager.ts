@@ -1,5 +1,6 @@
 import {
-  initializeGame,
+  createDeck,
+  shuffleDeck,
   initializeTrumpDeclarationState,
 } from "../utils/gameInitialization";
 import { GamePhase, GameState, Rank, RoundResult, TeamId } from "../types";
@@ -99,7 +100,7 @@ export function prepareNextRound(
   }
 
   // Create and shuffle a new deck
-  const deck = initializeGame().deck;
+  const deck = shuffleDeck(createDeck());
 
   newState.deck = deck;
 

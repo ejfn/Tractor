@@ -135,9 +135,9 @@ export const initializeGame = (): GameState => {
     gamePhase: GamePhase.Dealing,
   };
 
-  // Log the start of round 1
+  // Log game initialization
   gameLogger.debug(
-    "round_start",
+    "game_initialized",
     {
       roundNumber: gameState.roundNumber,
       defendingTeam: gameState.teams.find((t) => t.isDefending)?.id,
@@ -150,8 +150,9 @@ export const initializeGame = (): GameState => {
         currentRank: team.currentRank,
         isDefending: team.isDefending,
       })),
+      deckSize: gameState.deck.length,
     },
-    `Round ${gameState.roundNumber} started: ${gameState.teams.find((t) => t.isDefending)?.id} defending, ${gameState.teams.find((t) => !t.isDefending)?.id} attacking, trump rank ${gameState.trumpInfo.trumpRank}`,
+    `Game initialized: ${gameState.teams.find((t) => t.isDefending)?.id} defending, ${gameState.teams.find((t) => !t.isDefending)?.id} attacking, trump rank ${gameState.trumpInfo.trumpRank}`,
   );
 
   return gameState;

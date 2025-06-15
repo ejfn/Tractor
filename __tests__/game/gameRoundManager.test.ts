@@ -7,13 +7,14 @@ import {
   Suit,
   TeamId
 } from "../../src/types";
-import { initializeGame } from '../../src/utils/gameInitialization';
+import { createDeck, shuffleDeck } from '../../src/utils/gameInitialization';
 import { createFullGameStateWithTricks } from "../helpers";
 
 // Mock dependencies
 jest.mock('../../src/utils/gameInitialization', () => ({
   ...jest.requireActual('../../src/utils/gameInitialization'),
-  initializeGame: jest.fn()
+  createDeck: jest.fn(),
+  shuffleDeck: jest.fn()
 }));
 
 const createMockGameState = createFullGameStateWithTricks;
@@ -27,7 +28,7 @@ describe('gameRoundManager', () => {
     test('should correctly prepare the game state for the next round', () => {
       const mockState = createMockGameState();
       
-      // Mock the return value of initializeGame to return a deck
+      // Mock the return value of createDeck and shuffleDeck to return a specific deck
       const mockDeck = Array(52).fill(null).map((_, i) => ({
         id: `card_${i}`,
         suit: Suit.Spades,
@@ -36,9 +37,8 @@ describe('gameRoundManager', () => {
         joker: undefined
       }));
       
-      (initializeGame as jest.Mock).mockReturnValue({
-        deck: mockDeck
-      });
+      (createDeck as jest.Mock).mockReturnValue(mockDeck);
+      (shuffleDeck as jest.Mock).mockReturnValue(mockDeck);
       
       // Create a mock round result for testing prepareNextRound
       const mockRoundResult = {
@@ -91,8 +91,9 @@ describe('gameRoundManager', () => {
       // Verify dealing state was reset
       expect(result.dealingState).toBeUndefined();
       
-      // Verify initializeGame was called
-      expect(initializeGame).toHaveBeenCalled();
+      // Verify createDeck and shuffleDeck were called
+      expect(createDeck).toHaveBeenCalled();
+      expect(shuffleDeck).toHaveBeenCalledWith(mockDeck);
     });
   });
 
