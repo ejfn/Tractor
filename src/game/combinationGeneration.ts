@@ -11,6 +11,7 @@ import { identifyCombos } from "./comboDetection";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
 import { isValidPlay } from "./playValidation";
 import { isValidTractor } from "./tractorLogic";
+import { gameLogger } from "../utils/gameLogger";
 
 // Local helper functions to avoid circular dependencies
 
@@ -60,10 +61,37 @@ export const getValidCombinations = (
   playerHand: Card[],
   gameState: GameState,
 ): Combo[] => {
-  const { currentTrick, trumpInfo } = gameState;
+  const { currentTrick, trumpInfo, players, currentPlayerIndex } = gameState;
 
-  // If no current trick, player is leading - all combinations are valid
-  if (!currentTrick || !currentTrick.plays[0]?.cards) {
+  // CRITICAL FIX: Check if player should be leading a new trick
+  // This happens when:
+  // 1. No current trick exists, OR
+  // 2. Current trick is completed AND current player won it (should lead next trick)
+  const currentPlayer = players[currentPlayerIndex];
+  const isTrickComplete =
+    currentTrick && currentTrick.plays.length === players.length;
+  const isWinnerOfCompletedTrick =
+    isTrickComplete && currentTrick.winningPlayerId === currentPlayer.id;
+
+  if (
+    !currentTrick ||
+    !currentTrick.plays[0]?.cards ||
+    isWinnerOfCompletedTrick
+  ) {
+    gameLogger.debug(
+      "player_leading_new_trick",
+      {
+        playerId: currentPlayer.id,
+        reason: !currentTrick
+          ? "no_current_trick"
+          : !currentTrick.plays[0]?.cards
+            ? "no_leading_cards"
+            : "won_previous_trick",
+        previousTrickComplete: isTrickComplete,
+        handSize: playerHand.length,
+      },
+      `Player ${currentPlayer.id} leading new trick with ${playerHand.length} cards`,
+    );
     return identifyCombos(playerHand, trumpInfo);
   }
 
@@ -610,17 +638,18 @@ export const generateMixedCombinations = (
 
   // CRITICAL SAFETY: Ensure we always return at least one valid combination
   if (validMixedCombos.length === 0) {
-    console.warn(
-      "No valid mixed combinations found, entering fallback logic:",
+    gameLogger.warn(
+      "no_valid_combinations_fallback",
       {
         playerHandSize: playerHand.length,
-        leadingCards: leadingCards.map((c) => c.joker || `${c.rank}${c.suit}`),
+        leadingCards: leadingCards.map((c) => c.getDisplayName()),
         leadingSuit,
         isLeadingTrump,
         spadesInHand: playerHand
           .filter((c) => c.suit === "Spades")
-          .map((c) => `${c.rank}${c.suit}`),
+          .map((c) => c.getDisplayName()),
       },
+      "No valid mixed combinations found, entering fallback logic",
     );
     // Guaranteed fallback: Find any valid combination through systematic search
     const guaranteedCombo = findGuaranteedValidCombination(
@@ -640,19 +669,18 @@ export const generateMixedCombinations = (
     } else {
       // Last resort emergency fallback - should be extremely rare
       const emergencyCombo = playerHand.slice(0, leadingLength);
-      console.error(
-        "CRITICAL: Emergency fallback in generateMixedCombinations",
+      gameLogger.error(
+        "emergency_fallback_critical",
         {
-          playerHand: playerHand.map((c) => c.joker || `${c.rank}${c.suit}`),
-          leadingCards: leadingCards.map(
-            (c) => c.joker || `${c.rank}${c.suit}`,
-          ),
+          playerHand: playerHand.map((c) => c.getDisplayName()),
+          leadingCards: leadingCards.map((c) => c.getDisplayName()),
           trumpInfo,
           leadingSuit,
           isLeadingTrump,
           leadingLength,
           guaranteedComboLength: guaranteedCombo.length,
         },
+        "CRITICAL: Emergency fallback in generateMixedCombinations",
       );
 
       validMixedCombos.push({

@@ -34,7 +34,12 @@ const mockInitializeGame = require('../../src/utils/gameInitialization').initial
 
 jest.mock('../../src/game/playProcessing', () => ({
   processPlay: jest.fn(),
-  validatePlay: jest.fn()
+  validatePlay: jest.fn(),
+  clearCompletedTrick: jest.fn((state) => ({
+    ...state,
+    currentTrick: null,
+    currentPlayerIndex: 2
+  }))
 }));
 
 

@@ -44,3 +44,7 @@ coverage/
 
 # Dev version file (auto-generated)
 src/dev-version.json
+
+# log files
+logs/
+!logs/.gitkeep

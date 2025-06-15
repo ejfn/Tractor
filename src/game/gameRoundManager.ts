@@ -3,6 +3,7 @@ import {
   initializeTrumpDeclarationState,
 } from "../utils/gameInitialization";
 import { GamePhase, GameState, Rank, RoundResult, TeamId } from "../types";
+import { gameLogger } from "../utils/gameLogger";
 
 /**
  * Prepares the game state for the next round using round result information
@@ -19,13 +20,44 @@ export function prepareNextRound(
   newState.roundNumber++;
   newState.gamePhase = GamePhase.Dealing;
 
+  gameLogger.debug(
+    "round_preparation_start",
+    {
+      roundNumber: newState.roundNumber,
+      previousRoundResult: {
+        attackingTeamWon: roundResult.attackingTeamWon,
+        finalPoints: roundResult.finalPoints,
+        gameOver: roundResult.gameOver,
+        gameWinner: roundResult.gameWinner,
+      },
+      currentTeamRanks: state.teams.map((team) => ({
+        teamId: team.id,
+        currentRank: team.currentRank,
+        isDefending: team.isDefending,
+      })),
+    },
+    `Starting round ${newState.roundNumber} preparation after ${roundResult.attackingTeamWon ? "attacking" : "defending"} team victory`,
+  );
+
   // Apply computed changes from round result
 
   // Apply rank changes
   Object.entries(roundResult.rankChanges).forEach(([teamId, newRank]) => {
     const team = newState.teams.find((t) => t.id === (teamId as TeamId));
     if (team) {
+      const oldRank = team.currentRank;
       team.currentRank = newRank;
+
+      gameLogger.debug(
+        "team_rank_updated",
+        {
+          teamId: teamId as TeamId,
+          oldRank,
+          newRank,
+          roundNumber: newState.roundNumber,
+        },
+        `Team ${teamId} advanced from ${oldRank} to ${newRank}`,
+      );
     }
   });
 
@@ -37,6 +69,17 @@ export function prepareNextRound(
     if (defendingTeam && attackingTeam) {
       defendingTeam.isDefending = false;
       attackingTeam.isDefending = true;
+
+      gameLogger.debug(
+        "team_roles_switched",
+        {
+          newDefendingTeam: attackingTeam.id,
+          newAttackingTeam: defendingTeam.id,
+          roundNumber: newState.roundNumber,
+          reason: "attacking_team_won",
+        },
+        `Team roles switched: ${attackingTeam.id} now defending, ${defendingTeam.id} now attacking`,
+      );
     }
   }
 
@@ -178,6 +221,24 @@ export function prepareNextRound(
   // For now, set it for dealing phase to start dealing from the correct player
   newState.currentPlayerIndex = nextRoundStartingPlayerIndex;
 
+  gameLogger.debug(
+    "round_preparation_completed",
+    {
+      roundNumber: newState.roundNumber,
+      roundStartingPlayer: newState.players[nextRoundStartingPlayerIndex]?.id,
+      defendingTeam: newState.teams.find((t) => t.isDefending)?.id,
+      attackingTeam: newState.teams.find((t) => !t.isDefending)?.id,
+      trumpRank: newState.trumpInfo.trumpRank,
+      teamRanks: newState.teams.map((team) => ({
+        teamId: team.id,
+        currentRank: team.currentRank,
+        isDefending: team.isDefending,
+      })),
+      gamePhase: GamePhase.Dealing,
+    },
+    `Round ${newState.roundNumber} ready: ${newState.players[nextRoundStartingPlayerIndex]?.id} starts, trump rank ${newState.trumpInfo.trumpRank}`,
+  );
+
   // Reset trump declaration state for new round (AFTER we've used it to determine starting player)
   newState.trumpDeclarationState = initializeTrumpDeclarationState();
 
@@ -186,6 +247,25 @@ export function prepareNextRound(
 
   // Set phase to dealing for progressive dealing system
   newState.gamePhase = GamePhase.Dealing;
+
+  // Round start logging - after all preparation is complete
+  gameLogger.debug(
+    "round_start",
+    {
+      roundNumber: newState.roundNumber,
+      defendingTeam: newState.teams.find((t) => t.isDefending)?.id,
+      attackingTeam: newState.teams.find((t) => !t.isDefending)?.id,
+      roundStartingPlayer:
+        newState.players[newState.roundStartingPlayerIndex]?.id,
+      trumpRank: newState.trumpInfo.trumpRank,
+      teamRanks: newState.teams.map((team) => ({
+        teamId: team.id,
+        currentRank: team.currentRank,
+        isDefending: team.isDefending,
+      })),
+    },
+    `Round ${newState.roundNumber} started: ${newState.teams.find((t) => t.isDefending)?.id} defending, ${newState.teams.find((t) => !t.isDefending)?.id} attacking, trump rank ${newState.trumpInfo.trumpRank}`,
+  );
 
   return newState;
 }
@@ -207,6 +287,24 @@ export function endRound(state: GameState): RoundResult {
   // Calculate scores and determine if a team levels up
   const defendingTeam = state.teams.find((t) => t.isDefending);
   const attackingTeam = state.teams.find((t) => !t.isDefending);
+
+  gameLogger.debug(
+    "round_end_calculation_start",
+    {
+      roundNumber: state.roundNumber,
+      defendingTeam: defendingTeam?.id,
+      attackingTeam: attackingTeam?.id,
+      attackingTeamTrickPoints: attackingTeam?.points || 0,
+      kittyInfo: state.roundEndKittyInfo,
+      teamRanks: state.teams.map((team) => ({
+        teamId: team.id,
+        currentRank: team.currentRank,
+        isDefending: team.isDefending,
+        points: team.points,
+      })),
+    },
+    `Round ${state.roundNumber} ending: attacking team has ${attackingTeam?.points || 0} trick points`,
+  );
 
   if (defendingTeam && attackingTeam) {
     const rankOrder = Object.values(Rank);
@@ -244,6 +342,21 @@ export function endRound(state: GameState): RoundResult {
       );
       const newRank = rankOrder[newRankIndex];
       rankChanges[attackingTeam.id] = newRank;
+
+      gameLogger.debug(
+        "attacking_team_victory",
+        {
+          attackingTeam: attackingTeam.id,
+          finalPoints: points,
+          trickPoints,
+          kittyBonus,
+          rankAdvancement,
+          oldRank: attackingTeam.currentRank,
+          newRank,
+          roundNumber: state.roundNumber,
+        },
+        `Attacking team ${attackingTeam.id} won with ${points} points (${trickPoints} + ${kittyBonus} kitty), advancing ${rankAdvancement} ranks to ${newRank}`,
+      );
 
       // Create round result message
       if (rankAdvancement === 0) {
@@ -294,6 +407,22 @@ export function endRound(state: GameState): RoundResult {
         const newRank = rankOrder[newRankIndex];
         rankChanges[defendingTeam.id] = newRank;
 
+        gameLogger.debug(
+          "defending_team_victory",
+          {
+            defendingTeam: defendingTeam.id,
+            attackingTeamPoints: points,
+            trickPoints,
+            kittyBonus,
+            rankAdvancement,
+            oldRank: defendingTeam.currentRank,
+            newRank,
+            roundNumber: state.roundNumber,
+            gameOver: false,
+          },
+          `Defending team ${defendingTeam.id} held attackers to ${points} points, advancing ${rankAdvancement} ranks to ${newRank}`,
+        );
+
         // Create round result message
         let pointMessage = "";
         if (points === 0) {
@@ -312,6 +441,28 @@ export function endRound(state: GameState): RoundResult {
       }
     }
   }
+
+  // Round end logging - after all calculations are complete
+  gameLogger.debug(
+    "round_end",
+    {
+      roundNumber: state.roundNumber,
+      attackingTeamWon,
+      finalPoints,
+      gameOver,
+      gameWinner,
+      rankChanges,
+      defendingTeam: defendingTeam?.id,
+      attackingTeam: attackingTeam?.id,
+      teamPointsAfter: state.teams.map((team) => ({
+        teamId: team.id,
+        points: team.points,
+        currentRank: team.currentRank,
+        isDefending: team.isDefending,
+      })),
+    },
+    `Round ${state.roundNumber} ended: ${attackingTeamWon ? "attacking" : "defending"} team won with ${finalPoints} points${gameOver ? ` - ${gameWinner} wins the game!` : ""}`,
+  );
 
   return {
     gameOver,

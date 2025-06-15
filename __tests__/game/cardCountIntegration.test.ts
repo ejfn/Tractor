@@ -1,6 +1,5 @@
-import { GameState, Card, Rank } from "../../src/types";
-import { processPlay } from '../../src/game/playProcessing';
-import { getAIMoveWithErrorHandling } from '../../src/game/playProcessing';
+import { getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
+import { Card } from "../../src/types";
 import { createFullyDealtGameState } from '../helpers/gameStates';
 
 describe('Card Count Integration Test', () => {
@@ -21,7 +20,7 @@ describe('Card Count Integration Test', () => {
       const currentPlayerIdx = state.currentPlayerIndex;
       const currentPlayer = state.players[currentPlayerIdx];
       console.log(`\n--- Play ${play + 1} ---`);
-      console.log(`Current player: ${currentPlayerIdx} (${currentPlayer.name})`);
+      console.log(`Current player: ${currentPlayerIdx} (${currentPlayer.name})`); 
       console.log(`Card counts before: ${state.players.map(p => p.hand.length).join(', ')}`);
       
       // For simplicity, play the first card
