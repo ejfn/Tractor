@@ -1,6 +1,7 @@
 
 import { getAIMoveWithErrorHandling, processPlay } from '../../src/game/playProcessing';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Full Game Simulation', () => {
   test('Play complete game monitoring all card counts', () => {
@@ -26,13 +27,13 @@ describe('Full Game Simulation', () => {
     // Play until someone runs out of cards or we hit an error
     while (state.players.every(p => p.hand.length > 0) && totalErrors < 3) {
       round++;
-      console.log(`\n=== ROUND ${round} ===`);
+      gameLogger.info('test_round_start', { round }, `\n=== ROUND ${round} ===`);
       
       // Play 5 complete tricks per round
       for (let trickNum = 0; trickNum < 5 && state.players.every(p => p.hand.length > 0); trickNum++) {
-        console.log(`\nTrick ${trickNum + 1}:`);
+        gameLogger.info('test_trick_start', { trickNum: trickNum + 1 }, `\nTrick ${trickNum + 1}:`);
         const trickStartCounts = state.players.map(p => p.hand.length);
-        console.log(`Starting counts: ${trickStartCounts.join(', ')}`);
+        gameLogger.info('test_trick_card_counts', { counts: trickStartCounts }, `Starting counts: ${trickStartCounts.join(', ')}`);
         
         let trickWinner = null;
         
@@ -67,7 +68,7 @@ describe('Full Game Simulation', () => {
           }
           
           if (cardsToPlay.length === 0) {
-            console.error(`ERROR: ${currentPlayer.name} has no cards to play!`);
+            gameLogger.error('test_no_cards_error', { player: currentPlayer.name }, `ERROR: ${currentPlayer.name} has no cards to play!`);
             totalErrors++;
             break;
           }
@@ -111,8 +112,8 @@ describe('Full Game Simulation', () => {
           }
           
           if (anomalies.length > 0) {
-            console.error(`\nANOMALIES in Round ${round}, Trick ${trickNum + 1}, Play ${playNum + 1}:`);
-            anomalies.forEach(a => console.error(`  ${a}`));
+            gameLogger.error('test_card_count_anomalies', { round, trick: trickNum + 1, play: playNum + 1, anomalies }, `\nANOMALIES in Round ${round}, Trick ${trickNum + 1}, Play ${playNum + 1}:`);
+            anomalies.forEach(a => gameLogger.error('test_anomaly_detail', { anomaly: a }, `  ${a}`));
             totalErrors++;
           }
           
@@ -129,12 +130,12 @@ describe('Full Game Simulation', () => {
         
         const wrongCounts = trickEndCounts.filter((c, i) => c !== expectedCount);
         if (wrongCounts.length > 0) {
-          console.error(`ERROR: After trick ${trickNum + 1}, not all players have ${expectedCount} cards`);
-          console.error(`  Counts: ${trickEndCounts.join(', ')}`);
+          gameLogger.error('test_trick_end_error', { trick: trickNum + 1, expectedCount, actualCounts: trickEndCounts }, `ERROR: After trick ${trickNum + 1}, not all players have ${expectedCount} cards`);
+          gameLogger.error('test_trick_end_counts', { counts: trickEndCounts }, `  Counts: ${trickEndCounts.join(', ')}`);
           totalErrors++;
         }
         
-        console.log(`Trick winner: ${trickWinner}, End counts: ${trickEndCounts.join(', ')}`);
+        gameLogger.info('test_trick_end', { winner: trickWinner, counts: trickEndCounts }, `Trick winner: ${trickWinner}, End counts: ${trickEndCounts.join(', ')}`);
       }
       
       // Don't play too many rounds
@@ -142,7 +143,7 @@ describe('Full Game Simulation', () => {
     }
     
     // Analyze the game log
-    console.log('\n=== GAME ANALYSIS ===');
+    gameLogger.info('test_game_analysis_start', {}, '\n=== GAME ANALYSIS ===');
     
     // Find when card counts first diverged
     let firstDivergence = null;
@@ -157,37 +158,49 @@ describe('Full Game Simulation', () => {
     }
     
     if (firstDivergence) {
-      console.error('\nFirst divergence occurred at:');
-      console.error(`  Round ${firstDivergence.round}, Trick ${firstDivergence.trick + 1}, Play ${firstDivergence.play + 1}`);
-      console.error(`  Player: ${firstDivergence.player}`);
-      console.error(`  Cards before: ${firstDivergence.cardsBefore.join(', ')}`);
-      console.error(`  Cards after: ${firstDivergence.cardsAfter.join(', ')}`);
+      gameLogger.error('test_first_divergence', { 
+        round: firstDivergence.round, 
+        trick: firstDivergence.trick + 1, 
+        play: firstDivergence.play + 1,
+        player: firstDivergence.player,
+        cardsBefore: firstDivergence.cardsBefore,
+        cardsAfter: firstDivergence.cardsAfter
+      }, '\nFirst divergence occurred at:');
+      gameLogger.error('test_divergence_details', { firstDivergence }, `  Round ${firstDivergence.round}, Trick ${firstDivergence.trick + 1}, Play ${firstDivergence.play + 1}`);
+      gameLogger.error('test_divergence_player', { player: firstDivergence.player }, `  Player: ${firstDivergence.player}`);
+      gameLogger.error('test_divergence_before', { cardsBefore: firstDivergence.cardsBefore }, `  Cards before: ${firstDivergence.cardsBefore.join(', ')}`);
+      gameLogger.error('test_divergence_after', { cardsAfter: firstDivergence.cardsAfter }, `  Cards after: ${firstDivergence.cardsAfter.join(', ')}`);
       
       // Show context around the divergence
       const contextStart = Math.max(0, gameLog.indexOf(firstDivergence) - 3);
       const contextEnd = Math.min(gameLog.length, gameLog.indexOf(firstDivergence) + 4);
       
-      console.error('\nContext:');
+      gameLogger.error('test_divergence_context_start', {}, '\nContext:');
       for (let i = contextStart; i < contextEnd; i++) {
         const entry = gameLog[i];
         const marker = i === gameLog.indexOf(firstDivergence) ? ' <-- DIVERGENCE' : '';
-        console.error(`  ${entry.player}: ${entry.cardsBefore.join(',')} -> ${entry.cardsAfter.join(',')}${marker}`);
+        gameLogger.error('test_divergence_context_entry', { entry, marker }, `  ${entry.player}: ${entry.cardsBefore.join(',')} -> ${entry.cardsAfter.join(',')}${marker}`);
       }
     }
     
     // Player-specific analysis
     const players = ['Human', 'Bot 1', 'Bot 2', 'Bot 3'];
-    console.log('\nPlayer Analysis:');
+    gameLogger.info('test_player_analysis_start', {}, '\nPlayer Analysis:');
     
     players.forEach((playerName, idx) => {
       const playerEntries = gameLog.filter(e => e.player === playerName);
       const totalCardsPlayed = playerEntries.reduce((sum, e) => sum + e.cardsPlayed, 0);
       const errors = playerEntries.filter(e => e.error).length;
       
-      console.log(`${playerName}:`);
-      console.log(`  Total plays: ${playerEntries.length}`);
-      console.log(`  Total cards played: ${totalCardsPlayed}`);
-      console.log(`  Errors: ${errors}`);
+      gameLogger.info('test_player_stats', { 
+        playerName, 
+        totalPlays: playerEntries.length, 
+        totalCardsPlayed, 
+        errors 
+      }, `${playerName}:`);
+      gameLogger.info('test_player_plays', { playerName, totalPlays: playerEntries.length }, `  Total plays: ${playerEntries.length}`);
+      gameLogger.info('test_player_cards', { playerName, totalCardsPlayed }, `  Total cards played: ${totalCardsPlayed}`);
+      gameLogger.info('test_player_errors', { playerName, errors }, `  Errors: ${errors}`);
       
       // Find anomalous entries
       const anomalous = playerEntries.filter(e => {
@@ -196,9 +209,16 @@ describe('Full Game Simulation', () => {
       });
       
       if (anomalous.length > 0) {
-        console.error(`  ANOMALIES: ${anomalous.length} plays with incorrect card removal`);
+        gameLogger.error('test_player_anomalies', { playerName, anomalousCount: anomalous.length }, `  ANOMALIES: ${anomalous.length} plays with incorrect card removal`);
         anomalous.slice(0, 3).forEach(a => {
-          console.error(`    Round ${a.round}, Trick ${a.trick + 1}: ${a.cardsBefore[idx]} -> ${a.cardsAfter[idx]} (played ${a.cardsPlayed})`);
+          gameLogger.error('test_anomaly_example', { 
+            playerName, 
+            round: a.round, 
+            trick: a.trick + 1, 
+            cardsBefore: a.cardsBefore[idx], 
+            cardsAfter: a.cardsAfter[idx], 
+            cardsPlayed: a.cardsPlayed 
+          }, `    Round ${a.round}, Trick ${a.trick + 1}: ${a.cardsBefore[idx]} -> ${a.cardsAfter[idx]} (played ${a.cardsPlayed})`);
         });
       }
     });

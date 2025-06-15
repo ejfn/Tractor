@@ -2,6 +2,7 @@ import { initializeGame } from '../../src/utils/gameInitialization';
 import { isValidPlay } from '../../src/game/playValidation';
 import { getAIMove } from '../../src/ai/aiLogic';
 import { Card, PlayerId, GamePhase, Suit, Rank, JokerType } from '../../src/types';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 /**
  * Comprehensive AI tractor following behavior tests
@@ -17,7 +18,7 @@ import { Card, PlayerId, GamePhase, Suit, Rank, JokerType } from '../../src/type
 describe('AI Tractor Following Behavior', () => {
   describe('Issue #71: AI Tractor Following Rules', () => {
   test('AI plays valid moves when following trump tractors', () => {
-    console.log('\n✅ VERIFYING FIX FOR ISSUE #71: AI TRACTOR FOLLOWING');
+    gameLogger.info('test_issue_71_verification', {}, 'VERIFYING FIX FOR ISSUE #71: AI TRACTOR FOLLOWING');
     
     // Initialize game with Hearts as trump (rank 2)
     let gameState = initializeGame();
@@ -56,23 +57,22 @@ describe('AI Tractor Following Behavior', () => {
     };
     gameState.currentPlayerIndex = 1; // Bot1 is at index 1
     
-    console.log('Human led Hearts tractor: 5♥-5♥-6♥-6♥ (trump suit tractor)');
-    console.log('Bot1 hand:');
-    bot1Player.hand.forEach(card => {
-      console.log(`  ${card.suit}-${card.rank}`);
-    });
-    console.log('Bot1 has Hearts pairs: 7♥-7♥ and 8♥-8♥ available');
+    gameLogger.info('test_tractor_following_setup', { tractor: '5♥-5♥-6♥-6♥' }, 'Human led Hearts tractor: 5♥-5♥-6♥-6♥ (trump suit tractor)');
+    gameLogger.info('test_bot_hand_analysis', { 
+      hand: bot1Player.hand.map(card => `${card.suit}-${card.rank}`),
+      heartsPairs: '7♥-7♥ and 8♥-8♥'
+    }, 'Bot1 hand and available Hearts pairs');
     
     // Get AI move - should now be valid
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
-    console.log('AI move:', aiMove.map(card => `${card.suit}-${card.rank}`));
+    gameLogger.info('test_ai_move_result', { cards: aiMove.map(card => `${card.suit}-${card.rank}`) }, 'AI move result');
     
     // Check if the move is valid
     const isValid = isValidPlay(aiMove, leadingTractor, bot1Player.hand, gameState.trumpInfo);
-    console.log('Is AI move valid?', isValid);
+    gameLogger.info('test_move_validation', { isValid }, 'AI move validation result');
     
     if (isValid) {
-      console.log('✅ FIX CONFIRMED: AI now generates VALID moves!');
+      gameLogger.info('test_fix_confirmation', {}, 'FIX CONFIRMED: AI now generates VALID moves!');
       
       // Check if AI properly used pairs instead of singles
       const hasHeartsPairs = (
@@ -82,12 +82,12 @@ describe('AI Tractor Following Behavior', () => {
       );
       
       if (hasHeartsPairs) {
-        console.log('✅ PERFECT: AI properly played Hearts pairs [7♥, 7♥, 8♥, 8♥] as expected!');
+        gameLogger.info('test_optimal_play_confirmation', { cards: '[7♥, 7♥, 8♥, 8♥]' }, 'PERFECT: AI properly played Hearts pairs as expected!');
       } else {
-        console.log('⚠️  AI played valid but suboptimal move - might be using trump rank pairs or other valid combination');
+        gameLogger.warn('test_suboptimal_play_warning', {}, 'AI played valid but suboptimal move - might be using trump rank pairs or other valid combination');
       }
     } else {
-      console.log('❌ REGRESSION: AI is still generating invalid moves!');
+      gameLogger.error('test_regression_detected', {}, 'REGRESSION: AI is still generating invalid moves!');
     }
     
     // The fix should make AI moves valid
@@ -100,7 +100,7 @@ describe('AI Tractor Following Behavior', () => {
   });
   
   test('AI follows proper hierarchy: tractors > pairs > singles', () => {
-    console.log('\n🎯 TESTING AI HIERARCHY: Tractors > Pairs > Singles');
+    gameLogger.info('test_hierarchy_validation', {}, 'TESTING AI HIERARCHY: Tractors > Pairs > Singles');
     
     let gameState = initializeGame();
     gameState.gamePhase = GamePhase.Playing;
@@ -136,13 +136,13 @@ describe('AI Tractor Following Behavior', () => {
     };
     gameState.currentPlayerIndex = 1; // Bot1 is at index 1
     
-    console.log('Human led Spades tractor (non-trump), AI has Hearts tractor available');
+    gameLogger.info('test_cross_suit_scenario', { leadingSuit: 'Spades', aiTrumpSuit: 'Hearts' }, 'Human led Spades tractor (non-trump), AI has Hearts tractor available');
     
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
-    console.log('AI move:', aiMove.map(card => `${card.suit}-${card.rank}`));
+    gameLogger.info('test_ai_hierarchy_move', { cards: aiMove.map(card => `${card.suit}-${card.rank}`) }, 'AI hierarchy test move result');
     
     const isValid = isValidPlay(aiMove, leadingTractor, bot1Player.hand, gameState.trumpInfo);
-    console.log('Is AI move valid?', isValid);
+    gameLogger.info('test_hierarchy_validation_result', { isValid }, 'AI hierarchy move validation result');
     
     // AI should play the trump tractor if possible (7♥-7♥-8♥-8♥)
     const isTrumpTractor = (
@@ -152,7 +152,7 @@ describe('AI Tractor Following Behavior', () => {
     );
     
     if (isTrumpTractor) {
-      console.log('🎯 EXCELLENT: AI prioritized trump tractor over other options!');
+      gameLogger.info('test_trump_tractor_priority', {}, 'EXCELLENT: AI prioritized trump tractor over other options!');
     }
     
     expect(isValid).toBe(true);
@@ -400,10 +400,11 @@ describe('AI Tractor Following Behavior', () => {
       
       const aiMove = getAIMove(gameState, PlayerId.Bot1);
       
-      console.log('=== DEBUG: AI Tractor Following Test ===');
-      console.log(`AI hand: ${bot1Player.hand.map(c => `${c.rank}${c.suit}`).join(', ')}`);
-      console.log(`Led tractor: ${leadingTractor.map(c => `${c.rank}${c.suit}`).join(', ')}`);
-      console.log(`AI selected: ${aiMove.map(c => `${c.rank}${c.suit}`).join(', ')}`);
+      gameLogger.info('test_cross_suit_trump_debug', {
+        aiHand: bot1Player.hand.map(c => `${c.rank}${c.suit}`).join(', '),
+        ledTractor: leadingTractor.map(c => `${c.rank}${c.suit}`).join(', '),
+        aiSelected: aiMove.map(c => `${c.rank}${c.suit}`).join(', ')
+      }, 'DEBUG: AI Tractor Following Test');
       
       // AI should use trump tractor to win (same combo type beats non-trump)
       const playedTrumpTractor = (
@@ -412,7 +413,7 @@ describe('AI Tractor Following Behavior', () => {
         aiMove.filter(card => card.rank === Rank.Eight && card.suit === Suit.Hearts).length === 2
       );
       
-      console.log(`Expected trump tractor: ${playedTrumpTractor}`);
+      gameLogger.info('test_trump_tractor_expectation', { playedTrumpTractor }, 'Expected trump tractor validation result');
       expect(playedTrumpTractor).toBe(true);
       expect(aiMove.length).toBe(4);
       

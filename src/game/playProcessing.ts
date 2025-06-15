@@ -19,7 +19,6 @@ import { isTrump } from "./gameHelpers";
 import { identifyCombos, getComboType } from "./comboDetection";
 import { isValidPlay } from "./playValidation";
 import { gameLogger } from "../utils/gameLogger";
-import { isUnattendedTestMode } from "../utils/testModeOverrides";
 
 /**
  * Play Processing Module
@@ -230,6 +229,31 @@ export function processPlay(
   };
   const currentPlayer = newState.players[newState.currentPlayerIndex];
 
+  // Log card play for both AI and human players
+  const logData: Record<string, unknown> = {
+    playerId: currentPlayer.id,
+    isHuman: currentPlayer.isHuman,
+    cardsPlayed: cards.map((card) => card.getDisplayName()),
+    cardsPlayedCount: cards.length,
+    handSizeBefore: currentPlayer.hand.length,
+    handSizeAfter: currentPlayer.hand.length - cards.length,
+    trickNumber: newState.tricks.length + 1,
+    roundNumber: newState.roundNumber,
+    currentTrickState: newState.currentTrick ? "continuing" : "starting_new",
+  };
+
+  if (gameLogger.isPlayerHandsIncluded()) {
+    logData.handBefore = currentPlayer.hand.map((card) =>
+      card.getDisplayName(),
+    );
+  }
+
+  gameLogger.debug(
+    "card_play",
+    logData,
+    `${currentPlayer.name} plays: ${cards.map((c) => c.getDisplayName()).join(", ")} (${cards.length} cards)`,
+  );
+
   // Check if we should start a new trick
   // Rules:
   // 1. If no current trick exists, start a new one
@@ -266,19 +290,6 @@ export function processPlay(
       points: 0,
       isFinalTrick: willBeFinalTrick, // Track if this is the final trick
     };
-
-    gameLogger.debug(
-      "trick_started",
-      {
-        leadingPlayer: currentPlayer.id,
-        leadingCards: cards.map((card) => card.getDisplayName()),
-        comboLength: cards.length,
-        trickNumber: newState.tricks.length + 1,
-        isFinalTrick: willBeFinalTrick,
-        roundNumber: newState.roundNumber,
-      },
-      `Trick ${newState.tricks.length + 1} started by ${currentPlayer.id}: ${cards.map((c) => c.getDisplayName()).join(", ")}${willBeFinalTrick ? " (FINAL TRICK)" : ""}`,
-    );
 
     // First player is leading the trick
   } else if (newState.currentTrick) {
@@ -323,20 +334,7 @@ export function processPlay(
 
         if (trickResult.canBeat) {
           // Current play beats the current winner
-          const previousWinner = newState.currentTrick.winningPlayerId;
           newState.currentTrick.winningPlayerId = currentPlayer.id;
-
-          gameLogger.debug(
-            "trick_leader_changed",
-            {
-              newLeader: currentPlayer.id,
-              previousLeader: previousWinner,
-              playedCards: cards.map((card) => card.getDisplayName()),
-              trickNumber: newState.tricks.length + 1,
-              roundNumber: newState.roundNumber,
-            },
-            `Trick ${newState.tricks.length + 1}: ${currentPlayer.id} takes lead with ${cards.map((c) => c.getDisplayName()).join(", ")}`,
-          );
         }
       }
     }
@@ -380,7 +378,7 @@ export function processPlay(
       newState.currentTrick.winningPlayerId ||
       newState.currentTrick.plays[0]?.playerId;
 
-    gameLogger.debug(
+    gameLogger.info(
       "trick_completed",
       {
         trickNumber: newState.tricks.length + 1,
@@ -539,19 +537,6 @@ export function getAIMoveWithErrorHandling(state: GameState): {
         cards: [],
         error: `Invalid player index: ${state.currentPlayerIndex}`,
       };
-    }
-
-    // Safety check to ensure the current player is an AI (except in unattended test mode)
-    if (currentPlayer.isHuman && !isUnattendedTestMode()) {
-      gameLogger.warn(
-        "ai_called_for_human",
-        {
-          playerId: currentPlayer.id,
-          currentPlayerIndex: state.currentPlayerIndex,
-        },
-        "getAIMoveWithErrorHandling called for human player",
-      );
-      return { cards: [], error: "Function called for human player" };
     }
 
     // Get AI move

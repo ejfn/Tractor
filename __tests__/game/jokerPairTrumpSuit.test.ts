@@ -1,6 +1,7 @@
 import { makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
 import { Card, DeclarationType, JokerType, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Joker Pair Trump Suit Rules', () => {
   let gameState: any;
@@ -23,7 +24,7 @@ describe('Joker Pair Trump Suit Rules', () => {
     // Trump suit should be Suit.None (no trump suit)
     expect(newState.trumpInfo.trumpSuit).toBe(Suit.None);
     
-    console.log('✅ Big joker pair correctly sets trump suit to Suit.None');
+    gameLogger.info('test_big_joker_trump_suit', { trumpSuit: newState.trumpInfo.trumpSuit }, '✅ Big joker pair correctly sets trump suit to Suit.None');
   });
 
   test('should set trump suit to Suit.None when small joker pair is declared', () => {
@@ -40,7 +41,7 @@ describe('Joker Pair Trump Suit Rules', () => {
     // Trump suit should be Suit.None (no trump suit)
     expect(newState.trumpInfo.trumpSuit).toBe(Suit.None);
     
-    console.log('✅ Small joker pair correctly sets trump suit to Suit.None');
+    gameLogger.info('test_small_joker_trump_suit', { trumpSuit: newState.trumpInfo.trumpSuit }, '✅ Small joker pair correctly sets trump suit to Suit.None');
   });
 
   test('should maintain trump suit for regular rank declarations', () => {
@@ -57,7 +58,7 @@ describe('Joker Pair Trump Suit Rules', () => {
     // Trump suit should be the declared suit
     expect(newState.trumpInfo.trumpSuit).toBe(Suit.Clubs);
     
-    console.log('✅ Regular rank declarations correctly set trump suit');
+    gameLogger.info('test_regular_rank_trump_suit', { trumpSuit: newState.trumpInfo.trumpSuit }, '✅ Regular rank declarations correctly set trump suit');
   });
 
   test('should demonstrate joker pair overriding regular declaration', () => {
@@ -90,7 +91,7 @@ describe('Joker Pair Trump Suit Rules', () => {
     expect(state.trumpDeclarationState?.declarationHistory).toHaveLength(2);
     expect(state.trumpDeclarationState?.currentDeclaration?.type).toBe(DeclarationType.BigJokerPair);
     
-    console.log('✅ Joker pair correctly overrides regular declaration and removes trump suit');
+    gameLogger.info('test_joker_override', { finalTrumpSuit: state.trumpInfo.trumpSuit, declarerId: state.trumpDeclarationState?.currentDeclaration?.playerId }, '✅ Joker pair correctly overrides regular declaration and removes trump suit');
   });
 
   test('should show correct logs for joker pair declarations', () => {
@@ -114,6 +115,6 @@ describe('Joker Pair Trump Suit Rules', () => {
     
     consoleSpy.mockRestore();
     
-    console.log('✅ Joker pair declarations no longer incorrectly reference trump suits');
+    gameLogger.info('test_joker_declaration_logs', { trumpSuit: newState.trumpInfo.trumpSuit }, '✅ Joker pair declarations no longer incorrectly reference trump suits');
   });
 });

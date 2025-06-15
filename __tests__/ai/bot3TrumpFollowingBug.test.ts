@@ -2,6 +2,7 @@ import { getAIMove } from '../../src/ai/aiLogic';
 import { initializeGame } from '../../src/utils/gameInitialization';
 import { PlayerId, Rank, Suit, ComboType, GamePhase, Card } from '../../src/types';
 import type { GameState } from '../../src/types';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Bot 3 Trump Following Decision Tree Bug', () => {
   test('Bot 3 should play weakest trump when opponent (Bot 2) is winning trump trick', () => {
@@ -67,8 +68,8 @@ describe('Bot 3 Trump Following Decision Tree Bug', () => {
     expect(selectedCards).toHaveLength(1);
     const selectedCard = selectedCards[0];
     
-    console.log(`Bot 3 selected: ${selectedCard.rank}${selectedCard.suit}`);
-    console.log('Available trump options were:', bot3Hand.map(c => `${c.rank}${c.suit}`));
+    gameLogger.info('test_bot3_trump_selection', { selectedCard: `${selectedCard.rank}${selectedCard.suit}` }, `Bot 3 selected: ${selectedCard.rank}${selectedCard.suit}`);
+    gameLogger.info('test_available_trump_options', { availableOptions: bot3Hand.map(c => `${c.rank}${c.suit}`) }, 'Available trump options were: ' + bot3Hand.map(c => `${c.rank}${c.suit}`).join(', '));
 
     // Expected: Bot 3 should choose 3♦ (weakest trump) over 2♣ (valuable trump rank)
     expect(selectedCard.rank).toBe(Rank.Three);

@@ -22,6 +22,7 @@ import {
   ROUND_COMPLETE_BUFFER,
   TRICK_RESULT_DISPLAY_TIME,
 } from "../utils/gameTimings";
+import { gameLogger } from "../utils/gameLogger";
 
 // Interface for trick completion data
 interface TrickCompletionData {
@@ -180,8 +181,9 @@ export function useGameState() {
       // Reset processing state on validation error
       setIsProcessingPlay(false);
       // In a real implementation, we'd show an alert or error message
-      console.warn(
-        "Invalid Play",
+      gameLogger.warn(
+        "invalid_play",
+        { selectedCards: selectedCards.length },
         "Please select a valid combination of cards.",
       );
       return;
@@ -208,7 +210,11 @@ export function useGameState() {
     if (!gameState || gameState.gamePhase !== GamePhase.KittySwap) return;
 
     if (!validateKittySwap(selectedCards)) {
-      console.warn("Invalid Kitty Swap", "Please select exactly 8 cards.");
+      gameLogger.warn(
+        "invalid_kitty_swap",
+        { selectedCount: selectedCards.length },
+        "Please select exactly 8 cards.",
+      );
       return;
     }
 
@@ -225,7 +231,11 @@ export function useGameState() {
       setGameState(newGameState);
       setSelectedCards([]);
     } catch (error) {
-      console.error("Kitty swap failed:", error);
+      gameLogger.error(
+        "kitty_swap_failed",
+        { error, playerId: currentPlayer.id },
+        "Kitty swap failed",
+      );
     }
   };
 

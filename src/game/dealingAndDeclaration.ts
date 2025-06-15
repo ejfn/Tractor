@@ -443,7 +443,7 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
   if (newState.trumpDeclarationState?.currentDeclaration) {
     const finalDeclaration = newState.trumpDeclarationState.currentDeclaration;
 
-    gameLogger.debug(
+    gameLogger.info(
       "trump_finalized",
       {
         finalDeclaration: {

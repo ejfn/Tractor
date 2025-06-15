@@ -1,5 +1,6 @@
 import { identifyCombos } from '../../src/game/comboDetection';
 import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Invalid Trump Rank Pair Bug', () => {
   test('should NOT create pair from different suit trump rank cards', () => {
@@ -18,15 +19,19 @@ describe('Invalid Trump Rank Pair Bug', () => {
     const combos = identifyCombos(cards, trumpInfo);
 
     // DEBUG: Let's see what combinations are actually found
-    console.log('DEBUG: All combos found:', combos);
-    console.log('DEBUG: Cards input:', cards);
+    gameLogger.info('test_combo_debug', {
+      allCombos: combos,
+      cardsInput: cards
+    }, 'DEBUG: All combos found and cards input');
     
     // Should find 2 singles but NO pairs
     const pairs = combos.filter(combo => combo.type === ComboType.Pair);
     const singles = combos.filter(combo => combo.type === ComboType.Single);
 
-    console.log('DEBUG: Pairs found:', pairs);
-    console.log('DEBUG: Singles found:', singles);
+    gameLogger.info('test_combo_results', {
+      pairsFound: pairs,
+      singlesFound: singles
+    }, 'DEBUG: Pairs and singles found');
 
     expect(singles).toHaveLength(2);
     expect(pairs).toHaveLength(0); // Should NOT find pairs from different suits

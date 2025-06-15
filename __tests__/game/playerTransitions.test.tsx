@@ -13,6 +13,7 @@ import {
   Suit
 } from "../../src/types";
 import { createComponentTestGameState } from "../helpers";
+import { gameLogger } from '../../src/utils/gameLogger';
 
 // Mock dependencies
 jest.mock('../../src/game/comboDetection', () => ({
@@ -85,7 +86,7 @@ const TestComponent: React.FC<TestComponentProps> = ({ initialState, onStateChan
   // Track state changes
   React.useEffect(() => {
     if (onStateChange) {
-      console.log('Updating state:', gameStateHook.gameState);
+      gameLogger.info('test_state_update', { currentPlayerIndex: gameStateHook.gameState?.currentPlayerIndex }, 'Updating state: ' + JSON.stringify(gameStateHook.gameState));
       onStateChange({
         gameState: gameStateHook.gameState,
         aiState: aiTurnsHook

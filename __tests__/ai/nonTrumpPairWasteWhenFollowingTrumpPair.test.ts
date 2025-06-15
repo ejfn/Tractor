@@ -1,6 +1,7 @@
 import { getAIMove } from '../../src/ai/aiLogic';
 import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, TrumpInfo, GameState } from '../../src/types';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
   let gameState: GameState;
@@ -47,17 +48,25 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
       Card.createCard(Suit.Diamonds, Rank.Four, 0)
     ];
 
-    console.log('=== Non-Trump Pair Waste Test ===');
-    console.log('Setup:');
-    console.log('- Lead: 7♠-7♠ (trump suit pair)');
-    console.log('- Bot1 has:');
-    console.log('  * Trump pairs: 3♠-3♠, 2♣-2♥ (SHOULD use these)');
-    console.log('  * Non-trump pairs: K♥-K♥, Q♣-Q♣ (should NOT use these)');
-    console.log('Expected: Bot1 should use trump pair, NOT non-trump pair');
+    gameLogger.info('test_non_trump_pair_waste_setup', {
+      testName: 'Non-Trump Pair Waste Test',
+      leadCards: '7♠-7♠',
+      trumpPairs: ['3♠-3♠', '2♣-2♥'],
+      nonTrumpPairs: ['K♥-K♥', 'Q♣-Q♣']
+    }, '=== Non-Trump Pair Waste Test ===');
+    gameLogger.info('test_setup_details', { phase: 'setup' }, 'Setup:');
+    gameLogger.info('test_lead_cards', { lead: '7♠-7♠' }, '- Lead: 7♠-7♠ (trump suit pair)');
+    gameLogger.info('test_bot_hand', { player: 'Bot1' }, '- Bot1 has:');
+    gameLogger.info('test_trump_pairs', { pairs: ['3♠-3♠', '2♣-2♥'] }, '  * Trump pairs: 3♠-3♠, 2♣-2♥ (SHOULD use these)');
+    gameLogger.info('test_non_trump_pairs', { pairs: ['K♥-K♥', 'Q♣-Q♣'] }, '  * Non-trump pairs: K♥-K♥, Q♣-Q♣ (should NOT use these)');
+    gameLogger.info('test_expectation', { expected: 'use trump pair, not non-trump pair' }, 'Expected: Bot1 should use trump pair, NOT non-trump pair');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
+    gameLogger.info('test_ai_selection', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`),
+      cardCount: aiMove.length
+    }, `AI selected: ${aiMove.map(c => `${c.rank}${c.suit}`).join('-')}`);
 
     // Verify correct behavior
     expect(aiMove).toHaveLength(2); // Should play a pair to follow pair lead
@@ -118,17 +127,26 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
       Card.createCard(Suit.Clubs, Rank.Four, 0)
     ];
 
-    console.log('=== Trump Rank Pair Following Test ===');
-    console.log('Setup:');
-    console.log('- Lead: 2♥-2♣ (trump rank pair)');
-    console.log('- Bot1 has trump rank pair: 2♦-2♠');
-    console.log('- Bot1 has trump suit pair: 5♠-5♠');
-    console.log('- Bot1 has non-trump pair: A♥-A♥');
-    console.log('Expected: Bot1 should use trump pair (either trump rank or trump suit)');
+    gameLogger.info('test_trump_rank_pair_setup', {
+      testName: 'Trump Rank Pair Following Test',
+      leadCards: '2♥-2♣',
+      trumpRankPair: '2♦-2♠',
+      trumpSuitPair: '5♠-5♠',
+      nonTrumpPair: 'A♥-A♥'
+    }, '=== Trump Rank Pair Following Test ===');
+    gameLogger.info('test_setup_details', { phase: 'setup' }, 'Setup:');
+    gameLogger.info('test_lead_cards', { lead: '2♥-2♣' }, '- Lead: 2♥-2♣ (trump rank pair)');
+    gameLogger.info('test_trump_rank_pair', { pair: '2♦-2♠' }, '- Bot1 has trump rank pair: 2♦-2♠');
+    gameLogger.info('test_trump_suit_pair', { pair: '5♠-5♠' }, '- Bot1 has trump suit pair: 5♠-5♠');
+    gameLogger.info('test_non_trump_pair', { pair: 'A♥-A♥' }, '- Bot1 has non-trump pair: A♥-A♥');
+    gameLogger.info('test_expectation', { expected: 'use trump pair (either trump rank or trump suit)' }, 'Expected: Bot1 should use trump pair (either trump rank or trump suit)');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
+    gameLogger.info('test_ai_selection', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`),
+      cardCount: aiMove.length
+    }, `AI selected: ${aiMove.map(c => `${c.rank}${c.suit}`).join('-')}`);
 
     // Verify correct behavior
     expect(aiMove).toHaveLength(2); // Should play a pair
@@ -181,18 +199,28 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
       Card.createCard(Suit.Diamonds, Rank.King, 1),
     ];
 
-    console.log('=== Trump Conservation Test ===');
-    console.log('Setup:');
-    console.log('- Lead: 4♠-4♠ (trump suit pair)');
-    console.log('- Bot1 has weak trump: 3♠-3♠');
-    console.log('- Bot1 has strong trump: A♠-A♠'); 
-    console.log('- Bot1 has trump rank: 2♥-2♣');
-    console.log('- Bot1 has non-trump: K♦-K♦');
-    console.log('Expected: Bot1 should use weakest trump (3♠-3♠)');
+    gameLogger.info('test_trump_conservation_setup', {
+      testName: 'Trump Conservation Test',
+      leadCards: '4♠-4♠',
+      weakTrump: '3♠-3♠',
+      strongTrump: 'A♠-A♠',
+      trumpRank: '2♥-2♣',
+      nonTrump: 'K♦-K♦'
+    }, '=== Trump Conservation Test ===');
+    gameLogger.info('test_setup_details', { phase: 'setup' }, 'Setup:');
+    gameLogger.info('test_lead_cards', { lead: '4♠-4♠' }, '- Lead: 4♠-4♠ (trump suit pair)');
+    gameLogger.info('test_weak_trump', { pair: '3♠-3♠' }, '- Bot1 has weak trump: 3♠-3♠');
+    gameLogger.info('test_strong_trump', { pair: 'A♠-A♠' }, '- Bot1 has strong trump: A♠-A♠');
+    gameLogger.info('test_trump_rank', { pair: '2♥-2♣' }, '- Bot1 has trump rank: 2♥-2♣');
+    gameLogger.info('test_non_trump', { pair: 'K♦-K♦' }, '- Bot1 has non-trump: K♦-K♦');
+    gameLogger.info('test_expectation', { expected: 'use weakest trump (3♠-3♠)' }, 'Expected: Bot1 should use weakest trump (3♠-3♠)');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
+    gameLogger.info('test_ai_selection', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`),
+      cardCount: aiMove.length
+    }, `AI selected: ${aiMove.map(c => `${c.rank}${c.suit}`).join('-')}`);
 
     // Should use trump cards
     const usedTrump = aiMove.every(card => 
@@ -253,18 +281,32 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
       Card.createCard(Suit.Hearts, Rank.Six, 0)
     ];
 
-    console.log('=== Edge Case: No Trump Pairs Available ===');
-    console.log('Setup:');
-    console.log('- Lead: 7♠-7♠ (trump suit pair)');
-    console.log('- Bot1 has trump singles: 3♠, 4♠, 2♣ (cannot form pairs)');
-    console.log('- Bot1 has non-trump pairs: K♥-K♥, Q♦-Q♦');
-    console.log('Expected: Should be forced to use non-trump pair (no trump pairs available)');
+    gameLogger.info('test_edge_case_setup', {
+      testName: 'Edge Case: No Trump Pairs Available',
+      leadCards: '7♠-7♠',
+      trumpSingles: ['3♠', '4♠', '2♣'],
+      nonTrumpPairs: ['K♥-K♥', 'Q♦-Q♦']
+    }, '=== Edge Case: No Trump Pairs Available ===');
+    gameLogger.info('test_setup_details', { phase: 'setup' }, 'Setup:');
+    gameLogger.info('test_lead_cards', { lead: '7♠-7♠' }, '- Lead: 7♠-7♠ (trump suit pair)');
+    gameLogger.info('test_trump_singles', { singles: ['3♠', '4♠', '2♣'] }, '- Bot1 has trump singles: 3♠, 4♠, 2♣ (cannot form pairs)');
+    gameLogger.info('test_non_trump_pairs', { pairs: ['K♥-K♥', 'Q♦-Q♦'] }, '- Bot1 has non-trump pairs: K♥-K♥, Q♦-Q♦');
+    gameLogger.info('test_expectation', { expected: 'use non-trump pair (no trump pairs available)' }, 'Expected: Should be forced to use non-trump pair (no trump pairs available)');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
-    console.log('First card:', aiMove[0]?.rank, aiMove[0]?.suit);
-    console.log('Second card:', aiMove[1]?.rank, aiMove[1]?.suit);
+    gameLogger.info('test_ai_selection', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`),
+      cardCount: aiMove.length
+    }, `AI selected: ${aiMove.map(c => `${c.rank}${c.suit}`).join('-')}`);
+    gameLogger.info('test_first_card', {
+      rank: aiMove[0]?.rank,
+      suit: aiMove[0]?.suit
+    }, `First card: ${aiMove[0]?.rank} ${aiMove[0]?.suit}`);
+    gameLogger.info('test_second_card', {
+      rank: aiMove[1]?.rank,
+      suit: aiMove[1]?.suit
+    }, `Second card: ${aiMove[1]?.rank} ${aiMove[1]?.suit}`);
 
     // Should still play a pair (game rules require following combination type)
     expect(aiMove).toHaveLength(2);
@@ -272,8 +314,16 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
     // Check if it's actually a valid pair
     const isValidPair = aiMove[0].rank === aiMove[1].rank;
     if (!isValidPair) {
-      console.log('⚠️  AI played mismatched cards - this might indicate a combination generation bug');
-      console.log('Expected: pair following pair, but got different ranks');
+      gameLogger.warn('test_mismatched_cards', {
+        firstRank: aiMove[0].rank,
+        secondRank: aiMove[1].rank,
+        expected: 'pair',
+        actual: 'mismatched ranks'
+      }, '⚠️  AI played mismatched cards - this might indicate a combination generation bug');
+      gameLogger.warn('test_combination_bug', {
+        expected: 'pair following pair',
+        actual: 'different ranks'
+      }, 'Expected: pair following pair, but got different ranks');
     }
     
     // For now, let's be more flexible to see what the AI is actually doing
@@ -286,10 +336,16 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
     );
     
     if (usedNonTrump) {
-      console.log('✓ Correctly used non-trump pair when no trump pairs available');
+      gameLogger.info('test_correct_non_trump_usage', {
+        usedNonTrump: true,
+        reason: 'no trump pairs available'
+      }, '✓ Correctly used non-trump pair when no trump pairs available');
       expect(usedNonTrump).toBe(true); // This is acceptable when no trump pairs exist
     } else {
-      console.log('Note: AI found a way to use trump cards even without pairs');
+      gameLogger.info('test_trump_usage_note', {
+        usedTrump: true,
+        situation: 'without pairs available'
+      }, 'Note: AI found a way to use trump cards even without pairs');
       // If AI somehow used trump, verify it's a valid play (might be through mixed combinations)
       expect(aiMove).toHaveLength(2);
     }
@@ -329,17 +385,36 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
       Card.createCard(Suit.Clubs, Rank.Seven, 0)
     ];
 
-    console.log('=== Bug Reproduction Test ===');
-    console.log('Setup:');
-    console.log('- Lead: 6♠-6♠, Bot2 winning with K♠-K♠');
-    console.log('- Bot1 has trump pairs: 4♠-4♠, 2♥-2♣');
-    console.log('- Bot1 has attractive non-trump pairs: A♥-A♥, K♦-K♦');
-    console.log('- 15-point trick, opponent winning');
-    console.log('CRITICAL: Bot1 MUST use trump pair, not waste non-trump pair');
+    gameLogger.info('test_bug_reproduction_setup', {
+      testName: 'Bug Reproduction Test',
+      leadCards: '6♠-6♠',
+      winningCards: 'K♠-K♠',
+      trumpPairs: ['4♠-4♠', '2♥-2♣'],
+      nonTrumpPairs: ['A♥-A♥', 'K♦-K♦'],
+      trickPoints: 15
+    }, '=== Bug Reproduction Test ===');
+    gameLogger.info('test_setup_details', { phase: 'setup' }, 'Setup:');
+    gameLogger.info('test_lead_and_winning', {
+      lead: '6♠-6♠',
+      winner: 'Bot2',
+      winningCards: 'K♠-K♠'
+    }, '- Lead: 6♠-6♠, Bot2 winning with K♠-K♠');
+    gameLogger.info('test_trump_pairs', { pairs: ['4♠-4♠', '2♥-2♣'] }, '- Bot1 has trump pairs: 4♠-4♠, 2♥-2♣');
+    gameLogger.info('test_attractive_non_trump', { pairs: ['A♥-A♥', 'K♦-K♦'] }, '- Bot1 has attractive non-trump pairs: A♥-A♥, K♦-K♦');
+    gameLogger.info('test_trick_value', {
+      points: 15,
+      winningPlayer: 'opponent'
+    }, '- 15-point trick, opponent winning');
+    gameLogger.info('test_critical_requirement', {
+      requirement: 'use trump pair, not waste non-trump pair'
+    }, 'CRITICAL: Bot1 MUST use trump pair, not waste non-trump pair');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
+    gameLogger.info('test_ai_selection', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`),
+      cardCount: aiMove.length
+    }, `AI selected: ${aiMove.map(c => `${c.rank}${c.suit}`).join('-')}`);
 
     // Should use trump pair when trump is led, regardless of other considerations
     const usedTrump = aiMove.every(card => 
@@ -347,14 +422,24 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
     );
 
     if (!usedTrump) {
-      console.log('🚨 BUG REPRODUCED: AI used non-trump pair when trump pairs were available!');
-      console.log('This is the exact wasteful behavior that should be fixed');
+      gameLogger.error('test_bug_reproduced', {
+        usedNonTrump: !usedTrump,
+        trumpPairsAvailable: true
+      }, '🚨 BUG REPRODUCED: AI used non-trump pair when trump pairs were available!');
+      gameLogger.error('test_wasteful_behavior', {
+        behavior: 'used non-trump when trump available'
+      }, 'This is the exact wasteful behavior that should be fixed');
       
       // Log what the AI actually selected
       const selectedSuits = aiMove.map(c => c.suit);
       const selectedRanks = aiMove.map(c => c.rank);
-      console.log('Selected suits:', selectedSuits);
-      console.log('Selected ranks:', selectedRanks);
+      gameLogger.error('test_selection_details', {
+        selectedSuits,
+        selectedRanks
+      }, `Selected suits: ${selectedSuits}`);
+      gameLogger.error('test_selected_ranks', {
+        selectedRanks
+      }, `Selected ranks: ${selectedRanks}`);
     }
 
     expect(usedTrump).toBe(true); // MUST use trump when trump is led and trump pairs are available
@@ -394,20 +479,38 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
       Card.createCard(Suit.Hearts, Rank.Five, 0)
     ];
 
-    console.log('=== No Trump Cards Available Test ===');
-    console.log('Setup:');
-    console.log('- Lead: 7♠-7♠ (trump pair)');
-    console.log('- Bot1 has NO trump cards');
-    console.log('- Bot1 has: 7♥-7♥ (non-trump pair), 9♣, J♣ (singles)');
-    console.log('Question: What should AI play?');
-    console.log('Option A: 7♥-7♥ (use the pair)');
-    console.log('Option B: 9♣-J♣ (some other combination)');
+    gameLogger.info('test_no_trump_available_setup', {
+      testName: 'No Trump Cards Available Test',
+      leadCards: '7♠-7♠',
+      trumpCards: 'none',
+      nonTrumpPair: '7♥-7♥',
+      singles: ['9♣', 'J♣']
+    }, '=== No Trump Cards Available Test ===');
+    gameLogger.info('test_setup_details', { phase: 'setup' }, 'Setup:');
+    gameLogger.info('test_lead_cards', { lead: '7♠-7♠' }, '- Lead: 7♠-7♠ (trump pair)');
+    gameLogger.info('test_no_trump', { trumpCards: 'none' }, '- Bot1 has NO trump cards');
+    gameLogger.info('test_available_cards', {
+      nonTrumpPair: '7♥-7♥',
+      singles: ['9♣', 'J♣']
+    }, '- Bot1 has: 7♥-7♥ (non-trump pair), 9♣, J♣ (singles)');
+    gameLogger.info('test_question', { question: 'What should AI play?' }, 'Question: What should AI play?');
+    gameLogger.info('test_option_a', { option: '7♥-7♥' }, 'Option A: 7♥-7♥ (use the pair)');
+    gameLogger.info('test_option_b', { option: '9♣-J♣' }, 'Option B: 9♣-J♣ (some other combination)');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`).join('-'));
-    console.log('First card:', aiMove[0]?.rank, aiMove[0]?.suit);
-    console.log('Second card:', aiMove[1]?.rank, aiMove[1]?.suit);
+    gameLogger.info('test_ai_selection', {
+      selectedCards: aiMove.map(c => `${c.rank}${c.suit}`),
+      cardCount: aiMove.length
+    }, `AI selected: ${aiMove.map(c => `${c.rank}${c.suit}`).join('-')}`);
+    gameLogger.info('test_first_card', {
+      rank: aiMove[0]?.rank,
+      suit: aiMove[0]?.suit
+    }, `First card: ${aiMove[0]?.rank} ${aiMove[0]?.suit}`);
+    gameLogger.info('test_second_card', {
+      rank: aiMove[1]?.rank,
+      suit: aiMove[1]?.suit
+    }, `Second card: ${aiMove[1]?.rank} ${aiMove[1]?.suit}`);
 
     // Should play 2 cards to follow the pair lead
     expect(aiMove).toHaveLength(2);
@@ -422,13 +525,25 @@ describe('Non-Trump Pair Waste When Following Trump Pair Bug', () => {
     );
 
     if (usedHeartsPair) {
-      console.log('✓ AI used 7♥-7♥ (non-trump pair) - this preserves pair structure');
+      gameLogger.info('test_hearts_pair_usage', {
+        usedPair: '7♥-7♥',
+        structure: 'pair preserved'
+      }, '✓ AI used 7♥-7♥ (non-trump pair) - this preserves pair structure');
     } else if (usedClubsSingles) {
-      console.log('? AI used 9♣-J♣ (non-trump singles) - mixed combination');
+      gameLogger.info('test_clubs_singles_usage', {
+        usedCards: '9♣-J♣',
+        type: 'mixed combination'
+      }, '? AI used 9♣-J♣ (non-trump singles) - mixed combination');
     } else {
-      console.log('? AI used some other combination');
-      console.log('Selected suits:', aiMove.map(c => c.suit));
-      console.log('Selected ranks:', aiMove.map(c => c.rank));
+      gameLogger.info('test_other_combination', {
+        type: 'unknown combination'
+      }, '? AI used some other combination');
+      gameLogger.info('test_selected_suits', {
+        suits: aiMove.map(c => c.suit)
+      }, `Selected suits: ${aiMove.map(c => c.suit)}`);
+      gameLogger.info('test_selected_ranks', {
+        ranks: aiMove.map(c => c.rank)
+      }, `Selected ranks: ${aiMove.map(c => c.rank)}`);
     }
 
     // The key question: when no trump available, does AI prefer to:

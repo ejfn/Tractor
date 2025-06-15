@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 // Import game screen controller directly
 import GameScreenController from "../src/screens/GameScreenController";
 import { VersionDisplay } from "../src/components/VersionDisplay";
+import { gameLogger } from "../src/utils/gameLogger";
 
 export default function Index() {
   const [hasError, setHasError] = useState(false);
@@ -17,9 +18,11 @@ export default function Index() {
       content = <GameScreenController />;
     } catch (error) {
       // Log the error and set error state
-      console.error(
-        "Game loading error:",
-        error instanceof Error ? error.message : String(error),
+      gameLogger.error(
+        "game_loading_error",
+        { error: error instanceof Error ? error.message : String(error) },
+        "Game loading error: " +
+          (error instanceof Error ? error.message : String(error)),
       );
       // We need to use setTimeout to avoid state updates during render
       setTimeout(() => setHasError(true), 0);

@@ -2,6 +2,7 @@ import { GameState, Card, Rank, Suit } from "../../src/types";
 import { processPlay } from '../../src/game/playProcessing';
 import { getAIMoveWithErrorHandling } from '../../src/game/playProcessing';
 import { createFullyDealtGameState } from '../helpers/gameStates';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Comprehensive Card Tracking Tests', () => {
   // Helper function to verify card counts
@@ -10,15 +11,15 @@ describe('Comprehensive Card Tracking Tests', () => {
     const uniqueCounts = new Set(counts);
     
     if (uniqueCounts.size > 1) {
-      console.error('ERROR: Unequal card counts detected!');
+      gameLogger.error('test_card_tracking', { playerCounts: state.players.map(p => ({ name: p.name, cardCount: p.hand.length })) }, 'ERROR: Unequal card counts detected!');
       state.players.forEach((p, idx) => {
-        console.error(`  ${p.name}: ${p.hand.length} cards`);
+        gameLogger.error('test_card_tracking', { playerName: p.name, cardCount: p.hand.length }, `  ${p.name}: ${p.hand.length} cards`);
       });
       return false;
     }
     
     if (expected !== undefined && counts[0] !== expected) {
-      console.error(`ERROR: Expected ${expected} cards but found ${counts[0]}`);
+      gameLogger.error('test_card_tracking', { expected, actual: counts[0] }, `ERROR: Expected ${expected} cards but found ${counts[0]}`);
       return false;
     }
     
@@ -30,14 +31,14 @@ describe('Comprehensive Card Tracking Tests', () => {
     let state = gameState;
     
     const bot2Index = state.players.findIndex(p => p.name === 'Bot 2');
-    console.log(`Bot 2 is at index ${bot2Index}`);
+    gameLogger.info('test_card_tracking', { bot2Index }, `Bot 2 is at index ${bot2Index}`);
     
     // Track Bot 2's card history
     const bot2History: { trick: number, play: number, cards: number, action: string }[] = [];
     
     // Play 15 complete tricks
     for (let trickNum = 0; trickNum < 15; trickNum++) {
-      console.log(`\n=== TRICK ${trickNum + 1} ===`);
+      gameLogger.info('test_card_tracking', { trickNumber: trickNum + 1 }, `\n=== TRICK ${trickNum + 1} ===`);
       
       for (let playNum = 0; playNum < 4; playNum++) {
         const currentPlayer = state.players[state.currentPlayerIndex];
@@ -73,18 +74,18 @@ describe('Comprehensive Card Tracking Tests', () => {
         
         // Check if Bot 2 lost cards incorrectly
         if (bot2CardsBefore !== bot2CardsAfter && action === 'waiting') {
-          console.error(`ERROR: Bot 2 lost ${bot2CardsBefore - bot2CardsAfter} cards while waiting!`);
-          console.error(`  Current player was: ${currentPlayer.name}`);
+          gameLogger.error('test_card_tracking', { cardsLost: bot2CardsBefore - bot2CardsAfter, currentPlayerName: currentPlayer.name }, `ERROR: Bot 2 lost ${bot2CardsBefore - bot2CardsAfter} cards while waiting!`);
+          gameLogger.error('test_card_tracking', { currentPlayerName: currentPlayer.name }, `  Current player was: ${currentPlayer.name}`);
         }
         
         state = result.newState;
         
         if (result.trickComplete) {
-          console.log(`  Winner: ${result.trickWinnerId}`);
+          gameLogger.info('test_card_tracking', { trickWinnerId: result.trickWinnerId }, `  Winner: ${result.trickWinnerId}`);
           
           // Verify equal counts after trick
           if (!verifyCardCounts(state)) {
-            console.error(`  Failed after trick ${trickNum + 1}`);
+            gameLogger.error('test_card_tracking', { trickNumber: trickNum + 1 }, `  Failed after trick ${trickNum + 1}`);
             throw new Error('Card count mismatch');
           }
         }
@@ -92,7 +93,7 @@ describe('Comprehensive Card Tracking Tests', () => {
     }
     
     // Analyze Bot 2's history
-    console.log('\nBot 2 Card History Analysis:');
+    gameLogger.info('test_card_tracking', {}, '\nBot 2 Card History Analysis:');
     let totalLost = 0;
     bot2History.forEach((entry, idx) => {
       if (idx > 0) {
@@ -100,11 +101,11 @@ describe('Comprehensive Card Tracking Tests', () => {
         const lost = prev.cards - entry.cards;
         if (lost > 0) {
           totalLost += lost;
-          console.log(`  Trick ${entry.trick + 1}, Play ${entry.play + 1}: Lost ${lost} cards (${entry.action})`);
+          gameLogger.info('test_card_tracking', { trickNumber: entry.trick + 1, playNumber: entry.play + 1, cardsLost: lost, action: entry.action }, `  Trick ${entry.trick + 1}, Play ${entry.play + 1}: Lost ${lost} cards (${entry.action})`);
         }
       }
     });
-    console.log(`Total cards lost by Bot 2: ${totalLost}`);
+    gameLogger.info('test_card_tracking', { totalLost }, `Total cards lost by Bot 2: ${totalLost}`);
     
     expect(verifyCardCounts(state)).toBe(true);
   });
@@ -112,7 +113,7 @@ describe('Comprehensive Card Tracking Tests', () => {
   test('Test with different starting players', () => {
     // Test starting with each player as the first to play
     for (let startingPlayer = 0; startingPlayer < 4; startingPlayer++) {
-      console.log(`\n=== Testing with Player ${startingPlayer} starting ===`);
+      gameLogger.info('test_card_tracking', { startingPlayer }, `\n=== Testing with Player ${startingPlayer} starting ===`);
       
       const gameState = createFullyDealtGameState();
       let state = gameState;
@@ -132,7 +133,7 @@ describe('Comprehensive Card Tracking Tests', () => {
           state = result.newState;
           
           if (result.trickComplete) {
-            console.log(`  Trick ${trickNum + 1} won by ${result.trickWinnerId}`);
+            gameLogger.info('test_card_tracking', { trickNumber: trickNum + 1, trickWinnerId: result.trickWinnerId }, `  Trick ${trickNum + 1} won by ${result.trickWinnerId}`);
           }
         }
         
@@ -162,11 +163,11 @@ describe('Comprehensive Card Tracking Tests', () => {
       });
     });
     
-    console.log('\n=== Testing multi-card plays ===');
+    gameLogger.info('test_card_tracking', {}, '\n=== Testing multi-card plays ===');
     
     // Try to play pairs when possible
     for (let trickNum = 0; trickNum < 3; trickNum++) {
-      console.log(`\nTrick ${trickNum + 1}:`);
+      gameLogger.info('test_card_tracking', { trickNumber: trickNum + 1 }, `\nTrick ${trickNum + 1}:`);
       
       for (let playNum = 0; playNum < 4; playNum++) {
         const currentPlayer = state.players[state.currentPlayerIndex];
@@ -186,7 +187,7 @@ describe('Comprehensive Card Tracking Tests', () => {
         if (playNum === 0 && pairs.length > 0) {
           // Lead with a pair if possible
           cardsToPlay = pairs[0];
-          console.log(`  ${currentPlayer.name} plays pair: ${cardsToPlay[0].rank} of ${cardsToPlay[0].suit}`);
+          gameLogger.info('test_card_tracking', { playerName: currentPlayer.name, cardRank: cardsToPlay[0].rank, cardSuit: cardsToPlay[0].suit }, `  ${currentPlayer.name} plays pair: ${cardsToPlay[0].rank} of ${cardsToPlay[0].suit}`);
         } else if (currentPlayer.isHuman) {
           const comboLength = state.currentTrick?.plays[0]?.cards?.length || 1;
           cardsToPlay = currentPlayer.hand.slice(0, Math.min(comboLength, currentPlayer.hand.length));
@@ -203,7 +204,7 @@ describe('Comprehensive Card Tracking Tests', () => {
         state = result.newState;
         
         const cardsAfter = state.players[state.currentPlayerIndex].hand.length;
-        console.log(`  ${currentPlayer.name}: ${cardsBefore} -> ${cardsAfter} (played ${cardsToPlay.length})`);
+        gameLogger.info('test_card_tracking', { playerName: currentPlayer.name, cardsBefore, cardsAfter, cardsPlayed: cardsToPlay.length }, `  ${currentPlayer.name}: ${cardsBefore} -> ${cardsAfter} (played ${cardsToPlay.length})`);
         
         // Verify the player lost exactly the cards they played
         const otherPlayersBefore = state.players.map((p, idx) => 
@@ -215,7 +216,7 @@ describe('Comprehensive Card Tracking Tests', () => {
             const before = cardsBefore; // This needs fixing - track all players
             const after = player.hand.length;
             if (before !== after && idx !== state.currentPlayerIndex) {
-              console.error(`ERROR: ${player.name} lost cards when not playing!`);
+              gameLogger.error('test_card_tracking', { playerName: player.name, before, after }, `ERROR: ${player.name} lost cards when not playing!`);
             }
           }
         });
@@ -230,7 +231,7 @@ describe('Comprehensive Card Tracking Tests', () => {
     let state = gameState;
     
     // Test what happens when we try to process invalid states
-    console.log('\n=== Testing edge cases ===');
+    gameLogger.info('test_card_tracking', {}, '\n=== Testing edge cases ===');
     
     // Test 1: Try to play when no cards
     const emptyHandPlayer = { ...state.players[0], hand: [] };
@@ -238,9 +239,9 @@ describe('Comprehensive Card Tracking Tests', () => {
     
     try {
       const result = processPlay(stateWithEmptyHand, []);
-      console.log('Empty hand test: No error thrown (this might be a bug)');
+      gameLogger.info('test_card_tracking', {}, 'Empty hand test: No error thrown (this might be a bug)');
     } catch (e) {
-      console.log('Empty hand test: Error correctly thrown');
+      gameLogger.info('test_card_tracking', {}, 'Empty hand test: Error correctly thrown');
     }
     
     // Test 2: Regular gameplay to near-empty hands
@@ -268,13 +269,13 @@ describe('Comprehensive Card Tracking Tests', () => {
       expect(verifyCardCounts(state)).toBe(true);
     }
     
-    console.log('Final card counts:', state.players.map(p => p.hand.length).join(', '));
+    gameLogger.info('test_card_tracking', { finalCardCounts: state.players.map(p => p.hand.length) }, 'Final card counts: ' + state.players.map(p => p.hand.length).join(', '));
   });
 
   test('Test concurrent plays and race conditions', () => {
     const gameState = createFullyDealtGameState();
     
-    console.log('\n=== Testing race conditions ===');
+    gameLogger.info('test_card_tracking', {}, '\n=== Testing race conditions ===');
     
     // Simulate multiple players trying to play at once
     const player0Cards = [gameState.players[0].hand[0]];
@@ -286,17 +287,17 @@ describe('Comprehensive Card Tracking Tests', () => {
     // Try to process second play with original state (simulating race condition)
     try {
       const result2 = processPlay(gameState, player1Cards);
-      console.log('Race condition test: Both plays succeeded (might indicate state mutation)');
+      gameLogger.info('test_card_tracking', {}, 'Race condition test: Both plays succeeded (might indicate state mutation)');
       
       // Check if original state was mutated
       const originalCounts = gameState.players.map(p => p.hand.length);
       const result1Counts = result1.newState.players.map(p => p.hand.length);
       
       if (JSON.stringify(originalCounts) !== JSON.stringify([25, 25, 25, 25])) {
-        console.error('ERROR: Original state was mutated!');
+        gameLogger.error('test_card_tracking', { originalCounts, result1Counts }, 'ERROR: Original state was mutated!');
       }
     } catch (e) {
-      console.log('Race condition test: Second play failed (good - prevents race condition)');
+      gameLogger.info('test_card_tracking', {}, 'Race condition test: Second play failed (good - prevents race condition)');
     }
   });
 });

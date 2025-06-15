@@ -1,5 +1,6 @@
 import { identifyCombos } from '../../src/game/comboDetection';
 import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Cross-Suit Pair Bug Fix', () => {
   test('should NOT form pairs between different suit trump rank cards', () => {
@@ -14,15 +15,15 @@ describe('Cross-Suit Pair Bug Fix', () => {
       Card.createCard(Suit.Clubs, Rank.Eight, 1)    // 8♣ (trump rank in off-suit)
     ];
 
-    console.log('Testing cards:', cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId})`));
+    gameLogger.info('test_cross_suit_cards', { cards: cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId})`) }, 'Testing cards: ' + cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId})`).join(', '));
 
     const combos = identifyCombos(cards, trumpInfo);
     const pairs = combos.filter(c => c.type === ComboType.Pair);
 
-    console.log('Found pairs:', pairs.length);
+    gameLogger.info('test_pairs_found', { pairsCount: pairs.length }, 'Found pairs: ' + pairs.length);
     if (pairs.length > 0) {
       pairs.forEach(pair => {
-        console.log('Pair:', pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`));
+        gameLogger.info('test_pair_details', { pairCards: pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`) }, 'Pair: ' + pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`).join(', '));
       });
     }
 
@@ -46,15 +47,15 @@ describe('Cross-Suit Pair Bug Fix', () => {
       Card.createCard(Suit.Spades, Rank.Eight, 1)   // 8♠ from deck 1
     ];
 
-    console.log('Testing identical cards:', cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId}, deckId: ${c.deckId})`));
+    gameLogger.info('test_identical_cards', { cards: cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId}, deckId: ${c.deckId})`) }, 'Testing identical cards: ' + cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId}, deckId: ${c.deckId})`).join(', '));
 
     const combos = identifyCombos(cards, trumpInfo);
     const pairs = combos.filter(c => c.type === ComboType.Pair);
 
-    console.log('Found pairs:', pairs.length);
+    gameLogger.info('test_pairs_found', { pairsCount: pairs.length }, 'Found pairs: ' + pairs.length);
     if (pairs.length > 0) {
       pairs.forEach(pair => {
-        console.log('Pair:', pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`));
+        gameLogger.info('test_pair_details', { pairCards: pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`) }, 'Pair: ' + pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`).join(', '));
       });
     }
 

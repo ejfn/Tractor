@@ -1,6 +1,7 @@
 import { dealNextCard, getDealingProgress } from "../../src/game/dealingAndDeclaration";
 import { GameState } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
+import { gameLogger } from '../../src/utils/gameLogger';
 
 /**
  * Tests for dealing progress count fix (Issue #115)
@@ -39,11 +40,11 @@ describe("Dealing Progress Count (Fixed)", () => {
     });
 
     test("should demonstrate inconsistent progress when starting from different players", () => {
-      console.log("=== TESTING ALL STARTING PLAYERS ===");
+      gameLogger.info('test_all_starting_players', {}, "=== TESTING ALL STARTING PLAYERS ===");
       
       // Test all possible starting players to find the pattern
       for (let startingPlayer = 0; startingPlayer < 4; startingPlayer++) {
-        console.log(`\n--- Starting from Player ${startingPlayer} ---`);
+        gameLogger.info('test_starting_player', { startingPlayer }, `\n--- Starting from Player ${startingPlayer} ---`);
         
         let testState = initializeGame();
         testState.roundNumber = 2;
@@ -57,11 +58,11 @@ describe("Dealing Progress Count (Fixed)", () => {
           const afterProgress = getDealingProgress(testState);
           progressValues.push(afterProgress.current);
           
-          console.log(`  Card ${i + 1}: progress = ${afterProgress.current}`);
+          gameLogger.info('test_card_progress', { cardNumber: i + 1, progress: afterProgress.current }, `  Card ${i + 1}: progress = ${afterProgress.current}`);
         }
         
         const isSequential = progressValues.every((val, idx) => val === idx + 1);
-        console.log(`  Sequential? ${isSequential} (${progressValues.join(', ')})`);
+        gameLogger.info('test_sequential_check', { isSequential, progressValues }, `  Sequential? ${isSequential} (${progressValues.join(', ')})`);
         
         // Also test what happens if we check progress at the very beginning
         const initialState = initializeGame();
@@ -69,7 +70,7 @@ describe("Dealing Progress Count (Fixed)", () => {
         initialState.roundStartingPlayerIndex = startingPlayer;
         initialState.dealingState = undefined;
         const initialProgress = getDealingProgress(initialState);
-        console.log(`  Initial progress before any dealing: ${initialProgress.current}/${initialProgress.total}`);
+        gameLogger.info('test_initial_progress', { current: initialProgress.current, total: initialProgress.total }, `  Initial progress before any dealing: ${initialProgress.current}/${initialProgress.total}`);
       }
     });
 

@@ -2,6 +2,7 @@ import { getAITrumpDeclarationDecision } from '../../src/ai/trumpDeclaration/tru
 import { makeTrumpDeclaration } from '../../src/game/dealingAndDeclaration';
 import { Card, DeclarationType, JokerType, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('AI Reasoning Bug Fix', () => {
   let gameState: any;
@@ -52,7 +53,7 @@ describe('AI Reasoning Bug Fix', () => {
     
     // Now check Bot2's reasoning for big joker pair decision
     const bot2Decision = getAITrumpDeclarationDecision(newState, PlayerId.Bot2);
-    console.log('Bot2 decision:', bot2Decision);
+    gameLogger.info('test_bot2_decision', { shouldDeclare: bot2Decision.shouldDeclare, reasoning: bot2Decision.reasoning, decision: bot2Decision }, 'Bot2 decision:');
 
     // The reasoning should correctly identify that human declared a "pair", not undefined or wrong type
     if (bot2Decision.shouldDeclare) {
@@ -66,7 +67,7 @@ describe('AI Reasoning Bug Fix', () => {
   test('should format declaration types properly in reasoning', () => {
     // Test various declaration type formatting
     const bot1Decision = getAITrumpDeclarationDecision(gameState, PlayerId.Bot1);
-    console.log('Bot1 initial decision:', bot1Decision);
+    gameLogger.info('test_bot1_initial_decision', { shouldDeclare: bot1Decision.shouldDeclare, reasoning: bot1Decision.reasoning, decision: bot1Decision }, 'Bot1 initial decision:');
 
     if (bot1Decision.reasoning.includes('pair')) {
       // Should show "pair" not "pair" or other raw enum values
@@ -76,7 +77,7 @@ describe('AI Reasoning Bug Fix', () => {
 
     // Test bot2 with jokers
     const bot2Decision = getAITrumpDeclarationDecision(gameState, PlayerId.Bot2);
-    console.log('Bot2 initial decision:', bot2Decision);
+    gameLogger.info('test_bot2_initial_decision', { shouldDeclare: bot2Decision.shouldDeclare, reasoning: bot2Decision.reasoning, decision: bot2Decision }, 'Bot2 initial decision:');
 
     if (bot2Decision.reasoning.includes('joker')) {
       expect(bot2Decision.reasoning).toMatch(/\bbig joker pair\b/);
@@ -116,7 +117,7 @@ describe('AI Reasoning Bug Fix', () => {
     // Check that Bot2's reasoning correctly identifies the human's declaration
     const bot2Decision = getAITrumpDeclarationDecision(stateWithDeclaration, PlayerId.Bot2);
     
-    console.log('✅ Fixed reasoning:', bot2Decision.reasoning);
+    gameLogger.info('test_fixed_reasoning', { reasoning: bot2Decision.reasoning }, '✅ Fixed reasoning: ' + bot2Decision.reasoning);
     
     // Should properly reference human's pair declaration
     if (bot2Decision.shouldDeclare) {
@@ -155,8 +156,8 @@ describe('AI Reasoning Bug Fix', () => {
 
       const stateAfterBot2 = makeTrumpDeclaration(stateAfterHuman, PlayerId.Bot2, bot2Declaration);
       
-      console.log('✅ Bot2 successfully overrode human declaration');
-      console.log('Final trump suit:', stateAfterBot2.trumpInfo.trumpSuit);
+      gameLogger.info('test_bot2_override_success', {}, '✅ Bot2 successfully overrode human declaration');
+      gameLogger.info('test_final_trump_suit', { trumpSuit: stateAfterBot2.trumpInfo.trumpSuit }, 'Final trump suit: ' + stateAfterBot2.trumpInfo.trumpSuit);
       
       // This demonstrates the scenario that was causing confusing logs
       // The AI reasoning should now correctly format the override message
@@ -164,7 +165,7 @@ describe('AI Reasoning Bug Fix', () => {
       expect(stateAfterBot2.trumpDeclarationState?.currentDeclaration?.playerId).toBe(PlayerId.Bot2);
       
     } catch (error) {
-      console.log('Declaration failed:', error);
+      gameLogger.info('test_declaration_failed', { error: error instanceof Error ? error.message : String(error) }, 'Declaration failed: ' + (error instanceof Error ? error.message : String(error)));
       // This is also fine - shows the validation is working
     }
   });

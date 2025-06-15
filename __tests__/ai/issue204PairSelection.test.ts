@@ -1,4 +1,5 @@
 import { getAIMove } from '../../src/ai/aiLogic';
+import { gameLogger } from '../../src/utils/gameLogger';
 import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, TrumpInfo, GameState } from '../../src/types';
 
@@ -61,18 +62,21 @@ describe('Issue 204: AI Pair Selection Bug', () => {
 
     gameState.players[3].hand = bot3Hand;
 
-    console.log('=== Issue 204 Test Scenario ===');
-    console.log('Human leads A♠ pair and wins');
-    console.log('Bot1 (teammate) follows with K♠ pair');
-    console.log('Bot2 (opponent) follows with 7♠ pair');
-    console.log('Bot3 (4th player) has both 9♠ pair and 10♠ pair available');
-    console.log('Expected: Bot3 should play 9♠ pair (0 points) since Human (opponent) is winning');
-    console.log('Issue: Bot3 should NOT play 10♠ pair (20 points) - giving points to opponent');
+    gameLogger.info('issue204_test_scenario', {
+      humanLead: 'A♠ pair wins',
+      bot1Follow: 'K♠ pair (teammate)',
+      bot2Follow: '7♠ pair (opponent)',
+      bot3Options: 'both 9♠ pair and 10♠ pair available',
+      expected: 'Bot3 should play 9♠ pair (0 points)',
+      issue: 'Bot3 should NOT play 10♠ pair (20 points) - giving points to opponent'
+    }, '=== Issue 204 Test Scenario ===');
 
     // Get AI move for 4th player
     const aiMove = getAIMove(gameState, fourthPlayerId);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`));
+    gameLogger.info('issue204_ai_selection', {
+      aiSelected: aiMove.map(c => `${c.rank}${c.suit}`)
+    }, 'AI selected cards for pair selection test');
 
     // Verify AI move
     expect(aiMove).toHaveLength(2); // Should play a pair
@@ -83,11 +87,21 @@ describe('Issue 204: AI Pair Selection Bug', () => {
     const isTenPair = selectedRanks.every(rank => rank === Rank.Ten);
 
     if (isNinePair) {
-      console.log('✅ CORRECT: AI selected 9♠ pair (0 points - avoiding point contribution to opponent)');
+      gameLogger.info('issue204_correct_choice', {
+        selected: '9♠ pair',
+        points: 0,
+        reason: 'avoiding point contribution to opponent'
+      }, '✅ CORRECT: AI selected 9♠ pair (0 points - avoiding point contribution to opponent)');
     } else if (isTenPair) {
-      console.log('❌ BUG: AI selected 10♠ pair (20 points - giving points to opponent!)');
+      gameLogger.error('issue204_bug_detected', {
+        selected: '10♠ pair',
+        points: 20,
+        issue: 'giving points to opponent'
+      }, '❌ BUG: AI selected 10♠ pair (20 points - giving points to opponent!)');
     } else {
-      console.log('❓ UNEXPECTED: AI selected neither pair option');
+      gameLogger.warn('issue204_unexpected', {
+        selected: aiMove.map(c => `${c.rank}${c.suit}`)
+      }, '❓ UNEXPECTED: AI selected neither pair option');
     }
 
     // The AI should prefer the non-point pair (9s) when opponent is winning
@@ -142,14 +156,17 @@ describe('Issue 204: AI Pair Selection Bug', () => {
 
     gameState.players[3].hand = bot3Hand;
 
-    console.log('=== Teammate Winning Scenario ===');
-    console.log('Bot1 (teammate) wins with A♠ pair');
-    console.log('Expected: Bot3 should play 10♠ pair (20 points contribution to teammate)');
+    gameLogger.info('issue204_teammate_scenario', {
+      teammateWin: 'Bot1 wins with A♠ pair',
+      expected: 'Bot3 should play 10♠ pair (20 points contribution to teammate)'
+    }, '=== Teammate Winning Scenario ===');
 
     // Get AI move for 4th player
     const aiMove = getAIMove(gameState, fourthPlayerId);
 
-    console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit}`));
+    gameLogger.info('issue204_teammate_ai_selection', {
+      aiSelected: aiMove.map(c => `${c.rank}${c.suit}`)
+    }, 'AI selected cards when teammate winning');
 
     // Verify AI move
     expect(aiMove).toHaveLength(2); // Should play a pair
@@ -160,9 +177,16 @@ describe('Issue 204: AI Pair Selection Bug', () => {
     const isTenPair = selectedRanks.every(rank => rank === Rank.Ten);
 
     if (isTenPair) {
-      console.log('✅ CORRECT: AI selected 10♠ pair (20 points contribution when teammate winning)');
+      gameLogger.info('issue204_teammate_correct', {
+        selected: '10♠ pair',
+        points: 20,
+        reason: 'contribution when teammate winning'
+      }, '✅ CORRECT: AI selected 10♠ pair (20 points contribution when teammate winning)');
     } else if (isNinePair) {
-      console.log('⚠️ SUBOPTIMAL: AI selected 9♠ pair (missing opportunity to contribute points)');
+      gameLogger.warn('issue204_teammate_suboptimal', {
+        selected: '9♠ pair',
+        missed: 'opportunity to contribute points'
+      }, '⚠️ SUBOPTIMAL: AI selected 9♠ pair (missing opportunity to contribute points)');
     }
 
     // When teammate is winning, AI should contribute point cards

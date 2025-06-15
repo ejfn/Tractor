@@ -14,6 +14,7 @@ module.exports = {
     '**/?(*.)+(spec|test).ts?(x)'
   ],
   testPathIgnorePatterns: [
-    '__tests__/helpers/'
+    '__tests__/helpers/',
+    '__tests__/integration/'
   ]
 };

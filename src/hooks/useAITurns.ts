@@ -4,6 +4,7 @@ import { getAIKittySwap } from "../ai/aiLogic";
 import { putbackKittyCards } from "../game/kittyManager";
 import { Card, GamePhase, GameState, PlayerId, Trick } from "../types";
 import { AI_MOVE_DELAY, AI_KITTY_SWAP_DELAY } from "../utils/gameTimings";
+import { gameLogger } from "../utils/gameLogger";
 
 type ProcessPlayFn = (cards: Card[]) => void;
 type SetGameStateFn = (gameState: GameState) => void;
@@ -41,7 +42,11 @@ export function useAITurns(
   // Handle AI move logic - using useCallback to prevent dependency cycle
   const handleAIMove = useCallback(() => {
     if (!gameState) {
-      console.error("handleAIMove: gameState is null");
+      gameLogger.error(
+        "handle_ai_move_null_state",
+        {},
+        "handleAIMove: gameState is null",
+      );
       setWaitingForAI(false);
       setWaitingPlayerId("" as PlayerId);
       return;
@@ -85,7 +90,9 @@ export function useAITurns(
 
     // Safety check to ensure the current player is an AI
     if (currentPlayer.isHuman) {
-      console.warn(
+      gameLogger.warn(
+        "ai_move_called_for_human",
+        { playerName: currentPlayer.name, playerId: currentPlayer.id },
         `ERROR: handleAIMove called for human player ${currentPlayer.name}`,
       );
       setWaitingForAI(false);
@@ -106,7 +113,16 @@ export function useAITurns(
       !trickComplete; // Don't let AI play if trick is complete but not cleared
 
     if (!botReady) {
-      console.warn(
+      gameLogger.warn(
+        "ai_move_invalid_game_state",
+        {
+          playerName: currentPlayer.name,
+          playerId: currentPlayer.id,
+          gamePhase: gameState.gamePhase,
+          showTrickResult: showTrickResult,
+          showRoundComplete: showRoundComplete,
+          trickComplete: trickComplete,
+        },
         `${currentPlayer.name} move attempted during invalid game state: phase=${gameState.gamePhase}, showResult=${showTrickResult}, roundComplete=${showRoundComplete}, trickComplete=${trickComplete}`,
       );
 
@@ -140,7 +156,13 @@ export function useAITurns(
           setWaitingPlayerId("" as PlayerId);
           return;
         } else {
-          console.error(
+          gameLogger.error(
+            "ai_invalid_kitty_swap",
+            {
+              playerName: currentPlayer.name,
+              playerId: currentPlayer.id,
+              selectedCardsCount: selectedCards.length,
+            },
             `AI ${currentPlayer.name} returned invalid kitty swap: ${selectedCards.length} cards`,
           );
           setWaitingForAI(false);
@@ -155,9 +177,14 @@ export function useAITurns(
       const { cards, error } = getAIMoveWithErrorHandling(gameState);
 
       if (error) {
-        console.error(
-          `Error in AI move logic for ${currentPlayer.name}:`,
-          error,
+        gameLogger.error(
+          "ai_move_logic_error",
+          {
+            playerName: currentPlayer.name,
+            playerId: currentPlayer.id,
+            error: error,
+          },
+          `Error in AI move logic for ${currentPlayer.name}: ${error}`,
         );
 
         // Reset waiting state
@@ -183,7 +210,14 @@ export function useAITurns(
         setWaitingForAI(false);
         setWaitingPlayerId("" as PlayerId);
       } else {
-        console.warn(`AI ${currentPlayer.name} returned empty move`);
+        gameLogger.warn(
+          "ai_empty_move",
+          {
+            playerName: currentPlayer.name,
+            playerId: currentPlayer.id,
+          },
+          `AI ${currentPlayer.name} returned empty move`,
+        );
 
         // Reset waiting state
         setWaitingForAI(false);
@@ -195,7 +229,12 @@ export function useAITurns(
         );
       }
     } catch (error) {
-      console.error(
+      gameLogger.error(
+        "ai_move_unexpected_error",
+        {
+          error: error instanceof Error ? error.message : String(error),
+          currentPlayerIndex: gameState?.currentPlayerIndex,
+        },
         `Unexpected error in AI move handling: ${error instanceof Error ? error.message : String(error)}`,
       );
 

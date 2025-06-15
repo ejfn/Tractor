@@ -1,6 +1,7 @@
 import { getAIMove } from '../../src/ai/aiLogic';
 import { initializeGame } from '../../src/utils/gameInitialization';
 import { Card, Suit, Rank, PlayerId, GamePhase, TrumpInfo, JokerType } from '../../src/types';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('Issue 206: AI Joker Conservation Strategy', () => {
   let gameState: any;
@@ -56,15 +57,36 @@ describe('Issue 206: AI Joker Conservation Strategy', () => {
       Card.createCard(Suit.Spades, Rank.Six, 0)
     ];
 
-    console.log('=== Issue 206: Joker Conservation Test ===');
-    console.log('Human led: 6♦6♦ (Diamond pair)');
-    console.log('Bot1 played: Big Joker pair (opponent winning)');
-    console.log('Bot2 hand: Small Joker pair, 3♣, 4♣, 5♠, 6♠ (NO DIAMONDS)');
-    console.log('Expected: Bot2 should conserve Small Jokers, play Clubs pair instead');
+    gameLogger.info('test_joker_conservation_setup', { 
+      testCase: 'small_joker_pair_conservation', 
+      humanLead: '6♦6♦', 
+      bot1Play: 'Big Joker pair', 
+      bot2Hand: 'Small Joker pair, 3♣, 4♣, 5♠, 6♠' 
+    }, '=== Issue 206: Joker Conservation Test ===');
+    gameLogger.info('test_scenario_details', { 
+      leadCards: '6♦6♦', 
+      opponentCards: 'Big Joker pair', 
+      playerHand: 'Small Joker pair, 3♣, 4♣, 5♠, 6♠', 
+      noDiamonds: true 
+    }, 'Human led: 6♦6♦ (Diamond pair)');
+    gameLogger.info('test_scenario_details', { 
+      opponentWinning: true, 
+      opponentCards: 'Big Joker pair' 
+    }, 'Bot1 played: Big Joker pair (opponent winning)');
+    gameLogger.info('test_scenario_details', { 
+      bot2Hand: ['Small Joker pair', '3♣', '4♣', '5♠', '6♠'], 
+      outOfSuit: 'diamonds' 
+    }, 'Bot2 hand: Small Joker pair, 3♣, 4♣, 5♠, 6♠ (NO DIAMONDS)');
+    gameLogger.info('test_expectation', { 
+      expectedBehavior: 'conserve_small_jokers', 
+      alternativePlay: 'clubs_pair' 
+    }, 'Expected: Bot2 should conserve Small Jokers, play Clubs pair instead');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot2);
 
-    console.log('AI selected:', aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`));
+    gameLogger.info('test_ai_decision', { 
+      aiMove: aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`) 
+    }, 'AI selected: ' + aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`).join(', '));
 
     // Verify AI did NOT waste Small Jokers
     const usedSmallJokers = aiMove.filter(c => c.joker === JokerType.Small).length;
@@ -72,15 +94,25 @@ describe('Issue 206: AI Joker Conservation Strategy', () => {
       c.suit === Suit.Clubs && (c.rank === Rank.Three || c.rank === Rank.Four)
     ).length;
 
-    console.log('Small Jokers used:', usedSmallJokers);
-    console.log('Clubs cards used:', usedClubsPair);
+    gameLogger.info('test_joker_analysis', { 
+      smallJokersUsed: usedSmallJokers, 
+      clubsCardsUsed: usedClubsPair 
+    }, 'Small Jokers used: ' + usedSmallJokers);
+    gameLogger.info('test_joker_analysis', { 
+      smallJokersUsed: usedSmallJokers, 
+      clubsCardsUsed: usedClubsPair 
+    }, 'Clubs cards used: ' + usedClubsPair);
 
     // CRITICAL: Should NOT use Small Jokers when opponent winning with Big Jokers
     expect(usedSmallJokers).toBe(0); // Should not waste Small Jokers
     expect(usedClubsPair).toBe(2); // Should use Clubs pair instead
     expect(aiMove).toHaveLength(2); // Correct response length
 
-    console.log('✅ AI correctly conserves Small Jokers when opponent has Big Jokers');
+    gameLogger.info('test_joker_conservation_success', { 
+      testPassed: true, 
+      conservationBehavior: 'small_jokers_conserved', 
+      opponentThreat: 'big_jokers' 
+    }, '✅ AI correctly conserves Small Jokers when opponent has Big Jokers');
   });
 
   it('should conserve Small Jokers even when teammate Bot3 could potentially win', () => {
@@ -119,12 +151,22 @@ describe('Issue 206: AI Joker Conservation Strategy', () => {
       Card.createCard(Suit.Spades, Rank.Six, 0)
     ];
 
-    console.log('\n=== Corrected Test: 0-Point Trick Conservation ===');
-    console.log('0 points on table - should conserve Small Jokers regardless of strategic considerations');
+    gameLogger.info('test_zero_point_conservation', { 
+      testCase: 'zero_point_trick_conservation', 
+      pointsOnTable: 0, 
+      expectedBehavior: 'conserve_small_jokers' 
+    }, '\n=== Corrected Test: 0-Point Trick Conservation ===');
+    gameLogger.info('test_zero_point_strategy', { 
+      pointsOnTable: 0, 
+      strategicConsideration: 'irrelevant_when_zero_points' 
+    }, '0 points on table - should conserve Small Jokers regardless of strategic considerations');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot2);
 
-    console.log('AI selected:', aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`));
+    gameLogger.info('test_ai_decision', { 
+      aiMove: aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`), 
+      pointsOnTrick: 0 
+    }, 'AI selected: ' + aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`).join(', '));
 
     // Should conserve Small Jokers on 0-point tricks
     const usedSmallJokers = aiMove.filter(c => c.joker === JokerType.Small).length;
@@ -132,8 +174,15 @@ describe('Issue 206: AI Joker Conservation Strategy', () => {
     expect(aiMove).toHaveLength(2);
     expect(usedSmallJokers).toBe(0); // Should NOT waste Small Jokers on 0-point trick
     
-    console.log('Small Jokers used:', usedSmallJokers);
-    console.log('✅ AI correctly conserves Small Jokers on 0-point tricks');
+    gameLogger.info('test_joker_analysis', { 
+      smallJokersUsed: usedSmallJokers, 
+      pointsOnTrick: 0 
+    }, 'Small Jokers used: ' + usedSmallJokers);
+    gameLogger.info('test_zero_point_conservation_success', { 
+      testPassed: true, 
+      conservationBehavior: 'small_jokers_conserved', 
+      trickValue: 0 
+    }, '✅ AI correctly conserves Small Jokers on 0-point tricks');
   });
 
   it('should conserve Small Jokers when out of trump suit against Big Joker singles', () => {
@@ -162,19 +211,34 @@ describe('Issue 206: AI Joker Conservation Strategy', () => {
       Card.createCard(Suit.Hearts, Rank.Seven, 0) // Trump suit, but lower than jokers
     ];
 
-    console.log('\n=== Single Card Conservation Test ===');
-    console.log('Bot1 winning with Big Joker single, Bot2 should not waste Small Joker');
+    gameLogger.info('test_single_card_conservation', { 
+      testCase: 'single_joker_conservation', 
+      opponentCard: 'Big Joker single', 
+      expectedBehavior: 'conserve_small_joker' 
+    }, '\n=== Single Card Conservation Test ===');
+    gameLogger.info('test_single_card_strategy', { 
+      opponentWinning: true, 
+      opponentCard: 'Big Joker single', 
+      playerCard: 'Small Joker available' 
+    }, 'Bot1 winning with Big Joker single, Bot2 should not waste Small Joker');
 
     const aiMove = getAIMove(gameState, PlayerId.Bot2);
 
-    console.log('AI selected:', aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`));
+    gameLogger.info('test_ai_decision', { 
+      aiMove: aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`), 
+      opponentThreat: 'Big Joker single' 
+    }, 'AI selected: ' + aiMove.map(c => c.joker ? `${c.joker}Joker` : `${c.rank}${c.suit}`).join(', '));
 
     // Should not use Small Joker against unbeatable Big Joker
     const usedSmallJoker = aiMove.some(c => c.joker === JokerType.Small);
     expect(usedSmallJoker).toBe(false);
     expect(aiMove).toHaveLength(1);
 
-    console.log('✅ AI conserves Single Small Joker against Big Joker');
+    gameLogger.info('test_single_joker_conservation_success', { 
+      testPassed: true, 
+      conservationBehavior: 'single_small_joker_conserved', 
+      opponentThreat: 'big_joker_single' 
+    }, '✅ AI conserves Single Small Joker against Big Joker');
   });
 
   it('should recognize trump hierarchy: Big Joker > Small Joker > Trump Rank > Trump Suit', () => {
@@ -205,7 +269,11 @@ describe('Issue 206: AI Joker Conservation Strategy', () => {
     ];
 
     scenarios.forEach((scenario, index) => {
-      console.log(`\n=== Hierarchy Test ${index + 1}: ${scenario.name} ===`);
+      gameLogger.info('test_trump_hierarchy', { 
+        testNumber: index + 1, 
+        scenarioName: scenario.name, 
+        testCase: 'trump_hierarchy_conservation' 
+      }, `\n=== Hierarchy Test ${index + 1}: ${scenario.name} ===`);
       
       const testGameState = { ...gameState };
       testGameState.currentTrick = {
@@ -230,16 +298,34 @@ describe('Issue 206: AI Joker Conservation Strategy', () => {
         (c.rank === scenario.bot2Trump.rank && c.suit === scenario.bot2Trump.suit)
       );
 
-      console.log(`Opponent: ${scenario.opponentCard.joker || `${scenario.opponentCard.rank}${scenario.opponentCard.suit}`}`);
-      console.log(`Bot2 trump: ${scenario.bot2Trump.joker || `${scenario.bot2Trump.rank}${scenario.bot2Trump.suit}`}`);
-      console.log(`AI selected: ${aiMove.map(c => c.joker || `${c.rank}${c.suit}`).join('')}`);
-      console.log(`Should conserve: ${scenario.shouldConserve}, Actually conserved: ${!usedTrump}`);
+      gameLogger.info('test_hierarchy_comparison', { 
+        opponentCard: scenario.opponentCard.joker || `${scenario.opponentCard.rank}${scenario.opponentCard.suit}`, 
+        bot2Trump: scenario.bot2Trump.joker || `${scenario.bot2Trump.rank}${scenario.bot2Trump.suit}` 
+      }, `Opponent: ${scenario.opponentCard.joker || `${scenario.opponentCard.rank}${scenario.opponentCard.suit}`}`);
+      gameLogger.info('test_hierarchy_comparison', { 
+        opponentCard: scenario.opponentCard.joker || `${scenario.opponentCard.rank}${scenario.opponentCard.suit}`, 
+        bot2Trump: scenario.bot2Trump.joker || `${scenario.bot2Trump.rank}${scenario.bot2Trump.suit}` 
+      }, `Bot2 trump: ${scenario.bot2Trump.joker || `${scenario.bot2Trump.rank}${scenario.bot2Trump.suit}`}`);
+      gameLogger.info('test_hierarchy_ai_decision', { 
+        aiMove: aiMove.map(c => c.joker || `${c.rank}${c.suit}`), 
+        scenarioName: scenario.name 
+      }, `AI selected: ${aiMove.map(c => c.joker || `${c.rank}${c.suit}`).join('')}`);
+      gameLogger.info('test_hierarchy_result', { 
+        shouldConserve: scenario.shouldConserve, 
+        actuallyConserved: !usedTrump, 
+        usedTrump: usedTrump, 
+        scenarioName: scenario.name 
+      }, `Should conserve: ${scenario.shouldConserve}, Actually conserved: ${!usedTrump}`);
 
       if (scenario.shouldConserve) {
         expect(usedTrump).toBe(false); // Should conserve weaker trump
       }
     });
 
-    console.log('✅ AI understands trump hierarchy for conservation decisions');
+    gameLogger.info('test_trump_hierarchy_success', { 
+      testPassed: true, 
+      conservationBehavior: 'trump_hierarchy_respected', 
+      scenariosCompleted: scenarios.length 
+    }, '✅ AI understands trump hierarchy for conservation decisions');
   });
 });

@@ -8,6 +8,7 @@ import {
   PlayStyle 
 } from '../../src/types';
 import { getTrickPosition } from '../../src/ai/aiGameContext';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 describe('4th Player Strategy Tests', () => {
   
@@ -52,8 +53,13 @@ describe('4th Player Strategy Tests', () => {
       ];
       
       let aiMove = getAIMove(gameState, fourthPlayerId);
-      console.log('Test 1: 10 vs King vs 5 - Selected:', aiMove[0].rank);
-      console.log('Partner (Bot1) winning with A♠, Bot3 should prioritize 10♠');
+      gameLogger.info('test_fourth_player_priority_1', {
+        selectedRank: aiMove[0].rank,
+        scenario: '10 vs King vs 5'
+      }, 'Test 1: 10 vs King vs 5 - Selected: ' + aiMove[0].rank);
+      gameLogger.info('test_fourth_player_context_1', {
+        situation: 'Partner (Bot1) winning with A♠, Bot3 should prioritize 10♠'
+      }, 'Partner (Bot1) winning with A♠, Bot3 should prioritize 10♠');
       expect(aiMove[0].rank).toBe(Rank.Ten); // Should prioritize 10
       
       // Test case 2: King should be prioritized over 5 when no 10
@@ -64,7 +70,10 @@ describe('4th Player Strategy Tests', () => {
       ];
       
       aiMove = getAIMove(gameState, fourthPlayerId);
-      console.log('Test 2: King vs 5 - Selected:', aiMove[0].rank);
+      gameLogger.info('test_fourth_player_priority_2', {
+        selectedRank: aiMove[0].rank,
+        scenario: 'King vs 5'
+      }, 'Test 2: King vs 5 - Selected: ' + aiMove[0].rank);
       expect(aiMove[0].rank).toBe(Rank.King); // Should prioritize King over 5
     });
 
@@ -115,19 +124,21 @@ describe('4th Player Strategy Tests', () => {
       
       gameState.players[3].hand = bot3Hand;
       
-      console.log('=== 4th Player Opponent Winning Test ===');
-      console.log('Opponent (Bot 2) is winning with Ace of Spades');
-      console.log('Bot 3 (4th player) has point cards available:');
-      console.log('- 5♠ (5 points)');
-      console.log('- 10♠ (10 points)');  
-      console.log('- K♠ (10 points)');
-      console.log('Also has non-point cards: 6♠, 7♠');
-      console.log('Bot 3 should play lowest value card since opponent is winning');
+      gameLogger.info('test_fourth_player_opponent_setup', {
+        scenario: 'opponent_winning',
+        opponent: 'Bot 2',
+        opponentCard: 'Ace of Spades',
+        availablePointCards: ['5♠ (5 points)', '10♠ (10 points)', 'K♠ (10 points)'],
+        nonPointCards: ['6♠', '7♠'],
+        expectedBehavior: 'play lowest value card since opponent is winning'
+      }, '=== 4th Player Opponent Winning Test ===');
       
       // Get AI move for 4th player
       const aiMove = getAIMove(gameState, fourthPlayerId);
       
-      console.log('AI selected:', aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`));
+      gameLogger.info('test_fourth_player_selection', {
+        selectedCards: aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`)
+      }, 'AI selected: ' + aiMove.map(c => `${c.rank}${c.suit} (${c.points}pts)`).join(', '));
       
       // Verify AI selected a low-value card (not point cards)
       const selectedPointCard = aiMove.some(card => (card.points || 0) > 0);

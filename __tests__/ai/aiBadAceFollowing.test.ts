@@ -1,6 +1,7 @@
 import { getAIMove } from '../../src/ai/aiLogic';
 import { Card, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
 import { initializeGame } from '../../src/utils/gameInitialization';
+import { gameLogger } from '../../src/utils/gameLogger';
 
 /**
  * Test for issue #61 comment: AI playing Ace after leading Ace
@@ -42,23 +43,23 @@ describe('Issue #61: AI Bad Ace Following', () => {
     };
     gameState.currentPlayerIndex = 1; // Bot1 is next to play
     
-    console.log('\n=== TESTING AI ACE FOLLOWING BEHAVIOR ===');
-    console.log('Human led: A♠ (unbeatable non-trump Ace)');
-    console.log('Bot1 hand: A♠, 3♠, 4♠, 6♥, 9♣');
-    console.log('Expected: Bot1 should play smallest spade (3♠ or 4♠), NOT the Ace');
+    gameLogger.info('test_bad_ace_following_start', { scenario: 'ai_ace_following_behavior' }, '\n=== TESTING AI ACE FOLLOWING BEHAVIOR ===');
+    gameLogger.info('test_bad_ace_following_human_led', { leadCard: 'A♠', cardType: 'unbeatable_non_trump_ace' }, 'Human led: A♠ (unbeatable non-trump Ace)');
+    gameLogger.info('test_bad_ace_following_bot_hand', { hand: ['A♠', '3♠', '4♠', '6♥', '9♣'] }, 'Bot1 hand: A♠, 3♠, 4♠, 6♥, 9♣');
+    gameLogger.info('test_bad_ace_following_expected', { expectedPlay: ['3♠', '4♠'], avoidPlay: 'A♠' }, 'Expected: Bot1 should play smallest spade (3♠ or 4♠), NOT the Ace');
     
     // Get AI move
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
-    console.log('AI played:', aiMove.map(card => `${card.rank}${card.suit}`));
+    gameLogger.info('test_bad_ace_following_ai_played', { aiMove: aiMove.map(card => `${card.rank}${card.suit}`) }, `AI played: ${aiMove.map(card => `${card.rank}${card.suit}`).join(', ')}`);
     
     // Check if AI played an Ace (this is the bug)
     const playedAce = aiMove.some(card => card.rank === Rank.Ace);
     
     if (playedAce) {
-      console.log('❌ BUG: AI wasted an Ace after opponent led Ace!');
-      console.log('   This is suboptimal - should play smallest card instead');
+      gameLogger.error('test_bad_ace_following_bug_detected', { playedAce: true, issue: 'ace_wasted_after_opponent_ace' }, '❌ BUG: AI wasted an Ace after opponent led Ace!');
+      gameLogger.error('test_bad_ace_following_suboptimal', { recommendation: 'play_smallest_card' }, '   This is suboptimal - should play smallest card instead');
     } else {
-      console.log('✅ GOOD: AI conserved its Ace and played a smaller card');
+      gameLogger.info('test_bad_ace_following_good_behavior', { playedAce: false, behavior: 'ace_conserved' }, '✅ GOOD: AI conserved its Ace and played a smaller card');
     }
     
     // The AI should NOT play an Ace when following an unbeatable Ace
@@ -102,13 +103,13 @@ describe('Issue #61: AI Bad Ace Following', () => {
     };
     gameState.currentPlayerIndex = 1; // Bot1 is next to play
     
-    console.log('\n=== TESTING AI ACE USAGE WITH POINTS ===');
-    console.log('Human led: K♠ (beatable, worth 10 points)');
-    console.log('Bot1 hand: A♠, 3♠, 6♥, 9♣');
-    console.log('Expected: Bot1 should play Ace to win the 10 points');
+    gameLogger.info('test_ace_usage_with_points_start', { scenario: 'ai_ace_usage_with_points' }, '\n=== TESTING AI ACE USAGE WITH POINTS ===');
+    gameLogger.info('test_ace_usage_human_led', { leadCard: 'K♠', cardType: 'beatable', points: 10 }, 'Human led: K♠ (beatable, worth 10 points)');
+    gameLogger.info('test_ace_usage_bot_hand', { hand: ['A♠', '3♠', '6♥', '9♣'] }, 'Bot1 hand: A♠, 3♠, 6♥, 9♣');
+    gameLogger.info('test_ace_usage_expected', { expectedPlay: 'A♠', reason: 'win_10_points' }, 'Expected: Bot1 should play Ace to win the 10 points');
     
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
-    console.log('AI played:', aiMove.map(card => `${card.rank}${card.suit}`));
+    gameLogger.info('test_ace_usage_ai_played', { aiMove: aiMove.map(card => `${card.rank}${card.suit}`) }, `AI played: ${aiMove.map(card => `${card.rank}${card.suit}`).join(', ')}`);
     
     // In this case, playing the Ace makes sense to collect points
     const playedAce = aiMove.some(card => card.rank === Rank.Ace);
@@ -151,21 +152,21 @@ describe('Issue #61: AI Bad Ace Following', () => {
     };
     gameState.currentPlayerIndex = 1; // Bot1 is next to play
     
-    console.log('\n=== TESTING AI ACE PAIR FOLLOWING ===');
-    console.log('Human led: A♠-A♠ (unbeatable Ace pair)');
-    console.log('Bot1 hand: A♠-A♠, 3♠-3♠, 6♥, 9♣');
-    console.log('Expected: Bot1 should play 3♠-3♠, NOT waste the Ace pair');
+    gameLogger.info('test_ace_pair_following_start', { scenario: 'ai_ace_pair_following' }, '\n=== TESTING AI ACE PAIR FOLLOWING ===');
+    gameLogger.info('test_ace_pair_human_led', { leadCards: ['A♠', 'A♠'], cardType: 'unbeatable_ace_pair' }, 'Human led: A♠-A♠ (unbeatable Ace pair)');
+    gameLogger.info('test_ace_pair_bot_hand', { hand: ['A♠-A♠', '3♠-3♠', '6♥', '9♣'] }, 'Bot1 hand: A♠-A♠, 3♠-3♠, 6♥, 9♣');
+    gameLogger.info('test_ace_pair_expected', { expectedPlay: ['3♠', '3♠'], avoidPlay: ['A♠', 'A♠'] }, 'Expected: Bot1 should play 3♠-3♠, NOT waste the Ace pair');
     
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
-    console.log('AI played:', aiMove.map(card => `${card.rank}${card.suit}`));
+    gameLogger.info('test_ace_pair_ai_played', { aiMove: aiMove.map(card => `${card.rank}${card.suit}`) }, `AI played: ${aiMove.map(card => `${card.rank}${card.suit}`).join(', ')}`);
     
     // Check if AI wasted the Ace pair
     const playedAces = aiMove.filter(card => card.rank === Rank.Ace).length;
     
     if (playedAces > 0) {
-      console.log('❌ BUG: AI wasted Ace(s) after opponent led unbeatable Ace pair!');
+      gameLogger.error('test_ace_pair_bug_detected', { playedAces: playedAces, issue: 'aces_wasted_after_unbeatable_pair' }, '❌ BUG: AI wasted Ace(s) after opponent led unbeatable Ace pair!');
     } else {
-      console.log('✅ GOOD: AI conserved its Ace pair and played smaller cards');
+      gameLogger.info('test_ace_pair_good_behavior', { playedAces: 0, behavior: 'ace_pair_conserved' }, '✅ GOOD: AI conserved its Ace pair and played smaller cards');
     }
     
     // Should not play any Aces
@@ -211,23 +212,23 @@ describe('Issue #61: AI Bad Ace Following', () => {
     };
     gameState.currentPlayerIndex = 3; // Bot3 is next (last to play)
     
-    console.log('\n=== TESTING COMPLEX MULTI-PLAYER SCENARIO ===');
-    console.log('Human led: A♠ (winning)');
-    console.log('Bot1 played: K♠ (10 points)');
-    console.log('Bot2 played: Q♠ (0 points)');
-    console.log('Bot3 hand: A♠, 4♠, 6♥, 9♣');
-    console.log('Expected: Bot3 should play 4♠ (smallest), NOT waste Ace since Human is winning');
+    gameLogger.info('test_complex_scenario_start', { scenario: 'complex_multi_player' }, '\n=== TESTING COMPLEX MULTI-PLAYER SCENARIO ===');
+    gameLogger.info('test_complex_human_led', { leadCard: 'A♠', status: 'winning' }, 'Human led: A♠ (winning)');
+    gameLogger.info('test_complex_bot1_played', { card: 'K♠', points: 10 }, 'Bot1 played: K♠ (10 points)');
+    gameLogger.info('test_complex_bot2_played', { card: 'Q♠', points: 0 }, 'Bot2 played: Q♠ (0 points)');
+    gameLogger.info('test_complex_bot3_hand', { hand: ['A♠', '4♠', '6♥', '9♣'] }, 'Bot3 hand: A♠, 4♠, 6♥, 9♣');
+    gameLogger.info('test_complex_expected', { expectedPlay: '4♠', avoidPlay: 'A♠', reason: 'human_already_winning' }, 'Expected: Bot3 should play 4♠ (smallest), NOT waste Ace since Human is winning');
     
     const aiMove = getAIMove(gameState, PlayerId.Bot3);
-    console.log('AI played:', aiMove.map(card => `${card.rank}${card.suit}`));
+    gameLogger.info('test_complex_ai_played', { aiMove: aiMove.map(card => `${card.rank}${card.suit}`) }, `AI played: ${aiMove.map(card => `${card.rank}${card.suit}`).join(', ')}`);
     
     // Bot3 should not waste an Ace when Human's Ace is already winning
     const playedAce = aiMove.some(card => card.rank === Rank.Ace);
     
     if (playedAce) {
-      console.log('❌ BUG: AI wasted an Ace when opponent was already winning with Ace!');
+      gameLogger.error('test_complex_bug_detected', { playedAce: true, issue: 'ace_wasted_when_opponent_winning' }, '❌ BUG: AI wasted an Ace when opponent was already winning with Ace!');
     } else {
-      console.log('✅ GOOD: AI conserved its Ace since opponent was already winning');
+      gameLogger.info('test_complex_good_behavior', { playedAce: false, behavior: 'ace_conserved_opponent_winning' }, '✅ GOOD: AI conserved its Ace since opponent was already winning');
     }
     
     expect(playedAce).toBe(false);
