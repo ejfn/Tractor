@@ -62,6 +62,7 @@ export function createCardMemory(gameState: GameState): CardMemory {
       knownCards: [],
       estimatedHandSize: player.hand.length,
       suitVoids: new Set(),
+      trumpVoid: false, // Start assuming player has trump cards
       trumpCount: 0,
       pointCardsProbability: 0.5, // Start with neutral assumption
       playPatterns: [],
@@ -92,12 +93,25 @@ function analyzeCompletedTrick(
   memory: CardMemory,
   trumpInfo: TrumpInfo,
 ): void {
+  // Extract lead card from the first card played
+  const leadCard = trick.plays[0]?.cards[0] || null;
+  // Only set leadSuit if the lead is NOT trump (pass null for trump leads)
+  const leadSuit =
+    leadCard && !isTrump(leadCard, trumpInfo) ? leadCard.suit : null;
+
   // Track all plays including leader at plays[0]
   trick.plays.forEach(
     (play: { playerId: PlayerId; cards: Card[] }, index: number) => {
       const position = index === 0 ? "leading" : "following";
       play.cards.forEach((card: Card) => {
-        processPlayedCard(card, play.playerId, memory, trumpInfo, position);
+        processPlayedCard(
+          card,
+          play.playerId,
+          memory,
+          trumpInfo,
+          position,
+          leadSuit,
+        );
       });
     },
   );
@@ -113,12 +127,25 @@ function analyzeCurrentTrick(
   memory: CardMemory,
   trumpInfo: TrumpInfo,
 ): void {
+  // Extract lead card from the first card played
+  const leadCard = trick.plays[0]?.cards[0] || null;
+  // Only set leadSuit if the lead is NOT trump (pass null for trump leads)
+  const leadSuit =
+    leadCard && !isTrump(leadCard, trumpInfo) ? leadCard.suit : null;
+
   // Track all plays made so far including leader at plays[0]
   trick.plays.forEach(
     (play: { playerId: PlayerId; cards: Card[] }, index: number) => {
       const position = index === 0 ? "leading" : "following";
       play.cards.forEach((card: Card) => {
-        processPlayedCard(card, play.playerId, memory, trumpInfo, position);
+        processPlayedCard(
+          card,
+          play.playerId,
+          memory,
+          trumpInfo,
+          position,
+          leadSuit,
+        );
       });
     },
   );
@@ -133,6 +160,7 @@ function processPlayedCard(
   memory: CardMemory,
   trumpInfo: TrumpInfo,
   position: "leading" | "following",
+  leadSuit: Suit | null, // null when trump is led (no suit void tracking for trump leads)
 ): void {
   // Add to global played cards
   memory.playedCards.push(card);
@@ -162,6 +190,32 @@ function processPlayedCard(
     // Update trump count estimate
     if (isTrump(card, trumpInfo)) {
       playerMemory.trumpCount++;
+    }
+
+    // CRITICAL: Detect suit voids when player cannot follow non-trump suit
+    // leadSuit is null for trump leads, so this only tracks voids for non-trump suits
+    if (
+      position === "following" &&
+      leadSuit &&
+      (card.suit !== leadSuit || isTrump(card, trumpInfo))
+    ) {
+      if (!playerMemory.suitVoids.has(leadSuit)) {
+        playerMemory.suitVoids.add(leadSuit);
+        // Note: Player is now known to be void in the led non-trump suit
+      }
+    }
+
+    // CRITICAL: Detect trump voids when trump is led but player cannot follow with trump
+    // This handles the separate case where trump is led (leadSuit is null)
+    if (
+      position === "following" &&
+      leadSuit === null && // Trump was led
+      !isTrump(card, trumpInfo) && // Player played non-trump
+      !playerMemory.trumpVoid // Not already marked as trump void
+    ) {
+      playerMemory.trumpVoid = true;
+      playerMemory.trumpCount = 0; // Zero trump count since player is void
+      // Note: Player is now known to be void in trump cards
     }
 
     // Update point card probability based on what they've played

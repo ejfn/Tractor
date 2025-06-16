@@ -82,6 +82,7 @@ export interface PlayerMemory {
   knownCards: Card[]; // Cards we've seen this player play
   estimatedHandSize: number; // Estimated cards remaining
   suitVoids: Set<Suit>; // Suits this player has shown to be out of
+  trumpVoid: boolean; // Whether this player has shown to be out of trump cards
   trumpCount: number; // Estimated trump cards remaining
   pointCardsProbability: number; // Likelihood of having point cards
   playPatterns: PlayPattern[]; // Historical play behavior

@@ -17,7 +17,8 @@ import {
   Suit,
   Trick,
   TrickPosition,
-  TrumpInfo
+  TrumpInfo,
+  JokerType
 } from "../../src/types";
 import { createTestCardsGameState } from '../helpers/gameStates';
 
@@ -459,6 +460,357 @@ describe('AI Card Memory System - Phase 3', () => {
       expect(memory1.playedCards).toEqual(memory2.playedCards);
       expect(memory1.trumpCardsPlayed).toBe(memory2.trumpCardsPlayed);
       expect(memory1.tricksAnalyzed).toBe(memory2.tricksAnalyzed);
+    });
+  });
+
+  describe('Suit Void Detection - Phase 1 Implementation', () => {
+    it('should detect suit voids when player cannot follow suit', () => {
+      // Create a trick where Human leads Spades, Bot1 follows with Hearts (non-trump)
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Cannot follow Spades, plays Clubs
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as void in Spades
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.suitVoids.has(Suit.Spades)).toBe(true);
+    });
+
+    it('should NOT detect suit voids when player follows suit correctly', () => {
+      // Create a trick where all players follow suit
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Seven, 0)] }, // Follows Spades
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] },   // Follows Spades
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // No players should be detected as void in Spades
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      const bot2Memory = memory.playerMemories[PlayerId.Bot2];
+      expect(bot1Memory.suitVoids.has(Suit.Spades)).toBe(false);
+      expect(bot2Memory.suitVoids.has(Suit.Spades)).toBe(false);
+    });
+
+    it('should detect suit voids when player plays trump (must follow suit rule)', () => {
+      // Create a trick where Human leads Spades, Bot1 plays trump Hearts
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] }, // Plays trump Hearts
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as void (must follow suit - can only play trump if void)
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.suitVoids.has(Suit.Spades)).toBe(true);
+    });
+
+    it('should detect multiple suit voids for same player across tricks', () => {
+      // Create multiple tricks showing Bot1 is void in both Spades and Diamonds
+      const trick1 = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Void in Spades
+        ]
+      );
+      
+      const trick2 = createTestTrick(
+        PlayerId.Bot2,
+        [Card.createCard(Suit.Diamonds, Rank.Queen, 0)], // Lead Diamonds
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Eight, 0)] }, // Void in Diamonds
+        ]
+      );
+      
+      gameState.tricks = [trick1, trick2];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as void in both Spades and Diamonds
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.suitVoids.has(Suit.Spades)).toBe(true);
+      expect(bot1Memory.suitVoids.has(Suit.Diamonds)).toBe(true);
+      expect(bot1Memory.suitVoids.has(Suit.Clubs)).toBe(false); // Not void in Clubs
+    });
+
+    it('should detect suit voids for multiple players in same trick', () => {
+      // Create a trick where multiple players show suit voids
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] },   // Void in Spades
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Diamonds, Rank.Eight, 0)] }, // Void in Spades
+          { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Spades, Rank.Three, 0)] },   // Not void
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 and Bot2 should be detected as void in Spades, Bot3 should not
+      expect(memory.playerMemories[PlayerId.Bot1].suitVoids.has(Suit.Spades)).toBe(true);
+      expect(memory.playerMemories[PlayerId.Bot2].suitVoids.has(Suit.Spades)).toBe(true);
+      expect(memory.playerMemories[PlayerId.Bot3].suitVoids.has(Suit.Spades)).toBe(false);
+    });
+
+    it('should detect suit voids when player plays trump rank cards in non-trump suit', () => {
+      // Trump rank is 2, trump suit is Hearts
+      // Create a trick where Human leads Spades, Bot1 plays 2 of Clubs (trump rank)
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Two, 0)] }, // Trump rank card
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as void (trump rank indicates can't follow suit)
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.suitVoids.has(Suit.Spades)).toBe(true);
+    });
+
+    it('should persist suit voids across memory recreations', () => {
+      // Create a trick with void detection
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Void in Spades
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      
+      // Create memory multiple times and verify consistency
+      const memory1 = createCardMemory(gameState);
+      const memory2 = createCardMemory(gameState);
+
+      expect(memory1.playerMemories[PlayerId.Bot1].suitVoids.has(Suit.Spades)).toBe(true);
+      expect(memory2.playerMemories[PlayerId.Bot1].suitVoids.has(Suit.Spades)).toBe(true);
+      
+      // Should be identical
+      expect(Array.from(memory1.playerMemories[PlayerId.Bot1].suitVoids)).toEqual(
+        Array.from(memory2.playerMemories[PlayerId.Bot1].suitVoids)
+      );
+    });
+
+    it('should detect suit voids when player plays trump rank in led non-trump suit', () => {
+      // Trump rank is 2, trump suit is Hearts
+      // Create a trick where Human leads Spades (non-trump), Bot1 plays 2 of Spades (trump rank in led suit)
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades (non-trump suit)
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Two, 0)] }, // Trump rank in led suit
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as void (should play non-trump Spades if available)
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.suitVoids.has(Suit.Spades)).toBe(true);
+    });
+
+    it('should handle current trick in progress for void detection', () => {
+      // Test that current trick analysis also detects voids
+      const currentTrick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead Spades
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Void in Spades
+        ]
+      );
+      
+      gameState.currentTrick = currentTrick;
+      gameState.tricks = []; // No completed tricks
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as void from current trick
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.suitVoids.has(Suit.Spades)).toBe(true);
+    });
+  });
+
+  describe('Trump Void Detection - Phase 1 Implementation', () => {
+    it('should detect trump voids when trump is led but player plays non-trump', () => {
+      // Create a trick where Human leads trump, Bot1 follows with non-trump
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Hearts, Rank.Two, 0)], // Lead trump rank in trump suit
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Plays non-trump (void in trump)
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as trump void
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.trumpVoid).toBe(true);
+    });
+
+    it('should NOT detect trump voids when trump is led and player follows with trump', () => {
+      // Create a trick where Human leads trump, Bot1 follows with trump
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Hearts, Rank.Two, 0)], // Lead trump rank in trump suit
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] }, // Follows with trump suit
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should NOT be detected as trump void
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.trumpVoid).toBe(false);
+    });
+
+    it('should detect trump voids when big joker is led but player plays non-trump', () => {
+      // Create a trick where Human leads big joker, Bot1 follows with non-trump
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createJoker(JokerType.Big, 0)], // Lead big joker (trump)
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Plays non-trump (void in trump)
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as trump void
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.trumpVoid).toBe(true);
+    });
+
+    it('should detect trump voids when trump rank in off-suit is led but player plays non-trump', () => {
+      // Trump rank is 2, trump suit is Hearts
+      // Create a trick where Human leads 2 of Spades (trump rank), Bot1 follows with non-trump
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Spades, Rank.Two, 0)], // Lead trump rank in off-suit (trump)
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Plays non-trump (void in trump)
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as trump void
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.trumpVoid).toBe(true);
+    });
+
+    it('should detect multiple players with trump voids in same trick', () => {
+      // Create a trick where trump is led and multiple players play non-trump
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Hearts, Rank.Two, 0)], // Lead trump
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] },   // Void in trump
+          { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Diamonds, Rank.Eight, 0)] }, // Void in trump
+          { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] },   // Not void (has trump)
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 and Bot2 should be detected as trump void, Bot3 should not
+      expect(memory.playerMemories[PlayerId.Bot1].trumpVoid).toBe(true);
+      expect(memory.playerMemories[PlayerId.Bot2].trumpVoid).toBe(true);
+      expect(memory.playerMemories[PlayerId.Bot3].trumpVoid).toBe(false);
+    });
+
+    it('should persist trump void status once detected', () => {
+      // Create first trick where Bot1 shows trump void
+      const trick1 = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Hearts, Rank.Two, 0)], // Lead trump
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Void in trump
+        ]
+      );
+      
+      // Create second trick where Bot1 plays normally (non-trump lead)
+      const trick2 = createTestTrick(
+        PlayerId.Bot2,
+        [Card.createCard(Suit.Spades, Rank.King, 0)], // Lead non-trump
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)] }, // Follows suit normally
+        ]
+      );
+      
+      gameState.tricks = [trick1, trick2];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should still be marked as trump void from first trick
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.trumpVoid).toBe(true);
+    });
+
+    it('should handle current trick in progress for trump void detection', () => {
+      // Test that current trick analysis also detects trump voids
+      const currentTrick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Hearts, Rank.Two, 0)], // Lead trump
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Void in trump
+        ]
+      );
+      
+      gameState.currentTrick = currentTrick;
+      gameState.tricks = []; // No completed tricks
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as trump void from current trick
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.trumpVoid).toBe(true);
+    });
+
+    it('should zero trump count when trump void is detected', () => {
+      // Create a trick where Human leads trump, Bot1 follows with non-trump
+      const trick = createTestTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Hearts, Rank.Two, 0)], // Lead trump rank in trump suit
+        [
+          { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Seven, 0)] }, // Plays non-trump (void in trump)
+        ]
+      );
+      
+      gameState.tricks = [trick];
+      const memory = createCardMemory(gameState);
+
+      // Bot1 should be detected as trump void with zero trump count
+      const bot1Memory = memory.playerMemories[PlayerId.Bot1];
+      expect(bot1Memory.trumpVoid).toBe(true);
+      expect(bot1Memory.trumpCount).toBe(0);
     });
   });
 });
