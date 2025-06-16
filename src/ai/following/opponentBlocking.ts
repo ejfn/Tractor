@@ -16,6 +16,7 @@ import {
   selectOptimalWinningCombo,
   selectAggressiveBeatPlay,
 } from "./trickContention";
+import { isBiggestRemainingInSuit } from "../aiCardMemory";
 
 /**
  * Opponent Blocking - Strategic countering when opponent is winning
@@ -34,6 +35,22 @@ export function handleOpponentWinning(
   trumpInfo: TrumpInfo,
   gameState: GameState,
 ): Card[] | null {
+  // MEMORY ENHANCEMENT: Check for guaranteed winners first, but only for valuable tricks AND when we can beat the opponent
+  if (
+    context.memoryContext?.cardMemory &&
+    trickWinner.trickPoints >= 10 &&
+    trickWinner.canBeatCurrentWinner
+  ) {
+    const guaranteedWinner = selectMemoryGuaranteedWinner(
+      comboAnalyses,
+      context,
+      trumpInfo,
+    );
+    if (guaranteedWinner) {
+      return guaranteedWinner;
+    }
+  }
+
   // Can't beat opponent - use strategic disposal
   if (!trickWinner.canBeatCurrentWinner) {
     return selectStrategicPointAvoidance(comboAnalyses, trumpInfo);
@@ -95,7 +112,7 @@ export function handleOpponentWinning(
  */
 export function selectStrategicPointAvoidance(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-  trumpInfo: TrumpInfo,
+  _trumpInfo: TrumpInfo,
 ): Card[] {
   // Priority 1: Non-trump, non-point, non-Ace cards (safest disposal)
   const safeCards = comboAnalyses.filter(
@@ -136,4 +153,73 @@ export function selectStrategicPointAvoidance(
     (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
   );
   return sorted[0].combo.cards;
+}
+
+/**
+ * Memory-enhanced: Select guaranteed winning combos for opponent blocking
+ * Uses card memory to identify combinations that are certain to win
+ */
+function selectMemoryGuaranteedWinner(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  context: GameContext,
+  trumpInfo: TrumpInfo,
+): Card[] | null {
+  if (!context.memoryContext?.cardMemory) return null;
+
+  // Find combos with guaranteed winning cards
+  const guaranteedWinners: {
+    combo: { combo: Combo; analysis: ComboAnalysis };
+    priority: number;
+  }[] = [];
+
+  comboAnalyses.forEach((comboAnalysis) => {
+    const firstCard = comboAnalysis.combo.cards[0];
+    if (!firstCard.rank || !firstCard.suit || isTrump(firstCard, trumpInfo)) {
+      return; // Skip trump or invalid cards for blocking strategy
+    }
+
+    const comboType =
+      comboAnalysis.combo.type === ComboType.Pair ? "pair" : "single";
+    const isBiggestRemaining =
+      context.memoryContext?.cardMemory &&
+      firstCard.rank &&
+      isBiggestRemainingInSuit(
+        context.memoryContext.cardMemory,
+        firstCard.suit,
+        firstCard.rank,
+        comboType,
+      );
+
+    if (isBiggestRemaining) {
+      let priority = 0;
+
+      // For opponent blocking: prioritize stopping their points
+      // High cards get priority for blocking
+      if (firstCard.rank === Rank.Ace) {
+        priority += 50; // Aces are excellent blockers
+      } else if (firstCard.rank === Rank.King) {
+        priority += 40; // Kings are good blockers
+      } else if (firstCard.rank === Rank.Queen) {
+        priority += 30; // Queens are decent blockers
+      }
+
+      // Bonus for non-point cards (avoid giving points while blocking)
+      if (!firstCard.points || firstCard.points === 0) {
+        priority += 20;
+      }
+
+      guaranteedWinners.push({
+        combo: comboAnalysis,
+        priority,
+      });
+    }
+  });
+
+  if (guaranteedWinners.length > 0) {
+    // Sort by priority: highest first
+    guaranteedWinners.sort((a, b) => b.priority - a.priority);
+    return guaranteedWinners[0].combo.combo.cards;
+  }
+
+  return null;
 }
