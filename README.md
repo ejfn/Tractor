@@ -51,7 +51,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 **Architectural Highlights:**
 
 - **Modular Game System**: Focused game modules with direct imports (no re-export hub)
-- **Modular AI System**: 22 specialized modules with 4-phase intelligence organized by functional domain
+- **Modular AI System**: 22 specialized modules with memory-enhanced intelligence organized by functional domain
 - **Unified Trick Structure**: Streamlined game state with plays array for consistent data flow
 - **Consolidated Hook Architecture**: Single-responsibility hooks with minimal interdependencies
 - **Progressive Dealing System**: Unified dealing and trump declaration management
@@ -62,7 +62,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 ## AI Intelligence
 
-**Sophisticated 4-phase AI system** with memory-enhanced decision trees, strategic point management, and intelligent trump conservation.
+**Sophisticated Memory-Enhanced AI system** with comprehensive card tracking, strategic point management, and intelligent trump conservation.
 
 **Core AI Capabilities:**
 
@@ -72,20 +72,20 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **⚡ Real-Time Trump Declarations**: Hand quality analysis with timing optimization
 - **🛡️ Strategic Conservation**: Trump hierarchy preservation and point card management
 
-**Complete 4-Phase Intelligence:**
+**Complete Memory-Enhanced Intelligence:**
 
-- **Phase 1: Foundation** - Perfect rule compliance and basic strategic logic
-- **Phase 2: Strategy** - Point optimization, team coordination, position-based play
-- **Phase 3: Memory** - Card tracking, probability analysis, guaranteed winner detection
-- **Phase 4: Historical** - Opponent modeling, behavioral adaptation, predictive intelligence
+- **Foundation Layer** - Perfect rule compliance and basic strategic logic
+- **Strategy Layer** - Point optimization, team coordination, position-based play
+- **Memory Layer** - Card tracking, probability analysis, guaranteed winner detection
+- **Advanced Features** - Void exploitation, point timing optimization, trump conservation
 
-**Advanced Features:**
+**Memory System Highlights:**
 
-- **Memory-Enhanced Biggest Remaining**: Uses card tracking to identify guaranteed winners
-- **Historical Pattern Recognition**: Analyzes opponent behavior and adapts counter-strategies
-- **Position-Based Intelligence**: Specialized logic for all 4 trick positions (1st/2nd/3rd/4th player)
-- **Predictive Opponent Modeling**: Confidence-based behavioral profiles and strategic recommendations
-- **Authentic Trump Group Rules**: All trump cards (jokers + trump rank + trump suit) treated as unified group for proper combination formation
+- **Guaranteed Winner Detection**: Uses card tracking to identify cards certain to win
+- **Smart Void Exploitation**: Differentiates teammate vs opponent void strategies for optimal point collection
+- **Trump Exhaustion Tracking**: Dynamic trump conservation based on opponent depletion analysis
+- **Position-Specific Memory**: Specialized memory analysis for 2nd, 3rd, and 4th player positions
+- **Point Timing Optimization**: Memory-enhanced analysis for optimal point card collection timing
 
 *Complete AI documentation in **[AI System Guide](docs/AI_SYSTEM.md)***
 

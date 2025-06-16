@@ -7,7 +7,6 @@ import {
 import {
   Card,
   GameState,
-  GameContextBase,
   GameContext,
   MemoryContext,
   PlayerId,
@@ -261,7 +260,7 @@ describe('AI Card Memory System - Phase 3', () => {
 
   describe('enhanceGameContextWithMemory', () => {
     it('should integrate memory context into game context', () => {
-      const baseContext: GameContextBase = {
+      const baseContext: GameContext = {
         isAttackingTeam: true,
         currentPoints: 30,
         pointsNeeded: 80,
@@ -276,14 +275,11 @@ describe('AI Card Memory System - Phase 3', () => {
 
       expect(enhancedContext).toMatchObject(baseContext);
       expect(enhancedContext.memoryContext).toBeDefined();
-      expect(enhancedContext.memoryStrategy).toBeDefined();
       expect(enhancedContext.memoryContext!.cardsRemaining).toBeGreaterThan(0);
-      expect(enhancedContext.memoryStrategy!.riskLevel).toBeGreaterThanOrEqual(0);
-      expect(enhancedContext.memoryStrategy!.riskLevel).toBeLessThanOrEqual(1);
     });
 
     it('should preserve all original context properties', () => {
-      const baseContext: GameContextBase = {
+      const baseContext: GameContext = {
         isAttackingTeam: false,
         currentPoints: 65,
         pointsNeeded: 80,
@@ -306,7 +302,6 @@ describe('AI Card Memory System - Phase 3', () => {
       expect(enhancedContext.playStyle).toBe(PlayStyle.Desperate);
       // Should add memory context and strategy
       expect(enhancedContext.memoryContext).toBeDefined();
-      expect(enhancedContext.memoryStrategy).toBeDefined();
     });
   });
 

@@ -15,6 +15,7 @@ import {
   PlayerId,
 } from "../../types";
 import { isTrump, isPointCard } from "../../game/gameHelpers";
+import { analyzePointCardTiming } from "../analysis/pointCardTiming";
 
 /**
  * Enhanced Point-Focused AI Strategy Implementation
@@ -145,6 +146,72 @@ export function createTrumpConservationStrategy(
     minTricksRemainingForBigTrump,
     trumpFollowingPriority,
   };
+}
+
+/**
+ * Memory-Enhanced Point Collection Strategy
+ * Uses point card timing analysis to optimize point collection decisions
+ */
+export function selectMemoryEnhancedPointPlay(
+  validCombos: Combo[],
+  trumpInfo: TrumpInfo,
+  context: GameContext,
+  gameState: GameState,
+  currentPlayerId: PlayerId,
+): Combo | null {
+  // Only proceed if we have memory context with card memory
+  if (!context.memoryContext?.cardMemory) {
+    return null;
+  }
+
+  try {
+    // Perform comprehensive point card timing analysis
+    const pointTimingAnalysis = analyzePointCardTiming(
+      context.memoryContext.cardMemory,
+      gameState,
+      context,
+      trumpInfo,
+      currentPlayerId,
+      validCombos,
+    );
+
+    // Check for high-priority point opportunities
+    if (pointTimingAnalysis.memoryBasedPointPriority > 0.7) {
+      // Prioritize immediate guaranteed point plays
+      if (pointTimingAnalysis.immediatePointOpportunities.length > 0) {
+        const bestImmediate =
+          pointTimingAnalysis.immediatePointOpportunities[0];
+        if (bestImmediate.confidenceLevel > 0.8) {
+          return bestImmediate.combo;
+        }
+      }
+
+      // Use guaranteed point plays if available
+      if (pointTimingAnalysis.guaranteedPointPlays.length > 0) {
+        return pointTimingAnalysis.guaranteedPointPlays[0];
+      }
+
+      // Follow optimal point sequence if available
+      if (pointTimingAnalysis.optimalPointSequence.length > 0) {
+        const sequence = pointTimingAnalysis.optimalPointSequence[0];
+        if (sequence.sequence.length > 0) {
+          return sequence.sequence[0].recommendedCombo;
+        }
+      }
+    }
+
+    // Use opportunistic point plays for moderate priority scenarios
+    if (
+      pointTimingAnalysis.memoryBasedPointPriority > 0.4 &&
+      pointTimingAnalysis.opportunisticPointPlays.length > 0
+    ) {
+      return pointTimingAnalysis.opportunisticPointPlays[0];
+    }
+  } catch (error) {
+    console.warn("Point card timing analysis failed:", error);
+  }
+
+  return null;
 }
 
 /**

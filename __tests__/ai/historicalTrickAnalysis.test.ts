@@ -6,7 +6,7 @@ import {
 import {
   Card,
   GameState,
-  GameContextBase,
+  GameContext,
   PlayerId,
   PlayStyle,
   PointPressure,
@@ -296,7 +296,7 @@ describe("Historical Trick Analysis", () => {
 
   describe("enhanceGameContextWithHistoricalMemory", () => {
     it("should enhance context while preserving base properties", () => {
-      const baseContext: GameContextBase = {
+      const baseContext: GameContext = {
         isAttackingTeam: true,
         currentPoints: 40,
         pointsNeeded: 80,
@@ -339,7 +339,6 @@ describe("Historical Trick Analysis", () => {
 
       // Should add enhanced memory context with historical analysis
       expect(enhancedContext.memoryContext).toBeDefined();
-      expect(enhancedContext.memoryStrategy).toBeDefined();
     });
   });
 

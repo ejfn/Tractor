@@ -25,7 +25,6 @@ import {
   PlayPatterns,
   LeadingBehaviorProfile,
   PlayerContext,
-  GameContextBase,
   GameContext,
 } from "../types";
 import { isTrump } from "../game/gameHelpers";
@@ -231,7 +230,7 @@ function processPlayedCard(
  */
 function updatePointCardProbability(
   playerMemory: PlayerMemory,
-  card: Card,
+  _card: Card,
 ): void {
   const totalCards = playerMemory.knownCards.length;
   const pointCards = playerMemory.knownCards.filter((c) => c.points > 0).length;
@@ -244,6 +243,503 @@ function updatePointCardProbability(
     playerMemory.pointCardsProbability =
       (1 - weight) * 0.5 + weight * observedRate;
   }
+}
+
+/**
+ * Phase 3: Trump Exhaustion Tracking System
+ *
+ * Calculates trump depletion levels for strategic trump deployment and conservation.
+ * Provides sophisticated analysis of remaining trump distribution for optimal timing.
+ */
+
+/**
+ * Calculates trump exhaustion level for a specific player
+ * Returns 0.0 (no trump played) to 1.0 (completely exhausted/void)
+ */
+export function getTrumpExhaustionLevel(
+  cardMemory: CardMemory,
+  playerId: PlayerId,
+  trumpInfo: TrumpInfo,
+): number {
+  const playerMemory = cardMemory.playerMemories[playerId];
+  if (!playerMemory) return 0.0;
+
+  // If player is confirmed trump void, they are 100% exhausted
+  if (playerMemory.trumpVoid) return 1.0;
+
+  // Calculate exhaustion based on trump cards played vs estimated trump holdings
+  const trumpCardsPlayed = playerMemory.knownCards.filter((card) =>
+    isTrump(card, trumpInfo),
+  ).length;
+
+  // Estimate initial trump cards (approximately 25-30% of total deck)
+  // Total trump cards in deck: 2 jokers + 8 trump rank cards + 13 trump suit cards = 23 trump cards
+  const estimatedInitialTrumpCards = Math.ceil(23 / 4); // ~6 trump cards per player on average
+
+  // Calculate exhaustion ratio with minimum bounds
+  const exhaustionRatio = Math.min(
+    trumpCardsPlayed / Math.max(estimatedInitialTrumpCards, 1),
+    1.0,
+  );
+
+  return exhaustionRatio;
+}
+
+/**
+ * Analyzes trump distribution across all players for strategic insight
+ */
+export function analyzeTrumpDistribution(
+  cardMemory: CardMemory,
+  trumpInfo: TrumpInfo,
+): {
+  globalTrumpExhaustion: number;
+  playerExhaustion: Record<PlayerId, number>;
+  mostTrumpDepleted: PlayerId | null;
+  leastTrumpDepleted: PlayerId | null;
+  voidPlayers: PlayerId[];
+} {
+  const playerExhaustion: Record<PlayerId, number> = {} as Record<
+    PlayerId,
+    number
+  >;
+  const voidPlayers: PlayerId[] = [];
+  let totalExhaustion = 0;
+  let playerCount = 0;
+
+  let mostDepleted: PlayerId | null = null;
+  let leastDepleted: PlayerId | null = null;
+  let highestExhaustion = -1;
+  let lowestExhaustion = 2;
+
+  // Analyze each player's trump exhaustion
+  Object.keys(cardMemory.playerMemories).forEach((playerId) => {
+    const id = playerId as PlayerId;
+    const exhaustion = getTrumpExhaustionLevel(cardMemory, id, trumpInfo);
+
+    playerExhaustion[id] = exhaustion;
+    totalExhaustion += exhaustion;
+    playerCount++;
+
+    // Track void players
+    if (cardMemory.playerMemories[id].trumpVoid) {
+      voidPlayers.push(id);
+    }
+
+    // Track most and least depleted
+    if (exhaustion > highestExhaustion) {
+      highestExhaustion = exhaustion;
+      mostDepleted = id;
+    }
+    if (exhaustion < lowestExhaustion) {
+      lowestExhaustion = exhaustion;
+      leastDepleted = id;
+    }
+  });
+
+  const globalTrumpExhaustion =
+    playerCount > 0 ? totalExhaustion / playerCount : 0;
+
+  return {
+    globalTrumpExhaustion,
+    playerExhaustion,
+    mostTrumpDepleted: mostDepleted,
+    leastTrumpDepleted: leastDepleted,
+    voidPlayers,
+  };
+}
+
+/**
+ * Determines optimal trump deployment timing based on exhaustion analysis
+ */
+export function calculateTrumpDeploymentTiming(
+  cardMemory: CardMemory,
+  currentPlayer: PlayerId,
+  trumpInfo: TrumpInfo,
+): {
+  shouldConserveTrump: boolean;
+  recommendedDeployment: "never" | "critical" | "strategic" | "aggressive";
+  trumpAdvantage: number; // 0.0 to 1.0, higher means more advantage
+  reasoning: string;
+} {
+  const trumpAnalysis = analyzeTrumpDistribution(cardMemory, trumpInfo);
+  const currentPlayerExhaustion = trumpAnalysis.playerExhaustion[currentPlayer];
+
+  // Calculate trump advantage: how much trump we have relative to opponents
+  const opponentExhaustions = Object.entries(trumpAnalysis.playerExhaustion)
+    .filter(([playerId]) => playerId !== currentPlayer)
+    .map(([, exhaustion]) => exhaustion);
+
+  const averageOpponentExhaustion =
+    opponentExhaustions.length > 0
+      ? opponentExhaustions.reduce((sum, e) => sum + e, 0) /
+        opponentExhaustions.length
+      : 0;
+
+  // Trump advantage: positive when we have more trump than opponents
+  const trumpAdvantage = Math.max(
+    0,
+    averageOpponentExhaustion - currentPlayerExhaustion,
+  );
+
+  // Determine deployment strategy
+  let shouldConserveTrump = false;
+  let recommendedDeployment: "never" | "critical" | "strategic" | "aggressive" =
+    "strategic";
+  let reasoning = "";
+
+  if (currentPlayerExhaustion >= 0.8) {
+    // We're nearly exhausted - use remaining trump strategically
+    shouldConserveTrump = true;
+    recommendedDeployment = "critical";
+    reasoning = "Nearly trump exhausted - save for critical moments";
+  } else if (trumpAdvantage >= 0.4) {
+    // We have significant trump advantage - can be aggressive
+    shouldConserveTrump = false;
+    recommendedDeployment = "aggressive";
+    reasoning = "Strong trump advantage - deploy aggressively";
+  } else if (trumpAdvantage >= 0.2) {
+    // Moderate trump advantage - strategic deployment
+    shouldConserveTrump = false;
+    recommendedDeployment = "strategic";
+    reasoning = "Moderate trump advantage - strategic deployment";
+  } else if (trumpAdvantage <= -0.2) {
+    // Trump disadvantage - conserve heavily
+    shouldConserveTrump = true;
+    recommendedDeployment = "critical";
+    reasoning = "Trump disadvantage - heavy conservation required";
+  } else {
+    // Balanced trump situation - standard strategic play
+    shouldConserveTrump = false;
+    recommendedDeployment = "strategic";
+    reasoning = "Balanced trump situation - standard strategy";
+  }
+
+  return {
+    shouldConserveTrump,
+    recommendedDeployment,
+    trumpAdvantage,
+    reasoning,
+  };
+}
+
+/**
+ * Phase 3: Position-Specific Memory Query Functions
+ *
+ * Provides memory analysis tailored to specific trick positions, leveraging
+ * unique advantages and information available to each position.
+ */
+
+/**
+ * 2nd Player Memory Analysis - Partial Information with Memory Enhancement
+ *
+ * Leverages leading card analysis combined with memory to make informed decisions
+ * with partial information (1 card seen, 2 remaining players).
+ */
+export function analyze2ndPlayerMemoryContext(
+  cardMemory: CardMemory,
+  leadingCards: Card[],
+  trumpInfo: TrumpInfo,
+  currentPlayer: PlayerId,
+): {
+  opponentVoidProbabilities: Record<PlayerId, number>;
+  trumpExhaustionAdvantage: number;
+  recommendedInfluenceLevel: "low" | "moderate" | "high";
+  optimalResponseStrategy: "support" | "pressure" | "block" | "setup";
+  reasoning: string;
+} {
+  // Analyze opponents (3rd and 4th players)
+  const allPlayers = Object.keys(cardMemory.playerMemories) as PlayerId[];
+  const opponents = allPlayers.filter((id) => id !== currentPlayer);
+
+  // Calculate void probabilities for remaining players
+  const opponentVoidProbabilities: Record<PlayerId, number> = {} as Record<
+    PlayerId,
+    number
+  >;
+  let totalVoidProbability = 0;
+
+  opponents.forEach((playerId) => {
+    const playerMemory = cardMemory.playerMemories[playerId];
+    if (playerMemory) {
+      // Check if opponent is known to be void in leading suit
+      const leadSuit = leadingCards[0]?.suit;
+      if (leadSuit && !isTrump(leadingCards[0], trumpInfo)) {
+        opponentVoidProbabilities[playerId] = playerMemory.suitVoids.has(
+          leadSuit,
+        )
+          ? 1.0
+          : 0.0;
+      } else {
+        // Trump lead - check trump void status
+        opponentVoidProbabilities[playerId] = playerMemory.trumpVoid
+          ? 1.0
+          : 0.0;
+      }
+      totalVoidProbability += opponentVoidProbabilities[playerId];
+    }
+  });
+
+  // Calculate trump exhaustion advantage
+  const trumpAnalysis = analyzeTrumpDistribution(cardMemory, trumpInfo);
+  const currentPlayerExhaustion = trumpAnalysis.playerExhaustion[currentPlayer];
+  const averageOpponentExhaustion =
+    opponents.reduce((sum, id) => sum + trumpAnalysis.playerExhaustion[id], 0) /
+    opponents.length;
+
+  const trumpExhaustionAdvantage =
+    averageOpponentExhaustion - currentPlayerExhaustion;
+
+  // Determine recommended influence level
+  let recommendedInfluenceLevel: "low" | "moderate" | "high" = "moderate";
+  let optimalResponseStrategy: "support" | "pressure" | "block" | "setup" =
+    "setup";
+  let reasoning = "";
+
+  if (totalVoidProbability >= 1.0) {
+    // At least one opponent is void - high influence opportunity
+    recommendedInfluenceLevel = "high";
+    optimalResponseStrategy =
+      trumpExhaustionAdvantage > 0.2 ? "pressure" : "block";
+    reasoning = "Opponent void detected - high influence potential";
+  } else if (trumpExhaustionAdvantage > 0.3) {
+    // Strong trump advantage - moderate influence
+    recommendedInfluenceLevel = "moderate";
+    optimalResponseStrategy = "pressure";
+    reasoning = "Strong trump advantage - apply pressure";
+  } else if (trumpExhaustionAdvantage < -0.2) {
+    // Trump disadvantage - low influence, setup for teammate
+    recommendedInfluenceLevel = "low";
+    optimalResponseStrategy = "setup";
+    reasoning = "Trump disadvantage - setup for teammate";
+  } else {
+    // Balanced situation - strategic positioning
+    recommendedInfluenceLevel = "moderate";
+    optimalResponseStrategy = "setup";
+    reasoning = "Balanced situation - strategic positioning";
+  }
+
+  return {
+    opponentVoidProbabilities,
+    trumpExhaustionAdvantage,
+    recommendedInfluenceLevel,
+    optimalResponseStrategy,
+    reasoning,
+  };
+}
+
+/**
+ * 3rd Player Memory Analysis - Tactical Position with Enhanced Risk Assessment
+ *
+ * Combines tactical position advantages with memory data for optimal risk/reward decisions.
+ */
+export function analyze3rdPlayerMemoryContext(
+  cardMemory: CardMemory,
+  leadingCards: Card[],
+  secondPlayerCards: Card[],
+  trumpInfo: TrumpInfo,
+  currentPlayer: PlayerId,
+): {
+  finalPlayerPrediction: {
+    playerId: PlayerId;
+    likelyVoid: boolean;
+    trumpAdvantage: number;
+    predictedResponse: "weak" | "moderate" | "strong";
+  };
+  optimalTakeoverOpportunity: boolean;
+  riskAssessment: number; // 0.0 to 1.0
+  recommendedAction: "support" | "takeover" | "conservative" | "strategic";
+  reasoning: string;
+} {
+  const allPlayers = Object.keys(cardMemory.playerMemories) as PlayerId[];
+  const finalPlayer = allPlayers.find(
+    (id) =>
+      id !== currentPlayer &&
+      !leadingCards.some((card) =>
+        cardMemory.playerMemories[id]?.knownCards.includes(card),
+      ) &&
+      !secondPlayerCards.some((card) =>
+        cardMemory.playerMemories[id]?.knownCards.includes(card),
+      ),
+  );
+
+  if (!finalPlayer) {
+    // Fallback if can't identify final player
+    return {
+      finalPlayerPrediction: {
+        playerId: allPlayers[0] || ("bot1" as PlayerId),
+        likelyVoid: false,
+        trumpAdvantage: 0,
+        predictedResponse: "moderate",
+      },
+      optimalTakeoverOpportunity: false,
+      riskAssessment: 0.5,
+      recommendedAction: "conservative",
+      reasoning: "Cannot identify final player - conservative approach",
+    };
+  }
+
+  const finalPlayerMemory = cardMemory.playerMemories[finalPlayer];
+  const trumpAnalysis = analyzeTrumpDistribution(cardMemory, trumpInfo);
+
+  // Analyze final player's likely void status
+  const leadSuit = leadingCards[0]?.suit;
+  let likelyVoid = false;
+  if (leadSuit && !isTrump(leadingCards[0], trumpInfo)) {
+    likelyVoid = finalPlayerMemory?.suitVoids.has(leadSuit) ?? false;
+  } else {
+    // Trump lead
+    likelyVoid = finalPlayerMemory?.trumpVoid ?? false;
+  }
+
+  // Calculate trump advantage relative to final player
+  const currentPlayerExhaustion = trumpAnalysis.playerExhaustion[currentPlayer];
+  const finalPlayerExhaustion = trumpAnalysis.playerExhaustion[finalPlayer];
+  const trumpAdvantage = finalPlayerExhaustion - currentPlayerExhaustion;
+
+  // Predict final player's response strength
+  let predictedResponse: "weak" | "moderate" | "strong" = "moderate";
+  if (likelyVoid) {
+    predictedResponse = "weak";
+  } else if (trumpAdvantage > 0.3) {
+    predictedResponse = "weak";
+  } else if (trumpAdvantage < -0.3) {
+    predictedResponse = "strong";
+  }
+
+  // Assess takeover opportunity
+  const optimalTakeoverOpportunity = trumpAdvantage > 0.2 || likelyVoid;
+
+  // Calculate risk assessment
+  let riskAssessment = 0.5; // Base risk
+  if (likelyVoid) riskAssessment -= 0.3; // Lower risk if opponent void
+  if (trumpAdvantage > 0.2) riskAssessment -= 0.2; // Lower risk with trump advantage
+  if (trumpAdvantage < -0.2) riskAssessment += 0.2; // Higher risk with trump disadvantage
+  if (predictedResponse === "strong") riskAssessment += 0.2; // Higher risk if opponent strong
+
+  riskAssessment = Math.max(0, Math.min(1, riskAssessment)); // Clamp to [0,1]
+
+  // Determine recommended action
+  let recommendedAction: "support" | "takeover" | "conservative" | "strategic" =
+    "strategic";
+  let reasoning = "";
+
+  if (optimalTakeoverOpportunity && riskAssessment < 0.4) {
+    recommendedAction = "takeover";
+    reasoning = "Low risk takeover opportunity detected";
+  } else if (riskAssessment > 0.7) {
+    recommendedAction = "conservative";
+    reasoning = "High risk situation - play conservatively";
+  } else if (predictedResponse === "weak") {
+    recommendedAction = "support";
+    reasoning = "Final player likely weak - support current winner";
+  } else {
+    recommendedAction = "strategic";
+    reasoning = "Balanced situation - strategic positioning";
+  }
+
+  return {
+    finalPlayerPrediction: {
+      playerId: finalPlayer,
+      likelyVoid,
+      trumpAdvantage,
+      predictedResponse,
+    },
+    optimalTakeoverOpportunity,
+    riskAssessment,
+    recommendedAction,
+    reasoning,
+  };
+}
+
+/**
+ * 4th Player Memory Analysis - Perfect Information + Memory Combination
+ *
+ * Leverages complete trick information combined with memory for optimal final decisions.
+ */
+export function analyze4thPlayerMemoryContext(
+  cardMemory: CardMemory,
+  _allPlayedCards: Card[],
+  trumpInfo: TrumpInfo,
+  currentPlayer: PlayerId,
+  trickPoints: number,
+): {
+  optimalDecision: "win" | "lose" | "minimize" | "contribute";
+  confidenceLevel: number; // 0.0 to 1.0
+  futureRoundAdvantage: number; // Projected advantage for future rounds
+  pointOptimization: {
+    maxContribution: number;
+    minimalLoss: number;
+    optimalBalance: number;
+  };
+  reasoning: string;
+} {
+  const trumpAnalysis = analyzeTrumpDistribution(cardMemory, trumpInfo);
+  const currentPlayerExhaustion = trumpAnalysis.playerExhaustion[currentPlayer];
+
+  // Calculate future round advantage based on trump distribution
+  const averageOpponentExhaustion =
+    Object.entries(trumpAnalysis.playerExhaustion)
+      .filter(([playerId]) => playerId !== currentPlayer)
+      .reduce((sum, [, exhaustion]) => sum + exhaustion, 0) / 3;
+
+  const futureRoundAdvantage =
+    averageOpponentExhaustion - currentPlayerExhaustion;
+
+  // Analyze point optimization opportunities
+  const maxContribution = Math.max(0, trickPoints);
+  const minimalLoss = 0; // 4th player can always choose not to contribute points
+  const optimalBalance =
+    futureRoundAdvantage > 0.2 ? maxContribution * 0.8 : maxContribution * 0.5;
+
+  // Determine optimal decision with high confidence (perfect information)
+  let optimalDecision: "win" | "lose" | "minimize" | "contribute" =
+    "contribute";
+  let confidenceLevel = 0.9; // High confidence with perfect information
+  let reasoning = "";
+
+  if (trickPoints >= 15 && futureRoundAdvantage > 0.1) {
+    // High value trick with future advantage - worth winning
+    optimalDecision = "win";
+    reasoning = "High value trick with future trump advantage";
+  } else if (trickPoints >= 10 && futureRoundAdvantage > 0.2) {
+    // Moderate value trick with good future advantage
+    optimalDecision = "win";
+    reasoning = "Moderate value trick with strong future advantage";
+  } else if (trickPoints >= 5) {
+    // Moderate points - contribute optimally
+    optimalDecision = "contribute";
+    reasoning = "Moderate points - optimal contribution strategy";
+  } else if (futureRoundAdvantage < -0.2) {
+    // Poor future position - minimize losses
+    optimalDecision = "minimize";
+    reasoning = "Poor future trump position - minimize losses";
+  } else {
+    // Standard contribution based on situation
+    optimalDecision = "contribute";
+    reasoning = "Standard situation - balanced contribution";
+  }
+
+  // Adjust confidence based on trump analysis certainty
+  if (trumpAnalysis.voidPlayers.length > 0) {
+    confidenceLevel += 0.05; // Higher confidence with known voids
+  }
+  if (futureRoundAdvantage > 0.3 || futureRoundAdvantage < -0.3) {
+    confidenceLevel += 0.05; // Higher confidence with clear advantage/disadvantage
+  }
+
+  confidenceLevel = Math.min(1.0, confidenceLevel);
+
+  return {
+    optimalDecision,
+    confidenceLevel,
+    futureRoundAdvantage,
+    pointOptimization: {
+      maxContribution,
+      minimalLoss,
+      optimalBalance,
+    },
+    reasoning,
+  };
 }
 
 /**
@@ -567,7 +1063,7 @@ function countTotalTrumps(trumpInfo: TrumpInfo): number {
 
 function estimatePlayerStrength(
   playerMemory: PlayerMemory,
-  trumpInfo: TrumpInfo,
+  _trumpInfo: TrumpInfo,
 ): number {
   // Base strength on estimated remaining cards and observed patterns
   let strength = playerMemory.estimatedHandSize * 0.1; // Base score
@@ -598,9 +1094,9 @@ function estimatePlayerStrength(
 }
 
 function determineTrumpPlay(
-  memory: CardMemory,
+  _memory: CardMemory,
   memoryContext: MemoryContext,
-  trumpInfo: TrumpInfo,
+  _trumpInfo: TrumpInfo,
 ): boolean {
   // Play trump if exhaustion is high (opponents likely have few trumps)
   if (memoryContext.trumpExhaustion > 0.7) {
@@ -635,7 +1131,7 @@ function calculateAverageOpponentStrength(
 
 function detectSuitExhaustionAdvantage(
   memory: CardMemory,
-  gameState: GameState,
+  _gameState: GameState,
 ): boolean {
   // Check if any opponent has shown suit voids we can exploit
   const playerMemories = Object.values(memory.playerMemories);
@@ -799,7 +1295,7 @@ function createTeamCoordinationPattern(
  */
 function createAdaptiveBehaviorDetection(
   tricks: Trick[],
-  players: PlayerContext[],
+  _players: PlayerContext[],
 ): AdaptiveBehaviorDetection {
   const midpoint = Math.floor(tricks.length / 2);
   const earlyTricks = tricks.slice(0, midpoint);
@@ -828,7 +1324,7 @@ function createAdaptiveBehaviorDetection(
  */
 function createRoundProgressionPattern(
   tricks: Trick[],
-  players: PlayerContext[],
+  _players: PlayerContext[],
   trumpInfo: TrumpInfo,
 ): RoundProgressionPattern {
   const trickCount = tricks.length;
@@ -856,7 +1352,7 @@ function createRoundProgressionPattern(
  */
 function identifyTrickSequencePatterns(
   tricks: Trick[],
-  players: PlayerContext[],
+  _players: PlayerContext[],
 ): TrickSequencePattern[] {
   const patterns: TrickSequencePattern[] = [];
 
@@ -866,7 +1362,7 @@ function identifyTrickSequencePatterns(
     const nextTrick = tricks[i + 1];
 
     // Check for setup patterns
-    if (isSetupPattern(currentTrick, nextTrick, players)) {
+    if (isSetupPattern(currentTrick, nextTrick, _players)) {
       patterns.push({
         patternType: "setup",
         triggerConditions: ["low_point_trick", "teammate_next_lead"],
@@ -992,7 +1488,7 @@ function createDefaultLeadingPattern(): OpponentLeadingPattern {
 
 function analyzeSituationalBehavior(
   tricks: Trick[],
-  trumpInfo: TrumpInfo,
+  _trumpInfo: TrumpInfo,
 ): Record<string, LeadingBehaviorProfile> {
   // Simplified implementation
   return {
@@ -1006,8 +1502,8 @@ function analyzeSituationalBehavior(
 }
 
 function analyzeTeamCoordinationStyle(
-  leaderTricks: Trick[],
-  allTricks: Trick[],
+  _leaderTricks: Trick[],
+  _allTricks: Trick[],
 ): "supportive" | "independent" | "opportunistic" {
   // Simplified analysis
   return "supportive";
@@ -1015,7 +1511,7 @@ function analyzeTeamCoordinationStyle(
 
 function analyzeSupport(
   currentCards: Card[],
-  previousCards: Card[],
+  _previousCards: Card[],
   trick: Trick,
 ): boolean {
   // Simplified: check if current player contributed points when teammate was winning
@@ -1024,8 +1520,8 @@ function analyzeSupport(
 
 function analyzeBlocking(
   currentCards: Card[],
-  previousCards: Card[],
-  trick: Trick,
+  _previousCards: Card[],
+  _trick: Trick,
 ): boolean {
   // Simplified: check if current player used trump to block opponent
   return currentCards.length > 0; // Placeholder logic
@@ -1095,9 +1591,9 @@ function analyzeBehaviorPhase(
 }
 
 function calculateRoundConsistency(
-  early: Trick[],
-  mid: Trick[],
-  late: Trick[],
+  _early: Trick[],
+  _mid: Trick[],
+  _late: Trick[],
 ): number {
   // Simplified consistency score
   return 0.7; // Placeholder
@@ -1153,17 +1649,15 @@ function determinePrimaryGoal(
  * Integrates memory-based insights into existing game context
  */
 export function enhanceGameContextWithMemory(
-  baseContext: GameContextBase,
+  baseContext: GameContext,
   memory: CardMemory,
   gameState: GameState,
 ): GameContext {
   const memoryContext = createMemoryContext(memory, gameState);
-  const memoryStrategy = createMemoryStrategy(memory, memoryContext, gameState);
 
   return {
     ...baseContext,
     memoryContext,
-    memoryStrategy,
   };
 }
 
@@ -1171,20 +1665,14 @@ export function enhanceGameContextWithMemory(
  * Enhanced version that includes historical analysis
  */
 export function enhanceGameContextWithHistoricalMemory(
-  baseContext: GameContextBase,
+  baseContext: GameContext,
   memory: CardMemory,
   gameState: GameState,
 ): GameContext {
   const enhancedMemoryContext = createEnhancedMemoryContext(memory, gameState);
-  const memoryStrategy = createMemoryStrategy(
-    memory,
-    enhancedMemoryContext,
-    gameState,
-  );
 
   return {
     ...baseContext,
     memoryContext: enhancedMemoryContext,
-    memoryStrategy,
   };
 }

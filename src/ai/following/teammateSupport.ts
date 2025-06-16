@@ -9,9 +9,13 @@ import {
   TrickPosition,
   TrumpInfo,
   TrickWinnerAnalysis,
+  PlayerId,
 } from "../../types";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
-import { selectPointContribution } from "./pointContribution";
+import {
+  selectPointContribution,
+  selectEnhancedPointContribution,
+} from "./pointContribution";
 import {
   analyzeSecondPlayerStrategy,
   selectSecondPlayerContribution,
@@ -35,11 +39,26 @@ export function handleTeammateWinning(
   context: GameContext,
   trumpInfo: TrumpInfo,
   gameState: GameState,
+  currentPlayerId?: PlayerId,
 ): Card[] {
   const trickWinner = context.trickWinnerAnalysis;
   if (!trickWinner) {
     // No trick winner analysis available, fall back to safe play
     return selectLowestValueNonPointCombo(comboAnalyses);
+  }
+
+  // ENHANCED POINT TIMING ANALYSIS: Use advanced point timing when available
+  if (context.memoryContext?.cardMemory && currentPlayerId) {
+    const enhancedContribution = selectEnhancedPointContribution(
+      comboAnalyses,
+      trumpInfo,
+      context,
+      gameState,
+      currentPlayerId,
+    );
+    if (enhancedContribution) {
+      return enhancedContribution;
+    }
   }
 
   // MEMORY ENHANCEMENT: Prioritize guaranteed point winners when teammate winning (only for valuable tricks)
@@ -61,7 +80,7 @@ export function handleTeammateWinning(
   // Position-specific analysis and contribution logic
   switch (context.trickPosition) {
     case TrickPosition.Fourth:
-      // 4th player perfect information analysis
+      // Phase 3: 4th Player Enhanced Strategy with Perfect Information + Memory
       const shouldContributeFourth = shouldContributePointCards(
         trickWinner,
         comboAnalyses,

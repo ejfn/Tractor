@@ -4,6 +4,7 @@ import {
   ComboAnalysis,
   GameContext,
   GameState,
+  PlayerId,
   PositionStrategy,
   TrickPosition,
   TrumpInfo,
@@ -35,6 +36,7 @@ export function selectOptimalFollowPlay(
   positionStrategy: PositionStrategy,
   trumpInfo: TrumpInfo,
   gameState: GameState,
+  currentPlayerId?: PlayerId,
 ): Card[] {
   // RESTRUCTURED: Clear priority chain for following play decisions
   const trickWinner = context.trickWinnerAnalysis;
@@ -44,7 +46,13 @@ export function selectOptimalFollowPlay(
   // === PRIORITY 1: TEAM COORDINATION ===
   if (trickWinner?.isTeammateWinning) {
     // Teammate is winning - help collect points or play conservatively
-    return handleTeammateWinning(comboAnalyses, context, trumpInfo, gameState);
+    return handleTeammateWinning(
+      comboAnalyses,
+      context,
+      trumpInfo,
+      gameState,
+      currentPlayerId,
+    );
   }
 
   // === PRIORITY 2: OPPONENT BLOCKING ===

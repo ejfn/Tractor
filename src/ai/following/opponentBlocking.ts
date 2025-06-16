@@ -3,6 +3,7 @@ import {
   Combo,
   ComboAnalysis,
   ComboType,
+  ComboStrength,
   GameContext,
   GameState,
   PositionStrategy,
@@ -17,6 +18,7 @@ import {
   selectAggressiveBeatPlay,
 } from "./trickContention";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
+import { VoidExploitationAnalysis } from "../analysis/voidExploitation";
 
 /**
  * Opponent Blocking - Strategic countering when opponent is winning
@@ -48,6 +50,20 @@ export function handleOpponentWinning(
     );
     if (guaranteedWinner) {
       return guaranteedWinner;
+    }
+  }
+
+  // Advanced Void Exploitation Blocking
+  if (context.memoryContext && context.memoryContext.voidExploitation) {
+    const voidAnalysis = context.memoryContext.voidExploitation;
+    const voidBasedBlock = selectVoidExploitationBlock(
+      comboAnalyses,
+      voidAnalysis,
+      trickWinner,
+      trumpInfo,
+    );
+    if (voidBasedBlock) {
+      return voidBasedBlock;
     }
   }
 
@@ -219,6 +235,68 @@ function selectMemoryGuaranteedWinner(
     // Sort by priority: highest first
     guaranteedWinners.sort((a, b) => b.priority - a.priority);
     return guaranteedWinners[0].combo.combo.cards;
+  }
+
+  return null;
+}
+
+/**
+ * Void Exploitation Blocking - Use void knowledge to block opponents strategically
+ */
+function selectVoidExploitationBlock(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  voidAnalysis: VoidExploitationAnalysis,
+  trickWinner: TrickWinnerAnalysis,
+  trumpInfo: TrumpInfo,
+): Card[] | null {
+  // Only apply void exploitation if the opponent is winning
+  if (!trickWinner.isOpponentWinning) {
+    return null;
+  }
+
+  // Look for opportunities to force opponents into difficult positions
+  const blockingOpportunities = voidAnalysis.exploitableVoids.filter(
+    (opportunity) =>
+      opportunity.exploitationType === "force_trump" &&
+      opportunity.successProbability > 0.7,
+  );
+
+  if (blockingOpportunities.length > 0) {
+    const bestOpportunity = blockingOpportunities[0];
+
+    // Find a combo that can be used for this blocking strategy
+    const blockingCombo = comboAnalyses.find(
+      (ca) =>
+        ca.combo.cards.some((card) =>
+          bestOpportunity.exploitationCards.some(
+            (exploitCard) =>
+              card.suit === exploitCard.suit && card.rank === exploitCard.rank,
+          ),
+        ) && !ca.analysis.isTrump, // Prefer non-trump for blocking
+    );
+
+    if (blockingCombo && trickWinner.canBeatCurrentWinner) {
+      return blockingCombo.combo.cards;
+    }
+  }
+
+  // Check for defensive void management
+  const voidRisks = voidAnalysis.voidRiskAssessment.filter(
+    (risk) => risk.urgency === "high" || risk.urgency === "immediate",
+  );
+
+  if (voidRisks.length > 0) {
+    // Play conservatively to avoid revealing our own voids
+    const safeBlockingCombos = comboAnalyses.filter(
+      (ca) =>
+        !ca.analysis.isTrump &&
+        !ca.analysis.hasPoints &&
+        ca.analysis.strength !== ComboStrength.Critical,
+    );
+
+    if (safeBlockingCombos.length > 0) {
+      return safeBlockingCombos[0].combo.cards;
+    }
   }
 
   return null;

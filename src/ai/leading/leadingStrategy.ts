@@ -15,12 +15,14 @@ import {
 import {
   createPointFocusedContext,
   selectEarlyGameLeadingPlay,
+  selectMemoryEnhancedPointPlay,
 } from "./pointFocusedStrategy";
 import { analyzeCombo } from "../aiGameContext";
 import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
 import { getRankValue } from "../analysis/comboAnalysis";
 import { isTrump } from "../../game/gameHelpers";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
+import { VoidExploitationAnalysis } from "../analysis/voidExploitation";
 
 /**
  * Leading Strategy - Main leading logic and first position tactics
@@ -69,7 +71,36 @@ export function selectAdvancedLeadingPlay(
     }
   }
 
-  // === PRIORITY 2: MEMORY GUARANTEED WINNERS ===
+  // === PRIORITY 2: VOID EXPLOITATION ===
+  // Use void exploitation opportunities for strategic advantage
+  if (context.memoryContext && context.memoryContext.voidExploitation) {
+    const voidAnalysis = context.memoryContext.voidExploitation;
+    const voidExploitationPlay = selectVoidExploitationLead(
+      comboAnalyses,
+      voidAnalysis,
+      trumpInfo,
+    );
+    if (voidExploitationPlay) {
+      return voidExploitationPlay;
+    }
+  }
+
+  // === PRIORITY 3: MEMORY-ENHANCED POINT TIMING ===
+  // Use advanced point card timing analysis for optimal point collection
+  if (context.memoryContext?.cardMemory && gameState.tricks.length >= 1) {
+    const pointTimingPlay = selectMemoryEnhancedPointPlay(
+      validCombos,
+      trumpInfo,
+      context,
+      gameState,
+      currentPlayer.id,
+    );
+    if (pointTimingPlay) {
+      return pointTimingPlay.cards;
+    }
+  }
+
+  // === PRIORITY 4: MEMORY GUARANTEED WINNERS ===
   // Play guaranteed winners from memory analysis (but not in early probing phase)
   if (
     context.memoryContext &&
@@ -85,7 +116,7 @@ export function selectAdvancedLeadingPlay(
     }
   }
 
-  // === PRIORITY 3: HISTORICAL INSIGHTS ===
+  // === PRIORITY 5: HISTORICAL INSIGHTS ===
   // Apply opponent modeling when sufficient data available
   if (gameState.tricks.length >= 3) {
     const historicalPlay = applyLeadingHistoricalInsights(
@@ -99,7 +130,7 @@ export function selectAdvancedLeadingPlay(
     }
   }
 
-  // === PRIORITY 4: FIRST PLAYER ANALYSIS ===
+  // === PRIORITY 6: FIRST PLAYER ANALYSIS ===
   // Use FirstPlayerAnalysis for game phase strategy
   const firstPlayerAnalysis = analyzeFirstPlayerStrategy(
     validCombos,
@@ -150,13 +181,16 @@ export function selectAdvancedLeadingPlay(
     return firstPlayerAnalysis.optimalLeadingCombo.cards;
   }
 
-  // === PRIORITY 5: SAFE DISPOSAL ===
+  // === PRIORITY 7: SAFE DISPOSAL ===
   // Play safe, non-revealing cards when no better option
   return selectSafeLeadingDisposal(comboAnalyses, trumpInfo, context);
 }
 
 /**
  * Basic leading play for fallback scenarios
+ *
+ * @remarks Used as fallback when no player context is available or memory analysis fails.
+ * Provides simple, safe play selection for edge cases.
  */
 export function selectBasicLeadingPlay(
   validCombos: Combo[],
@@ -174,6 +208,9 @@ export function selectBasicLeadingPlay(
 
 /**
  * Safe leading disposal when no better option available
+ *
+ * @remarks Thin wrapper around selectSafeLeadCombo for consistent API.
+ * Consider using selectSafeLeadCombo directly for new code.
  */
 export function selectSafeLeadingDisposal(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
@@ -485,4 +522,56 @@ export function selectEndgameLeadingPlay(
   });
 
   return bestCombo.cards;
+}
+
+/**
+ * Void Exploitation Leading - Use void analysis for strategic leading
+ */
+function selectVoidExploitationLead(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  voidAnalysis: VoidExploitationAnalysis,
+  trumpInfo: TrumpInfo,
+): Card[] | null {
+  // Check if we have high-value void exploitation opportunities
+  if (
+    voidAnalysis.voidAdvantageScore > 0.7 &&
+    voidAnalysis.voidBasedLeadRecommendations.length > 0
+  ) {
+    const bestVoidLead = voidAnalysis.voidBasedLeadRecommendations[0];
+
+    // Find the combo that matches the recommended lead
+    const matchingCombo = comboAnalyses.find(
+      (ca) =>
+        ca.combo.cards.length === 1 &&
+        ca.combo.cards[0].suit === bestVoidLead.leadCard.suit &&
+        ca.combo.cards[0].rank === bestVoidLead.leadCard.rank,
+    );
+
+    if (matchingCombo) {
+      return matchingCombo.combo.cards;
+    }
+  }
+
+  // Check for immediate void exploitation opportunities
+  const immediateOpportunities =
+    voidAnalysis.voidTimingRecommendations.immediateOpportunities;
+  if (immediateOpportunities.length > 0) {
+    const bestOpportunity = immediateOpportunities[0];
+
+    // Find a combo that exploits this void
+    const exploitationCombo = comboAnalyses.find((ca) =>
+      ca.combo.cards.some((card) =>
+        bestOpportunity.exploitationCards.some(
+          (exploitCard) =>
+            card.suit === exploitCard.suit && card.rank === exploitCard.rank,
+        ),
+      ),
+    );
+
+    if (exploitationCombo) {
+      return exploitationCombo.combo.cards;
+    }
+  }
+
+  return null;
 }
