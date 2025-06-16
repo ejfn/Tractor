@@ -190,7 +190,7 @@ function getCurrentDeclarationMultiplier(
   proposedDeclaration: { type: DeclarationType },
 ): number {
   if (!currentDeclaration) {
-    return 1.2; // Strong bonus when no one has declared yet - establish early control
+    return 1.0; // Neutral when no one has declared - wait for better information
   }
 
   const currentStrength = getDeclarationStrength(currentDeclaration.type);
