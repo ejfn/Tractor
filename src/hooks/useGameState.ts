@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { initializeGame } from "../utils/gameInitialization";
 import { putbackKittyCards, validateKittySwap } from "../game/kittyManager";
+import { useGameStatePersistence } from "./useGameStatePersistence";
 import {
   processPlay,
   validatePlay,
@@ -62,13 +63,54 @@ export function useGameState() {
   // Ref to store kitty cards for pre-selection
   const kittyCardsRef = useRef<Card[]>([]);
 
-  // Initialize game on component mount if no game state exists
+  // Track initialization state
+  const [isInitializing, setIsInitializing] = useState(false);
+  const hasAttemptedRestore = useRef(false);
+
+  // Persistence integration
+  const persistence = useGameStatePersistence(gameState);
+
+  // Initialize game with auto-restoration on component mount
   useEffect(() => {
-    if (!gameState) {
-      const newGameState = initializeGame();
-      setGameState(newGameState);
+    if (!gameState && !isInitializing && !hasAttemptedRestore.current) {
+      hasAttemptedRestore.current = true;
+      setIsInitializing(true);
+
+      // Attempt to restore saved game first
+      persistence
+        .loadGame()
+        .then((result) => {
+          if (result.success && result.gameState) {
+            // Successfully restored saved game
+            gameLogger.info("game_auto_restored", {
+              gamePhase: result.gameState.gamePhase,
+              roundNumber: result.gameState.roundNumber,
+              savedAt: result.timestamp
+                ? new Date(result.timestamp).toISOString()
+                : "unknown",
+            });
+            setGameState(result.gameState);
+          } else {
+            // No saved game or load failed, start new game
+            gameLogger.info("game_new_start", {
+              reason: result.error || "No saved game found",
+            });
+            const newGameState = initializeGame();
+            setGameState(newGameState);
+          }
+          setIsInitializing(false);
+        })
+        .catch((error) => {
+          // Error during restoration, fallback to new game
+          gameLogger.warn("game_restore_error", {
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+          const newGameState = initializeGame();
+          setGameState(newGameState);
+          setIsInitializing(false);
+        });
     }
-  }, [gameState]);
+  }, [gameState, isInitializing, persistence]);
 
   // Extract relevant values for kitty swap detection
   const gamePhase = gameState?.gamePhase;
@@ -105,11 +147,11 @@ export function useGameState() {
 
   // Initialize game (for manual initialization)
   const initGame = useCallback(() => {
-    if (!gameState) {
-      const newGameState = initializeGame();
-      setGameState(newGameState);
+    if (!gameState && !isInitializing) {
+      // This will trigger the auto-restoration logic in useEffect
+      // No need to do anything here, just ensure we're not already initializing
     }
-  }, [gameState]);
+  }, [gameState, isInitializing]);
 
   // Handle card selection
   const handleCardSelect = (card: Card) => {
@@ -338,18 +380,39 @@ export function useGameState() {
 
   // Handle starting a new game
   const startNewGame = () => {
-    setGameState(null);
+    // Clear any saved game data
+    persistence
+      .clearSavedGame()
+      .then((success) => {
+        if (success) {
+          gameLogger.info("saved_game_cleared_new_game");
+        }
+      })
+      .catch((error) => {
+        gameLogger.warn("clear_saved_game_failed_new_game", {
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+      });
+
+    // Reset all state and immediately initialize new game
     setSelectedCards([]);
     setGameOver(false);
     setWinner(null);
     setShowRoundComplete(false);
     setRoundCompleteMessage("");
     setPreviousGamePhase(null);
+    setIsInitializing(false);
+    hasAttemptedRestore.current = false;
     pendingStateRef.current = null;
     roundResultRef.current = null;
     kittyCardsRef.current = [];
 
-    // Initialize will be called on next render due to dependency changes
+    // Immediately initialize new game (skip restoration)
+    const newGameState = initializeGame();
+    setGameState(newGameState);
+    gameLogger.info("game_new_start_manual", {
+      reason: "User started new game",
+    });
   };
 
   // Function to clear trick after result is displayed
@@ -372,12 +435,16 @@ export function useGameState() {
     showRoundComplete,
     roundCompleteMessage,
     isProcessingPlay,
+    isInitializing,
 
     // Trick completion data ref (for communication with other hooks)
     trickCompletionDataRef,
 
     // Round result ref (for round complete modal)
     roundResultRef,
+
+    // Persistence
+    persistence,
 
     // Initializers
     initGame,
