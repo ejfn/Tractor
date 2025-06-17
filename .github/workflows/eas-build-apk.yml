@@ -3,6 +3,13 @@ name: EAS Build APK
 on:
   release:
     types: [released]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git reference (tag, branch, or commit SHA) to build'
+        required: true
+        default: 'main'
+        type: string
 
 permissions:
   contents: write
@@ -16,6 +23,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
+        ref: ${{ github.event.inputs.ref || github.event.release.tag_name || github.sha }}
         fetch-depth: 0
 
     - name: Setup Node.js
@@ -53,10 +61,12 @@ jobs:
         echo "Build URL: $BUILD_URL"
 
     - name: Download APK
+      if: github.event_name == 'release'
       run: |
         curl -L -o tractor-${{ steps.version.outputs.version }}.apk "${{ steps.build-url.outputs.build_url }}"
 
     - name: Upload APK to Release
+      if: github.event_name == 'release'
       uses: softprops/action-gh-release@v2
       with:
         files: tractor-${{ steps.version.outputs.version }}.apk
