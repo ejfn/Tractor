@@ -34,6 +34,35 @@ npm run typecheck     # Type checking
 npm test              # Run tests
 ```
 
+## Game State Persistence
+
+The game features **automatic save/restore functionality** with seamless user experience:
+
+### **Auto-Save System**
+- **Phase Changes**: Automatically saves when transitioning between game phases
+- **Round Transitions**: Saves at the start of each new round
+- **Trick Completions**: Saves after each completed trick
+- **Player Turns**: Saves when turn passes to next player
+- **Smart Throttling**: Prevents excessive saves (2-second minimum interval)
+
+### **Auto-Restoration**
+- **Seamless Recovery**: Automatically detects and offers to restore saved games on app startup
+- **UI Timing**: Proper timing delays ensure modals display correctly after restoration
+- **Trick Handling**: Automatically clears completed tricks when resuming mid-game
+- **Round Results**: Shows round result modals for games saved during round end
+
+### **Technical Implementation**
+- **AsyncStorage Integration**: Uses React Native AsyncStorage for reliable local persistence
+- **Card Deserialization**: Maintains Card class methods after JSON parsing with deep deserialization
+- **Version Management**: Simple numeric versioning (bump when making breaking GameState changes)
+- **Error Handling**: Robust retry logic and graceful fallback to new games
+- **Validation**: Comprehensive validation of saved game data integrity
+
+### **Developer Guidelines**
+- **Breaking Changes**: Bump `PERSISTENCE_VERSION` number when modifying GameState structure
+- **Testing**: All persistence functions have comprehensive test coverage
+- **Logging**: Uses `gameLogger` for all persistence operations and errors
+
 *Project structure and architectural highlights detailed in [README.md](README.md)*
 
 ## Development Guidelines
@@ -575,7 +604,8 @@ This protection ensures Shengji/Tractor game rule compliance and prevents invali
 ## Hook Architecture
 
 **Single-responsibility hooks with minimal interdependencies:**
-- `useGameState` - Core game state management
+- `useGameState` - Core game state management with integrated persistence
+- `useGameStatePersistence` - Automatic save/load with AsyncStorage integration
 - `useProgressiveDealing` - Unified dealing and trump declarations
 - `useAITurns` - AI turn handling
 - `useTrickResults` - Trick completion and display
@@ -584,6 +614,13 @@ This protection ensures Shengji/Tractor game rule compliance and prevents invali
 **RoundResult System:**
 - Pure computation approach with `endRound()` and `prepareNextRound()`
 - Separates calculations from state mutations for clean UI timing
+
+**Game State Persistence System:**
+- Auto-save triggers on phase changes, round transitions, trick completions, and player turns
+- Auto-restoration on app startup with proper UI timing for modals and completed tricks
+- Card deserialization maintains class methods after JSON parsing
+- Validation and error handling with automatic fallback to new game
+- Simple numeric versioning system for migration compatibility
 
 ## Automated Badge System
 
@@ -626,6 +663,7 @@ These are lessons learned and principles established through development experie
 - **State timing**: When UI timing is critical, use refs to preserve state during modal displays and transitions
 - **Unified data structures**: Maintain single source of truth for game state - eliminate dual fields that can become inconsistent
 - **Modular AI organization**: Group AI logic by functional domain (following/, leading/, analysis/) rather than mixing strategies
+- **Game state persistence**: Auto-save integrates seamlessly with existing game state management without architectural disruption
 
 ### Type Safety Enforcement
 
@@ -720,8 +758,55 @@ src/ai/following/fourthPlayerStrategy.ts    // Perfect information + memory comb
 - **Impact**: AI now correctly forms trump rank pairs across suits (e.g., 2♠-2♥) and uses ALL trump pairs before ANY trump singles when following trump tractors
 - **Rule Enforced**: "ALL trump cards are treated as the same suit when following trump leads" - fundamental Tractor/Shengji rule now properly implemented
 
+### Game State Persistence Implementation
+
+The game includes a **comprehensive persistence system** that automatically saves and restores game progress with seamless user experience.
+
+#### **Core Persistence Features**
+
+- **Auto-Save Triggers**: Automatic saves on phase changes, round transitions, trick completions, and player turns
+- **Auto-Restoration**: Seamless game restoration on app startup with proper timing for UI modals
+- **AsyncStorage Integration**: Reliable local storage with retry logic and error handling
+- **Card Deserialization**: Maintains Card class methods after JSON parsing using `Card.deepDeserializeCards()`
+- **Validation System**: Comprehensive validation prevents corrupted save files from breaking the game
+- **Version Management**: Simple numeric versioning with automatic fallback to new game on version mismatches
+
+#### **Persistence Architecture**
+
+```typescript
+src/utils/gameStatePersistence.ts    // Core persistence utilities with AsyncStorage wrapper
+src/hooks/useGameStatePersistence.ts // React hook with auto-save logic and status tracking
+src/hooks/useGameState.ts           // Integrated persistence in main game state management
+```
+
+#### **Auto-Save Strategy**
+
+- **Phase Changes**: `dealing` → `playing` → `scoring` → `roundEnd`
+- **Round Transitions**: New round initialization and advancement
+- **Trick Completions**: Each completed trick saved for progress preservation
+- **Player Turns**: Current player changes during active gameplay
+- **Throttling**: Minimum 2-second intervals prevent excessive saves
+- **Game Over Exclusion**: Completed games not auto-saved to prevent unnecessary storage
+
+#### **Restoration Logic**
+
+- **Startup Check**: Automatically attempts restoration on app launch
+- **UI Timing Fixes**: Proper delays for modals and completed trick displays
+- **Validation**: Only restores valid, recent saves (within 7 days)
+- **Fallback Strategy**: Invalid saves automatically trigger new game initialization
+- **Version Compatibility**: Breaking changes increment version number for clean migration
+
+#### **Developer Guidelines**
+
+- **No Manual Calls**: Persistence is fully automatic - no manual save/load calls needed in game logic
+- **State Integration**: Persistence hooks integrate cleanly with existing `useGameState` hook
+- **Error Resilience**: All persistence operations include comprehensive error handling
+- **Testing**: Persistence system includes unit tests and integration tests for reliability
+- **Performance**: Throttling and efficient serialization prevent performance impact
+
 ### Project Management
 
 - **Documentation sync**: Update documentation when adding new features or changing architecture
 - **File naming**: Use descriptive names that reflect actual complexity (avoid "Simple" for sophisticated implementations)
 - **Modular organization**: Organize files by logical domain (ai/, game/, utils/) rather than just file type
+- **Persistence integration**: New features automatically benefit from persistence without additional implementation

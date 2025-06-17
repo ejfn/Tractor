@@ -34,6 +34,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **🃏 Smart Card Auto-Selection**: Intelligent pair/tractor detection with tap-to-toggle controls
 - **⚡ Progressive Dealing System**: Real-time trump declarations with sophisticated AI strategy
 - **🎯 Advanced Kitty Management**: Strategic suit elimination and endgame bonus multipliers
+- **💾 Automatic Game Persistence**: Seamless save/restore with auto-recovery on app restart
 - **📱 Touch-Optimized UI**: Smooth animations, team color coding, and dark theme support
 - **🏆 Authentic Gameplay**: Complete Shengji/Tractor rules with proper combination following
 

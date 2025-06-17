@@ -120,6 +120,79 @@ export class Card {
   }
 
   /**
+   * Deserialize Card objects from JSON back to Card class instances
+   * This is crucial because JSON.parse creates plain objects, losing Card methods
+   */
+  static deserializeCard(cardData: unknown): Card {
+    const data = cardData as Record<string, unknown>;
+    if (data.joker) {
+      // This is a joker card
+      return Card.createJoker(data.joker as JokerType, data.deckId as DeckId);
+    } else {
+      // This is a regular card
+      return Card.createCard(
+        data.suit as Suit,
+        data.rank as Rank,
+        data.deckId as DeckId,
+      );
+    }
+  }
+
+  /**
+   * Deep deserialization of any object that may contain Card objects
+   * Recursively traverses the object and converts all Card-like objects to proper Card instances
+   */
+  static deepDeserializeCards(obj: unknown): unknown {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    // If this looks like a Card object, deserialize it
+    if (Card.isCardLike(obj)) {
+      return Card.deserializeCard(obj);
+    }
+
+    // If it's an array, recursively deserialize each element
+    if (Array.isArray(obj)) {
+      return obj.map(Card.deepDeserializeCards);
+    }
+
+    // If it's an object, recursively deserialize all properties
+    if (typeof obj === "object") {
+      const result: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(obj)) {
+        result[key] = Card.deepDeserializeCards(value);
+      }
+      return result;
+    }
+
+    // For primitives, return as-is
+    return obj;
+  }
+
+  /**
+   * Check if an object looks like a serialized Card
+   */
+  private static isCardLike(obj: unknown): boolean {
+    if (typeof obj !== "object" || obj === null) {
+      return false;
+    }
+
+    // Must have deckId and either joker OR (suit and rank)
+    const hasBasicProps = "deckId" in obj && typeof obj.deckId === "number";
+    const isJoker =
+      hasBasicProps && "joker" in obj && typeof obj.joker === "string";
+    const isRegularCard =
+      hasBasicProps &&
+      "suit" in obj &&
+      "rank" in obj &&
+      typeof obj.suit === "string" &&
+      typeof obj.rank === "string";
+
+    return isJoker || isRegularCard;
+  }
+
+  /**
    * Create a pair of identical cards from different decks
    * Returns [Card from deck 0, Card from deck 1]
    */
