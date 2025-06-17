@@ -8,7 +8,7 @@ import {
   getStorageStats,
 } from '../../src/utils/gameStatePersistence';
 import { initializeGame } from '../../src/utils/gameInitialization';
-import { GamePhase, Rank } from '../../src/types';
+import { GamePhase, Rank, Card, JokerType, Suit } from '../../src/types';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -349,6 +349,160 @@ describe('Game State Persistence', () => {
 
       const result = await loadGameState();
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('Card Deserialization', () => {
+    it('should properly deserialize Card objects with methods', async () => {
+      const gameState = initializeGame();
+      
+      // Add some cards to the first player's hand for testing
+      const testCard = Card.createCard(Suit.Hearts, Rank.Ace, 0);
+      gameState.players[0].hand.push(testCard);
+      
+      // Ensure we have some cards in player hands
+      expect(gameState.players[0].hand.length).toBeGreaterThan(0);
+      
+      // Verify original cards have methods
+      const originalCard = gameState.players[0].hand[0];
+      expect(typeof originalCard.getDisplayName).toBe('function');
+      expect(typeof originalCard.isTrump).toBe('function');
+      expect(typeof originalCard.isIdenticalTo).toBe('function');
+      
+      // Save the game state
+      mockAsyncStorage.setItem.mockResolvedValue();
+      const saveResult = await saveGameState(gameState);
+      expect(saveResult.success).toBe(true);
+      
+      // Mock the stored data
+      const persistedState = {
+        gameState,
+        timestamp: Date.now(),
+        version: '1.0.0',
+        gameId: 'test_deserialization',
+        isComplete: false,
+        metadata: {
+          roundNumber: gameState.roundNumber,
+          gamePhase: gameState.gamePhase,
+          playerCount: 4,
+        }
+      };
+      
+      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(persistedState));
+      
+      // Load the game state
+      const loadResult = await loadGameState();
+      expect(loadResult.success).toBe(true);
+      expect(loadResult.gameState).toBeDefined();
+      
+      // Verify loaded cards have methods restored
+      const loadedCard = loadResult.gameState!.players[0].hand[0];
+      expect(typeof loadedCard.getDisplayName).toBe('function');
+      expect(typeof loadedCard.isTrump).toBe('function');
+      expect(typeof loadedCard.isIdenticalTo).toBe('function');
+      
+      // Verify the methods work correctly
+      expect(loadedCard.getDisplayName()).toBe(originalCard.getDisplayName());
+      expect(loadedCard.isTrump(gameState.trumpInfo)).toBe(originalCard.isTrump(gameState.trumpInfo));
+      expect(loadedCard.isIdenticalTo(originalCard)).toBe(true);
+      
+      // Verify card properties are preserved
+      expect(loadedCard.suit).toBe(originalCard.suit);
+      expect(loadedCard.rank).toBe(originalCard.rank);
+      expect(loadedCard.deckId).toBe(originalCard.deckId);
+      expect(loadedCard.id).toBe(originalCard.id);
+    });
+
+    it('should deserialize joker cards correctly', async () => {
+      const gameState = initializeGame();
+      
+      // Add some jokers to the first player's hand
+      const bigJoker = Card.createJoker(JokerType.Big, 0);
+      const smallJoker = Card.createJoker(JokerType.Small, 1);
+      gameState.players[0].hand.push(bigJoker, smallJoker);
+      
+      // Mock save and create persisted state
+      const persistedState = {
+        gameState,
+        timestamp: Date.now(),
+        version: '1.0.0',
+        gameId: 'test_joker_deserialization',
+        isComplete: false,
+        metadata: {
+          roundNumber: gameState.roundNumber,
+          gamePhase: gameState.gamePhase,
+          playerCount: 4,
+        }
+      };
+      
+      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(persistedState));
+      
+      // Load the game state
+      const loadResult = await loadGameState();
+      expect(loadResult.success).toBe(true);
+      
+      // Find the loaded jokers
+      const loadedCards = loadResult.gameState!.players[0].hand;
+      const loadedBigJoker = loadedCards.find(card => card.joker === JokerType.Big);
+      const loadedSmallJoker = loadedCards.find(card => card.joker === JokerType.Small);
+      
+      expect(loadedBigJoker).toBeDefined();
+      expect(loadedSmallJoker).toBeDefined();
+      
+      // Verify joker methods work
+      expect(loadedBigJoker!.getDisplayName()).toBe('BJ');
+      expect(loadedSmallJoker!.getDisplayName()).toBe('SJ');
+      expect(loadedBigJoker!.isTrump(gameState.trumpInfo)).toBe(true);
+      expect(loadedSmallJoker!.isTrump(gameState.trumpInfo)).toBe(true);
+    });
+
+    it('should deserialize kittyCards correctly', async () => {
+      const gameState = initializeGame();
+      
+      // Add some cards to kittyCards
+      const kittyCard1 = Card.createCard(Suit.Diamonds, Rank.King, 0);
+      const kittyCard2 = Card.createCard(Suit.Clubs, Rank.Five, 1);
+      gameState.kittyCards = [kittyCard1, kittyCard2];
+      
+      // Mock save and create persisted state
+      const persistedState = {
+        gameState,
+        timestamp: Date.now(),
+        version: '1.0.0',
+        gameId: 'test_kitty_deserialization',
+        isComplete: false,
+        metadata: {
+          roundNumber: gameState.roundNumber,
+          gamePhase: gameState.gamePhase,
+          playerCount: 4,
+        }
+      };
+      
+      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(persistedState));
+      
+      // Load the game state
+      const loadResult = await loadGameState();
+      expect(loadResult.success).toBe(true);
+      
+      // Verify kitty cards were deserialized correctly
+      const loadedKittyCards = loadResult.gameState!.kittyCards;
+      expect(loadedKittyCards).toHaveLength(2);
+      
+      // Verify first kitty card
+      const loadedKittyCard1 = loadedKittyCards[0];
+      expect(typeof loadedKittyCard1.getDisplayName).toBe('function');
+      expect(loadedKittyCard1.getDisplayName()).toBe('K♦');
+      expect(loadedKittyCard1.suit).toBe(Suit.Diamonds);
+      expect(loadedKittyCard1.rank).toBe(Rank.King);
+      expect(loadedKittyCard1.points).toBe(10);
+      
+      // Verify second kitty card
+      const loadedKittyCard2 = loadedKittyCards[1];
+      expect(typeof loadedKittyCard2.getDisplayName).toBe('function');
+      expect(loadedKittyCard2.getDisplayName()).toBe('5♣');
+      expect(loadedKittyCard2.suit).toBe(Suit.Clubs);
+      expect(loadedKittyCard2.rank).toBe(Rank.Five);
+      expect(loadedKittyCard2.points).toBe(5);
     });
   });
 });

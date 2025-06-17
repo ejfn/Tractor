@@ -120,6 +120,25 @@ export class Card {
   }
 
   /**
+   * Deserialize Card objects from JSON back to Card class instances
+   * This is crucial because JSON.parse creates plain objects, losing Card methods
+   */
+  static deserializeCard(cardData: unknown): Card {
+    const data = cardData as Record<string, unknown>;
+    if (data.joker) {
+      // This is a joker card
+      return Card.createJoker(data.joker as JokerType, data.deckId as DeckId);
+    } else {
+      // This is a regular card
+      return Card.createCard(
+        data.suit as Suit,
+        data.rank as Rank,
+        data.deckId as DeckId,
+      );
+    }
+  }
+
+  /**
    * Create a pair of identical cards from different decks
    * Returns [Card from deck 0, Card from deck 1]
    */

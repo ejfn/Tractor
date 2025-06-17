@@ -89,6 +89,16 @@ export function useGameState() {
                 ? new Date(result.timestamp).toISOString()
                 : "unknown",
             });
+
+            // Check if we have a completed round that needs to show result
+            if (result.gameState.gamePhase === GamePhase.RoundEnd) {
+              // We have a completed round - trigger round result modal after state is set
+              const gameStateToHandle = result.gameState;
+              setTimeout(() => {
+                handleEndRound(gameStateToHandle);
+              }, 100); // Small delay to ensure state is properly set
+            }
+
             setGameState(result.gameState);
           } else {
             // No saved game or load failed, start new game
