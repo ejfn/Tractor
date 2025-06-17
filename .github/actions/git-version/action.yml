@@ -73,14 +73,14 @@ runs:
           VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           RUNTIME_VERSION="v${BASE_VERSION}-beta"
-          EAS_BRANCH="beta"
+          EAS_BRANCH="preview"
           
         else
           # Other branch (manual trigger) - isolate with git hash in runtime version
           VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           RUNTIME_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          EAS_BRANCH="alpha"
+          EAS_BRANCH="development"
         fi
         
         # Set all outputs
