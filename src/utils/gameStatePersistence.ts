@@ -10,93 +10,12 @@ import { gameLogger } from "./gameLogger";
  */
 
 /**
- * Recursively deserialize a game state, converting plain Card objects back to Card instances
+ * Recursively deserialize a game state, converting ALL Card objects back to Card instances
+ * Uses deep deserialization to catch any Card objects anywhere in the object graph
  */
 function deserializeGameState(gameState: unknown): GameState {
-  // Deep clone the game state to avoid modifying the original
-  const deserializedState = JSON.parse(JSON.stringify(gameState)) as GameState;
-
-  // Deserialize cards in player hands
-  if (deserializedState.players && Array.isArray(deserializedState.players)) {
-    deserializedState.players.forEach((player) => {
-      if (player.hand && Array.isArray(player.hand)) {
-        player.hand = player.hand.map(Card.deserializeCard);
-      }
-    });
-  }
-
-  // Deserialize cards in kittyCards
-  if (
-    deserializedState.kittyCards &&
-    Array.isArray(deserializedState.kittyCards)
-  ) {
-    deserializedState.kittyCards = deserializedState.kittyCards.map(
-      Card.deserializeCard,
-    );
-  }
-
-  // Deserialize cards in trump declarations
-  if (deserializedState.trumpDeclarationState) {
-    // Deserialize current declaration cards
-    if (deserializedState.trumpDeclarationState.currentDeclaration) {
-      const currentDecl =
-        deserializedState.trumpDeclarationState.currentDeclaration;
-      if (currentDecl.cards && Array.isArray(currentDecl.cards)) {
-        currentDecl.cards = currentDecl.cards.map(Card.deserializeCard);
-      }
-    }
-
-    // Deserialize declaration history cards
-    if (deserializedState.trumpDeclarationState.declarationHistory) {
-      deserializedState.trumpDeclarationState.declarationHistory.forEach(
-        (declaration) => {
-          if (declaration.cards && Array.isArray(declaration.cards)) {
-            declaration.cards = declaration.cards.map(Card.deserializeCard);
-          }
-        },
-      );
-    }
-  }
-
-  // Deserialize cards in dealing state
-  if (deserializedState.dealingState) {
-    if (deserializedState.dealingState.lastDealtCard) {
-      deserializedState.dealingState.lastDealtCard = Card.deserializeCard(
-        deserializedState.dealingState.lastDealtCard,
-      );
-    }
-  }
-
-  // Deserialize cards in current trick
-  if (deserializedState.currentTrick) {
-    // Deserialize cards in plays
-    if (
-      deserializedState.currentTrick.plays &&
-      Array.isArray(deserializedState.currentTrick.plays)
-    ) {
-      deserializedState.currentTrick.plays.forEach((play) => {
-        if (play.cards && Array.isArray(play.cards)) {
-          play.cards = play.cards.map(Card.deserializeCard);
-        }
-      });
-    }
-  }
-
-  // Deserialize cards in tricks history
-  if (deserializedState.tricks && Array.isArray(deserializedState.tricks)) {
-    deserializedState.tricks.forEach((trick) => {
-      // Deserialize cards in historical plays
-      if (trick.plays && Array.isArray(trick.plays)) {
-        trick.plays.forEach((play) => {
-          if (play.cards && Array.isArray(play.cards)) {
-            play.cards = play.cards.map(Card.deserializeCard);
-          }
-        });
-      }
-    });
-  }
-
-  return deserializedState as GameState;
+  // Use the comprehensive deep deserialization to find and fix ALL Card objects
+  return Card.deepDeserializeCards(gameState) as GameState;
 }
 
 export interface PersistedGameState {
