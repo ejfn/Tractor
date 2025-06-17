@@ -21,7 +21,7 @@ function deserializeGameState(gameState: unknown): GameState {
 export interface PersistedGameState {
   gameState: GameState;
   timestamp: number;
-  version: string; // For migration compatibility
+  version: number; // For migration compatibility - bump when introducing breaking changes
   gameId: string; // Unique identifier
   isComplete: boolean;
   metadata: {
@@ -53,8 +53,8 @@ const STORAGE_KEYS = {
   LAST_SAVE_TIME: "tractor_last_save_time",
 } as const;
 
-// Current version for migration compatibility
-const PERSISTENCE_VERSION = "1.0.0";
+// Current version for migration compatibility - bump when introducing breaking changes
+const PERSISTENCE_VERSION = 1;
 
 /**
  * Storage Manager - AsyncStorage wrapper with error handling
@@ -240,7 +240,6 @@ const ValidationService = {
           saved: state.version,
           current: PERSISTENCE_VERSION,
         });
-        // For now, reject different versions. Future: implement migration
         return false;
       }
 
@@ -423,6 +422,7 @@ export async function clearSavedGameState(): Promise<boolean> {
     return false;
   }
 }
+
 
 /**
  * Check if a saved game exists

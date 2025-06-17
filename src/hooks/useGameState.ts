@@ -22,6 +22,7 @@ import {
   CARD_SELECTION_DELAY,
   ROUND_COMPLETE_BUFFER,
   TRICK_RESULT_DISPLAY_TIME,
+  AI_MOVE_DELAY,
 } from "../utils/gameTimings";
 import { gameLogger } from "../utils/gameLogger";
 
@@ -92,11 +93,28 @@ export function useGameState() {
 
             // Check if we have a completed round that needs to show result
             if (result.gameState.gamePhase === GamePhase.RoundEnd) {
-              // We have a completed round - trigger round result modal after state is set
+              // We have a completed round - trigger round result modal after UI is ready
               const gameStateToHandle = result.gameState;
               setTimeout(() => {
                 handleEndRound(gameStateToHandle);
-              }, 100); // Small delay to ensure state is properly set
+              }, ROUND_COMPLETE_BUFFER + AI_MOVE_DELAY); // 1100ms total - ensures UI is fully initialized after restoration
+            }
+
+            // Check if we have a completed trick that needs to be cleared
+            if (result.gameState.currentTrick && result.gameState.currentTrick.plays.length === 4) {
+              // We have a completed trick - set up trick completion data and clear it
+              const completedTrick = result.gameState.currentTrick;
+              trickCompletionDataRef.current = {
+                winnerId: completedTrick.winningPlayerId,
+                points: completedTrick.points,
+                completedTrick: completedTrick,
+                timestamp: Date.now(),
+              };
+
+              // Clear the completed trick after a short delay
+              setTimeout(() => {
+                handleTrickResultComplete();
+              }, 100);
             }
 
             setGameState(result.gameState);
