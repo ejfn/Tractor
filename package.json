@@ -10,9 +10,9 @@
     "lint": "expo lint",
     "test": "jest",
     "test:silent": "jest --silent",
-    "test:integration": "jest __tests__/integration/ --testPathIgnorePatterns=[]",
+    "test:simulation": "jest __tests__/simulation/ --testPathIgnorePatterns=[]",
     "typecheck": "tsc --noEmit",
-    "qualitycheck": "npm-run-all typecheck lint test:silent test:integration"
+    "qualitycheck": "npm-run-all typecheck lint test:silent"
   },
   "expo": {
     "doctor": {

@@ -15,6 +15,6 @@ module.exports = {
   ],
   testPathIgnorePatterns: [
     '__tests__/helpers/',
-    '__tests__/integration/'
+    '__tests__/simulation/'
   ]
 };
