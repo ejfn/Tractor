@@ -6,7 +6,8 @@ import {
   View,
   TextStyle,
   TouchableWithoutFeedback,
-  Alert,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
 import { GamePhase, Suit, Team, TrumpInfo } from "../types";
 
@@ -133,6 +134,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
 }) => {
   // Hidden new game trigger - 5 quick taps on trump display
   const [tapCount, setTapCount] = useState(0);
+  const [showNewGameModal, setShowNewGameModal] = useState(false);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTrumpTap = () => {
@@ -147,18 +149,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
     if (newCount >= 5) {
       // 5 taps reached - show confirmation
       setTapCount(0);
-      Alert.alert(
-        "Start New Game",
-        "Are you sure you want to start a new game? Both teams will reset to rank 2.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "New Game",
-            style: "destructive",
-            onPress: () => onStartNewGame?.(),
-          },
-        ],
-      );
+      setShowNewGameModal(true);
     } else {
       // Reset counter after 2 seconds if not reached 5 taps
       tapTimeoutRef.current = setTimeout(() => {
@@ -309,6 +300,50 @@ const GameStatus: React.FC<GameStatusProps> = ({
           </View>
         ))}
       </View>
+
+      {/* New Game Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showNewGameModal}
+        onRequestClose={() => setShowNewGameModal(false)}
+      >
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.modalContainer}>
+            <View style={modalStyles.header}>
+              <Text style={modalStyles.title}>🃏 Start New Game</Text>
+            </View>
+            
+            <View style={modalStyles.content}>
+              <Text style={modalStyles.message}>
+                Are you sure you want to start a new game?
+              </Text>
+              <Text style={modalStyles.submessage}>
+                Both teams will reset to rank 2 and current progress will be lost.
+              </Text>
+            </View>
+
+            <View style={modalStyles.buttonContainer}>
+              <TouchableOpacity
+                style={[modalStyles.button, modalStyles.cancelButton]}
+                onPress={() => setShowNewGameModal(false)}
+              >
+                <Text style={modalStyles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[modalStyles.button, modalStyles.confirmButton]}
+                onPress={() => {
+                  setShowNewGameModal(false);
+                  onStartNewGame?.();
+                }}
+              >
+                <Text style={modalStyles.confirmButtonText}>New Game</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -524,6 +559,100 @@ const styles = StyleSheet.create({
   },
   attackingProgress: {
     backgroundColor: "#E53935",
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "#faf5f0",
+    borderRadius: 16,
+    padding: 0,
+    margin: 20,
+    maxWidth: 340,
+    width: "90%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: "#e8ddd4",
+  },
+  header: {
+    backgroundColor: "#f0e6d6",
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d6c7b3",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#5d4e37",
+    textAlign: "center",
+  },
+  content: {
+    padding: 24,
+    alignItems: "center",
+  },
+  message: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#5d4e37",
+    textAlign: "center",
+    marginBottom: 12,
+    lineHeight: 22,
+  },
+  submessage: {
+    fontSize: 14,
+    color: "#8b7355",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    paddingTop: 8,
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#e8ddd4",
+    borderWidth: 1,
+    borderColor: "#d6c7b3",
+  },
+  confirmButton: {
+    backgroundColor: "#c53030",
+  },
+  cancelButtonText: {
+    color: "#5d4e37",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  confirmButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
