@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, Text, View, TextStyle } from "react-native";
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  View,
+  TextStyle,
+  TouchableWithoutFeedback,
+  Alert,
+} from "react-native";
 import { GamePhase, Suit, Team, TrumpInfo } from "../types";
 
 const getSuitSymbol = (suit: Suit): string => {
@@ -28,6 +36,7 @@ interface GameStatusProps {
   trumpInfo: TrumpInfo;
   roundNumber: number;
   gamePhase: GamePhase;
+  onStartNewGame?: () => void; // Hidden new game trigger
 }
 
 // Animated progress bar component
@@ -120,7 +129,43 @@ const GameStatus: React.FC<GameStatusProps> = ({
   trumpInfo,
   roundNumber,
   gamePhase,
+  onStartNewGame,
 }) => {
+  // Hidden new game trigger - 5 quick taps on trump display
+  const [tapCount, setTapCount] = useState(0);
+  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTrumpTap = () => {
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+
+    // Clear existing timeout
+    if (tapTimeoutRef.current) {
+      clearTimeout(tapTimeoutRef.current);
+    }
+
+    if (newCount >= 5) {
+      // 5 taps reached - show confirmation
+      setTapCount(0);
+      Alert.alert(
+        "Start New Game",
+        "Are you sure you want to start a new game? Both teams will reset to rank 2.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "New Game",
+            style: "destructive",
+            onPress: () => onStartNewGame?.(),
+          },
+        ],
+      );
+    } else {
+      // Reset counter after 2 seconds if not reached 5 taps
+      tapTimeoutRef.current = setTimeout(() => {
+        setTapCount(0);
+      }, 2000);
+    }
+  };
   // Animation values
   const phaseAnimation = useRef(new Animated.Value(0)).current;
 
@@ -165,42 +210,44 @@ const GameStatus: React.FC<GameStatusProps> = ({
 
         <View style={styles.trumpInfo}>
           <Text style={styles.trumpLabel}>Trump</Text>
-          <Animated.View
-            style={[
-              styles.trumpDisplay,
-              { transform: [{ scale: phaseScale }] },
-            ]}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {trumpInfo.trumpSuit && trumpInfo.trumpSuit !== Suit.None ? (
-                <>
-                  <Text
-                    style={[
-                      styles.trumpText,
-                      getSuitColorStyle(trumpInfo.trumpSuit, styles),
-                    ]}
-                  >
-                    {trumpInfo.trumpRank}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.suitSymbol,
-                      getSuitColorStyle(trumpInfo.trumpSuit, styles),
-                    ]}
-                  >
-                    {getSuitSymbol(trumpInfo.trumpSuit)}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
-                  {trumpInfo.trumpSuit === Suit.None && (
-                    <Text style={styles.suitSymbol}>🤡</Text>
-                  )}
-                </>
-              )}
-            </View>
-          </Animated.View>
+          <TouchableWithoutFeedback onPress={handleTrumpTap}>
+            <Animated.View
+              style={[
+                styles.trumpDisplay,
+                { transform: [{ scale: phaseScale }] },
+              ]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                {trumpInfo.trumpSuit && trumpInfo.trumpSuit !== Suit.None ? (
+                  <>
+                    <Text
+                      style={[
+                        styles.trumpText,
+                        getSuitColorStyle(trumpInfo.trumpSuit, styles),
+                      ]}
+                    >
+                      {trumpInfo.trumpRank}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.suitSymbol,
+                        getSuitColorStyle(trumpInfo.trumpSuit, styles),
+                      ]}
+                    >
+                      {getSuitSymbol(trumpInfo.trumpSuit)}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.trumpText}>{trumpInfo.trumpRank}</Text>
+                    {trumpInfo.trumpSuit === Suit.None && (
+                      <Text style={styles.suitSymbol}>🤡</Text>
+                    )}
+                  </>
+                )}
+              </View>
+            </Animated.View>
+          </TouchableWithoutFeedback>
         </View>
       </View>
 

@@ -51,7 +51,7 @@ describe("useGameState Auto-Restoration", () => {
     const persistedState = {
       gameState: originalGameState,
       timestamp: Date.now(),
-      version: "1.0.0",
+      version: 1,
       gameId: "test_game_restore",
       isComplete: false,
       metadata: {
@@ -110,7 +110,7 @@ describe("useGameState Auto-Restoration", () => {
     const persistedState = {
       gameState: originalGameState,
       timestamp: Date.now(),
-      version: "1.0.0",
+      version: 1,
       gameId: "test_game_clear",
       isComplete: false,
       metadata: {

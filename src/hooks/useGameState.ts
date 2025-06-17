@@ -101,7 +101,10 @@ export function useGameState() {
             }
 
             // Check if we have a completed trick that needs to be cleared
-            if (result.gameState.currentTrick && result.gameState.currentTrick.plays.length === 4) {
+            if (
+              result.gameState.currentTrick &&
+              result.gameState.currentTrick.plays.length === 4
+            ) {
               // We have a completed trick - set up trick completion data and clear it
               const completedTrick = result.gameState.currentTrick;
               trickCompletionDataRef.current = {
@@ -444,7 +447,7 @@ export function useGameState() {
   };
 
   // Function to clear trick after result is displayed
-  const handleTrickResultComplete = () => {
+  const handleTrickResultComplete = useCallback(() => {
     if (gameState) {
       // Use the utility function to clear completed trick and set winner as next player
       const newState = clearCompletedTrick(gameState);
@@ -452,7 +455,7 @@ export function useGameState() {
 
       // The useAITurns hook will detect the currentPlayerIndex change and trigger AI moves automatically
     }
-  };
+  }, [gameState]);
 
   return {
     // State

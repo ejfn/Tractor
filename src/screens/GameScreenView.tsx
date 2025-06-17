@@ -194,6 +194,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           trumpInfo={gameState.trumpInfo}
           roundNumber={gameState.roundNumber}
           gamePhase={gameState.gamePhase}
+          onStartNewGame={onStartNewGame}
         />
 
         {/* Container with bottom margin */}

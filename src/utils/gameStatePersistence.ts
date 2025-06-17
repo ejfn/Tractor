@@ -423,7 +423,6 @@ export async function clearSavedGameState(): Promise<boolean> {
   }
 }
 
-
 /**
  * Check if a saved game exists
  */

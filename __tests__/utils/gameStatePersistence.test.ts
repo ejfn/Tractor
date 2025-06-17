@@ -86,7 +86,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState: originalGameState,
         timestamp: Date.now(),
-        version: '1.0.0',
+        version: 1,
         gameId: 'test_game_123',
         isComplete: false,
         metadata: {
@@ -148,7 +148,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState: oldGameState,
         timestamp: oldTimestamp,
-        version: '1.0.0',
+        version: 1,
         gameId: 'old_game_123',
         isComplete: false,
         metadata: {
@@ -208,7 +208,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState,
         timestamp: Date.now(),
-        version: '1.0.0',
+        version: 1,
         gameId: 'test_123',
         isComplete: false,
         metadata: {
@@ -284,7 +284,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState,
         timestamp: Date.now(),
-        version: '1.0.0',
+        version: 1,
         gameId: 'valid_game_456',
         isComplete: false,
         metadata: {
@@ -311,7 +311,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState,
         timestamp: Date.now(),
-        version: '1.0.0',
+        version: 1,
         gameId: 'invalid_players',
         isComplete: false,
         metadata: {
@@ -335,7 +335,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState,
         timestamp: Date.now(),
-        version: '1.0.0',
+        version: 1,
         gameId: 'invalid_teams',
         isComplete: false,
         metadata: {
@@ -378,7 +378,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState,
         timestamp: Date.now(),
-        version: '1.0.0',
+        version: 1,
         gameId: 'test_deserialization',
         isComplete: false,
         metadata: {
@@ -425,7 +425,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState,
         timestamp: Date.now(),
-        version: '1.0.0',
+        version: 1,
         gameId: 'test_joker_deserialization',
         isComplete: false,
         metadata: {
@@ -468,7 +468,7 @@ describe('Game State Persistence', () => {
       const persistedState = {
         gameState,
         timestamp: Date.now(),
-        version: '1.0.0',
+        version: 1,
         gameId: 'test_kitty_deserialization',
         isComplete: false,
         metadata: {
