@@ -74,14 +74,15 @@ describe('Basic Memory System Integration Tests - Phase 4', () => {
       let memoryEvolution: any[] = [];
 
       // Simulate 5 tricks and track memory evolution
+      const ranks = [Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack];
       for (let i = 0; i < 5; i++) {
         // Add a trick
         const trick = {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Clubs, Rank.Seven + i, 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, Rank.Eight + i, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Clubs, Rank.Nine + i, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Clubs, Rank.Ten + i, 0)] }
+            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Clubs, ranks[i % ranks.length], 0)] },
+            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, ranks[(i + 1) % ranks.length], 0)] },
+            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Clubs, ranks[(i + 2) % ranks.length], 0)] },
+            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Clubs, ranks[(i + 3) % ranks.length], 0)] }
           ],
           winningPlayerId: PlayerId.Bot3,
           points: i % 2 === 0 ? 10 : 0
@@ -131,13 +132,14 @@ describe('Basic Memory System Integration Tests - Phase 4', () => {
 
     it('should maintain performance with realistic memory workload', () => {
       // Add realistic number of tricks (half a round)
+      const testRanks = [Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King];
       for (let i = 0; i < 12; i++) {
         const trick = {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Diamonds, Rank.Seven + (i % 7), 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Eight + (i % 7), 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Diamonds, Rank.Nine + (i % 7), 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Diamonds, Rank.Ten + (i % 7), 0)] }
+            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Diamonds, testRanks[i % testRanks.length], 0)] },
+            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, testRanks[(i + 1) % testRanks.length], 0)] },
+            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Diamonds, testRanks[(i + 2) % testRanks.length], 0)] },
+            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Diamonds, testRanks[(i + 3) % testRanks.length], 0)] }
           ],
           winningPlayerId: PlayerId.Bot3,
           points: Math.random() > 0.5 ? 10 : 0

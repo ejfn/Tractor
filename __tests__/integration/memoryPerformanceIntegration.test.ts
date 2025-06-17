@@ -310,9 +310,9 @@ function addTestTricks(gameState: GameState, count: number): void {
     const trick = {
       plays: [
         { playerId: PlayerId.Human, cards: [Card.createCard(suit, baseRank, 0)] },
-        { playerId: PlayerId.Bot1, cards: [Card.createCard(suit, ranks[(baseRank + 1) % ranks.length], 0)] },
-        { playerId: PlayerId.Bot2, cards: [Card.createCard(suit, ranks[(baseRank + 2) % ranks.length], 0)] },
-        { playerId: PlayerId.Bot3, cards: [Card.createCard(suit, ranks[(baseRank + 3) % ranks.length], 0)] }
+        { playerId: PlayerId.Bot1, cards: [Card.createCard(suit, ranks[(ranks.indexOf(baseRank) + 1) % ranks.length], 0)] },
+        { playerId: PlayerId.Bot2, cards: [Card.createCard(suit, ranks[(ranks.indexOf(baseRank) + 2) % ranks.length], 0)] },
+        { playerId: PlayerId.Bot3, cards: [Card.createCard(suit, ranks[(ranks.indexOf(baseRank) + 3) % ranks.length], 0)] }
       ],
       winningPlayerId: PlayerId.Bot3,
       points: i % 3 === 0 ? 10 : 0
