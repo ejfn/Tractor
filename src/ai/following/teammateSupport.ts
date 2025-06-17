@@ -6,6 +6,7 @@ import {
   GameContext,
   GameState,
   Rank,
+  Suit,
   TrickPosition,
   TrumpInfo,
   TrickWinnerAnalysis,
@@ -23,6 +24,7 @@ import {
 import { analyzeThirdPlayerAdvantage } from "./thirdPlayerStrategy";
 import { getPointCardPriority } from "../utils/aiHelpers";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
+import { isTrump } from "../../game/gameHelpers";
 
 /**
  * Teammate Support - Team coordination when teammate is winning
@@ -30,6 +32,55 @@ import { isBiggestRemainingInSuit } from "../aiCardMemory";
  * Handles point contribution and conservative play when teammate is currently
  * winning the trick. Uses position-specific analysis for optimal support.
  */
+
+/**
+ * Helper function to check if a player is void of the led suit
+ * Uses memory system and hand analysis to determine if player can follow suit
+ */
+function isPlayerVoidOfLedSuit(
+  playerId: PlayerId,
+  ledSuit: Suit | null,
+  gameState: GameState,
+  context: GameContext,
+  trumpInfo: TrumpInfo,
+): boolean {
+  // If no led suit (trump lead), check trump void
+  if (ledSuit === null) {
+    // Check memory for trump void
+    if (context.memoryContext?.cardMemory) {
+      const playerMemory =
+        context.memoryContext.cardMemory.playerMemories[playerId];
+      if (playerMemory) {
+        return playerMemory.trumpVoid;
+      }
+    }
+
+    // Fallback: Check if player has trump cards in hand
+    const player = gameState.players.find((p) => p.id === playerId);
+    if (player) {
+      return !player.hand.some((card) => isTrump(card, trumpInfo));
+    }
+
+    return false;
+  }
+
+  // Check memory for suit void
+  if (context.memoryContext?.cardMemory) {
+    const playerMemory =
+      context.memoryContext.cardMemory.playerMemories[playerId];
+    if (playerMemory) {
+      return playerMemory.suitVoids.has(ledSuit);
+    }
+  }
+
+  // Fallback: Check if player has cards of the led suit in hand
+  const player = gameState.players.find((p) => p.id === playerId);
+  if (player) {
+    return !player.hand.some((card) => card.suit === ledSuit);
+  }
+
+  return false;
+}
 
 /**
  * Main teammate winning handler with position-specific logic
@@ -307,6 +358,31 @@ function shouldThirdPlayerContribute(
   // Use 3rd player risk assessment and tactical analysis
   if (!trumpInfo || !gameState) {
     return false; // Cannot analyze without required parameters
+  }
+
+  // CRITICAL FIX: Check if 4th player is also void of the led suit
+  // If both 3rd and 4th players are void, don't contribute point cards as 4th player can trump in
+  const currentTrick = gameState.currentTrick;
+  if (currentTrick && currentTrick.plays.length > 0) {
+    const leadCard = currentTrick.plays[0]?.cards[0];
+    if (leadCard) {
+      const ledSuit = isTrump(leadCard, trumpInfo) ? null : leadCard.suit;
+
+      // Check if 4th player is also void of the led suit
+      const fourthPlayerVoid = isPlayerVoidOfLedSuit(
+        PlayerId.Bot3, // 4th player is always Bot3
+        ledSuit,
+        gameState,
+        context,
+        trumpInfo,
+      );
+
+      if (fourthPlayerVoid) {
+        // Both 3rd and 4th players are void - don't contribute point cards
+        // 4th player can trump in and take our points
+        return false;
+      }
+    }
   }
 
   const thirdPlayerAnalysis = analyzeThirdPlayerAdvantage(
