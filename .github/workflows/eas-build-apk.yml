@@ -41,8 +41,8 @@ jobs:
     - name: Setup Expo
       uses: expo/expo-github-action@v8
       with:
-        expo-version: 53.0.11
         eas-version: 16.10.1
+        packager: npm
         token: ${{ secrets.EXPO_TOKEN }}
 
     - name: Detect version and inject into app.json
