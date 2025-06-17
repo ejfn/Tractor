@@ -313,13 +313,14 @@ const GameStatus: React.FC<GameStatusProps> = ({
             <View style={modalStyles.header}>
               <Text style={modalStyles.title}>🃏 Start New Game</Text>
             </View>
-            
+
             <View style={modalStyles.content}>
               <Text style={modalStyles.message}>
                 Are you sure you want to start a new game?
               </Text>
               <Text style={modalStyles.submessage}>
-                Both teams will reset to rank 2 and current progress will be lost.
+                Both teams will reset to rank 2 and current progress will be
+                lost.
               </Text>
             </View>
 
@@ -330,7 +331,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
               >
                 <Text style={modalStyles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[modalStyles.button, modalStyles.confirmButton]}
                 onPress={() => {

@@ -71,6 +71,17 @@ export function useGameState() {
   // Persistence integration
   const persistence = useGameStatePersistence(gameState);
 
+  // Function to clear trick after result is displayed
+  const handleTrickResultComplete = useCallback(() => {
+    if (gameState) {
+      // Use the utility function to clear completed trick and set winner as next player
+      const newState = clearCompletedTrick(gameState);
+      setGameState(newState);
+
+      // The useAITurns hook will detect the currentPlayerIndex change and trigger AI moves automatically
+    }
+  }, [gameState]);
+
   // Initialize game with auto-restoration on component mount
   useEffect(() => {
     if (!gameState && !isInitializing && !hasAttemptedRestore.current) {
@@ -141,7 +152,7 @@ export function useGameState() {
           setIsInitializing(false);
         });
     }
-  }, [gameState, isInitializing, persistence]);
+  }, [gameState, isInitializing, persistence, handleTrickResultComplete]);
 
   // Extract relevant values for kitty swap detection
   const gamePhase = gameState?.gamePhase;
@@ -445,17 +456,6 @@ export function useGameState() {
       reason: "User started new game",
     });
   };
-
-  // Function to clear trick after result is displayed
-  const handleTrickResultComplete = useCallback(() => {
-    if (gameState) {
-      // Use the utility function to clear completed trick and set winner as next player
-      const newState = clearCompletedTrick(gameState);
-      setGameState(newState);
-
-      // The useAITurns hook will detect the currentPlayerIndex change and trigger AI moves automatically
-    }
-  }, [gameState]);
 
   return {
     // State
