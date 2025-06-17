@@ -72,7 +72,7 @@ runs:
           # Main branch push - isolate with git hash in runtime version
           VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          RUNTIME_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
+          RUNTIME_VERSION="v${BASE_VERSION}-beta"
           EAS_BRANCH="beta"
           
         else
