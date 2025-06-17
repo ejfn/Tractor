@@ -8,11 +8,13 @@ import {
   Rank,
   TrickPosition,
   TrumpInfo,
+  PlayerId,
 } from "../../types";
 import { isTrump } from "../../game/gameHelpers";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
 import { getPointCardPriority } from "../utils/aiHelpers";
+import { analyzePointCardTiming } from "../analysis/pointCardTiming";
 
 /**
  * Point Contribution - Strategic point card selection for team coordination
@@ -20,6 +22,102 @@ import { getPointCardPriority } from "../utils/aiHelpers";
  * Handles optimal point card contribution when teammate is winning.
  * Uses memory-enhanced analysis and position-specific priorities.
  */
+
+/**
+ * Enhanced point contribution with timing analysis
+ * Uses point card timing optimization for teammate support
+ */
+export function selectEnhancedPointContribution(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  trumpInfo: TrumpInfo,
+  context: GameContext,
+  gameState: GameState,
+  currentPlayerId: PlayerId,
+): Card[] | null {
+  // Only proceed if we have memory context for timing analysis
+  if (!context.memoryContext?.cardMemory) {
+    return null;
+  }
+
+  try {
+    // Create valid combos from combo analyses
+    const validCombos = comboAnalyses.map((ca) => ca.combo);
+
+    // Perform point timing analysis
+    const pointTimingAnalysis = analyzePointCardTiming(
+      context.memoryContext.cardMemory,
+      gameState,
+      context,
+      trumpInfo,
+      currentPlayerId,
+      validCombos,
+    );
+
+    // Check for optimal point contribution scenarios
+    if (
+      pointTimingAnalysis.teamPointCoordination.coordinationOpportunities
+        .length > 0
+    ) {
+      const bestCoordination =
+        pointTimingAnalysis.teamPointCoordination.coordinationOpportunities[0];
+
+      // Look for setup teammate opportunities
+      if (bestCoordination.opportunityType === "setup_teammate") {
+        // Find the best point card to contribute
+        const pointCombos = comboAnalyses.filter((ca) =>
+          ca.combo.cards.some((card) => card.points && card.points > 0),
+        );
+
+        if (pointCombos.length > 0) {
+          // Use timing analysis to select optimal point contribution
+          const timingAwareSelection = pointCombos.find((ca) =>
+            pointTimingAnalysis.guaranteedPointPlays.some(
+              (guaranteed) =>
+                guaranteed.cards.length === ca.combo.cards.length &&
+                guaranteed.cards.every(
+                  (card, index) =>
+                    card.suit === ca.combo.cards[index].suit &&
+                    card.rank === ca.combo.cards[index].rank,
+                ),
+            ),
+          );
+
+          if (timingAwareSelection) {
+            return timingAwareSelection.combo.cards;
+          }
+
+          // Fallback to highest value point contribution
+          const sortedPoints = pointCombos.sort(
+            (a, b) => b.analysis.pointValue - a.analysis.pointValue,
+          );
+          return sortedPoints[0].combo.cards;
+        }
+      }
+    }
+
+    // Check for defensive point strategies
+    if (pointTimingAnalysis.pointDefensePlays.length > 0) {
+      const defensivePlay = pointTimingAnalysis.pointDefensePlays[0];
+      const matchingCombo = comboAnalyses.find(
+        (ca) =>
+          ca.combo.cards.length === defensivePlay.cards.length &&
+          ca.combo.cards.every(
+            (card, index) =>
+              card.suit === defensivePlay.cards[index].suit &&
+              card.rank === defensivePlay.cards[index].rank,
+          ),
+      );
+
+      if (matchingCombo) {
+        return matchingCombo.combo.cards;
+      }
+    }
+  } catch (error) {
+    console.warn("Enhanced point contribution analysis failed:", error);
+  }
+
+  return null;
+}
 
 /**
  * Main point contribution logic with memory enhancement

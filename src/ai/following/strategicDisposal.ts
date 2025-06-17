@@ -8,7 +8,9 @@ import {
   Rank,
   TrickPosition,
   TrumpInfo,
+  PlayerId,
 } from "../../types";
+import { calculateTrumpDeploymentTiming } from "../aiCardMemory";
 
 /**
  * Strategic Disposal - Optimal card disposal when can't influence trick outcome
@@ -101,13 +103,10 @@ export function selectStrategicDisposal(
     }
 
     // Last resort: use trump cards (only if no non-trump available)
-    // When forced to play trump, use trump conservation hierarchy (weakest trump first)
+    // PHASE 3: Memory-enhanced trump disposal with deployment timing analysis
     const trumpCombos = comboAnalyses.filter((ca) => ca.analysis.isTrump);
     if (trumpCombos.length > 0) {
-      const sorted = trumpCombos.sort(
-        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
-      );
-      return sorted[0].combo.cards;
+      return selectMemoryEnhancedTrumpDisposal(trumpCombos, context, gameState);
     }
   }
 
@@ -121,12 +120,9 @@ export function selectStrategicDisposal(
     return sorted[0].combo.cards;
   }
 
-  // If only trump available, use conservation hierarchy (weakest trump first)
+  // If only trump available, use memory-enhanced trump disposal
   if (trumpCombos.length > 0) {
-    const sorted = trumpCombos.sort(
-      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
-    );
-    return sorted[0].combo.cards;
+    return selectMemoryEnhancedTrumpDisposal(trumpCombos, context, gameState);
   }
 
   // Ultimate fallback (should rarely happen)
@@ -188,11 +184,135 @@ export function selectFourthPlayerPointAvoidance(
     return sorted[0].combo.cards;
   }
 
-  // Last resort: Use weakest trump (only when no non-trump available)
-  const sorted = comboAnalyses.sort(
-    (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+  // Last resort: Use memory-enhanced trump disposal (only when no non-trump available)
+  return selectMemoryEnhancedTrumpDisposal(
+    comboAnalyses,
+    context,
+    undefined, // No gameState needed for fallback
   );
-  return sorted[0].combo.cards;
+}
+
+/**
+ * Phase 3: Memory-Enhanced Trump Disposal
+ *
+ * Uses trump exhaustion analysis to determine optimal trump disposal timing.
+ * Considers trump advantage, opponent exhaustion, and deployment recommendations.
+ */
+function selectMemoryEnhancedTrumpDisposal(
+  trumpCombos: { combo: Combo; analysis: ComboAnalysis }[],
+  context: GameContext,
+  gameState?: GameState,
+): Card[] {
+  // Fallback to basic conservation hierarchy if no memory available
+  if (!context.memoryContext?.cardMemory || !gameState) {
+    const sorted = trumpCombos.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    );
+    return sorted[0].combo.cards;
+  }
+
+  try {
+    // Get trump deployment timing analysis
+    const currentPlayer = getCurrentPlayerId(gameState, context);
+    if (!currentPlayer) {
+      // Fallback if can't determine current player
+      const sorted = trumpCombos.sort(
+        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+      );
+      return sorted[0].combo.cards;
+    }
+
+    const deploymentAnalysis = calculateTrumpDeploymentTiming(
+      context.memoryContext.cardMemory,
+      currentPlayer,
+      gameState.trumpInfo,
+    );
+
+    // Apply memory-enhanced disposal strategy based on deployment recommendation
+    switch (deploymentAnalysis.recommendedDeployment) {
+      case "never":
+        // Absolutely avoid trump disposal - should not happen in disposal context
+        // but use most conservative approach
+        const mostValuable = trumpCombos.sort(
+          (a, b) => b.analysis.conservationValue - a.analysis.conservationValue,
+        );
+        return mostValuable[mostValuable.length - 1].combo.cards; // Least valuable trump
+
+      case "critical":
+        // Heavy conservation - dispose only weakest trump
+        const criticalSorted = trumpCombos.sort(
+          (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+        );
+        return criticalSorted[0].combo.cards;
+
+      case "strategic":
+        // Standard trump conservation hierarchy
+        const strategicSorted = trumpCombos.sort(
+          (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+        );
+        return strategicSorted[0].combo.cards;
+
+      case "aggressive":
+        // Less conservative - willing to dispose medium-value trump
+        // Still avoid highest value trump (jokers, trump rank cards)
+        const aggressiveSorted = trumpCombos.filter((ca) => {
+          // Filter out highest conservation value trump (jokers, trump rank)
+          return ca.analysis.conservationValue < 70; // Below trump rank threshold
+        });
+
+        if (aggressiveSorted.length > 0) {
+          const sorted = aggressiveSorted.sort(
+            (a, b) =>
+              a.analysis.conservationValue - b.analysis.conservationValue,
+          );
+          return sorted[0].combo.cards;
+        } else {
+          // All trump is high value - use standard hierarchy
+          const sorted = trumpCombos.sort(
+            (a, b) =>
+              a.analysis.conservationValue - b.analysis.conservationValue,
+          );
+          return sorted[0].combo.cards;
+        }
+
+      default:
+        // Fallback to standard conservation hierarchy
+        const defaultSorted = trumpCombos.sort(
+          (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+        );
+        return defaultSorted[0].combo.cards;
+    }
+  } catch (error) {
+    // Fallback to standard trump hierarchy if memory analysis fails
+    console.warn(
+      "Memory-enhanced trump disposal failed, using standard hierarchy:",
+      error,
+    );
+    const sorted = trumpCombos.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    );
+    return sorted[0].combo.cards;
+  }
+}
+
+/**
+ * Helper to determine current player ID from game state and context
+ */
+function getCurrentPlayerId(
+  gameState: GameState,
+  context: GameContext,
+): PlayerId | null {
+  // Try to determine from current player index
+  if (
+    gameState.currentPlayerIndex >= 0 &&
+    gameState.currentPlayerIndex < gameState.players.length
+  ) {
+    return gameState.players[gameState.currentPlayerIndex].id;
+  }
+
+  // If context has player information, try to use it
+  // This is a fallback approach - in practice the context should provide player info
+  return null;
 }
 
 /**

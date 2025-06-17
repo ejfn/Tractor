@@ -3,6 +3,7 @@ import {
   Combo,
   ComboAnalysis,
   ComboType,
+  ComboStrength,
   GameContext,
   GameState,
   PositionStrategy,
@@ -16,6 +17,8 @@ import {
   selectOptimalWinningCombo,
   selectAggressiveBeatPlay,
 } from "./trickContention";
+import { isBiggestRemainingInSuit } from "../aiCardMemory";
+import { VoidExploitationAnalysis } from "../analysis/voidExploitation";
 
 /**
  * Opponent Blocking - Strategic countering when opponent is winning
@@ -34,6 +37,36 @@ export function handleOpponentWinning(
   trumpInfo: TrumpInfo,
   gameState: GameState,
 ): Card[] | null {
+  // MEMORY ENHANCEMENT: Check for guaranteed winners first, but only for valuable tricks AND when we can beat the opponent
+  if (
+    context.memoryContext?.cardMemory &&
+    trickWinner.trickPoints >= 10 &&
+    trickWinner.canBeatCurrentWinner
+  ) {
+    const guaranteedWinner = selectMemoryGuaranteedWinner(
+      comboAnalyses,
+      context,
+      trumpInfo,
+    );
+    if (guaranteedWinner) {
+      return guaranteedWinner;
+    }
+  }
+
+  // Advanced Void Exploitation Blocking
+  if (context.memoryContext && context.memoryContext.voidExploitation) {
+    const voidAnalysis = context.memoryContext.voidExploitation;
+    const voidBasedBlock = selectVoidExploitationBlock(
+      comboAnalyses,
+      voidAnalysis,
+      trickWinner,
+      trumpInfo,
+    );
+    if (voidBasedBlock) {
+      return voidBasedBlock;
+    }
+  }
+
   // Can't beat opponent - use strategic disposal
   if (!trickWinner.canBeatCurrentWinner) {
     return selectStrategicPointAvoidance(comboAnalyses, trumpInfo);
@@ -95,7 +128,7 @@ export function handleOpponentWinning(
  */
 export function selectStrategicPointAvoidance(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-  trumpInfo: TrumpInfo,
+  _trumpInfo: TrumpInfo,
 ): Card[] {
   // Priority 1: Non-trump, non-point, non-Ace cards (safest disposal)
   const safeCards = comboAnalyses.filter(
@@ -136,4 +169,135 @@ export function selectStrategicPointAvoidance(
     (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
   );
   return sorted[0].combo.cards;
+}
+
+/**
+ * Memory-enhanced: Select guaranteed winning combos for opponent blocking
+ * Uses card memory to identify combinations that are certain to win
+ */
+function selectMemoryGuaranteedWinner(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  context: GameContext,
+  trumpInfo: TrumpInfo,
+): Card[] | null {
+  if (!context.memoryContext?.cardMemory) return null;
+
+  // Find combos with guaranteed winning cards
+  const guaranteedWinners: {
+    combo: { combo: Combo; analysis: ComboAnalysis };
+    priority: number;
+  }[] = [];
+
+  comboAnalyses.forEach((comboAnalysis) => {
+    const firstCard = comboAnalysis.combo.cards[0];
+    if (!firstCard.rank || !firstCard.suit || isTrump(firstCard, trumpInfo)) {
+      return; // Skip trump or invalid cards for blocking strategy
+    }
+
+    const comboType =
+      comboAnalysis.combo.type === ComboType.Pair ? "pair" : "single";
+    const isBiggestRemaining =
+      context.memoryContext?.cardMemory &&
+      firstCard.rank &&
+      isBiggestRemainingInSuit(
+        context.memoryContext.cardMemory,
+        firstCard.suit,
+        firstCard.rank,
+        comboType,
+      );
+
+    if (isBiggestRemaining) {
+      let priority = 0;
+
+      // For opponent blocking: prioritize stopping their points
+      // High cards get priority for blocking
+      if (firstCard.rank === Rank.Ace) {
+        priority += 50; // Aces are excellent blockers
+      } else if (firstCard.rank === Rank.King) {
+        priority += 40; // Kings are good blockers
+      } else if (firstCard.rank === Rank.Queen) {
+        priority += 30; // Queens are decent blockers
+      }
+
+      // Bonus for non-point cards (avoid giving points while blocking)
+      if (!firstCard.points || firstCard.points === 0) {
+        priority += 20;
+      }
+
+      guaranteedWinners.push({
+        combo: comboAnalysis,
+        priority,
+      });
+    }
+  });
+
+  if (guaranteedWinners.length > 0) {
+    // Sort by priority: highest first
+    guaranteedWinners.sort((a, b) => b.priority - a.priority);
+    return guaranteedWinners[0].combo.combo.cards;
+  }
+
+  return null;
+}
+
+/**
+ * Void Exploitation Blocking - Use void knowledge to block opponents strategically
+ */
+function selectVoidExploitationBlock(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  voidAnalysis: VoidExploitationAnalysis,
+  trickWinner: TrickWinnerAnalysis,
+  trumpInfo: TrumpInfo,
+): Card[] | null {
+  // Only apply void exploitation if the opponent is winning
+  if (!trickWinner.isOpponentWinning) {
+    return null;
+  }
+
+  // Look for opportunities to force opponents into difficult positions
+  const blockingOpportunities = voidAnalysis.exploitableVoids.filter(
+    (opportunity) =>
+      opportunity.exploitationType === "force_trump" &&
+      opportunity.successProbability > 0.7,
+  );
+
+  if (blockingOpportunities.length > 0) {
+    const bestOpportunity = blockingOpportunities[0];
+
+    // Find a combo that can be used for this blocking strategy
+    const blockingCombo = comboAnalyses.find(
+      (ca) =>
+        ca.combo.cards.some((card) =>
+          bestOpportunity.exploitationCards.some(
+            (exploitCard) =>
+              card.suit === exploitCard.suit && card.rank === exploitCard.rank,
+          ),
+        ) && !ca.analysis.isTrump, // Prefer non-trump for blocking
+    );
+
+    if (blockingCombo && trickWinner.canBeatCurrentWinner) {
+      return blockingCombo.combo.cards;
+    }
+  }
+
+  // Check for defensive void management
+  const voidRisks = voidAnalysis.voidRiskAssessment.filter(
+    (risk) => risk.urgency === "high" || risk.urgency === "immediate",
+  );
+
+  if (voidRisks.length > 0) {
+    // Play conservatively to avoid revealing our own voids
+    const safeBlockingCombos = comboAnalyses.filter(
+      (ca) =>
+        !ca.analysis.isTrump &&
+        !ca.analysis.hasPoints &&
+        ca.analysis.strength !== ComboStrength.Critical,
+    );
+
+    if (safeBlockingCombos.length > 0) {
+      return safeBlockingCombos[0].combo.cards;
+    }
+  }
+
+  return null;
 }

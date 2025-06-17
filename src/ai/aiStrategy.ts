@@ -6,6 +6,7 @@ import {
 import { analyzeCombo, createGameContext } from "./aiGameContext";
 import { selectOptimalFollowPlay } from "./following/followingStrategy";
 import { selectAdvancedLeadingPlay } from "./leading/leadingStrategy";
+import { analyzeVoidExploitation } from "./analysis/voidExploitation";
 
 /**
  * Main AI strategy function - replaces the class-based approach
@@ -38,6 +39,27 @@ export function makeAIPlay(
     Object.assign(context, enhancedContext);
   }
 
+  // Phase 3: Advanced Void Exploitation Analysis
+  let voidExploitationAnalysis = null;
+  if (context.memoryContext?.cardMemory && gameState.tricks.length >= 2) {
+    try {
+      voidExploitationAnalysis = analyzeVoidExploitation(
+        context.memoryContext.cardMemory,
+        gameState,
+        context,
+        trumpInfo,
+        player.id,
+      );
+
+      // Integrate void exploitation insights into context
+      if (context.memoryContext) {
+        context.memoryContext.voidExploitation = voidExploitationAnalysis;
+      }
+    } catch (error) {
+      console.warn("Void exploitation analysis failed:", error);
+    }
+  }
+
   // Enhanced Point-Focused Strategy (Issue #61) - Used in leading play selection
 
   // Determine if leading or following
@@ -64,6 +86,7 @@ export function makeAIPlay(
       {} as PositionStrategy, // Simplified for now
       trumpInfo,
       gameState,
+      player.id,
     );
     return restructuredPlay;
   }

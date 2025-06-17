@@ -2,21 +2,27 @@ import {
   Card,
   Combo,
   ComboAnalysis,
+  ComboType,
   GameContext,
   GameState,
   Rank,
   TrickPosition,
   TrumpInfo,
   TrickWinnerAnalysis,
+  PlayerId,
 } from "../../types";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
-import { selectPointContribution } from "./pointContribution";
+import {
+  selectPointContribution,
+  selectEnhancedPointContribution,
+} from "./pointContribution";
 import {
   analyzeSecondPlayerStrategy,
   selectSecondPlayerContribution,
 } from "./secondPlayerStrategy";
 import { analyzeThirdPlayerAdvantage } from "./thirdPlayerStrategy";
 import { getPointCardPriority } from "../utils/aiHelpers";
+import { isBiggestRemainingInSuit } from "../aiCardMemory";
 
 /**
  * Teammate Support - Team coordination when teammate is winning
@@ -33,6 +39,7 @@ export function handleTeammateWinning(
   context: GameContext,
   trumpInfo: TrumpInfo,
   gameState: GameState,
+  currentPlayerId?: PlayerId,
 ): Card[] {
   const trickWinner = context.trickWinnerAnalysis;
   if (!trickWinner) {
@@ -40,10 +47,40 @@ export function handleTeammateWinning(
     return selectLowestValueNonPointCombo(comboAnalyses);
   }
 
+  // ENHANCED POINT TIMING ANALYSIS: Use advanced point timing when available
+  if (context.memoryContext?.cardMemory && currentPlayerId) {
+    const enhancedContribution = selectEnhancedPointContribution(
+      comboAnalyses,
+      trumpInfo,
+      context,
+      gameState,
+      currentPlayerId,
+    );
+    if (enhancedContribution) {
+      return enhancedContribution;
+    }
+  }
+
+  // MEMORY ENHANCEMENT: Prioritize guaranteed point winners when teammate winning (only for valuable tricks)
+  if (
+    context.memoryContext?.cardMemory &&
+    gameState?.currentTrick?.points &&
+    gameState.currentTrick.points >= 10
+  ) {
+    const guaranteedPointWinner = selectMemoryGuaranteedPointContribution(
+      comboAnalyses,
+      context,
+      trumpInfo,
+    );
+    if (guaranteedPointWinner) {
+      return guaranteedPointWinner;
+    }
+  }
+
   // Position-specific analysis and contribution logic
   switch (context.trickPosition) {
     case TrickPosition.Fourth:
-      // 4th player perfect information analysis
+      // Phase 3: 4th Player Enhanced Strategy with Perfect Information + Memory
       const shouldContributeFourth = shouldContributePointCards(
         trickWinner,
         comboAnalyses,
@@ -138,7 +175,7 @@ export function shouldContributePointCards(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
   gameState?: GameState,
-  trumpInfo?: TrumpInfo,
+  _trumpInfo?: TrumpInfo,
 ): boolean {
   // Check if we have point cards available
   const hasPointCards = comboAnalyses.some((ca) =>
@@ -252,7 +289,7 @@ function analyzeTeammateLeadStrength(
  * with optimal point collection.
  */
 function shouldThirdPlayerContribute(
-  trickWinner: TrickWinnerAnalysis,
+  _trickWinner: TrickWinnerAnalysis,
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
   gameState?: GameState,
@@ -423,4 +460,83 @@ function selectThirdPlayerContribution(
     );
     return aPoints - bPoints; // Lowest points first (minimize trump waste)
   })[0].combo;
+}
+
+/**
+ * Memory-enhanced: Select guaranteed point winning combos for teammate support
+ * Uses card memory to identify point cards that are certain to win
+ */
+function selectMemoryGuaranteedPointContribution(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  context: GameContext,
+  trumpInfo: TrumpInfo,
+): Card[] | null {
+  if (!context.memoryContext?.cardMemory) return null;
+
+  // Find point card combos with guaranteed winning cards
+  const guaranteedPointWinners: {
+    combo: { combo: Combo; analysis: ComboAnalysis };
+    priority: number;
+  }[] = [];
+
+  comboAnalyses.forEach((comboAnalysis) => {
+    const firstCard = comboAnalysis.combo.cards[0];
+    const hasPoints = comboAnalysis.combo.cards.some(
+      (card) => card.points && card.points > 0,
+    );
+
+    if (!hasPoints || !firstCard.rank || !firstCard.suit) {
+      return; // Skip non-point or invalid cards
+    }
+
+    // Skip trump cards for now (save trump for critical situations)
+    if (firstCard.suit && firstCard.suit === trumpInfo.trumpSuit) {
+      return;
+    }
+
+    const comboType =
+      comboAnalysis.combo.type === ComboType.Pair ? "pair" : "single";
+    const isBiggestRemaining =
+      context.memoryContext?.cardMemory &&
+      firstCard.rank &&
+      isBiggestRemainingInSuit(
+        context.memoryContext.cardMemory,
+        firstCard.suit,
+        firstCard.rank,
+        comboType,
+      );
+
+    if (isBiggestRemaining) {
+      let priority = 0;
+      const totalPoints = comboAnalysis.combo.cards.reduce(
+        (sum, card) => sum + (card.points || 0),
+        0,
+      );
+
+      // Priority calculation: Point value > Card rank
+      priority += totalPoints * 10; // High priority for point value
+
+      // Bonus for high-value point cards
+      if (firstCard.rank === Rank.Ten) {
+        priority += 50; // 10s are high value
+      } else if (firstCard.rank === Rank.King) {
+        priority += 40; // Kings are high value
+      } else if (firstCard.rank === Rank.Five) {
+        priority += 30; // 5s are medium value
+      }
+
+      guaranteedPointWinners.push({
+        combo: comboAnalysis,
+        priority,
+      });
+    }
+  });
+
+  if (guaranteedPointWinners.length > 0) {
+    // Sort by priority: highest first
+    guaranteedPointWinners.sort((a, b) => b.priority - a.priority);
+    return guaranteedPointWinners[0].combo.combo.cards;
+  }
+
+  return null;
 }

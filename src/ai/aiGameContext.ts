@@ -14,10 +14,15 @@ import {
   TrickWinnerAnalysis,
   Rank,
   Trick,
+  CardMemory,
 } from "../types";
 import { isTrump, calculateCardStrategicValue } from "../game/gameHelpers";
 import { compareCards } from "../game/cardComparison";
-import { createCardMemory, enhanceGameContextWithMemory } from "./aiCardMemory";
+import {
+  createCardMemory,
+  enhanceGameContextWithMemory,
+  analyzeTrumpDistribution,
+} from "./aiCardMemory";
 
 /**
  * Analyzes the current game state to provide strategic context for AI decision making
@@ -462,6 +467,9 @@ export function determinePlayStyle(
 /**
  * Calculate trump conservation value based on trump hierarchy
  *
+ * @internal This function serves as a fallback for calculateMemoryEnhancedTrumpConservationValue()
+ * when memory context is unavailable. It provides the base calculation that memory-enhanced analysis builds upon.
+ *
  * Trump Hierarchy (highest to lowest):
  * 1. Big Joker (100)
  * 2. Small Joker (90)
@@ -485,6 +493,79 @@ function calculateTrumpConservationValue(
   }
 
   return totalValue;
+}
+
+/**
+ * Phase 3: Memory-Enhanced Trump Conservation Value
+ *
+ * Calculates dynamic trump conservation values based on memory analysis of trump exhaustion.
+ * Higher exhaustion in opponents makes our trump more valuable to conserve.
+ */
+export function calculateMemoryEnhancedTrumpConservationValue(
+  cards: Card[],
+  trumpInfo: TrumpInfo,
+  cardMemory?: CardMemory,
+): number {
+  // Start with base conservation value
+  const baseValue = calculateTrumpConservationValue(cards, trumpInfo);
+
+  // If no memory context available, use base calculation
+  if (!cardMemory) {
+    return baseValue;
+  }
+
+  // Use imported trump exhaustion analysis functions
+
+  try {
+    // Analyze current trump distribution
+    const trumpAnalysis = analyzeTrumpDistribution(cardMemory, trumpInfo);
+
+    // Calculate memory-based enhancement multiplier
+    let memoryMultiplier = 1.0;
+
+    // Factor 1: Global trump exhaustion - more exhaustion globally makes trump more valuable
+    const globalExhaustion = trumpAnalysis.globalTrumpExhaustion;
+    if (globalExhaustion > 0.6) {
+      memoryMultiplier += 0.5; // +50% value when globally trump-depleted
+    } else if (globalExhaustion > 0.4) {
+      memoryMultiplier += 0.3; // +30% value when moderately trump-depleted
+    } else if (globalExhaustion > 0.2) {
+      memoryMultiplier += 0.1; // +10% value when some trump-depletion
+    }
+
+    // Factor 2: Opponent void status - trump becomes critical when opponents are void
+    const voidPlayerCount = trumpAnalysis.voidPlayers.length;
+    if (voidPlayerCount >= 2) {
+      memoryMultiplier += 0.4; // +40% when multiple opponents void
+    } else if (voidPlayerCount >= 1) {
+      memoryMultiplier += 0.2; // +20% when one opponent void
+    }
+
+    // Factor 3: Trump advantage/disadvantage relative to opponents
+    // This is calculated per player in calculateTrumpDeploymentTiming, but we can estimate
+    const averageOpponentExhaustion =
+      Object.entries(trumpAnalysis.playerExhaustion)
+        .map(([, exhaustion]) => exhaustion)
+        .reduce((sum, exhaustion) => sum + exhaustion, 0) / 4; // All players average
+
+    if (averageOpponentExhaustion > 0.7) {
+      memoryMultiplier += 0.3; // +30% when opponents are heavily depleted
+    } else if (averageOpponentExhaustion > 0.5) {
+      memoryMultiplier += 0.15; // +15% when opponents are moderately depleted
+    }
+
+    // Cap the multiplier to prevent extreme values
+    memoryMultiplier = Math.min(memoryMultiplier, 2.5); // Max 2.5x base value
+
+    return Math.round(baseValue * memoryMultiplier);
+  } catch (error) {
+    // Fallback to base calculation if memory analysis fails
+    console.warn(
+      "Memory-enhanced trump conservation failed, using base calculation:",
+      error,
+    );
+    return baseValue;
+  }
 }
 
 /**
@@ -523,8 +604,20 @@ export function analyzeCombo(
   let conservationValue: number;
 
   if (isTrumpCombo) {
-    // Use proper trump hierarchy value - ignore misleading base combo.value
-    conservationValue = calculateTrumpConservationValue(combo.cards, trumpInfo);
+    // Use memory-enhanced trump hierarchy value when available
+    if (context.memoryContext?.cardMemory) {
+      conservationValue = calculateMemoryEnhancedTrumpConservationValue(
+        combo.cards,
+        trumpInfo,
+        context.memoryContext.cardMemory,
+      );
+    } else {
+      // Fallback to standard trump hierarchy value
+      conservationValue = calculateTrumpConservationValue(
+        combo.cards,
+        trumpInfo,
+      );
+    }
   } else {
     // For non-trump cards, use base combo.value
     conservationValue = combo.value;

@@ -102,44 +102,6 @@ export function getAITrumpDeclarationDecision(
   };
 }
 
-/**
- * AI logic for evaluating whether to override existing declarations
- */
-export function shouldAIOverrideDeclaration(
-  gameState: GameState,
-  playerId: PlayerId,
-  proposedDeclaration: { type: DeclarationType; suit: Suit },
-): boolean {
-  const currentDeclaration =
-    gameState.trumpDeclarationState?.currentDeclaration;
-
-  if (!currentDeclaration) {
-    return true; // No current declaration, safe to declare
-  }
-
-  // Don't override our own declarations unless significantly stronger
-  if (currentDeclaration.playerId === playerId) {
-    const currentStrength = getDeclarationStrength(currentDeclaration.type);
-    const proposedStrength = getDeclarationStrength(proposedDeclaration.type);
-    return proposedStrength > currentStrength + 1; // Need significant improvement
-  }
-
-  // Override opponent declarations more aggressively
-  const currentStrength = getDeclarationStrength(currentDeclaration.type);
-  const proposedStrength = getDeclarationStrength(proposedDeclaration.type);
-
-  // Only override if we have a stronger declaration
-  if (proposedStrength <= currentStrength) {
-    return false;
-  }
-
-  // Calculate override probability based on strength difference
-  const strengthDiff = proposedStrength - currentStrength;
-  const overrideProbability = Math.min(0.8, strengthDiff * 0.4);
-
-  return Math.random() < overrideProbability;
-}
-
 // Helper functions
 
 function getBaseDeclarationProbability(type: DeclarationType): number {

@@ -2,6 +2,8 @@
 
 import { PlayerId } from "./core";
 import { Card, Suit, TrumpInfo, Combo } from "./card";
+import type { VoidExploitationAnalysis } from "../ai/analysis/voidExploitation";
+import type { PointCardTimingAnalysis } from "../ai/analysis/pointCardTiming";
 
 // AI Strategy Enhancement Types
 export enum TrickPosition {
@@ -39,6 +41,8 @@ export interface MemoryContext {
   trumpExhaustion: number; // 0.0 (many trumps left) to 1.0 (few trumps)
   opponentHandStrength: Record<string, number>; // Estimated strength per player
   cardMemory?: CardMemory; // Enhanced: Direct access to card memory for biggest remaining detection
+  voidExploitation?: VoidExploitationAnalysis; // Advanced void exploitation analysis
+  pointTiming?: PointCardTimingAnalysis; // Point card timing analysis
 }
 
 // Position-based strategy matrices
@@ -49,7 +53,7 @@ export interface PositionStrategy {
   disruptionFocus: number; // How much to focus on disrupting opponents
 }
 
-export interface GameContextBase {
+export interface GameContext {
   isAttackingTeam: boolean; // Is this AI on the attacking team?
   currentPoints: number; // Points collected by attacking team so far
   pointsNeeded: number; // Points needed to win (usually 80)
@@ -59,11 +63,7 @@ export interface GameContextBase {
   playStyle: PlayStyle; // Current strategic approach
   trickWinnerAnalysis?: TrickWinnerAnalysis; // Real-time trick winner analysis
   trumpInfo?: TrumpInfo; // Enhanced: Trump information for card analysis
-}
-
-export interface GameContext extends GameContextBase {
-  memoryContext?: MemoryContext; // Phase 3: Memory-based decision context
-  memoryStrategy?: MemoryBasedStrategy; // Phase 3: Memory-enhanced strategy
+  memoryContext?: MemoryContext; // Memory-based decision context
 }
 
 export interface ComboAnalysis {
@@ -82,6 +82,7 @@ export interface PlayerMemory {
   knownCards: Card[]; // Cards we've seen this player play
   estimatedHandSize: number; // Estimated cards remaining
   suitVoids: Set<Suit>; // Suits this player has shown to be out of
+  trumpVoid: boolean; // Whether this player has shown to be out of trump cards
   trumpCount: number; // Estimated trump cards remaining
   pointCardsProbability: number; // Likelihood of having point cards
   playPatterns: PlayPattern[]; // Historical play behavior
@@ -170,10 +171,26 @@ export interface ThirdPlayerAnalysis {
 export interface FourthPlayerAnalysis {
   certainWinCards: Combo[]; // Cards that definitely win
   pointMaximizationPotential: number; // Total points possible in trick
-  optimalContributionStrategy: "maximize" | "conserve" | "beat"; // Recommended strategy
+  optimalContributionStrategy:
+    | "maximize"
+    | "optimize"
+    | "conservative"
+    | "minimal"
+    | "conserve"
+    | "beat"; // Recommended strategy
   teammateSupportOpportunity: boolean; // Can contribute points to teammate
   guaranteedPointCards: Combo[]; // Point cards that are guaranteed winners
   perfectInformationAdvantage: boolean; // Has certain winning options
+  // Phase 3: Memory enhancement fields
+  memoryAnalysis?: {
+    optimalDecision: "win" | "lose" | "minimize" | "contribute";
+    confidenceLevel: number;
+    futureRoundAdvantage: number;
+    reasoning: string;
+  };
+  trumpConservationRecommendation?: "preserve" | "standard" | "use";
+  nonTrumpPointOptions: Combo[]; // Non-trump point card options
+  trumpPointOptions: Combo[]; // Trump point card options
 }
 
 // Phase 4: Historical Trick Analysis Types
