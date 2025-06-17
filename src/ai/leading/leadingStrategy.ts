@@ -8,6 +8,8 @@ import {
   GameContext,
   GamePhaseStrategy,
   GameState,
+  PlayerId,
+  Suit,
   TrumpInfo,
   MemoryContext,
   EnhancedMemoryContext,
@@ -82,6 +84,22 @@ export function selectAdvancedLeadingPlay(
     );
     if (voidExploitationPlay) {
       return voidExploitationPlay;
+    }
+  }
+
+  // === PRIORITY 2.5: POINT CARD PROTECTION ===
+  // Filter out risky point card leads that would give points to opponents
+  if (context.memoryContext && context.memoryContext.voidExploitation) {
+    const safeComboAnalyses = filterRiskyPointCardLeads(
+      comboAnalyses,
+      context.memoryContext.voidExploitation,
+      trumpInfo,
+      gameState,
+      currentPlayer.id,
+    );
+    // Update combo analyses to use only safe options for subsequent priorities
+    if (safeComboAnalyses.length > 0) {
+      comboAnalyses.splice(0, comboAnalyses.length, ...safeComboAnalyses);
     }
   }
 
@@ -574,4 +592,126 @@ function selectVoidExploitationLead(
   }
 
   return null;
+}
+
+/**
+ * Point Card Protection - Filter out risky leads that give points to opponents
+ * Prevents leading non-trump point cards when opponents have voids in that suit
+ */
+function filterRiskyPointCardLeads(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  voidAnalysis: VoidExploitationAnalysis,
+  trumpInfo: TrumpInfo,
+  gameState: GameState,
+  currentPlayerId: PlayerId,
+): { combo: Combo; analysis: ComboAnalysis }[] {
+  const safeCombos = comboAnalyses.filter((comboAnalysis) => {
+    const combo = comboAnalysis.combo;
+    const analysis = comboAnalysis.analysis;
+
+    // Only check non-trump point cards
+    if (analysis.isTrump || !analysis.hasPoints) {
+      return true; // Trump cards and non-point cards are safe
+    }
+
+    // Check if this would lead into a dangerous opponent void
+    const leadSuit = combo.cards[0].suit;
+    const isRiskyLead = isRiskyPointCardLead(
+      combo,
+      leadSuit,
+      voidAnalysis,
+      trumpInfo,
+      gameState,
+      currentPlayerId,
+    );
+
+    return !isRiskyLead;
+  });
+
+  // If filtering removes all options, return original list to avoid empty choices
+  return safeCombos.length > 0 ? safeCombos : comboAnalyses;
+}
+
+/**
+ * Determine if leading this point card combo is risky due to opponent voids
+ */
+function isRiskyPointCardLead(
+  combo: Combo,
+  leadSuit: Suit,
+  voidAnalysis: VoidExploitationAnalysis,
+  trumpInfo: TrumpInfo,
+  gameState: GameState,
+  currentPlayerId: PlayerId,
+): boolean {
+  // Calculate total point value at risk
+  const pointsAtRisk = combo.cards.reduce(
+    (sum, card) => sum + (card.points || 0),
+    0,
+  );
+
+  // Only protect valuable point cards (5+ points)
+  if (pointsAtRisk < 5) {
+    return false; // Low-value point cards can be risked
+  }
+
+  // Check confirmed opponent voids in this suit
+  const confirmedVoidOpponents = Object.entries(voidAnalysis.confirmedVoids)
+    .filter(([playerId, voidSuits]) => {
+      const isOpponent = !isTeammatePlayer(
+        playerId as PlayerId,
+        gameState,
+        currentPlayerId,
+      );
+      const hasVoidInSuit = voidSuits.includes(leadSuit);
+      return isOpponent && hasVoidInSuit;
+    })
+    .map(([playerId]) => playerId as PlayerId);
+
+  if (confirmedVoidOpponents.length > 0) {
+    // High risk: Confirmed opponent void in this suit
+    return true;
+  }
+
+  // Check probable opponent voids with high probability
+  const probableVoidOpponents = Object.entries(voidAnalysis.probableVoids)
+    .filter(([playerId, voidProbs]) => {
+      const isOpponent = !isTeammatePlayer(
+        playerId as PlayerId,
+        gameState,
+        currentPlayerId,
+      );
+      const highProbVoid = voidProbs.some(
+        (voidProb) =>
+          voidProb.suit === leadSuit &&
+          voidProb.probability > 0.75 &&
+          voidProb.confidence > 0.7,
+      );
+      return isOpponent && highProbVoid;
+    })
+    .map(([playerId]) => playerId as PlayerId);
+
+  if (probableVoidOpponents.length > 0 && pointsAtRisk >= 10) {
+    // High risk for valuable cards: Probable opponent void with high confidence
+    return true;
+  }
+
+  return false; // Safe to lead
+}
+
+/**
+ * Helper function to check if a player is a teammate using game state
+ */
+function isTeammatePlayer(
+  playerId: PlayerId,
+  gameState: GameState,
+  currentPlayerId: PlayerId,
+): boolean {
+  const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
+  const targetPlayer = gameState.players.find((p) => p.id === playerId);
+
+  if (!currentPlayer || !targetPlayer) {
+    return false;
+  }
+
+  return currentPlayer.team === targetPlayer.team;
 }
