@@ -6,7 +6,7 @@
   },
   "declarations": {
     "single": "单张",
-    "pair": "对子",
+    "pair": "一对",
     "smallJokers": "小王对",
     "bigJokers": "大王对"
   },

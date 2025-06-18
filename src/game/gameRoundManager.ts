@@ -431,15 +431,6 @@ export function endRound(state: GameState): RoundResult {
     const trickPoints = attackingTeam?.points || 0;
     const kittyBonus = state.roundEndKittyInfo?.kittyBonus?.bonusPoints || 0;
 
-    let pointMessage = "";
-    if (finalPoints === 0) {
-      pointMessage = "shut out the attackers (0 points)";
-    } else if (finalPoints < 40) {
-      pointMessage = `held attackers to only ${finalPoints} points`;
-    } else {
-      pointMessage = `defended with attackers getting ${finalPoints}/80 points`;
-    }
-
     gameLogger.info(
       "game_over",
       {
@@ -449,7 +440,6 @@ export function endRound(state: GameState): RoundResult {
         trickPoints,
         kittyBonus,
         winCondition: "ace_defense",
-        pointMessage,
       },
       `Game over! Team ${gameWinner} wins by successfully defending Ace rank with ${finalPoints} points`,
     );
