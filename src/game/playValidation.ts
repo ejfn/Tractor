@@ -1,4 +1,4 @@
-import { Card, TrumpInfo } from "../types";
+import { Card, TrumpInfo, ComboType, GameState, PlayerId } from "../types";
 import {
   identifyCombos,
   checkSameSuitPairPreservation,
@@ -6,6 +6,14 @@ import {
   getComboType,
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
+import {
+  detectMultiComboAttempt,
+  isNonTrumpMultiCombo,
+} from "./multiComboDetection";
+import {
+  validateLeadingMultiCombo,
+  validateFollowingMultiCombo,
+} from "./multiComboValidation";
 
 // Local helper function to avoid circular dependencies
 const getLeadingSuit = (combo: Card[]) => {
@@ -242,4 +250,113 @@ export const isValidPlay = (
 
   // Default - should only reach here in edge cases
   return true;
+};
+
+/**
+ * Enhanced validation that includes multi-combo support
+ * @param playedCards Cards being played
+ * @param leadingCombo Leading combination (null if leading)
+ * @param playerHand Player's full hand
+ * @param trumpInfo Trump information
+ * @param gameState Current game state (for multi-combo validation)
+ * @param playerId Player attempting the play (for multi-combo validation)
+ * @returns True if the play is valid
+ */
+export const isValidPlayWithMultiCombo = (
+  playedCards: Card[],
+  leadingCombo: Card[] | null,
+  playerHand: Card[],
+  trumpInfo: TrumpInfo,
+  gameState?: GameState,
+  playerId?: PlayerId,
+): boolean => {
+  // Check for multi-combo attempts
+  const playedType = getComboType(playedCards, trumpInfo);
+
+  if (playedType === ComboType.MultiCombo) {
+    if (!leadingCombo) {
+      // Leading multi-combo validation
+      if (!gameState || !playerId) {
+        return false; // Need game state and player ID for multi-combo validation
+      }
+
+      const multiComboDetection = detectMultiComboAttempt(
+        playedCards,
+        trumpInfo,
+      );
+      if (
+        !multiComboDetection.isMultiCombo ||
+        !multiComboDetection.components ||
+        !multiComboDetection.structure
+      ) {
+        return false;
+      }
+
+      // Phase 1: Only allow leading multi-combos from non-trump suits
+      if (!isNonTrumpMultiCombo(multiComboDetection.structure)) {
+        return false;
+      }
+
+      // Validate using memory system and void detection
+      const validation = validateLeadingMultiCombo(
+        multiComboDetection.components,
+        multiComboDetection.structure.suit,
+        gameState,
+        playerId,
+      );
+
+      return validation.isValid;
+    } else {
+      // Following multi-combo validation
+      const leadingType = getComboType(leadingCombo, trumpInfo);
+
+      if (leadingType !== ComboType.MultiCombo) {
+        return false; // Can't follow non-multi-combo with multi-combo
+      }
+
+      // Get leading multi-combo structure
+      const leadingDetection = detectMultiComboAttempt(leadingCombo, trumpInfo);
+      if (!leadingDetection.isMultiCombo || !leadingDetection.structure) {
+        return false;
+      }
+
+      // Validate following multi-combo structure match
+      const followingValidation = validateFollowingMultiCombo(
+        playedCards,
+        leadingDetection.structure,
+        playerHand,
+        trumpInfo,
+      );
+
+      return followingValidation.isValid;
+    }
+  }
+
+  // If leading combo is multi-combo but played cards are not, check if valid following
+  if (leadingCombo) {
+    const leadingType = getComboType(leadingCombo, trumpInfo);
+    if (leadingType === ComboType.MultiCombo) {
+      // Following a multi-combo with non-multi-combo
+      // This could be valid if player exhausts suit cards and uses trump/other suits
+
+      // Get leading multi-combo structure for validation
+      const leadingDetection = detectMultiComboAttempt(leadingCombo, trumpInfo);
+      if (!leadingDetection.isMultiCombo || !leadingDetection.structure) {
+        return false;
+      }
+
+      // Validate following multi-combo structure match
+      const followingValidation = validateFollowingMultiCombo(
+        playedCards,
+        leadingDetection.structure,
+        playerHand,
+        trumpInfo,
+      );
+
+      return followingValidation.isValid;
+    }
+  }
+
+  // Fall back to existing validation for non-multi-combo plays
+  return isValidPlay(playedCards, leadingCombo, playerHand, trumpInfo);
 };

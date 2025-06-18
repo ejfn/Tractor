@@ -1,7 +1,8 @@
 // Phase 4: Advanced Combination Logic Types
 
-import { ComboType, Card } from "./card";
+import { ComboType, Card, MultiComboStructure, Combo } from "./card";
 import { ComboStrength } from "./ai";
+import { PlayerId } from "./core";
 
 export enum CombinationPotential {
   None = "none", // No combinations possible
@@ -53,4 +54,35 @@ export interface CombinationStrategy {
   avoidancePatterns: AdvancedComboPattern[]; // Combinations to avoid
   adaptiveThreshold: number; // When to switch strategies
   memoryInfluence: number; // How much memory affects combination choice
+}
+
+// Multi-Combo Detection and Validation Types
+
+export interface MultiComboValidation {
+  isValid: boolean;
+  invalidReasons: string[];
+  voidStatus: {
+    allOpponentsVoid: boolean;
+    voidPlayers: PlayerId[];
+  };
+  unbeatableStatus: {
+    allUnbeatable: boolean;
+    beatableComponents: {
+      combo: Combo;
+      beatenBy: string; // Description of what can beat it
+    }[];
+  };
+}
+
+export interface MultiComboDetection {
+  isMultiCombo: boolean;
+  structure?: MultiComboStructure;
+  components?: Combo[]; // Individual combos within multi-combo
+  validation?: MultiComboValidation;
+}
+
+export interface BeatingCombo {
+  playerId: PlayerId;
+  combo: Combo;
+  confidence: number; // 0.0-1.0 based on memory certainty
 }

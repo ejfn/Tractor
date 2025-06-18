@@ -6,7 +6,7 @@ export enum Suit {
   Diamonds = "Diamonds",
   Clubs = "Clubs",
   Spades = "Spades",
-  None = "None", // For joker pair declarations - no trump suit
+  None = "None", // For trump multi-combos and joker pair declarations
 }
 
 /**
@@ -234,18 +234,11 @@ export class Card {
    * Check if this card is trump given the current trump info
    */
   isTrump(trumpInfo: TrumpInfo): boolean {
-    // Jokers are always trump
-    if (this.joker) return true;
-
-    // Trump rank cards are trump regardless of suit (but not Rank.None)
-    if (this.rank !== Rank.None && this.rank === trumpInfo.trumpRank)
-      return true;
-
-    // Trump suit cards are trump (but not Suit.None)
-    if (this.suit !== Suit.None && this.suit === trumpInfo.trumpSuit)
-      return true;
-
-    return false;
+    return (
+      this.joker !== undefined ||
+      this.rank === trumpInfo.trumpRank ||
+      this.suit === trumpInfo.trumpSuit
+    );
   }
 
   /**
@@ -296,11 +289,27 @@ export enum ComboType {
   Single = "Single",
   Pair = "Pair",
   Tractor = "Tractor", // Consecutive pairs of same suit
+  MultiCombo = "MultiCombo", // Multiple combination types from same suit
+  Invalid = "Invalid", // Invalid combination that doesn't form any valid combo type
 }
+
+// Multi-combo structure for tracking component types
+export type MultiComboStructure = {
+  suit: Suit; // Specific suit or Suit.None for trump multi-combos
+  components: {
+    singles: number; // Count of single cards
+    pairs: number; // Count of pairs
+    tractors: number; // Count of tractors
+    tractorSizes: number[]; // Length of each tractor (in pairs)
+  };
+  totalLength: number; // Total cards in multi-combo
+  isLeading: boolean; // Leading vs following context
+};
 
 export type Combo = {
   type: ComboType;
   cards: Card[];
   value: number; // Relative hand strength for comparison
   isBreakingPair?: boolean; // Whether this combo breaks up a valuable pair
+  multiComboStructure?: MultiComboStructure; // For MultiCombo type only
 };

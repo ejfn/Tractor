@@ -1,11 +1,25 @@
-import { Card, Combo, ComboType, Suit, TrumpInfo } from "../types";
+import {
+  Card,
+  Combo,
+  ComboType,
+  Suit,
+  TrumpInfo,
+  MultiComboStructure,
+} from "../types";
 import { findAllTractors, isValidTractor } from "./tractorLogic";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
+import {
+  detectMultiComboAttempt,
+  getMultiComboStructure,
+  analyzeMultiComboComponents,
+} from "./multiComboDetection";
 
 // Identify valid combinations in a player's hand
 export const identifyCombos = (
   cards: Card[],
   trumpInfo: TrumpInfo,
+  context?: "leading" | "following", // NEW: Context for multi-combo detection
+  leadingStructure?: MultiComboStructure, // NEW: For following validation
 ): Combo[] => {
   const combos: Combo[] = [];
 
@@ -56,8 +70,110 @@ export const identifyCombos = (
   }));
   combos.push(...tractorsWithBreaking);
 
+  // NEW: Multi-combo detection
+  if (context === "leading") {
+    const multiComboDetection = detectMultiComboAttempt(cards, trumpInfo);
+    if (
+      multiComboDetection.isMultiCombo &&
+      multiComboDetection.structure &&
+      multiComboDetection.components
+    ) {
+      // Add multi-combo as a possible combination
+      combos.push({
+        type: ComboType.MultiCombo,
+        cards: cards,
+        value: calculateMultiComboValue(multiComboDetection.components),
+        multiComboStructure: multiComboDetection.structure,
+        isBreakingPair: false,
+      });
+    }
+  }
+
+  if (context === "following" && leadingStructure) {
+    // For following, try to form a multi-combo that matches the leading structure
+    const followingComponents = analyzeMultiComboComponents(cards, trumpInfo);
+    const followingStructure = getMultiComboStructure(
+      followingComponents,
+      leadingStructure.suit,
+      false,
+    );
+
+    // Check if this could be a valid following multi-combo
+    if (matchesRequiredStructure(followingStructure, leadingStructure)) {
+      combos.push({
+        type: ComboType.MultiCombo,
+        cards: cards,
+        value: calculateMultiComboValue(followingComponents),
+        multiComboStructure: followingStructure,
+        isBreakingPair: false,
+      });
+    }
+  }
+
   return combos;
 };
+
+/**
+ * Calculate the value of a multi-combo based on its components
+ * Multi-combos should have MUCH higher priority than single cards (even Aces)
+ * @param components Component combos within the multi-combo
+ * @returns Combined value of all components with multi-combo bonus
+ */
+function calculateMultiComboValue(components: Combo[]): number {
+  const baseValue = components.reduce((total, combo) => total + combo.value, 0);
+
+  // Multi-combo bonus: Ensures multi-combos are prioritized over even high-value singles
+  // A multi-combo like A♠-K♠-K♠ should beat a single A♠ in selection priority
+  const multiComboBonus = 5000; // High enough to beat any single card value
+
+  return baseValue + multiComboBonus;
+}
+
+/**
+ * Check if a following structure matches the required leading structure
+ * @param followingStructure Structure of the following multi-combo
+ * @param leadingStructure Required structure from the lead
+ * @returns True if the following structure is valid
+ */
+function matchesRequiredStructure(
+  followingStructure: MultiComboStructure,
+  leadingStructure: MultiComboStructure,
+): boolean {
+  const following = followingStructure.components;
+  const required = leadingStructure.components;
+
+  // Must match total length exactly
+  if (followingStructure.totalLength !== leadingStructure.totalLength) {
+    return false;
+  }
+
+  // Must have at least the required number of each component type
+  if (following.pairs < required.pairs) {
+    return false;
+  }
+
+  if (following.tractors < required.tractors) {
+    return false;
+  }
+
+  // For tractors, check if we have adequate tractor sizes
+  if (following.tractors > 0 && required.tractors > 0) {
+    const followingTractorPairs = following.tractorSizes.reduce(
+      (sum, size) => sum + size,
+      0,
+    );
+    const requiredTractorPairs = required.tractorSizes.reduce(
+      (sum, size) => sum + size,
+      0,
+    );
+
+    if (followingTractorPairs < requiredTractorPairs) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 // Legacy function for backward compatibility
 export const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
@@ -83,8 +199,27 @@ export const getComboType = (
     }
   }
 
-  // Default to Single as fallback
-  return ComboType.Single;
+  // Check for multi-combo if 3+ cards
+  if (cards.length >= 3) {
+    const multiComboDetection = detectMultiComboAttempt(cards, trumpInfo);
+    if (multiComboDetection.isMultiCombo) {
+      return ComboType.MultiCombo;
+    }
+  }
+
+  // Special case: Multiple cards that are all singles
+  if (cards.length > 1) {
+    // If all cards are different (no pairs), treat as multiple singles
+    const cardIds = cards.map((card) => card.cardId);
+    const uniqueCardIds = new Set(cardIds);
+    if (uniqueCardIds.size === cards.length) {
+      // All cards are different - treat as multiple singles for comparison purposes
+      return ComboType.Single;
+    }
+  }
+
+  // Return Invalid for combinations that don't match any valid combo type
+  return ComboType.Invalid;
 };
 
 /**
