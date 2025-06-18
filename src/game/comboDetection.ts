@@ -9,9 +9,10 @@ import {
 import { findAllTractors, isValidTractor } from "./tractorLogic";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
 import {
-  detectMultiComboAttempt,
+  validateMultiComboSelection,
   getMultiComboStructure,
   analyzeMultiComboComponents,
+  matchesRequiredStructure,
 } from "./multiComboDetection";
 
 // Identify valid combinations in a player's hand
@@ -70,20 +71,17 @@ export const identifyCombos = (
   }));
   combos.push(...tractorsWithBreaking);
 
-  // NEW: Multi-combo detection
+  // NEW: Multi-combo detection for leading context
   if (context === "leading") {
-    const multiComboDetection = detectMultiComboAttempt(cards, trumpInfo);
-    if (
-      multiComboDetection.isMultiCombo &&
-      multiComboDetection.structure &&
-      multiComboDetection.components
-    ) {
-      // Add multi-combo as a possible combination
+    // Just detect structure - validation happens elsewhere
+    const components = analyzeMultiComboComponents(cards, trumpInfo);
+    if (components.length >= 2) {
+      const structure = getMultiComboStructure(components, cards[0]?.suit || "Hearts", true);
       combos.push({
         type: ComboType.MultiCombo,
         cards: cards,
-        value: calculateMultiComboValue(multiComboDetection.components),
-        multiComboStructure: multiComboDetection.structure,
+        value: calculateMultiComboValue(components),
+        multiComboStructure: structure,
         isBreakingPair: false,
       });
     }
@@ -199,11 +197,25 @@ export const getComboType = (
     }
   }
 
-  // Check for multi-combo if 3+ cards
+  // Check for multi-combo if 3+ cards - basic structural check only
   if (cards.length >= 3) {
-    const multiComboDetection = detectMultiComboAttempt(cards, trumpInfo);
-    if (multiComboDetection.isMultiCombo) {
-      return ComboType.MultiCombo;
+    // Group cards by suit/trump to check if they're from same suit
+    const cardGroups: Record<string, Card[]> = {};
+    cards.forEach((card) => {
+      const groupKey = isTrump(card, trumpInfo) ? "trump" : card.suit;
+      if (!cardGroups[groupKey]) {
+        cardGroups[groupKey] = [];
+      }
+      cardGroups[groupKey].push(card);
+    });
+
+    // Multi-combo must be from single suit
+    if (Object.keys(cardGroups).length === 1) {
+      // Check if cards can form multiple combination types
+      const components = analyzeMultiComboComponents(cards, trumpInfo);
+      if (components.length >= 2) {
+        return ComboType.MultiCombo;
+      }
     }
   }
 
