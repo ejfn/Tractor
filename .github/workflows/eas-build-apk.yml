@@ -49,31 +49,12 @@ jobs:
       id: version
       uses: ./.github/actions/git-version
 
-    - name: Determine build profile from version
-      id: profile
-      run: |
-        EAS_BRANCH="${{ steps.version.outputs.eas-branch }}"
-        case "$EAS_BRANCH" in
-          "production")
-            echo "profile=production" >> $GITHUB_OUTPUT
-            echo "Using production profile for production version"
-            ;;
-          "beta")
-            echo "profile=preview" >> $GITHUB_OUTPUT
-            echo "Using preview profile for beta version (main branch)"
-            ;;
-          *)
-            echo "profile=development" >> $GITHUB_OUTPUT
-            echo "Using development profile for branch: $EAS_BRANCH"
-            ;;
-        esac
-
     - name: Build APK
-      if: steps.profile.outputs.profile == 'production' || steps.profile.outputs.profile == 'preview'
-      run: eas build --platform android --profile ${{ steps.profile.outputs.profile }} --non-interactive --wait
+      if: steps.version.outputs.eas-branch == 'production' || steps.version.outputs.eas-branch == 'preview'
+      run: eas build --platform android --profile ${{ steps.version.outputs.eas-branch }} --non-interactive --wait
 
     - name: Get build artifact URL
-      if: steps.profile.outputs.profile == 'production' || steps.profile.outputs.profile == 'preview'
+      if: steps.version.outputs.eas-branch == 'production' || steps.version.outputs.eas-branch == 'preview'
       id: build-url
       run: |
         # Get the latest build for this project
