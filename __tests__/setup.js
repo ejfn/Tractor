@@ -4,3 +4,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn().mockResolvedValue(null),
   removeItem: jest.fn(),
 }));
+
+// Mock expo-localization for tests
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageCode: 'en' }]),
+}));

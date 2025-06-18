@@ -34,7 +34,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#0A3A2E"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

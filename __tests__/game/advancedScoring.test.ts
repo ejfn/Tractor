@@ -33,8 +33,9 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.rankChanges[TeamId.A]).toBe(Rank.Four);
       expect(result.attackingTeamWon).toBe(false);
-      expect(result.roundCompleteMessage).toContain('65/80 points');
-      expect(result.roundCompleteMessage).toContain('advances 1 rank to 4');
+      expect(result.winningTeam).toBe(TeamId.A);
+      expect(result.finalPoints).toBe(65);
+      expect(result.rankAdvancement).toBe(1);
     });
 
     it('should advance defending team by 2 ranks when attackers get < 40 points', () => {
@@ -57,8 +58,6 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.rankChanges[TeamId.A]).toBe(Rank.Five);
       expect(result.attackingTeamWon).toBe(false);
-      expect(result.roundCompleteMessage).toContain('held attackers to only 25 points');
-      expect(result.roundCompleteMessage).toContain('advances 2 ranks to 5');
     });
 
     it('should advance defending team by 3 ranks when attackers get 0 points', () => {
@@ -81,8 +80,6 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.rankChanges[TeamId.A]).toBe(Rank.Six);
       expect(result.attackingTeamWon).toBe(false);
-      expect(result.roundCompleteMessage).toContain('shut out the attackers');
-      expect(result.roundCompleteMessage).toContain('advances 3 ranks to 6');
     });
 
     it('should advance defending team to Ace and continue game', () => {
@@ -125,7 +122,6 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.gameOver).toBe(false);
       expect(result.rankChanges[TeamId.A]).toBe(Rank.Ace);
-      expect(result.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
     });
   });
 
@@ -150,8 +146,6 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.rankChanges[TeamId.B]).toBe(Rank.Five); // No rank change
       expect(result.attackingTeamWon).toBe(true); // Attacking team won, so roles will switch
-      expect(result.roundCompleteMessage).toContain('won with 100 points');
-      expect(result.roundCompleteMessage).toContain('will defend next round at rank 5');
     });
 
     it('should advance attacking team by 1 rank when they get 120-159 points', () => {
@@ -174,8 +168,6 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.rankChanges[TeamId.B]).toBe(Rank.Six);
       expect(result.attackingTeamWon).toBe(true);
-      expect(result.roundCompleteMessage).toContain('won with 140 points');
-      expect(result.roundCompleteMessage).toContain('advanced 1 rank to 6');
     });
 
     it('should advance attacking team by 2 ranks when they get 160-199 points', () => {
@@ -198,8 +190,6 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.rankChanges[TeamId.B]).toBe(Rank.Seven);
       expect(result.attackingTeamWon).toBe(true);
-      expect(result.roundCompleteMessage).toContain('won with 180 points');
-      expect(result.roundCompleteMessage).toContain('advanced 2 ranks to 7');
     });
 
     it('should advance attacking team by 3 ranks when they get 200+ points', () => {
@@ -222,8 +212,6 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.rankChanges[TeamId.B]).toBe(Rank.Eight);
       expect(result.attackingTeamWon).toBe(true);
-      expect(result.roundCompleteMessage).toContain('won with 220 points');
-      expect(result.roundCompleteMessage).toContain('advanced 3 ranks to 8');
     });
 
     it('should advance attacking team to Ace and continue game', () => {
@@ -266,7 +254,6 @@ describe('Advanced Scoring Rules', () => {
 
       expect(result.gameOver).toBe(false);
       expect(result.rankChanges[TeamId.B]).toBe(Rank.Ace);
-      expect(result.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
     });
   });
 
@@ -280,7 +267,6 @@ describe('Advanced Scoring Rules', () => {
       const resultDefending = endRound(defendingAtAce);
       expect(resultDefending.gameOver).toBe(true);
       expect(resultDefending.gameWinner).toBe(TeamId.A);
-      expect(resultDefending.roundCompleteMessage).toContain('wins the game by successfully defending Ace!');
 
       // Test attacking team at King advancing to Ace (should continue game)
       const attackingAtKing = createMockGameState(
@@ -308,7 +294,6 @@ describe('Advanced Scoring Rules', () => {
       const resultAttackingQueen = endRound(attackingAtQueen);
       expect(resultAttackingQueen.gameOver).toBe(false);
       expect(resultAttackingQueen.rankChanges[TeamId.B]).toBe(Rank.Ace);
-      expect(resultAttackingQueen.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
 
       // Test defending team at King defending against 0 points (3 ranks = capped at Ace)
       const defendingAtKing = createMockGameState(
@@ -318,7 +303,6 @@ describe('Advanced Scoring Rules', () => {
       const resultDefendingKing = endRound(defendingAtKing);
       expect(resultDefendingKing.gameOver).toBe(false);
       expect(resultDefendingKing.rankChanges[TeamId.A]).toBe(Rank.Ace);
-      expect(resultDefendingKing.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
 
       // Test defending team at Queen advancing to Ace (should continue game)
       const defendingAtQueen = createMockGameState(
@@ -328,7 +312,6 @@ describe('Advanced Scoring Rules', () => {
       const resultDefendingQueen = endRound(defendingAtQueen);
       expect(resultDefendingQueen.gameOver).toBe(false);
       expect(resultDefendingQueen.rankChanges[TeamId.A]).toBe(Rank.Ace);
-      expect(resultDefendingQueen.roundCompleteMessage).toContain('reached Ace! They must now defend Ace to win');
 
       // Test defending team at Ten defending with <40 points (advances to Ace exactly)
       const defendingAtTen = createMockGameState(
@@ -339,7 +322,6 @@ describe('Advanced Scoring Rules', () => {
       expect(resultDefendingTen.gameOver).toBe(false);
       expect(resultDefendingTen.gameWinner).toBe(undefined);
       expect(resultDefendingTen.rankChanges[TeamId.A]).toBe(Rank.Queen);
-      expect(resultDefendingTen.roundCompleteMessage).toContain('advances 2 ranks to Q');
     });
 
     it('should handle exact point boundaries correctly', () => {

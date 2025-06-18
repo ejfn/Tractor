@@ -11,7 +11,7 @@ describe('Card Dealing Bug Test', () => {
       
       gameLogger.info('test_initial_card_counts', {}, 'Initial card counts:');
       gameState.players.forEach((player, idx) => {
-        gameLogger.info('test_player_card_count', { playerIndex: idx, playerName: player.name, cardCount: player.hand.length }, `  Player ${idx} (${player.name}): ${player.hand.length} cards`);
+        gameLogger.info('test_player_card_count', { playerIndex: idx, playerName: player.id, cardCount: player.hand.length }, `  Player ${idx} (${player.id}): ${player.hand.length} cards`);
       });
       
       // Check that all players have the same number of cards

@@ -2,6 +2,7 @@ import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { sharedStyles } from "../styles/sharedStyles";
 import { Player, Trick } from "../types";
+import { getPlayerDisplayName } from "../utils/translationHelpers";
 import CardBack from "./CardBack";
 import ThinkingIndicator from "./ThinkingIndicator";
 
@@ -77,8 +78,8 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
     isDefending ? sharedStyles.teamALabel : sharedStyles.teamBLabel,
   ];
 
-  // Get player label from player name
-  const playerLabel = player.name;
+  // Get player label using translation
+  const playerLabel = getPlayerDisplayName(player.id);
 
   // Determine whether to show thinking indicator
   // Double-check that we're not showing thinking during trick result display

@@ -10,6 +10,12 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { GamePhase, Suit, Team, TrumpInfo } from "../types";
+import {
+  useCommonTranslation,
+  useGameTranslation,
+  useModalsTranslation,
+} from "../hooks/useTranslation";
+import { getTeamDisplayName } from "../utils/translationHelpers";
 
 const getSuitSymbol = (suit: Suit): string => {
   switch (suit) {
@@ -132,6 +138,11 @@ const GameStatus: React.FC<GameStatusProps> = ({
   gamePhase,
   onStartNewGame,
 }) => {
+  // Translation hooks
+  const { t: tCommon } = useCommonTranslation();
+  const { t: tGame } = useGameTranslation();
+  const { t: tModals } = useModalsTranslation();
+
   // Hidden new game trigger - 5 quick taps on trump display
   const [tapCount, setTapCount] = useState(0);
   const [showNewGameModal, setShowNewGameModal] = useState(false);
@@ -186,21 +197,21 @@ const GameStatus: React.FC<GameStatusProps> = ({
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.roundInfo}>
-          <Text style={styles.roundText}>Round {roundNumber}</Text>
+          <Text style={styles.roundText}>
+            {tCommon("round", { number: roundNumber })}
+          </Text>
           <Animated.View
             style={[
               styles.phaseIndicator,
               { transform: [{ scale: phaseScale }] },
             ]}
           >
-            <Text style={styles.phaseText}>
-              {gamePhase.charAt(0).toUpperCase() + gamePhase.slice(1)}
-            </Text>
+            <Text style={styles.phaseText}>{tGame(`phases.${gamePhase}`)}</Text>
           </Animated.View>
         </View>
 
         <View style={styles.trumpInfo}>
-          <Text style={styles.trumpLabel}>Trump</Text>
+          <Text style={styles.trumpLabel}>{tCommon("trump")}</Text>
           <TouchableWithoutFeedback onPress={handleTrumpTap}>
             <Animated.View
               style={[
@@ -252,7 +263,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
             ]}
           >
             <View style={styles.teamHeader}>
-              <Text style={styles.teamName}>Team {team.id}</Text>
+              <Text style={styles.teamName}>{getTeamDisplayName(team.id)}</Text>
               <View
                 style={[
                   styles.statusBadge,
@@ -262,20 +273,22 @@ const GameStatus: React.FC<GameStatusProps> = ({
                 ]}
               >
                 <Text style={styles.statusText}>
-                  {team.isDefending ? "Defending" : "Attacking"}
+                  {team.isDefending
+                    ? tGame("status.defending")
+                    : tGame("status.attacking")}
                 </Text>
               </View>
             </View>
 
             <View style={styles.teamStats}>
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Rank:</Text>
+                <Text style={styles.statLabel}>{tGame("status.rank")}</Text>
                 <Text style={styles.statValue}>{team.currentRank}</Text>
               </View>
 
               {!team.isDefending && (
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Points:</Text>
+                  <Text style={styles.statLabel}>{tGame("status.points")}</Text>
                   <RollingNumber
                     value={team.points}
                     isAttackingTeam={!team.isDefending}
@@ -311,16 +324,15 @@ const GameStatus: React.FC<GameStatusProps> = ({
         <View style={modalStyles.overlay}>
           <View style={modalStyles.modalContainer}>
             <View style={modalStyles.header}>
-              <Text style={modalStyles.title}>🃏 Start New Game</Text>
+              <Text style={modalStyles.title}>{tModals("newGame.title")}</Text>
             </View>
 
             <View style={modalStyles.content}>
               <Text style={modalStyles.message}>
-                Are you sure you want to start a new game?
+                {tModals("newGame.message")}
               </Text>
               <Text style={modalStyles.submessage}>
-                Both teams will reset to rank 2 and current progress will be
-                lost.
+                {tModals("newGame.submessage")}
               </Text>
             </View>
 
@@ -329,7 +341,9 @@ const GameStatus: React.FC<GameStatusProps> = ({
                 style={[modalStyles.button, modalStyles.cancelButton]}
                 onPress={() => setShowNewGameModal(false)}
               >
-                <Text style={modalStyles.cancelButtonText}>Cancel</Text>
+                <Text style={modalStyles.cancelButtonText}>
+                  {tModals("newGame.cancel")}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -339,7 +353,9 @@ const GameStatus: React.FC<GameStatusProps> = ({
                   onStartNewGame?.();
                 }}
               >
-                <Text style={modalStyles.confirmButtonText}>New Game</Text>
+                <Text style={modalStyles.confirmButtonText}>
+                  {tModals("newGame.confirm")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

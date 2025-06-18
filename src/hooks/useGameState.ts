@@ -55,7 +55,6 @@ export function useGameState() {
 
   // Round completion
   const [showRoundComplete, setShowRoundComplete] = useState(false);
-  const [roundCompleteMessage, setRoundCompleteMessage] = useState("");
   const pendingStateRef = useRef<GameState | null>(null);
 
   // Ref for trick completion data (used for communication with other hooks)
@@ -394,7 +393,6 @@ export function useGameState() {
       setGameOver(true);
       setWinner(roundResult.gameWinner || null);
     } else {
-      setRoundCompleteMessage(roundResult.roundCompleteMessage);
       setShowRoundComplete(true);
 
       // Store the round result and current state for processing after modal dismissal
@@ -441,7 +439,6 @@ export function useGameState() {
     setGameOver(false);
     setWinner(null);
     setShowRoundComplete(false);
-    setRoundCompleteMessage("");
     setPreviousGamePhase(null);
     setIsInitializing(false);
     hasAttemptedRestore.current = false;
@@ -464,7 +461,6 @@ export function useGameState() {
     gameOver,
     winner,
     showRoundComplete,
-    roundCompleteMessage,
     isProcessingPlay,
     isInitializing,
 

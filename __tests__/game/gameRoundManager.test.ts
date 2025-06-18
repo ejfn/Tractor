@@ -44,9 +44,10 @@ describe('gameRoundManager', () => {
       const mockRoundResult = {
         gameOver: false,
         gameWinner: undefined,
-        roundCompleteMessage: "Test message",
         attackingTeamWon: false,
+        winningTeam: TeamId.A,
         rankChanges: {} as Record<TeamId, Rank>,
+        rankAdvancement: 1,
         finalPoints: 0,
         pointsBreakdown: ""
       };
@@ -121,8 +122,6 @@ describe('gameRoundManager', () => {
       expect(result.attackingTeamWon).toBe(false);
       
       // Verify round complete message
-      expect(result.roundCompleteMessage).toContain('Team A');
-      expect(result.roundCompleteMessage).toContain('advance');
     });
 
     test('should end the round with team B winning and advancing rank', () => {
@@ -147,8 +146,6 @@ describe('gameRoundManager', () => {
       expect(result.attackingTeamWon).toBe(true);
       
       // Verify round complete message
-      expect(result.roundCompleteMessage).toContain('Team B');
-      expect(result.roundCompleteMessage).toContain('will defend next round at rank 2');
     });
 
     test('should end the round with defending team winning', () => {
@@ -179,9 +176,6 @@ describe('gameRoundManager', () => {
       expect(result.attackingTeamWon).toBe(false);
       
       // Verify round complete message
-      expect(result.roundCompleteMessage).toContain('Team A');
-      expect(result.roundCompleteMessage).toContain('held attackers to only 30 points');
-      expect(result.roundCompleteMessage).toContain('advances 2 ranks');
     });
 
     test('should handle team advancing to Ace and continuing game', () => {
@@ -207,7 +201,6 @@ describe('gameRoundManager', () => {
       expect(result.rankChanges[TeamId.B]).toBe(Rank.Ace);
       
       // Should have round complete message
-      expect(result.roundCompleteMessage).toContain('won with 120 points');
     });
   });
 });

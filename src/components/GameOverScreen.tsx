@@ -8,6 +8,7 @@ import {
   Dimensions,
   SafeAreaView,
 } from "react-native";
+import { useModalsTranslation } from "../hooks/useTranslation";
 
 interface GameOverScreenProps {
   winner: "A" | "B" | null;
@@ -27,6 +28,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
   fadeAnim,
   scaleAnim,
 }) => {
+  const { t } = useModalsTranslation();
   const confettiAnim1 = useRef(new Animated.Value(0)).current;
   const confettiAnim2 = useRef(new Animated.Value(0)).current;
   const confettiAnim3 = useRef(new Animated.Value(0)).current;
@@ -152,11 +154,13 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         <View style={[styles.corner, styles.bottomRight]} />
 
         <Text style={styles.trophy}>🏆</Text>
-        <Text style={styles.title}>Victory!</Text>
+        <Text style={styles.title}>{t("gameOver.title")}</Text>
         <Text style={styles.winnerText}>
-          {winner === "A" ? teamNames[0] : teamNames[1]} wins the game!
+          {t("gameOver.teamWins", {
+            teamName: winner === "A" ? teamNames[0] : teamNames[1],
+          })}
         </Text>
-        <Text style={styles.congratsText}>Congratulations!</Text>
+        <Text style={styles.congratsText}>{t("gameOver.congratulations")}</Text>
 
         <TouchableOpacity
           style={styles.button}
@@ -164,7 +168,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
           activeOpacity={0.8}
         >
           <View style={styles.buttonGradient}>
-            <Text style={styles.buttonText}>NEW GAME</Text>
+            <Text style={styles.buttonText}>{t("gameOver.newGame")}</Text>
           </View>
         </TouchableOpacity>
       </Animated.View>

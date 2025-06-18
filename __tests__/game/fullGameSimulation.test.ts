@@ -68,7 +68,7 @@ describe('Full Game Simulation', () => {
           }
           
           if (cardsToPlay.length === 0) {
-            gameLogger.error('test_no_cards_error', { player: currentPlayer.name }, `ERROR: ${currentPlayer.name} has no cards to play!`);
+            gameLogger.error('test_no_cards_error', { player: currentPlayer.id }, `ERROR: ${currentPlayer.id} has no cards to play!`);
             totalErrors++;
             break;
           }
@@ -82,7 +82,7 @@ describe('Full Game Simulation', () => {
             round,
             trick: trickNum,
             play: playNum,
-            player: currentPlayer.name,
+            player: currentPlayer.id,
             cardsBefore,
             cardsAfter,
             cardsPlayed: cardsToPlay.length,
@@ -100,7 +100,7 @@ describe('Full Game Simulation', () => {
             const expected = i === state.currentPlayerIndex ? before - cardsToPlay.length : before;
             
             if (after !== expected) {
-              anomalies.push(`Player ${i} (${state.players[i].name}): expected ${expected}, got ${after}`);
+              anomalies.push(`Player ${i} (${state.players[i].id}): expected ${expected}, got ${after}`);
             }
           }
           

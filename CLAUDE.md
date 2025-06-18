@@ -601,6 +601,50 @@ This protection ensures Shengji/Tractor game rule compliance and prevents invali
 - **Testing**: Always include point card management and trump conservation in AI tests
 - **Logging**: Use `gameLogger` for all logging instead of `console.log()` - provides structured logging with levels and context
 
+## Internationalization (i18n) System
+
+The game features **comprehensive multilingual support** with type-safe translations and automatic language detection:
+
+### **Supported Languages**
+- **English (en)**: Primary language with complete translations
+- **Chinese (zh)**: Full Traditional/Simplified Chinese support
+- **System Detection**: Automatic language detection based on device locale
+- **User Preference**: Manual language switching with persistent storage
+
+### **Translation Architecture**
+- **Modular Namespaces**: Organized by functional domain for maintainability
+  - `common` - Core UI elements (buttons, loading, basic game terms)
+  - `game` - Game-specific content (phases, status, actions)
+  - `trumpDeclaration` - Trump declaration system messages
+  - `modals` - Modal dialogs and results (round complete, game over)
+- **Type Safety**: Full TypeScript support with auto-generated types
+- **React i18next Integration**: Efficient translation hooks with caching
+
+### **Translation Hooks**
+```typescript
+// Namespace-specific hooks for type safety
+useCommonTranslation()     // Basic UI elements
+useGameTranslation()       // Game-specific content  
+useTrumpDeclarationTranslation() // Trump declaration system
+useModalsTranslation()     // Modal dialogs and results
+```
+
+### **Key Features**
+- **Automatic Language Detection**: Uses expo-localization for system language
+- **Persistent Preferences**: AsyncStorage integration for user language choice
+- **Separation of Concerns**: Game logic returns structured data, UI handles message generation
+- **Dynamic Language Switching**: Real-time language changes without app restart
+- **Fallback Support**: Graceful fallback to English for missing translations
+
+### **Development Guidelines**
+- **Always use translation hooks** instead of hardcoded strings
+- **Import relevant enums** for type-safe translation keys
+- **Test with both languages** to ensure proper text rendering
+- **Update types** when adding new translation keys
+- **Follow namespace conventions** when organizing translations
+
+*Translation files located in `src/locales/` with type definitions in `src/locales/types.ts`*
+
 ## Hook Architecture
 
 **Single-responsibility hooks with minimal interdependencies:**
@@ -610,6 +654,7 @@ This protection ensures Shengji/Tractor game rule compliance and prevents invali
 - `useAITurns` - AI turn handling
 - `useTrickResults` - Trick completion and display
 - `useAnimations` - UI animations and timing
+- `useTranslation` - Type-safe internationalization hooks
 
 **RoundResult System:**
 - Pure computation approach with `endRound()` and `prepareNextRound()`

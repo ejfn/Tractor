@@ -1,9 +1,9 @@
-import { GameState, Card, PlayerId, Suit, Rank, TrumpInfo, PlayerName, TeamId } from '../../src/types';
+import { GameState, Card, PlayerId, Suit, Rank, TrumpInfo, TeamId } from '../../src/types';
 import { getAIMove } from '../../src/ai/aiLogic';
 import { getValidCombinations } from '../../src/game/combinationGeneration';
 import { isValidPlay } from '../../src/game/playValidation';
 import { isTrump } from '../../src/game/gameHelpers';
-import { createGameState, createTrumpInfo } from '../helpers';
+import { createGameState } from '../helpers';
 
 describe('AI Rule Violation Bug - Issue #95', () => {
   test('AI should not play random singles when it cannot form a pair from leading suit', () => {
@@ -36,7 +36,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
         points: 10
       },
       players: [
-        { id: PlayerId.Bot1, name: PlayerName.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
+        { id: PlayerId.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
       ]
     });
 
@@ -96,7 +96,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
         points: 10
       },
       players: [
-        { id: PlayerId.Bot1, name: PlayerName.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
+        { id: PlayerId.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
       ]
     });
 
@@ -135,7 +135,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
         points: 10
       },
       players: [
-        { id: PlayerId.Bot1, name: PlayerName.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
+        { id: PlayerId.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
       ]
     });
 
@@ -187,7 +187,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
         points: 20
       },
       players: [
-        { id: PlayerId.Bot1, name: PlayerName.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
+        { id: PlayerId.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
       ]
     });
 
@@ -239,7 +239,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
         points: 20
       },
       players: [
-        { id: PlayerId.Bot1, name: PlayerName.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
+        { id: PlayerId.Bot1, team: TeamId.B, hand: aiHand, isHuman: false }
       ]
     });
 

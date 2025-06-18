@@ -39,10 +39,10 @@ describe('Counter-clockwise rotation', () => {
     const gameState = createMockGameState();
     
     // Verify player order in the array (logical order)
-    expect(gameState.players[0].name).toBe('You');  // Bottom (human perspective)
-    expect(gameState.players[1].name).toBe('Bot 1');  // Next in array
-    expect(gameState.players[2].name).toBe('Bot 2');  // Next in array
-    expect(gameState.players[3].name).toBe('Bot 3');  // Next in array
+    expect(gameState.players[0].id).toBe('human');  // Bottom (human perspective)
+    expect(gameState.players[1].id).toBe('bot1');  // Next in array
+    expect(gameState.players[2].id).toBe('bot2');  // Next in array
+    expect(gameState.players[3].id).toBe('bot3');  // Next in array
     
     // Visual positions (swapped for counter-clockwise from human's view):
     // Human (bottom) → Bot 3 (left) → Bot 2 (top) → Bot 1 (right) → Human

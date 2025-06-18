@@ -1,9 +1,10 @@
 import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { Card, Player, TrumpInfo, GamePhase, Trick } from "../types";
+import { Card, Player, TrumpInfo, GamePhase, Trick, PlayerId } from "../types";
 import HumanHandAnimated from "./HumanHandAnimated";
 import ThinkingIndicator from "./ThinkingIndicator";
 import { sharedStyles } from "../styles/sharedStyles";
+import { getPlayerDisplayName } from "../utils/translationHelpers";
 
 interface HumanPlayerViewProps {
   player: Player;
@@ -63,7 +64,9 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
           {isRoundStartingPlayer && (
             <Text style={styles.startingPlayerIcon}>👑</Text>
           )}
-          <Text style={sharedStyles.playerLabel}>You</Text>
+          <Text style={sharedStyles.playerLabel}>
+            {getPlayerDisplayName(PlayerId.Human)}
+          </Text>
         </View>
         {isCurrentPlayer &&
           gamePhase === GamePhase.Playing &&

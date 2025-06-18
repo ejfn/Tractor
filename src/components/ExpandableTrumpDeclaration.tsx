@@ -7,11 +7,19 @@ import {
   View,
 } from "react-native";
 import {
-  getPlayerDeclarationOptions,
   getDealingProgress,
+  getPlayerDeclarationOptions,
   isDealingComplete,
 } from "../game/dealingAndDeclaration";
+import {
+  useGameTranslation,
+  useTrumpDeclarationTranslation,
+} from "../hooks/useTranslation";
+import { TrumpDeclarationTranslationKey } from "../locales/types";
 import { Card, DeclarationType, GameState, PlayerId, Suit } from "../types";
+import { getPlayerDisplayName } from "../utils/translationHelpers";
+
+type TranslationOptions = Record<string, unknown>;
 
 interface ExpandableTrumpDeclarationProps {
   gameState: GameState;
@@ -32,6 +40,8 @@ export function ExpandableTrumpDeclaration({
   onPause,
   shouldShowOpportunities,
 }: ExpandableTrumpDeclarationProps) {
+  const { t: tGame } = useGameTranslation();
+  const { t: tTrump } = useTrumpDeclarationTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [animatedHeight] = useState(new Animated.Value(0));
   const [isCollapsing, setIsCollapsing] = useState(false);
@@ -147,13 +157,16 @@ export function ExpandableTrumpDeclaration({
 
       {/* Status text */}
       <Text style={styles.statusText}>
-        Dealing... {dealingProgress.current}/{dealingProgress.total}
+        {tGame("actions.dealingProgress", {
+          current: dealingProgress.current,
+          total: dealingProgress.total,
+        })}
       </Text>
 
       {/* Current dealing player - only show when not expanded and not complete */}
       {!isExpanded && !isComplete && gameState.dealingState && (
         <Text style={styles.currentPlayerText}>
-          →{" "}
+          ➤{" "}
           {getPlayerDisplayName(
             gameState.players[gameState.dealingState.currentDealingPlayerIndex]
               ?.id || "",
@@ -164,17 +177,19 @@ export function ExpandableTrumpDeclaration({
       {/* Current declaration - only show when not expanded */}
       {currentDeclaration && !isExpanded && (
         <Text style={styles.declarationText}>
-          {getPlayerDisplayName(currentDeclaration.playerId)} leads:{" "}
-          {getDeclarationDisplay(
-            currentDeclaration.type,
-            currentDeclaration.suit,
-          )}
+          {tTrump("messages.currentDeclaration", {
+            playerName: getPlayerDisplayName(currentDeclaration.playerId),
+            declaration: getDeclarationButtonDisplay(
+              currentDeclaration.type,
+              currentDeclaration.suit,
+            ),
+          })}
         </Text>
       )}
 
       {/* Tap hint - only show when not expanded */}
       {!isExpanded && !isComplete && (
-        <Text style={styles.tapHint}>Tap to pause & declare</Text>
+        <Text style={styles.tapHint}>{tGame("actions.tapToPause")}</Text>
       )}
 
       {/* Expandable content - in same container */}
@@ -183,20 +198,23 @@ export function ExpandableTrumpDeclaration({
         <Text style={styles.title}>
           {isComplete
             ? declarationOptions.length > 0
-              ? "Final Declaration Opportunity"
-              : "Final Declaration Info"
-            : "Trump Declaration Opportunity"}
+              ? tTrump("actions.finalDeclaration")
+              : tTrump("actions.finalDeclarationInfo")
+            : tTrump("actions.trumpDeclaration")}
         </Text>
 
         {/* Current declaration leader */}
         <View style={styles.currentDeclaration}>
           <Text style={styles.currentDeclarationText}>
             {currentDeclaration
-              ? `Trump Declaration: ${getDeclarationDisplay(
-                  currentDeclaration.type,
-                  currentDeclaration.suit,
-                )} by ${getPlayerDisplayName(currentDeclaration.playerId)}`
-              : "No trump declarations made"}
+              ? tTrump("messages.trumpDeclarationLabel", {
+                  declaration: getDeclarationButtonDisplay(
+                    currentDeclaration.type,
+                    currentDeclaration.suit,
+                  ),
+                  playerName: getPlayerDisplayName(currentDeclaration.playerId),
+                })
+              : tTrump("messages.noDeclarations")}
           </Text>
         </View>
 
@@ -215,7 +233,7 @@ export function ExpandableTrumpDeclaration({
                       {getDeclarationButtonDisplay(option.type, option.suit)}
                     </Text>
                     <Text style={styles.buttonDesc}>
-                      {getDeclarationDescription(option.type)}
+                      {getDeclarationDescription(option.type, tTrump)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -232,7 +250,7 @@ export function ExpandableTrumpDeclaration({
                         {getDeclarationButtonDisplay(option.type, option.suit)}
                       </Text>
                       <Text style={styles.buttonDesc}>
-                        {getDeclarationDescription(option.type)}
+                        {getDeclarationDescription(option.type, tTrump)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -242,12 +260,12 @@ export function ExpandableTrumpDeclaration({
           ) : (
             <View style={styles.noOptionsContainer}>
               <Text style={styles.noOptionsText}>
-                No valid declarations available with current hand.
+                {tTrump("messages.noValidDeclarations")}
               </Text>
               <Text style={styles.noOptionsHint}>
                 {isComplete
-                  ? "Play will begin with the current trump setting"
-                  : "Need matching trump rank cards or joker pairs"}
+                  ? tTrump("messages.playWillBegin")
+                  : tTrump("messages.needMatchingCards")}
               </Text>
             </View>
           )}
@@ -259,7 +277,9 @@ export function ExpandableTrumpDeclaration({
           onPress={handleContinue}
         >
           <Text style={styles.continueButtonText}>
-            {isComplete ? "Start Playing" : "Continue"}
+            {isComplete
+              ? tTrump("messages.startPlaying")
+              : tTrump("messages.continue")}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -268,20 +288,6 @@ export function ExpandableTrumpDeclaration({
 }
 
 // Helper functions
-function getPlayerDisplayName(playerId: PlayerId): string {
-  switch (playerId) {
-    case PlayerId.Human:
-      return "You";
-    case PlayerId.Bot1:
-      return "Bot 1";
-    case PlayerId.Bot2:
-      return "Bot 2";
-    case PlayerId.Bot3:
-      return "Bot 3";
-    default:
-      return playerId;
-  }
-}
 
 function getDeclarationButtonDisplay(
   type: DeclarationType,
@@ -318,50 +324,24 @@ function getSuitEmoji(suit: Suit): string {
   }
 }
 
-function getDeclarationDescription(type: DeclarationType): string {
+function getDeclarationDescription(
+  type: DeclarationType,
+  tTrump: (
+    key: TrumpDeclarationTranslationKey,
+    options?: TranslationOptions,
+  ) => string,
+): string {
   switch (type) {
     case DeclarationType.Single:
-      return "Single";
+      return tTrump("declarations.single");
     case DeclarationType.Pair:
-      return "Pair";
+      return tTrump("declarations.pair");
     case DeclarationType.SmallJokerPair:
-      return "Small Jokers";
+      return tTrump("declarations.smallJokers");
     case DeclarationType.BigJokerPair:
-      return "Big Jokers";
+      return tTrump("declarations.bigJokers");
     default:
       return "";
-  }
-}
-
-function getDeclarationDisplay(type: DeclarationType, suit: Suit): string {
-  const suitDisplay = getSuitDisplay(suit);
-
-  switch (type) {
-    case DeclarationType.Single:
-      return suitDisplay;
-    case DeclarationType.Pair:
-      return `${suitDisplay} Pair`;
-    case DeclarationType.SmallJokerPair:
-      return "Small Jokers";
-    case DeclarationType.BigJokerPair:
-      return "Big Jokers";
-    default:
-      return `${type} in ${suitDisplay}`;
-  }
-}
-
-function getSuitDisplay(suit: Suit): string {
-  switch (suit) {
-    case "Hearts":
-      return "Hearts";
-    case "Diamonds":
-      return "Diamonds";
-    case "Clubs":
-      return "Clubs";
-    case "Spades":
-      return "Spades";
-    default:
-      return suit;
   }
 }
 
@@ -372,7 +352,7 @@ const styles = StyleSheet.create({
     left: 10,
     right: 10,
     zIndex: 1000,
-    backgroundColor: "rgba(30, 40, 50, 0.95)",
+    backgroundColor: "rgba(40, 50, 60, 0.95)",
     padding: 14,
     borderRadius: 12,
     alignItems: "center",
@@ -416,7 +396,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
     marginTop: 3,
-    backgroundColor: "rgba(255, 213, 79, 0.15)",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
@@ -438,7 +417,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   currentDeclaration: {
-    backgroundColor: "rgba(255, 213, 79, 0.15)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,

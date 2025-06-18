@@ -8,8 +8,90 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card, RoundResult } from "../types";
+import { Card, RoundResult, Rank } from "../types";
 import AnimatedCardComponent from "./AnimatedCard";
+import { useModalsTranslation } from "../hooks/useTranslation";
+import type { ModalsTranslationKey } from "../locales/types";
+import { getTeamDisplayName } from "../utils/translationHelpers";
+
+// Helper function to generate the round result message in the UI layer
+function generateModalMessage(
+  roundResult: RoundResult,
+  tModals: (
+    key: ModalsTranslationKey,
+    options?: Record<string, unknown>,
+  ) => string,
+): string {
+  const teamName = getTeamDisplayName(roundResult.winningTeam);
+  const rankText = roundResult.rankAdvancement === 1 ? "rank" : "ranks";
+  const newRank = roundResult.rankChanges[roundResult.winningTeam];
+
+  if (roundResult.attackingTeamWon) {
+    // Attacking team won
+    if (roundResult.rankAdvancement === 0) {
+      return (
+        tModals("roundResult.attackingWonDefend", {
+          teamName,
+          points: roundResult.finalPoints,
+          rank: newRank,
+        }) + roundResult.pointsBreakdown
+      );
+    } else {
+      if (newRank === Rank.Ace) {
+        return (
+          tModals("roundResult.attackingWonAce", {
+            teamName,
+            points: roundResult.finalPoints,
+          }) + roundResult.pointsBreakdown
+        );
+      } else {
+        return (
+          tModals("roundResult.attackingWonAdvance", {
+            teamName,
+            points: roundResult.finalPoints,
+            advancement: roundResult.rankAdvancement,
+            rankText,
+            rank: newRank,
+          }) + roundResult.pointsBreakdown
+        );
+      }
+    }
+  } else {
+    // Defending team won
+    const pointMessage =
+      roundResult.finalPoints === 0
+        ? tModals("roundResult.heldToPoints", { points: 0 })
+        : tModals("roundResult.defendedWithPoints", {
+            points: roundResult.finalPoints,
+          });
+
+    if (roundResult.gameOver) {
+      return (
+        tModals("roundResult.defendingWonGame", {
+          teamName,
+          pointMessage,
+        }) + roundResult.pointsBreakdown
+      );
+    } else if (newRank === Rank.Ace) {
+      return (
+        tModals("roundResult.defendingWonAce", {
+          teamName,
+          pointMessage,
+        }) + roundResult.pointsBreakdown
+      );
+    } else {
+      return (
+        tModals("roundResult.defendingWonAdvance", {
+          teamName,
+          pointMessage,
+          advancement: roundResult.rankAdvancement,
+          rankText,
+          rank: newRank,
+        }) + roundResult.pointsBreakdown
+      );
+    }
+  }
+}
 
 interface RoundCompleteModalProps {
   onNextRound: () => void;
@@ -27,6 +109,8 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   kittyCards,
   roundResult,
 }) => {
+  const { t: tModals } = useModalsTranslation();
+
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -89,9 +173,9 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
               {roundResult.attackingTeamWon ? "⚔️" : "🛡️"}
             </Text>
 
-            <Text style={styles.title}>Round Complete!</Text>
+            <Text style={styles.title}>{tModals("roundComplete.title")}</Text>
             <Text style={styles.message}>
-              {roundResult.roundCompleteMessage}
+              {generateModalMessage(roundResult, tModals)}
             </Text>
 
             {/* Kitty Cards Display */}
@@ -125,7 +209,9 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
               activeOpacity={0.8}
             >
               <View style={styles.buttonGradient}>
-                <Text style={styles.buttonText}>NEXT ROUND →</Text>
+                <Text style={styles.buttonText}>
+                  {tModals("roundComplete.nextRound")}
+                </Text>
               </View>
             </TouchableOpacity>
 

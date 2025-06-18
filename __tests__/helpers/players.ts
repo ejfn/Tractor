@@ -2,7 +2,6 @@ import {
   Card,
   Player,
   PlayerId,
-  PlayerName,
   Rank,
   Team,
   TeamId
@@ -17,13 +16,11 @@ import {
  */
 export const createPlayer = (
   id: PlayerId,
-  name: PlayerName,
   isHuman: boolean,
   team: TeamId,
   hand: Card[] = []
 ): Player => ({
   id,
-  name,
   isHuman,
   team,
   hand: [...hand] // Deep copy the hand
@@ -33,21 +30,19 @@ export const createPlayer = (
  * Creates the standard 4-player setup used in most tests
  */
 export const createStandardPlayers = (): Player[] => [
-  createPlayer(PlayerId.Human, PlayerName.Human, true, TeamId.A),
-  createPlayer(PlayerId.Bot1, PlayerName.Bot1, false, TeamId.B),
-  createPlayer(PlayerId.Bot2, PlayerName.Bot2, false, TeamId.A),
-  createPlayer(PlayerId.Bot3, PlayerName.Bot3, false, TeamId.B)
+  createPlayer(PlayerId.Human, true, TeamId.A),
+  createPlayer(PlayerId.Bot1, false, TeamId.B),
+  createPlayer(PlayerId.Bot2, false, TeamId.A),
+  createPlayer(PlayerId.Bot3, false, TeamId.B)
 ];
 
 /**
- * Creates players with standard IDs but custom display names (useful for specific test scenarios)
- * Note: This bypasses type safety for custom names, use carefully
+ * Creates players with standard IDs (names are now handled by i18n)
  */
-export const createPlayersWithNames = (names: string[]): Player[] => {
+export const createPlayersWithIds = (playerIds: PlayerId[]): Player[] => {
   const teams: TeamId[] = [TeamId.A, TeamId.B, TeamId.A, TeamId.B];
-  const playerIds = [PlayerId.Human, PlayerId.Bot1, PlayerId.Bot2, PlayerId.Bot3];
-  return names.map((name, index) => 
-    createPlayer(playerIds[index], name as PlayerName, index === 0, teams[index])
+  return playerIds.map((id, index) => 
+    createPlayer(id, index === 0, teams[index])
   );
 };
 

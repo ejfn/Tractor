@@ -1,0 +1,23 @@
+{
+  "actions": {
+    "finalDeclaration": "Final Declaration Opportunity",
+    "finalDeclarationInfo": "Final Declaration Info",
+    "trumpDeclaration": "Trump Declaration Opportunity"
+  },
+  "declarations": {
+    "single": "Single",
+    "pair": "Pair",
+    "smallJokers": "Small Jokers",
+    "bigJokers": "Big Jokers"
+  },
+  "messages": {
+    "currentDeclaration": "{{playerName}} leads: {{declaration}}",
+    "trumpDeclarationLabel": "Trump Declaration: {{declaration}} by {{playerName}}",
+    "noDeclarations": "No trump declarations made",
+    "noValidDeclarations": "No valid declarations available with current hand.",
+    "needMatchingCards": "Need matching trump rank cards or joker pairs",
+    "playWillBegin": "Play will begin with the current trump setting",
+    "startPlaying": "Start Playing",
+    "continue": "Continue"
+  }
+}

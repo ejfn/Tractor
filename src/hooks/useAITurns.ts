@@ -92,8 +92,8 @@ export function useAITurns(
     if (currentPlayer.isHuman) {
       gameLogger.warn(
         "ai_move_called_for_human",
-        { playerName: currentPlayer.name, playerId: currentPlayer.id },
-        `ERROR: handleAIMove called for human player ${currentPlayer.name}`,
+        { playerId: currentPlayer.id },
+        `ERROR: handleAIMove called for human player ${currentPlayer.id}`,
       );
       setWaitingForAI(false);
       return;
@@ -116,14 +116,13 @@ export function useAITurns(
       gameLogger.warn(
         "ai_move_invalid_game_state",
         {
-          playerName: currentPlayer.name,
           playerId: currentPlayer.id,
           gamePhase: gameState.gamePhase,
           showTrickResult: showTrickResult,
           showRoundComplete: showRoundComplete,
           trickComplete: trickComplete,
         },
-        `${currentPlayer.name} move attempted during invalid game state: phase=${gameState.gamePhase}, showResult=${showTrickResult}, roundComplete=${showRoundComplete}, trickComplete=${trickComplete}`,
+        `${currentPlayer.id} move attempted during invalid game state: phase=${gameState.gamePhase}, showResult=${showTrickResult}, roundComplete=${showRoundComplete}, trickComplete=${trickComplete}`,
       );
 
       setWaitingForAI(false);
@@ -159,11 +158,10 @@ export function useAITurns(
           gameLogger.error(
             "ai_invalid_kitty_swap",
             {
-              playerName: currentPlayer.name,
               playerId: currentPlayer.id,
               selectedCardsCount: selectedCards.length,
             },
-            `AI ${currentPlayer.name} returned invalid kitty swap: ${selectedCards.length} cards`,
+            `AI ${currentPlayer.id} returned invalid kitty swap: ${selectedCards.length} cards`,
           );
           setWaitingForAI(false);
           setWaitingPlayerId("" as PlayerId);
@@ -180,11 +178,10 @@ export function useAITurns(
         gameLogger.error(
           "ai_move_logic_error",
           {
-            playerName: currentPlayer.name,
             playerId: currentPlayer.id,
             error: error,
           },
-          `Error in AI move logic for ${currentPlayer.name}: ${error}`,
+          `Error in AI move logic for ${currentPlayer.id}: ${error}`,
         );
 
         // Reset waiting state
@@ -193,7 +190,7 @@ export function useAITurns(
 
         // Throw error immediately without delay
         throw new Error(
-          `Fatal game error: AI ${currentPlayer.name} could not make a valid move (${error}). In Tractor, invalid moves are not allowed.`,
+          `Fatal game error: AI ${currentPlayer.id} could not make a valid move (${error}). In Tractor, invalid moves are not allowed.`,
         );
       } else if (cards && cards.length > 0) {
         // Mark this turn as processed to prevent duplicates
@@ -213,10 +210,9 @@ export function useAITurns(
         gameLogger.warn(
           "ai_empty_move",
           {
-            playerName: currentPlayer.name,
             playerId: currentPlayer.id,
           },
-          `AI ${currentPlayer.name} returned empty move`,
+          `AI ${currentPlayer.id} returned empty move`,
         );
 
         // Reset waiting state
@@ -225,7 +221,7 @@ export function useAITurns(
 
         // Throw error immediately without delay
         throw new Error(
-          `Fatal game error: AI ${currentPlayer.name} could not determine a valid move. Empty moves are not allowed in Tractor.`,
+          `Fatal game error: AI ${currentPlayer.id} could not determine a valid move. Empty moves are not allowed in Tractor.`,
         );
       }
     } catch (error) {
@@ -244,7 +240,7 @@ export function useAITurns(
 
       // Throw error immediately without delay
       throw new Error(
-        `Fatal game error: Unexpected error in AI move handling for ${currentPlayer.name}: ${error instanceof Error ? error.message : String(error)}`,
+        `Fatal game error: Unexpected error in AI move handling for ${currentPlayer.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }, [

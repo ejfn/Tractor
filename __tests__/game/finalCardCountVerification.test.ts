@@ -18,7 +18,7 @@ describe('Final Card Count Verification', () => {
       // Play all 4 players
       for (let playNum = 0; playNum < 4; playNum++) {
         const currentPlayer = state.players[state.currentPlayerIndex];
-        const bot3Index = state.players.findIndex(p => p.name === 'Bot 3');
+        const bot3Index = state.players.findIndex(p => p.id === 'bot3');
         const bot3Before = state.players[bot3Index].hand.length;
         
         // Get cards to play
@@ -40,11 +40,11 @@ describe('Final Card Count Verification', () => {
         if (state.currentPlayerIndex === bot3Index + 1 || 
             (state.currentPlayerIndex === 0 && result.trickComplete)) {
           // Bot 3 just played or trick completed with Bot 3 as last player
-          if (bot3Before === bot3After && currentPlayer.name === 'Bot 3') {
+          if (bot3Before === bot3After && currentPlayer.id === 'bot3') {
             throw new Error(`Bot 3 didn't lose cards when it played!`);
           }
-        } else if (bot3Before !== bot3After && currentPlayer.name !== 'Bot 3') {
-          throw new Error(`Bot 3 lost cards when it wasn't its turn! Player ${currentPlayer.name} was playing.`);
+        } else if (bot3Before !== bot3After && currentPlayer.id !== 'bot3') {
+          throw new Error(`Bot 3 lost cards when it wasn't its turn! Player ${currentPlayer.id} was playing.`);
         }
         
         if (result.trickComplete) {
@@ -64,7 +64,7 @@ describe('Final Card Count Verification', () => {
         const expectedCount = trickEndCounts[0];
         state.players.forEach((player: Player, idx: number) => {
           if (player.hand.length !== expectedCount) {
-            gameLogger.error('test_player_count_mismatch', { playerName: player.name, actualCount: player.hand.length, expectedCount }, `  ${player.name} has ${player.hand.length} cards, expected ${expectedCount}`);
+            gameLogger.error('test_player_count_mismatch', { playerName: player.id, actualCount: player.hand.length, expectedCount }, `  ${player.id} has ${player.hand.length} cards, expected ${expectedCount}`);
           }
         });
         
@@ -126,7 +126,7 @@ describe('Final Card Count Verification', () => {
         winners.push(result.trickWinnerId!);
         gameLogger.info('test_trick_winner_verification', { trickWinnerId: result.trickWinnerId }, `Trick winner: ${result.trickWinnerId}`);
         gameLogger.info('test_expected_next_player', { expectedNextPlayer: result.trickWinnerId }, `Next player should be: ${result.trickWinnerId}`);
-        gameLogger.info('test_actual_next_player', { actualNextPlayer: state.players[state.currentPlayerIndex].name }, `Next player is: ${state.players[state.currentPlayerIndex].name}`);
+        gameLogger.info('test_actual_next_player', { actualNextPlayer: state.players[state.currentPlayerIndex].id }, `Next player is: ${state.players[state.currentPlayerIndex].id}`);
         
         // Verify winner is the next player
         expect(state.players[state.currentPlayerIndex].id).toBe(result.trickWinnerId);

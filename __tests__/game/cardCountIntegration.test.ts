@@ -13,7 +13,7 @@ describe('Card Count Integration Test', () => {
     // Log initial state
     gameLogger.info('test_initial_card_counts', { playerCounts: state.players.map(p => p.hand.length) }, 'Initial card counts');
     state.players.forEach((p, idx) => {
-      gameLogger.info('test_player_card_count', { playerIndex: idx, playerName: p.name, cardCount: p.hand.length }, `Player ${idx} (${p.name}): ${p.hand.length} cards`);
+      gameLogger.info('test_player_card_count', { playerIndex: idx, playerName: p.id, cardCount: p.hand.length }, `Player ${idx} (${p.id}): ${p.hand.length} cards`);
     });
     
     // Play one complete trick
@@ -21,7 +21,7 @@ describe('Card Count Integration Test', () => {
       const currentPlayerIdx = state.currentPlayerIndex;
       const currentPlayer = state.players[currentPlayerIdx];
       gameLogger.info('test_play_start', { playNumber: play + 1 }, `--- Play ${play + 1} ---`);
-      gameLogger.info('test_current_player', { playerIndex: currentPlayerIdx, playerName: currentPlayer.name }, `Current player: ${currentPlayerIdx} (${currentPlayer.name})`); 
+      gameLogger.info('test_current_player', { playerIndex: currentPlayerIdx, playerName: currentPlayer.id }, `Current player: ${currentPlayerIdx} (${currentPlayer.id})`); 
       gameLogger.info('test_card_counts_before', { cardCounts: state.players.map(p => p.hand.length) }, `Card counts before: ${state.players.map(p => p.hand.length).join(', ')}`);
       
       // For simplicity, play the first card
@@ -47,14 +47,14 @@ describe('Card Count Integration Test', () => {
         const cardIdsDiff = cardIdsBefore[idx].filter(id => !player.hand.some(c => c.id === id));
         
         if (countBefore !== countAfter) {
-          gameLogger.info('test_player_card_change', { playerIndex: idx, playerName: player.name, countBefore, countAfter, cardsLost: cardIdsDiff.length }, `  Player ${idx} (${player.name}): ${countBefore} -> ${countAfter} (lost ${cardIdsDiff.length} cards)`);
+          gameLogger.info('test_player_card_change', { playerIndex: idx, playerName: player.id, countBefore, countAfter, cardsLost: cardIdsDiff.length }, `  Player ${idx} (${player.id}): ${countBefore} -> ${countAfter} (lost ${cardIdsDiff.length} cards)`);
           if (cardIdsDiff.length > 0) {
             gameLogger.info('test_lost_card_ids', { playerIndex: idx, lostCardIds: cardIdsDiff }, `    Lost card IDs: ${cardIdsDiff.join(', ')}`);
           }
           
           // Only the player who just played should lose cards
           if (idx !== currentPlayerIdx) {
-            gameLogger.error('test_invalid_card_loss', { playerIndex: idx, playerName: player.name, currentPlayerIndex: currentPlayerIdx }, `ERROR: Player ${idx} (${player.name}) lost cards but wasn't the current player!`);
+            gameLogger.error('test_invalid_card_loss', { playerIndex: idx, playerName: player.id, currentPlayerIndex: currentPlayerIdx }, `ERROR: Player ${idx} (${player.id}) lost cards but wasn't the current player!`);
             throw new Error(`Player ${idx} lost cards incorrectly`);
           }
         }
@@ -100,7 +100,7 @@ describe('Card Count Integration Test', () => {
     // Now make another play with the new state
     const currentPlayer = result1.newState.players[result1.newState.currentPlayerIndex];
     
-    gameLogger.info('test_next_player_playing', { playerIndex: result1.newState.currentPlayerIndex, playerName: currentPlayer.name }, `\nPlayer ${result1.newState.currentPlayerIndex} (${currentPlayer.name}) playing...`);
+    gameLogger.info('test_next_player_playing', { playerIndex: result1.newState.currentPlayerIndex, playerName: currentPlayer.id }, `\nPlayer ${result1.newState.currentPlayerIndex} (${currentPlayer.id}) playing...`);
     const cardsBefore = result1.newState.players.map(p => p.hand.length);
     
     let cardsToPlay: Card[] = [];
@@ -127,7 +127,7 @@ describe('Card Count Integration Test', () => {
         expect(after).toBe(before - cardsToPlay.length);
       } else {
         if (after !== before) {
-          gameLogger.error('test_incorrect_card_loss', { playerIndex: idx, playerName: player.name, cardsLost: before - after }, `ERROR: Player ${idx} (${player.name}) lost ${before - after} cards incorrectly!`);
+          gameLogger.error('test_incorrect_card_loss', { playerIndex: idx, playerName: player.id, cardsLost: before - after }, `ERROR: Player ${idx} (${player.id}) lost ${before - after} cards incorrectly!`);
         }
         expect(after).toBe(before);
       }

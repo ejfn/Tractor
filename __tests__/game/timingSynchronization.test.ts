@@ -68,7 +68,7 @@ describe('Timing Synchronization Tests', () => {
         
         // Start next trick
         const nextPlayer = state.players[state.currentPlayerIndex];
-        gameLogger.info('test_next_trick_start', { playerName: nextPlayer.name }, `Next trick starts with ${nextPlayer.name}`);
+        gameLogger.info('test_next_trick_start', { playerName: nextPlayer.id }, `Next trick starts with ${nextPlayer.id}`);
       }
     }
     

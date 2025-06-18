@@ -279,7 +279,6 @@ export function prepareNextRound(
 export function endRound(state: GameState): RoundResult {
   let gameOver = false;
   let gameWinner: TeamId | undefined = undefined;
-  let roundCompleteMessage = "";
   let attackingTeamWon = false;
   const rankChanges: Record<TeamId, Rank> = {} as Record<TeamId, Rank>;
   let finalPoints = 0;
@@ -358,17 +357,6 @@ export function endRound(state: GameState): RoundResult {
         },
         `Attacking team ${attackingTeam.id} won with ${points} points (${trickPoints} + ${kittyBonus} kitty), advancing ${rankAdvancement} ranks to ${newRank}`,
       );
-
-      // Create round result message
-      if (rankAdvancement === 0) {
-        roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and will defend next round at rank ${newRank}!${pointsBreakdown}`;
-      } else {
-        if (newRank === Rank.Ace) {
-          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and reached Ace! They must now defend Ace to win the game!${pointsBreakdown}`;
-        } else {
-          roundCompleteMessage = `Team ${attackingTeam.id} won with ${points} points and advanced ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${newRank}!${pointsBreakdown}`;
-        }
-      }
     } else {
       // Defending team successfully defended
       attackingTeamWon = false;
@@ -378,17 +366,6 @@ export function endRound(state: GameState): RoundResult {
         // Already at Ace and successfully defended - game over
         gameOver = true;
         gameWinner = defendingTeam.id;
-
-        let pointMessage = "";
-        if (points === 0) {
-          pointMessage = "shut out the attackers (0 points)";
-        } else if (points < 40) {
-          pointMessage = `held attackers to only ${points} points`;
-        } else {
-          pointMessage = `defended with attackers getting ${points}/80 points`;
-        }
-
-        roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and wins the game by successfully defending Ace!${pointsBreakdown}`;
       } else {
         // Calculate rank advancement based on attacker's points
         let rankAdvancement = 1; // Default advancement
@@ -423,22 +400,6 @@ export function endRound(state: GameState): RoundResult {
           },
           `Defending team ${defendingTeam.id} held attackers to ${points} points, advancing ${rankAdvancement} ranks to ${newRank}`,
         );
-
-        // Create round result message
-        let pointMessage = "";
-        if (points === 0) {
-          pointMessage = "shut out the attackers (0 points)";
-        } else if (points < 40) {
-          pointMessage = `held attackers to only ${points} points`;
-        } else {
-          pointMessage = `defended with attackers getting ${points}/80 points`;
-        }
-
-        if (newRank === Rank.Ace) {
-          roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and reached Ace! They must now defend Ace to win the game!${pointsBreakdown}`;
-        } else {
-          roundCompleteMessage = `Team ${defendingTeam.id} ${pointMessage} and advances ${rankAdvancement} rank${rankAdvancement > 1 ? "s" : ""} to ${newRank}!${pointsBreakdown}`;
-        }
       }
     }
   }
@@ -497,9 +458,18 @@ export function endRound(state: GameState): RoundResult {
   return {
     gameOver,
     gameWinner,
-    roundCompleteMessage,
     attackingTeamWon,
+    winningTeam: attackingTeamWon
+      ? attackingTeam?.id || TeamId.A
+      : defendingTeam?.id || TeamId.B,
     rankChanges,
+    rankAdvancement: attackingTeamWon
+      ? Math.floor((finalPoints - 80) / 40)
+      : finalPoints < 40
+        ? finalPoints === 0
+          ? 3
+          : 2
+        : 1,
     finalPoints,
     pointsBreakdown,
   };
