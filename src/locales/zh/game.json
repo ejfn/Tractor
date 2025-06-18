@@ -1,0 +1,29 @@
+{
+  "status": {
+    "attacking": "攻方",
+    "defending": "守方",
+    "rank": "级别:",
+    "points": "分数:",
+    "pointsCount": "{{count}}分"
+  },
+  "phases": {
+    "dealing": "发牌中",
+    "declaring": "叫主中",
+    "kittySwap": "换底牌",
+    "playing": "出牌中",
+    "scoring": "计分中",
+    "roundEnd": "本轮结束",
+    "gameOver": "游戏结束"
+  },
+  "tricks": {
+    "youWin": "你赢了!",
+    "playerWins": "{{playerName}}获胜!",
+    "pointsAwarded": "+{{points}}分"
+  },
+  "actions": {
+    "selectCardsToSwap": "选择要交换的底牌",
+    "swapKittyCards": "交换底牌",
+    "dealingProgress": "发牌中... {{current}}/{{total}}",
+    "tapToPause": "点击暂停并叫主"
+  }
+}

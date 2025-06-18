@@ -251,7 +251,7 @@ export function processPlay(
   gameLogger.debug(
     "card_play",
     logData,
-    `${currentPlayer.name} plays: ${cards.map((c) => c.getDisplayName()).join(", ")} (${cards.length} cards)`,
+    `${currentPlayer.id} plays: ${cards.map((c) => c.getDisplayName()).join(", ")} (${cards.length} cards)`,
   );
 
   // Check if we should start a new trick

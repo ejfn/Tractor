@@ -211,9 +211,10 @@ describe("Next Round Starting Player Rotation", () => {
       const mockRoundResult = {
         gameOver: false,
         gameWinner: undefined,
-        roundCompleteMessage: "Test message",
         attackingTeamWon: false,
+        winningTeam: TeamId.A,
         rankChanges: {} as Record<TeamId, Rank>,
+        rankAdvancement: 1,
         finalPoints: 0,
         pointsBreakdown: ""
       };

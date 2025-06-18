@@ -6,35 +6,108 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Platform, Text, View, StatusBar as RNStatusBar } from "react-native";
+import {
+  Platform,
+  Text,
+  View,
+  StatusBar as RNStatusBar,
+  TouchableOpacity,
+} from "react-native";
 import "react-native-reanimated";
+import { useState } from "react";
 
 // Import the color scheme hook
 import { useColorScheme } from "../hooks/useColorScheme";
 
-// Header title with "Tractor Card Game" on a single line
-const HeaderTitle = () => (
-  <View style={{ width: "100%", alignItems: "center" }}>
-    <Text
-      style={{
-        color: "white",
-        fontSize: 18, // Slightly reduced font size
-        fontWeight: "bold",
-        textAlign: "center",
-        textShadowColor: "rgba(0, 0, 0, 0.25)",
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
-        // Ensure it doesn't get truncated
-        paddingHorizontal: 5,
-        width: Platform.OS === "android" ? 200 : undefined, // Fixed width on Android
-      }}
-      numberOfLines={1}
-      adjustsFontSizeToFit={true}
+// Initialize i18n and import language functions
+import { changeLanguageCustom, getCurrentLanguage } from "../src/locales";
+import { useCommonTranslation } from "../src/hooks/useTranslation";
+
+// Header title with i18n support
+const HeaderTitle = () => {
+  const { t } = useCommonTranslation();
+  return (
+    <View style={{ width: "100%", alignItems: "center" }}>
+      <Text
+        style={{
+          color: "white",
+          fontSize: 18, // Slightly reduced font size
+          fontWeight: "bold",
+          textAlign: "center",
+          textShadowColor: "rgba(0, 0, 0, 0.25)",
+          textShadowOffset: { width: 1, height: 1 },
+          textShadowRadius: 2,
+          // Ensure it doesn't get truncated
+          paddingHorizontal: 5,
+          width: Platform.OS === "android" ? 200 : undefined, // Fixed width on Android
+        }}
+        numberOfLines={1}
+        adjustsFontSizeToFit={true}
+      >
+        {t("appTitle")}
+      </Text>
+    </View>
+  );
+};
+
+// Shared button style for perfect alignment
+const languageButtonStyle = {
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  marginRight: 0,
+  marginLeft: 12,
+  minWidth: 60,
+  alignItems: "center" as const,
+  justifyContent: "center" as const,
+};
+
+const languageTextStyle = {
+  color: "white",
+  fontSize: 12,
+  fontWeight: "600" as const,
+  textShadowColor: "rgba(0, 0, 0, 0.3)",
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 1,
+};
+
+// Invisible spacer to balance the header (matches language button exactly)
+const HeaderLeftSpacer = () => {
+  return (
+    <View style={{ ...languageButtonStyle, backgroundColor: "transparent" }}>
+      <Text style={{ ...languageTextStyle, opacity: 0 }}>中文</Text>
+    </View>
+  );
+};
+
+// Short language codes
+const SHORT_LANGUAGES = {
+  en: "EN",
+  zh: "中文",
+} as const;
+
+// Language switcher button for header
+const HeaderLanguageButton = () => {
+  const [currentLanguage, setCurrentLanguage] = useState(getCurrentLanguage());
+
+  const handleLanguageToggle = async () => {
+    const newLanguage = currentLanguage === "en" ? "zh" : "en";
+    try {
+      await changeLanguageCustom(newLanguage);
+      setCurrentLanguage(newLanguage);
+    } catch (error) {
+      console.error("Failed to change language:", error);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handleLanguageToggle}
+      style={{ ...languageButtonStyle, marginRight: -8 }}
     >
-      Tractor Card Game
-    </Text>
-  </View>
-);
+      <Text style={languageTextStyle}>{SHORT_LANGUAGES[currentLanguage]}</Text>
+    </TouchableOpacity>
+  );
+};
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -73,9 +146,9 @@ export default function RootLayout() {
           headerTintColor: "#FFFFFF", // White text for header
           headerTitleAlign: "center", // Center the header title
           headerTitle: () => <HeaderTitle />,
-          // Ensure header has no back button or other elements that would take space
-          headerLeft: () => null,
-          headerRight: () => null,
+          // Balance the header with invisible spacer that exactly matches language button
+          headerLeft: () => <HeaderLeftSpacer />,
+          headerRight: () => <HeaderLanguageButton />,
           contentStyle: {
             backgroundColor: "transparent", // Reverted from filled color to transparent
             flex: 1, // Make content fill available space

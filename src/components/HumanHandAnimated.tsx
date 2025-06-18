@@ -17,6 +17,10 @@ import {
 } from "../types";
 import { sortCards } from "../utils/cardSorting";
 import AnimatedCardComponent from "./AnimatedCard";
+import {
+  useCommonTranslation,
+  useGameTranslation,
+} from "../hooks/useTranslation";
 
 interface HumanHandAnimatedProps {
   player: Player;
@@ -49,6 +53,8 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
   gamePhase,
   onKittySwap,
 }) => {
+  const { t: tCommon } = useCommonTranslation();
+  const { t: tGame } = useGameTranslation();
   // Local state to track if user has interacted with kitty cards
   const [hasInteractedWithKitty, setHasInteractedWithKitty] = useState(false);
 
@@ -163,10 +169,12 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
                 ]}
               >
                 {!hasInteractedWithKitty
-                  ? "Select Cards to Swap"
+                  ? tGame("actions.selectCardsToSwap")
                   : selectedCards.length === 8
-                    ? "Swap Kitty Cards"
-                    : `Select ${8 - selectedCards.length} More Cards`}
+                    ? tGame("actions.swapKittyCards")
+                    : tCommon("buttons.selectMore", {
+                        count: 8 - selectedCards.length,
+                      })}
               </Text>
             </TouchableOpacity>
           ) : (
@@ -187,9 +195,9 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
                     !canInteract && styles.disabledButtonText,
                   ]}
                 >
-                  {selectedCards.length === 1
-                    ? "Play 1 Card"
-                    : `Play ${selectedCards.length} Cards`}
+                  {tCommon("buttons.playCards", {
+                    count: selectedCards.length,
+                  })}
                 </Text>
               </TouchableOpacity>
             )

@@ -1,6 +1,9 @@
 import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 
+// Hooks
+import { useCommonTranslation } from "../hooks/useTranslation";
+
 // Components
 import AIPlayerView from "../components/AIPlayerView";
 import CardPlayArea from "../components/CardPlayArea";
@@ -111,6 +114,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onManualPause,
   shouldShowOpportunities,
 }) => {
+  const { t: tCommon } = useCommonTranslation();
   // Game over screen
   if (gameOver) {
     return (
@@ -128,7 +132,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   if (!gameState) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Loading game...</Text>
+        <Text>{tCommon("loading")}</Text>
       </View>
     );
   }

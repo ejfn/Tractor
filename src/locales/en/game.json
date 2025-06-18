@@ -1,0 +1,29 @@
+{
+  "status": {
+    "attacking": "Attacking",
+    "defending": "Defending",
+    "rank": "Rank:",
+    "points": "Points:",
+    "pointsCount": "{{count}} pts"
+  },
+  "phases": {
+    "dealing": "Dealing",
+    "declaring": "Declaring",
+    "kittySwap": "Kitty Swap",
+    "playing": "Playing",
+    "scoring": "Scoring",
+    "roundEnd": "Round Complete",
+    "gameOver": "Game Over"
+  },
+  "tricks": {
+    "youWin": "You win!",
+    "playerWins": "{{playerName}} wins!",
+    "pointsAwarded": "+{{points}} pts"
+  },
+  "actions": {
+    "selectCardsToSwap": "Select Cards to Swap",
+    "swapKittyCards": "Swap Kitty Cards",
+    "dealingProgress": "Dealing... {{current}}/{{total}}",
+    "tapToPause": "Tap to pause & declare"
+  }
+}

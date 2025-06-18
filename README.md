@@ -35,6 +35,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **⚡ Progressive Dealing System**: Real-time trump declarations with sophisticated AI strategy
 - **🎯 Advanced Kitty Management**: Strategic suit elimination and endgame bonus multipliers
 - **💾 Automatic Game Persistence**: Seamless save/restore with auto-recovery on app restart
+- **🌍 Multilingual Support**: Full English and Chinese localization with automatic language detection
 - **📱 Touch-Optimized UI**: Smooth animations, team color coding, and dark theme support
 - **🏆 Authentic Gameplay**: Complete Shengji/Tractor rules with proper combination following
 
@@ -45,6 +46,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **React Native 0.76+** - Cross-platform mobile framework
 - **Expo SDK 52** - Development tools and native API access
 - **TypeScript 5.7+** - Strict type safety and enhanced developer experience
+- **React i18next** - Type-safe internationalization with automatic language detection
 - **Jest** - Comprehensive tests with React Testing Library
 - **ESLint** - Code quality with React Native specific rules
 - **React Native Reanimated** - High-performance card animations

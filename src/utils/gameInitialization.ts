@@ -6,7 +6,6 @@ import {
   JokerType,
   Player,
   PlayerId,
-  PlayerName,
   Rank,
   Suit,
   Team,
@@ -69,28 +68,24 @@ export const initializeGame = (): GameState => {
   const players: Player[] = [
     {
       id: PlayerId.Human,
-      name: PlayerName.Human,
       isHuman: true,
       hand: [],
       team: TeamId.A,
     },
     {
       id: PlayerId.Bot1,
-      name: PlayerName.Bot1,
       isHuman: false,
       hand: [],
       team: TeamId.B,
     },
     {
       id: PlayerId.Bot2,
-      name: PlayerName.Bot2,
       isHuman: false,
       hand: [],
       team: TeamId.A,
     },
     {
       id: PlayerId.Bot3,
-      name: PlayerName.Bot3,
       isHuman: false,
       hand: [],
       team: TeamId.B,

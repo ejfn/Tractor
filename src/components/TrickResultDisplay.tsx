@@ -1,6 +1,8 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { PlayerName, GameState } from "../types";
+import { useGameTranslation } from "../hooks/useTranslation";
+import { GameState, PlayerId } from "../types";
+import { getPlayerDisplayName } from "../utils/translationHelpers";
 
 interface TrickResultDisplayProps {
   visible: boolean;
@@ -18,6 +20,7 @@ const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
   points,
   gameState,
 }) => {
+  const { t } = useGameTranslation();
   // Just use the visible prop directly - simpler code
   if (!visible) return null;
 
@@ -28,15 +31,19 @@ const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
   const winningTeam = gameState.teams.find((t) => t.id === winningPlayer.team);
   const isAttackingTeamWin = winningTeam ? !winningTeam.isDefending : false;
 
-  const winnerName = winningPlayer.name;
+  const winnerName = getPlayerDisplayName(winningPlayer.id);
 
   return (
     <View style={styles.container}>
       <Text style={styles.winnerText}>
-        {winnerName === PlayerName.Human ? "You win!" : `${winnerName} wins!`}
+        {winningPlayer.id === PlayerId.Human
+          ? t("tricks.youWin")
+          : t("tricks.playerWins", { playerName: winnerName })}
       </Text>
       {points > 0 && isAttackingTeamWin && (
-        <Text style={styles.pointsText}>+{points} pts</Text>
+        <Text style={styles.pointsText}>
+          {t("tricks.pointsAwarded", { points })}
+        </Text>
       )}
     </View>
   );

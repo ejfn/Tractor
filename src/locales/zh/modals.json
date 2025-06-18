@@ -1,0 +1,32 @@
+{
+  "newGame": {
+    "title": "🃏 开始新游戏",
+    "message": "确定要开始新游戏吗?",
+    "submessage": "双方队伍将重置到2级，当前进度将丢失。",
+    "confirm": "新游戏",
+    "cancel": "取消"
+  },
+  "roundComplete": {
+    "title": "本轮结束!",
+    "nextRound": "下一轮 ➤"
+  },
+  "roundResult": {
+    "attackingWonDefend": "{{teamName}}以{{points}}分取胜，下一轮将在{{rank}}级防守！",
+    "attackingWonAdvance": "{{teamName}}以{{points}}分取胜，升{{advancement}}级到{{rank}}！",
+    "attackingWonAce": "{{teamName}}以{{points}}分取胜，达到A级！现在必须守住A级才能赢得游戏！",
+    "defendingWonGame": "{{teamName}}{{pointMessage}}，成功守住A级赢得游戏！",
+    "defendingWonAdvance": "{{teamName}}{{pointMessage}}，升{{advancement}}级到{{rank}}！",
+    "defendingWonAce": "{{teamName}}{{pointMessage}}，达到A级！现在必须守住A级才能赢得游戏！",
+    "heldToPoints": "将攻方限制在0分",
+    "defendedWithPoints": "守住攻方{{points}}分"
+  },
+  "gameOver": {
+    "title": "胜利!",
+    "message": "{{winner}}获胜!",
+    "congratulations": "恭喜!",
+    "teamWins": "{{teamName}}获胜!",
+    "youWin": "你赢了!",
+    "playerWins": "{{playerName}}获胜!",
+    "newGame": "新游戏"
+  }
+}

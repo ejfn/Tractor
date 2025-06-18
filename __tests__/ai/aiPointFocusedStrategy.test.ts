@@ -16,7 +16,6 @@ import {
   PointCardStrategy,
   TrumpTiming,
   PlayerId,
-  PlayerName,
   GamePhase,
   TrickPosition,
   PointPressure,
@@ -47,28 +46,24 @@ const createTestGameState = (overrides: Partial<GameState> = {}): GameState => (
   players: [
     {
       id: PlayerId.Human,
-      name: PlayerName.Human,
       isHuman: true,
       hand: [],
       team: TeamId.A,
     },
     {
       id: PlayerId.Bot1,
-      name: PlayerName.Bot1,
       isHuman: false,
       hand: [],
       team: TeamId.B,
     },
     {
       id: PlayerId.Bot2,
-      name: PlayerName.Bot2,
       isHuman: false,
       hand: [],
       team: TeamId.A,
     },
     {
       id: PlayerId.Bot3,
-      name: PlayerName.Bot3,
       isHuman: false,
       hand: [],
       team: TeamId.B,

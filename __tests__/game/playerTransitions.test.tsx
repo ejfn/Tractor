@@ -100,7 +100,7 @@ const TestComponent: React.FC<TestComponentProps> = ({ initialState, onStateChan
         {gameStateHook.gameState?.currentPlayerIndex}
       </Text>
       <Text testID="current-player-name">
-        {gameStateHook.gameState?.players[gameStateHook.gameState.currentPlayerIndex]?.name}
+        {gameStateHook.gameState?.players[gameStateHook.gameState.currentPlayerIndex]?.id}
       </Text>
       <Text testID="winning-player-index">
       </Text>

@@ -1,4 +1,4 @@
-import { GameState, PlayerId, PlayerName, TeamId, Suit, Rank, TrumpInfo } from '../../src/types';
+import { GameState, PlayerId, TeamId, Suit, Rank, TrumpInfo } from '../../src/types';
 import { selectAIKittySwapCards } from '../../src/ai/kittySwap/kittySwapStrategy';
 import { Card } from '../../src/types/card';
 import { gameLogger } from '../../src/utils/gameLogger';
@@ -67,10 +67,10 @@ describe('AI Kitty Swap Basic Test', () => {
     // Create game state with Bot2
     const gameState: GameState = {
       players: [
-        { id: PlayerId.Human, hand: [], name: PlayerName.Human, isHuman: true, team: TeamId.A },
-        { id: PlayerId.Bot1, hand: [], name: PlayerName.Bot1, isHuman: false, team: TeamId.B },
-        { id: PlayerId.Bot2, hand: bot2Hand, name: PlayerName.Bot2, isHuman: false, team: TeamId.A },
-        { id: PlayerId.Bot3, hand: [], name: PlayerName.Bot3, isHuman: false, team: TeamId.B }
+        { id: PlayerId.Human, hand: [], isHuman: true, team: TeamId.A },
+        { id: PlayerId.Bot1, hand: [], isHuman: false, team: TeamId.B },
+        { id: PlayerId.Bot2, hand: bot2Hand, isHuman: false, team: TeamId.A },
+        { id: PlayerId.Bot3, hand: [], isHuman: false, team: TeamId.B }
       ],
       teams: [
         { id: TeamId.A, currentRank: Rank.Two, points: 0, isDefending: false },

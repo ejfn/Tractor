@@ -15,13 +15,6 @@ export enum TeamId {
   B = "B",
 }
 
-export enum PlayerName {
-  Human = "You",
-  Bot1 = "Bot 1",
-  Bot2 = "Bot 2",
-  Bot3 = "Bot 3",
-}
-
 export enum GamePhase {
   Dealing = "dealing",
   KittySwap = "kittySwap",
@@ -33,7 +26,6 @@ export enum GamePhase {
 
 export type Player = {
   id: PlayerId;
-  name: PlayerName;
   isHuman: boolean;
   hand: Card[];
   team: TeamId; // Team identifier
@@ -90,11 +82,12 @@ export type RoundResult = {
   // Game outcome
   gameOver: boolean;
   gameWinner?: TeamId; // Only set when entire game ends
-  roundCompleteMessage: string;
 
   // Team and rank changes
   attackingTeamWon: boolean; // Also indicates round winner and if team roles should switch
+  winningTeam: TeamId; // The team that won this round
   rankChanges: Record<TeamId, Rank>;
+  rankAdvancement: number; // How many ranks the winning team advanced
 
   // Point information
   finalPoints: number;

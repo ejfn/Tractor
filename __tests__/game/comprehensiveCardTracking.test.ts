@@ -11,9 +11,9 @@ describe('Comprehensive Card Tracking Tests', () => {
     const uniqueCounts = new Set(counts);
     
     if (uniqueCounts.size > 1) {
-      gameLogger.error('test_card_tracking', { playerCounts: state.players.map(p => ({ name: p.name, cardCount: p.hand.length })) }, 'ERROR: Unequal card counts detected!');
+      gameLogger.error('test_card_tracking', { playerCounts: state.players.map(p => ({ name: p.id, cardCount: p.hand.length })) }, 'ERROR: Unequal card counts detected!');
       state.players.forEach((p, idx) => {
-        gameLogger.error('test_card_tracking', { playerName: p.name, cardCount: p.hand.length }, `  ${p.name}: ${p.hand.length} cards`);
+        gameLogger.error('test_card_tracking', { playerName: p.id, cardCount: p.hand.length }, `  ${p.id}: ${p.hand.length} cards`);
       });
       return false;
     }
@@ -30,7 +30,7 @@ describe('Comprehensive Card Tracking Tests', () => {
     const gameState = createFullyDealtGameState();
     let state = gameState;
     
-    const bot2Index = state.players.findIndex(p => p.name === 'Bot 2');
+    const bot2Index = state.players.findIndex(p => p.id === 'bot2');
     gameLogger.info('test_card_tracking', { bot2Index }, `Bot 2 is at index ${bot2Index}`);
     
     // Track Bot 2's card history
@@ -74,8 +74,8 @@ describe('Comprehensive Card Tracking Tests', () => {
         
         // Check if Bot 2 lost cards incorrectly
         if (bot2CardsBefore !== bot2CardsAfter && action === 'waiting') {
-          gameLogger.error('test_card_tracking', { cardsLost: bot2CardsBefore - bot2CardsAfter, currentPlayerName: currentPlayer.name }, `ERROR: Bot 2 lost ${bot2CardsBefore - bot2CardsAfter} cards while waiting!`);
-          gameLogger.error('test_card_tracking', { currentPlayerName: currentPlayer.name }, `  Current player was: ${currentPlayer.name}`);
+          gameLogger.error('test_card_tracking', { cardsLost: bot2CardsBefore - bot2CardsAfter, currentPlayerName: currentPlayer.id }, `ERROR: Bot 2 lost ${bot2CardsBefore - bot2CardsAfter} cards while waiting!`);
+          gameLogger.error('test_card_tracking', { currentPlayerName: currentPlayer.id }, `  Current player was: ${currentPlayer.id}`);
         }
         
         state = result.newState;
@@ -187,7 +187,7 @@ describe('Comprehensive Card Tracking Tests', () => {
         if (playNum === 0 && pairs.length > 0) {
           // Lead with a pair if possible
           cardsToPlay = pairs[0];
-          gameLogger.info('test_card_tracking', { playerName: currentPlayer.name, cardRank: cardsToPlay[0].rank, cardSuit: cardsToPlay[0].suit }, `  ${currentPlayer.name} plays pair: ${cardsToPlay[0].rank} of ${cardsToPlay[0].suit}`);
+          gameLogger.info('test_card_tracking', { playerName: currentPlayer.id, cardRank: cardsToPlay[0].rank, cardSuit: cardsToPlay[0].suit }, `  ${currentPlayer.id} plays pair: ${cardsToPlay[0].rank} of ${cardsToPlay[0].suit}`);
         } else if (currentPlayer.isHuman) {
           const comboLength = state.currentTrick?.plays[0]?.cards?.length || 1;
           cardsToPlay = currentPlayer.hand.slice(0, Math.min(comboLength, currentPlayer.hand.length));
@@ -204,7 +204,7 @@ describe('Comprehensive Card Tracking Tests', () => {
         state = result.newState;
         
         const cardsAfter = state.players[state.currentPlayerIndex].hand.length;
-        gameLogger.info('test_card_tracking', { playerName: currentPlayer.name, cardsBefore, cardsAfter, cardsPlayed: cardsToPlay.length }, `  ${currentPlayer.name}: ${cardsBefore} -> ${cardsAfter} (played ${cardsToPlay.length})`);
+        gameLogger.info('test_card_tracking', { playerName: currentPlayer.id, cardsBefore, cardsAfter, cardsPlayed: cardsToPlay.length }, `  ${currentPlayer.id}: ${cardsBefore} -> ${cardsAfter} (played ${cardsToPlay.length})`);
         
         // Verify the player lost exactly the cards they played
         const otherPlayersBefore = state.players.map((p, idx) => 
@@ -216,7 +216,7 @@ describe('Comprehensive Card Tracking Tests', () => {
             const before = cardsBefore; // This needs fixing - track all players
             const after = player.hand.length;
             if (before !== after && idx !== state.currentPlayerIndex) {
-              gameLogger.error('test_card_tracking', { playerName: player.name, before, after }, `ERROR: ${player.name} lost cards when not playing!`);
+              gameLogger.error('test_card_tracking', { playerName: player.id, before, after }, `ERROR: ${player.id} lost cards when not playing!`);
             }
           }
         });

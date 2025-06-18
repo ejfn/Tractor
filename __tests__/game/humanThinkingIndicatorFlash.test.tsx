@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import HumanPlayerView from '../../src/components/HumanPlayerView';
-import { Card, Suit, Rank, Player, TrumpInfo, PlayerId, PlayerName, TeamId, GamePhase } from "../../src/types";
+import { Card, Suit, Rank, Player, TrumpInfo, PlayerId, TeamId, GamePhase } from "../../src/types";
 import { Animated } from 'react-native';
 
 // Mock the ThinkingIndicator to easily check if it's rendered
@@ -22,7 +22,6 @@ jest.mock('../../src/components/HumanHandAnimated', () => ({
 
 const mockPlayer: Player = {
   id: PlayerId.Human,
-  name: PlayerName.Human,
   hand: [],
   isHuman: true,
   team: TeamId.A,

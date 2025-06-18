@@ -1,0 +1,28 @@
+{
+  "appTitle": "八十分升级游戏",
+  "buttons": {
+    "playCards": "出{{count}}张牌",
+    "playCards_plural": "出{{count}}张牌",
+    "selectMore": "再选{{count}}张底牌",
+    "selectMore_plural": "再选{{count}}张底牌"
+  },
+  "loading": "游戏加载中...",
+  "round": "第{{number}}轮",
+  "trump": "主牌",
+  "teams": {
+    "A": "甲队",
+    "B": "乙队"
+  },
+  "players": {
+    "human": "玩家",
+    "bot1": "月奴",
+    "bot2": "翠花",
+    "bot3": "少帅"
+  },
+  "suits": {
+    "hearts": "红桃",
+    "diamonds": "方块",
+    "clubs": "梅花",
+    "spades": "黑桃"
+  }
+}

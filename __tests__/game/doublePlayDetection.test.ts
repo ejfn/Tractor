@@ -11,7 +11,7 @@ describe('Double Play Detection Tests', () => {
     
     // Detailed tracking for each player
     const playerTracking = state.players.map(p => ({
-      name: p.name,
+      name: p.id,
       plays: [] as { trick: number, cards: number, action: string }[]
     }));
     
@@ -28,7 +28,7 @@ describe('Double Play Detection Tests', () => {
         const currentPlayer = state.players[currentPlayerIdx];
         const allCardsBefore = state.players.map(p => p.hand.length);
         
-        gameLogger.info('test_player_turn', { playNumber: trickPlays + 1, playerIndex: currentPlayerIdx, playerName: currentPlayer.name }, `\nPlay ${trickPlays + 1}: Player ${currentPlayerIdx} (${currentPlayer.name})`);
+        gameLogger.info('test_player_turn', { playNumber: trickPlays + 1, playerIndex: currentPlayerIdx, playerName: currentPlayer.id }, `\nPlay ${trickPlays + 1}: Player ${currentPlayerIdx} (${currentPlayer.id})`);
         gameLogger.info('test_cards_before_play', { cardCounts: allCardsBefore }, `Cards before: ${allCardsBefore.join(', ')}`);
         
         // Get cards to play
@@ -68,11 +68,11 @@ describe('Double Play Detection Tests', () => {
               action
             });
             
-            gameLogger.info('test_player_card_change', { playerName: player.name, before, after, diff, action }, `  ${player.name}: ${before} -> ${after} (${diff} cards ${action})`);
+            gameLogger.info('test_player_card_change', { playerName: player.id, before, after, diff, action }, `  ${player.id}: ${before} -> ${after} (${diff} cards ${action})`);
             
             if (action === 'UNEXPECTED') {
-              gameLogger.error('test_unexpected_card_loss', { playerName: player.name, currentPlayerName: currentPlayer.name }, `ERROR: ${player.name} lost cards when not playing!`);
-              gameLogger.error('test_current_player_context', { currentPlayerName: currentPlayer.name }, `  Current player was ${currentPlayer.name}`);
+              gameLogger.error('test_unexpected_card_loss', { playerName: player.id, currentPlayerName: currentPlayer.id }, `ERROR: ${player.id} lost cards when not playing!`);
+              gameLogger.error('test_current_player_context', { currentPlayerName: currentPlayer.id }, `  Current player was ${currentPlayer.id}`);
               throw new Error('Unexpected card loss detected');
             }
           }
@@ -81,7 +81,7 @@ describe('Double Play Detection Tests', () => {
         // Check if only the current player lost cards
         const expectedLoss = cardsToPlay.length;
         const actualLosses = allCardsBefore.map((before, idx) => ({
-          player: state.players[idx].name,
+          player: state.players[idx].id,
           loss: before - allCardsAfter[idx]
         })).filter(p => p.loss > 0);
         
@@ -91,9 +91,9 @@ describe('Double Play Detection Tests', () => {
           throw new Error('Multiple players lost cards in single play');
         }
         
-        if (actualLosses[0].player !== currentPlayer.name) {
-          gameLogger.error('test_wrong_player_lost_cards', { expectedPlayer: currentPlayer.name, actualPlayer: actualLosses[0].player }, `ERROR: Wrong player lost cards!`);
-          gameLogger.error('test_expected_player', { expectedPlayer: currentPlayer.name }, `  Expected: ${currentPlayer.name}`);
+        if (actualLosses[0].player !== currentPlayer.id) {
+          gameLogger.error('test_wrong_player_lost_cards', { expectedPlayer: currentPlayer.id, actualPlayer: actualLosses[0].player }, `ERROR: Wrong player lost cards!`);
+          gameLogger.error('test_expected_player', { expectedPlayer: currentPlayer.id }, `  Expected: ${currentPlayer.id}`);
           gameLogger.error('test_actual_player', { actualPlayer: actualLosses[0].player }, `  Actual: ${actualLosses[0].player}`);
           throw new Error('Wrong player lost cards');
         }
@@ -154,9 +154,9 @@ describe('Double Play Detection Tests', () => {
     
     for (let i = 0; i < 8; i++) { // Play 2 tricks worth
       const currentPlayer = state.players[state.currentPlayerIndex];
-      currentTrickPlayers.push(currentPlayer.name);
+      currentTrickPlayers.push(currentPlayer.id);
       
-      gameLogger.info('test_completion_play', { playNumber: i + 1, playerName: currentPlayer.name, playsInTrick: playsInCurrentTrick }, `\nPlay ${i + 1}: ${currentPlayer.name}`);
+      gameLogger.info('test_completion_play', { playNumber: i + 1, playerName: currentPlayer.id, playsInTrick: playsInCurrentTrick }, `\nPlay ${i + 1}: ${currentPlayer.id}`);
       gameLogger.info('test_completion_trick_count', { playsInCurrentTrick }, `  Plays in current trick: ${playsInCurrentTrick}`);
       
       let cardsToPlay = [currentPlayer.hand[0]];
