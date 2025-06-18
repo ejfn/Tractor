@@ -1,15 +1,12 @@
 name: EAS Build APK
 
 on:
+  push:
+    branches: [main]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # Semver tags like v1.2.3
   release:
     types: [released]
-  workflow_dispatch:
-    inputs:
-      ref:
-        description: 'Git reference to build (main branch or version tag like v1.2.3)'
-        required: true
-        default: 'main'
-        type: string
 
 permissions:
   contents: write
@@ -18,12 +15,13 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
+    environment: build-approval
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.inputs.ref || github.event.release.tag_name || github.sha }}
+        ref: ${{ github.event.release.tag_name || github.sha }}
         fetch-depth: 0
 
     - name: Setup Node.js
