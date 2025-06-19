@@ -15,7 +15,7 @@ describe('Cross-Suit Pair Bug Fix', () => {
       Card.createCard(Suit.Clubs, Rank.Eight, 1)    // 8♣ (trump rank in off-suit)
     ];
 
-    gameLogger.info('test_cross_suit_cards', { cards: cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId})`) }, 'Testing cards: ' + cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId})`).join(', '));
+    gameLogger.info('test_cross_suit_cards', { cards: cards.map(c => `${c.rank}${c.suit} (cardId: ${c.commonId})`) }, 'Testing cards: ' + cards.map(c => `${c.rank}${c.suit} (cardId: ${c.commonId})`).join(', '));
 
     const combos = identifyCombos(cards, trumpInfo);
     const pairs = combos.filter(c => c.type === ComboType.Pair);
@@ -23,7 +23,7 @@ describe('Cross-Suit Pair Bug Fix', () => {
     gameLogger.info('test_pairs_found', { pairsCount: pairs.length }, 'Found pairs: ' + pairs.length);
     if (pairs.length > 0) {
       pairs.forEach(pair => {
-        gameLogger.info('test_pair_details', { pairCards: pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`) }, 'Pair: ' + pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`).join(', '));
+        gameLogger.info('test_pair_details', { pairCards: pair.cards.map(c => `${c.rank}${c.suit} (${c.commonId})`) }, 'Pair: ' + pair.cards.map(c => `${c.rank}${c.suit} (${c.commonId})`).join(', '));
       });
     }
 
@@ -47,7 +47,7 @@ describe('Cross-Suit Pair Bug Fix', () => {
       Card.createCard(Suit.Spades, Rank.Eight, 1)   // 8♠ from deck 1
     ];
 
-    gameLogger.info('test_identical_cards', { cards: cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId}, deckId: ${c.deckId})`) }, 'Testing identical cards: ' + cards.map(c => `${c.rank}${c.suit} (cardId: ${c.cardId}, deckId: ${c.deckId})`).join(', '));
+    gameLogger.info('test_identical_cards', { cards: cards.map(c => `${c.rank}${c.suit} (cardId: ${c.commonId}, deckId: ${c.deckId})`) }, 'Testing identical cards: ' + cards.map(c => `${c.rank}${c.suit} (cardId: ${c.commonId}, deckId: ${c.deckId})`).join(', '));
 
     const combos = identifyCombos(cards, trumpInfo);
     const pairs = combos.filter(c => c.type === ComboType.Pair);
@@ -55,7 +55,7 @@ describe('Cross-Suit Pair Bug Fix', () => {
     gameLogger.info('test_pairs_found', { pairsCount: pairs.length }, 'Found pairs: ' + pairs.length);
     if (pairs.length > 0) {
       pairs.forEach(pair => {
-        gameLogger.info('test_pair_details', { pairCards: pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`) }, 'Pair: ' + pair.cards.map(c => `${c.rank}${c.suit} (${c.cardId})`).join(', '));
+        gameLogger.info('test_pair_details', { pairCards: pair.cards.map(c => `${c.rank}${c.suit} (${c.commonId})`) }, 'Pair: ' + pair.cards.map(c => `${c.rank}${c.suit} (${c.commonId})`).join(', '));
       });
     }
 

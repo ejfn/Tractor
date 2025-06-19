@@ -2,18 +2,17 @@ import {
   Card,
   Combo,
   ComboType,
+  MultiComboStructure,
   Suit,
   TrumpInfo,
-  MultiComboStructure,
 } from "../types";
-import { findAllTractors, isValidTractor } from "./tractorLogic";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
 import {
-  validateMultiComboSelection,
-  getMultiComboStructure,
   analyzeMultiComboComponents,
+  getMultiComboStructure,
   matchesRequiredStructure,
 } from "./multiComboDetection";
+import { findAllTractors, isValidTractor } from "./tractorLogic";
 
 // Identify valid combinations in a player's hand
 export const identifyCombos = (
@@ -28,7 +27,7 @@ export const identifyCombos = (
   const cardsByIdentity: Record<string, Card[]> = {};
 
   cards.forEach((card) => {
-    const identityKey = card.cardId; // "Hearts_A", "Spades_2", "Small_Joker", etc.
+    const identityKey = card.commonId; // "Hearts_A", "Spades_2", "Small_Joker", etc.
     if (!cardsByIdentity[identityKey]) {
       cardsByIdentity[identityKey] = [];
     }
@@ -76,7 +75,11 @@ export const identifyCombos = (
     // Just detect structure - validation happens elsewhere
     const components = analyzeMultiComboComponents(cards, trumpInfo);
     if (components.length >= 2) {
-      const structure = getMultiComboStructure(components, cards[0]?.suit || "Hearts", true);
+      const structure = getMultiComboStructure(
+        components,
+        cards[0]?.suit || "Hearts",
+        true,
+      );
       combos.push({
         type: ComboType.MultiCombo,
         cards: cards,
@@ -125,52 +128,6 @@ function calculateMultiComboValue(components: Combo[]): number {
   const multiComboBonus = 5000; // High enough to beat any single card value
 
   return baseValue + multiComboBonus;
-}
-
-/**
- * Check if a following structure matches the required leading structure
- * @param followingStructure Structure of the following multi-combo
- * @param leadingStructure Required structure from the lead
- * @returns True if the following structure is valid
- */
-function matchesRequiredStructure(
-  followingStructure: MultiComboStructure,
-  leadingStructure: MultiComboStructure,
-): boolean {
-  const following = followingStructure.components;
-  const required = leadingStructure.components;
-
-  // Must match total length exactly
-  if (followingStructure.totalLength !== leadingStructure.totalLength) {
-    return false;
-  }
-
-  // Must have at least the required number of each component type
-  if (following.pairs < required.pairs) {
-    return false;
-  }
-
-  if (following.tractors < required.tractors) {
-    return false;
-  }
-
-  // For tractors, check if we have adequate tractor sizes
-  if (following.tractors > 0 && required.tractors > 0) {
-    const followingTractorPairs = following.tractorSizes.reduce(
-      (sum, size) => sum + size,
-      0,
-    );
-    const requiredTractorPairs = required.tractorSizes.reduce(
-      (sum, size) => sum + size,
-      0,
-    );
-
-    if (followingTractorPairs < requiredTractorPairs) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 // Legacy function for backward compatibility
@@ -222,7 +179,7 @@ export const getComboType = (
   // Special case: Multiple cards that are all singles
   if (cards.length > 1) {
     // If all cards are different (no pairs), treat as multiple singles
-    const cardIds = cards.map((card) => card.cardId);
+    const cardIds = cards.map((card) => card.commonId);
     const uniqueCardIds = new Set(cardIds);
     if (uniqueCardIds.size === cards.length) {
       // All cards are different - treat as multiple singles for comparison purposes

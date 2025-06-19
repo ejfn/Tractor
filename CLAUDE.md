@@ -14,6 +14,36 @@ Tractor is a React Native Expo app implementing a single-player version of the C
 
 *Game details in [Game Rules](docs/GAME_RULES.md) | AI system in [AI System](docs/AI_SYSTEM.md)*
 
+## 🚨 CRITICAL MULTI-COMBO UNDERSTANDING 🚨
+
+**NEVER FORGET: Multi-combo validation is about ALL OTHER THREE PLAYERS, not opponents vs teammates!**
+
+### **Core Semantics**
+- **Current Player**: The one trying to play the multi-combo
+- **ALL OTHER THREE PLAYERS**: Everyone else at the table (teammates AND opponents combined)
+- **Question**: "Can ANY of the other three players beat this combo with cards available to them?"
+
+### **"Unbeatable" Definition**
+A combo is "unbeatable" when **ALL OTHER THREE PLAYERS COMBINED** cannot beat it with their available cards.
+
+**Available cards to other 3 players** = **Total cards (108) - playedCards - currentPlayer'sHand**
+
+### **Testing Logic**
+- **"Possibly Beatable"**: Higher combinations could exist in other players' hands
+- **"Guaranteed Unbeatable"**: No higher combinations mathematically possible
+
+**Examples:**
+- ✅ `A♥A♥-K♥K♥` → Always unbeatable (highest possible 2-pair tractor)
+- ✅ `Q♥Q♥-J♥J♥-10♥10♥` → Always unbeatable (no higher 3-pair possible)  
+- ⚠️ `10♥10♥-9♥9♥` → Possibly beatable if `K♥K♥-Q♥Q♥` available to others
+- ⚠️ `5♥5♥` → Possibly beatable if `A♥A♥`, `K♥K♥`, etc. available to others
+
+### **Test Design Principles**
+- **Test realistic scenarios** where detection logic matters
+- **Focus on "possibly beatable"** cases (like `10♥10♥-9♥9♥`)
+- **Account for cards in current player's hand** correctly
+- **Remember: It's about mathematical possibility, not strategic likelihood**
+
 ## Quick Start
 
 ```bash

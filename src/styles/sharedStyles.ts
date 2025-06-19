@@ -45,4 +45,12 @@ export const sharedStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
+  // Suit colors
+  redSuit: {
+    color: "#D32F2F", // Deeper red for contrast on light background
+  },
+  blackSuit: {
+    color: "#000000", // Black for contrast on light background
+  },
 });

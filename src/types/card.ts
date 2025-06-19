@@ -30,6 +30,16 @@ export enum Rank {
 }
 
 /**
+ * Playable ranks - all ranks except None (which is used for jokers)
+ */
+export type PlayableRank = Exclude<Rank, Rank.None>;
+
+/**
+ * Playable suits - all suits except None (which is used for trump multi-combos)
+ */
+export type PlayableSuit = Exclude<Suit, Suit.None>;
+
+/**
  * Joker type enumeration
  */
 export enum JokerType {
@@ -55,7 +65,7 @@ export type TrumpInfo = {
  *
  * Features:
  * - Constructor overloads for regular cards and jokers
- * - cardId: identity without deck info (e.g., "Hearts_A")
+ * - commonId: identity without deck info (e.g., "Hearts_A")
  * - id: unique instance ID with deck (e.g., "Hearts_A_1")
  * - isIdenticalTo(): reliable pair validation
  */
@@ -70,7 +80,7 @@ export class Card {
   readonly deckId: DeckId; // 0 or 1 (deck identifier)
 
   // Computed properties
-  readonly cardId: string; // Card identity without deck: "Hearts_A", "Big_Joker"
+  readonly commonId: string; // Card identity without deck: "Hearts_A", "Big_Joker"
   readonly id: string; // Full unique ID with deck: "Hearts_A_1", "Big_Joker_2"
 
   // Private constructor to prevent direct instantiation
@@ -96,13 +106,13 @@ export class Card {
 
     // Generate card identity
     if (joker) {
-      this.cardId = `${joker}_Joker`;
+      this.commonId = `${joker}_Joker`;
     } else {
-      this.cardId = `${suit}_${rank}`;
+      this.commonId = `${suit}_${rank}`;
     }
 
     // Generate unique instance ID
-    this.id = `${this.cardId}_${deckId}`;
+    this.id = `${this.commonId}_${deckId}`;
   }
 
   /**
@@ -227,7 +237,7 @@ export class Card {
    * This is the key method that fixes the pair formation bug
    */
   isIdenticalTo(other: Card): boolean {
-    return this.cardId === other.cardId;
+    return this.commonId === other.commonId;
   }
 
   /**

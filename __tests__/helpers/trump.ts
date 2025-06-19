@@ -29,5 +29,7 @@ export const createTrumpScenarios = {
   spadesTrump: () => createTrumpInfo(Rank.Two, Suit.Spades),
   clubsTrump: () => createTrumpInfo(Rank.Two, Suit.Clubs),
   diamondsTrump: () => createTrumpInfo(Rank.Two, Suit.Diamonds),
-  rankOnly: (rank: Rank) => createTrumpInfo(rank, undefined)
+  jackTrump: () => createTrumpInfo(Rank.Jack, Suit.Spades),
+  rankOnly: (rank: Rank) => createTrumpInfo(rank, undefined),
+  customTrump: (rank: Rank, suit: Suit) => createTrumpInfo(rank, suit)
 };

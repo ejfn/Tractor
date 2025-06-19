@@ -12,10 +12,9 @@ import { MultiComboDetection } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
 import { createCardMemory } from "../ai/aiCardMemory";
-import { 
+import {
   isComboUnbeatable,
   validateLeadingMultiCombo,
-  validateFollowingMultiCombo 
 } from "./multiComboValidation";
 
 /**
@@ -45,7 +44,7 @@ export function detectOptimalMultiCombo(
 
   // Group hand by suit/trump
   const cardGroups = groupCardsBySuitOrTrump(playerHand, trumpInfo);
-  
+
   let bestMultiCombo: MultiComboDetection = { isMultiCombo: false };
   let maxLength = 0;
 
@@ -56,24 +55,30 @@ export function detectOptimalMultiCombo(
     // Find all possible unbeatable components in this suit
     const allComponents = analyzeMultiComboComponents(cards, trumpInfo);
     const unbeatableComponents = allComponents.filter((combo) => {
-      const result = isComboUnbeatable(
+      return isComboUnbeatable(
         combo,
         suit as Suit,
         memory.playedCards,
         ownHand,
         trumpInfo,
       );
-      return result.isUnbeatable;
     });
 
     // Check if we have multiple unbeatable component types
     if (hasMultipleComboTypes(unbeatableComponents)) {
-      const totalLength = unbeatableComponents.reduce((sum, comp) => sum + comp.cards.length, 0);
-      
+      const totalLength = unbeatableComponents.reduce(
+        (sum, comp) => sum + comp.cards.length,
+        0,
+      );
+
       // Keep the longest valid multi-combo
       if (totalLength > maxLength) {
         maxLength = totalLength;
-        const structure = getMultiComboStructure(unbeatableComponents, suit as Suit, true);
+        const structure = getMultiComboStructure(
+          unbeatableComponents,
+          suit as Suit,
+          true,
+        );
         bestMultiCombo = {
           isMultiCombo: true,
           structure,
@@ -124,9 +129,7 @@ export function validateMultiComboSelection(
   }
 
   // Use validation system to check if this is a legal play
-  const currentPlayer = gameState.players.find((p) => p.id === playerId);
-  const ownHand = currentPlayer?.hand || [];
-  
+
   const validation = validateLeadingMultiCombo(
     components,
     suit,
@@ -143,7 +146,7 @@ export function validateMultiComboSelection(
       validation,
     };
   } else {
-    return { 
+    return {
       isMultiCombo: false,
       validation,
     };
@@ -347,6 +350,46 @@ export function isNonTrumpMultiCombo(structure: MultiComboStructure): boolean {
   return structure.suit !== Suit.None;
 }
 
+/**
+ * Simple multi-combo detection for basic validation
+ * @param cards Cards to analyze
+ * @param trumpInfo Trump information
+ * @returns Basic multi-combo detection result
+ */
+export function detectMultiComboAttempt(
+  cards: Card[],
+  trumpInfo: TrumpInfo,
+): MultiComboDetection {
+  // Must have at least 3 cards to form a multi-combo
+  if (cards.length < 3) {
+    return { isMultiCombo: false };
+  }
+
+  // Group cards by suit/trump
+  const cardGroups = groupCardsBySuitOrTrump(cards, trumpInfo);
+
+  // Multi-combo must be from a single suit or all trump
+  const suits = Object.keys(cardGroups) as Suit[];
+  if (suits.length !== 1) {
+    return { isMultiCombo: false };
+  }
+
+  const suit = suits[0];
+  const groupCards = cardGroups[suit];
+
+  // Check if selection forms multiple combo types (structural requirement)
+  const components = analyzeMultiComboComponents(groupCards, trumpInfo);
+  if (!hasMultipleComboTypes(components)) {
+    return { isMultiCombo: false };
+  }
+
+  const structure = getMultiComboStructure(components, suit, true);
+  return {
+    isMultiCombo: true,
+    structure,
+    components,
+  };
+}
 
 /**
  * Following Multi-Combo Detection: Check if cards can follow a leading multi-combo

@@ -1,5 +1,5 @@
 import { Card, Combo, ComboType, JokerType, TrumpInfo } from "../types";
-import { getRankValue, calculateCardStrategicValue } from "./gameHelpers";
+import { calculateCardStrategicValue, getRankValue } from "./gameHelpers";
 
 /**
  * Tractor Detection Module
@@ -131,7 +131,7 @@ export const findTractorsInContext = (
       const cardsByIdentity: Record<string, Card[]> = {};
 
       rankCards.forEach((card) => {
-        const identityKey = card.cardId;
+        const identityKey = card.commonId;
         if (!cardsByIdentity[identityKey]) {
           cardsByIdentity[identityKey] = [];
         }

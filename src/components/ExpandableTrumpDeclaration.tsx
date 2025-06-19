@@ -16,7 +16,15 @@ import {
   useTrumpDeclarationTranslation,
 } from "../hooks/useTranslation";
 import { TrumpDeclarationTranslationKey } from "../locales/types";
-import { Card, DeclarationType, GameState, PlayerId, Suit } from "../types";
+import {
+  Card,
+  DeclarationType,
+  GameState,
+  JokerType,
+  PlayerId,
+  Suit,
+} from "../types";
+import { getSuitSymbol } from "../utils/suitHelpers";
 import { getPlayerDisplayName } from "../utils/translationHelpers";
 
 type TranslationOptions = Record<string, unknown>;
@@ -293,34 +301,23 @@ function getDeclarationButtonDisplay(
   type: DeclarationType,
   suit: Suit,
 ): string {
-  const suitEmoji = getSuitEmoji(suit);
+  const joker =
+    type === DeclarationType.BigJokerPair
+      ? JokerType.Big
+      : type === DeclarationType.SmallJokerPair
+        ? JokerType.Small
+        : undefined;
+  const suitEmoji = getSuitSymbol(suit, joker);
 
   switch (type) {
     case DeclarationType.Single:
       return suitEmoji;
     case DeclarationType.Pair:
-      return `${suitEmoji}${suitEmoji}`;
     case DeclarationType.SmallJokerPair:
-      return "🃏🃏";
     case DeclarationType.BigJokerPair:
-      return "🃏🃏";
+      return `${suitEmoji}${suitEmoji}`;
     default:
       return `${type} in ${suitEmoji}`;
-  }
-}
-
-function getSuitEmoji(suit: Suit): string {
-  switch (suit) {
-    case "Hearts":
-      return "♥";
-    case "Diamonds":
-      return "♦";
-    case "Clubs":
-      return "♣";
-    case "Spades":
-      return "♠";
-    default:
-      return suit;
   }
 }
 
