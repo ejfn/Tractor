@@ -64,8 +64,8 @@ export function detectOptimalMultiCombo(
       );
     });
 
-    // Check if we have multiple unbeatable component types
-    if (hasMultipleComboTypes(unbeatableComponents)) {
+    // Check if we have multiple unbeatable components
+    if (unbeatableComponents.length >= 2) {
       const totalLength = unbeatableComponents.reduce(
         (sum, comp) => sum + comp.cards.length,
         0,
@@ -122,14 +122,16 @@ export function validateMultiComboSelection(
   const suit = suits[0];
   const cards = cardGroups[suit];
 
-  // Check if selection forms multiple combo types (structural requirement)
+  // Check if selection forms multiple combos (structural requirement)
   const components = analyzeMultiComboComponents(cards, trumpInfo);
-  if (!hasMultipleComboTypes(components)) {
+  if (components.length < 2) {
     return { isMultiCombo: false };
   }
 
-  // Use validation system to check if this is a legal play
+  // Create structure - we have a valid multi-combo structure
+  const structure = getMultiComboStructure(components, suit, true);
 
+  // Use validation system to check if this is a legal play
   const validation = validateLeadingMultiCombo(
     components,
     suit,
@@ -137,20 +139,14 @@ export function validateMultiComboSelection(
     playerId,
   );
 
-  if (validation.isValid) {
-    const structure = getMultiComboStructure(components, suit, true);
-    return {
-      isMultiCombo: true,
-      structure,
-      components,
-      validation,
-    };
-  } else {
-    return {
-      isMultiCombo: false,
-      validation,
-    };
-  }
+  // Return structure information - structure is valid even if validation fails
+  // The validation failure is about game state (void status), not structure
+  return {
+    isMultiCombo: true, // Structure is valid multi-combo
+    structure,
+    components,
+    validation,
+  };
 }
 
 /**
@@ -264,26 +260,6 @@ function findOptimalComboDecomposition(
 }
 
 /**
- * Check if components represent a valid multi-combo
- * @param components Component combos
- * @returns True if this forms a valid multi-combo
- */
-function hasMultipleComboTypes(components: Combo[]): boolean {
-  // Multi-combo rule: Multiple unbeatable components from the same suit
-  // The key validation (unbeatability) happens elsewhere - this just checks composition
-
-  // Valid multi-combo: 2+ components of any type combination
-  // Examples:
-  // - 5 singles (all unbeatable)
-  // - 3 pairs (all unbeatable)
-  // - 1 tractor + 2 singles (all unbeatable)
-  // - 2 pairs + 3 singles (all unbeatable)
-  // - Any other combination of 2+ components
-
-  return components.length >= 2;
-}
-
-/**
  * Create multi-combo structure from component combos
  * @param components Individual combos within multi-combo
  * @param suit Suit (Suit.None for trump multi-combos)
@@ -377,9 +353,9 @@ export function detectMultiComboAttempt(
   const suit = suits[0];
   const groupCards = cardGroups[suit];
 
-  // Check if selection forms multiple combo types (structural requirement)
+  // Check if selection forms multiple combos (structural requirement)
   const components = analyzeMultiComboComponents(groupCards, trumpInfo);
-  if (!hasMultipleComboTypes(components)) {
+  if (components.length < 2) {
     return { isMultiCombo: false };
   }
 

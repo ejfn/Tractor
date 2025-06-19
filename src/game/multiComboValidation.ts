@@ -5,7 +5,6 @@ import {
   ComboType,
   GameState,
   MultiComboStructure,
-  PlayableRank,
   PlayerId,
   Rank,
   Suit,
@@ -13,8 +12,8 @@ import {
 } from "../types";
 import { MultiComboValidation } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
-import { getTractorRank } from "./tractorLogic";
 import { sortCards } from "../utils/cardSorting";
+import { compareCards } from "./cardComparison";
 
 /**
  * Multi-Combo Validation Module
@@ -64,7 +63,7 @@ export function validateLeadingMultiCombo(
 
   if (!voidStatus.allOpponentsVoid) {
     validation.invalidReasons.push(
-      `Not all opponents are void in ${suit}. Non-void players: ${getOpponentIds(
+      `Not all other players are void in ${suit}. Non-void players: ${getAllOtherPlayerIds(
         gameState,
         playerId,
       )
@@ -96,7 +95,7 @@ export function validateLeadingMultiCombo(
 }
 
 /**
- * Check if all opponents are void in the target suit
+ * Check if all other players (all three other players) are void in the target suit
  * @param suit Target suit for multi-combo
  * @param gameState Current game state
  * @param currentPlayerId Player attempting multi-combo
@@ -109,19 +108,19 @@ export function checkOpponentVoidStatus(
 ): { allOpponentsVoid: boolean; voidPlayers: PlayerId[] } {
   // Get memory system data for void detection
   const memory = createCardMemory(gameState);
-  const opponentIds = getOpponentIds(gameState, currentPlayerId);
+  const allOtherPlayerIds = getAllOtherPlayerIds(gameState, currentPlayerId);
 
   const voidPlayers: PlayerId[] = [];
 
   // Check confirmed voids from memory system using playerMemories
-  opponentIds.forEach((opponentId) => {
-    const playerMemory = memory.playerMemories[opponentId];
+  allOtherPlayerIds.forEach((playerId) => {
+    const playerMemory = memory.playerMemories[playerId];
     if (playerMemory && playerMemory.suitVoids.has(suit)) {
-      voidPlayers.push(opponentId);
+      voidPlayers.push(playerId);
     }
   });
 
-  const allOpponentsVoid = voidPlayers.length === opponentIds.length;
+  const allOpponentsVoid = voidPlayers.length === allOtherPlayerIds.length;
 
   return {
     allOpponentsVoid,
@@ -181,8 +180,90 @@ export function validateUnbeatableComponents(
 }
 
 /**
+ * Find all possible combos that can be formed from unseen cards (not played, not in own hand)
+ * This unified function replaces individual per-type generation for better performance
+ */
+export function findAllPossibleUnseenCombos(
+  suit: Suit,
+  playedCards: Card[],
+  ownHand: Card[],
+  trumpInfo: TrumpInfo,
+): {
+  singles: Card[];
+  pairs: Card[][];
+  tractors: Card[][];
+} {
+  // For trump cards (suit === Suit.None), use conservative approach for now
+  if (suit === Suit.None) {
+    return { singles: [], pairs: [], tractors: [] };
+  }
+
+  // Get all cards for this suit (excluding trump rank cards)
+  const allSuitCards = createAllCardsInSuit(suit, trumpInfo);
+
+  // Create set of accounted cards using card.id (specific deck instances for singles)
+  const accountedCardIds = new Set([
+    ...playedCards.map((c) => c.id),
+    ...ownHand.map((c) => c.id),
+  ]);
+
+  // Find unseen individual card instances
+  const unseenCardInstances = allSuitCards.filter(
+    (card) => !accountedCardIds.has(card.id),
+  );
+
+  // For singles: all unseen individual cards
+  const singles = unseenCardInstances;
+
+  // For pairs and tractors: need to check which pairs can still be formed
+  // Create set of accounted commonIds for pair/tractor logic
+  const accountedCommonIds = new Set([
+    ...playedCards.map((c) => c.commonId),
+    ...ownHand.map((c) => c.commonId),
+  ]);
+
+  // Find ranks that can still form pairs (both copies not accounted)
+  const unseenCardsByCommonId = allSuitCards.filter(
+    (card) => !accountedCommonIds.has(card.commonId),
+  );
+
+  // Generate pairs and tractors from available rank types
+  const allUnseenCombos = identifyCombos(unseenCardsByCommonId, trumpInfo);
+
+  const pairs = allUnseenCombos
+    .filter((combo) => combo.type === ComboType.Pair)
+    .map((combo) => combo.cards);
+
+  const tractors = allUnseenCombos
+    .filter((combo) => combo.type === ComboType.Tractor)
+    .map((combo) => combo.cards);
+
+  return { singles, pairs, tractors };
+}
+
+/**
+ * Create all cards in a suit (excluding trump rank cards which become trump)
+ */
+function createAllCardsInSuit(suit: Suit, trumpInfo: TrumpInfo): Card[] {
+  // Get all rank values from the enum, excluding None
+  const allRanks = Object.values(Rank).filter((rank) => rank !== Rank.None);
+
+  // Filter out trump rank - those cards become trump, not part of regular suit
+  const nonTrumpRanks = allRanks.filter((rank) => rank !== trumpInfo.trumpRank);
+
+  // Create cards for each rank (double deck - 2 copies of each)
+  const cards: Card[] = [];
+  nonTrumpRanks.forEach((rank) => {
+    cards.push(Card.createCard(suit, rank, 0)); // First copy
+    cards.push(Card.createCard(suit, rank, 1)); // Second copy
+  });
+
+  return cards;
+}
+
+/**
  * Check if a specific combo is unbeatable based on played cards and own hand
- * Each combo type uses different logic for efficiency and correctness
+ * UNIFIED VERSION: Uses findAllPossibleUnseenCombos for better performance
  */
 export function isComboUnbeatable(
   combo: Combo,
@@ -191,30 +272,31 @@ export function isComboUnbeatable(
   ownHand: Card[],
   trumpInfo: TrumpInfo,
 ): boolean {
+  // For trump cards (suit === Suit.None), use conservative approach for now
+  if (suit === Suit.None) {
+    return false; // Conservative approach - trump logic not implemented
+  }
+
+  // Get all possible unseen combos once
+  const unseenCombos = findAllPossibleUnseenCombos(
+    suit,
+    playedCards,
+    ownHand,
+    trumpInfo,
+  );
+
   switch (combo.type) {
     case ComboType.Single:
-      return isSingleUnbeatable(
-        combo.cards[0],
-        suit,
-        playedCards,
-        ownHand,
-        trumpInfo,
+      return !unseenCombos.singles.some((card) =>
+        isCardStronger(card, combo.cards[0], trumpInfo),
       );
     case ComboType.Pair:
-      return isPairUnbeatable(
-        combo.cards,
-        suit,
-        playedCards,
-        ownHand,
-        trumpInfo,
+      return !unseenCombos.pairs.some((pair) =>
+        isPairStronger(pair, combo.cards, trumpInfo),
       );
     case ComboType.Tractor:
-      return isTractorUnbeatable(
-        combo.cards,
-        suit,
-        playedCards,
-        ownHand,
-        trumpInfo,
+      return !unseenCombos.tractors.some((tractor) =>
+        isTractorStronger(tractor, combo.cards, trumpInfo),
       );
     default:
       return false;
@@ -222,223 +304,72 @@ export function isComboUnbeatable(
 }
 
 /**
- * Check if a single card is unbeatable
- * Logic: Populate all possible cards greater than given rank (excluding trump rank),
- * then do set difference with (played ∪ in hand)
+ * Check if one card is stronger than another
  */
-function isSingleUnbeatable(
-  card: Card,
-  suit: Suit,
-  playedCards: Card[],
-  ownHand: Card[],
+function isCardStronger(
+  card1: Card,
+  card2: Card,
   trumpInfo: TrumpInfo,
 ): boolean {
-  // For trump cards (suit === Suit.None), use trump-specific logic
-  if (suit === Suit.None) {
-    // TODO: Implement trump-specific unbeatable logic
-    return false; // Conservative approach for now
+  try {
+    const result = compareCards(card1, card2, trumpInfo);
+    return result > 0; // card1 > card2
+  } catch {
+    // Different suits - can't compare directly, assume not stronger
+    return false;
   }
-  // Get all possible cards greater than this card's rank in this suit
-  const higherCards = createHigherCardsInSuit(
-    card.rank as PlayableRank,
-    suit,
-    trumpInfo,
-  );
-
-  // Create set of accounted cards (played + in hand)
-  const accountedCardIds = new Set([
-    ...playedCards.map((c) => c.id),
-    ...ownHand.map((c) => c.id),
-  ]);
-
-  // Set difference: higher cards that are NOT accounted for
-  const unaccountedHigherCards = higherCards.filter(
-    (higherCard) => !accountedCardIds.has(higherCard.id),
-  );
-
-  // If any higher cards are unaccounted for, this single is beatable
-  return unaccountedHigherCards.length === 0;
 }
 
 /**
- * Create cards higher than given rank in given suit (excluding trump rank)
+ * Check if one pair is stronger than another
  */
-function createHigherCardsInSuit(
-  baseRank: PlayableRank,
-  suit: Suit,
-  trumpInfo: TrumpInfo,
-  singleDeck = false,
-): Card[] {
-  // For trump cards (suit === Suit.None), return empty array for now
-  if (suit === Suit.None) {
-    return []; // Conservative approach - no cards to beat trump
-  }
-  // Get all rank values from the enum, excluding None
-  const allRanks = Object.values(Rank).filter((rank) => rank !== Rank.None);
-
-  // Filter out trump rank - those cards become trump, not part of regular suit
-  const nonTrumpRanks = allRanks.filter((rank) => rank !== trumpInfo.trumpRank);
-
-  // Find ranks higher than baseRank
-  const baseIndex = nonTrumpRanks.indexOf(baseRank);
-  if (baseIndex === -1) return []; // Base rank not found or is trump rank
-
-  const higherRanks = nonTrumpRanks.slice(baseIndex + 1);
-
-  // Create cards for higher ranks
-  const higherCards: Card[] = [];
-  higherRanks.forEach((rank) => {
-    higherCards.push(Card.createCard(suit, rank, 0));
-    if (!singleDeck) {
-      higherCards.push(Card.createCard(suit, rank, 1));
-    }
-  });
-
-  return higherCards;
-}
-
-/**
- * Check if a pair is unbeatable
- * Logic: For pairs, need to check if any higher pair can be formed
- * A pair is unbeatable if all cards of higher ranks don't have both copies available
- */
-function isPairUnbeatable(
-  pairCards: Card[],
-  suit: Suit,
-  playedCards: Card[],
-  ownHand: Card[],
+function isPairStronger(
+  pair1: Card[],
+  pair2: Card[],
   trumpInfo: TrumpInfo,
 ): boolean {
-  // For trump cards (suit === Suit.None), use trump-specific logic
-  if (suit === Suit.None) {
-    // TODO: Implement trump-specific unbeatable logic
-    return false; // Conservative approach for now
+  if (pair1.length !== 2 || pair2.length !== 2) return false;
+  try {
+    // Compare the rank of the pairs (both cards in pair have same rank)
+    const result = compareCards(pair1[0], pair2[0], trumpInfo);
+    return result > 0; // pair1 > pair2
+  } catch {
+    // Different suits - can't compare directly, assume not stronger
+    return false;
   }
-  // Get the rank of this pair
-  const pairRank = pairCards[0].rank as PlayableRank;
-
-  // 1) Generate higher cards (single deck only)
-  const higherCards = createHigherCardsInSuit(pairRank, suit, trumpInfo, true);
-
-  // 2) Create set of accounted card types using commonId
-  const accountedCommonIds = new Set([
-    ...playedCards.map((c) => c.commonId),
-    ...ownHand.map((c) => c.commonId),
-  ]);
-
-  // Remove accounted higher cards
-  const unaccountedHigherCards = higherCards.filter(
-    (card) => !accountedCommonIds.has(card.commonId),
-  );
-
-  // 3) If nothing left, then unbeatable
-  return unaccountedHigherCards.length === 0;
 }
 
 /**
- * Placeholder for tractor unbeatable logic - to be implemented
+ * Check if one tractor is stronger than another
  */
-function isTractorUnbeatable(
-  tractorCards: Card[],
-  suit: Suit,
-  playedCards: Card[],
-  ownHand: Card[],
+function isTractorStronger(
+  tractor1: Card[],
+  tractor2: Card[],
   trumpInfo: TrumpInfo,
 ): boolean {
-  // For trump cards (suit === Suit.None), use trump-specific logic
-  if (suit === Suit.None) {
-    // TODO: Implement trump-specific unbeatable logic
-    return false; // Conservative approach for now
+  if (tractor1.length !== tractor2.length) return false;
+
+  try {
+    // Sort both tractors and compare the highest cards
+    const sorted1 = sortCards(tractor1, trumpInfo);
+    const sorted2 = sortCards(tractor2, trumpInfo);
+
+    const result = compareCards(sorted1[0], sorted2[0], trumpInfo);
+    return result > 0; // tractor1 > tractor2
+  } catch {
+    // Different suits - can't compare directly, assume not stronger
+    return false;
   }
-  const tractorLength = tractorCards.length / 2; // Number of pairs in tractor
-
-  // Get the highest rank in the tractor - use sorting helper (descending order)
-  const sortedTractorCards = sortCards(tractorCards, trumpInfo);
-  const highestTractorRank = sortedTractorCards[0].rank as PlayableRank;
-
-  // 1) Generate higher cards (single deck only)
-  const higherCards = createHigherCardsInSuit(
-    highestTractorRank,
-    suit,
-    trumpInfo,
-    true,
-  );
-
-  // 2) Remove accounted using commonId
-  const accountedCommonIds = new Set([
-    ...playedCards.map((c) => c.commonId),
-    ...ownHand.map((c) => c.commonId),
-  ]);
-
-  const unaccountedHigherCards = higherCards.filter(
-    (card) => !accountedCommonIds.has(card.commonId),
-  );
-
-  // 3) If nothing left, then unbeatable
-  if (unaccountedHigherCards.length === 0) {
-    return true;
-  }
-
-  // 4) Check if unaccounted cards can form consecutive sequences >= tractor length
-  const unaccountedRanks = unaccountedHigherCards.map((card) => card.rank);
-  return !hasConsecutiveSequence(
-    unaccountedRanks,
-    tractorLength,
-    suit,
-    trumpInfo,
-  );
 }
 
 /**
- * Check if there's a consecutive sequence of the required length
- * Uses getTractorRank to properly handle trump rank skipping
- */
-function hasConsecutiveSequence(
-  ranks: Rank[],
-  requiredLength: number,
-  suit: Suit,
-  trumpInfo: TrumpInfo,
-): boolean {
-  if (ranks.length < requiredLength) return false;
-
-  // Convert ranks to tractor ranks using the actual suit
-  // Create dummy cards to use getTractorRank function
-  const tractorRanks = ranks
-    .map((rank) => {
-      const dummyCard = Card.createCard(suit, rank, 0);
-      return getTractorRank(dummyCard, trumpInfo);
-    })
-    .sort((a, b) => a - b);
-
-  // Find all consecutive sequences in tractor rank space
-  let maxConsecutiveLength = 0;
-  let currentLength = 1;
-
-  for (let i = 1; i < tractorRanks.length; i++) {
-    if (tractorRanks[i] === tractorRanks[i - 1] + 1) {
-      // Consecutive in tractor rank space
-      currentLength++;
-    } else {
-      // Break in sequence, update max and reset
-      maxConsecutiveLength = Math.max(maxConsecutiveLength, currentLength);
-      currentLength = 1;
-    }
-  }
-
-  // Don't forget the last sequence
-  maxConsecutiveLength = Math.max(maxConsecutiveLength, currentLength);
-
-  // If any consecutive sequence is >= required length, then beatable
-  return maxConsecutiveLength >= requiredLength;
-}
-
-/**
- * Get opponent player IDs
+ * Get all other player IDs (the other three players in a 4-player game)
+ * NOTE: Multi-combo validation is about ALL OTHER THREE PLAYERS, not just opponents!
  * @param gameState Current game state
  * @param currentPlayerId Current player
- * @returns Array of opponent player IDs
+ * @returns Array of all other player IDs
  */
-function getOpponentIds(
+function getAllOtherPlayerIds(
   gameState: GameState,
   currentPlayerId: PlayerId,
 ): PlayerId[] {

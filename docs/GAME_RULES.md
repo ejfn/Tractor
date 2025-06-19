@@ -264,13 +264,19 @@ Work with your AI teammate to collect 80+ points per round and advance through c
 - **Within same type**: Higher cards beat lower cards
 
 ### **Multi-Combos**
-- **Definition**: Multiple combination types from the same suit played simultaneously
-- **Leading Multi-Combos**: Only allowed from non-trump suits when all opponents are void in that suit
+- **Definition**: Multiple combos from the same suit played simultaneously
+- **Leading Multi-Combos**: Only allowed from non-trump suits when all other three players are void in that suit
 - **Following Multi-Combos**: Must match the lead's combination structure exactly
 - **Trump Multi-Combos**: Can beat non-trump multi-combos regardless of strength
 
+#### **🚨 CRITICAL Multi-Combo Rules**
+- **All Other Three Players**: Multi-combo validation involves ALL OTHER THREE PLAYERS, not just opponents
+- **Same Type Allowed**: Multiple combos of same type are valid (e.g., A♥ + K♥ + Q♥ = 3 singles)
+- **Mixed Types Allowed**: Different combo types also valid (e.g., A♥A♥ + K♥ = pair + single)
+- **Key Requirement**: Each component combo must be unbeatable by cards held by other players
+
 #### **Multi-Combo Leading Rules**
-**Only available when ALL other players are void in the target suit**
+**Only available when ALL OTHER THREE PLAYERS are void in the target suit**
 
 **Unbeatable Requirement**: Each individual combo within the multi-combo must be the strongest possible based on:
 - All cards already played (visible to everyone)
