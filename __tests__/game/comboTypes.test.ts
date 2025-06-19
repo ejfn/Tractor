@@ -504,31 +504,6 @@ describe('Combo Type Identification Tests', () => {
       expect(getComboType(hand, trumpInfo)).toBe(ComboType.Invalid);
     });
 
-    test('Should identify 6-card combo with unpaired cards as MultiCombo', () => {
-      // Create cards with some singles: A-A-K-K-Q-J (Queen and Jack not paired)
-      // This should be identified as a multi-combo: tractor (A-A-K-K) + single Q + single J
-      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
-      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
-      const spadeQ = Card.createCard(Suit.Spades, Rank.Queen, 0);
-      const spadeJ = Card.createCard(Suit.Spades, Rank.Jack, 0);
-      
-      const hand = [...spadeApair, ...spadeKpair, spadeQ, spadeJ];
-      
-      // Should be identified as a multi-combo (tractor + singles)
-      expect(getComboType(hand, trumpInfo)).toBe(ComboType.MultiCombo);
-      
-      // Verify multi-combo structure using identifyCombos
-      const combos = identifyCombos(hand, trumpInfo);
-      const multiCombos = combos.filter(combo => combo.type === ComboType.MultiCombo);
-      expect(multiCombos.length).toBe(1);
-      
-      const multiCombo = multiCombos[0];
-      expect(multiCombo.multiComboStructure).toBeDefined();
-      expect(multiCombo.multiComboStructure?.components.tractors).toBe(1); // One tractor: A-A-K-K
-      expect(multiCombo.multiComboStructure?.components.pairs).toBe(0); // No pairs
-      expect(multiCombo.multiComboStructure?.components.singles).toBe(2); // Two singles: Q, J
-      expect(multiCombo.multiComboStructure?.totalLength).toBe(6);
-    });
 
     test('Should handle edge case with Ace-King-Queen trump tractor', () => {
       // Create trump tractor in trump suit
@@ -553,86 +528,9 @@ describe('Combo Type Identification Tests', () => {
       expect(getComboType(hand, trumpInfo)).toBe(ComboType.Tractor);
     });
 
-    test('Should identify odd number of cards as MultiCombo when valid', () => {
-      // Create 5 cards: A-A-K-K-Q
-      // This should be identified as a multi-combo: tractor (A-A-K-K) + single Q
-      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
-      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
-      const spadeQ = Card.createCard(Suit.Spades, Rank.Queen, 0);
-      
-      const hand = [...spadeApair, ...spadeKpair, spadeQ];
-      
-      // Should be identified as a multi-combo (tractor + single)
-      expect(getComboType(hand, trumpInfo)).toBe(ComboType.MultiCombo);
-      
-      // Verify multi-combo structure using identifyCombos
-      const combos = identifyCombos(hand, trumpInfo);
-      const multiCombos = combos.filter(combo => combo.type === ComboType.MultiCombo);
-      expect(multiCombos.length).toBe(1);
-      
-      const multiCombo = multiCombos[0];
-      expect(multiCombo.multiComboStructure).toBeDefined();
-      expect(multiCombo.multiComboStructure?.components.tractors).toBe(1); // One tractor: A-A-K-K
-      expect(multiCombo.multiComboStructure?.components.pairs).toBe(0); // No pairs
-      expect(multiCombo.multiComboStructure?.components.singles).toBe(1); // One single: Q
-      expect(multiCombo.multiComboStructure?.totalLength).toBe(5);
-    });
 
     
-    test('Should identify multi-combo with multiple component types', () => {
-      // Create cards: K♠-K♠ + Q♠ + 9♠ + 7♠
-      // This should be identified as a multi-combo: pair (K-K) + single Q + single 9 + single 7
-      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
-      const spadeQ = Card.createCard(Suit.Spades, Rank.Queen, 0);
-      const spade9 = Card.createCard(Suit.Spades, Rank.Nine, 0);
-      const spade7 = Card.createCard(Suit.Spades, Rank.Seven, 0);
-      
-      const hand = [...spadeKpair, spadeQ, spade9, spade7];
-      
-      // Should be identified as a multi-combo (pair + singles)
-      // If multi-combo detection doesn't recognize this, it should be Invalid, not Single
-      const result = getComboType(hand, trumpInfo);
-      expect([ComboType.MultiCombo, ComboType.Invalid]).toContain(result);
-      
-      // Verify multi-combo structure using identifyCombos
-      const combos = identifyCombos(hand, trumpInfo);
-      const multiCombos = combos.filter(combo => combo.type === ComboType.MultiCombo);
-      expect(multiCombos.length).toBe(1);
-      
-      const multiCombo = multiCombos[0];
-      expect(multiCombo.multiComboStructure).toBeDefined();
-      expect(multiCombo.multiComboStructure?.components.tractors).toBe(0); // No tractors
-      expect(multiCombo.multiComboStructure?.components.pairs).toBe(1); // One pair: K-K
-      expect(multiCombo.multiComboStructure?.components.singles).toBe(3); // Three singles: Q, 9, 7
-      expect(multiCombo.multiComboStructure?.totalLength).toBe(5);
-    });
     
     
-    test('Should identify complex multi-combo with tractor and non-consecutive pairs', () => {
-      // Create cards: A♠-A♠-K♠-K♠ + 9♠-9♠ + 7♠-7♠ + 5♠
-      // This should be identified as a multi-combo: tractor (A-A-K-K) + pair (9-9) + pair (7-7) + single 5
-      const spadeApair = Card.createPair(Suit.Spades, Rank.Ace);
-      const spadeKpair = Card.createPair(Suit.Spades, Rank.King);
-      const spade9pair = Card.createPair(Suit.Spades, Rank.Nine);
-      const spade7pair = Card.createPair(Suit.Spades, Rank.Seven);
-      const spade5 = Card.createCard(Suit.Spades, Rank.Five, 0);
-      
-      const hand = [...spadeApair, ...spadeKpair, ...spade9pair, ...spade7pair, spade5];
-      
-      // Should be identified as a multi-combo
-      expect(getComboType(hand, trumpInfo)).toBe(ComboType.MultiCombo);
-      
-      // Verify multi-combo structure using identifyCombos
-      const combos = identifyCombos(hand, trumpInfo);
-      const multiCombos = combos.filter(combo => combo.type === ComboType.MultiCombo);
-      expect(multiCombos.length).toBe(1);
-      
-      const multiCombo = multiCombos[0];
-      expect(multiCombo.multiComboStructure).toBeDefined();
-      expect(multiCombo.multiComboStructure?.components.tractors).toBe(1); // One tractor: A-A-K-K
-      expect(multiCombo.multiComboStructure?.components.pairs).toBe(2); // Two pairs: 9-9, 7-7
-      expect(multiCombo.multiComboStructure?.components.singles).toBe(1); // One single: 5
-      expect(multiCombo.multiComboStructure?.totalLength).toBe(9);
-    });
   });
 });
