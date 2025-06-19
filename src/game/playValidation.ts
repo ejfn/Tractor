@@ -1,23 +1,16 @@
 import { Card, ComboType, GameState, PlayerId } from "../types";
 import {
-  identifyCombos,
   checkSameSuitPairPreservation,
   checkTractorFollowingPriority,
   getComboType,
+  identifyCombos,
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
-import {
-  detectLeadingMultiCombo,
-  detectTrumpMultiComboResponse,
-} from "./multiComboDetection";
+import { detectLeadingMultiCombo } from "./multiComboDetection";
 import {
   validateLeadingMultiCombo,
   validateFollowingMultiCombo,
 } from "./multiComboValidation";
-import {
-  createMixedComboRequirements,
-  generateMixedCombo,
-} from "./mixedComboGeneration";
 
 // Local helper function to avoid circular dependencies
 const getLeadingSuit = (combo: Card[]) => {
@@ -46,6 +39,7 @@ export const isValidPlay = (
     gameState.currentTrick && gameState.currentTrick.plays.length > 0
       ? gameState.currentTrick.plays[0].cards
       : null;
+
   // If no leading combo, any valid combo is acceptable (including multi-combo)
   if (!leadingCombo) {
     // Check for leading multi-combo using contextual detection
@@ -78,11 +72,41 @@ export const isValidPlay = (
     );
   }
 
-  // Get combo types for regular validation
+  // Get combo types for following validation
   const leadingType = getComboType(leadingCombo, trumpInfo);
   const playedType = getComboType(playedCards, trumpInfo);
 
-  // Get the leading combo's suit and determine relevant cards early
+  // Multi-combo following validation
+  const leadingDetection =
+    leadingType === ComboType.Invalid
+      ? detectLeadingMultiCombo(leadingCombo, trumpInfo)
+      : { isMultiCombo: false };
+
+  if (leadingDetection.isMultiCombo) {
+    // Following a multi-combo - use dedicated validation system
+    if (!leadingDetection.structure) {
+      return false;
+    }
+
+    const followingValidation = validateFollowingMultiCombo(
+      playedCards,
+      leadingDetection.structure,
+      playerHand,
+      trumpInfo,
+    );
+
+    return followingValidation.isValid;
+  }
+
+  // Note: Exhausting scenarios with multi-combo patterns are handled by the hierarchical
+  // following logic below, not blocked as invalid multi-combo usage.
+
+  // Shengji rules: Must match the combination length
+  if (playedCards.length !== leadingCombo.length) {
+    return false;
+  }
+
+  // Get the leading combo's suit
   const leadingSuit = getLeadingSuit(leadingCombo);
   const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
 
@@ -94,85 +118,7 @@ export const isValidPlay = (
         (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
       );
 
-  // Check for multi-combos using contextual detection
-  // Only detect leading multi-combos for leading cards with Invalid type
-  const leadingDetection =
-    leadingType === ComboType.Invalid
-      ? detectLeadingMultiCombo(leadingCombo, trumpInfo)
-      : { isMultiCombo: false };
-
-  // For played cards, check both leading multi-combo and trump response scenarios
-  const playedDetection =
-    leadingDetection.isMultiCombo && leadingDetection.structure
-      ? detectTrumpMultiComboResponse(
-          playedCards,
-          leadingDetection.structure,
-          trumpInfo,
-        )
-      : playedType === ComboType.Invalid
-        ? detectLeadingMultiCombo(playedCards, trumpInfo)
-        : { isMultiCombo: false };
-
-  if (leadingDetection.isMultiCombo) {
-    // Following a multi-combo
-    if (!leadingDetection.structure) {
-      return false;
-    }
-
-    // Validate following multi-combo structure match
-    const followingValidation = validateFollowingMultiCombo(
-      playedCards,
-      leadingDetection.structure,
-      playerHand,
-      trumpInfo,
-    );
-
-    return followingValidation.isValid;
-  }
-
-  // Handle exhausting scenarios when player can't form exact required combo type
-  // This applies hierarchical following rules: tractor→pairs→singles, pair→singles, etc.
-  // Note: MultiCombo detection can conflict with exhausting scenarios, so check exhausting first
-  // Only apply when player has some cards of the leading suit
-  if (
-    (playedType === ComboType.Invalid || playedType === ComboType.MultiCombo) &&
-    (leadingType === ComboType.Tractor || leadingType === ComboType.Pair) &&
-    relevantCards.length > 0
-  ) {
-    // Handle hierarchical following scenarios (tractor→same pairs→all pairs→exhaust, pair→singles, etc.)
-    const mixedComboRequirements = createMixedComboRequirements(
-      leadingCombo,
-      trumpInfo,
-    );
-
-    // Generate the correct cards that should be played according to hierarchical rules
-    const expectedCards = generateMixedCombo(
-      playerHand,
-      mixedComboRequirements,
-      trumpInfo,
-    );
-
-    // Check if played cards match the expected cards (order independent)
-    if (playedCards.length !== expectedCards.length) {
-      return false;
-    }
-
-    const playedIds = playedCards.map((card) => card.id).sort();
-    const expectedIds = expectedCards.map((card) => card.id).sort();
-
-    return playedIds.every((id, index) => id === expectedIds[index]);
-  }
-
-  // Check for invalid multi-combo usage (after exhausting scenarios)
-  if (playedDetection.isMultiCombo && !leadingDetection.isMultiCombo) {
-    // Can't follow non-multi-combo with multi-combo
-    return false;
-  }
-
-  // Shengji rules: Must match the combination length
-  if (playedCards.length !== leadingCombo.length) {
-    return false;
-  }
+  // (combo types already declared above for multi-combo validation)
 
   // UNIFIED: Check if player can form matching combo in relevant suit
   const canFormMatchingCombo = relevantCards.length >= leadingCombo.length;
