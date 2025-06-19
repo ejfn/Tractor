@@ -1,33 +1,33 @@
+import { isTrump } from "../game/gameHelpers";
 import {
-  GameState,
+  AdaptiveBehaviorDetection,
+  AdaptiveStrategyRecommendation,
+  BehaviorPhaseProfile,
   Card,
   CardMemory,
-  PlayerMemory,
-  MemoryContext,
-  MemoryBasedStrategy,
-  Suit,
-  Rank,
-  TrumpInfo,
-  JokerType,
-  TrickHistoryAnalysis,
-  OpponentLeadingPattern,
-  TeamCoordinationPattern,
-  AdaptiveBehaviorDetection,
-  RoundProgressionPattern,
-  TrickSequencePattern,
-  EnhancedMemoryContext,
-  PredictiveOpponentModel,
-  AdaptiveStrategyRecommendation,
-  PlayerId,
-  Trick,
   DeckId,
-  BehaviorPhaseProfile,
-  PlayPatterns,
-  LeadingBehaviorProfile,
-  PlayerContext,
+  EnhancedMemoryContext,
   GameContext,
+  GameState,
+  JokerType,
+  LeadingBehaviorProfile,
+  MemoryBasedStrategy,
+  MemoryContext,
+  OpponentLeadingPattern,
+  PlayerContext,
+  PlayerId,
+  PlayerMemory,
+  PlayPatterns,
+  PredictiveOpponentModel,
+  Rank,
+  RoundProgressionPattern,
+  Suit,
+  TeamCoordinationPattern,
+  Trick,
+  TrickHistoryAnalysis,
+  TrickSequencePattern,
+  TrumpInfo,
 } from "../types";
-import { isTrump } from "../game/gameHelpers";
 
 /**
  * Phase 3: Card Memory & Counting System
@@ -62,7 +62,7 @@ export function createCardMemory(gameState: GameState): CardMemory {
       estimatedHandSize: player.hand.length,
       suitVoids: new Set(),
       trumpVoid: false, // Start assuming player has trump cards
-      trumpCount: 0,
+      trumpUsed: 0,
       pointCardsProbability: 0.5, // Start with neutral assumption
       playPatterns: [],
     };
@@ -188,7 +188,7 @@ function processPlayedCard(
 
     // Update trump count estimate
     if (isTrump(card, trumpInfo)) {
-      playerMemory.trumpCount++;
+      playerMemory.trumpUsed++;
     }
 
     // CRITICAL: Detect suit voids when player cannot follow non-trump suit
@@ -213,7 +213,6 @@ function processPlayedCard(
       !playerMemory.trumpVoid // Not already marked as trump void
     ) {
       playerMemory.trumpVoid = true;
-      playerMemory.trumpCount = 0; // Zero trump count since player is void
       // Note: Player is now known to be void in trump cards
     }
 
@@ -1068,8 +1067,8 @@ function estimatePlayerStrength(
   // Base strength on estimated remaining cards and observed patterns
   let strength = playerMemory.estimatedHandSize * 0.1; // Base score
 
-  // Add strength for trump cards
-  strength += playerMemory.trumpCount * 0.3;
+  // Subtract strength for trump cards used (more trumps used = weaker player)
+  strength -= playerMemory.trumpUsed * 0.3;
 
   // Add strength for point card probability
   strength += playerMemory.pointCardsProbability * 0.2;

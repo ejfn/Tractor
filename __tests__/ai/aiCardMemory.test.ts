@@ -6,8 +6,9 @@ import {
 } from '../../src/ai/aiCardMemory';
 import {
   Card,
-  GameState,
   GameContext,
+  GameState,
+  JokerType,
   MemoryContext,
   PlayerId,
   PlayStyle,
@@ -16,8 +17,7 @@ import {
   Suit,
   Trick,
   TrickPosition,
-  TrumpInfo,
-  JokerType
+  TrumpInfo
 } from "../../src/types";
 import { createTestCardsGameState } from '../helpers/gameStates';
 
@@ -107,7 +107,7 @@ describe('AI Card Memory System - Phase 3', () => {
       expect(humanMemory.knownCards[0].rank).toBe(Rank.King);
 
       const bot2Memory = memory.playerMemories[PlayerId.Bot2];
-      expect(bot2Memory.trumpCount).toBe(1); // Played trump Two of Hearts
+      expect(bot2Memory.trumpUsed).toBe(1); // Played trump Two of Hearts
     });
 
     it('should handle current trick in progress', () => {
@@ -805,7 +805,6 @@ describe('AI Card Memory System - Phase 3', () => {
       // Bot1 should be detected as trump void with zero trump count
       const bot1Memory = memory.playerMemories[PlayerId.Bot1];
       expect(bot1Memory.trumpVoid).toBe(true);
-      expect(bot1Memory.trumpCount).toBe(0);
     });
   });
 });

@@ -241,7 +241,7 @@ describe('Combo Generation Comprehensive Tests', () => {
 
       // Verify all generated combos are actually valid
       validCombos.forEach(combo => {
-        const isValid = isValidPlay(combo.cards, leadingHearts, playerHand, trumpInfo);
+        const isValid = isValidPlay(combo.cards, playerHand, PlayerId.Human, gameState);
         expect(isValid).toBe(true);
       });
     });
@@ -442,7 +442,7 @@ describe('Combo Generation Comprehensive Tests', () => {
 
       // The returned combo should be valid
       const combo = validCombos[0];
-      const isValid = isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo);
+      const isValid = isValidPlay(combo.cards, playerHand, PlayerId.Human, gameState);
       expect(isValid).toBe(true);
     });
 
@@ -528,7 +528,7 @@ describe('Combo Generation Comprehensive Tests', () => {
 
       // All options should be valid
       validCombos.forEach(combo => {
-        const isValid = isValidPlay(combo.cards, leadingCombo, playerHand, trumpInfo);
+        const isValid = isValidPlay(combo.cards, playerHand, PlayerId.Human, gameState);
         expect(isValid).toBe(true);
       });
 

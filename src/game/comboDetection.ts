@@ -1,25 +1,11 @@
-import {
-  Card,
-  Combo,
-  ComboType,
-  MultiComboStructure,
-  Suit,
-  TrumpInfo,
-} from "../types";
+import { Card, Combo, ComboType, Suit, TrumpInfo } from "../types";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
-import {
-  analyzeMultiComboComponents,
-  getMultiComboStructure,
-  matchesRequiredStructure,
-} from "./multiComboDetection";
 import { findAllTractors, isValidTractor } from "./tractorLogic";
 
 // Identify valid combinations in a player's hand
 export const identifyCombos = (
   cards: Card[],
   trumpInfo: TrumpInfo,
-  context?: "leading" | "following", // NEW: Context for multi-combo detection
-  leadingStructure?: MultiComboStructure, // NEW: For following validation
 ): Combo[] => {
   const combos: Combo[] = [];
 
@@ -70,65 +56,8 @@ export const identifyCombos = (
   }));
   combos.push(...tractorsWithBreaking);
 
-  // NEW: Multi-combo detection for leading context
-  if (context === "leading") {
-    // Just detect structure - validation happens elsewhere
-    const components = analyzeMultiComboComponents(cards, trumpInfo);
-    if (components.length >= 2) {
-      const structure = getMultiComboStructure(
-        components,
-        cards[0]?.suit || "Hearts",
-        true,
-      );
-      combos.push({
-        type: ComboType.MultiCombo,
-        cards: cards,
-        value: calculateMultiComboValue(components),
-        multiComboStructure: structure,
-        isBreakingPair: false,
-      });
-    }
-  }
-
-  if (context === "following" && leadingStructure) {
-    // For following, try to form a multi-combo that matches the leading structure
-    const followingComponents = analyzeMultiComboComponents(cards, trumpInfo);
-    const followingStructure = getMultiComboStructure(
-      followingComponents,
-      leadingStructure.suit,
-      false,
-    );
-
-    // Check if this could be a valid following multi-combo
-    if (matchesRequiredStructure(followingStructure, leadingStructure)) {
-      combos.push({
-        type: ComboType.MultiCombo,
-        cards: cards,
-        value: calculateMultiComboValue(followingComponents),
-        multiComboStructure: followingStructure,
-        isBreakingPair: false,
-      });
-    }
-  }
-
   return combos;
 };
-
-/**
- * Calculate the value of a multi-combo based on its components
- * Multi-combos should have MUCH higher priority than single cards (even Aces)
- * @param components Component combos within the multi-combo
- * @returns Combined value of all components with multi-combo bonus
- */
-function calculateMultiComboValue(components: Combo[]): number {
-  const baseValue = components.reduce((total, combo) => total + combo.value, 0);
-
-  // Multi-combo bonus: Ensures multi-combos are prioritized over even high-value singles
-  // A multi-combo like A♠-K♠-K♠ should beat a single A♠ in selection priority
-  const multiComboBonus = 5000; // High enough to beat any single card value
-
-  return baseValue + multiComboBonus;
-}
 
 // Legacy function for backward compatibility
 export const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
@@ -154,27 +83,7 @@ export const getComboType = (
     }
   }
 
-  // Check for multi-combo if 3+ cards - basic structural check only
-  if (cards.length >= 3) {
-    // Group cards by suit/trump to check if they're from same suit
-    const cardGroups: Record<string, Card[]> = {};
-    cards.forEach((card) => {
-      const groupKey = isTrump(card, trumpInfo) ? "trump" : card.suit;
-      if (!cardGroups[groupKey]) {
-        cardGroups[groupKey] = [];
-      }
-      cardGroups[groupKey].push(card);
-    });
-
-    // Multi-combo must be from single suit
-    if (Object.keys(cardGroups).length === 1) {
-      // Check if cards can form multiple combination types
-      const components = analyzeMultiComboComponents(cards, trumpInfo);
-      if (components.length >= 2) {
-        return ComboType.MultiCombo;
-      }
-    }
-  }
+  // Multi-combo detection removed from getComboType - now handled separately with context
 
   // Special case: Multiple cards that are all singles
   if (cards.length > 1) {

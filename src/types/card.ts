@@ -299,7 +299,7 @@ export enum ComboType {
   Single = "Single",
   Pair = "Pair",
   Tractor = "Tractor", // Consecutive pairs of same suit
-  MultiCombo = "MultiCombo", // Multiple combination types from same suit
+  MultiCombo = "MultiCombo", // Strategic unbeatable leading combos from non-trump suit
   Invalid = "Invalid", // Invalid combination that doesn't form any valid combo type
 }
 
@@ -314,6 +314,27 @@ export type MultiComboStructure = {
   };
   totalLength: number; // Total cards in multi-combo
   isLeading: boolean; // Leading vs following context
+};
+
+// Mixed-combo requirements for exhausting scenarios
+export type MixedComboRequirements = {
+  leadComboType: ComboType; // Type of combo being followed
+  leadComboLength: number; // Total number of cards required
+  leadSuit: Suit; // Target suit or trump group
+  leadStructure?: {
+    // Specific structure requirements for complex combos
+    pairs: number; // Required pairs
+    tractors: number; // Required tractors
+    tractorSizes: number[]; // Length of each required tractor
+    singles: number; // Required singles
+  };
+  minimalSameSuitRequirements: {
+    // Minimal requirements from same suit before using other suits
+    minTractorCounts: number; // Must use this many tractors from same suit
+    minTractorLength: number; // Minimum length of tractors from same suit
+    minPairs: number; // Must use this many pairs from same suit
+    exhaustAllSameSuit: boolean; // Must use ALL same-suit cards first
+  };
 };
 
 export type Combo = {

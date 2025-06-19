@@ -102,9 +102,9 @@ describe('AI Trump Following Behavior', () => {
     const nonTrumpPair = aiHand.slice(3, 5); // 6♠-6♠
     const isNonTrumpPairValid = isValidPlay(
       nonTrumpPair,
-      leadingTrumpPair,
       aiHand,
-      trumpInfo
+      PlayerId.Bot1,
+      gameState
     );
     
     expect(isNonTrumpPairValid).toBe(false); // Should be invalid
@@ -113,9 +113,9 @@ describe('AI Trump Following Behavior', () => {
     const trumpPair = aiHand.slice(0, 2); // 4♥-4♥
     const isTrumpPairValid = isValidPlay(
       trumpPair,
-      leadingTrumpPair, 
       aiHand,
-      trumpInfo
+      PlayerId.Bot1,
+      gameState
     );
     
     expect(isTrumpPairValid).toBe(true); // Should be valid
@@ -130,9 +130,9 @@ describe('AI Trump Following Behavior', () => {
     // AI move should be valid
     const isAIMoveValid = isValidPlay(
       aiMove,
-      leadingTrumpPair,
       aiHand,
-      trumpInfo
+      PlayerId.Bot1,
+      gameState
     );
     
     expect(isAIMoveValid).toBe(true);
@@ -213,9 +213,9 @@ describe('AI Trump Following Behavior', () => {
     // Verify the move is valid
     const isAIMoveValid = isValidPlay(
       aiMove,
-      leadingTrumpPair,
       bot1Hand,
-      trumpInfo
+      PlayerId.Bot1,
+      gameState
     );
     expect(isAIMoveValid).toBe(true);
   });
@@ -290,12 +290,17 @@ describe('AI Trump Following Behavior', () => {
     expect(nonTrumpCardsPlayed.length).toBe(0);
     
     // Verify the move is valid
+    console.log('DEBUG - AI move:', aiMove.map(c => c.joker || `${c.rank}${c.suit}`));
+    console.log('DEBUG - Leading cards:', leadingTrumpTractor.map(c => `${c.rank}${c.suit}`));
+    console.log('DEBUG - Bot2 hand:', bot2Hand.map(c => c.joker || `${c.rank}${c.suit}`));
+    
     const isAIMoveValid = isValidPlay(
       aiMove,
-      leadingTrumpTractor,
       bot2Hand,
-      trumpInfo
+      PlayerId.Bot2,
+      gameState
     );
+    console.log('DEBUG - isValidPlay result:', isAIMoveValid);
     expect(isAIMoveValid).toBe(true);
   });
 

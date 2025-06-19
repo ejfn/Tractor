@@ -575,9 +575,9 @@ export function getAIMoveWithErrorHandling(state: GameState): {
     const leadingCards = state.currentTrick?.plays[0]?.cards || null;
     const isValidMove = isValidPlay(
       aiMove,
-      leadingCards,
       currentPlayer.hand,
-      state.trumpInfo,
+      currentPlayer.id,
+      state,
     );
 
     if (!isValidMove) {
@@ -701,11 +701,6 @@ export function validatePlay(state: GameState, cards: Card[]): boolean {
     );
   } else {
     // Player is following - must match the leading combo
-    return isValidPlay(
-      cards,
-      state.currentTrick.plays[0]?.cards || [],
-      currentPlayer.hand,
-      state.trumpInfo,
-    );
+    return isValidPlay(cards, currentPlayer.hand, currentPlayer.id, state);
   }
 }

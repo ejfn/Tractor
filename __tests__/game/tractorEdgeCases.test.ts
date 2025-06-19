@@ -1,5 +1,6 @@
 import { isValidPlay } from "../../src/game/playValidation";
-import { Card, Rank, Suit, TrumpInfo } from "../../src/types";
+import { Card, Rank, Suit, TrumpInfo, PlayerId, GameState } from "../../src/types";
+import { createGameState } from "../helpers";
 
 describe('Tractor Edge Cases Tests', () => {
   describe('Edge Cases and Complex Scenarios', () => {
@@ -22,8 +23,16 @@ describe('Tractor Edge Cases Tests', () => {
       
       // Must play all Spades cards
       const validPlay = minimalHand;
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingTractor }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
-      const isValid = isValidPlay(validPlay, leadingTractor, minimalHand, trumpInfo);
+      const isValid = isValidPlay(validPlay, minimalHand, PlayerId.Bot1, gameState);
       expect(isValid).toBe(true);
     });
 
@@ -51,8 +60,16 @@ describe('Tractor Edge Cases Tests', () => {
         ...Card.createPair(Suit.Spades, Rank.Jack),
         ...Card.createPair(Suit.Spades, Rank.Queen)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: threePairTractor }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
-      const isValid = isValidPlay(validPlay, threePairTractor, playerHand, trumpInfo);
+      const isValid = isValidPlay(validPlay, playerHand, PlayerId.Bot1, gameState);
       expect(isValid).toBe(true);
     });
   });

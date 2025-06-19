@@ -1,6 +1,6 @@
 import { isValidPlay } from '../../src/game/playValidation';
-import { Card, Suit, Rank, TrumpInfo } from '../../src/types';
-import { createTrumpInfo } from '../helpers';
+import { Card, Suit, Rank, TrumpInfo, PlayerId, GameState } from '../../src/types';
+import { createTrumpInfo, createGameState } from '../helpers';
 
 describe('FRV-3: Tractor Following Rules', () => {
   const createTestTrumpInfo = (trumpRank: Rank, trumpSuit: Suit): TrumpInfo => ({
@@ -29,6 +29,14 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Diamonds, Rank.Six, 0),   // Single
         Card.createCard(Suit.Clubs, Rank.Two, 0)       // Other suit
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // INVALID: Player attempts to use mixed singles + one pair, skipping available A♦A♦ pair
       const invalidAttempt = [
@@ -38,7 +46,7 @@ describe('FRV-3: Tractor Following Rules', () => {
         playerHand[5]  // 6♦ (single)
       ];
       
-      expect(isValidPlay(invalidAttempt, leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay(invalidAttempt, playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-3.2: All pairs used first', () => {
@@ -58,6 +66,14 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Diamonds, Rank.Six, 0),
         Card.createCard(Suit.Clubs, Rank.Two, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // VALID: Player uses all available pairs
       const validPlay = [
@@ -65,7 +81,7 @@ describe('FRV-3: Tractor Following Rules', () => {
         playerHand[2], playerHand[3]  // 7♦7♦ pair
       ];
       
-      expect(isValidPlay(validPlay, leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay(validPlay, playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.3: Use available pair + singles', () => {
@@ -84,6 +100,14 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Diamonds, Rank.Six, 0),
         Card.createCard(Suit.Clubs, Rank.Two, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // VALID: Use available pair + singles to match 4-card requirement
       const validPlay = [
@@ -91,7 +115,7 @@ describe('FRV-3: Tractor Following Rules', () => {
         playerHand[2], playerHand[3]  // Singles
       ];
       
-      expect(isValidPlay(validPlay, leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay(validPlay, playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.4: Must use ALL trump pairs first', () => {
@@ -114,6 +138,14 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Six, 0),   // Trump single
         Card.createCard(Suit.Clubs, Rank.Two, 0)     // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // INVALID: Skipping available trump pair for singles
       const invalidTrumpAttempt = [
@@ -123,7 +155,7 @@ describe('FRV-3: Tractor Following Rules', () => {
         playerHand[5]  // 6♥ (trump single)
       ];
       
-      expect(isValidPlay(invalidTrumpAttempt, leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay(invalidTrumpAttempt, playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
   });
 
@@ -147,6 +179,14 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Diamonds, Rank.Queen, 0),
         Card.createCard(Suit.Diamonds, Rank.Jack, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // INVALID: Breaking Hearts pair unnecessarily
       const invalidPlay = [
@@ -156,7 +196,7 @@ describe('FRV-3: Tractor Following Rules', () => {
         playerHand[6]  // Q♦ (other suit)
       ];
       
-      expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay(invalidPlay, playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-3.6: Breaking pair unnecessarily', () => {
@@ -177,6 +217,14 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Spades, Rank.Ace, 0),
         Card.createCard(Suit.Clubs, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // INVALID: Breaking pair when could use pair + singles
       const invalidPlay = [
@@ -186,7 +234,7 @@ describe('FRV-3: Tractor Following Rules', () => {
         playerHand[4]  // 4♥ (single)
       ];
       
-      expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay(invalidPlay, playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-3.7: Breaking pair when insufficient Hearts', () => {
@@ -206,6 +254,14 @@ describe('FRV-3: Tractor Following Rules', () => {
         ...Card.createPair(Suit.Clubs, Rank.King),
         Card.createCard(Suit.Diamonds, Rank.Queen, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // INVALID: Breaking pair + insufficient Hearts when other suits available
       const invalidPlay = [
@@ -215,7 +271,7 @@ describe('FRV-3: Tractor Following Rules', () => {
         playerHand[5]  // K♣ (other suit)
       ];
       
-      expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay(invalidPlay, playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-3.8: Rule applies to trump combinations too', () => {
@@ -235,6 +291,14 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Nine, 0),
         Card.createCard(Suit.Clubs, Rank.Ten, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // INVALID: Breaking trump pair unnecessarily
       const invalidPlay = [
@@ -244,7 +308,7 @@ describe('FRV-3: Tractor Following Rules', () => {
         playerHand[4]  // 9♥ (non-trump)
       ];
       
-      expect(isValidPlay(invalidPlay, leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay(invalidPlay, playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
   });
 
@@ -264,11 +328,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         ...Card.createPair(Suit.Hearts, Rank.Eight),
         Card.createCard(Suit.Clubs, Rank.Nine, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // VALID: Tractor-to-tractor matching
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.10: Non-consecutive pairs when no tractor available', () => {
@@ -286,11 +358,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         ...Card.createPair(Suit.Hearts, Rank.Nine),
         Card.createCard(Suit.Clubs, Rank.Ten, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // VALID: Non-consecutive pairs when no tractor available
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.11: Insufficient tractor combinations', () => {
@@ -311,11 +391,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Clubs, Rank.Ten, 0),
         Card.createCard(Suit.Diamonds, Rank.Jack, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // VALID: Use available pair + fill with singles from same suit
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3], playerHand[4], playerHand[5]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.12: Must use all Hearts + fill with others', () => {
@@ -334,11 +422,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
         Card.createCard(Suit.Diamonds, Rank.Ten, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use all Hearts + fill with others
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.13: Order doesn\'t matter if all Hearts included', () => {
@@ -357,11 +453,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
         Card.createCard(Suit.Diamonds, Rank.Ten, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Order variation - all Hearts included
       expect(isValidPlay([
         playerHand[0], playerHand[2], playerHand[3], playerHand[1]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.14: Order variation - all Hearts included', () => {
@@ -380,11 +484,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
         Card.createCard(Suit.Diamonds, Rank.Ten, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Another order variation - all Hearts included
       expect(isValidPlay([
         playerHand[2], playerHand[3], playerHand[0], playerHand[1]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.15: Same-suit tractor following', () => {
@@ -402,11 +514,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         ...Card.createPair(Suit.Spades, Rank.Ten),
         Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Should follow with same-suit tractor
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.16: Use all pairs + singles when insufficient', () => {
@@ -425,11 +545,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Spades, Rank.Jack, 0),
         Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Should use available pair + singles
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-3.17: Cannot use other suits when same suit available', () => {
@@ -448,11 +576,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Spades, Rank.Jack, 0),
         Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Cannot mix with Hearts when sufficient Spades available
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[4], playerHand[2]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-3.18: Mixed suits when out of leading suit', () => {
@@ -471,11 +607,19 @@ describe('FRV-3: Tractor Following Rules', () => {
         Card.createCard(Suit.Diamonds, Rank.Jack, 0),
         Card.createCard(Suit.Hearts, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Mixed suits valid when out of leading suit
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
   });
 });

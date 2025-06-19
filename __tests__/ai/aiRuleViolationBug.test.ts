@@ -52,7 +52,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     expect(heartsCard?.rank).toBe(Rank.Three);
 
     // Verify the move is actually valid according to game rules
-    const isValid = isValidPlay(aiMove, leadingCombo, aiHand, trumpInfo);
+    const isValid = isValidPlay(aiMove, aiHand, PlayerId.Bot1, gameState);
     expect(isValid).toBe(true);
 
     // Get all valid combinations and ensure the AI picked one of them
@@ -104,7 +104,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     
     // Verify move follows rules
     expect(aiMove).toHaveLength(2);
-    const isValid = isValidPlay(aiMove, leadingCombo, aiHand, trumpInfo);
+    const isValid = isValidPlay(aiMove, aiHand, PlayerId.Bot1, gameState);
     expect(isValid).toBe(true);
   });
 
@@ -151,7 +151,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
     expect(includesHeartsCard).toBe(true);
     
     // Verify it's a valid play
-    const isValid = isValidPlay(aiMove, leadingCombo, aiHand, trumpInfo);
+    const isValid = isValidPlay(aiMove, aiHand, PlayerId.Bot1, gameState);
     expect(isValid).toBe(true);
   });
 
@@ -199,7 +199,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
       expect(aiMove).toHaveLength(4);
       
       // Verify move is actually valid
-      const isValid = isValidPlay(aiMove, leadingCombo, aiHand, trumpInfo);
+      const isValid = isValidPlay(aiMove, aiHand, PlayerId.Bot1, gameState);
       expect(isValid).toBe(true);
       
       // Verify it includes both Hearts cards (rule requirement)
@@ -248,7 +248,7 @@ describe('AI Rule Violation Bug - Issue #95', () => {
       expect(aiMove).toHaveLength(2);
       
       // Must be valid according to game rules
-      const isValid = isValidPlay(aiMove, leadingCombo, aiHand, trumpInfo);
+      const isValid = isValidPlay(aiMove, aiHand, PlayerId.Bot1, gameState);
       expect(isValid).toBe(true);
       
     }).not.toThrow();

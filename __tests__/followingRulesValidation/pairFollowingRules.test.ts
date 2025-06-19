@@ -1,6 +1,6 @@
 import { isValidPlay } from '../../src/game/playValidation';
-import { Card, JokerType, Rank, Suit, TrumpInfo } from '../../src/types';
-import { createTrumpInfo } from '../helpers';
+import { Card, JokerType, Rank, Suit, TrumpInfo, PlayerId, GameState } from '../../src/types';
+import { createTrumpInfo, createGameState } from '../helpers';
 
 describe('FRV-2: Pair Following Rules', () => {
   const createTestTrumpInfo = (trumpRank: Rank, trumpSuit: Suit): TrumpInfo => ({
@@ -16,12 +16,20 @@ describe('FRV-2: Pair Following Rules', () => {
         ...Card.createPair(Suit.Hearts, Rank.Seven),
         Card.createCard(Suit.Clubs, Rank.Eight, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Single card invalid for pair lead
-      expect(isValidPlay([playerHand[0]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[0]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
       
       // Two cards valid for pair lead
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-2.2: Must use same-suit pair when available', () => {
@@ -32,9 +40,17 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Eight, 0),
         Card.createCard(Suit.Clubs, Rank.Nine, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use the Hearts pair
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-2.3: Cannot mix suits when same-suit pair available', () => {
@@ -45,9 +61,17 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Eight, 0),
         Card.createCard(Suit.Clubs, Rank.Nine, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Cannot mix Hearts with Clubs when Hearts pair available
-      expect(isValidPlay([playerHand[0], playerHand[3]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[0], playerHand[3]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-2.4: Must include leading suit when insufficient', () => {
@@ -58,9 +82,17 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Clubs, Rank.Eight, 0),
         Card.createCard(Suit.Diamonds, Rank.Nine, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must include the Hearts card in play
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-2.5: Cannot skip leading suit card', () => {
@@ -71,9 +103,17 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Clubs, Rank.Eight, 0),
         Card.createCard(Suit.Diamonds, Rank.Nine, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Cannot skip the Hearts card
-      expect(isValidPlay([playerHand[1], playerHand[2]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[1], playerHand[2]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-2.6: Clubs combo valid when no Hearts', () => {
@@ -84,9 +124,17 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Clubs, Rank.Eight, 0),
         Card.createCard(Suit.Diamonds, Rank.Nine, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // No Hearts cards, so Clubs combo is valid
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
   });
 
@@ -101,11 +149,19 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Jack, 0),
         Card.createCard(Suit.Spades, Rank.Ace, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingPair }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Two different hearts should be valid
       const selectedCards = [playerHand[0], playerHand[1]];
       
-      expect(isValidPlay(selectedCards, leadingPair, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay(selectedCards, playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-2.8: Mixed Hearts valid when no pairs available', () => {
@@ -119,11 +175,19 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Ten, 0),
         Card.createCard(Suit.Spades, Rank.Ace, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingPair }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Should be valid to play any two hearts when no pairs available
       const mixedHeartsPlay = [playerHand[0], playerHand[1]];
       
-      expect(isValidPlay(mixedHeartsPlay, leadingPair, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay(mixedHeartsPlay, playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
   });
 
@@ -151,11 +215,20 @@ describe('FRV-2: Pair Following Rules', () => {
       ];
 
       // This should be INVALID - player has diamonds so must follow diamonds, not play clubs
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
+      
       const isValid = isValidPlay(
         followingCombo,
-        leadingCombo,
         playerHand,
-        trumpInfo
+        PlayerId.Bot1,
+        gameState
       );
 
       expect(isValid).toBe(false); // Should be false - must follow suit
@@ -184,11 +257,20 @@ describe('FRV-2: Pair Following Rules', () => {
       ];
 
       // This should be VALID - player void in diamonds, can play any suit
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
+      
       const isValid = isValidPlay(
         followingCombo,
-        leadingCombo,
         playerHandVoidInDiamonds,
-        trumpInfo
+        PlayerId.Bot1,
+        gameState
       );
 
       expect(isValid).toBe(true); // Should be true when void in led suit
@@ -206,11 +288,19 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Spades, Rank.Queen, 0), // Trump single  
         Card.createCard(Suit.Hearts, Rank.Seven, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
 
       const trumpSinglesPlay = [playerHand[0], playerHand[1]];
 
       // Should be valid - using trump singles when no trump pairs available
-      expect(isValidPlay(trumpSinglesPlay, leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay(trumpSinglesPlay, playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
   });
 
@@ -229,10 +319,18 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.King, 0), // Trump single
         Card.createCard(Suit.Spades, Rank.Queen, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use Big Joker pair, not trump singles
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
-      expect(isValidPlay([playerHand[2], playerHand[3]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      expect(isValidPlay([playerHand[2], playerHand[3]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-2.13: Must use trump rank pairs when leading trump pairs', () => {
@@ -249,10 +347,18 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.King, 0), // Trump single
         Card.createCard(Suit.Clubs, Rank.Queen, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use trump rank pair, not trump singles
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
-      expect(isValidPlay([playerHand[2], playerHand[3]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      expect(isValidPlay([playerHand[2], playerHand[3]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-2.14: Must use trump suit pairs when leading trump pairs', () => {
@@ -269,10 +375,18 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Queen, 0), // Trump single
         Card.createCard(Suit.Clubs, Rank.Jack, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use trump suit pair, not trump singles
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
-      expect(isValidPlay([playerHand[2], playerHand[3]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      expect(isValidPlay([playerHand[2], playerHand[3]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-2.15: Cannot use non-trump when trump pairs available', () => {
@@ -289,10 +403,18 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Spades, Rank.King, 1), // Non-trump pair
         Card.createCard(Suit.Clubs, Rank.Queen, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use trump pair, cannot use non-trump pair
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
-      expect(isValidPlay([playerHand[2], playerHand[3]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      expect(isValidPlay([playerHand[2], playerHand[3]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-2.16: Trump singles valid when no trump pairs', () => {
@@ -308,9 +430,17 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank single
         Card.createCard(Suit.Clubs, Rank.King, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Trump singles valid when no trump pairs
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-2.17: Cannot use non-trump singles when trump singles available', () => {
@@ -326,10 +456,18 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Spades, Rank.King, 0), // Non-trump single
         Card.createCard(Suit.Clubs, Rank.Queen, 0) // Non-trump single
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use trump singles, cannot use non-trump singles
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
-      expect(isValidPlay([playerHand[2], playerHand[3]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      expect(isValidPlay([playerHand[2], playerHand[3]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-2.18: Non-trump singles valid when no trump cards left', () => {
@@ -345,9 +483,17 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Diamonds, Rank.Jack, 0), // Non-trump
         Card.createCard(Suit.Spades, Rank.Ten, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Non-trump singles valid when no trump cards available
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-2.19: Mixed trump types - joker hierarchy', () => {
@@ -364,11 +510,19 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Ace, 0), // Trump suit single
         Card.createCard(Suit.Spades, Rank.King, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use Small Joker pair (available trump pair)
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
       // Cannot mix Big Joker single with trump suit single when trump pair available
-      expect(isValidPlay([playerHand[2], playerHand[3]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[2], playerHand[3]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-2.20: Mixed trump singles when no trump pairs', () => {
@@ -385,13 +539,21 @@ describe('FRV-2: Pair Following Rules', () => {
         Card.createCard(Suit.Hearts, Rank.Ace, 0), // Trump suit single
         Card.createCard(Suit.Clubs, Rank.King, 0) // Non-trump
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Can use any trump singles combination when no trump pairs
-      expect(isValidPlay([playerHand[0], playerHand[1]], leadingCombo, playerHand, trumpInfo)).toBe(true);
-      expect(isValidPlay([playerHand[0], playerHand[2]], leadingCombo, playerHand, trumpInfo)).toBe(true);
-      expect(isValidPlay([playerHand[1], playerHand[3]], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[1]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      expect(isValidPlay([playerHand[0], playerHand[2]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      expect(isValidPlay([playerHand[1], playerHand[3]], playerHand, PlayerId.Bot1, gameState)).toBe(true);
       // Cannot use non-trump when trump available
-      expect(isValidPlay([playerHand[0], playerHand[4]], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      expect(isValidPlay([playerHand[0], playerHand[4]], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
   });
 });

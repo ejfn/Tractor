@@ -68,7 +68,7 @@ describe('AI Tractor Following Behavior', () => {
     gameLogger.info('test_ai_move_result', { cards: aiMove.map(card => `${card.suit}-${card.rank}`) }, 'AI move result');
     
     // Check if the move is valid
-    const isValid = isValidPlay(aiMove, leadingTractor, bot1Player.hand, gameState.trumpInfo);
+    const isValid = isValidPlay(aiMove, bot1Player.hand, PlayerId.Bot1, gameState);
     gameLogger.info('test_move_validation', { isValid }, 'AI move validation result');
     
     if (isValid) {
@@ -141,7 +141,7 @@ describe('AI Tractor Following Behavior', () => {
     const aiMove = getAIMove(gameState, PlayerId.Bot1);
     gameLogger.info('test_ai_hierarchy_move', { cards: aiMove.map(card => `${card.suit}-${card.rank}`) }, 'AI hierarchy test move result');
     
-    const isValid = isValidPlay(aiMove, leadingTractor, bot1Player.hand, gameState.trumpInfo);
+    const isValid = isValidPlay(aiMove, bot1Player.hand, PlayerId.Bot1, gameState);
     gameLogger.info('test_hierarchy_validation_result', { isValid }, 'AI hierarchy move validation result');
     
     // AI should play the trump tractor if possible (7♥-7♥-8♥-8♥)

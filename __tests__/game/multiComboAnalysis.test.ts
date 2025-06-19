@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { detectOptimalMultiCombo, validateMultiComboSelection, detectMultiComboAttempt } from '../../src/game/multiComboDetection';
+import { detectOptimalMultiCombo, validateMultiComboSelection, detectMultiComboAttempt } from '../../src/game/multiComboAnalysis';
 import { Card, ComboType, GameState, Rank, Suit, PlayerId } from '../../src/types';
 import { createTrumpScenarios } from '../helpers';
 import { initializeGame } from '../../src/utils/gameInitialization';

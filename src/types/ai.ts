@@ -1,9 +1,9 @@
 // AI strategy and intelligence types
 
-import { PlayerId } from "./core";
-import { Card, Suit, TrumpInfo, Combo } from "./card";
-import type { VoidExploitationAnalysis } from "../ai/analysis/voidExploitation";
 import type { PointCardTimingAnalysis } from "../ai/analysis/pointCardTiming";
+import type { VoidExploitationAnalysis } from "../ai/analysis/voidExploitation";
+import { Card, Combo, Suit, TrumpInfo } from "./card";
+import { PlayerId } from "./core";
 
 // AI Strategy Enhancement Types
 export enum TrickPosition {
@@ -83,7 +83,7 @@ export interface PlayerMemory {
   estimatedHandSize: number; // Estimated cards remaining
   suitVoids: Set<Suit>; // Suits this player has shown to be out of
   trumpVoid: boolean; // Whether this player has shown to be out of trump cards
-  trumpCount: number; // Estimated trump cards remaining
+  trumpUsed: number; // The count of trump cards have been played by this player
   pointCardsProbability: number; // Likelihood of having point cards
   playPatterns: PlayPattern[]; // Historical play behavior
 }

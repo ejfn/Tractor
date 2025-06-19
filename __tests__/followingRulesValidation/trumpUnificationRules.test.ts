@@ -1,6 +1,6 @@
 import { isValidPlay } from '../../src/game/playValidation';
-import { Card, JokerType, Rank, Suit, TrumpInfo } from '../../src/types';
-import { createTrumpInfo } from '../helpers';
+import { Card, JokerType, Rank, Suit, TrumpInfo, PlayerId, GameState } from '../../src/types';
+import { createTrumpInfo, createGameState } from '../helpers';
 
 describe('FRV-4: Trump Unification Rules', () => {
   const createTestTrumpInfo = (trumpRank: Rank, trumpSuit: Suit): TrumpInfo => ({
@@ -28,11 +28,19 @@ describe('FRV-4: Trump Unification Rules', () => {
         ...Card.createPair(Suit.Hearts, Rank.Ace),
         Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Joker tractor should be valid trump response
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-4.2: Cannot mix Big and Small Jokers in same pair', () => {
@@ -53,11 +61,19 @@ describe('FRV-4: Trump Unification Rules', () => {
         ...Card.createPair(Suit.Hearts, Rank.Ace),
         Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Cannot use BJ-BJ + A♥A♥ when joker tractor BJ-BJ + SJ-SJ available
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[4], playerHand[5]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-4.3: Trump rank tractor - trump suit + off-suit rank pairs', () => {
@@ -76,11 +92,19 @@ describe('FRV-4: Trump Unification Rules', () => {
         ...Card.createPair(Suit.Clubs, Rank.Two),  // Trump rank in off-suit
         Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Trump rank tractor should be valid
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-4.4: Cannot form rank tractor with only off-suit pairs', () => {
@@ -99,11 +123,19 @@ describe('FRV-4: Trump Unification Rules', () => {
         ...Card.createPair(Suit.Clubs, Rank.Two),  // Trump rank (off-suit)
         Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Cannot use only off-suit rank pairs when trump suit rank pair available
       expect(isValidPlay([
         playerHand[2], playerHand[3], playerHand[4], playerHand[5]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-4.5: Skip-rank tractor - trump rank bridges gap', () => {
@@ -122,11 +154,19 @@ describe('FRV-4: Trump Unification Rules', () => {
         ...Card.createPair(Suit.Hearts, Rank.Nine),
         Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // 5♥5♥-6♥6♥ is valid (consecutive pairs)
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
 
     test('FRV-4.6: Cannot form skip-rank without trump rank bridge', () => {
@@ -145,11 +185,19 @@ describe('FRV-4: Trump Unification Rules', () => {
         ...Card.createPair(Suit.Hearts, Rank.Nine),
         Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // 6♥6♥-9♥9♥ is invalid (gap 6-[7,8]-9 too big)
       expect(isValidPlay([
         playerHand[2], playerHand[3], playerHand[4], playerHand[5]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-4.7: Must use trump tractor when available', () => {
@@ -168,11 +216,19 @@ describe('FRV-4: Trump Unification Rules', () => {
         ...Card.createPair(Suit.Clubs, Rank.Ace),    // Non-trump pair
         Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Cannot skip trump tractor for non-trump pairs
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[4], playerHand[5]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(false);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(false);
     });
 
     test('FRV-4.8: Using trump tractor when available', () => {
@@ -191,11 +247,19 @@ describe('FRV-4: Trump Unification Rules', () => {
         ...Card.createPair(Suit.Clubs, Rank.Ace),    // Non-trump pair
         Card.createCard(Suit.Diamonds, Rank.King, 0)
       ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        }
+      });
       
       // Must use trump tractor when available
       expect(isValidPlay([
         playerHand[0], playerHand[1], playerHand[2], playerHand[3]
-      ], leadingCombo, playerHand, trumpInfo)).toBe(true);
+      ], playerHand, PlayerId.Bot1, gameState)).toBe(true);
     });
   });
 });
