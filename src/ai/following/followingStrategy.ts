@@ -16,6 +16,7 @@ import {
   selectFourthPlayerPointAvoidance,
 } from "./strategicDisposal";
 import { selectOptimalWinningCombo } from "./trickContention";
+import { selectMultiComboFollowingPlay } from "./multiComboFollowingStrategy";
 
 /**
  * Following Strategy - Main following logic with 4-priority decision chain
@@ -38,6 +39,25 @@ export function selectOptimalFollowPlay(
   gameState: GameState,
   currentPlayerId?: PlayerId,
 ): Card[] {
+  // === PRIORITY 0: MULTI-COMBO SPECIALIZED HANDLING ===
+  // Check for multi-combo following scenarios first
+  if (currentPlayerId) {
+    const player = gameState.players.find((p) => p.id === currentPlayerId);
+    const playerHand = player?.hand || [];
+    const validCombos = comboAnalyses.map((ca) => ca.combo);
+
+    const multiComboResult = selectMultiComboFollowingPlay(
+      playerHand,
+      gameState,
+      currentPlayerId,
+      validCombos,
+    );
+
+    if (multiComboResult && multiComboResult.strategy !== "no_valid_response") {
+      return multiComboResult.cards;
+    }
+  }
+
   // RESTRUCTURED: Clear priority chain for following play decisions
   const trickWinner = context.trickWinnerAnalysis;
 

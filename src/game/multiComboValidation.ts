@@ -12,6 +12,7 @@ import {
 } from "../types";
 import { MultiComboValidation } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
+import { analyzeMultiComboComponents } from "./multiComboAnalysis";
 import { sortCards } from "../utils/cardSorting";
 import { compareCards } from "./cardComparison";
 
@@ -408,10 +409,15 @@ export function validateFollowingMultiCombo(
   }
 
   // Rule 2: Must match combination structure
-  const followingComponents = identifyCombos(followingCards, trumpInfo);
+  // Use analyzeMultiComboComponents to get non-overlapping components
+  const followingComponents = analyzeMultiComboComponents(
+    followingCards,
+    trumpInfo,
+  );
   const structureMatch = matchesMultiComboStructure(
     followingComponents,
     leadingStructure,
+    followingCards,
   );
 
   if (!structureMatch.matches) {
@@ -425,15 +431,20 @@ export function validateFollowingMultiCombo(
 }
 
 /**
- * Check if following multi-combo matches required structure
+ * Check if following multi-combo matches required structure using 5-step algorithm
  * @param followingComponents Components of following multi-combo
  * @param requiredStructure Required structure from lead
+ * @param followingCards Original following cards for length validation
  * @returns Match result
  */
 function matchesMultiComboStructure(
   followingComponents: Combo[],
   requiredStructure: MultiComboStructure,
+  followingCards: Card[],
 ): { matches: boolean; reason: string } {
+  // Step 1: Total length check already done at higher level
+  // Step 2: Same suit check already done at higher level
+
   const actualStructure = {
     singles: 0,
     pairs: 0,
@@ -457,20 +468,55 @@ function matchesMultiComboStructure(
     }
   });
 
-  // Check if following has enough of each component type
-  if (actualStructure.pairs < requiredStructure.components.pairs) {
-    return {
-      matches: false,
-      reason: `Not enough pairs: ${actualStructure.pairs} vs required ${requiredStructure.components.pairs}`,
-    };
+  // Step 3: If leading has pairs/tractors, check total number of pairs, if less, false
+  const leadingTotalPairs =
+    requiredStructure.components.pairs +
+    requiredStructure.components.tractorSizes.reduce(
+      (sum, size) => sum + size,
+      0,
+    );
+
+  if (leadingTotalPairs > 0) {
+    const actualTotalPairs =
+      actualStructure.pairs +
+      actualStructure.tractorSizes.reduce((sum, size) => sum + size, 0);
+
+    if (actualTotalPairs < leadingTotalPairs) {
+      return {
+        matches: false,
+        reason: `Not enough total pairs: ${actualTotalPairs} vs required ${leadingTotalPairs}`,
+      };
+    }
   }
 
-  if (actualStructure.tractors < requiredStructure.components.tractors) {
-    return {
-      matches: false,
-      reason: `Not enough tractors: ${actualStructure.tractors} vs required ${requiredStructure.components.tractors}`,
-    };
+  // Step 4: If leading has tractors, check number of tractors first, if less, false;
+  // then check length of longest tractor, if less, false
+  if (requiredStructure.components.tractors > 0) {
+    // First check: number of tractors
+    if (actualStructure.tractors < requiredStructure.components.tractors) {
+      return {
+        matches: false,
+        reason: `Not enough tractors: ${actualStructure.tractors} vs required ${requiredStructure.components.tractors}`,
+      };
+    }
+
+    // Second check: length of longest tractor
+    const longestRequiredTractor = Math.max(
+      ...requiredStructure.components.tractorSizes,
+    );
+    const longestActualTractor =
+      actualStructure.tractorSizes.length > 0
+        ? Math.max(...actualStructure.tractorSizes)
+        : 0;
+
+    if (longestActualTractor < longestRequiredTractor) {
+      return {
+        matches: false,
+        reason: `Longest tractor too short: ${longestActualTractor} pairs vs required ${longestRequiredTractor} pairs`,
+      };
+    }
   }
 
+  // Step 5: Return true
   return { matches: true, reason: "" };
 }

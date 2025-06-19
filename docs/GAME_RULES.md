@@ -305,17 +305,24 @@ Valid Multi-Combo: Q♠9♠9♠7♠7♠
 #### **Multi-Combo Following Rules**
 **Must match the leading multi-combo structure exactly**
 
+**Step-by-Step Following Logic**:
+1. **Has cards in led suit?** → Match types/length exactly, contribute best or dispose weakest based on teammate vs opponent strategy
+2. **Void in led suit?** → **Trump opportunity!** Can beat non-trump multi-combo with trump cards that match the structure
+3. **Trump vs Trump?** → Later trump players can beat earlier trump responses using trump comparison rules
+
 **Combination Type Matching**:
 - **Pairs Led**: Must follow with same number (or more) of pairs if available
 - **Tractors Led**: Must follow with tractors if available, same number (or more) of pairs
 - **Exact Total Length**: Must match the leading combo's total card count exactly
 
-**Suit Exhaustion Priority**:
-1. **Use ALL remaining cards** from the led suit first
-2. **Contribute from other suits** only when led suit exhausted
-3. **Trump cards** last resort (but can beat the multi-combo)
+**Multi-Layer Trump Beating**:
+- **Leading**: Always non-trump multi-combo (trump multi-combos cannot lead)
+- **First Trump Response**: Can beat non-trump multi-combo with any trump structure match
+- **Later Trump Responses**: Can beat earlier trump responses using trump vs trump comparison
 
 **Following Multi-Combo Examples**:
+
+**Basic Structure Matching**:
 ```
 Lead: K♠K♠ + Q♠ + 8♠ (pair + singles, 4 cards total)
 Scenario: A♠A♠, J♠, 10♠, and 9♠ already played, making this a valid unbeatable lead
@@ -326,6 +333,19 @@ Your Response Options:
 ✅ 2♥2♥ + A♣ + K♦ (pair + singles, 4 cards, trump/other suits)
 ❌ 7♠7♠ + 6♠ (only 3 cards, wrong total length)
 ❌ 7♠ + 6♠ + 5♠ + 4♠ (4 singles, wrong combination types)
+```
+
+**Multi-Layer Trump Beating Scenario**:
+```
+Trump: 2♥ (Hearts trump)
+Human leads: K♠K♠ + Q♠ + 8♠ (non-trump multi-combo, unbeatable in Spades)
+
+Bot1 (opponent, void in Spades): 3♥3♥ + 4♥ + 5♥ (trump response, beats non-trump)
+Bot2 (teammate, void in Spades): A♥A♥ + K♥ + Q♥ (higher trump response)
+  → Comparison: A♥A♥ (highest pair) vs 3♥3♥ (Bot1's highest pair) → Bot2 wins
+
+Bot3 (opponent, void in Spades): 🃏🃏 + Big Joker + Small Joker (joker response)
+  → Comparison: 🃏🃏 (Big Joker pair) vs A♥A♥ (trump suit pair) → Bot3 wins final
 ```
 
 #### **Trump Multi-Combo Rules**

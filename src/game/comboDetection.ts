@@ -9,10 +9,11 @@ export const identifyCombos = (
 ): Combo[] => {
   const combos: Combo[] = [];
 
-  // Simple pairs: identical cards make pairs!
+  // Standard pairing logic: only identical cards can form pairs
   const cardsByIdentity: Record<string, Card[]> = {};
 
   cards.forEach((card) => {
+    // Regular pairing by commonId (works for identical cards only)
     const identityKey = card.commonId; // "Hearts_A", "Spades_2", "Small_Joker", etc.
     if (!cardsByIdentity[identityKey]) {
       cardsByIdentity[identityKey] = [];
@@ -20,7 +21,7 @@ export const identifyCombos = (
     cardsByIdentity[identityKey].push(card);
   });
 
-  // Create pairs from identical cards first
+  // Create pairs from identical cards only
   const pairCards = new Set<string>(); // Track cards that are part of pairs
   Object.values(cardsByIdentity).forEach((identicalCards) => {
     if (identicalCards.length === 2) {
