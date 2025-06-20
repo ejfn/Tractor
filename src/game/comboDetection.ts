@@ -88,17 +88,6 @@ export const getComboType = (
 
   // Multi-combo detection removed from getComboType - now handled separately with context
 
-  // Special case: Multiple cards that are all singles
-  if (cards.length > 1) {
-    // If all cards are different (no pairs), treat as multiple singles
-    const cardIds = cards.map((card) => card.commonId);
-    const uniqueCardIds = new Set(cardIds);
-    if (uniqueCardIds.size === cards.length) {
-      // All cards are different - treat as multiple singles for comparison purposes
-      return ComboType.Single;
-    }
-  }
-
   // Return Invalid for combinations that don't match any valid combo type
   return ComboType.Invalid;
 };

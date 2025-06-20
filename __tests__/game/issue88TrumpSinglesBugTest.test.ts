@@ -28,7 +28,9 @@ describe('Issue #88: Non-trump pair vs single trumps bug', () => {
 
       // Verify that the combos are correctly identified
       expect(getComboType(leadingNonTrumpPair, trumpInfo)).toBe(ComboType.Pair);
-      expect(getComboType(followingTwoSingleTrumps, trumpInfo)).toBe(ComboType.Single); // Two singles, not a pair
+      expect(getComboType(followingTwoSingleTrumps, trumpInfo)).toBe(
+        ComboType.Invalid,
+      ); // Two different singles = invalid combo
 
       // The bug: When a pair is led, only pairs can beat it (not two singles, even trump singles)
       // According to game rules: different combination types cannot beat each other
@@ -53,7 +55,9 @@ describe('Issue #88: Non-trump pair vs single trumps bug', () => {
 
       // Verify types
       expect(getComboType(leadingNonTrumpPair, trumpInfo)).toBe(ComboType.Pair);
-      expect(getComboType(followingTwoSingleTrumps, trumpInfo)).toBe(ComboType.Single);
+      expect(getComboType(followingTwoSingleTrumps, trumpInfo)).toBe(
+        ComboType.Invalid,
+      ); // Two different singles = invalid combo
 
       // Leading pair should beat following two singles (wrong combination type to follow)
       const result = compareCardCombos(leadingNonTrumpPair, followingTwoSingleTrumps, trumpInfo);
@@ -73,7 +77,9 @@ describe('Issue #88: Non-trump pair vs single trumps bug', () => {
 
       // Verify types
       expect(getComboType(leadingNonTrumpPair, trumpInfo)).toBe(ComboType.Pair);
-      expect(getComboType(followingTwoSingleTrumps, trumpInfo)).toBe(ComboType.Single);
+      expect(getComboType(followingTwoSingleTrumps, trumpInfo)).toBe(
+        ComboType.Invalid,
+      ); // Two different singles = invalid combo
 
       // Leading pair should beat following two singles (wrong combination type to follow)
       const result = compareCardCombos(leadingNonTrumpPair, followingTwoSingleTrumps, trumpInfo);
