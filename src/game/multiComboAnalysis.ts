@@ -50,7 +50,7 @@ export function detectOptimalMultiCombo(
 
   // Check each suit for potential multi-combos
   for (const [suit, cards] of Object.entries(cardGroups)) {
-    if (cards.length < 3) continue; // Need at least 3 cards for multi-combo
+    if (cards.length < 2) continue; // Need at least 2 cards for multi-combo
 
     // Find all possible unbeatable components in this suit
     const allComponents = analyzeMultiComboComponents(cards, trumpInfo);
@@ -105,8 +105,9 @@ export function validateMultiComboSelection(
   gameState: GameState,
   playerId: PlayerId,
 ): MultiComboDetection {
-  // Must have at least 3 cards to form a multi-combo
-  if (selectedCards.length < 3) {
+  // Must have at least 2 cards to form a multi-combo
+  // 2 cards can form multi-combo if they are multiple singles (e.g., A♦K♦)
+  if (selectedCards.length < 2) {
     return { isMultiCombo: false };
   }
 
@@ -339,8 +340,10 @@ export function detectMultiComboAttempt(
   // RESTRICTIVE: Only detect actual strategic multi-combos
   // Exhausting scenarios should NOT be detected as multi-combos
 
-  // Must have at least 3 cards to form a multi-combo
-  if (cards.length < 3) {
+  // Must have at least 2 cards to form a multi-combo
+  // 2 cards can form multi-combo if they are multiple singles (e.g., A♦K♦)
+  // 3+ cards needed for more complex multi-combos (pair + single, etc.)
+  if (cards.length < 2) {
     return { isMultiCombo: false };
   }
 
@@ -369,47 +372,14 @@ export function detectMultiComboAttempt(
     return { isMultiCombo: false };
   }
 
-  // RESTRICTIVE: Must be a well-structured multi-combo, not just random mixed cards
+  // Create structure - if we have multiple combos from same suit, it's a multi-combo
   const structure = getMultiComboStructure(components, suit, true);
-  if (!isWellStructuredMultiCombo(structure)) {
-    return { isMultiCombo: false };
-  }
 
   return {
     isMultiCombo: true,
     structure,
     components,
   };
-}
-
-/**
- * Check if a multi-combo structure is well-formed for strategic play
- * @param structure Multi-combo structure to validate
- * @returns True if this is a valid strategic multi-combo structure
- */
-function isWellStructuredMultiCombo(structure: MultiComboStructure): boolean {
-  const { components } = structure;
-
-  // Must have meaningful combination of different types OR enough singles
-  // Multiple singles (3+) from same suit is a valid strategic multi-combo
-  const hasSignificantCombos =
-    components.pairs > 0 || components.tractors > 0 || components.singles >= 3;
-
-  if (!hasSignificantCombos) {
-    // Need at least pairs/tractors OR 3+ singles for strategic multi-combo
-    return false;
-  }
-
-  // Must be a reasonable mix, not just one type repeated
-  const totalCombos =
-    components.singles + components.pairs + components.tractors;
-  if (totalCombos < 2) {
-    return false;
-  }
-
-  // Should represent intentional structured play, not exhausting
-  // (This is subjective but helps distinguish strategic vs exhausting)
-  return true;
 }
 
 /**

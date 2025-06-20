@@ -10,7 +10,10 @@ import {
 } from "../types";
 import { getRankValue, isTrump } from "./gameHelpers";
 import { getComboType } from "./comboDetection";
-import { analyzeMultiComboComponents } from "./multiComboAnalysis";
+import {
+  analyzeMultiComboComponents,
+  detectMultiComboAttempt,
+} from "./multiComboAnalysis";
 
 // Get trump hierarchy level (for comparing trumps)
 export const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
@@ -358,11 +361,17 @@ export function canComboBeaten(
 
   // Same suit or both trump - compare by rank/strength
   if (proposedSuit === winningSuit || (proposedIsTrump && winningIsTrump)) {
-    // Check if these are multi-combos (more than single card with mixed combo types)
-    const isMultiCombo =
-      proposedCombo.length > 1 && currentWinningCombo.length > 1;
+    // Check if these are actual multi-combos (multiple separate combos from same suit)
+    const proposedIsMultiCombo = detectMultiComboAttempt(
+      proposedCombo,
+      trumpInfo,
+    ).isMultiCombo;
+    const winningIsMultiCombo = detectMultiComboAttempt(
+      currentWinningCombo,
+      trumpInfo,
+    ).isMultiCombo;
 
-    if (isMultiCombo) {
+    if (proposedIsMultiCombo && winningIsMultiCombo) {
       // Use multi-combo comparison logic
       const multiComboResult = compareMultiCombos(
         proposedCombo,

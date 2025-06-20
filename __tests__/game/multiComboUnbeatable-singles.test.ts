@@ -1,6 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
-import { isComboUnbeatable } from '../../src/game/multiComboValidation';
-import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
+import { isComboUnbeatable, validateLeadingMultiCombo } from '../../src/game/multiComboValidation';
+import { detectLeadingMultiCombo } from '../../src/game/multiComboDetection';
+import { isValidPlay } from '../../src/game/playValidation';
+import { initializeGame } from '../../src/utils/gameInitialization';
+import { Card, ComboType, GameState, PlayerId, Rank, Suit, TrumpInfo } from '../../src/types';
 import { createTrumpScenarios } from '../helpers';
 
 describe('Single Cards - isComboUnbeatable Tests', () => {
@@ -297,6 +300,153 @@ describe('Single Cards - isComboUnbeatable Tests', () => {
       // (2♥ is trump, so 3♥ becomes the lowest card in Hearts suit)
       const result = isComboUnbeatable(combo, Suit.Hearts, playedCards, ownHand, trumpInfo);
       expect(result).toBe(true);
+    });
+  });
+
+  describe('Multi-Combo Leading: A♦K♦ Scenario', () => {
+    let gameState: GameState;
+
+    beforeEach(() => {
+      const trumpInfoHearts: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
+      gameState = initializeGame();
+      gameState.trumpInfo = trumpInfoHearts;
+    });
+
+    test('A♦K♦ should be detected as valid leading multi-combo when A♦,K♦,3♦,4♦ already played', () => {
+      // Set up played cards in memory (A♦,K♦,3♦,4♦ already played)
+      const playedCards = [
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+        Card.createCard(Suit.Diamonds, Rank.King, 0), 
+        Card.createCard(Suit.Diamonds, Rank.Three, 0),
+        Card.createCard(Suit.Diamonds, Rank.Four, 0),
+      ];
+
+      // Add these to tricks to simulate they've been played
+      gameState.tricks = [
+        {
+          plays: [
+            { playerId: PlayerId.Bot1, cards: [playedCards[0]] },
+            { playerId: PlayerId.Bot2, cards: [playedCards[1]] },
+            { playerId: PlayerId.Bot3, cards: [playedCards[2]] },
+            { playerId: PlayerId.Human, cards: [playedCards[3]] },
+          ],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+          isFinalTrick: false
+        }
+      ];
+
+      // Clear current trick to simulate human is leading
+      gameState.currentTrick = null;
+
+      // Human hand with A♦K♦ (the other copies) 
+      const humanHand = [
+        Card.createCard(Suit.Diamonds, Rank.Ace, 1),    // A♦ from deck 1
+        Card.createCard(Suit.Diamonds, Rank.King, 1),   // K♦ from deck 1
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+      ];
+
+      gameState.players[0].hand = humanHand; // Human is player 0
+
+      const attemptedCombo = [
+        Card.createCard(Suit.Diamonds, Rank.Ace, 1),
+        Card.createCard(Suit.Diamonds, Rank.King, 1),
+      ];
+
+      // Step 1: Should be detected as multi-combo (2 singles from same suit)
+      const detection = detectLeadingMultiCombo(attemptedCombo, gameState.trumpInfo);
+      expect(detection.isMultiCombo).toBe(true);
+      expect(detection.structure).toBeDefined();
+      expect(detection.components).toBeDefined();
+      
+      if (detection.structure && detection.components) {
+        expect(detection.structure.suit).toBe(Suit.Diamonds);
+        expect(detection.structure.components.singles).toBe(2);
+        expect(detection.structure.components.pairs).toBe(0);
+        expect(detection.structure.totalLength).toBe(2);
+        expect(detection.components).toHaveLength(2); // Two single-card combos
+      }
+
+      // Step 2: Should pass validation (unbeatable because other A♦,K♦ already played)
+      if (detection.isMultiCombo && detection.components && detection.structure) {
+        const validation = validateLeadingMultiCombo(
+          detection.components,
+          detection.structure.suit,
+          gameState,
+          PlayerId.Human
+        );
+        expect(validation.isValid).toBe(true);
+        expect(validation.invalidReasons).toHaveLength(0);
+      }
+
+      // Step 3: Should pass full isValidPlay validation
+      const isValid = isValidPlay(attemptedCombo, humanHand, PlayerId.Human, gameState);
+      expect(isValid).toBe(true);
+    });
+
+    test('A♦K♦ should be unbeatable when other copies already played', () => {
+      // Scenario: A♦ (deck 0) and K♦ (deck 0) have been played
+      // Therefore A♦ (deck 1) and K♦ (deck 1) are the highest remaining in Diamonds
+      const playedCards = [
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),   // Other A♦ played
+        Card.createCard(Suit.Diamonds, Rank.King, 0),  // Other K♦ played
+      ];
+
+      // Add these to tricks
+      gameState.tricks = [
+        {
+          plays: [
+            { playerId: PlayerId.Bot1, cards: [playedCards[0]] },
+            { playerId: PlayerId.Bot2, cards: [playedCards[1]] },
+          ],
+          winningPlayerId: PlayerId.Bot1,
+          points: 0,
+          isFinalTrick: false
+        }
+      ];
+
+      // Human hand with remaining A♦K♦
+      const humanHand = [
+        Card.createCard(Suit.Diamonds, Rank.Ace, 1),    
+        Card.createCard(Suit.Diamonds, Rank.King, 1),   
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+      ];
+
+      gameState.players[0].hand = humanHand;
+      gameState.currentTrick = null; // Leading
+
+      const attemptedCombo = [
+        Card.createCard(Suit.Diamonds, Rank.Ace, 1),
+        Card.createCard(Suit.Diamonds, Rank.King, 1),
+      ];
+
+      // Should be valid because no higher singles can beat A♦ and K♦
+      const isValid = isValidPlay(attemptedCombo, humanHand, PlayerId.Human, gameState);
+      expect(isValid).toBe(true);
+    });
+
+    test('A♦K♦ should NOT be valid when other A♦,K♦ still available to opponents', () => {
+      // Scenario: No Diamonds played yet, so other players could have A♦,K♦
+      gameState.tricks = []; // No cards played
+      gameState.currentTrick = null; // Leading
+
+      const humanHand = [
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),    
+        Card.createCard(Suit.Diamonds, Rank.King, 0),   
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+      ];
+
+      gameState.players[0].hand = humanHand;
+
+      const attemptedCombo = [
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+        Card.createCard(Suit.Diamonds, Rank.King, 0),
+      ];
+
+      // Should be invalid because opponents could have the other A♦,K♦ to beat this
+      const isValid = isValidPlay(attemptedCombo, humanHand, PlayerId.Human, gameState);
+      expect(isValid).toBe(false); // Not unbeatable
     });
   });
 });

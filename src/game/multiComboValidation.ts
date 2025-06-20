@@ -58,23 +58,10 @@ export function validateLeadingMultiCombo(
     return validation;
   }
 
-  // Rule 2: All other players must be void in that suit
+  // Rule 2: Either all other players are void OR each combo is unbeatable
   const voidStatus = checkOpponentVoidStatus(suit, gameState, playerId);
   validation.voidStatus = voidStatus;
 
-  if (!voidStatus.allOpponentsVoid) {
-    validation.invalidReasons.push(
-      `Not all other players are void in ${suit}. Non-void players: ${getAllOtherPlayerIds(
-        gameState,
-        playerId,
-      )
-        .filter((id) => !voidStatus.voidPlayers.includes(id))
-        .join(", ")}`,
-    );
-    return validation;
-  }
-
-  // Rule 3: Each component combo must be unbeatable
   const unbeatableStatus = validateUnbeatableComponents(
     components,
     suit,
@@ -83,9 +70,12 @@ export function validateLeadingMultiCombo(
   );
   validation.unbeatableStatus = unbeatableStatus;
 
-  if (!unbeatableStatus.allUnbeatable) {
+  // Multi-combo is valid if EITHER condition is met:
+  // 1. All other players are void in the suit (every card is unbeatable)
+  // 2. Each component combo is individually unbeatable based on memory
+  if (!voidStatus.allOpponentsVoid && !unbeatableStatus.allUnbeatable) {
     validation.invalidReasons.push(
-      `${unbeatableStatus.beatableComponents.length} component(s) can be beaten`,
+      `Multi-combo invalid: not all players void (${voidStatus.voidPlayers.length}/3 void) AND ${unbeatableStatus.beatableComponents.length} component(s) can be beaten`,
     );
     return validation;
   }
