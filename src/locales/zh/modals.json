@@ -22,7 +22,7 @@
   },
   "gameOver": {
     "title": "胜利!",
-    "message": "{{teamName}}获胜!",
+    "message": "{{teamName}}赢得游戏!",
     "congratulations": "恭喜!",
     "newGame": "新游戏"
   }

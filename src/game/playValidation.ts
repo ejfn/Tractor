@@ -1,4 +1,5 @@
 import { Card, ComboType, GameState, PlayerId } from "../types";
+import { gameLogger } from "../utils/gameLogger";
 import {
   checkSameSuitPairPreservation,
   checkTractorFollowingPriority,
@@ -7,8 +8,8 @@ import {
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
 import { detectLeadingMultiCombo } from "./multiComboDetection";
-import { validateFollowingMultiCombo } from "./multiComboValidation";
 import { validateMultiComboLead } from "./multiComboLeadingStrategies";
+import { validateFollowingMultiCombo } from "./multiComboValidation";
 
 // Local helper function to avoid circular dependencies
 const getLeadingSuit = (combo: Card[]) => {
@@ -44,6 +45,15 @@ export const isValidPlay = (
     const multiComboDetection = detectLeadingMultiCombo(playedCards, trumpInfo);
 
     if (multiComboDetection.isMultiCombo) {
+      gameLogger.debug(
+        "multi_combo_lead",
+        {
+          playerId,
+          cardCount: playedCards.length,
+        },
+        `Player ${playerId} leading multi-combo with ${playedCards.length} cards`,
+      );
+
       // Use comprehensive validation for multi-combo leads
       const validation = validateMultiComboLead(
         playedCards,

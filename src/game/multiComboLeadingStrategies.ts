@@ -1,9 +1,9 @@
 import { createCardMemory } from "../ai/aiCardMemory";
 import { Card, GameState, PlayerId, Suit } from "../types";
+import { isTrump } from "./gameHelpers";
 import { MultiComboValidation } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
 import { analyzeMultiComboComponents } from "./multiComboAnalysis";
-import { isTrump } from "./gameHelpers";
 import {
   validateLeadingMultiCombo,
   checkOpponentVoidStatus,
@@ -101,9 +101,28 @@ export function selectAIMultiComboLead(
   // IMPORTANT: This function should ONLY return results for true unbeatable multi-combo scenarios
   // It should NOT interfere with normal leading logic (pairs, singles, etc.)
 
-  // For now, be very conservative and only activate for specific scenarios
-  // TODO: Implement more sophisticated multi-combo detection when needed
-  return null;
+  let mostUnbeatableCards: Card[] = [];
+
+  // Check each non-trump suit for unbeatable multi-combo opportunities
+  for (const suit of [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades]) {
+    if (suit === gameState.trumpInfo.trumpSuit) continue; // Skip trump suit
+
+    // Use proper unbeatable analysis instead of simple void check
+    const unbeatableCards = getAllUnbeatableCardsInSuit(
+      suit,
+      playerHand,
+      gameState,
+      playerId,
+    );
+
+    // Select suit with most unbeatable cards total count
+    if (unbeatableCards.length > mostUnbeatableCards.length) {
+      mostUnbeatableCards = unbeatableCards;
+    }
+  }
+
+  // Bundle ALL unbeatable combos from longest suit → Lead multi-combo
+  return mostUnbeatableCards.length > 0 ? mostUnbeatableCards : null;
 }
 
 /**
