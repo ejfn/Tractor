@@ -14,6 +14,7 @@ import {
   GameState,
   PlayerId,
   RoundResult,
+  TeamId,
   Trick,
 } from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
@@ -51,7 +52,7 @@ export function useGameState() {
 
   // Game flow control
   const [gameOver, setGameOver] = useState(false);
-  const [winner, setWinner] = useState<"A" | "B" | null>(null);
+  const [winner, setWinner] = useState<TeamId | null>(null);
 
   // Round completion
   const [showRoundComplete, setShowRoundComplete] = useState(false);

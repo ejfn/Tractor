@@ -7,10 +7,8 @@ import {
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
 import { detectLeadingMultiCombo } from "./multiComboDetection";
-import {
-  validateLeadingMultiCombo,
-  validateFollowingMultiCombo,
-} from "./multiComboValidation";
+import { validateFollowingMultiCombo } from "./multiComboValidation";
+import { validateMultiComboLead } from "./multiComboLeadingStrategies";
 
 // Local helper function to avoid circular dependencies
 const getLeadingSuit = (combo: Card[]) => {
@@ -46,14 +44,9 @@ export const isValidPlay = (
     const multiComboDetection = detectLeadingMultiCombo(playedCards, trumpInfo);
 
     if (multiComboDetection.isMultiCombo) {
-      if (!multiComboDetection.components || !multiComboDetection.structure) {
-        return false;
-      }
-
-      // Validate using memory system and void detection
-      const validation = validateLeadingMultiCombo(
-        multiComboDetection.components,
-        multiComboDetection.structure.suit,
+      // Use comprehensive validation for multi-combo leads
+      const validation = validateMultiComboLead(
+        playedCards,
         gameState,
         playerId,
       );

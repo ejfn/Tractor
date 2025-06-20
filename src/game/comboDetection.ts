@@ -66,6 +66,8 @@ export const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
 };
 
 // Get the combo type (single, pair, etc.) based on the cards
+// IMPORTANT: This function should ONLY be used for straight combo detection!
+// Do NOT use this for multi-combos - they require contextual detection via detectLeadingMultiCombo()
 export const getComboType = (
   cards: Card[],
   trumpInfo: TrumpInfo,

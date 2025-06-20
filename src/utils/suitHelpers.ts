@@ -15,7 +15,7 @@ export const getSuitColorStyle = (suit: Suit) => {
  */
 export const getSuitSymbol = (suit: Suit, joker?: JokerType): string => {
   if (joker) {
-    return joker === JokerType.Big ? "🃏" : "🃟";
+    return joker === JokerType.Big ? "🃏" : "🃏";
   }
 
   switch (suit) {

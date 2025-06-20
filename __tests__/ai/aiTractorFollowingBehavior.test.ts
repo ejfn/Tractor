@@ -224,15 +224,15 @@ describe('AI Tractor Following Behavior', () => {
       
       // Bot1 has only 1 pair + singles in the led suit
       bot1Player.hand = [
-        Card.createCard(Suit.Spades, Rank.Seven, 0), Card.createCard(Suit.Spades, Rank.Seven, 0),   // Only 1 pair
+        Card.createCard(Suit.Spades, Rank.Seven, 0), Card.createCard(Suit.Spades, Rank.Seven, 1),   // Only 1 pair
         Card.createCard(Suit.Spades, Rank.Nine, 0), Card.createCard(Suit.Spades, Rank.Ten, 0),     // Singles
         Card.createCard(Suit.Clubs, Rank.Ace, 0), Card.createCard(Suit.Clubs, Rank.King, 0)
       ];
       
       // Human leads with Spades tractor (needs 2 pairs)
       const leadingTractor = [
-        Card.createCard(Suit.Spades, Rank.Five, 0), Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0), Card.createCard(Suit.Spades, Rank.Six, 0)
+        Card.createCard(Suit.Spades, Rank.Five, 0), Card.createCard(Suit.Spades, Rank.Five, 1),
+        Card.createCard(Suit.Spades, Rank.Six, 0), Card.createCard(Suit.Spades, Rank.Six, 1)
       ];
       
       gameState.currentTrick = {

@@ -82,7 +82,7 @@ describe("Unified Leading Strategy", () => {
       const bot1 = gameState.players[1];
       bot1.hand = [
         Card.createCard(Suit.Hearts, Rank.Ace, 0), // Hearts Ace pair
-        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Hearts Ace pair
+        Card.createCard(Suit.Hearts, Rank.Ace, 1), // Hearts Ace pair
         Card.createCard(Suit.Clubs, Rank.Ace, 0),  // Clubs Ace single
         Card.createCard(Suit.Diamonds, Rank.King, 0),
         Card.createCard(Suit.Diamonds, Rank.Queen, 0),

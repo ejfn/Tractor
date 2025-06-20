@@ -447,6 +447,253 @@ describe("Multi-Combo Following Rules", () => {
     });
   });
 
+  describe("Mixed Combo-Types Edge Cases", () => {
+    test("MCF-EC-1: Complex mixed combo-types (tractor + pair + singles)", () => {
+      const gameState = initializeGame();
+      gameState.trumpInfo = trumpInfo;
+      
+      // Leading: Complex mixed multi-combo: A♠A♠-K♠K♠ + Q♠Q♠ + J♠ + 10♠ + 9♠ (tractor + pair + singles, 8 cards)
+      gameState.currentTrick = {
+        plays: [{
+          playerId: PlayerId.Human,
+          cards: [
+            Card.createCard(Suit.Spades, Rank.Ace, 0),
+            Card.createCard(Suit.Spades, Rank.Ace, 1),
+            Card.createCard(Suit.Spades, Rank.King, 0),
+            Card.createCard(Suit.Spades, Rank.King, 1),
+            Card.createCard(Suit.Spades, Rank.Queen, 0),
+            Card.createCard(Suit.Spades, Rank.Queen, 1),
+            Card.createCard(Suit.Spades, Rank.Jack, 0),
+            Card.createCard(Suit.Spades, Rank.Ten, 0),
+          ]
+        }],
+        winningPlayerId: PlayerId.Human,
+        points: 40, // A+A+K+K+Q+Q = 40 points
+        isFinalTrick: false
+      };
+      
+      const playerHand = [
+        Card.createCard(Suit.Spades, Rank.Nine, 0),
+        Card.createCard(Suit.Spades, Rank.Nine, 1),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 1),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 1),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Clubs, Rank.Ace, 0),
+      ];
+      
+      // Valid: Matching complex structure (tractor + pair + singles, 8 cards)
+      const validComplexResponse = [
+        Card.createCard(Suit.Spades, Rank.Nine, 0),
+        Card.createCard(Suit.Spades, Rank.Nine, 1),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 1),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 1),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+      ];
+      
+      expect(isValidPlay(validComplexResponse, playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      
+      // Invalid: Wrong structure (3 pairs + 2 singles instead of 1 tractor + 1 pair + 2 singles)
+      const wrongComplexStructure = [
+        Card.createCard(Suit.Spades, Rank.Nine, 0),
+        Card.createCard(Suit.Spades, Rank.Nine, 1),  // First pair (non-consecutive with third pair)
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 1), // Second pair (consecutive with first)
+        Card.createCard(Suit.Spades, Rank.Six, 0),   // Third pair (non-consecutive, breaks tractor)
+        Card.createCard(Suit.Spades, Rank.Six, 1),   // This creates 3 separate pairs instead of tractor
+        Card.createCard(Suit.Spades, Rank.Seven, 0), // Single
+        Card.createCard(Suit.Spades, Rank.Five, 0),  // Single
+      ];
+      
+      expect(isValidPlay(wrongComplexStructure, playerHand, PlayerId.Bot1, gameState)).toBe(false);
+    });
+
+    test("MCF-EC-2: Mixed trump combo-types beating non-trump", () => {
+      const gameState = initializeGame();
+      gameState.trumpInfo = trumpInfo;
+      
+      // Leading: Mixed non-trump combo: A♠A♠ + K♠ + Q♠ (pair + singles, 4 cards)
+      gameState.currentTrick = {
+        plays: [{
+          playerId: PlayerId.Human,
+          cards: [
+            Card.createCard(Suit.Spades, Rank.Ace, 0),
+            Card.createCard(Suit.Spades, Rank.Ace, 1),
+            Card.createCard(Suit.Spades, Rank.King, 0),
+            Card.createCard(Suit.Spades, Rank.Queen, 0),
+          ]
+        }],
+        winningPlayerId: PlayerId.Human,
+        points: 30, // A+A+K = 30 points
+        isFinalTrick: false
+      };
+      
+      // Bot hand: Void in Spades, has mixed trump types
+      const trumpRankPair = Card.createPair(Suit.Clubs, Rank.Two);
+      const playerHand = [
+        ...trumpRankPair,                            // 2♣2♣ - Trump rank pair
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),   // Trump suit card
+        Card.createJoker(JokerType.Small, 0),        // Joker
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+      ];
+      
+      // Valid: Mixed trump types response (trump rank pair + trump suit + joker)
+      const mixedTrumpResponse = [
+        ...trumpRankPair,                            // 2♣2♣ - Trump rank pair
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),   // Trump suit card
+        Card.createJoker(JokerType.Small, 0),        // Joker
+      ];
+      
+      expect(isValidPlay(mixedTrumpResponse, playerHand, PlayerId.Bot1, gameState)).toBe(true);
+      
+      // Should beat non-trump multi-combo
+      const result = evaluateTrickPlay(
+        mixedTrumpResponse,
+        gameState.currentTrick!,
+        trumpInfo,
+        playerHand
+      );
+      
+      expect(result.canBeat).toBe(true);
+      expect(result.isLegal).toBe(true);
+    });
+  });
+
+
+  describe("Trump vs Trump Mixed Combo-Types", () => {
+    test("MCF-EC-5: Mixed trump combo beats another mixed trump combo", () => {
+      const gameState = initializeGame();
+      gameState.trumpInfo = trumpInfo;
+      
+      // Previous trump responses: Mixed trump combo already played
+      gameState.currentTrick = {
+        plays: [
+          {
+            playerId: PlayerId.Human,
+            cards: [
+              Card.createCard(Suit.Spades, Rank.King, 0),  // Non-trump lead
+              Card.createCard(Suit.Spades, Rank.King, 1),
+              Card.createCard(Suit.Spades, Rank.Queen, 0),
+              Card.createCard(Suit.Spades, Rank.Jack, 0),
+            ]
+          },
+          {
+            playerId: PlayerId.Bot1,
+            cards: [
+              Card.createCard(Suit.Hearts, Rank.Three, 0), // First trump response: trump suit
+              Card.createCard(Suit.Hearts, Rank.Three, 1), // pair + singles
+              Card.createCard(Suit.Hearts, Rank.Four, 0),
+              Card.createCard(Suit.Hearts, Rank.Five, 0),
+            ]
+          }
+        ],
+        winningPlayerId: PlayerId.Bot1,
+        points: 20,
+        isFinalTrick: false
+      };
+      
+      // Bot2 hand: Higher mixed trump types
+      const trumpRankPair = Card.createPair(Suit.Clubs, Rank.Two);
+      const playerHand = [
+        ...trumpRankPair,                            // 2♣2♣ - Higher trump rank pair
+        Card.createJoker(JokerType.Small, 0),        // Joker (highest)
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),   // Trump suit card
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+      ];
+      
+      // Higher mixed trump response: trump rank pair + joker beats trump suit pair + cards
+      const higherMixedTrump = [
+        ...trumpRankPair,                            // 2♣2♣ - Trump rank pair beats 3♥3♥
+        Card.createJoker(JokerType.Small, 0),        // Joker beats 4♥
+        Card.createCard(Suit.Hearts, Rank.Ace, 0),   // A♥ beats 5♥
+      ];
+      
+      expect(isValidPlay(higherMixedTrump, playerHand, PlayerId.Bot2, gameState)).toBe(true);
+      
+      // Should beat previous trump response
+      const result = evaluateTrickPlay(
+        higherMixedTrump,
+        gameState.currentTrick!,
+        trumpInfo,
+        playerHand
+      );
+      
+      expect(result.canBeat).toBe(true); // 2♣2♣ + Small Joker + A♥ beats 3♥3♥ + 4♥ + 5♥
+      expect(result.isLegal).toBe(true);
+    });
+
+    test("MCF-EC-6: Joker-dominated mixed combo vs trump rank dominated combo", () => {
+      const gameState = initializeGame();
+      gameState.trumpInfo = trumpInfo;
+      
+      // Previous: Trump rank dominated response
+      gameState.currentTrick = {
+        plays: [
+          {
+            playerId: PlayerId.Human,
+            cards: [
+              Card.createCard(Suit.Spades, Rank.Ace, 0),   // Non-trump tractor + single
+              Card.createCard(Suit.Spades, Rank.Ace, 1),
+              Card.createCard(Suit.Spades, Rank.King, 0),
+              Card.createCard(Suit.Spades, Rank.King, 1),
+              Card.createCard(Suit.Spades, Rank.Queen, 0),
+            ]
+          },
+          {
+            playerId: PlayerId.Bot1,
+            cards: [
+              Card.createCard(Suit.Clubs, Rank.Two, 0),    // Trump rank tractor (2♣2♣-2♠2♠)
+              Card.createCard(Suit.Clubs, Rank.Two, 1),
+              Card.createCard(Suit.Spades, Rank.Two, 0),   // (Trump rank in trump suit)
+              Card.createCard(Suit.Spades, Rank.Two, 1),
+              Card.createCard(Suit.Hearts, Rank.Ace, 0),   // Trump suit single
+            ]
+          }
+        ],
+        winningPlayerId: PlayerId.Bot1,
+        points: 30,
+        isFinalTrick: false
+      };
+      
+      // Bot2 hand: Joker-dominated response
+      const playerHand = [
+        Card.createJoker(JokerType.Big, 0),          // Big joker
+        Card.createJoker(JokerType.Big, 1),          // Big joker pair
+        Card.createJoker(JokerType.Small, 0),        // Small joker
+        Card.createJoker(JokerType.Small, 1),        // Small joker pair
+        Card.createCard(Suit.Hearts, Rank.King, 0),  // Trump suit
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+      ];
+      
+      // Joker-dominated response: Big Joker tractor + Small Joker single
+      const jokerDominatedResponse = [
+        Card.createJoker(JokerType.Big, 0),          // Big Joker tractor
+        Card.createJoker(JokerType.Big, 1),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createJoker(JokerType.Small, 1),
+        Card.createCard(Suit.Hearts, Rank.King, 0),  // Trump suit single
+      ];
+      
+      expect(isValidPlay(jokerDominatedResponse, playerHand, PlayerId.Bot2, gameState)).toBe(true);
+      
+      // Should beat trump rank dominated response
+      const result = evaluateTrickPlay(
+        jokerDominatedResponse,
+        gameState.currentTrick!,
+        trumpInfo,
+        playerHand
+      );
+      
+      expect(result.canBeat).toBe(true); // Big Joker tractor beats trump rank tractor
+      expect(result.isLegal).toBe(true);
+    });
+  });
+
   describe("Edge Cases and Invalid Attempts", () => {
     test("MCF-7: Cannot respond with non-matching structure when have matching cards", () => {
       const gameState = initializeGame();

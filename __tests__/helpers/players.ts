@@ -1,11 +1,4 @@
-import {
-  Card,
-  Player,
-  PlayerId,
-  Rank,
-  Team,
-  TeamId
-} from '../../src/types';
+import { Card, Player, PlayerId, Rank, Team, TeamId } from "../../src/types";
 
 // ============================================================================
 // PLAYER CREATION UTILITIES
@@ -18,12 +11,12 @@ export const createPlayer = (
   id: PlayerId,
   isHuman: boolean,
   team: TeamId,
-  hand: Card[] = []
+  hand: Card[] = [],
 ): Player => ({
   id,
   isHuman,
   team,
-  hand: [...hand] // Deep copy the hand
+  hand: [...hand], // Deep copy the hand
 });
 
 /**
@@ -33,7 +26,7 @@ export const createStandardPlayers = (): Player[] => [
   createPlayer(PlayerId.Human, true, TeamId.A),
   createPlayer(PlayerId.Bot1, false, TeamId.B),
   createPlayer(PlayerId.Bot2, false, TeamId.A),
-  createPlayer(PlayerId.Bot3, false, TeamId.B)
+  createPlayer(PlayerId.Bot3, false, TeamId.B),
 ];
 
 /**
@@ -41,8 +34,8 @@ export const createStandardPlayers = (): Player[] => [
  */
 export const createPlayersWithIds = (playerIds: PlayerId[]): Player[] => {
   const teams: TeamId[] = [TeamId.A, TeamId.B, TeamId.A, TeamId.B];
-  return playerIds.map((id, index) => 
-    createPlayer(id, index === 0, teams[index])
+  return playerIds.map((id, index) =>
+    createPlayer(id, index === 0, teams[index]),
   );
 };
 
@@ -57,12 +50,12 @@ export const createTeam = (
   id: TeamId,
   currentRank: Rank = Rank.Two,
   isDefending: boolean,
-  points: number = 0
+  points: number = 0,
 ): Team => ({
   id,
   currentRank,
   isDefending,
-  points
+  points,
 });
 
 /**
@@ -70,19 +63,5 @@ export const createTeam = (
  */
 export const createStandardTeams = (): [Team, Team] => [
   createTeam(TeamId.A, Rank.Two, true, 0),
-  createTeam(TeamId.B, Rank.Two, false, 0)
-];
-
-/**
- * Creates teams with custom ranks and points
- */
-export const createTeamsWithRanks = (
-  teamARank: Rank,
-  teamBRank: Rank,
-  defendingTeam: 'A' | 'B' = 'A',
-  teamAPoints: number = 0,
-  teamBPoints: number = 0
-): [Team, Team] => [
-  createTeam(TeamId.A, teamARank, defendingTeam === 'A', teamAPoints),
-  createTeam(TeamId.B, teamBRank, defendingTeam === 'B', teamBPoints)
+  createTeam(TeamId.B, Rank.Two, false, 0),
 ];

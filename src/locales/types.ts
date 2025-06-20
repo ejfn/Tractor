@@ -110,9 +110,6 @@ export interface ModalsTranslations {
     title: string;
     message: string;
     congratulations: string;
-    teamWins: string;
-    youWin: string;
-    playerWins: string;
     newGame: string;
   };
 }

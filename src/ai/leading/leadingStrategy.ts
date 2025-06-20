@@ -19,7 +19,7 @@ import {
   selectEarlyGameLeadingPlay,
   selectMemoryEnhancedPointPlay,
 } from "./pointFocusedStrategy";
-import { selectMultiComboLeadByPhase } from "./multiComboLeadingStrategy";
+import { selectAIMultiComboLead } from "../../game/multiComboLeadingStrategies";
 import { analyzeCombo } from "../aiGameContext";
 import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
 import { getRankValue } from "../analysis/comboAnalysis";
@@ -60,15 +60,12 @@ export function selectAdvancedLeadingPlay(
     analysis: analyzeCombo(combo, trumpInfo, context),
   }));
 
-  // === PRIORITY 1: MULTI-COMBOS (GAME PHASE AWARE) ===
-  // Early game: Multi-combos have HIGHEST priority
-  // Mid/Late game: Sophisticated strategic evaluation
-  const multiComboPlay = selectMultiComboLeadByPhase(
-    validCombos,
-    trumpInfo,
-    context,
+  // === PRIORITY 1: MULTI-COMBOS (UNBEATABLE STRATEGY) ===
+  // Check for any unbeatable multi-combo opportunities
+  const multiComboPlay = selectAIMultiComboLead(
+    currentPlayer.hand,
     gameState,
-    pointContext.gamePhase,
+    currentPlayer.id,
   );
   if (multiComboPlay) {
     return multiComboPlay;
