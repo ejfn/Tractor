@@ -303,16 +303,18 @@ export enum ComboType {
   Invalid = "Invalid", // Invalid combination that doesn't form any valid combo type
 }
 
+// Multi-combo components breakdown
+export type MultiComboComponents = {
+  totalLength: number; // Total cards in multi-combo
+  totalPairs: number; // Total pairs (includes standalone pairs + pairs within tractors)
+  tractors: number; // Count of tractors
+  tractorSizes: number[]; // Length of each tractor (in pairs)
+};
+
 // Multi-combo structure for tracking component types
 export type MultiComboStructure = {
   suit: Suit; // Specific suit or Suit.None for trump multi-combos
-  components: {
-    singles: number; // Count of single cards
-    pairs: number; // Count of pairs
-    tractors: number; // Count of tractors
-    tractorSizes: number[]; // Length of each tractor (in pairs)
-  };
-  totalLength: number; // Total cards in multi-combo
+  components: MultiComboComponents;
   isLeading: boolean; // Leading vs following context
 };
 

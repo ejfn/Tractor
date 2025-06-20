@@ -391,9 +391,9 @@ export function validateFollowingMultiCombo(
   };
 
   // Rule 1: Must match total length exactly
-  if (followingCards.length !== leadingStructure.totalLength) {
+  if (followingCards.length !== leadingStructure.components.totalLength) {
     validation.invalidReasons.push(
-      `Wrong total length: ${followingCards.length} vs required ${leadingStructure.totalLength}`,
+      `Wrong total length: ${followingCards.length} vs required ${leadingStructure.components.totalLength}`,
     );
     return validation;
   }
@@ -459,12 +459,7 @@ function matchesMultiComboStructure(
   });
 
   // Step 3: If leading has pairs/tractors, check total number of pairs, if less, false
-  const leadingTotalPairs =
-    requiredStructure.components.pairs +
-    requiredStructure.components.tractorSizes.reduce(
-      (sum, size) => sum + size,
-      0,
-    );
+  const leadingTotalPairs = requiredStructure.components.totalPairs;
 
   if (leadingTotalPairs > 0) {
     const actualTotalPairs =

@@ -275,30 +275,31 @@ export function getMultiComboStructure(
   const structure: MultiComboStructure = {
     suit,
     components: {
-      singles: 0,
-      pairs: 0,
+      totalPairs: 0,
       tractors: 0,
       tractorSizes: [],
+      totalLength: 0,
     },
-    totalLength: 0,
     isLeading,
   };
 
   components.forEach((combo) => {
-    structure.totalLength += combo.cards.length;
+    structure.components.totalLength += combo.cards.length;
 
     switch (combo.type) {
       case ComboType.Single:
-        structure.components.singles++;
+        // Singles are calculated implicitly: totalLength - (totalPairs * 2)
         break;
       case ComboType.Pair:
-        structure.components.pairs++;
+        structure.components.totalPairs++; // Count standalone pairs
         break;
       case ComboType.Tractor:
         structure.components.tractors++;
         // Calculate tractor size in pairs
         const tractorPairs = combo.cards.length / 2;
         structure.components.tractorSizes.push(tractorPairs);
+        // IMPORTANT: Add tractor pairs to total pairs count
+        structure.components.totalPairs += tractorPairs;
         break;
       default:
         // MultiCombo should not appear as a component
@@ -433,12 +434,13 @@ export function matchesRequiredStructure(
   const required = leadingStructure.components;
 
   // Must match total length exactly
-  if (followingStructure.totalLength !== leadingStructure.totalLength) {
+  if (followingStructure.components.totalLength !== leadingStructure.components.totalLength) {
     return false;
   }
 
   // Must have at least the required number of each component type
-  if (following.pairs < required.pairs) {
+  // Note: totalPairs includes all pairs (standalone + tractor pairs)
+  if (following.totalPairs < required.totalPairs) {
     return false;
   }
 
@@ -447,6 +449,7 @@ export function matchesRequiredStructure(
   }
 
   // For tractors, check if we have adequate tractor sizes
+  // Note: This is in addition to the total pairs check above
   if (following.tractors > 0 && required.tractors > 0) {
     const followingTractorPairs = following.tractorSizes.reduce(
       (sum, size) => sum + size,
