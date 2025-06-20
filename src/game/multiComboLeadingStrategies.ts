@@ -1,5 +1,5 @@
 import { createCardMemory } from "../ai/aiCardMemory";
-import { Card, Combo, GameState, PlayerId, Suit } from "../types";
+import { Card, GameState, PlayerId, Suit } from "../types";
 import { MultiComboValidation } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
 import { analyzeMultiComboComponents } from "./multiComboAnalysis";
