@@ -3,6 +3,7 @@ import {
   Combo,
   ComboType,
   GameState,
+  PlayerId,
   Rank,
   Suit,
   TrumpInfo,
@@ -132,7 +133,12 @@ export const getValidCombinations = (
       }
     }
 
-    return isValidPlay(combo.cards, leadingCards, playerHand, trumpInfo);
+    return isValidPlay(
+      combo.cards,
+      playerHand,
+      gameState.players[gameState.currentPlayerIndex].id,
+      gameState,
+    );
   });
 
   // Always generate to provide AI with disposal options, even when proper combos exist
@@ -140,6 +146,8 @@ export const getValidCombinations = (
     playerHand,
     leadingCards,
     trumpInfo,
+    gameState,
+    currentPlayer.id,
   );
 
   // Combine proper combos with mixed combos for full strategic options
@@ -168,6 +176,8 @@ export const generateMixedCombinations = (
   playerHand: Card[],
   leadingCards: Card[],
   trumpInfo: TrumpInfo,
+  gameState: GameState,
+  playerId: PlayerId,
 ): Combo[] => {
   const leadingLength = leadingCards.length;
   const validMixedCombos: Combo[] = [];
@@ -525,7 +535,7 @@ export const generateMixedCombinations = (
   // Try optimal construction first - with validation retry
   const optimalCombo = constructOptimalCombination();
   if (optimalCombo) {
-    if (isValidPlay(optimalCombo, leadingCards, playerHand, trumpInfo)) {
+    if (isValidPlay(optimalCombo, playerHand, playerId, gameState)) {
       validMixedCombos.push({
         type: ComboType.Single,
         cards: optimalCombo,
@@ -579,7 +589,7 @@ export const generateMixedCombinations = (
 
       if (
         simpleCombo.length === leadingLength &&
-        isValidPlay(simpleCombo, leadingCards, playerHand, trumpInfo)
+        isValidPlay(simpleCombo, playerHand, playerId, gameState)
       ) {
         validMixedCombos.push({
           type: ComboType.Single,
@@ -600,7 +610,7 @@ export const generateMixedCombinations = (
 
   // Sort combinations by strategic value (weakest combinations first for better disposal)
   const sortedCombinations = allCombinations
-    .filter((cards) => isValidPlay(cards, leadingCards, playerHand, trumpInfo))
+    .filter((cards) => isValidPlay(cards, playerHand, playerId, gameState))
     .sort((a, b) => {
       const valueA = a.reduce(
         (sum, card) =>
@@ -657,6 +667,8 @@ export const generateMixedCombinations = (
       leadingCards,
       trumpInfo,
       leadingLength,
+      gameState,
+      playerId,
     );
 
     if (guaranteedCombo.length === leadingLength) {
@@ -701,6 +713,8 @@ function findGuaranteedValidCombination(
   leading: Card[],
   trump: TrumpInfo,
   length: number,
+  gameState: GameState,
+  playerId: PlayerId,
 ): Card[] {
   const leadingSuit = getLeadingSuit(leading);
   const isLeadingTrump = leading.some((card) => isTrump(card, trump));
@@ -712,7 +726,7 @@ function findGuaranteedValidCombination(
 
   if (leadingSuitCards.length >= length) {
     const combo = leadingSuitCards.slice(0, length);
-    if (isValidPlay(combo, leading, hand, trump)) {
+    if (isValidPlay(combo, hand, playerId, gameState)) {
       return combo;
     }
   }
@@ -724,7 +738,10 @@ function findGuaranteedValidCombination(
       .slice(0, length - leadingSuitCards.length);
 
     const combo = [...leadingSuitCards, ...otherCards];
-    if (combo.length === length && isValidPlay(combo, leading, hand, trump)) {
+    if (
+      combo.length === length &&
+      isValidPlay(combo, hand, playerId, gameState)
+    ) {
       return combo;
     }
   }
@@ -732,7 +749,7 @@ function findGuaranteedValidCombination(
   // Strategy 3: Brute force - try different combinations until we find valid one
   for (let startIndex = 0; startIndex <= hand.length - length; startIndex++) {
     const combo = hand.slice(startIndex, startIndex + length);
-    if (isValidPlay(combo, leading, hand, trump)) {
+    if (isValidPlay(combo, hand, playerId, gameState)) {
       return combo;
     }
   }
@@ -753,7 +770,10 @@ function findGuaranteedValidCombination(
       }
     }
 
-    if (combo.length === length && isValidPlay(combo, leading, hand, trump)) {
+    if (
+      combo.length === length &&
+      isValidPlay(combo, hand, playerId, gameState)
+    ) {
       return combo;
     }
   }

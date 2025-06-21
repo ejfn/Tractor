@@ -137,13 +137,16 @@ describe("useGameState Auto-Restoration", () => {
     // Should clear saved game
     await waitFor(() => {
       expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith(
-        "tractor_current_game"
+        "tractor_current_game",
       );
     });
 
     // Should reset to new game state
-    await waitFor(() => {
-      expect(result.current.gameState?.roundNumber).toBe(1);
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(result.current.gameState?.roundNumber).toBe(1);
+      },
+      { timeout: 2000 },
+    );
   });
 });

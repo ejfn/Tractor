@@ -22,11 +22,8 @@
   },
   "gameOver": {
     "title": "胜利!",
-    "message": "{{winner}}获胜!",
+    "message": "{{teamName}}赢得游戏!",
     "congratulations": "恭喜!",
-    "teamWins": "{{teamName}}获胜!",
-    "youWin": "你赢了!",
-    "playerWins": "{{playerName}}获胜!",
     "newGame": "新游戏"
   }
 }

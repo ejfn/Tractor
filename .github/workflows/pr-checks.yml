@@ -29,3 +29,7 @@ jobs:
 
     - name: Run quality checks
       run: npm run qualitycheck
+
+    - name: Run simulation tests
+      run: npm run test:simulation
+      timeout-minutes: 1

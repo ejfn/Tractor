@@ -4,7 +4,7 @@ import { initializeGame } from "../../src/utils/gameInitialization";
 
 /**
  * Tests for dealing start player logic (Issue #115)
- * 
+ *
  * Rules:
  * - Round 1: Always start dealing from human player (index 0)
  * - Round 2+: Start dealing from roundStartingPlayerIndex
@@ -22,15 +22,19 @@ describe("Dealing Start Player Logic", () => {
       // Setup round 1
       gameState.roundNumber = 1;
       gameState.roundStartingPlayerIndex = 2; // Bot2, but should be ignored for round 1
-      
+
       // Start dealing
       const stateAfterFirstDeal = dealNextCard(gameState);
-      
+
       // Should start dealing from human player (index 0) regardless of roundStartingPlayerIndex
       // After dealing first card, currentDealingPlayerIndex should point to next player (1)
-      expect(stateAfterFirstDeal.dealingState?.currentDealingPlayerIndex).toBe(1);
-      expect(stateAfterFirstDeal.dealingState?.startingDealingPlayerIndex).toBe(0);
-      
+      expect(stateAfterFirstDeal.dealingState?.currentDealingPlayerIndex).toBe(
+        1,
+      );
+      expect(stateAfterFirstDeal.dealingState?.startingDealingPlayerIndex).toBe(
+        0,
+      );
+
       // Verify human player got the first card
       expect(stateAfterFirstDeal.players[0].hand.length).toBe(1);
       expect(stateAfterFirstDeal.players[1].hand.length).toBe(0);
@@ -41,14 +45,14 @@ describe("Dealing Start Player Logic", () => {
     test("should start dealing from human even when roundStartingPlayerIndex is different", () => {
       // Test various roundStartingPlayerIndex values for round 1
       const testCases = [1, 2, 3]; // Bot1, Bot2, Bot3
-      
-      testCases.forEach(startingPlayerIndex => {
+
+      testCases.forEach((startingPlayerIndex) => {
         const testState = initializeGame();
         testState.roundNumber = 1;
         testState.roundStartingPlayerIndex = startingPlayerIndex;
-        
+
         const afterDeal = dealNextCard(testState);
-        
+
         // Should always start from human (0) in round 1
         // After dealing first card, currentDealingPlayerIndex should point to next player (1)
         expect(afterDeal.dealingState?.currentDealingPlayerIndex).toBe(1);
@@ -63,15 +67,19 @@ describe("Dealing Start Player Logic", () => {
       gameState.roundNumber = 2;
       gameState.roundStartingPlayerIndex = 1; // Bot1
       gameState.dealingState = undefined; // Reset dealing state so it gets re-initialized
-      
+
       // Start dealing
       const stateAfterFirstDeal = dealNextCard(gameState);
-      
+
       // Should start dealing from Bot1 (index 1)
       // After dealing first card to Bot1, currentDealingPlayerIndex should point to next player (2)
-      expect(stateAfterFirstDeal.dealingState?.currentDealingPlayerIndex).toBe(2);
-      expect(stateAfterFirstDeal.dealingState?.startingDealingPlayerIndex).toBe(1);
-      
+      expect(stateAfterFirstDeal.dealingState?.currentDealingPlayerIndex).toBe(
+        2,
+      );
+      expect(stateAfterFirstDeal.dealingState?.startingDealingPlayerIndex).toBe(
+        1,
+      );
+
       // Verify Bot1 got the first card
       expect(stateAfterFirstDeal.players[0].hand.length).toBe(0);
       expect(stateAfterFirstDeal.players[1].hand.length).toBe(1);
@@ -84,15 +92,19 @@ describe("Dealing Start Player Logic", () => {
       gameState.roundNumber = 3;
       gameState.roundStartingPlayerIndex = 2; // Bot2
       gameState.dealingState = undefined; // Reset dealing state so it gets re-initialized
-      
+
       // Start dealing
       const stateAfterFirstDeal = dealNextCard(gameState);
-      
+
       // Should start dealing from Bot2 (index 2)
       // After dealing first card to Bot2, currentDealingPlayerIndex should point to next player (3)
-      expect(stateAfterFirstDeal.dealingState?.currentDealingPlayerIndex).toBe(3);
-      expect(stateAfterFirstDeal.dealingState?.startingDealingPlayerIndex).toBe(2);
-      
+      expect(stateAfterFirstDeal.dealingState?.currentDealingPlayerIndex).toBe(
+        3,
+      );
+      expect(stateAfterFirstDeal.dealingState?.startingDealingPlayerIndex).toBe(
+        2,
+      );
+
       // Verify Bot2 got the first card
       expect(stateAfterFirstDeal.players[0].hand.length).toBe(0);
       expect(stateAfterFirstDeal.players[1].hand.length).toBe(0);
@@ -107,22 +119,24 @@ describe("Dealing Start Player Logic", () => {
         { player: "Bot2", index: 2, playerId: PlayerId.Bot2 },
         { player: "Bot3", index: 3, playerId: PlayerId.Bot3 },
       ];
-      
+
       testCases.forEach(({ player, index, playerId }) => {
         const testState = initializeGame();
         testState.roundNumber = 2; // Round 2+
         testState.roundStartingPlayerIndex = index;
         testState.dealingState = undefined; // Reset dealing state so it gets re-initialized
-        
+
         const afterDeal = dealNextCard(testState);
-        
+
         // Should start dealing from the specified player
         // After dealing first card, currentDealingPlayerIndex should point to next player
         const expectedNextPlayerIndex = (index + 1) % 4;
-        expect(afterDeal.dealingState?.currentDealingPlayerIndex).toBe(expectedNextPlayerIndex);
+        expect(afterDeal.dealingState?.currentDealingPlayerIndex).toBe(
+          expectedNextPlayerIndex,
+        );
         expect(afterDeal.dealingState?.startingDealingPlayerIndex).toBe(index);
         expect(afterDeal.players[index].id).toBe(playerId);
-        
+
         // Verify only that player got the first card
         afterDeal.players.forEach((p, i) => {
           if (i === index) {
@@ -140,13 +154,13 @@ describe("Dealing Start Player Logic", () => {
       // Test round 2 starting from Bot2 (index 2)
       gameState.roundNumber = 2;
       gameState.roundStartingPlayerIndex = 2;
-      
+
       // Deal first 4 cards to verify counter-clockwise order
       let currentState = gameState;
       for (let i = 0; i < 4; i++) {
         currentState = dealNextCard(currentState);
       }
-      
+
       // Expected order: Bot2 (2) → Bot3 (3) → Human (0) → Bot1 (1)
       expect(currentState.players[2].hand.length).toBe(1); // Bot2: 1st card
       expect(currentState.players[3].hand.length).toBe(1); // Bot3: 2nd card
@@ -158,13 +172,13 @@ describe("Dealing Start Player Logic", () => {
       // Test round 2 starting from Bot3 (index 3)
       gameState.roundNumber = 2;
       gameState.roundStartingPlayerIndex = 3;
-      
+
       // Deal first 4 cards
       let currentState = gameState;
       for (let i = 0; i < 4; i++) {
         currentState = dealNextCard(currentState);
       }
-      
+
       // Expected order: Bot3 (3) → Human (0) → Bot1 (1) → Bot2 (2)
       expect(currentState.players[3].hand.length).toBe(1); // Bot3: 1st card
       expect(currentState.players[0].hand.length).toBe(1); // Human: 2nd card
@@ -174,15 +188,14 @@ describe("Dealing Start Player Logic", () => {
   });
 
   describe("Edge Cases", () => {
-
     test("should handle round 0 as round 1 behavior", () => {
       // Edge case: round 0 should behave like round 1
       gameState.roundNumber = 0;
       gameState.roundStartingPlayerIndex = 2;
       gameState.dealingState = undefined; // Reset dealing state so it gets re-initialized
-      
+
       const afterDeal = dealNextCard(gameState);
-      
+
       // Should start from roundStartingPlayerIndex since roundNumber !== 1 is true for 0
       // After dealing first card to Bot2 (index 2), currentDealingPlayerIndex should point to next player (3)
       expect(afterDeal.dealingState?.currentDealingPlayerIndex).toBe(3);
@@ -193,11 +206,11 @@ describe("Dealing Start Player Logic", () => {
       gameState.roundNumber = 2;
       gameState.roundStartingPlayerIndex = 1; // Bot1
       gameState.dealingState = undefined; // Reset dealing state so it gets re-initialized
-      
+
       // First deal - should initialize
       const firstDeal = dealNextCard(gameState);
       expect(firstDeal.dealingState?.startingDealingPlayerIndex).toBe(1);
-      
+
       // Second deal - should preserve starting player info
       const secondDeal = dealNextCard(firstDeal);
       expect(secondDeal.dealingState?.startingDealingPlayerIndex).toBe(1);

@@ -6,7 +6,7 @@ export enum Suit {
   Diamonds = "Diamonds",
   Clubs = "Clubs",
   Spades = "Spades",
-  None = "None", // For joker pair declarations - no trump suit
+  None = "None", // For trump multi-combos and joker pair declarations
 }
 
 /**
@@ -28,6 +28,16 @@ export enum Rank {
   King = "K",
   Ace = "A",
 }
+
+/**
+ * Playable ranks - all ranks except None (which is used for jokers)
+ */
+export type PlayableRank = Exclude<Rank, Rank.None>;
+
+/**
+ * Playable suits - all suits except None (which is used for trump multi-combos)
+ */
+export type PlayableSuit = Exclude<Suit, Suit.None>;
 
 /**
  * Joker type enumeration
@@ -55,7 +65,7 @@ export type TrumpInfo = {
  *
  * Features:
  * - Constructor overloads for regular cards and jokers
- * - cardId: identity without deck info (e.g., "Hearts_A")
+ * - commonId: identity without deck info (e.g., "Hearts_A")
  * - id: unique instance ID with deck (e.g., "Hearts_A_1")
  * - isIdenticalTo(): reliable pair validation
  */
@@ -70,7 +80,7 @@ export class Card {
   readonly deckId: DeckId; // 0 or 1 (deck identifier)
 
   // Computed properties
-  readonly cardId: string; // Card identity without deck: "Hearts_A", "Big_Joker"
+  readonly commonId: string; // Card identity without deck: "Hearts_A", "Big_Joker"
   readonly id: string; // Full unique ID with deck: "Hearts_A_1", "Big_Joker_2"
 
   // Private constructor to prevent direct instantiation
@@ -96,13 +106,13 @@ export class Card {
 
     // Generate card identity
     if (joker) {
-      this.cardId = `${joker}_Joker`;
+      this.commonId = `${joker}_Joker`;
     } else {
-      this.cardId = `${suit}_${rank}`;
+      this.commonId = `${suit}_${rank}`;
     }
 
     // Generate unique instance ID
-    this.id = `${this.cardId}_${deckId}`;
+    this.id = `${this.commonId}_${deckId}`;
   }
 
   /**
@@ -227,25 +237,18 @@ export class Card {
    * This is the key method that fixes the pair formation bug
    */
   isIdenticalTo(other: Card): boolean {
-    return this.cardId === other.cardId;
+    return this.commonId === other.commonId;
   }
 
   /**
    * Check if this card is trump given the current trump info
    */
   isTrump(trumpInfo: TrumpInfo): boolean {
-    // Jokers are always trump
-    if (this.joker) return true;
-
-    // Trump rank cards are trump regardless of suit (but not Rank.None)
-    if (this.rank !== Rank.None && this.rank === trumpInfo.trumpRank)
-      return true;
-
-    // Trump suit cards are trump (but not Suit.None)
-    if (this.suit !== Suit.None && this.suit === trumpInfo.trumpSuit)
-      return true;
-
-    return false;
+    return (
+      this.joker !== undefined ||
+      this.rank === trumpInfo.trumpRank ||
+      this.suit === trumpInfo.trumpSuit
+    );
   }
 
   /**
@@ -296,11 +299,29 @@ export enum ComboType {
   Single = "Single",
   Pair = "Pair",
   Tractor = "Tractor", // Consecutive pairs of same suit
+  MultiCombo = "MultiCombo", // Strategic unbeatable leading combos from non-trump suit
+  Invalid = "Invalid", // Invalid combination that doesn't form any valid combo type
 }
+
+// Multi-combo components breakdown
+export type MultiComboComponents = {
+  totalLength: number; // Total cards in multi-combo
+  totalPairs: number; // Total pairs (includes standalone pairs + pairs within tractors)
+  tractors: number; // Count of tractors
+  tractorSizes: number[]; // Length of each tractor (in pairs)
+};
+
+// Multi-combo structure for tracking component types
+export type MultiComboStructure = {
+  suit: Suit; // Specific suit or Suit.None for trump multi-combos
+  components: MultiComboComponents;
+  isLeading: boolean; // Leading vs following context
+};
 
 export type Combo = {
   type: ComboType;
   cards: Card[];
   value: number; // Relative hand strength for comparison
   isBreakingPair?: boolean; // Whether this combo breaks up a valuable pair
+  multiComboStructure?: MultiComboStructure; // For MultiCombo type only
 };

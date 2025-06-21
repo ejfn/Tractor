@@ -1,6 +1,6 @@
 import { Card, Combo, ComboType, Suit, TrumpInfo } from "../types";
-import { findAllTractors, isValidTractor } from "./tractorLogic";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
+import { findAllTractors, isValidTractor } from "./tractorLogic";
 
 // Identify valid combinations in a player's hand
 export const identifyCombos = (
@@ -9,18 +9,19 @@ export const identifyCombos = (
 ): Combo[] => {
   const combos: Combo[] = [];
 
-  // Simple pairs: identical cards make pairs!
+  // Standard pairing logic: only identical cards can form pairs
   const cardsByIdentity: Record<string, Card[]> = {};
 
   cards.forEach((card) => {
-    const identityKey = card.cardId; // "Hearts_A", "Spades_2", "Small_Joker", etc.
+    // Regular pairing by commonId (works for identical cards only)
+    const identityKey = card.commonId; // "Hearts_A", "Spades_2", "Small_Joker", etc.
     if (!cardsByIdentity[identityKey]) {
       cardsByIdentity[identityKey] = [];
     }
     cardsByIdentity[identityKey].push(card);
   });
 
-  // Create pairs from identical cards first
+  // Create pairs from identical cards only
   const pairCards = new Set<string>(); // Track cards that are part of pairs
   Object.values(cardsByIdentity).forEach((identicalCards) => {
     if (identicalCards.length === 2) {
@@ -64,7 +65,28 @@ export const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
   return calculateCardStrategicValue(card, trumpInfo, "combo");
 };
 
+// Count total pairs in cards (including pairs within tractors) - Algorithm Flow Diagram compliance
+const countTotalPairsInCards = (
+  cards: Card[],
+  trumpInfo: TrumpInfo,
+): number => {
+  const combos = identifyCombos(cards, trumpInfo);
+  let totalPairs = 0;
+
+  combos.forEach((combo) => {
+    if (combo.type === ComboType.Pair) {
+      totalPairs += 1; // Each pair combo contributes 1 pair
+    } else if (combo.type === ComboType.Tractor) {
+      totalPairs += combo.cards.length / 2; // Each tractor contributes multiple pairs
+    }
+  });
+
+  return totalPairs;
+};
+
 // Get the combo type (single, pair, etc.) based on the cards
+// IMPORTANT: This function should ONLY be used for straight combo detection!
+// Do NOT use this for multi-combos - they require contextual detection via detectLeadingMultiCombo()
 export const getComboType = (
   cards: Card[],
   trumpInfo: TrumpInfo,
@@ -83,8 +105,10 @@ export const getComboType = (
     }
   }
 
-  // Default to Single as fallback
-  return ComboType.Single;
+  // Multi-combo detection removed from getComboType - now handled separately with context
+
+  // Return Invalid for combinations that don't match any valid combo type
+  return ComboType.Invalid;
 };
 
 /**
@@ -186,30 +210,21 @@ export const checkTractorFollowingPriority = (
     return true;
   }
 
-  // Get all available pairs in the relevant suit
-  const availablePairs = identifyCombos(relevantCards, trumpInfo)
-    .filter((combo) => combo.type === ComboType.Pair)
-    .map((combo) => combo.cards);
+  // Count total pairs including pairs within tractors (following Algorithm Flow Diagram)
+  const totalAvailablePairs = countTotalPairsInCards(relevantCards, trumpInfo);
+  const totalUsedPairs = countTotalPairsInCards(playedCards, trumpInfo);
 
   // If no pairs available, rule doesn't apply
-  if (availablePairs.length === 0) {
+  if (totalAvailablePairs === 0) {
     return true;
   }
 
-  // Check how many pairs were used in the played cards
-  const usedPairs = availablePairs.filter((pair) =>
-    pair.every((pairCard) =>
-      playedCards.some((played) => played.id === pairCard.id),
-    ),
-  );
-
   // Check how many pairs could have been used (limited by played cards length)
   const maxPairsUsable = Math.floor(playedCards.length / 2);
-  const availablePairsCount = availablePairs.length;
-  const expectedPairsUsed = Math.min(maxPairsUsable, availablePairsCount);
+  const expectedPairsUsed = Math.min(maxPairsUsable, totalAvailablePairs);
 
   // Must use ALL available pairs before any singles (up to the limit of played cards)
-  if (usedPairs.length < expectedPairsUsed) {
+  if (totalUsedPairs < expectedPairsUsed) {
     return false; // Didn't use all available pairs first
   }
 

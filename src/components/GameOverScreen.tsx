@@ -1,18 +1,19 @@
 import React, { useEffect, useRef } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
   Animated,
   Dimensions,
   SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useModalsTranslation } from "../hooks/useTranslation";
+import { TeamId } from "../types";
+import { getTeamDisplayName } from "../utils/translationHelpers";
 
 interface GameOverScreenProps {
-  winner: "A" | "B" | null;
-  teamNames: [string, string];
+  winner: TeamId | null;
   onNewGame: () => void;
   fadeAnim: Animated.Value;
   scaleAnim: Animated.Value;
@@ -23,7 +24,6 @@ interface GameOverScreenProps {
  */
 const GameOverScreen: React.FC<GameOverScreenProps> = ({
   winner,
-  teamNames,
   onNewGame,
   fadeAnim,
   scaleAnim,
@@ -156,8 +156,8 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         <Text style={styles.trophy}>🏆</Text>
         <Text style={styles.title}>{t("gameOver.title")}</Text>
         <Text style={styles.winnerText}>
-          {t("gameOver.teamWins", {
-            teamName: winner === "A" ? teamNames[0] : teamNames[1],
+          {t("gameOver.message", {
+            teamName: winner != null ? getTeamDisplayName(winner) : "",
           })}
         </Text>
         <Text style={styles.congratsText}>{t("gameOver.congratulations")}</Text>

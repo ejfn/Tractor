@@ -7,23 +7,24 @@ import { useCommonTranslation } from "../hooks/useTranslation";
 // Components
 import AIPlayerView from "../components/AIPlayerView";
 import CardPlayArea from "../components/CardPlayArea";
+import { ExpandableTrumpDeclaration } from "../components/ExpandableTrumpDeclaration";
 import GameOverScreen from "../components/GameOverScreen";
 import GameStatus from "../components/GameStatus";
 import GameTable from "../components/GameTable";
 import HumanPlayerView from "../components/HumanPlayerView";
 import RoundCompleteModal from "../components/RoundCompleteModal";
 import TrickResultDisplay from "../components/TrickResultDisplay";
-import { ExpandableTrumpDeclaration } from "../components/ExpandableTrumpDeclaration";
 
 // Types
 import {
   Card,
+  DeclarationOpportunity,
+  GamePhase,
   GameState,
   PlayerId,
-  Trick,
-  GamePhase,
   RoundResult,
-  DeclarationOpportunity,
+  TeamId,
+  Trick,
 } from "../types";
 
 // Utils
@@ -38,7 +39,7 @@ interface GameScreenViewProps {
 
   // UI state
   gameOver: boolean;
-  winner: "A" | "B" | null;
+  winner: TeamId | null;
   waitingForAI: boolean;
   waitingPlayerId: PlayerId;
   showTrickResult: boolean;
@@ -120,7 +121,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
     return (
       <GameOverScreen
         winner={winner}
-        teamNames={teamNames}
         onNewGame={onStartNewGame}
         fadeAnim={fadeAnim}
         scaleAnim={scaleAnim}

@@ -1,11 +1,18 @@
 import { getAIMove } from "../../src/ai/aiLogic";
-import { Card, GamePhase, PlayerId, Rank, Suit, TrumpInfo } from "../../src/types";
+import {
+  Card,
+  GamePhase,
+  PlayerId,
+  Rank,
+  Suit,
+  TrumpInfo,
+} from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 
 describe("Fourth Player Teammate Competition Bug", () => {
   test("4th player should not beat teammate's winning trump pair with trump rank pair", () => {
     const gameState = initializeGame();
-    
+
     // Set up trump info: Rank 2, Spades trump
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
@@ -19,12 +26,12 @@ describe("Fourth Player Teammate Competition Bug", () => {
       Card.createCard(Suit.Clubs, Rank.Seven, 0),
       Card.createCard(Suit.Clubs, Rank.Seven, 1),
     ];
-    
+
     const bot1Cards = [
       Card.createCard(Suit.Spades, Rank.King, 0), // Trump suit pair - winning
       Card.createCard(Suit.Spades, Rank.King, 1),
     ];
-    
+
     const bot2Cards = [
       Card.createCard(Suit.Hearts, Rank.Three, 0),
       Card.createCard(Suit.Hearts, Rank.Four, 0),
@@ -59,24 +66,27 @@ describe("Fourth Player Teammate Competition Bug", () => {
 
     // CRITICAL: Should NOT play trump rank pair (2♥-2♥) against winning teammate
     const playedTrumpRankCards = selectedCards.filter(
-      (card) => card.rank === Rank.Two
+      (card) => card.rank === Rank.Two,
     );
-    
+
     expect(playedTrumpRankCards.length).toBe(0);
     expect(selectedCards).toHaveLength(2); // Must play pair to match lead
 
     // Should play low disposal cards instead (diamonds or non-trump hearts)
-    const isLowDisposal = selectedCards.every(card => 
-      (card.suit === Suit.Diamonds && [Rank.Four, Rank.Five].includes(card.rank)) ||
-      (card.suit === Suit.Hearts && [Rank.Eight, Rank.Nine].includes(card.rank)) // Non-trump hearts
+    const isLowDisposal = selectedCards.every(
+      (card) =>
+        (card.suit === Suit.Diamonds &&
+          [Rank.Four, Rank.Five].includes(card.rank)) ||
+        (card.suit === Suit.Hearts &&
+          [Rank.Eight, Rank.Nine].includes(card.rank)), // Non-trump hearts
     );
-    
+
     expect(isLowDisposal).toBe(true);
   });
 
   test("4th player should contribute points when teammate winning", () => {
     const gameState = initializeGame();
-    
+
     // Simple trump: Rank 2, Spades trump
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
@@ -88,9 +98,18 @@ describe("Fourth Player Teammate Competition Bug", () => {
     // Single card trick: Human leads Q♣, Bot1 beats with A♠ (trump suit), Bot2 disposes
     gameState.currentTrick = {
       plays: [
-        { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Clubs, Rank.Queen, 0)] },
-        { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] }, // Teammate winning with trump
-        { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Clubs, Rank.Three, 0)] },
+        {
+          playerId: PlayerId.Human,
+          cards: [Card.createCard(Suit.Clubs, Rank.Queen, 0)],
+        },
+        {
+          playerId: PlayerId.Bot1,
+          cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)],
+        }, // Teammate winning with trump
+        {
+          playerId: PlayerId.Bot2,
+          cards: [Card.createCard(Suit.Clubs, Rank.Three, 0)],
+        },
       ],
       points: 0,
       winningPlayerId: PlayerId.Bot1,
@@ -110,8 +129,8 @@ describe("Fourth Player Teammate Competition Bug", () => {
     const selectedCards = getAIMove(gameState, PlayerId.Bot3);
 
     // Should NOT waste trump cards
-    const playedTrumpCards = selectedCards.filter(card => 
-      card.rank === Rank.Two || card.suit === Suit.Spades
+    const playedTrumpCards = selectedCards.filter(
+      (card) => card.rank === Rank.Two || card.suit === Suit.Spades,
     );
     expect(playedTrumpCards.length).toBe(0);
     expect(selectedCards).toHaveLength(1);

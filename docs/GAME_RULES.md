@@ -58,9 +58,13 @@ Work with your AI teammate to collect 80+ points per round and advance through c
   - **Same-Suit**: 7♥7♥-8♥8♥ (basic consecutive pairs)
   - **Trump Cross-Suit**: 2♠2♠-2♥2♥ (trump suit + off-suit rank)
   - **Rank-Skip**: 6♠6♠-8♠8♠ (trump rank bridges gap)
+- **Multi-Combos**: Multiple combination types from same suit played simultaneously
+  - **Leading**: Only when each combo unbeatable OR all other players void in that suit
+  - **Following**: Must match lead structure exactly
+  - **Examples**: K♠K♠ + Q♠ + 7♠ (pair + singles), A♠A♠-K♠K♠ + J♠ (tractor + single)
 
-### **Following Priority (Tractor)**
-1. Tractor (same # pairs) → 2. Same # pairs → 3. All pairs → 4. Singles → 5. Other suits
+### **Following Priority (Multi-Combo & Tractor)**
+1. **Multi-Combo**: Match structure (pairs/tractors/singles) + exact total length → 2. **Tractor**: (same # pairs) → 3. Same # pairs → 4. All pairs → 5. Singles → 6. Other suits
 
 ---
 
@@ -259,6 +263,115 @@ Work with your AI teammate to collect 80+ points per round and advance through c
 - **Higher combinations beat lower**: Tractors > Pairs > Singles
 - **Within same type**: Higher cards beat lower cards
 
+### **Multi-Combos**
+- **Definition**: Multiple combos from the same suit played simultaneously
+- **Leading Multi-Combos**: Available when each combo unbeatable OR all other players void in target non-trump suit
+- **Following Multi-Combos**: Must match the lead's combination structure exactly
+- **Trump Multi-Combos**: Can beat non-trump multi-combos regardless of strength
+
+#### **🚨 CRITICAL Multi-Combo Rules**
+- **All Other Three Players**: Multi-combo validation involves ALL OTHER THREE PLAYERS, not just opponents
+- **Same Type Allowed**: Multiple combos of same type are valid (e.g., A♥ + K♥ + Q♥ = 3 singles)
+- **Mixed Types Allowed**: Different combo types also valid (e.g., A♥A♥ + K♥ = pair + single)
+- **Key Requirement**: Each component combo must be unbeatable by cards held by other players
+
+#### **Multi-Combo Leading Rules**
+**Available when each combo unbeatable OR all other three players are void in the target suit**
+
+**Unbeatable Requirement**: Each individual combo within the multi-combo must be the strongest possible based on:
+- All cards already played (visible to everyone)
+- Player's own hand (excluding cards in own hand from "outside" competition)
+- Only cards held by opponents can beat your combos
+
+**Valid Leading Multi-Combo Examples**:
+- **Q♠ + 9♠9♠ + 7♠7♠** (single + pair + pair from Spades)
+- **A♠A♠ + K♠K♠ + J♠** (pair + pair + single from Hearts)  
+- **K♠K♠-Q♠Q♠ + 10♠ + 8♠** (tractor + singles from Spades)
+
+**Unbeatable Analysis Example**:
+```
+Played Cards: A♠A♠K♠K♠Q♠J♠8♠
+Your Hand: Q♠10♠9♠9♠7♠7♠
+Analysis:
+- Q♠ is biggest single (A♠K♠ played, J♠ played, you hold 10♠)
+- 10♠ is NOT biggest (J♠ outside could beat it)  
+- 9♠9♠ is unbeatable pair (A♠A♠K♠K♠ played, you hold 10♠)
+- 7♠7♠ is unbeatable pair (you hold 8♠, so 8♠8♠ impossible outside)
+Valid Multi-Combo: Q♠9♠9♠7♠7♠
+```
+
+**Tractor Unbeatable Rule**: If no bigger tractor exists outside your hand, the tractor is unbeatable even if individual pairs within it could be beaten by separate pairs.
+
+#### **Multi-Combo Following Rules**
+**Must match the leading multi-combo structure exactly**
+
+**Step-by-Step Following Logic**:
+1. **Has cards in led suit?** → Match types/length exactly, contribute best or dispose weakest based on teammate vs opponent strategy
+2. **Void in led suit?** → **Trump opportunity!** Can beat non-trump multi-combo with trump cards that match the structure
+3. **Trump vs Trump?** → Later trump players can beat earlier trump responses using trump comparison rules
+
+**Combination Type Matching**:
+- **Pairs Led**: Must follow with same number (or more) of pairs if available
+- **Tractors Led**: Must follow with tractors if available, same number (or more) of pairs
+- **Exact Total Length**: Must match the leading combo's total card count exactly
+
+**Multi-Layer Trump Beating**:
+- **Leading**: Always non-trump multi-combo (trump multi-combos cannot lead)
+- **First Trump Response**: Can beat non-trump multi-combo with any trump structure match
+- **Later Trump Responses**: Can beat earlier trump responses using trump vs trump comparison
+
+**Following Multi-Combo Examples**:
+
+**Basic Structure Matching**:
+```
+Lead: K♠K♠ + Q♠ + 8♠ (pair + singles, 4 cards total)
+Scenario: A♠A♠, J♠, 10♠, and 9♠ already played, making this a valid unbeatable lead
+
+Your Response Options:
+✅ 7♠7♠ + 6♠ + 5♠ (pair + singles, 4 cards, same suit)
+✅ 4♠4♠ + 3♠ + 2♠ (pair + singles, 4 cards, same suit)  
+✅ 2♥2♥ + A♣ + K♦ (pair + singles, 4 cards, trump/other suits)
+❌ 7♠7♠ + 6♠ (only 3 cards, wrong total length)
+❌ 7♠ + 6♠ + 5♠ + 4♠ (4 singles, wrong combination types)
+```
+
+**Multi-Layer Trump Beating Scenario**:
+```
+Trump: 2♥ (Hearts trump)
+Human leads: K♠K♠ + Q♠ + 8♠ (non-trump multi-combo, unbeatable in Spades)
+
+Bot1 (opponent, void in Spades): 3♥3♥ + 4♥ + 5♥ (trump response, beats non-trump)
+Bot2 (teammate, void in Spades): A♥A♥ + K♥ + Q♥ (higher trump response)
+  → Comparison: A♥A♥ (highest pair) vs 3♥3♥ (Bot1's highest pair) → Bot2 wins
+
+Bot3 (opponent, void in Spades): 🃏🃏 + Big Joker + Small Joker (joker response)
+  → Comparison: 🃏🃏 (Big Joker pair) vs A♥A♥ (trump suit pair) → Bot3 wins final
+```
+
+#### **Trump Multi-Combo Rules**
+**Trump multi-combos can beat non-trump multi-combos**
+
+**Beating Requirements**:
+- **Same combination structure**: Must match or exceed each combo type
+- **Same total length**: Exact card count match required
+- **Strength irrelevant**: Trump always beats non-trump regardless of ranks
+
+**Trump vs Trump Multi-Combo Comparison**:
+When trump multi-combo competes with trump multi-combo, compare by **highest combo type only**:
+1. **Has tractors**: Compare the biggest tractor
+2. **Has pairs (no tractors)**: Compare the biggest pair
+3. **All singles**: Compare the biggest single
+
+**Trump Multi-Combo Examples**:
+```
+Non-Trump Lead: K♠K♠ + Q♠ + 8♠ (Spades: pair + singles)
+Trump Responses:
+✅ 3♥3♥ + 2♦ + Small Joker (trump pair + singles, beats regardless of rank)
+✅ 5♥5♥-4♥4♥ + Big Joker (trump tractor + single, exceeds requirements)
+❌ 3♥3♥ + 2♦ (only 3 cards, wrong total length)
+❌ A♥ + K♥ + Q♥ + J♥ (4 singles, wrong combination types)
+```
+
 ---
 
 ## Trick Play Rules
@@ -270,16 +383,27 @@ Work with your AI teammate to collect 80+ points per round and advance through c
 4. **Winner leads next**: Trick winner leads subsequent trick
 
 ### **Leading Rules**
-- **Can play any valid combination** from hand
+- **Can play any valid combination** from hand (singles, pairs, tractors, multi-combos)
+- **Multi-combo leading**: Available when each combo unbeatable OR all other players void in target non-trump suit
 - **Sets combination type** for all followers
 - **Strategic choice**: Controls trick direction and information
 
 ### **General Following Rules**
 1. **Follow suit if possible**: Must play same suit as led
-2. **Match combination type**: Must match singles/pairs/tractors if able
-3. **Suit exhaustion first**: Use all cards of led suit before others
-4. **Trump when out of suit**: Can use trump if no cards of led suit
-5. **Any suit last resort**: Play from other suits only when necessary
+2. **Match combination type**: Must match singles/pairs/tractors/multi-combos if able
+3. **Multi-combo following**: Must match structure + exact total length
+4. **Suit exhaustion rule**: If you run out of the led suit after your play, any combination is valid (even mixed suits)
+5. **Trump when out of suit**: Can use trump if no cards of led suit
+6. **Any suit last resort**: Play from other suits only when necessary
+
+#### **🚨 CRITICAL: Suit Exhaustion Rule**
+**If you will have NO cards of the led suit remaining after your play, you can play ANY cards to make up the required length.**
+
+**Example:**
+- Leading: A♥ K♥ Q♥ Q♥ (4 hearts required)
+- Your hearts: J♥ 8♥ 6♥ (only 3 hearts total)
+- **Valid play**: J♥ 8♥ 6♥ 4♦ (3 hearts + 1 diamond)
+- **Result**: You have 0 hearts left - exhaustion rule applies
 
 ---
 

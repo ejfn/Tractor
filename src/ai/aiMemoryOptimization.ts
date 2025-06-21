@@ -1,11 +1,11 @@
 import {
+  Card,
   CardMemory,
   GameState,
   PlayerId,
-  TrumpInfo,
-  Card,
-  Trick,
   Suit,
+  Trick,
+  TrumpInfo,
 } from "../types";
 
 /**
@@ -176,7 +176,7 @@ function createFullCardMemory(gameState: GameState): CardMemory {
       estimatedHandSize: player.hand.length,
       suitVoids: new Set(),
       trumpVoid: false,
-      trumpCount: 0,
+      trumpUsed: 0,
       pointCardsProbability: 0.5,
       playPatterns: [],
     };

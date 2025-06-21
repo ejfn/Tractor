@@ -12,7 +12,8 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Card as CardType, JokerType, Suit } from "../types";
+import { Card as CardType, JokerType } from "../types";
+import { getSuitSymbol, getSuitColorStyle } from "../utils/suitHelpers";
 
 interface CardProps {
   card: CardType;
@@ -49,36 +50,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
   // Color based on suit
   const getColor = () => {
-    if (card.joker) return "#000";
-
-    switch (card.suit) {
-      case Suit.Hearts:
-      case Suit.Diamonds:
-        return "#D32F2F"; // Red
-      case Suit.Clubs:
-      case Suit.Spades:
-        return "#212121"; // Black
-      default:
-        return "#000";
-    }
-  };
-
-  // Suit symbol
-  const getSuitSymbol = () => {
-    if (card.joker) return card.joker === JokerType.Big ? "🃏" : "🂿";
-
-    switch (card.suit) {
-      case Suit.Hearts:
-        return "♥";
-      case Suit.Diamonds:
-        return "♦";
-      case Suit.Clubs:
-        return "♣";
-      case Suit.Spades:
-        return "♠";
-      default:
-        return "";
-    }
+    return getSuitColorStyle(card.suit).color;
   };
 
   // Card text content
@@ -509,7 +481,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
               {getCardText()}
             </Text>
             <Text style={[styles.suitSymbolSmall, { color: getColor() }]}>
-              {getSuitSymbol()}
+              {getSuitSymbol(card.suit, card.joker)}
             </Text>
           </View>
 
@@ -524,7 +496,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
         {/* Card center with large suit symbol */}
         <View style={styles.cardCenter}>
           <Text style={[styles.suit, { color: getColor() }]}>
-            {getSuitSymbol()}
+            {getSuitSymbol(card.suit, card.joker)}
           </Text>
         </View>
 
@@ -532,7 +504,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
         <View style={styles.cardFooter}>
           <View style={styles.rankSuitPairInverted}>
             <Text style={[styles.suitSymbolSmall, { color: getColor() }]}>
-              {getSuitSymbol()}
+              {getSuitSymbol(card.suit, card.joker)}
             </Text>
             <Text style={[styles.cardRank, { color: getColor() }]}>
               {getCardText()}

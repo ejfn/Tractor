@@ -16,27 +16,7 @@ import {
   useModalsTranslation,
 } from "../hooks/useTranslation";
 import { getTeamDisplayName } from "../utils/translationHelpers";
-
-const getSuitSymbol = (suit: Suit): string => {
-  switch (suit) {
-    case Suit.Hearts:
-      return "♥";
-    case Suit.Diamonds:
-      return "♦";
-    case Suit.Clubs:
-      return "♣";
-    case Suit.Spades:
-      return "♠";
-    default:
-      return "";
-  }
-};
-
-const getSuitColorStyle = (suit: Suit, styles: Record<string, TextStyle>) => {
-  return suit === Suit.Hearts || suit === Suit.Diamonds
-    ? styles.redSuit
-    : styles.blackSuit;
-};
+import { getSuitColorStyle, getSuitSymbol } from "../utils/suitHelpers";
 
 interface GameStatusProps {
   teams: [Team, Team];
@@ -225,7 +205,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
                     <Text
                       style={[
                         styles.trumpText,
-                        getSuitColorStyle(trumpInfo.trumpSuit, styles),
+                        getSuitColorStyle(trumpInfo.trumpSuit),
                       ]}
                     >
                       {trumpInfo.trumpRank}
@@ -233,7 +213,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
                     <Text
                       style={[
                         styles.suitSymbol,
-                        getSuitColorStyle(trumpInfo.trumpSuit, styles),
+                        getSuitColorStyle(trumpInfo.trumpSuit),
                       ]}
                     >
                       {getSuitSymbol(trumpInfo.trumpSuit)}
@@ -461,12 +441,6 @@ const styles = StyleSheet.create({
     marginLeft: 2,
     lineHeight: 16,
     marginBottom: 1, // Lift it up slightly
-  },
-  redSuit: {
-    color: "#D32F2F", // Deeper red for contrast on light background
-  },
-  blackSuit: {
-    color: "#000000", // Black for contrast on light background
   },
   teamsContainer: {
     flexDirection: "row",

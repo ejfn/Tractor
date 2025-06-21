@@ -64,6 +64,9 @@ export function calculateLeadingComboValue(
 
   // Base value from combo type
   switch (combo.type) {
+    case ComboType.MultiCombo:
+      value += 100; // HIGHEST priority - multi-combos should be preferred over everything
+      break;
     case ComboType.Tractor:
       value += 30;
       break;
@@ -146,6 +149,9 @@ export function calculateSecondPlayerComboValue(
 
   // Base value from combo type
   switch (combo.type) {
+    case ComboType.MultiCombo:
+      value += 100; // HIGHEST priority - multi-combos should be preferred over everything
+      break;
     case ComboType.Tractor:
       value += 30;
       break;
@@ -257,6 +263,11 @@ export function analyzeComboStrength(
   combo: Combo,
   trumpInfo: TrumpInfo,
 ): ComboStrength {
+  // Multi-combos are always critical strength when unbeatable
+  if (combo.type === ComboType.MultiCombo) {
+    return ComboStrength.Critical; // Multi-combos have the highest strategic value
+  }
+
   // Enhanced tractor validation
   if (combo.type === ComboType.Tractor) {
     if (!isValidTractor(combo.cards, trumpInfo)) {

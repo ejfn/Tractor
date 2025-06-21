@@ -6,9 +6,9 @@ import {
   Rank,
   Suit,
   Trick,
-} from '../../src/types';
-import { createTrumpInfo } from './trump';
-import { gameLogger } from '../../src/utils/gameLogger';
+} from "../../src/types";
+import { createTrumpInfo } from "./trump";
+import { gameLogger } from "../../src/utils/gameLogger";
 
 // ============================================================================
 // MOCK SETUP UTILITIES
@@ -22,26 +22,25 @@ export const mockConfigs = {
   comboDetection: {
     identifyCombos: jest.fn(),
   },
-  
+
   gameHelpers: {
     isTrump: jest.fn(),
   },
-  
+
   aiLogic: {
-    getAIMove: jest.fn()
+    getAIMove: jest.fn(),
   },
-  
+
   playProcessing: {
     processPlay: jest.fn(),
     validatePlay: jest.fn(),
-    getAIMoveWithErrorHandling: jest.fn()
+    getAIMoveWithErrorHandling: jest.fn(),
   },
-  
-  
+
   gameRoundManager: {
     prepareNextRound: jest.fn(),
-    endRound: jest.fn()
-  }
+    endRound: jest.fn(),
+  },
 };
 
 /**
@@ -60,20 +59,30 @@ export const getMockModule = (modulePath: string) => {
  */
 export const testAssertions = {
   // Verify a player has specific cards
-  playerHasCards: (gameState: GameState, playerIndex: number, expectedCards: Card[]) => {
+  playerHasCards: (
+    gameState: GameState,
+    playerIndex: number,
+    expectedCards: Card[],
+  ) => {
     const player = gameState.players[playerIndex];
     expect(player.hand).toHaveLength(expectedCards.length);
-    expectedCards.forEach(expectedCard => {
-      expect(player.hand.some(card => 
-        card.suit === expectedCard.suit && 
-        card.rank === expectedCard.rank &&
-        card.points === expectedCard.points
-      )).toBe(true);
+    expectedCards.forEach((expectedCard) => {
+      expect(
+        player.hand.some(
+          (card) =>
+            card.suit === expectedCard.suit &&
+            card.rank === expectedCard.rank &&
+            card.points === expectedCard.points,
+        ),
+      ).toBe(true);
     });
   },
 
   // Verify game phase
-  gamePhaseIs: (gameState: GameState, expectedPhase: GameState['gamePhase']) => {
+  gamePhaseIs: (
+    gameState: GameState,
+    expectedPhase: GameState["gamePhase"],
+  ) => {
     expect(gameState.gamePhase).toBe(expectedPhase);
   },
 
@@ -88,7 +97,7 @@ export const testAssertions = {
     if (expectedSuit) {
       expect(gameState.trumpInfo.trumpSuit).toBe(expectedSuit);
     }
-  }
+  },
 };
 
 // ============================================================================
@@ -100,17 +109,21 @@ export const testAssertions = {
  */
 export const measurePerformance = async <T>(
   fn: () => T | Promise<T>,
-  label: string = "operation"
+  label: string = "operation",
 ): Promise<{ result: T; duration: number }> => {
   const start = performance.now();
   const result = await fn();
   const end = performance.now();
   const duration = end - start;
-  
+
   if (duration > 100) {
-    gameLogger.warn("test_performance_warning", { label, duration }, `${label} took ${duration.toFixed(2)}ms - consider optimization`);
+    gameLogger.warn(
+      "test_performance_warning",
+      { label, duration },
+      `${label} took ${duration.toFixed(2)}ms - consider optimization`,
+    );
   }
-  
+
   return { result, duration };
 };
 
@@ -120,24 +133,27 @@ export const measurePerformance = async <T>(
  */
 export const createLargeGameState = (): GameState => {
   // Import here to avoid circular dependency
-  const { createGameState, givePlayerCards } = require('./gameStates');
-  const { createCompletedTrick } = require('./tricks');
-  
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createGameState, givePlayerCards } = require("./gameStates");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createCompletedTrick } = require("./tricks");
+
   let state = createGameState({
     gamePhase: GamePhase.Playing,
     trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades),
-    currentPlayerIndex: 0
+    currentPlayerIndex: 0,
   });
 
   // Give each player a full hand (25 cards)
   const allSuits = Object.values(Suit);
   const allRanks = Object.values(Rank);
-  
+
   for (let playerIndex = 0; playerIndex < 4; playerIndex++) {
     const cards: Card[] = [];
     for (let cardIndex = 0; cardIndex < 25; cardIndex++) {
       const suit = allSuits[cardIndex % allSuits.length];
-      const rank = allRanks[Math.floor(cardIndex / allSuits.length) % allRanks.length];
+      const rank =
+        allRanks[Math.floor(cardIndex / allSuits.length) % allRanks.length];
       cards.push(Card.createCard(suit, rank, 0));
     }
     state = givePlayerCards(state, playerIndex, cards);
@@ -146,16 +162,27 @@ export const createLargeGameState = (): GameState => {
   // Add some completed tricks
   const tricks: Trick[] = [];
   for (let i = 0; i < 10; i++) {
-    tricks.push(createCompletedTrick(
-      PlayerId.Human,
-      [Card.createCard(Suit.Hearts, Rank.Three, 0)],
-      [
-        { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Four, 0)] },
-        { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] },
-        { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)] }
-      ],
-      PlayerId.Bot3
-    ));
+    tricks.push(
+      createCompletedTrick(
+        PlayerId.Human,
+        [Card.createCard(Suit.Hearts, Rank.Three, 0)],
+        [
+          {
+            playerId: PlayerId.Bot1,
+            cards: [Card.createCard(Suit.Hearts, Rank.Four, 0)],
+          },
+          {
+            playerId: PlayerId.Bot2,
+            cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)],
+          },
+          {
+            playerId: PlayerId.Bot3,
+            cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)],
+          },
+        ],
+        PlayerId.Bot3,
+      ),
+    );
   }
   state.tricks = tricks;
 
@@ -172,38 +199,43 @@ export const createLargeGameState = (): GameState => {
 export const createInvalidGameStates = {
   // Game state with missing players
   missingPlayers: () => {
-    const { createGameState } = require('./gameStates');
-    const { createStandardPlayers } = require('./players');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createGameState } = require("./gameStates");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createStandardPlayers } = require("./players");
     return createGameState({
-      players: [createStandardPlayers()[0]] // Only 1 player instead of 4
+      players: [createStandardPlayers()[0]], // Only 1 player instead of 4
     });
   },
 
   // Game state with invalid current player index
   invalidPlayerIndex: () => {
-    const { createGameState } = require('./gameStates');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createGameState } = require("./gameStates");
     return createGameState({
-      currentPlayerIndex: 10 // Out of bounds
+      currentPlayerIndex: 10, // Out of bounds
     });
   },
 
   // Game state with inconsistent trump info
   inconsistentTrump: () => {
-    const { createGameState } = require('./gameStates');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createGameState } = require("./gameStates");
     return createGameState({
-      trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades) // Inconsistent trump info
+      trumpInfo: createTrumpInfo(Rank.Two, Suit.Spades), // Inconsistent trump info
     });
   },
 
   // Game state with empty hands during play
   emptyHandsInPlay: () => {
-    const { createGameState } = require('./gameStates');
-    let state = createGameState({
-      gamePhase: GamePhase.Playing
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createGameState } = require("./gameStates");
+    const state = createGameState({
+      gamePhase: GamePhase.Playing,
     });
     // All players have empty hands but game is in play phase
     return state;
-  }
+  },
 };
 
 /**
@@ -212,15 +244,15 @@ export const createInvalidGameStates = {
 export const errorScenarios = {
   // Network-related errors
   networkError: () => new Error("Network connection failed"),
-  
+
   // Game logic errors
   invalidPlayError: () => new Error("Invalid card play attempted"),
-  
+
   // State consistency errors
   stateCorruptionError: () => new Error("Game state corruption detected"),
-  
+
   // AI decision errors
-  aiDecisionError: () => new Error("AI failed to make valid decision")
+  aiDecisionError: () => new Error("AI failed to make valid decision"),
 };
 
 // ============================================================================
@@ -230,8 +262,11 @@ export const errorScenarios = {
 /**
  * Creates promises that resolve after a specified delay
  */
-export const createDelayedPromise = <T>(value: T, delay: number = 100): Promise<T> => {
-  return new Promise(resolve => {
+export const createDelayedPromise = <T>(
+  value: T,
+  delay: number = 100,
+): Promise<T> => {
+  return new Promise((resolve) => {
     setTimeout(() => resolve(value), delay);
   });
 };
@@ -239,7 +274,10 @@ export const createDelayedPromise = <T>(value: T, delay: number = 100): Promise<
 /**
  * Creates promises that reject after a specified delay
  */
-export const createDelayedRejection = (error: Error, delay: number = 100): Promise<never> => {
+export const createDelayedRejection = (
+  error: Error,
+  delay: number = 100,
+): Promise<never> => {
   return new Promise((_, reject) => {
     setTimeout(() => reject(error), delay);
   });
@@ -251,14 +289,14 @@ export const createDelayedRejection = (error: Error, delay: number = 100): Promi
 export const waitForCondition = async (
   condition: () => boolean,
   timeout: number = 5000,
-  interval: number = 100
+  interval: number = 100,
 ): Promise<void> => {
   const startTime = Date.now();
-  
-  while (!condition() && (Date.now() - startTime) < timeout) {
-    await new Promise(resolve => setTimeout(resolve, interval));
+
+  while (!condition() && Date.now() - startTime < timeout) {
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
-  
+
   if (!condition()) {
     throw new Error(`Condition not met within ${timeout}ms timeout`);
   }
@@ -271,11 +309,12 @@ export const waitForCondition = async (
 /**
  * Creates a mock trick for testing tactical scenarios
  */
-export const createMockTrick = (leadingPlayer: PlayerId, leadingCards: Card[]): Trick => {
+export const createMockTrick = (
+  leadingPlayer: PlayerId,
+  leadingCards: Card[],
+): Trick => {
   return {
-    plays: [
-      { playerId: leadingPlayer, cards: leadingCards }
-    ],
+    plays: [{ playerId: leadingPlayer, cards: leadingCards }],
     winningPlayerId: leadingPlayer, // Leader is currently winning
     points: leadingCards.reduce((sum, card) => sum + (card.points || 0), 0),
   };
@@ -285,7 +324,7 @@ export const createMockTrick = (leadingPlayer: PlayerId, leadingCards: Card[]): 
  * Creates a mock player for testing
  */
 export const createMockPlayer = (playerId: PlayerId, hand: Card[] = []) => {
-  const { createPlayer } = require('./players');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createPlayer } = require("./players");
   return createPlayer(playerId, hand);
 };
-

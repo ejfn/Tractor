@@ -1,8 +1,8 @@
-import { identifyCombos } from '../../src/game/comboDetection';
-import { Card, ComboType, Rank, Suit, TrumpInfo } from '../../src/types';
+import { identifyCombos } from "../../src/game/comboDetection";
+import { Card, ComboType, Rank, Suit, TrumpInfo } from "../../src/types";
 
-describe('Invalid Cross-Suit Pair Bug Fix', () => {
-  test('should NOT create pair from different suit trump rank cards', () => {
+describe("Invalid Cross-Suit Pair Bug Fix", () => {
+  test("should NOT create pair from different suit trump rank cards", () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
@@ -17,8 +17,8 @@ describe('Invalid Cross-Suit Pair Bug Fix', () => {
     const combos = identifyCombos(cards, trumpInfo);
 
     // Should find 2 singles but NO pairs
-    const pairs = combos.filter(combo => combo.type === ComboType.Pair);
-    const singles = combos.filter(combo => combo.type === ComboType.Single);
+    const pairs = combos.filter((combo) => combo.type === ComboType.Pair);
+    const singles = combos.filter((combo) => combo.type === ComboType.Single);
 
     expect(singles).toHaveLength(2);
     expect(pairs).toHaveLength(0); // Bug fix: No cross-suit pairs
@@ -29,7 +29,7 @@ describe('Invalid Cross-Suit Pair Bug Fix', () => {
     expect(singles[0].cards[0].suit).not.toBe(singles[1].cards[0].suit);
   });
 
-  test('should create pair from identical trump rank cards (same suit)', () => {
+  test("should create pair from identical trump rank cards (same suit)", () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.Two,
       trumpSuit: Suit.Spades,
@@ -44,8 +44,8 @@ describe('Invalid Cross-Suit Pair Bug Fix', () => {
     const combos = identifyCombos(cards, trumpInfo);
 
     // Should find 2 singles AND 1 pair from identical cards
-    const pairs = combos.filter(combo => combo.type === ComboType.Pair);
-    const singles = combos.filter(combo => combo.type === ComboType.Single);
+    const pairs = combos.filter((combo) => combo.type === ComboType.Pair);
+    const singles = combos.filter((combo) => combo.type === ComboType.Single);
 
     expect(singles).toHaveLength(2);
     expect(pairs).toHaveLength(1); // Should correctly find identical pair
@@ -58,7 +58,7 @@ describe('Invalid Cross-Suit Pair Bug Fix', () => {
     expect(pairs[0].cards[1].suit).toBe(Suit.Hearts);
   });
 
-  test('should handle mixed trump scenarios correctly', () => {
+  test("should handle mixed trump scenarios correctly", () => {
     const trumpInfo: TrumpInfo = {
       trumpRank: Rank.King,
       trumpSuit: Suit.Clubs,
@@ -74,8 +74,8 @@ describe('Invalid Cross-Suit Pair Bug Fix', () => {
 
     const combos = identifyCombos(cards, trumpInfo);
 
-    const pairs = combos.filter(combo => combo.type === ComboType.Pair);
-    const singles = combos.filter(combo => combo.type === ComboType.Single);
+    const pairs = combos.filter((combo) => combo.type === ComboType.Pair);
+    const singles = combos.filter((combo) => combo.type === ComboType.Single);
 
     expect(singles).toHaveLength(4);
     expect(pairs).toHaveLength(1); // Only the identical A♣-A♣ pair

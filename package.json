@@ -7,12 +7,12 @@
     "reset-project": "node ./scripts/reset-project.js",
     "android": "node scripts/inject-dev-version.js && expo start --android",
     "ios": "node scripts/inject-dev-version.js && expo start --ios",
-    "lint": "expo lint",
+    "lint": "expo lint src/ __tests__/",
     "test": "jest",
     "test:silent": "jest --silent",
     "test:simulation": "jest __tests__/simulation/ --testPathIgnorePatterns=[]",
     "typecheck": "tsc --noEmit",
-    "qualitycheck": "npm-run-all typecheck lint test:silent test:simulation"
+    "qualitycheck": "npm-run-all typecheck lint test:silent"
   },
   "expo": {
     "doctor": {
@@ -31,6 +31,7 @@
     "expo-constants": "~17.1.6",
     "expo-font": "~13.3.1",
     "expo-linking": "~7.1.5",
+    "expo-localization": "~16.1.5",
     "expo-router": "~5.1.0",
     "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",
@@ -44,8 +45,7 @@
     "react-native-reanimated": "~3.17.5",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-test-renderer": "~19.0.0",
-    "expo-localization": "~16.1.5"
+    "react-test-renderer": "~19.0.0"
   },
   "devDependencies": {
     "@babel/core": "~7.27.1",

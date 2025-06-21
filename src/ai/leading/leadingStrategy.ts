@@ -19,6 +19,7 @@ import {
   selectEarlyGameLeadingPlay,
   selectMemoryEnhancedPointPlay,
 } from "./pointFocusedStrategy";
+import { selectAIMultiComboLead } from "../../game/multiComboLeadingStrategies";
 import { analyzeCombo } from "../aiGameContext";
 import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
 import { getRankValue } from "../analysis/comboAnalysis";
@@ -59,7 +60,18 @@ export function selectAdvancedLeadingPlay(
     analysis: analyzeCombo(combo, trumpInfo, context),
   }));
 
-  // === PRIORITY 1: EARLY GAME ACES ===
+  // === PRIORITY 1: MULTI-COMBOS (UNBEATABLE STRATEGY) ===
+  // Check for any unbeatable multi-combo opportunities
+  const multiComboPlay = selectAIMultiComboLead(
+    currentPlayer.hand,
+    gameState,
+    currentPlayer.id,
+  );
+  if (multiComboPlay) {
+    return multiComboPlay;
+  }
+
+  // === PRIORITY 2: EARLY GAME ACES ===
   // Non-trump Aces are guaranteed winners in early game - ALWAYS check this first
   if (pointContext.gamePhase === GamePhaseStrategy.EarlyGame) {
     const earlyGamePlay = selectEarlyGameLeadingPlay(
@@ -73,7 +85,7 @@ export function selectAdvancedLeadingPlay(
     }
   }
 
-  // === PRIORITY 2: VOID EXPLOITATION ===
+  // === PRIORITY 3: VOID EXPLOITATION ===
   // Use void exploitation opportunities for strategic advantage
   if (context.memoryContext && context.memoryContext.voidExploitation) {
     const voidAnalysis = context.memoryContext.voidExploitation;
@@ -134,7 +146,7 @@ export function selectAdvancedLeadingPlay(
     }
   }
 
-  // === PRIORITY 5: HISTORICAL INSIGHTS ===
+  // === PRIORITY 6: HISTORICAL INSIGHTS ===
   // Apply opponent modeling when sufficient data available
   if (gameState.tricks.length >= 3) {
     const historicalPlay = applyLeadingHistoricalInsights(

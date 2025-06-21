@@ -1,24 +1,24 @@
-import { getAIMove } from '../../src/ai/aiLogic';
-import { createCardMemory } from '../../src/ai/aiCardMemory';
+import { createCardMemory } from "../../src/ai/aiCardMemory";
+import { getAIMove } from "../../src/ai/aiLogic";
 import {
   Card,
+  GamePhase,
   GameState,
   PlayerId,
   Rank,
   Suit,
-  GamePhase,
   TrumpInfo,
-} from '../../src/types';
-import { initializeGame } from '../../src/utils/gameInitialization';
+} from "../../src/types";
+import { initializeGame } from "../../src/utils/gameInitialization";
 
 /**
  * Phase 4: Basic Memory System Integration Tests
- * 
+ *
  * Simple integration tests to validate basic memory system functionality
  * without complex analysis modules that might have dependency issues.
  */
 
-describe('Basic Memory System Integration Tests - Phase 4', () => {
+describe("Basic Memory System Integration Tests - Phase 4", () => {
   let gameState: GameState;
   let trumpInfo: TrumpInfo;
 
@@ -32,20 +32,32 @@ describe('Basic Memory System Integration Tests - Phase 4', () => {
     gameState.gamePhase = GamePhase.Playing;
   });
 
-  describe('Core Memory System Integration', () => {
-    it('should create memory system and provide to AI without errors', () => {
+  describe("Core Memory System Integration", () => {
+    it("should create memory system and provide to AI without errors", () => {
       // Add some completed tricks for memory data
       gameState.tricks = [
         {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] }
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Spades, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Spades, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot3,
-          points: 30
-        }
+          points: 30,
+        },
       ];
 
       // Test memory creation
@@ -60,18 +72,24 @@ describe('Basic Memory System Integration Tests - Phase 4', () => {
         Card.createCard(Suit.Diamonds, Rank.Queen, 0),
         Card.createCard(Suit.Hearts, Rank.Five, 0),
       ];
-      
+
       // Test AI decision with memory context
       gameState.currentPlayerIndex = 1; // Bot1's turn
       const aiDecision = getAIMove(gameState, PlayerId.Bot1);
-      
+
       expect(aiDecision).toBeDefined();
       expect(Array.isArray(aiDecision)).toBe(true);
       expect(aiDecision.length).toBeGreaterThan(0);
     });
 
-    it('should track card memory across multiple tricks', () => {
-      let memoryEvolution: any[] = [];
+    it("should track card memory across multiple tricks", () => {
+      const memoryEvolution: {
+        trickCount: number;
+        playedCards: number;
+        tricksAnalyzed: number;
+        trumpCardsPlayed: number;
+        pointCardsPlayed: number;
+      }[] = [];
 
       // Simulate 5 tricks and track memory evolution
       const ranks = [Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack];
@@ -79,13 +97,31 @@ describe('Basic Memory System Integration Tests - Phase 4', () => {
         // Add a trick
         const trick = {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Clubs, ranks[i % ranks.length], 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Clubs, ranks[(i + 1) % ranks.length], 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Clubs, ranks[(i + 2) % ranks.length], 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Clubs, ranks[(i + 3) % ranks.length], 0)] }
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Clubs, ranks[i % ranks.length], 0)],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [
+                Card.createCard(Suit.Clubs, ranks[(i + 1) % ranks.length], 0),
+              ],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [
+                Card.createCard(Suit.Clubs, ranks[(i + 2) % ranks.length], 0),
+              ],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [
+                Card.createCard(Suit.Clubs, ranks[(i + 3) % ranks.length], 0),
+              ],
+            },
           ],
           winningPlayerId: PlayerId.Bot3,
-          points: i % 2 === 0 ? 10 : 0
+          points: i % 2 === 0 ? 10 : 0,
         };
         gameState.tricks.push(trick);
 
@@ -96,64 +132,124 @@ describe('Basic Memory System Integration Tests - Phase 4', () => {
           playedCards: cardMemory.playedCards.length,
           tricksAnalyzed: cardMemory.tricksAnalyzed,
           trumpCardsPlayed: cardMemory.trumpCardsPlayed,
-          pointCardsPlayed: cardMemory.pointCardsPlayed
+          pointCardsPlayed: cardMemory.pointCardsPlayed,
         });
       }
 
       // Verify memory accumulates correctly
-      expect(memoryEvolution[0].playedCards).toBeLessThan(memoryEvolution[4].playedCards);
-      expect(memoryEvolution[0].tricksAnalyzed).toBeLessThan(memoryEvolution[4].tricksAnalyzed);
+      expect(memoryEvolution[0].playedCards).toBeLessThan(
+        memoryEvolution[4].playedCards,
+      );
+      expect(memoryEvolution[0].tricksAnalyzed).toBeLessThan(
+        memoryEvolution[4].tricksAnalyzed,
+      );
       expect(memoryEvolution[4].playedCards).toBe(20); // 5 tricks * 4 cards each
       expect(memoryEvolution[4].tricksAnalyzed).toBe(5);
     });
 
-    it('should detect voids when players trump off-suit leads', () => {
+    it("should detect voids when players trump off-suit leads", () => {
       // Setup scenario where Bot1 shows a void
       gameState.tricks = [
         {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.King, 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] }, // Trump = void
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Spades, Rank.Jack, 0)] }
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Spades, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)],
+            }, // Trump = void
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Spades, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Spades, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot1,
-          points: 10
-        }
+          points: 10,
+        },
       ];
 
       const cardMemory = createCardMemory(gameState);
-      
+
       // Verify void detection
       const bot1Memory = cardMemory.playerMemories[PlayerId.Bot1];
       expect(bot1Memory).toBeDefined();
       expect(bot1Memory.suitVoids.has(Suit.Spades)).toBe(true);
     });
 
-    it('should maintain performance with realistic memory workload', () => {
+    it("should maintain performance with realistic memory workload", () => {
       // Add realistic number of tricks (half a round)
-      const testRanks = [Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King];
+      const testRanks = [
+        Rank.Seven,
+        Rank.Eight,
+        Rank.Nine,
+        Rank.Ten,
+        Rank.Jack,
+        Rank.Queen,
+        Rank.King,
+      ];
       for (let i = 0; i < 12; i++) {
         const trick = {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Diamonds, testRanks[i % testRanks.length], 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, testRanks[(i + 1) % testRanks.length], 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Diamonds, testRanks[(i + 2) % testRanks.length], 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Diamonds, testRanks[(i + 3) % testRanks.length], 0)] }
+            {
+              playerId: PlayerId.Human,
+              cards: [
+                Card.createCard(
+                  Suit.Diamonds,
+                  testRanks[i % testRanks.length],
+                  0,
+                ),
+              ],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [
+                Card.createCard(
+                  Suit.Diamonds,
+                  testRanks[(i + 1) % testRanks.length],
+                  0,
+                ),
+              ],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [
+                Card.createCard(
+                  Suit.Diamonds,
+                  testRanks[(i + 2) % testRanks.length],
+                  0,
+                ),
+              ],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [
+                Card.createCard(
+                  Suit.Diamonds,
+                  testRanks[(i + 3) % testRanks.length],
+                  0,
+                ),
+              ],
+            },
           ],
           winningPlayerId: PlayerId.Bot3,
-          points: Math.random() > 0.5 ? 10 : 0
+          points: Math.random() > 0.5 ? 10 : 0,
         };
         gameState.tricks.push(trick);
       }
 
       const startTime = Date.now();
-      
+
       // Memory operations
       const cardMemory = createCardMemory(gameState);
       gameState.currentPlayerIndex = 1;
       const aiDecision = getAIMove(gameState, PlayerId.Bot1);
-      
+
       const endTime = Date.now();
       const processingTime = endTime - startTime;
 
@@ -163,10 +259,10 @@ describe('Basic Memory System Integration Tests - Phase 4', () => {
       expect(aiDecision).toBeDefined();
     });
 
-    it('should handle edge cases gracefully', () => {
+    it("should handle edge cases gracefully", () => {
       // Test with minimal data
       gameState.tricks = [];
-      
+
       expect(() => {
         const cardMemory = createCardMemory(gameState);
         expect(cardMemory.playedCards.length).toBe(0);
@@ -175,9 +271,8 @@ describe('Basic Memory System Integration Tests - Phase 4', () => {
 
       // Test with empty current trick
       gameState.currentTrick = null;
-      
+
       expect(() => {
-        const cardMemory = createCardMemory(gameState);
         const aiDecision = getAIMove(gameState, PlayerId.Bot1);
         expect(aiDecision).toBeDefined();
       }).not.toThrow();
