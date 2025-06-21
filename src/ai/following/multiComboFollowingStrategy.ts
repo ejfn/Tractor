@@ -1,4 +1,4 @@
-import { compareCards } from "../../game/cardComparison";
+import { compareTrumpMultiCombos } from "../../game/cardComparison";
 import { calculateCardStrategicValue, isTrump } from "../../game/gameHelpers";
 import { detectLeadingMultiCombo } from "../../game/multiComboDetection";
 import { identifyCombos, getComboType } from "../../game/comboDetection";
@@ -235,26 +235,47 @@ function analyzeComboStructure(
   cards: Card[],
   trumpInfo: TrumpInfo,
 ): ComboStructureAnalysis {
-  // Use the combo detection system to find all combinations
-  const combos = identifyCombos(cards, trumpInfo);
+  // For multi-combo structure analysis, we need to identify the actual intended structure
+  // without double-counting cards that appear in both pairs and singles
 
+  // First, identify all possible combinations
+  const allCombos = identifyCombos(cards, trumpInfo);
+
+  // Filter to get only pairs and tractors (higher priority combinations)
+  const pairsAndTractors = allCombos.filter((combo) => {
+    const type = getComboType(combo.cards, trumpInfo);
+    return type === ComboType.Pair || type === ComboType.Tractor;
+  });
+
+  // Track which cards are already used in pairs/tractors
+  const usedCardIds = new Set<string>();
   let totalPairs = 0;
-  let singles = 0;
   const tractors: { length: number; pairs: number }[] = [];
 
-  combos.forEach((combo) => {
+  // Process pairs and tractors first
+  pairsAndTractors.forEach((combo) => {
     const comboType = getComboType(combo.cards, trumpInfo);
 
-    if (comboType === ComboType.Pair) {
-      totalPairs += 1;
-    } else if (comboType === ComboType.Tractor) {
-      const pairCount = combo.cards.length / 2;
-      totalPairs += pairCount;
-      tractors.push({ length: combo.cards.length, pairs: pairCount });
-    } else {
-      singles += combo.cards.length;
+    // Only count if none of these cards are already used
+    const comboCardIds = combo.cards.map((c) => c.id);
+    const hasUsedCard = comboCardIds.some((id) => usedCardIds.has(id));
+
+    if (!hasUsedCard) {
+      if (comboType === ComboType.Pair) {
+        totalPairs += 1;
+        comboCardIds.forEach((id) => usedCardIds.add(id));
+      } else if (comboType === ComboType.Tractor) {
+        const pairCount = combo.cards.length / 2;
+        totalPairs += pairCount;
+        tractors.push({ length: combo.cards.length, pairs: pairCount });
+        comboCardIds.forEach((id) => usedCardIds.add(id));
+      }
     }
   });
+
+  // Count remaining cards as singles
+  const remainingCards = cards.filter((card) => !usedCardIds.has(card.id));
+  const singles = remainingCards.length;
 
   return {
     totalPairs,
@@ -360,13 +381,19 @@ function selectSameSuitDisposal(
 
   // Select combinations to fill the required length
   const responseCards: Card[] = [];
+  const usedCardIds = new Set<string>();
   let remainingNeeded = leadingCards.length;
 
   for (const combo of sortedCombos) {
     if (remainingNeeded <= 0) break;
 
-    if (combo.cards.length <= remainingNeeded) {
+    // Check if any cards in this combo are already used
+    const comboCardIds = combo.cards.map((card) => card.id);
+    const hasUsedCard = comboCardIds.some((id) => usedCardIds.has(id));
+
+    if (!hasUsedCard && combo.cards.length <= remainingNeeded) {
       responseCards.push(...combo.cards);
+      comboCardIds.forEach((id) => usedCardIds.add(id));
       remainingNeeded -= combo.cards.length;
     }
   }
@@ -377,17 +404,21 @@ function selectSameSuitDisposal(
     const unusedCards = sameSuitCards.filter(
       (card) => !usedCardIds.has(card.id),
     );
+
     const sortedUnused = unusedCards.sort(
       (a, b) =>
         calculateCardStrategicValue(a, trumpInfo, "strategic") -
         calculateCardStrategicValue(b, trumpInfo, "strategic"),
     );
 
-    responseCards.push(...sortedUnused.slice(0, remainingNeeded));
+    const additionalCards = sortedUnused.slice(0, remainingNeeded);
+    responseCards.push(...additionalCards);
   }
 
+  const finalCards = responseCards.slice(0, leadingCards.length);
+
   return {
-    cards: responseCards.slice(0, leadingCards.length), // Ensure exact length
+    cards: finalCards, // Ensure exact length
     strategy: "same_suit_match",
     reasoning: `Same-suit disposal: using available tractors/pairs first, then lowest singles`,
     canBeat: false,
@@ -457,7 +488,7 @@ function makeStrategicTrumpDecision(
     );
     if (canBeatLeading) {
       // 2. Can this trump response beat the previous trump? (strength comparison)
-      const canBeatPreviousTrump = compareTrumpVsTrump(
+      const canBeatPreviousTrump = compareTrumpMultiCombos(
         trumpResponse,
         currentWinner,
         trumpInfo,
@@ -508,15 +539,120 @@ function selectCrossSuitDisposal(
 
 /**
  * Helper function to select best matching combination from available combos
+ * IMPORTANT: This function should match the STRUCTURE of the leading combo
  */
 function selectBestMatchingCombination(
   availableCombos: Combo[],
   leadingCards: Card[],
   trumpInfo: TrumpInfo,
 ): Card[] {
-  // Use the existing same-suit disposal logic which properly prioritizes tractors/pairs
-  const allCards = availableCombos.flatMap((combo) => combo.cards);
-  return selectOptimalCardSelection(allCards, leadingCards, trumpInfo);
+  // Analyze the leading structure to understand what we need to match
+  const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
+
+  // For structure matching, we need to select specific combinations that match the lead
+  return selectStructureMatchingCards(
+    availableCombos,
+    leadingAnalysis,
+    trumpInfo,
+  );
+}
+
+/**
+ * Select cards to match the exact structure of the leading combo
+ * IMPORTANT: This function prioritizes strategic value when multiple options exist
+ */
+function selectStructureMatchingCards(
+  availableCombos: Combo[],
+  leadingAnalysis: ComboStructureAnalysis,
+  trumpInfo: TrumpInfo,
+  prioritizeLowest: boolean = false, // true for trump beating, false for same-suit
+): Card[] {
+  const selectedCards: Card[] = [];
+  const usedCardIds = new Set<string>();
+
+  // Sort function for strategic value
+  const sortByStrategicValue = (a: Combo, b: Combo) => {
+    const aValue = a.cards.reduce(
+      (sum, card) =>
+        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
+      0,
+    );
+    const bValue = b.cards.reduce(
+      (sum, card) =>
+        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
+      0,
+    );
+    // For trump beating, use lowest value; for same-suit disposal, use lowest value too
+    return aValue - bValue;
+  };
+
+  // Filter and sort combos by type and strategic value
+  const availableTractors = availableCombos
+    .filter(
+      (combo) => getComboType(combo.cards, trumpInfo) === ComboType.Tractor,
+    )
+    .sort(sortByStrategicValue);
+
+  const availablePairs = availableCombos
+    .filter((combo) => getComboType(combo.cards, trumpInfo) === ComboType.Pair)
+    .sort(sortByStrategicValue);
+
+  const availableSingles = availableCombos
+    .filter(
+      (combo) => getComboType(combo.cards, trumpInfo) === ComboType.Single,
+    )
+    .sort(sortByStrategicValue);
+
+  // 1. Match tractors first (if leading has tractors)
+  for (const requiredTractor of leadingAnalysis.tractors) {
+    // Find the best matching tractor (lowest strategic value)
+    const matchingTractor = availableTractors.find((tractor) => {
+      const tractorCards = tractor.cards.map((c) => c.id);
+      const hasUsedCard = tractorCards.some((id) => usedCardIds.has(id));
+      return !hasUsedCard && tractor.cards.length >= requiredTractor.length;
+    });
+
+    if (matchingTractor) {
+      selectedCards.push(...matchingTractor.cards);
+      matchingTractor.cards.forEach((card) => usedCardIds.add(card.id));
+    }
+  }
+
+  // 2. Match remaining pairs (total pairs - pairs already used in tractors)
+  const remainingPairsNeeded =
+    leadingAnalysis.totalPairs -
+    leadingAnalysis.tractors.reduce((sum, t) => sum + t.pairs, 0);
+  let pairsSelected = 0;
+
+  for (const pair of availablePairs) {
+    if (pairsSelected >= remainingPairsNeeded) break;
+
+    const pairCards = pair.cards.map((c) => c.id);
+    const hasUsedCard = pairCards.some((id) => usedCardIds.has(id));
+
+    if (!hasUsedCard) {
+      selectedCards.push(...pair.cards);
+      pair.cards.forEach((card) => usedCardIds.add(card.id));
+      pairsSelected++;
+    }
+  }
+
+  // 3. Fill remaining with singles (lowest strategic value first)
+  const remainingSinglesNeeded = leadingAnalysis.singles;
+  let singlesSelected = 0;
+
+  for (const single of availableSingles) {
+    if (singlesSelected >= remainingSinglesNeeded) break;
+
+    const singleCard = single.cards[0];
+    if (!usedCardIds.has(singleCard.id)) {
+      selectedCards.push(singleCard);
+      usedCardIds.add(singleCard.id);
+      singlesSelected++;
+    }
+  }
+
+  return selectedCards;
 }
 
 /**
@@ -541,77 +677,6 @@ function selectBestMatchingCombination(
 // }
 
 // TODO: Clean up unused functions after implementation is complete
-
-/**
- * Select optimal cards prioritizing tractors, then pairs, then singles
- */
-function selectOptimalCardSelection(
-  availableCards: Card[],
-  leadingCards: Card[],
-  trumpInfo: TrumpInfo,
-): Card[] {
-  // Find available combinations, prioritizing tractors and pairs
-  const availableCombos = identifyCombos(availableCards, trumpInfo);
-
-  // Sort combos by priority: tractors first, then pairs, then singles
-  const sortedCombos = availableCombos.sort((a, b) => {
-    const aType = getComboType(a.cards, trumpInfo);
-    const bType = getComboType(b.cards, trumpInfo);
-
-    // Priority: Tractor > Pair > Single
-    const getPriority = (type: ComboType) => {
-      if (type === ComboType.Tractor) return 3;
-      if (type === ComboType.Pair) return 2;
-      return 1; // Singles
-    };
-
-    const priorityDiff = getPriority(aType) - getPriority(bType);
-    if (priorityDiff !== 0) return -priorityDiff; // Higher priority first
-
-    // Within same type, use lowest strategic value
-    const aValue = a.cards.reduce(
-      (sum, card) =>
-        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
-      0,
-    );
-    const bValue = b.cards.reduce(
-      (sum, card) =>
-        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
-      0,
-    );
-    return aValue - bValue; // Lower value first
-  });
-
-  // Select combinations to fill the required length
-  const responseCards: Card[] = [];
-  let remainingNeeded = leadingCards.length;
-
-  for (const combo of sortedCombos) {
-    if (remainingNeeded <= 0) break;
-
-    if (combo.cards.length <= remainingNeeded) {
-      responseCards.push(...combo.cards);
-      remainingNeeded -= combo.cards.length;
-    }
-  }
-
-  // If we still need more cards, add individual singles by lowest value
-  if (remainingNeeded > 0) {
-    const usedCardIds = new Set(responseCards.map((card) => card.id));
-    const unusedCards = availableCards.filter(
-      (card) => !usedCardIds.has(card.id),
-    );
-    const sortedUnused = unusedCards.sort(
-      (a, b) =>
-        calculateCardStrategicValue(a, trumpInfo, "strategic") -
-        calculateCardStrategicValue(b, trumpInfo, "strategic"),
-    );
-
-    responseCards.push(...sortedUnused.slice(0, remainingNeeded));
-  }
-
-  return responseCards.slice(0, leadingCards.length); // Ensure exact length
-}
 
 /**
  * Check if trump cards can beat leading combo (trump vs non-trump structure matching)
@@ -657,113 +722,6 @@ function canBeatLeadingCombo(
 
   // 5. true (can beat) - trump with matching structure always beats non-trump
   return true;
-}
-
-/**
- * Compare trump vs trump strength - highest combo type comparison
- * 1. Compare combo types: Tractor > Pair > Single
- * 2. If same type, compare highest card/pair from that type
- * 3. For tractors: find highest pair from ALL tractor pairs
- */
-function compareTrumpVsTrump(
-  responseCards: Card[],
-  currentWinningCards: Card[],
-  trumpInfo: TrumpInfo,
-): boolean {
-  const responseCombos = identifyCombos(responseCards, trumpInfo);
-  const winningCombos = identifyCombos(currentWinningCards, trumpInfo);
-
-  // Find highest combo type and representative card/pair for comparison
-  const getHighestComboForComparison = (combos: Combo[]) => {
-    const tractors = combos.filter(
-      (c) => getComboType(c.cards, trumpInfo) === ComboType.Tractor,
-    );
-    const pairs = combos.filter(
-      (c) => getComboType(c.cards, trumpInfo) === ComboType.Pair,
-    );
-    const singles = combos.filter(
-      (c) => getComboType(c.cards, trumpInfo) === ComboType.Single,
-    );
-
-    if (tractors.length > 0) {
-      // For tractors: find the highest pair from ALL tractor pairs
-      let highestPair: Card[] | null = null;
-
-      for (const tractor of tractors) {
-        // Each tractor has pairs - find highest pair in this tractor
-        const tractorPairs: Card[][] = [];
-        for (let i = 0; i < tractor.cards.length; i += 2) {
-          if (i + 1 < tractor.cards.length) {
-            tractorPairs.push([tractor.cards[i], tractor.cards[i + 1]]);
-          }
-        }
-
-        // Find highest pair in this tractor
-        for (const pair of tractorPairs) {
-          if (
-            !highestPair ||
-            compareCards(pair[0], highestPair[0], trumpInfo) > 0
-          ) {
-            highestPair = pair;
-          }
-        }
-      }
-
-      return {
-        type: ComboType.Tractor,
-        representativeCards: highestPair || tractors[0].cards.slice(0, 2),
-      };
-    }
-
-    if (pairs.length > 0) {
-      // Find highest pair
-      let highestPair = pairs[0].cards;
-      for (const pair of pairs) {
-        if (compareCards(pair.cards[0], highestPair[0], trumpInfo) > 0) {
-          highestPair = pair.cards;
-        }
-      }
-      return { type: ComboType.Pair, representativeCards: highestPair };
-    }
-
-    if (singles.length > 0) {
-      // Find highest single
-      let highestSingle = singles[0].cards[0];
-      for (const single of singles) {
-        if (compareCards(single.cards[0], highestSingle, trumpInfo) > 0) {
-          highestSingle = single.cards[0];
-        }
-      }
-      return { type: ComboType.Single, representativeCards: [highestSingle] };
-    }
-
-    return {
-      type: ComboType.Single,
-      representativeCards: [combos[0].cards[0]],
-    };
-  };
-
-  const responseHighest = getHighestComboForComparison(responseCombos);
-  const winningHighest = getHighestComboForComparison(winningCombos);
-
-  // Compare combo types first
-  if (responseHighest.type !== winningHighest.type) {
-    const getTypeValue = (type: ComboType) => {
-      if (type === ComboType.Tractor) return 3;
-      if (type === ComboType.Pair) return 2;
-      return 1;
-    };
-    const responseWins =
-      getTypeValue(responseHighest.type) > getTypeValue(winningHighest.type);
-    return responseWins;
-  }
-
-  // Same combo type - compare representative cards
-  const responseCard = responseHighest.representativeCards[0];
-  const winningCard = winningHighest.representativeCards[0];
-
-  const cardComparison = compareCards(responseCard, winningCard, trumpInfo);
-  return cardComparison > 0;
 }
 
 /**

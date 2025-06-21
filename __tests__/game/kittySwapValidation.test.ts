@@ -1,7 +1,14 @@
 import { getAIKittySwap } from "../../src/ai/aiLogic";
 import { putbackKittyCards } from "../../src/game/kittyManager";
 import { finalizeTrumpDeclaration } from "../../src/game/dealingAndDeclaration";
-import { GameState, PlayerId, GamePhase, Card, Suit, Rank } from "../../src/types";
+import {
+  GameState,
+  PlayerId,
+  GamePhase,
+  Card,
+  Suit,
+  Rank,
+} from "../../src/types";
 import { createGameState } from "../helpers/gameStates";
 
 describe("Bot Kitty Swap Bug", () => {
@@ -18,15 +25,15 @@ describe("Bot Kitty Swap Bug", () => {
 
     // Give all players 25 cards each (normal 2-deck Tractor distribution)
     gameState.players.forEach((player, index) => {
-      player.hand = Array(25).fill(null).map((_, cardIndex) => 
-        Card.createCard(Suit.Hearts, Rank.Two, 0)
-      );
+      player.hand = Array(25)
+        .fill(null)
+        .map((_, cardIndex) => Card.createCard(Suit.Hearts, Rank.Two, 0));
     });
 
     // Create kitty with 8 cards
-    gameState.kittyCards = Array(8).fill(null).map((_, index) => 
-      Card.createCard(Suit.Spades, Rank.Three, 0)
-    );
+    gameState.kittyCards = Array(8)
+      .fill(null)
+      .map((_, index) => Card.createCard(Suit.Spades, Rank.Three, 0));
   });
 
   test("should handle bot kitty swap correctly", () => {
@@ -45,7 +52,7 @@ describe("Bot Kitty Swap Bug", () => {
 
     // Now test AI kitty swap
     const selectedCards = getAIKittySwap(stateAfterDealing, PlayerId.Bot1);
-    
+
     // Verify AI selected exactly 8 cards
     expect(selectedCards).toHaveLength(8);
 
@@ -53,7 +60,7 @@ describe("Bot Kitty Swap Bug", () => {
     const stateAfterSwap = putbackKittyCards(
       stateAfterDealing,
       selectedCards,
-      PlayerId.Bot1
+      PlayerId.Bot1,
     );
 
     // Verify game transitioned to Playing phase
@@ -111,40 +118,50 @@ describe("Bot Kitty Swap Bug", () => {
   test("should validate bot has exactly 25 cards after kitty swap", () => {
     // Start with proper setup
     const stateAfterDealing = finalizeTrumpDeclaration(gameState);
-    
-    // Get AI kitty swap selection  
+
+    // Get AI kitty swap selection
     const selectedCards = getAIKittySwap(stateAfterDealing, PlayerId.Bot1);
-    
+
     // Test normal case - should work fine
     const stateAfterSwap = putbackKittyCards(
       stateAfterDealing,
       selectedCards,
-      PlayerId.Bot1
+      PlayerId.Bot1,
     );
-    
+
     // Verify bot has exactly 25 cards
     expect(stateAfterSwap.players[1].hand).toHaveLength(25);
-    
+
     // Test error case - manually create invalid scenario
     const invalidState = { ...stateAfterDealing };
     // Remove one extra card to simulate bug where AI would have 24 cards after swap
     invalidState.players[1].hand = invalidState.players[1].hand.slice(0, 32); // 32 - 8 = 24
-    
+
     // This should throw an error
     expect(() => {
       putbackKittyCards(invalidState, selectedCards.slice(0, 7), PlayerId.Bot1); // Only remove 7 cards instead of 8
-    }).toThrow("Must select exactly 8 cards for kitty swap, but 7 were selected");
-    
+    }).toThrow(
+      "Must select exactly 8 cards for kitty swap, but 7 were selected",
+    );
+
     // Test another error case - simulate selecting wrong number of cards that would result in wrong hand size
     const anotherInvalidState = { ...stateAfterDealing };
     // Create scenario where removing 8 cards would leave wrong number
-    anotherInvalidState.players[1].hand = anotherInvalidState.players[1].hand.slice(0, 32); // Start with 32 cards
-    
+    anotherInvalidState.players[1].hand =
+      anotherInvalidState.players[1].hand.slice(0, 32); // Start with 32 cards
+
     // Get valid cards from the reduced hand to avoid "cards not found" error
-    const validCardsFromReducedHand = anotherInvalidState.players[1].hand.slice(0, 8);
-    
+    const validCardsFromReducedHand = anotherInvalidState.players[1].hand.slice(
+      0,
+      8,
+    );
+
     expect(() => {
-      putbackKittyCards(anotherInvalidState, validCardsFromReducedHand, PlayerId.Bot1); // Remove 8 from 32 = 24 (wrong!)
+      putbackKittyCards(
+        anotherInvalidState,
+        validCardsFromReducedHand,
+        PlayerId.Bot1,
+      ); // Remove 8 from 32 = 24 (wrong!)
     }).toThrow("After kitty swap, player bot1 should have 25 cards, but has");
   });
 });

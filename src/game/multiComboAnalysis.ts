@@ -367,6 +367,7 @@ export function detectMultiComboAttempt(
   const suit = suits[0];
   const groupCards = cardGroups[suit];
 
+  // 🚨 CRITICAL: MULTI-COMBO = Multiple combos from same suit (e.g., A♥ + K♥ + Q♥ = 3 singles = VALID)
   // Check if selection forms multiple combos (structural requirement)
   const components = analyzeMultiComboComponents(groupCards, trumpInfo);
   if (components.length < 2) {
@@ -434,7 +435,10 @@ export function matchesRequiredStructure(
   const required = leadingStructure.components;
 
   // Must match total length exactly
-  if (followingStructure.components.totalLength !== leadingStructure.components.totalLength) {
+  if (
+    followingStructure.components.totalLength !==
+    leadingStructure.components.totalLength
+  ) {
     return false;
   }
 

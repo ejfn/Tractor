@@ -28,6 +28,17 @@ export function selectStrategicDisposal(
   positionStrategy: PositionStrategy,
   gameState?: GameState,
 ): Card[] {
+  console.log(
+    `[STRATEGIC-DISPOSAL] Called with ${comboAnalyses.length} combo options`,
+  );
+  console.log(
+    `[STRATEGIC-DISPOSAL] Available combos:`,
+    comboAnalyses.map((ca) => ({
+      cards: ca.combo.cards.map((c) => c.getDisplayName()),
+      type: ca.combo.type,
+      conservationValue: ca.analysis.conservationValue,
+    })),
+  );
   // REMOVED ISSUE #104 BAND-AID FIX - Game logic now properly handles mixed combinations
 
   // Strategic disposal when not contesting trick
@@ -126,8 +137,14 @@ export function selectStrategicDisposal(
   }
 
   // Ultimate fallback (should rarely happen)
+  console.log(`[STRATEGIC-DISPOSAL] Using ultimate fallback`);
   const sorted = comboAnalyses.sort((a, b) => a.combo.value - b.combo.value);
-  return sorted[0].combo.cards;
+  const result = sorted[0].combo.cards;
+  console.log(
+    `[STRATEGIC-DISPOSAL] Fallback result:`,
+    result.map((c) => c.getDisplayName()),
+  );
+  return result;
 }
 
 /**

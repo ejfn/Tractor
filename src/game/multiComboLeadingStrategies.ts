@@ -1,13 +1,13 @@
 import { createCardMemory } from "../ai/aiCardMemory";
 import { Card, GameState, PlayerId, Suit } from "../types";
-import { isTrump } from "./gameHelpers";
 import { MultiComboValidation } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
+import { isTrump } from "./gameHelpers";
 import { analyzeMultiComboComponents } from "./multiComboAnalysis";
 import {
-  validateLeadingMultiCombo,
   checkOpponentVoidStatus,
   isComboUnbeatable,
+  validateLeadingMultiCombo,
 } from "./multiComboValidation";
 
 /**
@@ -122,7 +122,7 @@ export function selectAIMultiComboLead(
   }
 
   // Bundle ALL unbeatable combos from longest suit → Lead multi-combo
-  return mostUnbeatableCards.length > 0 ? mostUnbeatableCards : null;
+  return mostUnbeatableCards.length > 1 ? mostUnbeatableCards : null;
 }
 
 /**
@@ -133,7 +133,7 @@ export function selectAIMultiComboLead(
  * @param playerId Player ID
  * @returns All unbeatable cards in the suit
  */
-export function getAllUnbeatableCardsInSuit(
+function getAllUnbeatableCardsInSuit(
   suit: Suit,
   playerHand: Card[],
   gameState: GameState,

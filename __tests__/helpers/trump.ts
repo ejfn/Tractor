@@ -1,9 +1,4 @@
-import {
-  Rank,
-  Suit,
-  TrumpInfo,
-  PlayerId,
-} from '../../src/types';
+import { Rank, Suit, TrumpInfo } from "../../src/types";
 
 // ============================================================================
 // TRUMP INFO UTILITIES
@@ -14,10 +9,10 @@ import {
  */
 export const createTrumpInfo = (
   trumpRank: Rank = Rank.Two,
-  trumpSuit?: Suit
+  trumpSuit?: Suit,
 ): TrumpInfo => ({
   trumpRank,
-  trumpSuit
+  trumpSuit,
 });
 
 /**
@@ -31,5 +26,5 @@ export const createTrumpScenarios = {
   diamondsTrump: () => createTrumpInfo(Rank.Two, Suit.Diamonds),
   jackTrump: () => createTrumpInfo(Rank.Jack, Suit.Spades),
   rankOnly: (rank: Rank) => createTrumpInfo(rank, undefined),
-  customTrump: (rank: Rank, suit: Suit) => createTrumpInfo(rank, suit)
+  customTrump: (rank: Rank, suit: Suit) => createTrumpInfo(rank, suit),
 };

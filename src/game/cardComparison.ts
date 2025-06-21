@@ -9,7 +9,7 @@ import {
   TrumpInfo,
 } from "../types";
 import { getRankValue, isTrump } from "./gameHelpers";
-import { getComboType } from "./comboDetection";
+import { getComboType, identifyCombos } from "./comboDetection";
 import {
   analyzeMultiComboComponents,
   detectMultiComboAttempt,
@@ -206,6 +206,112 @@ export function getCurrentWinningCombo(trick: Trick): Card[] {
  * Compare multi-combos when structure matches using trump hierarchy
  * Rule: Get highest value of highest combo-type, if tractor, longest then highest
  */
+/**
+ * Compare trump multi-combos using highest combo type priority
+ * Moved from AI module as this is core game logic, not AI-specific
+ */
+export function compareTrumpMultiCombos(
+  responseCards: Card[],
+  currentWinningCards: Card[],
+  trumpInfo: TrumpInfo,
+): boolean {
+  const responseCombos = identifyCombos(responseCards, trumpInfo);
+  const winningCombos = identifyCombos(currentWinningCards, trumpInfo);
+
+  // Find highest combo type and representative card/pair for comparison
+  const getHighestComboForComparison = (combos: Combo[]) => {
+    const tractors = combos.filter(
+      (c) => getComboType(c.cards, trumpInfo) === ComboType.Tractor,
+    );
+    const pairs = combos.filter(
+      (c) => getComboType(c.cards, trumpInfo) === ComboType.Pair,
+    );
+    const singles = combos.filter(
+      (c) => getComboType(c.cards, trumpInfo) === ComboType.Single,
+    );
+
+    if (tractors.length > 0) {
+      // For tractors: find the highest pair from ALL tractor pairs
+      let highestPair: Card[] | null = null;
+
+      for (const tractor of tractors) {
+        // Each tractor has pairs - find highest pair in this tractor
+        const tractorPairs: Card[][] = [];
+        for (let i = 0; i < tractor.cards.length; i += 2) {
+          if (i + 1 < tractor.cards.length) {
+            tractorPairs.push([tractor.cards[i], tractor.cards[i + 1]]);
+          }
+        }
+
+        // Find highest pair in this tractor
+        for (const pair of tractorPairs) {
+          if (
+            !highestPair ||
+            compareCards(pair[0], highestPair[0], trumpInfo) > 0
+          ) {
+            highestPair = pair;
+          }
+        }
+      }
+
+      return {
+        type: ComboType.Tractor,
+        representativeCards: highestPair || tractors[0].cards.slice(0, 2),
+      };
+    }
+
+    if (pairs.length > 0) {
+      // Find highest pair
+      let highestPair = pairs[0].cards;
+      for (const pair of pairs) {
+        if (compareCards(pair.cards[0], highestPair[0], trumpInfo) > 0) {
+          highestPair = pair.cards;
+        }
+      }
+      return { type: ComboType.Pair, representativeCards: highestPair };
+    }
+
+    if (singles.length > 0) {
+      // Find highest single
+      let highestSingle = singles[0].cards[0];
+      for (const single of singles) {
+        if (compareCards(single.cards[0], highestSingle, trumpInfo) > 0) {
+          highestSingle = single.cards[0];
+        }
+      }
+      return { type: ComboType.Single, representativeCards: [highestSingle] };
+    }
+
+    return {
+      type: ComboType.Single,
+      representativeCards: [combos[0].cards[0]],
+    };
+  };
+
+  const responseHighest = getHighestComboForComparison(responseCombos);
+  const winningHighest = getHighestComboForComparison(winningCombos);
+
+  // Compare combo types first
+  if (responseHighest.type !== winningHighest.type) {
+    const getTypeValue = (type: ComboType) => {
+      if (type === ComboType.Tractor) return 3;
+      if (type === ComboType.Pair) return 2;
+      return 1;
+    };
+    const responseWins =
+      getTypeValue(responseHighest.type) > getTypeValue(winningHighest.type);
+    return responseWins;
+  }
+
+  // Same combo type - compare representative cards
+  const responseCard = responseHighest.representativeCards[0];
+  const winningCard = winningHighest.representativeCards[0];
+
+  const cardComparison = compareCards(responseCard, winningCard, trumpInfo);
+  return cardComparison > 0;
+}
+
+// TODO: Review if this function is still needed after trump comparison consolidation
 export function compareMultiCombos(
   proposedCombo: Card[],
   currentWinningCombo: Card[],
@@ -372,13 +478,22 @@ export function canComboBeaten(
     ).isMultiCombo;
 
     if (proposedIsMultiCombo && winningIsMultiCombo) {
-      // Use multi-combo comparison logic
-      const multiComboResult = compareMultiCombos(
-        proposedCombo,
-        currentWinningCombo,
-        trumpInfo,
-      );
-      return multiComboResult > 0;
+      // For trump vs trump multi-combo comparison, use specialized logic
+      if (proposedIsTrump && winningIsTrump) {
+        return compareTrumpMultiCombos(
+          proposedCombo,
+          currentWinningCombo,
+          trumpInfo,
+        );
+      } else {
+        // Use general multi-combo comparison logic
+        const multiComboResult = compareMultiCombos(
+          proposedCombo,
+          currentWinningCombo,
+          trumpInfo,
+        );
+        return multiComboResult > 0;
+      }
     } else {
       // Use existing compareCards for simple combos (singles, pairs, tractors)
       return (

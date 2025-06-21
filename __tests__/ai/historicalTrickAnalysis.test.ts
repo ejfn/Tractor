@@ -5,8 +5,8 @@ import {
 } from "../../src/ai/aiCardMemory";
 import {
   Card,
-  GameState,
   GameContext,
+  GameState,
   PlayerId,
   PlayStyle,
   PointPressure,
@@ -14,7 +14,7 @@ import {
   Suit,
   Trick,
   TrickPosition,
-  TrumpInfo
+  TrumpInfo,
 } from "../../src/types";
 import { createGameState } from "../helpers";
 
@@ -44,20 +44,44 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot1,
           points: 10,
         },
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Two, 0)] }, // Trump lead
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Ten, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Nine, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Eight, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Spades, Rank.Two, 0)],
+            }, // Trump lead
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ten, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Nine, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Eight, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot1,
           points: 15,
@@ -78,10 +102,22 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Ten, 0)] }, // Teammate contributes points
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ten, 0)],
+            }, // Teammate contributes points
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Human,
           points: 10,
@@ -92,8 +128,12 @@ describe("Historical Trick Analysis", () => {
       const analysis = analyzeTrickHistory(tricks, gameState);
 
       expect(analysis.teamCoordinationHistory).toBeDefined();
-      expect(analysis.teamCoordinationHistory.supportFrequency).toBeGreaterThanOrEqual(0);
-      expect(analysis.teamCoordinationHistory.cooperationLevel).toBeGreaterThanOrEqual(0);
+      expect(
+        analysis.teamCoordinationHistory.supportFrequency,
+      ).toBeGreaterThanOrEqual(0);
+      expect(
+        analysis.teamCoordinationHistory.cooperationLevel,
+      ).toBeGreaterThanOrEqual(0);
     });
 
     it("should analyze round progression patterns", () => {
@@ -101,10 +141,22 @@ describe("Historical Trick Analysis", () => {
         // Early trick
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Seven, 0)] }, // Safe lead
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Eight, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Nine, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Ten, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Seven, 0)],
+            }, // Safe lead
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.Eight, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Nine, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ten, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot3,
           points: 10,
@@ -112,10 +164,22 @@ describe("Historical Trick Analysis", () => {
         // Mid trick
         {
           plays: [
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Diamonds, Rank.King, 0)] }, // Point lead
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Diamonds, Rank.Ace, 0)] },
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Diamonds, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Diamonds, Rank.King, 0)],
+            }, // Point lead
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Diamonds, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Diamonds, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Diamonds, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot3,
           points: 10,
@@ -123,10 +187,22 @@ describe("Historical Trick Analysis", () => {
         // Late trick
         {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Spades, Rank.Two, 0)] }, // Trump lead (aggressive endgame)
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Four, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Spades, Rank.Two, 0)],
+            }, // Trump lead (aggressive endgame)
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Three, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Four, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Human,
           points: 5,
@@ -140,7 +216,9 @@ describe("Historical Trick Analysis", () => {
       expect(analysis.roundProgression.earlyRoundBehavior).toBeDefined();
       expect(analysis.roundProgression.midRoundBehavior).toBeDefined();
       expect(analysis.roundProgression.endgameBehavior).toBeDefined();
-      expect(analysis.roundProgression.consistencyScore).toBeGreaterThanOrEqual(0);
+      expect(analysis.roundProgression.consistencyScore).toBeGreaterThanOrEqual(
+        0,
+      );
       expect(analysis.roundProgression.consistencyScore).toBeLessThanOrEqual(1);
     });
 
@@ -149,10 +227,22 @@ describe("Historical Trick Analysis", () => {
         // Low-value setup trick
         {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Seven, 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Eight, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Nine, 0)] }, // Teammate wins
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)] },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.Seven, 0)],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Eight, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Nine, 0)],
+            }, // Teammate wins
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot2, // Human's teammate
           points: 0,
@@ -160,10 +250,22 @@ describe("Historical Trick Analysis", () => {
         // Follow-up trick where teammate leads
         {
           plays: [
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Diamonds, Rank.Ace, 0)] }, // Teammate from previous trick
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Diamonds, Rank.King, 0)] },
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Diamonds, Rank.Ten, 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Diamonds, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Diamonds, Rank.Ace, 0)],
+            }, // Teammate from previous trick
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Diamonds, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Diamonds, Rank.Ten, 0)],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Diamonds, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot2,
           points: 20,
@@ -183,10 +285,22 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot1,
           points: 0,
@@ -205,7 +319,10 @@ describe("Historical Trick Analysis", () => {
         tricksAnalyzed: 1,
       };
 
-      const enhancedContext = createEnhancedMemoryContext(mockMemory, gameState);
+      const enhancedContext = createEnhancedMemoryContext(
+        mockMemory,
+        gameState,
+      );
 
       expect(enhancedContext).toBeDefined();
       expect(enhancedContext.trickHistory).toBeDefined();
@@ -219,10 +336,22 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot1,
           points: 0,
@@ -241,14 +370,17 @@ describe("Historical Trick Analysis", () => {
         tricksAnalyzed: 1,
       };
 
-      const enhancedContext = createEnhancedMemoryContext(mockMemory, gameState);
+      const enhancedContext = createEnhancedMemoryContext(
+        mockMemory,
+        gameState,
+      );
 
       expect(enhancedContext.predictiveModeling).toBeDefined();
       expect(Array.isArray(enhancedContext.predictiveModeling)).toBe(true);
-      
+
       // Should have models for players who have leading patterns
-      if (enhancedContext.predictiveModeling!.length > 0) {
-        const model = enhancedContext.predictiveModeling![0];
+      if ((enhancedContext.predictiveModeling ?? []).length > 0) {
+        const model = (enhancedContext.predictiveModeling ?? [])[0];
         expect(model.playerId).toBeDefined();
         expect(model.nextMoveAnalysis).toBeDefined();
         expect(model.handStrengthEstimate).toBeDefined();
@@ -262,10 +394,22 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Spades, Rank.Two, 0)] }, // Aggressive trump lead
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Spades, Rank.Two, 0)],
+            }, // Aggressive trump lead
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot1,
           points: 0,
@@ -284,13 +428,22 @@ describe("Historical Trick Analysis", () => {
         tricksAnalyzed: 1,
       };
 
-      const enhancedContext = createEnhancedMemoryContext(mockMemory, gameState);
+      const enhancedContext = createEnhancedMemoryContext(
+        mockMemory,
+        gameState,
+      );
 
       expect(enhancedContext.adaptiveStrategy).toBeDefined();
-      expect(enhancedContext.adaptiveStrategy!.recommendedApproach).toBeDefined();
-      expect(enhancedContext.adaptiveStrategy!.confidenceLevel).toBeGreaterThanOrEqual(0);
-      expect(enhancedContext.adaptiveStrategy!.confidenceLevel).toBeLessThanOrEqual(1);
-      expect(enhancedContext.adaptiveStrategy!.expectedOutcome).toBeDefined();
+      expect(
+        enhancedContext.adaptiveStrategy?.recommendedApproach,
+      ).toBeDefined();
+      expect(
+        enhancedContext.adaptiveStrategy?.confidenceLevel,
+      ).toBeGreaterThanOrEqual(0);
+      expect(
+        enhancedContext.adaptiveStrategy?.confidenceLevel,
+      ).toBeLessThanOrEqual(1);
+      expect(enhancedContext.adaptiveStrategy?.expectedOutcome).toBeDefined();
     });
   });
 
@@ -309,10 +462,22 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot1,
           points: 0,
@@ -347,10 +512,22 @@ describe("Historical Trick Analysis", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Human,
           points: 0,
@@ -361,17 +538,31 @@ describe("Historical Trick Analysis", () => {
       const analysis = analyzeTrickHistory(tricks, gameState);
 
       expect(analysis).toBeDefined();
-      expect(analysis.adaptiveBehaviorTrends.behaviorConsistency).toBeGreaterThanOrEqual(0);
+      expect(
+        analysis.adaptiveBehaviorTrends.behaviorConsistency,
+      ).toBeGreaterThanOrEqual(0);
     });
 
     it("should handle tricks with no points", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Seven, 0)] },
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.Eight, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Nine, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Seven, 0)],
+            },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.Eight, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Nine, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot2,
           points: 0,
@@ -381,18 +572,34 @@ describe("Historical Trick Analysis", () => {
       gameState.tricks = tricks;
       const analysis = analyzeTrickHistory(tricks, gameState);
 
-      expect(analysis.teamCoordinationHistory.cooperationLevel).toBeGreaterThanOrEqual(0);
-      expect(analysis.teamCoordinationHistory.cooperationLevel).toBeLessThanOrEqual(1);
+      expect(
+        analysis.teamCoordinationHistory.cooperationLevel,
+      ).toBeGreaterThanOrEqual(0);
+      expect(
+        analysis.teamCoordinationHistory.cooperationLevel,
+      ).toBeLessThanOrEqual(1);
     });
 
     it("should handle players with no leading history", () => {
       const tricks: Trick[] = [
         {
           plays: [
-            { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)] },
-            { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] },
-            { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)] },
-            { playerId: PlayerId.Bot3, cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)] },
+            {
+              playerId: PlayerId.Bot1,
+              cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
+            },
+            {
+              playerId: PlayerId.Human,
+              cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+            },
+            {
+              playerId: PlayerId.Bot2,
+              cards: [Card.createCard(Suit.Hearts, Rank.Queen, 0)],
+            },
+            {
+              playerId: PlayerId.Bot3,
+              cards: [Card.createCard(Suit.Hearts, Rank.Jack, 0)],
+            },
           ],
           winningPlayerId: PlayerId.Bot1,
           points: 0,

@@ -1,5 +1,14 @@
+import { finalizeTrumpDeclaration } from "../../src/game/dealingAndDeclaration";
 import { processPlay } from "../../src/game/playProcessing";
-import { Card, DeckId, GamePhase, GameState, PlayerId, Rank, Suit } from "../../src/types";
+import {
+  Card,
+  DeckId,
+  GamePhase,
+  GameState,
+  PlayerId,
+  Rank,
+  Suit,
+} from "../../src/types";
 import { createGameState } from "../helpers/gameStates";
 
 describe("Kitty Bonus Integration", () => {
@@ -82,7 +91,9 @@ describe("Kitty Bonus Integration", () => {
 
     // Verify kitty bonus info is properly stored for round completion
     expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
-    expect(finalResult.newState.roundEndKittyInfo!.kittyBonus!.bonusPoints).toBe(kittyBonus);
+    expect(
+      finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints,
+    ).toBe(kittyBonus);
   });
 
   test("should apply 4x kitty bonus when attacking team wins final trick with pairs", () => {
@@ -139,7 +150,9 @@ describe("Kitty Bonus Integration", () => {
 
     // Verify kitty bonus info is properly stored for round completion
     expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
-    expect(finalResult.newState.roundEndKittyInfo!.kittyBonus!.bonusPoints).toBe(kittyBonus);
+    expect(
+      finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints,
+    ).toBe(kittyBonus);
   });
 
   test("should NOT apply kitty bonus when defending team wins final trick", () => {
@@ -185,7 +198,7 @@ describe("Kitty Bonus Integration", () => {
     gameState.players.forEach((player, index) => {
       player.hand = [
         testCards[index],
-        Card.createCard(Suit.Spades, Rank.Three, index % 2 as DeckId),
+        Card.createCard(Suit.Spades, Rank.Three, (index % 2) as DeckId),
       ];
     });
 
@@ -269,9 +282,24 @@ describe("Kitty Bonus Integration", () => {
 
     // Set up final trick with tractors (each player has 4 cards for tractor)
     gameState.players[0].hand = tractorCards; // Human - tractor 7-7-8-8
-    gameState.players[1].hand = [botCards[0], botCards[1], botCards[2], botCards[3]]; // Bot1 - tractor 6-6-5-5
-    gameState.players[2].hand = [botCards[4], botCards[5], botCards[6], botCards[7]]; // Bot2 - tractor 4-4-3-3
-    gameState.players[3].hand = [botCards[8], botCards[9], botCards[10], botCards[11]]; // Bot3 - tractor 2-2-A-A
+    gameState.players[1].hand = [
+      botCards[0],
+      botCards[1],
+      botCards[2],
+      botCards[3],
+    ]; // Bot1 - tractor 6-6-5-5
+    gameState.players[2].hand = [
+      botCards[4],
+      botCards[5],
+      botCards[6],
+      botCards[7],
+    ]; // Bot2 - tractor 4-4-3-3
+    gameState.players[3].hand = [
+      botCards[8],
+      botCards[9],
+      botCards[10],
+      botCards[11],
+    ]; // Bot3 - tractor 2-2-A-A
 
     // Human leads with tractor
     const result1 = processPlay(gameState, tractorCards);
@@ -280,15 +308,30 @@ describe("Kitty Bonus Integration", () => {
     // Complete the trick with all other players following
     gameState = result1.newState;
     gameState.currentPlayerIndex = 1;
-    const result2 = processPlay(gameState, [botCards[0], botCards[1], botCards[2], botCards[3]]);
+    const result2 = processPlay(gameState, [
+      botCards[0],
+      botCards[1],
+      botCards[2],
+      botCards[3],
+    ]);
 
     gameState = result2.newState;
     gameState.currentPlayerIndex = 2;
-    const result3 = processPlay(gameState, [botCards[4], botCards[5], botCards[6], botCards[7]]);
+    const result3 = processPlay(gameState, [
+      botCards[4],
+      botCards[5],
+      botCards[6],
+      botCards[7],
+    ]);
 
     gameState = result3.newState;
     gameState.currentPlayerIndex = 3;
-    const finalResult = processPlay(gameState, [botCards[8], botCards[9], botCards[10], botCards[11]]);
+    const finalResult = processPlay(gameState, [
+      botCards[8],
+      botCards[9],
+      botCards[10],
+      botCards[11],
+    ]);
 
     // Verify trick is complete and Human wins with tractor
     expect(finalResult.trickComplete).toBe(true);
@@ -305,7 +348,9 @@ describe("Kitty Bonus Integration", () => {
 
     // Verify kitty bonus info is properly stored for round completion
     expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
-    expect(finalResult.newState.roundEndKittyInfo!.kittyBonus!.bonusPoints).toBe(kittyBonus);
+    expect(
+      finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints,
+    ).toBe(kittyBonus);
   });
 
   test("should populate roundEndKittyInfo for display in round result modal", () => {
@@ -364,10 +409,16 @@ describe("Kitty Bonus Integration", () => {
     expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
     expect(finalResult.newState.kittyCards).toHaveLength(8); // Use gameState.kittyCards
     expect(finalResult.newState.roundEndKittyInfo?.kittyPoints).toBe(25);
-    expect(finalResult.newState.roundEndKittyInfo?.finalTrickType).toBe("pairs/tractors");
+    expect(finalResult.newState.roundEndKittyInfo?.finalTrickType).toBe(
+      "pairs/tractors",
+    );
     expect(finalResult.newState.roundEndKittyInfo?.kittyBonus).toBeDefined();
-    expect(finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints).toBe(100);
-    expect(finalResult.newState.roundEndKittyInfo?.kittyBonus?.multiplier).toBe(4);
+    expect(
+      finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints,
+    ).toBe(100);
+    expect(finalResult.newState.roundEndKittyInfo?.kittyBonus?.multiplier).toBe(
+      4,
+    );
   });
 
   test("should populate roundEndKittyInfo without bonus when defending team wins", () => {
@@ -414,20 +465,19 @@ describe("Kitty Bonus Integration", () => {
     const finalResult = processPlay(currentState, [bot3Card]); // Bot3 plays Jack
 
     // Verify defending team won (Bot2 from Team A)
-    expect(finalResult.trickWinnerId).toBe('bot2');
+    expect(finalResult.trickWinnerId).toBe("bot2");
 
     // Verify roundEndKittyInfo is populated but without bonus
     expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
     expect(finalResult.newState.kittyCards).toHaveLength(8); // Use gameState.kittyCards
     expect(finalResult.newState.roundEndKittyInfo?.kittyPoints).toBe(25);
-    expect(finalResult.newState.roundEndKittyInfo?.finalTrickType).toBe("singles");
+    expect(finalResult.newState.roundEndKittyInfo?.finalTrickType).toBe(
+      "singles",
+    );
     expect(finalResult.newState.roundEndKittyInfo?.kittyBonus).toBeUndefined(); // No bonus
   });
 
   test("should transition to KittySwap phase after dealing completes", () => {
-    // Use finalizeTrumpDeclaration to simulate dealing completion
-    const { finalizeTrumpDeclaration } = require("../../src/game/dealingAndDeclaration");
-    
     // Create a game state where dealing is complete
     const dealingCompleteState = createGameState();
     dealingCompleteState.gamePhase = GamePhase.Dealing;
@@ -441,12 +491,14 @@ describe("Kitty Bonus Integration", () => {
       Card.createCard(Suit.Diamonds, Rank.Seven, 0),
       Card.createCard(Suit.Spades, Rank.Eight, 0),
     ];
-    
+
     // All players should have 17 cards (normal hand size for Tractor)
-    dealingCompleteState.players.forEach(player => {
-      player.hand = Array(17).fill(null).map((_, i) => 
-        Card.createCard(Suit.Hearts, Rank.Two, i % 2 as DeckId)
-      );
+    dealingCompleteState.players.forEach((player) => {
+      player.hand = Array(17)
+        .fill(null)
+        .map((_, i) =>
+          Card.createCard(Suit.Hearts, Rank.Two, (i % 2) as DeckId),
+        );
     });
 
     // Finalize trump declaration (simulates dealing completion)
@@ -454,12 +506,15 @@ describe("Kitty Bonus Integration", () => {
 
     // Should transition to KittySwap phase
     expect(finalizedState.gamePhase).toBe(GamePhase.KittySwap);
-    
+
     // Round starting player (Human by default) should have 25 cards (17 + 8 kitty)
-    const roundStartingPlayer = finalizedState.players[finalizedState.roundStartingPlayerIndex];
+    const roundStartingPlayer =
+      finalizedState.players[finalizedState.roundStartingPlayerIndex];
     expect(roundStartingPlayer.hand).toHaveLength(25);
-    
+
     // Current player should be the round starting player
-    expect(finalizedState.currentPlayerIndex).toBe(finalizedState.roundStartingPlayerIndex);
+    expect(finalizedState.currentPlayerIndex).toBe(
+      finalizedState.roundStartingPlayerIndex,
+    );
   });
 });

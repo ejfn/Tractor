@@ -44,6 +44,29 @@ A combo is "unbeatable" when **ALL OTHER THREE PLAYERS COMBINED** cannot beat it
 - **Account for cards in current player's hand** correctly
 - **Remember: It's about mathematical possibility, not strategic likelihood**
 
+## 🚨 CRITICAL MULTI-COMBO UNDERSTANDING 🚨
+
+**MULTI-COMBO**: Multiple combos from same suit played simultaneously
+
+**Examples:**
+- ✅ `A♥ + K♥ + Q♥` = Multi-combo (3 singles from same suit)
+- ✅ `A♥A♥ + K♥` = Multi-combo (pair + single from same suit)  
+- ✅ `K♥ + Q♥` = Multi-combo (2 singles from same suit)
+- ✅ `8♦ + 5♦ + 3♦` = Multi-combo (3 singles from same suit)
+
+**Key Rule**: ANY multiple combos from same suit = multi-combo!
+
+## 🚨 CRITICAL MULTI-COMBO VALIDATION UNDERSTANDING 🚨
+
+**For Development Context Only** - Detailed implementation in [Multi-Combo Algorithms](docs/MULTI_COMBO_ALGORITHMS.md)
+
+### **Key Developer Insights**
+- **Exhaustion Rule**: Mixed-suit plays can be valid when player exhausts relevant suit
+- **Anti-Cheat Logic**: Players cannot hide better combinations (pairs/tractors) when required
+- **Validation Flow**: Exhaustion check → Structure validation → Anti-cheat detection
+
+**Critical Simulation Bug**: The "4♦, J♥, 8♥, 6♥" scenario from logs was valid due to exhaustion rule (player had no more hearts after play), not a validation error.
+
 ## Quick Start
 
 ```bash
@@ -62,6 +85,7 @@ npm run qualitycheck  # Runs typecheck, lint, and test
 npm run lint          # Run ESLint
 npm run typecheck     # Type checking
 npm test              # Run tests
+npm run test:simulation # Run simulation tests (bypasses ignore pattern)
 ```
 
 ## Game State Persistence

@@ -80,6 +80,155 @@ Both scenarios use the same core detection (implemented in `multiComboValidation
 
 ---
 
+## Multi-Combo Following Validation Algorithm
+
+**CRITICAL: The validation algorithm that determines if a following move is valid.**
+
+### Validation Flow Diagram
+
+```mermaid
+flowchart TD
+    Start([🎯 Validate Multi-Combo Following]) --> LengthCheck{📏 Length matches<br/>leading combo?}
+    
+    LengthCheck -->|No| Invalid1[❌ INVALID:<br/>Wrong length]
+    LengthCheck -->|Yes| DetermineSuit[🔍 Determine leading suit<br/>and relevant cards]
+    
+    DetermineSuit --> RelevantCards[📋 Get relevant suit cards<br/>remaining in hand AFTER play]
+    
+    RelevantCards --> ExhaustionCheck{🚫 Is player void in<br/>relevant suit AFTER play?}
+    
+    ExhaustionCheck -->|Yes| ValidExhaustion[✅ VALID: EXHAUSTION RULE<br/>Player exhausted the suit]
+    ExhaustionCheck -->|No| PairCheck{🔍 Did player play<br/>enough pairs?}
+    
+    PairCheck -->|Yes| TractorCheck{🔍 Did player play<br/>enough tractors?}
+    PairCheck -->|No| PairHiding{💡 Could player have<br/>played more pairs?}
+    
+    PairHiding -->|Yes| InvalidPairs[❌ INVALID:<br/>Player hiding/breaking pairs]
+    PairHiding -->|No| TractorCheck
+    
+    TractorCheck -->|Yes| TractorLengthCheck{🔍 Are tractor lengths<br/>optimal?}
+    TractorCheck -->|No| TractorHiding{💡 Could player have<br/>played more tractors?}
+    
+    TractorHiding -->|Yes| InvalidTractors[❌ INVALID:<br/>Player hiding/breaking tractors]
+    TractorHiding -->|No| TractorLengthCheck
+    
+    TractorLengthCheck -->|Yes| ValidAntiCheat[✅ VALID:<br/>Player used best structure]
+    TractorLengthCheck -->|No| LengthHiding{💡 Could player use<br/>longer tractors?}
+    
+    LengthHiding -->|Yes| InvalidLengths[❌ INVALID:<br/>Using shorter tractors]
+    LengthHiding -->|No| ValidAntiCheat
+```
+
+### **🚨 CRITICAL EXHAUSTION RULE**
+
+**THE FUNDAMENTAL RULE: If a player is void in the relevant suit AFTER making the play, the move is ALWAYS VALID regardless of structure.**
+
+This is the core rule that was causing the simulation bug. The validation must check:
+
+1. **Leading suit**: Hearts (from A♥, K♥, Q♥, Q♥)
+2. **Relevant cards in hand AFTER play**: Filter out trump rank cards
+3. **Exhaustion check**: `relevantSuitCards.length === 0` after the move
+
+**Example from simulation bug:**
+- Leading: A♥, K♥, Q♥, Q♥ (4 hearts)
+- Player hand: [2♥, 2♥, 6♥, 8♥, J♥, 4♦, ...] 
+- Relevant hearts: [6♥, 8♥, J♥] (2♥ are trump rank, excluded)
+- Player plays: 4♦, J♥, 8♥, 6♥
+- After play: 0 hearts remaining
+- **Result: VALID** (exhaustion rule applies)
+
+### **🔍 ANTI-CHEAT ALGORITHM**
+
+**When structure requirements are NOT met, check if player is hiding better combinations:**
+
+### **Anti-Cheat Algorithm Logic**
+
+**Input Parameters:**
+- `playedCards` - Cards the player wants to play
+- `playerHand` - All cards currently in player's hand  
+- `leadingCombo` - The leading multi-combo that was played
+- `trumpInfo` - Current trump information
+
+**Algorithm Steps:**
+
+**Step 1: Determine Requirements**
+- Analyze leading combo structure to get:
+  - Required number of tractors
+  - Required number of pairs
+
+**Step 2: Analyze Player's Actual Play**
+- Filter played cards to get only relevant suit cards
+- Analyze structure of what player actually played:
+  - Count tractors in played cards
+  - Count pairs in played cards
+  - Record tractor lengths
+
+**Step 3: Analyze Best Possible Structure**
+- Analyze all relevant cards in player's hand
+- Determine best possible structure:
+  - Maximum tractors possible
+  - Maximum pairs possible  
+  - Best possible tractor lengths
+
+**Step 4: Anti-Cheat Validation**
+
+**4a) Pair Check:**
+- IF player didn't play enough pairs:
+  - Check if player could have played more pairs
+  - IF yes → INVALID (player hiding/breaking pairs)
+  - IF no → Continue (genuine shortage)
+
+**4b) Tractor Check:**  
+- IF player didn't play enough tractors:
+  - Check if player could have played more tractors
+  - IF yes → INVALID (player hiding/breaking tractors)
+  - IF no → Continue (genuine shortage)
+
+**4c) Tractor Length Check:**
+- IF player played tractors but wrong lengths:
+  - Check if player could have used longer tractors
+  - IF yes → INVALID (using shorter when longer available)
+  - IF no → Continue
+
+**Result:** VALID if player used best possible structure given their constraints
+
+**Anti-Cheat Algorithm Steps Explained:**
+
+**Step 1**: **"Get Leading Requirements"** - Determine how many pairs/tractors the leading combo requires
+
+**Step 2**: **"Analyze Played Structure"** - Determine what structure the player actually used from relevant suit cards
+
+**Step 3**: **"Analyze Best Possible Structure"** - Determine the best possible structure from ALL relevant cards (played + remaining)
+
+**Simple Logic:**
+- **Context**: Structure requirements already failed (we're in the "NO" path)
+- **Rule**: Player cannot hide better combinations in their hand
+- **Check**: If leading has tractors/pairs → Player should have 0 tractors/pairs remaining
+
+**Example Scenario (Structure Comparison):**
+- Leading: K♥K♥ + Q♥Q♥ + J♥ (requires pairs, 5 cards)
+- Player has: 10♥ + 9♥ + 8♥ + 8♥ + 7♥ + 6♥ + 5♥ (7 cards total)
+- **Best possible structure** from all 7 cards: 1 pair (8♥8♥) + 5 singles = 1 totalPairs
+- Player plays: 10♥ + 9♥ + 8♥ + 7♥ + 6♥ (breaks 8♥8♥ pair)  
+- **Played structure**: 0 pairs + 5 singles = 0 totalPairs
+- **Comparison**: Played 0 pairs < Best possible 1 pair
+- **Result: INVALID** - Player didn't use best possible structure
+
+**Valid Example (Best Structure Used):**
+- Same scenario
+- Player plays: 8♥ + 8♥ + 10♥ + 9♥ + 7♥ (keeps pair together)
+- **Played structure**: 1 pair + 3 singles = 1 totalPairs  
+- **Comparison**: Played 1 pair = Best possible 1 pair
+- **Result: VALID** - Player used best possible structure
+
+**Key Anti-Cheat Rules:**
+1. **No Hiding Tractors**: If leading has tractors → Player should have 0 tractors left in hand
+2. **No Hiding Pairs**: If leading has pairs → Player should have 0 pairs left in hand  
+3. **Use Best Available**: Player must use their best combinations, not avoid them
+4. **Fallback Rule**: This only applies when structure requirements cannot be met
+
+---
+
 ## Multi-Combo Following Algorithm
 
 The multi-combo following algorithm determines how to respond to a multi-combo lead.

@@ -1,11 +1,14 @@
-import { dealNextCard, getDealingProgress } from "../../src/game/dealingAndDeclaration";
+import {
+  dealNextCard,
+  getDealingProgress,
+} from "../../src/game/dealingAndDeclaration";
 import { GameState } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
-import { gameLogger } from '../../src/utils/gameLogger';
+import { gameLogger } from "../../src/utils/gameLogger";
 
 /**
  * Tests for dealing progress count fix (Issue #115)
- * 
+ *
  * Fixed bug in getDealingProgress function where it incorrectly calculated
  * the number of cards dealt by using currentDealingPlayerIndex directly.
  * The index represents the NEXT player to receive a card, not the count
@@ -25,52 +28,73 @@ describe("Dealing Progress Count (Fixed)", () => {
       gameState.roundNumber = 2;
       gameState.roundStartingPlayerIndex = 2; // Bot2
       gameState.dealingState = undefined; // Reset dealing state
-      
+
       // Initial state - no cards dealt yet
       let progress = getDealingProgress(gameState);
       expect(progress.current).toBe(0);
-      
+
       // Deal first card to Bot2 (index 2)
       gameState = dealNextCard(gameState);
       progress = getDealingProgress(gameState);
-      
+
       // Fixed: Should correctly show 1 card dealt (was 3 before fix)
       expect(progress.current).toBe(1);
       expect(gameState.dealingState?.currentDealingPlayerIndex).toBe(3); // Next player
     });
 
     test("should demonstrate inconsistent progress when starting from different players", () => {
-      gameLogger.info('test_all_starting_players', {}, "=== TESTING ALL STARTING PLAYERS ===");
-      
+      gameLogger.info(
+        "test_all_starting_players",
+        {},
+        "=== TESTING ALL STARTING PLAYERS ===",
+      );
+
       // Test all possible starting players to find the pattern
       for (let startingPlayer = 0; startingPlayer < 4; startingPlayer++) {
-        gameLogger.info('test_starting_player', { startingPlayer }, `\n--- Starting from Player ${startingPlayer} ---`);
-        
+        gameLogger.info(
+          "test_starting_player",
+          { startingPlayer },
+          `\n--- Starting from Player ${startingPlayer} ---`,
+        );
+
         let testState = initializeGame();
         testState.roundNumber = 2;
         testState.roundStartingPlayerIndex = startingPlayer;
         testState.dealingState = undefined;
-        
+
         const progressValues = [];
         for (let i = 0; i < 4; i++) {
-          const beforeProgress = getDealingProgress(testState);
           testState = dealNextCard(testState);
           const afterProgress = getDealingProgress(testState);
           progressValues.push(afterProgress.current);
-          
-          gameLogger.info('test_card_progress', { cardNumber: i + 1, progress: afterProgress.current }, `  Card ${i + 1}: progress = ${afterProgress.current}`);
+
+          gameLogger.info(
+            "test_card_progress",
+            { cardNumber: i + 1, progress: afterProgress.current },
+            `  Card ${i + 1}: progress = ${afterProgress.current}`,
+          );
         }
-        
-        const isSequential = progressValues.every((val, idx) => val === idx + 1);
-        gameLogger.info('test_sequential_check', { isSequential, progressValues }, `  Sequential? ${isSequential} (${progressValues.join(', ')})`);
-        
+
+        const isSequential = progressValues.every(
+          (val, idx) => val === idx + 1,
+        );
+        gameLogger.info(
+          "test_sequential_check",
+          { isSequential, progressValues },
+          `  Sequential? ${isSequential} (${progressValues.join(", ")})`,
+        );
+
         // Also test what happens if we check progress at the very beginning
         const initialState = initializeGame();
         initialState.roundNumber = 2;
         initialState.roundStartingPlayerIndex = startingPlayer;
         initialState.dealingState = undefined;
         const initialProgress = getDealingProgress(initialState);
-        gameLogger.info('test_initial_progress', { current: initialProgress.current, total: initialProgress.total }, `  Initial progress before any dealing: ${initialProgress.current}/${initialProgress.total}`);
+        gameLogger.info(
+          "test_initial_progress",
+          { current: initialProgress.current, total: initialProgress.total },
+          `  Initial progress before any dealing: ${initialProgress.current}/${initialProgress.total}`,
+        );
       }
     });
 
@@ -88,7 +112,7 @@ describe("Dealing Progress Count (Fixed)", () => {
         for (let cardNum = 1; cardNum <= 4; cardNum++) {
           currentState = dealNextCard(currentState);
           const progress = getDealingProgress(currentState);
-          
+
           // Progress should always match the number of cards dealt
           expect(progress.current).toBe(cardNum);
         }

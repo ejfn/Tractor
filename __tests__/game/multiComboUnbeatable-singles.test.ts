@@ -448,9 +448,8 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
 
       if (detection.structure && detection.components) {
         expect(detection.structure.suit).toBe(Suit.Diamonds);
-        expect(detection.structure.components.singles).toBe(2);
-        expect(detection.structure.components.pairs).toBe(0);
-        expect(detection.structure.totalLength).toBe(2);
+        expect(detection.structure.components.totalPairs).toBe(0);
+        expect(detection.structure.components.totalLength).toBe(2);
         expect(detection.components).toHaveLength(2); // Two single-card combos
       }
 

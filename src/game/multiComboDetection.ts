@@ -66,6 +66,7 @@ export const detectLeadingMultiCombo = (
 /**
  * Detect trump multi-combo response to beat leading multi-combo
  * Only allows trump cards attempting to beat non-trump multi-combo
+ * TODO: review later - this function is not currently used, trump validation is done directly in isValidPlay()
  */
 export const detectTrumpMultiComboResponse = (
   cards: Card[],
@@ -99,6 +100,7 @@ export const detectTrumpMultiComboResponse = (
 /**
  * Check if cards form a multi-combo in the given context
  * Limited to specific scenarios as per architectural decision
+ * TODO: review later - this function is not currently used, no callers found
  */
 export const isContextualMultiCombo = (
   cards: Card[],

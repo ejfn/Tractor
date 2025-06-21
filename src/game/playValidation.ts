@@ -2,7 +2,6 @@ import {
   Card,
   ComboType,
   GameState,
-  MultiComboComponents,
   MultiComboStructure,
   PlayerId,
   Suit,
@@ -16,6 +15,7 @@ import {
   identifyCombos,
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
+import { analyzeMultiComboComponents } from "./multiComboAnalysis";
 import { detectLeadingMultiCombo } from "./multiComboDetection";
 import { validateMultiComboLead } from "./multiComboLeadingStrategies";
 
@@ -30,41 +30,8 @@ const getLeadingSuit = (combo: Card[]) => {
   return undefined;
 };
 
-// Count total pairs in a combo (including pairs within tractors) - Algorithm Flow Diagram compliance
-const countPairsInCombo = (cards: Card[], trumpInfo: TrumpInfo): number => {
-  const combos = identifyCombos(cards, trumpInfo);
-  let totalPairs = 0;
-
-  combos.forEach((combo) => {
-    if (combo.type === ComboType.Pair) {
-      totalPairs += 1;
-    } else if (combo.type === ComboType.Tractor) {
-      totalPairs += combo.cards.length / 2; // Each tractor contributes multiple pairs
-    }
-  });
-
-  return totalPairs;
-};
-
-// Check pair requirements according to Algorithm Flow Diagram (Section A3)
-const checkAlgorithmFlowPairRequirements = (
-  leadingCards: Card[],
-  sameSuitCards: Card[],
-  trumpInfo: TrumpInfo,
-): boolean => {
-  const leadingPairCount = countPairsInCombo(leadingCards, trumpInfo);
-  const availablePairCount = countPairsInCombo(sameSuitCards, trumpInfo);
-
-  // If leading has pairs and we don't have enough pairs, we can't properly follow
-  if (leadingPairCount > 0 && availablePairCount < leadingPairCount) {
-    return false; // Should use sameSuitDisposalOrContribution instead
-  }
-
-  return true; // Pair requirements satisfied
-};
-
-// Backward validation for multi-combo following
-const validateMultiComboFollowingBackward = (
+// Validation for multi-combo following
+export const validateMultiComboFollowing = (
   playedCards: Card[],
   leadingStructure: MultiComboStructure,
   playerHand: Card[],
@@ -75,55 +42,121 @@ const validateMultiComboFollowingBackward = (
     return false;
   }
 
-  // Step 2: Determine relevant suit and cards
+  // Step 2: Leading multi-combos are always non-trump
   const leadingSuit = leadingStructure.suit;
-  const isLeadingTrump = leadingStructure.suit === Suit.None; // Suit.None represents trump multi-combos
 
-  // Get remaining relevant cards (what player still has)
-  const relevantSuitCards = isLeadingTrump
-    ? playerHand.filter((card) => isTrump(card, trumpInfo))
-    : playerHand.filter(
-        (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
-      );
+  // Get remaining cards in the leading suit after this play
+  const remainingRelevantCards = playerHand.filter(
+    (card) =>
+      !playedCards.some((played) => played.id === card.id) &&
+      card.suit === leadingSuit &&
+      !isTrump(card, trumpInfo),
+  );
 
-  // Step 3: EXHAUSTION CHECK - If suit is emptied → ALWAYS VALID
-  if (relevantSuitCards.length === 0) {
-    return true;
+  // Step 3: EXHAUSTION CHECK - If player is void in leading suit AFTER the play → ALWAYS VALID
+  // This is the fundamental exhaustion rule in Tractor/Shengji
+  if (remainingRelevantCards.length === 0) {
+    return true; // Player exhausted the leading suit - always valid regardless of structure
   }
 
-  // Step 4: STRUCTURE ANALYSIS - Check if played cards meet requirements
-  const playedStructure = analyzePlayedStructure(playedCards, trumpInfo);
-  const requiredStructure = leadingStructure.components;
-
-  // Step 5: If requirements already met → Valid
-  if (structureMeetsRequirements(playedStructure, requiredStructure)) {
-    return true;
-  }
-
-  // Step 6: Check if better structure was possible with total available cards
-  const couldFormBetter = analyzeRemainingCardPotential(
-    relevantSuitCards,
+  // Step 4: ANTI-CHEAT VALIDATION - Check if player used best possible structure
+  return validateAntiCheatStructure(
     playedCards,
-    requiredStructure,
+    playerHand,
+    leadingStructure,
+    trumpInfo,
+    leadingSuit,
+  );
+};
+
+// Anti-cheat validation: Check if player used best possible structure
+const validateAntiCheatStructure = (
+  playedCards: Card[],
+  playerHand: Card[],
+  leadingStructure: MultiComboStructure,
+  trumpInfo: TrumpInfo,
+  leadingSuit: Suit,
+): boolean => {
+  // Get leading combo requirements
+  const requiredTractors = leadingStructure.components.tractors;
+  const requiredPairs = leadingStructure.components.totalPairs;
+
+  // Filter relevant cards from player's hand (leading is always non-trump)
+  const allRelevantCards = playerHand.filter(
+    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+  );
+
+  // Analyze what player actually played from relevant suit
+  const playedRelevantCards = playedCards.filter((card) =>
+    allRelevantCards.some((relevant) => relevant.id === card.id),
+  );
+  const playedStructure = analyzeComboStructure(playedRelevantCards, trumpInfo);
+
+  // Analyze best possible structure from all relevant cards
+  const bestPossibleStructure = analyzeComboStructure(
+    allRelevantCards,
     trumpInfo,
   );
 
-  // If better was possible → Invalid, otherwise valid (best effort)
-  return !couldFormBetter.canFormBetter;
+  // Anti-cheat checks following the algorithm
+
+  // 1) Check pairs: Did player play enough pairs?
+  if (playedStructure.totalPairs < requiredPairs) {
+    // Could player have played more pairs?
+    if (bestPossibleStructure.totalPairs > playedStructure.totalPairs) {
+      return false; // Player hiding/breaking pairs - INVALID
+    }
+    // Genuine shortage - continue to tractor check
+  }
+
+  // 2) Check tractors: Did player play enough tractors?
+  if (playedStructure.tractors < requiredTractors) {
+    // Could player have played more tractors?
+    if (bestPossibleStructure.tractors > playedStructure.tractors) {
+      return false; // Player hiding/breaking tractors - INVALID
+    }
+    // Genuine shortage - continue to length check
+  }
+
+  // 3) Check tractor lengths: Are tractor lengths optimal?
+  if (playedStructure.tractors > 0 && requiredTractors > 0) {
+    const requiredLengths = leadingStructure.components.tractorSizes || [];
+    const playedLengths = playedStructure.tractorSizes || [];
+    const bestPossibleLengths = bestPossibleStructure.tractorSizes || [];
+
+    // Sort lengths in descending order for comparison
+    const sortedRequired = [...requiredLengths].sort((a, b) => b - a);
+    const sortedPlayed = [...playedLengths].sort((a, b) => b - a);
+    const sortedBestPossible = [...bestPossibleLengths].sort((a, b) => b - a);
+
+    // Check if player could use longer tractors
+    for (let i = 0; i < sortedRequired.length; i++) {
+      if (
+        i < sortedBestPossible.length &&
+        i < sortedPlayed.length &&
+        sortedBestPossible[i] > sortedPlayed[i]
+      ) {
+        return false; // Using shorter tractors when longer available - INVALID
+      }
+    }
+  }
+
+  return true; // Player used best possible structure - VALID
 };
 
-// Analyze the structure of played cards
-const analyzePlayedStructure = (
-  playedCards: Card[],
+// Analyze the structure of combo cards to get counts
+const analyzeComboStructure = (
+  cards: Card[],
   trumpInfo: TrumpInfo,
-): MultiComboComponents => {
-  const combos = identifyCombos(playedCards, trumpInfo);
+): { totalPairs: number; tractors: number; tractorSizes: number[] } => {
+  // Use optimal decomposition to avoid counting overlapping combinations
+  const optimalCombos = analyzeMultiComboComponents(cards, trumpInfo);
 
   let totalPairs = 0;
   let tractorCount = 0;
   const tractorSizes: number[] = [];
 
-  combos.forEach((combo) => {
+  optimalCombos.forEach((combo) => {
     if (combo.type === ComboType.Pair) {
       totalPairs += 1; // Each pair combo contributes 1 pair
     } else if (combo.type === ComboType.Tractor) {
@@ -136,134 +169,10 @@ const analyzePlayedStructure = (
   });
 
   return {
-    totalLength: playedCards.length,
-    totalPairs, // Total number of pairs across all combos
+    totalPairs, // Total number of pairs across all combos (non-overlapping)
     tractors: tractorCount,
     tractorSizes, // Array of tractor lengths (in pairs)
   };
-};
-
-// Check if played structure meets requirements
-const structureMeetsRequirements = (
-  played: MultiComboComponents,
-  required: MultiComboComponents,
-): boolean => {
-  // Check basic requirements
-  if (
-    played.totalPairs < required.totalPairs ||
-    played.tractors < required.tractors ||
-    played.totalLength !== required.totalLength
-  ) {
-    return false;
-  }
-
-  // Check tractor lengths if specified
-  if (required.tractorSizes && required.tractorSizes.length > 0) {
-    if (!played.tractorSizes || played.tractorSizes.length === 0) {
-      return false; // Required tractors but played none
-    }
-
-    // Sort both arrays to compare properly
-    const playedLengths = [...played.tractorSizes].sort((a, b) => b - a);
-    const requiredLengths = [...required.tractorSizes].sort((a, b) => b - a);
-
-    // Each required tractor length must be matched or exceeded
-    for (let i = 0; i < requiredLengths.length; i++) {
-      if (i >= playedLengths.length || playedLengths[i] < requiredLengths[i]) {
-        return false;
-      }
-    }
-  }
-
-  return true;
-};
-
-// Analyze if better structure was possible
-const analyzeRemainingCardPotential = (
-  remainingCards: Card[],
-  playedCards: Card[],
-  requiredStructure: MultiComboComponents,
-  trumpInfo: TrumpInfo,
-) => {
-  // Check what was actually played first
-  const playedStructure = analyzePlayedStructure(playedCards, trumpInfo);
-
-  // If requirements already met, no need to check alternatives
-  if (structureMeetsRequirements(playedStructure, requiredStructure)) {
-    return { canFormBetter: false };
-  }
-
-  // Check if better structure was possible with total available cards
-  const totalAvailable = [...playedCards, ...remainingCards];
-  const bestPossible = findBestPossibleStructure(
-    totalAvailable,
-    requiredStructure,
-    trumpInfo,
-  );
-
-  // Compare if best possible is better than what was played
-  if (betterThanPlayed(bestPossible, playedStructure, requiredStructure)) {
-    return { canFormBetter: true };
-  }
-
-  return { canFormBetter: false };
-};
-
-// Find best possible structure from available cards
-const findBestPossibleStructure = (
-  availableCards: Card[],
-  required: MultiComboComponents,
-  trumpInfo: TrumpInfo,
-): MultiComboComponents => {
-  const allCombos = identifyCombos(availableCards, trumpInfo);
-
-  // Try to form the required structure
-  let totalPairs = 0;
-  let tractorCount = 0;
-
-  // First try to satisfy tractors
-  const tractorCombos = allCombos.filter(
-    (combo) => combo.type === ComboType.Tractor,
-  );
-  tractorCount = Math.min(tractorCombos.length, required.tractors || 0);
-
-  // Then try to satisfy pairs (including pairs from tractors)
-  const pairCombos = allCombos.filter((combo) => combo.type === ComboType.Pair);
-
-  // Calculate total pairs from tractors
-  for (let i = 0; i < tractorCount && i < tractorCombos.length; i++) {
-    const tractorLength = tractorCombos[i].cards.length;
-    totalPairs += tractorLength / 2; // Each tractor contributes multiple pairs
-  }
-
-  // Add standalone pairs
-  const standalonePairs = Math.min(
-    pairCombos.length,
-    Math.max(0, required.totalPairs - totalPairs),
-  );
-  totalPairs += standalonePairs;
-
-  return {
-    totalLength: required.totalLength,
-    totalPairs, // Total pairs across all combinations
-    tractors: tractorCount,
-    tractorSizes: tractorCombos
-      .slice(0, tractorCount)
-      .map((combo) => combo.cards.length / 2), // Track selected tractor lengths
-  };
-};
-
-// Check if one structure is better than another for the requirements
-const betterThanPlayed = (
-  bestPossible: MultiComboComponents,
-  played: MultiComboComponents,
-  required: MultiComboComponents,
-): boolean => {
-  // If best possible meets requirements but played doesn't
-  const bestMeetsReqs = structureMeetsRequirements(bestPossible, required);
-  const playedMeetsReqs = structureMeetsRequirements(played, required);
-
-  return bestMeetsReqs && !playedMeetsReqs;
 };
 
 /**
@@ -310,13 +219,81 @@ export const isValidPlay = (
 
     // Standard combo validation
     const combos = identifyCombos(playerHand, trumpInfo);
-    return combos.some(
+    const hasExactCombo = combos.some(
       (combo) =>
         combo.cards.length === playedCards.length &&
         combo.cards.every((card) =>
           playedCards.some((played) => played.id === card.id),
         ),
     );
+
+    if (hasExactCombo) {
+      return true;
+    }
+
+    // TRACTOR RULE: Allow leading multiple singles from same suit (exhausting scenarios)
+    // BUT cards must be genuinely different (no identical cards allowed)
+    const allFromPlayerHand = playedCards.every((played) =>
+      playerHand.some((handCard) => handCard.id === played.id),
+    );
+
+    if (!allFromPlayerHand) {
+      return false;
+    }
+
+    // Check for duplicate ranks - this is NEVER allowed in Tractor
+    const rankCounts = new Map<string, number>();
+    playedCards.forEach((card) => {
+      const rankKey = `${card.rank}-${card.suit}`;
+      rankCounts.set(rankKey, (rankCounts.get(rankKey) || 0) + 1);
+    });
+
+    // If any rank appears more than twice, it's invalid (max pair)
+    for (const count of rankCounts.values()) {
+      if (count > 2) {
+        return false; // Invalid: more than 2 of same rank+suit (e.g., 9♣, 9♣, 9♣)
+      }
+    }
+
+    // Group played cards by suit
+    const nonTrumpPlayedCards = playedCards.filter(
+      (card) => !isTrump(card, trumpInfo),
+    );
+    const trumpPlayedCards = playedCards.filter((card) =>
+      isTrump(card, trumpInfo),
+    );
+
+    // Case 1: All non-trump cards from same suit (allow multiple singles/pairs)
+    if (
+      nonTrumpPlayedCards.length === playedCards.length &&
+      nonTrumpPlayedCards.length > 1
+    ) {
+      const firstSuit = nonTrumpPlayedCards[0].suit;
+      const allSameSuit = nonTrumpPlayedCards.every(
+        (card) => card.suit === firstSuit,
+      );
+
+      if (allSameSuit) {
+        // Valid: Multiple different cards from same non-trump suit (exhausting scenario)
+        return true;
+      }
+    }
+
+    // Case 2: All trump cards (allow trump exhausting)
+    if (
+      trumpPlayedCards.length === playedCards.length &&
+      trumpPlayedCards.length > 1
+    ) {
+      // Valid: Multiple different trump cards (trump exhausting scenario)
+      return true;
+    }
+
+    // Case 3: Single card (always valid if from hand)
+    if (playedCards.length === 1) {
+      return true;
+    }
+
+    return false;
   }
 
   // Get combo types for following validation
@@ -330,12 +307,12 @@ export const isValidPlay = (
       : { isMultiCombo: false };
 
   if (leadingDetection.isMultiCombo) {
-    // Following a multi-combo - use backward validation approach
+    // Following a multi-combo - delegate to the dedicated validation function
     if (!leadingDetection.structure) {
       return false;
     }
 
-    return validateMultiComboFollowingBackward(
+    return validateMultiComboFollowing(
       playedCards,
       leadingDetection.structure,
       playerHand,
@@ -369,17 +346,6 @@ export const isValidPlay = (
   const canFormMatchingCombo = relevantCards.length >= leadingCombo.length;
 
   if (canFormMatchingCombo) {
-    // Apply Algorithm Flow Diagram pair requirements check
-    if (
-      !checkAlgorithmFlowPairRequirements(
-        leadingCombo,
-        relevantCards,
-        trumpInfo,
-      )
-    ) {
-      return false; // Not enough pairs to properly follow
-    }
-
     const relevantCombos = identifyCombos(relevantCards, trumpInfo);
     const hasMatchingCombo = relevantCombos.some(
       (combo) =>

@@ -7,9 +7,10 @@ import {
   PlayerId,
   Rank,
   Suit,
-  TrumpInfo
+  TrumpInfo,
 } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
+import { getPlayerById } from "../helpers/gameStates";
 
 describe("AI Trump Following Behavior", () => {
   it("should show AI correctly choosing trump singles when trump pairs are led", () => {
@@ -314,7 +315,7 @@ describe("AI Trump Following Behavior", () => {
       trumpRank: Rank.Two,
     };
 
-    const bot1Player = gameState.players.find((p) => p.id === PlayerId.Bot1)!;
+    const bot1Player = getPlayerById(gameState, PlayerId.Bot1);
 
     // Bot1 has multiple trump pairs but cannot form a tractor
     // Should use ALL trump pairs starting from weakest when following trump tractor
@@ -397,7 +398,7 @@ describe("AI Trump Following Behavior", () => {
       trumpRank: Rank.Ace,
     };
 
-    const bot2Player = gameState.players.find((p) => p.id === PlayerId.Bot2)!;
+    const bot2Player = getPlayerById(gameState, PlayerId.Bot2);
 
     // Bot2 has exactly 3 trump pairs (6 cards) but they're not consecutive (no tractor)
     bot2Player.hand = [
@@ -470,7 +471,7 @@ describe("AI Trump Following Behavior", () => {
       trumpRank: Rank.Two,
     };
 
-    const bot3Player = gameState.players.find((p) => p.id === PlayerId.Bot3)!;
+    const bot3Player = getPlayerById(gameState, PlayerId.Bot3);
 
     // Bot3 has multiple trump pair types with clear conservation hierarchy
     bot3Player.hand = [
@@ -539,7 +540,7 @@ describe("AI Trump Following Behavior", () => {
       trumpRank: Rank.King,
     };
 
-    const bot2Player = gameState.players.find((p) => p.id === PlayerId.Bot2)!;
+    const bot2Player = getPlayerById(gameState, PlayerId.Bot2);
 
     // Bot2 has trump pairs but also some singles
     // This tests if AI correctly uses ALL pairs before ANY singles

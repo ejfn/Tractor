@@ -1,12 +1,20 @@
-import { getAIMove } from '../../src/ai/aiLogic';
-import { Card, ComboType, GamePhase, PlayerId, Rank, Suit } from '../../src/types';
-import { initializeGame } from '../../src/utils/gameInitialization';
-import { gameLogger } from '../../src/utils/gameLogger';
+import { getAIMove } from "../../src/ai/aiLogic";
+import { getValidCombinations } from "../../src/game/combinationGeneration";
+import {
+  Card,
+  ComboType,
+  GamePhase,
+  PlayerId,
+  Rank,
+  Suit,
+} from "../../src/types";
+import { initializeGame } from "../../src/utils/gameInitialization";
+import { gameLogger } from "../../src/utils/gameLogger";
 
-describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
-  describe('AI Strategy When Following Pair and Out of Suit', () => {
-    it('should play two small singles instead of valuable pair when out of suit', () => {
-      // ISSUE #104 SCENARIO: 
+describe("Issue #104 - AI Using Valuable Pairs Instead of Two Singles", () => {
+  describe("AI Strategy When Following Pair and Out of Suit", () => {
+    it("should play two small singles instead of valuable pair when out of suit", () => {
+      // ISSUE #104 SCENARIO:
       // - Opponent leads a pair
       // - AI is out of the led suit
       // - AI has valuable pairs available
@@ -14,8 +22,6 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        
-        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
       };
@@ -49,34 +55,45 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
 
-      gameLogger.info('test_out_of_suit_pair_following', {
-        leadPair: leadingCards.map(c => `${c.rank}♥`).join(', '),
-        aiHand: aiBotHand.map(c => `${c.rank}${c.suit}`),
-        aiSelected: selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')
-      }, '=== ISSUE #104 TEST: Out of Suit Pair Following ===');
+      gameLogger.info(
+        "test_out_of_suit_pair_following",
+        {
+          leadPair: leadingCards.map((c) => `${c.rank}♥`).join(", "),
+          aiHand: aiBotHand.map((c) => `${c.rank}${c.suit}`),
+          aiSelected: selectedCards.map((c) => `${c.rank}${c.suit}`).join(", "),
+        },
+        "=== ISSUE #104 TEST: Out of Suit Pair Following ===",
+      );
 
       // Verify AI behavior
       expect(selectedCards).toHaveLength(2);
 
       // Should NOT use the valuable Ace pair
-      const usedAcePair = selectedCards.filter(c => c.rank === Rank.Ace).length === 2;
+      const usedAcePair =
+        selectedCards.filter((c) => c.rank === Rank.Ace).length === 2;
       expect(usedAcePair).toBe(false);
 
       // Should use two different small cards instead
-      const usedSmallCards = selectedCards.every(c => 
-        c.rank === Rank.Three || c.rank === Rank.Four || c.rank === Rank.Six || c.rank === Rank.Seven
+      const usedSmallCards = selectedCards.every(
+        (c) =>
+          c.rank === Rank.Three ||
+          c.rank === Rank.Four ||
+          c.rank === Rank.Six ||
+          c.rank === Rank.Seven,
       );
       expect(usedSmallCards).toBe(true);
 
-      gameLogger.info('test_out_of_suit_pair_following_success', {}, '✅ CORRECT: AI preserved valuable Ace pair and used two small singles');
+      gameLogger.info(
+        "test_out_of_suit_pair_following_success",
+        {},
+        "✅ CORRECT: AI preserved valuable Ace pair and used two small singles",
+      );
     });
 
-    it('should use trump pair when opponent winning with points and can beat them', () => {
+    it("should use trump pair when opponent winning with points and can beat them", () => {
       // SCENARIO: When opponent is winning with points, AI should use strong pairs to beat them
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        
-        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -108,19 +125,31 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot2);
 
-      gameLogger.info('test_strategic_trump_pair_usage', {
-        opponentLed: `${leadingCards.map(c => `${c.rank}♥`).join(', ')} (20 points)`,
-        aiSelected: selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')
-      }, '=== ISSUE #104 TEST: Strategic Trump Pair Usage ===');
+      gameLogger.info(
+        "test_strategic_trump_pair_usage",
+        {
+          opponentLed: `${leadingCards.map((c) => `${c.rank}♥`).join(", ")} (20 points)`,
+          aiSelected: selectedCards.map((c) => `${c.rank}${c.suit}`).join(", "),
+        },
+        "=== ISSUE #104 TEST: Strategic Trump Pair Usage ===",
+      );
 
       // Should use trump pair to beat opponent and capture 20 points
       expect(selectedCards).toHaveLength(2);
-      expect(selectedCards.every(c => c.rank === Rank.Two && c.suit === Suit.Spades)).toBe(true);
+      expect(
+        selectedCards.every(
+          (c) => c.rank === Rank.Two && c.suit === Suit.Spades,
+        ),
+      ).toBe(true);
 
-      gameLogger.info('test_strategic_trump_pair_usage_success', {}, '✅ CORRECT: AI used trump pair to beat opponent and capture 20 points');
+      gameLogger.info(
+        "test_strategic_trump_pair_usage_success",
+        {},
+        "✅ CORRECT: AI used trump pair to beat opponent and capture 20 points",
+      );
     });
 
-    it('should prefer singles over pairs when teammate is winning', () => {
+    it("should prefer singles over pairs when teammate is winning", () => {
       // SCENARIO: When teammate is winning, conserve pairs for later
       const gameState = initializeGame();
       gameState.trumpInfo = {
@@ -147,7 +176,7 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
           },
           {
             playerId: PlayerId.Bot1, // Opponent
-            cards: Card.createPair(Suit.Spades, Rank.Five) // Lower cards, Human still winning
+            cards: Card.createPair(Suit.Spades, Rank.Five), // Lower cards, Human still winning
           },
         ],
         points: 10,
@@ -159,31 +188,38 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot2);
 
-      gameLogger.info('test_teammate_winning_conservation', {
-        teammateWinning: 'Q♠ Q♠',
-        aiSelected: selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')
-      }, '=== ISSUE #104 TEST: Teammate Winning Conservation ===');
+      gameLogger.info(
+        "test_teammate_winning_conservation",
+        {
+          teammateWinning: "Q♠ Q♠",
+          aiSelected: selectedCards.map((c) => `${c.rank}${c.suit}`).join(", "),
+        },
+        "=== ISSUE #104 TEST: Teammate Winning Conservation ===",
+      );
 
       // Should NOT break the Six pair when teammate is winning
       expect(selectedCards).toHaveLength(2);
-      const usedSixPair = selectedCards.filter(c => c.rank === Rank.Six).length === 2;
+      const usedSixPair =
+        selectedCards.filter((c) => c.rank === Rank.Six).length === 2;
       expect(usedSixPair).toBe(false);
 
       // Should use higher singles instead, preserving the Six pair completely
-      const usedHigherSingles = selectedCards.every(c => 
-        c.rank === Rank.Nine || c.rank === Rank.Jack
+      const usedHigherSingles = selectedCards.every(
+        (c) => c.rank === Rank.Nine || c.rank === Rank.Jack,
       );
       expect(usedHigherSingles).toBe(true);
 
-      gameLogger.info('test_teammate_winning_conservation_success', {}, '✅ CORRECT: AI preserved Six pair and used higher singles when teammate winning');
+      gameLogger.info(
+        "test_teammate_winning_conservation_success",
+        {},
+        "✅ CORRECT: AI preserved Six pair and used higher singles when teammate winning",
+      );
     });
 
-    it('should conserve Ace pair when cannot beat opponent trick', () => {
+    it("should conserve Ace pair when cannot beat opponent trick", () => {
       // SCENARIO: When opponent has unbeatable trick, don't waste valuable pairs
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        
-        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Hearts,
       };
@@ -215,36 +251,45 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
 
-      gameLogger.info('test_unbeatable_opponent_conservation', {
-        opponentLedUnbeatable: leadingCards.map(c => `${c.rank}♥`).join(', '),
-        aiSelected: selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')
-      }, '=== ISSUE #104 TEST: Unbeatable Opponent Conservation ===');
+      gameLogger.info(
+        "test_unbeatable_opponent_conservation",
+        {
+          opponentLedUnbeatable: leadingCards
+            .map((c) => `${c.rank}♥`)
+            .join(", "),
+          aiSelected: selectedCards.map((c) => `${c.rank}${c.suit}`).join(", "),
+        },
+        "=== ISSUE #104 TEST: Unbeatable Opponent Conservation ===",
+      );
 
       // Should NOT waste valuable Ace pair on unbeatable trick
       expect(selectedCards).toHaveLength(2);
-      const usedAcePair = selectedCards.filter(c => c.rank === Rank.Ace).length === 2;
+      const usedAcePair =
+        selectedCards.filter((c) => c.rank === Rank.Ace).length === 2;
       expect(usedAcePair).toBe(false);
 
       // Should use two small different cards
-      const usedSmallCards = selectedCards.every(c => 
-        c.rank === Rank.Six || c.rank === Rank.Seven
+      const usedSmallCards = selectedCards.every(
+        (c) => c.rank === Rank.Six || c.rank === Rank.Seven,
       );
       expect(usedSmallCards).toBe(true);
 
-      gameLogger.info('test_unbeatable_opponent_conservation_success', {}, '✅ CORRECT: AI conserved Ace pair against unbeatable opponent');
+      gameLogger.info(
+        "test_unbeatable_opponent_conservation_success",
+        {},
+        "✅ CORRECT: AI conserved Ace pair against unbeatable opponent",
+      );
     });
   });
 
-  describe('Game Logic: Singles vs Pairs When Out of Suit', () => {
-    it('should allow singles from any suit when out of led suit, but reject cross-suit pairs', () => {
+  describe("Game Logic: Singles vs Pairs When Out of Suit", () => {
+    it("should allow singles from any suit when out of led suit, but reject cross-suit pairs", () => {
       // This tests that when following a pair and out of the led suit:
       // 1. Cross-suit pairs are properly filtered out (can't play A♣-A♣ when Hearts led)
       // 2. Singles from any suit are allowed (can play mixed singles like 3♣ + 4♦)
       // 3. Mixed combinations are generated when no proper pairs available
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        
-        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -275,46 +320,54 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       gameState.currentPlayerIndex = 1;
       gameState.gamePhase = GamePhase.Playing;
 
-      // Get valid combinations - should include mixed options
-      const { getValidCombinations } = require('../../src/game/combinationGeneration');
       const validCombos = getValidCombinations(aiBotHand, gameState);
 
-      gameLogger.info('test_singles_allowed_cross_suit_pairs_rejected', {
-        led: leadingCards.map(c => `${c.rank}♥`).join(', '),
-        validCombosCount: validCombos.length,
-        validCombos: validCombos.map((combo: any, i: number) => 
-          `${i + 1}: ${combo.cards.map((c: any) => `${c.rank}${c.suit}`).join(', ')} (${combo.type})`)
-      }, '=== ISSUE #104 TEST: Singles Allowed, Cross-Suit Pairs Rejected ===');
+      gameLogger.info(
+        "test_singles_allowed_cross_suit_pairs_rejected",
+        {
+          led: leadingCards.map((c) => `${c.rank}♥`).join(", "),
+          validCombosCount: validCombos.length,
+          validCombos: validCombos.map(
+            (combo, i: number) =>
+              `${i + 1}: ${combo.cards.map((c) => `${c.rank}${c.suit}`).join(", ")} (${combo.type})`,
+          ),
+        },
+        "=== ISSUE #104 TEST: Singles Allowed, Cross-Suit Pairs Rejected ===",
+      );
 
       // Should have multiple options including mixed combinations
       expect(validCombos.length).toBeGreaterThan(1);
 
       // Should NOT include the Ace pair when out of suit (proper fix)
-      const acePairCombo = validCombos.find((combo: any) => 
-        combo.cards.length === 2 && 
-        combo.cards.every((c: any) => c.rank === Rank.Ace)
+      const acePairCombo = validCombos.find(
+        (combo) =>
+          combo.cards.length === 2 &&
+          combo.cards.every((c) => c.rank === Rank.Ace),
       );
       expect(acePairCombo).toBeUndefined(); // Cross-suit pairs should be filtered out
 
       // Should include mixed single combinations
-      const mixedCombos = validCombos.filter((combo: any) => 
-        combo.cards.length === 2 && 
-        combo.cards[0].rank !== combo.cards[1].rank
+      const mixedCombos = validCombos.filter(
+        (combo) =>
+          combo.cards.length === 2 &&
+          combo.cards[0].rank !== combo.cards[1].rank,
       );
       expect(mixedCombos.length).toBeGreaterThan(0);
 
-      gameLogger.info('test_singles_allowed_cross_suit_pairs_rejected_success', {}, '✅ CORRECT: Cross-suit pairs filtered out, but singles and mixed combinations available');
+      gameLogger.info(
+        "test_singles_allowed_cross_suit_pairs_rejected_success",
+        {},
+        "✅ CORRECT: Cross-suit pairs filtered out, but singles and mixed combinations available",
+      );
     });
   });
 
-  describe('Edge Cases: Different Hand Compositions', () => {
-    it('should handle AI with some Hearts cards and cross-suit pairs', () => {
+  describe("Edge Cases: Different Hand Compositions", () => {
+    it("should handle AI with some Hearts cards and cross-suit pairs", () => {
       // SCENARIO: AI has Hearts cards but cannot form Hearts pair
       // Expected: Must use Hearts card, cannot waste cross-suit pair
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        
-        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -347,35 +400,42 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
 
-      gameLogger.info('test_edge_case_has_hearts_cannot_form_pair', {
-        led: leadingCards.map(c => `${c.rank}♥`).join(', '),
-        aiHand: aiBotHand.map(c => `${c.rank}${c.suit}`).join(', '),
-        aiSelected: selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')
-      }, '=== EDGE CASE TEST: Has Hearts but Cannot Form Pair ===');
+      gameLogger.info(
+        "test_edge_case_has_hearts_cannot_form_pair",
+        {
+          led: leadingCards.map((c) => `${c.rank}♥`).join(", "),
+          aiHand: aiBotHand.map((c) => `${c.rank}${c.suit}`).join(", "),
+          aiSelected: selectedCards.map((c) => `${c.rank}${c.suit}`).join(", "),
+        },
+        "=== EDGE CASE TEST: Has Hearts but Cannot Form Pair ===",
+      );
 
       // Must include the Hearts card (5♥)
       expect(selectedCards).toHaveLength(2);
-      const hasHeartsCard = selectedCards.some(c => c.suit === Suit.Hearts);
+      const hasHeartsCard = selectedCards.some((c) => c.suit === Suit.Hearts);
       expect(hasHeartsCard).toBe(true);
 
       // Should NOT use the valuable Ace pair
-      const usedAcePair = selectedCards.filter(c => c.rank === Rank.Ace).length === 2;
+      const usedAcePair =
+        selectedCards.filter((c) => c.rank === Rank.Ace).length === 2;
       expect(usedAcePair).toBe(false);
 
       // Should use Hearts card + one other card
-      const heartsCard = selectedCards.find(c => c.suit === Suit.Hearts);
+      const heartsCard = selectedCards.find((c) => c.suit === Suit.Hearts);
       expect(heartsCard?.rank).toBe(Rank.Five);
 
-      gameLogger.info('test_edge_case_has_hearts_cannot_form_pair_success', {}, '✅ CORRECT: AI used mandatory Hearts card and preserved Ace pair');
+      gameLogger.info(
+        "test_edge_case_has_hearts_cannot_form_pair_success",
+        {},
+        "✅ CORRECT: AI used mandatory Hearts card and preserved Ace pair",
+      );
     });
 
-    it('should handle AI with minimal hand (Hearts + valuable pair only)', () => {
+    it("should handle AI with minimal hand (Hearts + valuable pair only)", () => {
       // SCENARIO: AI has only 3 cards: 5♥, A♣-A♣
       // Expected: Must use Hearts card, cannot use cross-suit pair
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        
-        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -406,37 +466,44 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
 
       const selectedCards = getAIMove(gameState, PlayerId.Bot1);
 
-      gameLogger.info('test_edge_case_minimal_hand_with_hearts', {
-        led: leadingCards.map(c => `${c.rank}♥`).join(', '),
-        aiHand: aiBotHand.map(c => `${c.rank}${c.suit}`).join(', '),
-        aiSelected: selectedCards.map(c => `${c.rank}${c.suit}`).join(', ')
-      }, '=== EDGE CASE TEST: Minimal Hand with Hearts ===');
+      gameLogger.info(
+        "test_edge_case_minimal_hand_with_hearts",
+        {
+          led: leadingCards.map((c) => `${c.rank}♥`).join(", "),
+          aiHand: aiBotHand.map((c) => `${c.rank}${c.suit}`).join(", "),
+          aiSelected: selectedCards.map((c) => `${c.rank}${c.suit}`).join(", "),
+        },
+        "=== EDGE CASE TEST: Minimal Hand with Hearts ===",
+      );
 
       // Must include the Hearts card (5♥)
       expect(selectedCards).toHaveLength(2);
-      const hasHeartsCard = selectedCards.some(c => c.suit === Suit.Hearts);
+      const hasHeartsCard = selectedCards.some((c) => c.suit === Suit.Hearts);
       expect(hasHeartsCard).toBe(true);
 
       // Should NOT use the complete Ace pair (can only use one Ace)
-      const usedAcePair = selectedCards.filter(c => c.rank === Rank.Ace).length === 2;
+      const usedAcePair =
+        selectedCards.filter((c) => c.rank === Rank.Ace).length === 2;
       expect(usedAcePair).toBe(false);
 
       // Should use exactly: 5♥ + one A♣
-      const heartsCard = selectedCards.find(c => c.suit === Suit.Hearts);
-      const aceCard = selectedCards.find(c => c.rank === Rank.Ace);
+      const heartsCard = selectedCards.find((c) => c.suit === Suit.Hearts);
+      const aceCard = selectedCards.find((c) => c.rank === Rank.Ace);
       expect(heartsCard?.rank).toBe(Rank.Five);
       expect(aceCard?.suit).toBe(Suit.Clubs);
 
-      gameLogger.info('test_edge_case_minimal_hand_with_hearts_success', {}, '✅ CORRECT: AI used mandatory Hearts card and preserved one Ace from pair');
+      gameLogger.info(
+        "test_edge_case_minimal_hand_with_hearts_success",
+        {},
+        "✅ CORRECT: AI used mandatory Hearts card and preserved one Ace from pair",
+      );
     });
 
-    it('should handle AI with trump pairs when out of led suit', () => {
+    it("should handle AI with trump pairs when out of led suit", () => {
       // SCENARIO: AI has trump pairs when out of Hearts
       // Expected: Trump pairs should be valid options, cross-suit pairs filtered
       const gameState = initializeGame();
       gameState.trumpInfo = {
-        
-        
         trumpRank: Rank.Two,
         trumpSuit: Suit.Spades,
       };
@@ -468,41 +535,56 @@ describe('Issue #104 - AI Using Valuable Pairs Instead of Two Singles', () => {
       gameState.gamePhase = GamePhase.Playing;
 
       // Test valid combinations logic
-      const { getValidCombinations } = require('../../src/game/combinationGeneration');
       const validCombos = getValidCombinations(aiBotHand, gameState);
 
-      gameLogger.info('test_edge_case_trump_pairs_vs_cross_suit_pairs', {
-        led: leadingCards.map(c => `${c.rank}♥`).join(', '),
-        aiHand: aiBotHand.map(c => `${c.rank}${c.suit}`).join(', '),
-        validCombosCount: validCombos.length,
-        validCombos: validCombos.map((combo: any, i: number) => 
-          `${i + 1}: ${combo.cards.map((c: any) => `${c.rank}${c.suit}`).join(', ')} (${combo.type})`)
-      }, '=== EDGE CASE TEST: Trump Pairs vs Cross-Suit Pairs ===');
+      gameLogger.info(
+        "test_edge_case_trump_pairs_vs_cross_suit_pairs",
+        {
+          led: leadingCards.map((c) => `${c.rank}♥`).join(", "),
+          aiHand: aiBotHand.map((c) => `${c.rank}${c.suit}`).join(", "),
+          validCombosCount: validCombos.length,
+          validCombos: validCombos.map(
+            (combo, i: number) =>
+              `${i + 1}: ${combo.cards.map((c) => `${c.rank}${c.suit}`).join(", ")} (${combo.type})`,
+          ),
+        },
+        "=== EDGE CASE TEST: Trump Pairs vs Cross-Suit Pairs ===",
+      );
 
       // Should NOT include the Ace pair as a proper pair combo
-      const acePairCombo = validCombos.find((combo: any) => 
-        combo.cards.length === 2 && 
-        combo.cards.every((c: any) => c.rank === Rank.Ace && c.suit === Suit.Clubs) &&
-        combo.type === ComboType.Pair
+      const acePairCombo = validCombos.find(
+        (combo) =>
+          combo.cards.length === 2 &&
+          combo.cards.every(
+            (c) => c.rank === Rank.Ace && c.suit === Suit.Clubs,
+          ) &&
+          combo.type === ComboType.Pair,
       );
       expect(acePairCombo).toBeUndefined();
 
       // The Ace pair might appear in mixed combinations but should be discouraged
       // The key test is that we have strategic alternatives that preserve pairs
-      
+
       // Should have valid strategic alternatives to valuable pairs
       // At minimum, should have the trump pair as a valid option
       expect(validCombos.length).toBeGreaterThan(0);
-      
+
       // Should have trump pair as valid option (can beat led pair)
-      const trumpPairCombo = validCombos.find((combo: any) => 
-        combo.cards.length === 2 && 
-        combo.cards.every((c: any) => c.rank === Rank.Two && c.suit === Suit.Spades) &&
-        combo.type === ComboType.Pair
+      const trumpPairCombo = validCombos.find(
+        (combo) =>
+          combo.cards.length === 2 &&
+          combo.cards.every(
+            (c) => c.rank === Rank.Two && c.suit === Suit.Spades,
+          ) &&
+          combo.type === ComboType.Pair,
       );
       expect(trumpPairCombo).toBeDefined();
 
-      gameLogger.info('test_edge_case_trump_pairs_vs_cross_suit_pairs_success', {}, '✅ CORRECT: Cross-suit pairs filtered as proper pairs, strategic alternatives available');
+      gameLogger.info(
+        "test_edge_case_trump_pairs_vs_cross_suit_pairs_success",
+        {},
+        "✅ CORRECT: Cross-suit pairs filtered as proper pairs, strategic alternatives available",
+      );
     });
   });
 });

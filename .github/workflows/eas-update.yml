@@ -47,6 +47,10 @@ jobs:
         echo "test_count=$TEST_COUNT" >> $GITHUB_OUTPUT
         echo "Extracted test count: $TEST_COUNT"
 
+    - name: Run simulation tests
+      run: npm run test:simulation
+      timeout-minutes: 1
+
     - name: Update test count badge
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:

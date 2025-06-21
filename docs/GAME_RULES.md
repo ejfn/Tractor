@@ -265,7 +265,7 @@ Work with your AI teammate to collect 80+ points per round and advance through c
 
 ### **Multi-Combos**
 - **Definition**: Multiple combos from the same suit played simultaneously
-- **Leading Multi-Combos**: Only allowed from non-trump suits when all other three players are void in that suit
+- **Leading Multi-Combos**: Available when each combo unbeatable OR all other players void in target non-trump suit
 - **Following Multi-Combos**: Must match the lead's combination structure exactly
 - **Trump Multi-Combos**: Can beat non-trump multi-combos regardless of strength
 
@@ -276,7 +276,7 @@ Work with your AI teammate to collect 80+ points per round and advance through c
 - **Key Requirement**: Each component combo must be unbeatable by cards held by other players
 
 #### **Multi-Combo Leading Rules**
-**Only available when ALL OTHER THREE PLAYERS are void in the target suit**
+**Available when each combo unbeatable OR all other three players are void in the target suit**
 
 **Unbeatable Requirement**: Each individual combo within the multi-combo must be the strongest possible based on:
 - All cards already played (visible to everyone)
@@ -392,9 +392,18 @@ Trump Responses:
 1. **Follow suit if possible**: Must play same suit as led
 2. **Match combination type**: Must match singles/pairs/tractors/multi-combos if able
 3. **Multi-combo following**: Must match structure + exact total length
-4. **Suit exhaustion first**: Use all cards of led suit before others
+4. **Suit exhaustion rule**: If you run out of the led suit after your play, any combination is valid (even mixed suits)
 5. **Trump when out of suit**: Can use trump if no cards of led suit
 6. **Any suit last resort**: Play from other suits only when necessary
+
+#### **🚨 CRITICAL: Suit Exhaustion Rule**
+**If you will have NO cards of the led suit remaining after your play, you can play ANY cards to make up the required length.**
+
+**Example:**
+- Leading: A♥ K♥ Q♥ Q♥ (4 hearts required)
+- Your hearts: J♥ 8♥ 6♥ (only 3 hearts total)
+- **Valid play**: J♥ 8♥ 6♥ 4♦ (3 hearts + 1 diamond)
+- **Result**: You have 0 hearts left - exhaustion rule applies
 
 ---
 

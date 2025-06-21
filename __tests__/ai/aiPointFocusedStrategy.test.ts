@@ -2,36 +2,40 @@ import {
   createPointFocusedContext,
   createTrumpConservationStrategy,
   selectEarlyGameLeadingPlay,
-} from '../../src/ai/leading/pointFocusedStrategy';
+} from "../../src/ai/leading/pointFocusedStrategy";
 import {
   Card,
-  Suit,
-  Rank,
-  JokerType,
   ComboType,
-  TrumpInfo,
-  GameState,
   GameContext,
-  GamePhaseStrategy,
-  PointCardStrategy,
-  TrumpTiming,
-  PlayerId,
   GamePhase,
-  TrickPosition,
-  PointPressure,
+  GamePhaseStrategy,
+  GameState,
+  JokerType,
+  PlayerId,
   PlayStyle,
+  PointCardStrategy,
+  PointPressure,
+  Rank,
+  Suit,
   TeamId,
+  TrickPosition,
+  TrumpInfo,
+  TrumpTiming,
 } from "../../src/types";
 
 // Using Card class static methods
 
-const createTestTrumpInfo = (trumpRank: Rank = Rank.Two, trumpSuit?: Suit): TrumpInfo => ({
+const createTestTrumpInfo = (
+  trumpRank: Rank = Rank.Two,
+  trumpSuit?: Suit,
+): TrumpInfo => ({
   trumpRank,
   trumpSuit,
-  
 });
 
-const createTestGameContext = (overrides: Partial<GameContext> = {}): GameContext => ({
+const createTestGameContext = (
+  overrides: Partial<GameContext> = {},
+): GameContext => ({
   isAttackingTeam: true,
   currentPoints: 40,
   pointsNeeded: 80,
@@ -42,7 +46,9 @@ const createTestGameContext = (overrides: Partial<GameContext> = {}): GameContex
   ...overrides,
 });
 
-const createTestGameState = (overrides: Partial<GameState> = {}): GameState => ({
+const createTestGameState = (
+  overrides: Partial<GameState> = {},
+): GameState => ({
   players: [
     {
       id: PlayerId.Human,
@@ -85,73 +91,106 @@ const createTestGameState = (overrides: Partial<GameState> = {}): GameState => (
   ...overrides,
 });
 
-describe('AI Point-Focused Strategy (Issue #61)', () => {
-  describe('createPointFocusedContext', () => {
-    it('should identify early game phase correctly', () => {
+describe("AI Point-Focused Strategy (Issue #61)", () => {
+  describe("createPointFocusedContext", () => {
+    it("should identify early game phase correctly", () => {
       const gameState = createTestGameState({
         tricks: [], // No tricks played yet
         players: [
-          { ...createTestGameState().players[0], hand: Array(13).fill(Card.createCard(Suit.Hearts, Rank.Ace, 0)) },
-          { ...createTestGameState().players[1], hand: Array(13).fill(Card.createCard(Suit.Spades, Rank.King, 0)) },
-          { ...createTestGameState().players[2], hand: Array(13).fill(Card.createCard(Suit.Clubs, Rank.Queen, 0)) },
-          { ...createTestGameState().players[3], hand: Array(13).fill(Card.createCard(Suit.Diamonds, Rank.Jack, 0)) },
+          {
+            ...createTestGameState().players[0],
+            hand: Array(13).fill(Card.createCard(Suit.Hearts, Rank.Ace, 0)),
+          },
+          {
+            ...createTestGameState().players[1],
+            hand: Array(13).fill(Card.createCard(Suit.Spades, Rank.King, 0)),
+          },
+          {
+            ...createTestGameState().players[2],
+            hand: Array(13).fill(Card.createCard(Suit.Clubs, Rank.Queen, 0)),
+          },
+          {
+            ...createTestGameState().players[3],
+            hand: Array(13).fill(Card.createCard(Suit.Diamonds, Rank.Jack, 0)),
+          },
         ],
       });
-      
+
       const context = createTestGameContext();
-      const pointContext = createPointFocusedContext(gameState, PlayerId.Human, context);
-      
+      const pointContext = createPointFocusedContext(
+        gameState,
+        PlayerId.Human,
+        context,
+      );
+
       expect(pointContext.gamePhase).toBe(GamePhaseStrategy.EarlyGame);
     });
 
-    it('should determine aggressive point strategy when attacking team is behind', () => {
+    it("should determine aggressive point strategy when attacking team is behind", () => {
       const gameState = createTestGameState({
         tricks: [
           {
             plays: [
-              { playerId: PlayerId.Bot1, cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)] }
+              {
+                playerId: PlayerId.Bot1,
+                cards: [Card.createCard(Suit.Hearts, Rank.Five, 0)],
+              },
             ],
             winningPlayerId: PlayerId.Bot1,
             points: 15, // Opponent got points
           },
         ],
       });
-      
+
       const context = createTestGameContext({ isAttackingTeam: true });
-      const pointContext = createPointFocusedContext(gameState, PlayerId.Human, context);
-      
+      const pointContext = createPointFocusedContext(
+        gameState,
+        PlayerId.Human,
+        context,
+      );
+
       expect(pointContext.pointCardStrategy).toBe(PointCardStrategy.Aggressive);
       expect(pointContext.opponentPointsCollected).toBe(15);
     });
 
-    it('should determine conservative strategy when team has enough points', () => {
+    it("should determine conservative strategy when team has enough points", () => {
       const gameState = createTestGameState({
         tricks: [
           {
             plays: [
-              { playerId: PlayerId.Human, cards: [Card.createCard(Suit.Hearts, Rank.King, 0)] }
+              {
+                playerId: PlayerId.Human,
+                cards: [Card.createCard(Suit.Hearts, Rank.King, 0)],
+              },
             ],
             winningPlayerId: PlayerId.Human,
             points: 25, // Team A got good points
           },
           {
             plays: [
-              { playerId: PlayerId.Bot2, cards: [Card.createCard(Suit.Spades, Rank.Ten, 0)] }
+              {
+                playerId: PlayerId.Bot2,
+                cards: [Card.createCard(Suit.Spades, Rank.Ten, 0)],
+              },
             ],
             winningPlayerId: PlayerId.Bot2,
             points: 30, // Team A got more points
           },
         ],
       });
-      
+
       const context = createTestGameContext({ isAttackingTeam: true });
-      const pointContext = createPointFocusedContext(gameState, PlayerId.Human, context);
-      
+      const pointContext = createPointFocusedContext(
+        gameState,
+        PlayerId.Human,
+        context,
+      );
+
       expect(pointContext.teamPointsCollected).toBe(55);
       expect(pointContext.canWinWithoutPoints).toBe(false); // Need 80 points
     });
 
-    it('should detect partner needing point escape', () => {
+    it("should detect partner needing point escape", () => {
       const gameState = createTestGameState({
         players: [
           {
@@ -177,16 +216,20 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           },
         ],
       });
-      
+
       const context = createTestGameContext();
-      const pointContext = createPointFocusedContext(gameState, PlayerId.Human, context);
-      
+      const pointContext = createPointFocusedContext(
+        gameState,
+        PlayerId.Human,
+        context,
+      );
+
       expect(pointContext.partnerNeedsPointEscape).toBe(true);
     });
   });
 
-  describe('createTrumpConservationStrategy', () => {
-    it('should preserve big trumps in early game', () => {
+  describe("createTrumpConservationStrategy", () => {
+    it("should preserve big trumps in early game", () => {
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,
@@ -197,28 +240,44 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         partnerNeedsPointEscape: false,
         canWinWithoutPoints: false,
       };
-      
+
       // Create game state with realistic hand sizes
       const gameState = createTestGameState({
         players: [
-          { ...createTestGameState().players[0], hand: Array(10).fill(Card.createCard(Suit.Hearts, Rank.Ace, 0)) },
-          { ...createTestGameState().players[1], hand: Array(10).fill(Card.createCard(Suit.Spades, Rank.King, 0)) },
-          { ...createTestGameState().players[2], hand: Array(10).fill(Card.createCard(Suit.Clubs, Rank.Queen, 0)) },
-          { ...createTestGameState().players[3], hand: Array(10).fill(Card.createCard(Suit.Diamonds, Rank.Jack, 0)) },
+          {
+            ...createTestGameState().players[0],
+            hand: Array(10).fill(Card.createCard(Suit.Hearts, Rank.Ace, 0)),
+          },
+          {
+            ...createTestGameState().players[1],
+            hand: Array(10).fill(Card.createCard(Suit.Spades, Rank.King, 0)),
+          },
+          {
+            ...createTestGameState().players[2],
+            hand: Array(10).fill(Card.createCard(Suit.Clubs, Rank.Queen, 0)),
+          },
+          {
+            ...createTestGameState().players[3],
+            hand: Array(10).fill(Card.createCard(Suit.Diamonds, Rank.Jack, 0)),
+          },
         ],
       });
       const trumpInfo = createTestTrumpInfo();
-      
-      const strategy = createTrumpConservationStrategy(pointContext, gameState, trumpInfo);
-      
+
+      const strategy = createTrumpConservationStrategy(
+        pointContext,
+        gameState,
+        trumpInfo,
+      );
+
       expect(strategy.preserveBigJokers).toBe(true);
       expect(strategy.preserveSmallJokers).toBe(true);
       expect(strategy.preserveTrumpRanks).toBe(true);
       expect(strategy.minTricksRemainingForBigTrump).toBe(6);
-      expect(strategy.trumpFollowingPriority).toBe('minimal');
+      expect(strategy.trumpFollowingPriority).toBe("minimal");
     });
 
-    it('should be aggressive with trumps in late game', () => {
+    it("should be aggressive with trumps in late game", () => {
       const pointContext = {
         gamePhase: GamePhaseStrategy.LateGame,
         pointCardStrategy: PointCardStrategy.Aggressive,
@@ -229,20 +288,24 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         partnerNeedsPointEscape: false,
         canWinWithoutPoints: false,
       };
-      
+
       const gameState = createTestGameState();
       const trumpInfo = createTestTrumpInfo();
-      
-      const strategy = createTrumpConservationStrategy(pointContext, gameState, trumpInfo);
-      
+
+      const strategy = createTrumpConservationStrategy(
+        pointContext,
+        gameState,
+        trumpInfo,
+      );
+
       expect(strategy.preserveBigJokers).toBe(false);
       expect(strategy.preserveSmallJokers).toBe(false);
       expect(strategy.preserveTrumpRanks).toBe(false);
       expect(strategy.minTricksRemainingForBigTrump).toBe(2);
-      expect(strategy.trumpFollowingPriority).toBe('moderate');
+      expect(strategy.trumpFollowingPriority).toBe("moderate");
     });
 
-    it('should use emergency trump strategy under high pressure', () => {
+    it("should use emergency trump strategy under high pressure", () => {
       const pointContext = {
         gamePhase: GamePhaseStrategy.MidGame,
         pointCardStrategy: PointCardStrategy.Aggressive,
@@ -253,18 +316,22 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         partnerNeedsPointEscape: false,
         canWinWithoutPoints: false,
       };
-      
+
       const gameState = createTestGameState();
       const trumpInfo = createTestTrumpInfo();
-      
-      const strategy = createTrumpConservationStrategy(pointContext, gameState, trumpInfo);
-      
-      expect(strategy.trumpFollowingPriority).toBe('aggressive');
+
+      const strategy = createTrumpConservationStrategy(
+        pointContext,
+        gameState,
+        trumpInfo,
+      );
+
+      expect(strategy.trumpFollowingPriority).toBe("aggressive");
     });
   });
 
-  describe('selectEarlyGameLeadingPlay', () => {
-    it('should select high non-trump cards in early game', () => {
+  describe("selectEarlyGameLeadingPlay", () => {
+    it("should select high non-trump cards in early game", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -282,7 +349,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 16,
         },
       ];
-      
+
       const trumpInfo = createTestTrumpInfo();
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
@@ -295,15 +362,20 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeTruthy();
-      expect(selected!.cards[0].rank).toBe(Rank.Ace); // Should select high non-trump
-      expect(selected!.cards[0].joker).toBeUndefined(); // Should not select trump
+      expect(selected?.cards[0].rank).toBe(Rank.Ace); // Should select high non-trump
+      expect(selected?.cards[0].joker).toBeUndefined(); // Should not select trump
     });
 
-    it('should prioritize Ace singles over non-Ace pairs (integrated Ace priority)', () => {
+    it("should prioritize Ace singles over non-Ace pairs (integrated Ace priority)", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -319,8 +391,8 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 26,
         },
       ];
-      
-      const trumpInfo = { trumpRank: Rank.Two,  }; // No trump suit declared
+
+      const trumpInfo = { trumpRank: Rank.Two }; // No trump suit declared
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,
@@ -332,15 +404,20 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeTruthy();
-      expect(selected!.type).toBe(ComboType.Single); // Should prefer Ace single
-      expect(selected!.cards[0].rank).toBe(Rank.Ace); // Over King pair
+      expect(selected?.type).toBe(ComboType.Single); // Should prefer Ace single
+      expect(selected?.cards[0].rank).toBe(Rank.Ace); // Over King pair
     });
 
-    it('should prefer pairs over singles when no Aces are available', () => {
+    it("should prefer pairs over singles when no Aces are available", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -356,8 +433,8 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 26,
         },
       ];
-      
-      const trumpInfo = { trumpRank: Rank.Two,  };
+
+      const trumpInfo = { trumpRank: Rank.Two };
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,
@@ -369,15 +446,20 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeTruthy();
-      expect(selected!.type).toBe(ComboType.Pair); // Should prefer King pair
-      expect(selected!.cards[0].rank).toBe(Rank.King); // Over Queen single
+      expect(selected?.type).toBe(ComboType.Pair); // Should prefer King pair
+      expect(selected?.cards[0].rank).toBe(Rank.King); // Over Queen single
     });
 
-    it('should return null when not in early game', () => {
+    it("should return null when not in early game", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -385,7 +467,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 14,
         },
       ];
-      
+
       const trumpInfo = createTestTrumpInfo();
       const pointContext = {
         gamePhase: GamePhaseStrategy.MidGame, // Not early game
@@ -398,13 +480,18 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeNull();
     });
 
-    it('should select non-trump Aces even when trump suit is declared', () => {
+    it("should select non-trump Aces even when trump suit is declared", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -420,7 +507,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 26,
         },
       ];
-      
+
       // Trump suit is declared as Clubs, so Spades Ace pair becomes trump suit, Hearts Ace is not trump
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Clubs);
       const pointContext = {
@@ -434,9 +521,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       // Should select Hearts Ace since it's non-trump (Spades Ace pair filtered out as trump)
       expect(selected).toEqual({
         type: ComboType.Single,
@@ -445,7 +537,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       });
     });
 
-    it('should avoid trump suit Aces/Kings when trump is declared', () => {
+    it("should avoid trump suit Aces/Kings when trump is declared", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -463,7 +555,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 13,
         },
       ];
-      
+
       // Trump suit is declared as Spades - strategy should avoid trump suit cards
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
       const pointContext = {
@@ -477,9 +569,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       // Should select Hearts Ace since it's non-trump (Spades cards filtered out as trump)
       expect(selected).toEqual({
         type: ComboType.Single,
@@ -488,7 +585,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       });
     });
 
-    it('should select non-trump Aces when only non-trump combos available', () => {
+    it("should select non-trump Aces when only non-trump combos available", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -501,7 +598,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 13,
         },
       ];
-      
+
       // Trump suit is declared as Spades - only non-trump combos present
       const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
       const pointContext = {
@@ -515,9 +612,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       // Should select Hearts Ace since it's non-trump and highest priority
       expect(selected).toEqual({
         type: ComboType.Single,
@@ -526,7 +628,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
       });
     });
 
-    it('should prioritize Aces when no trump suit is declared', () => {
+    it("should prioritize Aces when no trump suit is declared", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -539,9 +641,9 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 14,
         },
       ];
-      
+
       // No trump suit declared - strategy should work and prioritize Aces
-      const trumpInfo = { trumpRank: Rank.Two,  };
+      const trumpInfo = { trumpRank: Rank.Two };
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,
@@ -553,14 +655,19 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeTruthy();
-      expect(selected!.cards[0].rank).toBe(Rank.Ace); // Should select Ace over King
+      expect(selected?.cards[0].rank).toBe(Rank.Ace); // Should select Ace over King
     });
 
-    it('should prefer Ace pairs over Ace singles', () => {
+    it("should prefer Ace pairs over Ace singles", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -576,8 +683,8 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 28,
         },
       ];
-      
-      const trumpInfo = { trumpRank: Rank.Two,  };
+
+      const trumpInfo = { trumpRank: Rank.Two };
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
         pointCardStrategy: PointCardStrategy.Escape,
@@ -589,16 +696,21 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeTruthy();
-      expect(selected!.type).toBe(ComboType.Pair); // Should prefer Ace pair
-      expect(selected!.cards[0].rank).toBe(Rank.Ace);
+      expect(selected?.type).toBe(ComboType.Pair); // Should prefer Ace pair
+      expect(selected?.cards[0].rank).toBe(Rank.Ace);
     });
 
     // NEW: Test cases for trump rank Ace scenario
-    it('should lead with Kings when trump rank is Ace (Kings become highest non-trump)', () => {
+    it("should lead with Kings when trump rank is Ace (Kings become highest non-trump)", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -616,7 +728,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 14,
         },
       ];
-      
+
       const trumpInfo = { trumpRank: Rank.Ace }; // Ace is trump rank
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
@@ -629,15 +741,20 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeTruthy();
-      expect(selected!.cards[0].rank).toBe(Rank.King); // Should select King when Ace is trump
-      expect(selected!.cards[0].suit).toBe(Suit.Hearts);
+      expect(selected?.cards[0].rank).toBe(Rank.King); // Should select King when Ace is trump
+      expect(selected?.cards[0].suit).toBe(Suit.Hearts);
     });
 
-    it('should prefer King pairs over King singles when trump rank is Ace', () => {
+    it("should prefer King pairs over King singles when trump rank is Ace", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -658,7 +775,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 14,
         },
       ];
-      
+
       const trumpInfo = { trumpRank: Rank.Ace }; // Ace is trump rank
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
@@ -671,16 +788,21 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeTruthy();
-      expect(selected!.type).toBe(ComboType.Pair); // Should prefer King pair
-      expect(selected!.cards[0].rank).toBe(Rank.King);
-      expect(selected!.cards[1].rank).toBe(Rank.King);
+      expect(selected?.type).toBe(ComboType.Pair); // Should prefer King pair
+      expect(selected?.cards[0].rank).toBe(Rank.King);
+      expect(selected?.cards[1].rank).toBe(Rank.King);
     });
 
-    it('should still lead with Aces when trump rank is not Ace (regression test)', () => {
+    it("should still lead with Aces when trump rank is not Ace (regression test)", () => {
       const validCombos = [
         {
           type: ComboType.Single,
@@ -698,7 +820,7 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           value: 2,
         },
       ];
-      
+
       const trumpInfo = { trumpRank: Rank.Two }; // Two is trump rank, Ace remains highest non-trump
       const pointContext = {
         gamePhase: GamePhaseStrategy.EarlyGame,
@@ -711,17 +833,22 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         canWinWithoutPoints: false,
       };
       const gameState = createTestGameState();
-      
-      const selected = selectEarlyGameLeadingPlay(validCombos, trumpInfo, pointContext, gameState);
-      
+
+      const selected = selectEarlyGameLeadingPlay(
+        validCombos,
+        trumpInfo,
+        pointContext,
+        gameState,
+      );
+
       expect(selected).toBeTruthy();
-      expect(selected!.cards[0].rank).toBe(Rank.Ace); // Should still select Ace when Two is trump
-      expect(selected!.cards[0].suit).toBe(Suit.Hearts);
+      expect(selected?.cards[0].rank).toBe(Rank.Ace); // Should still select Ace when Two is trump
+      expect(selected?.cards[0].suit).toBe(Suit.Hearts);
     });
   });
 
-  describe('Integration Tests', () => {
-    it('should prioritize point collection in late game with high pressure', () => {
+  describe("Integration Tests", () => {
+    it("should prioritize point collection in late game with high pressure", () => {
       const pointContext = {
         gamePhase: GamePhaseStrategy.LateGame,
         pointCardStrategy: PointCardStrategy.Aggressive,
@@ -732,13 +859,13 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
         partnerNeedsPointEscape: false,
         canWinWithoutPoints: false,
       };
-      
+
       expect(pointContext.pointCardStrategy).toBe(PointCardStrategy.Aggressive);
       expect(pointContext.trumpTiming).toBe(TrumpTiming.Emergency);
       expect(pointContext.canWinWithoutPoints).toBe(false);
     });
 
-    it('should coordinate team strategy effectively', () => {
+    it("should coordinate team strategy effectively", () => {
       const gameState = createTestGameState({
         players: [
           {
@@ -763,10 +890,14 @@ describe('AI Point-Focused Strategy (Issue #61)', () => {
           },
         ],
       });
-      
+
       const context = createTestGameContext();
-      const pointContext = createPointFocusedContext(gameState, PlayerId.Human, context);
-      
+      const pointContext = createPointFocusedContext(
+        gameState,
+        PlayerId.Human,
+        context,
+      );
+
       // Human should recognize partner needs point escape
       expect(pointContext.partnerNeedsPointEscape).toBe(true);
       expect(pointContext.gamePhase).toBe(GamePhaseStrategy.EarlyGame);

@@ -55,8 +55,8 @@ export function makeAIPlay(
       if (context.memoryContext) {
         context.memoryContext.voidExploitation = voidExploitationAnalysis;
       }
-    } catch (error) {
-      console.warn("Void exploitation analysis failed:", error);
+    } catch {
+      // Void exploitation analysis is optional - continue without it
     }
   }
 

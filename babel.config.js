@@ -1,11 +1,11 @@
-module.exports = function(api) {
+module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
+    presets: ["babel-preset-expo"],
     // Explicitly set platforms to exclude web
     plugins: [
-      ['@babel/plugin-transform-export-namespace-from'],
-      ['react-native-reanimated/plugin'],
+      ["@babel/plugin-transform-export-namespace-from"],
+      ["react-native-reanimated/plugin"],
       // Removed 'module:react-native-dotenv' - was causing "Welcome to Expo" screen issue
       // Removed 'expo-router/babel' as it's deprecated in SDK 50+
     ],

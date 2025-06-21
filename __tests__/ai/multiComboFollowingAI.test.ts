@@ -1,3 +1,4 @@
+import { getAIMove } from "../../src/ai/aiLogic";
 import { selectMultiComboFollowingPlay } from "../../src/ai/following/multiComboFollowingStrategy";
 import {
   Card,
@@ -9,6 +10,7 @@ import {
   TrumpInfo,
 } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
+import { gameLogger } from "../../src/utils/gameLogger";
 
 /**
  * AI Multi-Combo Following Strategy Tests
@@ -28,6 +30,71 @@ describe("AI Multi-Combo Following Strategy", () => {
     trumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
     gameState = initializeGame();
     gameState.trumpInfo = trumpInfo;
+  });
+
+  test("DUPLICATE BUG: AI should not duplicate cards", () => {
+    // From logs: Trump is Q spade, Bot3 leads A♦,7♦,7♦,6♦,6♦
+    // Bot1 tries to play 3♦,2♦,2♦,2♦,2♦ but only has 2x 2♦
+
+    gameState.trumpInfo = { trumpRank: Rank.Queen, trumpSuit: Suit.Spades };
+
+    // Leading combo from logs: A♦,7♦,7♦,6♦,6♦ (5 cards)
+    gameState.currentTrick = {
+      plays: [
+        {
+          playerId: PlayerId.Bot3,
+          cards: [
+            Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+            Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+            Card.createCard(Suit.Diamonds, Rank.Seven, 1),
+            Card.createCard(Suit.Diamonds, Rank.Six, 0),
+            Card.createCard(Suit.Diamonds, Rank.Six, 1),
+          ],
+        },
+      ],
+      winningPlayerId: PlayerId.Bot3,
+      points: 0,
+      isFinalTrick: false,
+    };
+
+    // Set up Bot1's hand - exactly as requested
+    gameState.players[1].hand = [
+      Card.createJoker(JokerType.Big, 0),
+      Card.createCard(Suit.Clubs, Rank.Ten, 0),
+      Card.createCard(Suit.Clubs, Rank.Four, 0),
+      Card.createCard(Suit.Clubs, Rank.Six, 0),
+      Card.createCard(Suit.Clubs, Rank.Nine, 0),
+      Card.createCard(Suit.Clubs, Rank.Ace, 0),
+      Card.createCard(Suit.Diamonds, Rank.Ten, 0),
+      Card.createCard(Suit.Diamonds, Rank.Two, 0), // First 2♦
+      Card.createCard(Suit.Diamonds, Rank.Two, 1), // Second 2♦ - ONLY 2 EXIST!
+      Card.createCard(Suit.Diamonds, Rank.Three, 0),
+      Card.createCard(Suit.Diamonds, Rank.Jack, 0),
+      Card.createCard(Suit.Diamonds, Rank.King, 0),
+      Card.createCard(Suit.Diamonds, Rank.Queen, 0),
+      Card.createCard(Suit.Hearts, Rank.Two, 0),
+      Card.createCard(Suit.Hearts, Rank.Two, 1),
+      Card.createCard(Suit.Hearts, Rank.Eight, 0),
+      Card.createCard(Suit.Hearts, Rank.Nine, 0),
+      Card.createCard(Suit.Hearts, Rank.Nine, 1),
+      Card.createCard(Suit.Hearts, Rank.King, 0),
+      Card.createCard(Suit.Spades, Rank.Two, 0),
+      Card.createCard(Suit.Spades, Rank.Seven, 0),
+      Card.createCard(Suit.Spades, Rank.Ace, 0),
+      Card.createCard(Suit.Spades, Rank.King, 0),
+      Card.createCard(Suit.Spades, Rank.King, 1),
+      Card.createCard(Suit.Spades, Rank.Queen, 0),
+    ];
+
+    gameState.currentPlayerIndex = 1; // Bot1's turn
+
+    // Test the FULL AI system
+    const aiMove = getAIMove(gameState, PlayerId.Bot1);
+
+    // Check for duplicates
+    const cardIds = aiMove.map((c) => c.id);
+    const uniqueIds = new Set(cardIds);
+    expect(uniqueIds.size).toBe(cardIds.length);
   });
 
   describe("Same-Suit Structure Matching", () => {
@@ -61,7 +128,7 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
       ];
 
-      const validCombos: any[] = []; // Will be generated internally
+      const validCombos: never[] = []; // Will be generated internally
 
       const result = selectMultiComboFollowingPlay(
         playerHand,
@@ -71,12 +138,14 @@ describe("AI Multi-Combo Following Strategy", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result!.strategy).toBe("same_suit_match");
-      expect(result!.cards).toHaveLength(4);
-      expect(result!.canBeat).toBe(false); // Can't beat with lower cards
+      if (!result) return; // Type guard for remaining checks
+
+      expect(result.strategy).toBe("same_suit_match");
+      expect(result.cards).toHaveLength(4);
+      expect(result.canBeat).toBe(false); // Can't beat with lower cards
 
       // Should use best available pair structure
-      const selectedRanks = result!.cards.map((card) => card.rank).sort();
+      const selectedRanks = result.cards.map((card) => card.rank).sort();
       expect(selectedRanks).toContain(Rank.Seven); // Should use 7♠7♠ pair
     });
 
@@ -108,7 +177,7 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
       ];
 
-      const validCombos: any[] = []; // Will be generated internally
+      const validCombos: never[] = []; // Will be generated internally
 
       const result = selectMultiComboFollowingPlay(
         playerHand,
@@ -118,17 +187,19 @@ describe("AI Multi-Combo Following Strategy", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result!.strategy).toBe("same_suit_match");
-      expect(result!.canBeat).toBe(false);
+      if (!result) return; // Type guard for remaining checks
+
+      expect(result.strategy).toBe("same_suit_match");
+      expect(result.canBeat).toBe(false);
 
       // Must use 10s (point cards) since they're the only pair available
       const usedTenPair =
-        result!.cards.filter((card) => card.rank === Rank.Ten).length === 2;
+        result.cards.filter((card) => card.rank === Rank.Ten).length === 2;
       expect(usedTenPair).toBe(true); // Must use 10♠-10♠ pair (only pair available)
 
       // Should use lowest singles to complete the structure
       const usedLowSingles =
-        result!.cards.filter(
+        result.cards.filter(
           (card) => card.rank === Rank.Seven || card.rank === Rank.Six,
         ).length >= 2;
       expect(usedLowSingles).toBe(true); // Should use 7♠, 6♠ for singles
@@ -164,7 +235,7 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0), // Other suit
       ];
 
-      const validCombos: any[] = []; // Will be generated internally
+      const validCombos: never[] = []; // Will be generated internally
 
       const result = selectMultiComboFollowingPlay(
         playerHand,
@@ -174,12 +245,14 @@ describe("AI Multi-Combo Following Strategy", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result!.strategy).toBe("trump_beat");
-      expect(result!.cards).toHaveLength(4);
-      expect(result!.canBeat).toBe(true);
+      if (!result) return; // Type guard for remaining checks
+
+      expect(result.strategy).toBe("trump_beat");
+      expect(result.cards).toHaveLength(4);
+      expect(result.canBeat).toBe(true);
 
       // Should use trump cards (Hearts)
-      const allTrump = result!.cards.every((card) => card.suit === Suit.Hearts);
+      const allTrump = result.cards.every((card) => card.suit === Suit.Hearts);
       expect(allTrump).toBe(true);
     });
 
@@ -211,7 +284,7 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
       ];
 
-      const validCombos: any[] = []; // Will be generated internally
+      const validCombos: never[] = []; // Will be generated internally
 
       const result = selectMultiComboFollowingPlay(
         playerHand,
@@ -221,14 +294,15 @@ describe("AI Multi-Combo Following Strategy", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result!.strategy).toBe("trump_beat");
+      if (!result) return; // Type guard for remaining checks
+      expect(result.strategy).toBe("trump_beat");
 
       // Should use low trump cards, not jokers
-      const usesJokers = result!.cards.some((card) => card.joker);
+      const usesJokers = result.cards.some((card) => card.joker);
       expect(usesJokers).toBe(false); // Should conserve jokers
 
       // Should use 3♥ pair and 4♥
-      const usesLowTrump = result!.cards.every(
+      const usesLowTrump = result.cards.every(
         (card) =>
           card.suit === Suit.Hearts &&
           (card.rank === Rank.Three || card.rank === Rank.Four),
@@ -273,7 +347,7 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Seven, 0),
       ];
 
-      const validCombos: any[] = [];
+      const validCombos: never[] = [];
 
       const result = selectMultiComboFollowingPlay(
         playerHand,
@@ -283,12 +357,13 @@ describe("AI Multi-Combo Following Strategy", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result!.strategy).toBe("trump_beat");
-      expect(result!.canBeat).toBe(true);
+      if (!result) return; // Type guard for remaining checks
+      expect(result.strategy).toBe("trump_beat");
+      expect(result.canBeat).toBe(true);
 
       // Should use Ace pair to beat 3♥ pair
       const hasAcePair =
-        result!.cards.filter((card) => card.rank === Rank.Ace).length === 2;
+        result.cards.filter((card) => card.rank === Rank.Ace).length === 2;
       expect(hasAcePair).toBe(true);
     });
   });
@@ -330,7 +405,7 @@ describe("AI Multi-Combo Following Strategy", () => {
             Card.createCard(Suit.Clubs, Rank.Six, 0),
             Card.createCard(Suit.Clubs, Rank.Five, 0),
           ],
-          type: "mixed" as any,
+          type: "mixed" as never,
           value: 100,
           canBeat: false,
           isBreakingPair: false,
@@ -346,14 +421,118 @@ describe("AI Multi-Combo Following Strategy", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result!.strategy).toBe("disposal");
-      expect(result!.canBeat).toBe(false);
+      if (!result) return; // Type guard for remaining checks
+      expect(result.strategy).toBe("disposal");
+      expect(result.canBeat).toBe(false);
 
       // Should dispose low cards (7♣, 6♣, 4♣), preserve 10♦ and K♦
-      const preservesValueCards = result!.cards.every(
+      const preservesValueCards = result.cards.every(
         (card) => card.rank !== Rank.Ten && card.rank !== Rank.King,
       );
       expect(preservesValueCards).toBe(true);
+    });
+  });
+
+  describe("Bug Investigation: Invalid AI Move", () => {
+    test("MCF-AI-BUG: AI should use available pair when responding to pair-single multi-combo", () => {
+      // Reproduce the exact scenario from logs:
+      // Bot1 leads: A♠, K♠, K♠ (pair + single multi-combo)
+      // Bot2 has Q♠Q♠ pair available but attempts 8♠, 7♠, 4♠ (invalid)
+
+      trumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Clubs };
+      gameState.trumpInfo = trumpInfo;
+
+      gameState.currentTrick = {
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: [
+              Card.createCard(Suit.Spades, Rank.Ace, 0),
+              Card.createCard(Suit.Spades, Rank.King, 0),
+              Card.createCard(Suit.Spades, Rank.King, 1),
+            ],
+          },
+        ],
+        winningPlayerId: PlayerId.Bot1,
+        points: 20,
+        isFinalTrick: false,
+      };
+
+      // Bot2's actual hand from logs (simplified to key spades)
+      const playerHand = [
+        Card.createCard(Suit.Clubs, Rank.Ten, 0),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
+        Card.createCard(Suit.Clubs, Rank.Seven, 1),
+        Card.createCard(Suit.Clubs, Rank.Eight, 0),
+        Card.createCard(Suit.Clubs, Rank.Nine, 0),
+        Card.createCard(Suit.Clubs, Rank.King, 0),
+        Card.createCard(Suit.Clubs, Rank.Queen, 0),
+        Card.createCard(Suit.Diamonds, Rank.Three, 0),
+        Card.createCard(Suit.Diamonds, Rank.King, 0),
+        Card.createCard(Suit.Diamonds, Rank.Queen, 0),
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Queen, 0),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Nine, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 1), // Second Ace
+        Card.createCard(Suit.Spades, Rank.Queen, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 1), // Q♠Q♠ pair available!
+      ];
+
+      const validCombos: never[] = []; // Will be generated internally
+
+      const result = selectMultiComboFollowingPlay(
+        playerHand,
+        gameState,
+        PlayerId.Bot2,
+        validCombos,
+      );
+
+      expect(result).not.toBeNull();
+      if (!result) return; // Type guard for remaining checks
+
+      // Log what the AI actually chose for debugging
+      gameLogger.info(
+        "ai_bug_investigation",
+        {
+          selectedCards: result.cards.map(
+            (c) =>
+              `${c.rank}♠${c.suit === Suit.Spades ? "♠" : c.suit === Suit.Hearts ? "♥" : c.suit === Suit.Clubs ? "♣" : "♦"}`,
+          ),
+          strategy: result.strategy,
+          cardCount: result.cards.length,
+          hasQueenPair:
+            result.cards.filter(
+              (card) => card.suit === Suit.Spades && card.rank === Rank.Queen,
+            ).length === 2,
+        },
+        "AI Bug Investigation: What AI actually chose",
+      );
+
+      // CRITICAL: AI should use Q♠Q♠ pair to match the structure (pair + single)
+      // NOT play 3 singles like 8♠, 7♠, 4♠
+      const hasQueenPair =
+        result.cards.filter(
+          (card) => card.suit === Suit.Spades && card.rank === Rank.Queen,
+        ).length === 2;
+
+      expect(hasQueenPair).toBe(true); // Should use Q♠Q♠ pair
+      expect(result.cards).toHaveLength(3); // Should match 3-card structure
+
+      // The response should be valid (pair + single structure)
+      // Example: Q♠Q♠ + 10♠ or Q♠Q♠ + 9♠
+      const spadesCards = result.cards.filter(
+        (card) => card.suit === Suit.Spades,
+      );
+      expect(spadesCards).toHaveLength(3); // All should be spades
     });
   });
 
@@ -387,7 +566,7 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Eight, 0),
       ];
 
-      const validCombos: any[] = []; // Will be generated internally
+      const validCombos: never[] = []; // Will be generated internally
 
       const result = selectMultiComboFollowingPlay(
         playerHand,
