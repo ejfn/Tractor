@@ -16,7 +16,7 @@ import {
 } from "./cardComparison";
 import { calculateKittyBonusInfo } from "./kittyManager";
 import { isTrump } from "./gameHelpers";
-import { identifyCombos, getComboType } from "./comboDetection";
+import { getComboType } from "./comboDetection";
 import { isValidPlay } from "./playValidation";
 import { gameLogger } from "../utils/gameLogger";
 
@@ -689,18 +689,7 @@ export function validatePlay(state: GameState, cards: Card[]): boolean {
 
   const currentPlayer = state.players[state.currentPlayerIndex];
 
-  if (!state.currentTrick) {
-    // Player is leading - any combo is valid
-    const combos = identifyCombos(currentPlayer.hand, state.trumpInfo);
-    return combos.some(
-      (combo) =>
-        combo.cards.length === cards.length &&
-        combo.cards.every((card) =>
-          cards.some((selected) => selected.id === card.id),
-        ),
-    );
-  } else {
-    // Player is following - must match the leading combo
-    return isValidPlay(cards, currentPlayer.hand, currentPlayer.id, state);
-  }
+  // Use the comprehensive validation function that handles both leading and following,
+  // including multi-combo scenarios
+  return isValidPlay(cards, currentPlayer.hand, currentPlayer.id, state);
 }
