@@ -6,6 +6,7 @@ import {
   PlayerId,
 } from "../../types";
 import { analyze3rdPlayerMemoryContext } from "../aiCardMemory";
+import { gameLogger } from "../../utils/gameLogger";
 
 /**
  * Risk Analysis - Strategic risk assessment for AI decisions
@@ -104,7 +105,15 @@ export function calculateMemoryEnhanced3rdPlayerRisk(
         reasoning += " - High risk situation";
       }
     } catch (error) {
-      console.warn("Enhanced 3rd player risk analysis failed:", error);
+      gameLogger.warn(
+        "third_player_risk_analysis_failed",
+        {
+          error: error instanceof Error ? error.message : String(error),
+          currentPlayer,
+          hasMemoryContext: !!context.memoryContext?.cardMemory,
+        },
+        "Enhanced 3rd player risk analysis failed",
+      );
       // Fallback to base risk calculation
       reasoning = "Memory analysis failed - using base calculation";
     }

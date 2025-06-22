@@ -9,5 +9,16 @@ module.exports = defineConfig([
   eslintPluginPrettierRecommended,
   {
     ignores: ['dist/*'],
+  },
+  {
+    rules: {
+      'no-console': 'error', // Enforce use of gameLogger instead of console
+    },
+  },
+  {
+    files: ['src/utils/gameLogger.ts', 'src/locales/index.ts'],
+    rules: {
+      'no-console': 'off', // Allow console in gameLogger infrastructure and locales
+    },
   }
 ]);

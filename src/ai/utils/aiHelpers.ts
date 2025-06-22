@@ -1,4 +1,12 @@
-import { Card, Combo, ComboAnalysis, Rank, TrumpInfo } from "../../types";
+import {
+  Card,
+  Combo,
+  ComboAnalysis,
+  GameState,
+  PlayerId,
+  Rank,
+  TrumpInfo,
+} from "../../types";
 
 /**
  * AI Helpers - Common utility functions for AI strategy
@@ -25,11 +33,34 @@ export function getPointCardPriority(card: Card): number {
  */
 export function selectDisruptiveCombo(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-  trumpInfo: TrumpInfo,
+  _trumpInfo: TrumpInfo,
 ): Card[] {
   // Select combo with highest disruption potential
   const sorted = comboAnalyses.sort(
     (a, b) => b.analysis.disruptionPotential - a.analysis.disruptionPotential,
   );
   return sorted[0].combo.cards;
+}
+
+/**
+ * Check if two players are teammates
+ *
+ * Players are teammates if they're on the same team.
+ * Teams: Human + Bot2 vs Bot1 + Bot3
+ */
+export function isTeammate(
+  gameState: GameState,
+  playerId1: PlayerId,
+  playerId2: PlayerId,
+): boolean {
+  // Get both players from gameState
+  const player1 = gameState.players.find((p) => p.id === playerId1);
+  const player2 = gameState.players.find((p) => p.id === playerId2);
+
+  if (!player1 || !player2) {
+    return false;
+  }
+
+  // Players are teammates if they're on the same team
+  return player1.team === player2.team;
 }

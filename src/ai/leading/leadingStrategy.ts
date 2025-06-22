@@ -26,6 +26,7 @@ import { getRankValue } from "../analysis/comboAnalysis";
 import { isTrump } from "../../game/gameHelpers";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 import { VoidExploitationAnalysis } from "../analysis/voidExploitation";
+import { isTeammate } from "../utils/aiHelpers";
 
 /**
  * Leading Strategy - Main leading logic and first position tactics
@@ -669,9 +670,9 @@ function isRiskyPointCardLead(
   // Check confirmed opponent voids in this suit
   const confirmedVoidOpponents = Object.entries(voidAnalysis.confirmedVoids)
     .filter(([playerId, voidSuits]) => {
-      const isOpponent = !isTeammatePlayer(
-        playerId as PlayerId,
+      const isOpponent = !isTeammate(
         gameState,
+        playerId as PlayerId,
         currentPlayerId,
       );
       const hasVoidInSuit = voidSuits.includes(leadSuit);
@@ -687,9 +688,9 @@ function isRiskyPointCardLead(
   // Check probable opponent voids with high probability
   const probableVoidOpponents = Object.entries(voidAnalysis.probableVoids)
     .filter(([playerId, voidProbs]) => {
-      const isOpponent = !isTeammatePlayer(
-        playerId as PlayerId,
+      const isOpponent = !isTeammate(
         gameState,
+        playerId as PlayerId,
         currentPlayerId,
       );
       const highProbVoid = voidProbs.some(
@@ -708,22 +709,4 @@ function isRiskyPointCardLead(
   }
 
   return false; // Safe to lead
-}
-
-/**
- * Helper function to check if a player is a teammate using game state
- */
-function isTeammatePlayer(
-  playerId: PlayerId,
-  gameState: GameState,
-  currentPlayerId: PlayerId,
-): boolean {
-  const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
-  const targetPlayer = gameState.players.find((p) => p.id === playerId);
-
-  if (!currentPlayer || !targetPlayer) {
-    return false;
-  }
-
-  return currentPlayer.team === targetPlayer.team;
 }

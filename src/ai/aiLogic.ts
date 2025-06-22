@@ -175,33 +175,6 @@ export const getAIMove = (gameState: GameState, playerId: PlayerId): Card[] => {
   // Delegate all strategic decisions to the AI strategy layer
   const selectedCards = makeAIPlay(gameState, player, validCombos);
 
-  gameLogger.info(
-    "ai_move_selected",
-    {
-      playerId,
-      selectedCards: selectedCards.map((c) => c.getDisplayName()),
-      cardIds: selectedCards.map((c) => c.id),
-    },
-    `Player ${playerId} selected ${selectedCards.length} cards`,
-  );
-
-  // Check for duplicates
-  const cardIds = selectedCards.map((c) => c.id);
-  const uniqueIds = new Set(cardIds);
-  if (uniqueIds.size !== cardIds.length) {
-    gameLogger.error(
-      "ai_duplicate_cards_detected",
-      {
-        playerId,
-        cardIds,
-        uniqueIds: Array.from(uniqueIds),
-        duplicateCount: cardIds.length - uniqueIds.size,
-        playerHand: player.hand.map((c) => c.getDisplayName()),
-      },
-      `DUPLICATE CARDS DETECTED: Player ${playerId} selected duplicate cards`,
-    );
-  }
-
   // Sort selected cards for consistent visual presentation
   return sortCards(selectedCards, gameState.trumpInfo);
 };

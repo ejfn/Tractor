@@ -11,6 +11,7 @@ import {
   PlayerId,
 } from "../../types";
 import { calculateTrumpDeploymentTiming } from "../aiCardMemory";
+import { gameLogger } from "../../utils/gameLogger";
 
 /**
  * Strategic Disposal - Optimal card disposal when can't influence trick outcome
@@ -28,16 +29,17 @@ export function selectStrategicDisposal(
   positionStrategy: PositionStrategy,
   gameState?: GameState,
 ): Card[] {
-  console.log(
-    `[STRATEGIC-DISPOSAL] Called with ${comboAnalyses.length} combo options`,
-  );
-  console.log(
-    `[STRATEGIC-DISPOSAL] Available combos:`,
-    comboAnalyses.map((ca) => ({
-      cards: ca.combo.cards.map((c) => c.getDisplayName()),
-      type: ca.combo.type,
-      conservationValue: ca.analysis.conservationValue,
-    })),
+  gameLogger.debug(
+    "strategic_disposal_start",
+    {
+      comboCount: comboAnalyses.length,
+      availableCombos: comboAnalyses.map((ca) => ({
+        cards: ca.combo.cards.map((c) => c.getDisplayName()),
+        type: ca.combo.type,
+        conservationValue: ca.analysis.conservationValue,
+      })),
+    },
+    `Strategic disposal called with ${comboAnalyses.length} combo options`,
   );
   // REMOVED ISSUE #104 BAND-AID FIX - Game logic now properly handles mixed combinations
 
@@ -137,12 +139,14 @@ export function selectStrategicDisposal(
   }
 
   // Ultimate fallback (should rarely happen)
-  console.log(`[STRATEGIC-DISPOSAL] Using ultimate fallback`);
   const sorted = comboAnalyses.sort((a, b) => a.combo.value - b.combo.value);
   const result = sorted[0].combo.cards;
-  console.log(
-    `[STRATEGIC-DISPOSAL] Fallback result:`,
-    result.map((c) => c.getDisplayName()),
+  gameLogger.warn(
+    "strategic_disposal_fallback",
+    {
+      selectedCards: result.map((c) => c.getDisplayName()),
+    },
+    "Strategic disposal using ultimate fallback",
   );
   return result;
 }
@@ -301,9 +305,12 @@ function selectMemoryEnhancedTrumpDisposal(
     }
   } catch (error) {
     // Fallback to standard trump hierarchy if memory analysis fails
-    console.warn(
-      "Memory-enhanced trump disposal failed, using standard hierarchy:",
-      error,
+    gameLogger.warn(
+      "memory_trump_disposal_error",
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Memory-enhanced trump disposal failed, using standard hierarchy",
     );
     const sorted = trumpCombos.sort(
       (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,

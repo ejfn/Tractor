@@ -1,7 +1,7 @@
 import { compareTrumpMultiCombos } from "../../game/cardComparison";
+import { getComboType, identifyCombos } from "../../game/comboDetection";
 import { calculateCardStrategicValue, isTrump } from "../../game/gameHelpers";
 import { detectLeadingMultiCombo } from "../../game/multiComboDetection";
-import { identifyCombos, getComboType } from "../../game/comboDetection";
 import {
   Card,
   Combo,
