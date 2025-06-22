@@ -655,6 +655,63 @@ This protection ensures Shengji/Tractor game rule compliance and prevents invali
 - **Testing**: Always include point card management and trump conservation in AI tests
 - **Logging**: Use `gameLogger` for all logging instead of `console.log()` - provides structured logging with levels and context
 
+### 🚨 CRITICAL: Duplicate Function Prevention
+
+**NEVER create duplicate functions!** This has caused multiple subtle bugs where two functions with the same name return different values, breaking validation consistency.
+
+#### **Mandatory Pre-Implementation Checks**
+Before writing ANY new function:
+
+1. **Search for existing implementations**:
+   ```bash
+   rg "functionName" --type ts
+   rg "export.*functionName" --type ts
+   ```
+
+2. **Check for existing exports** - ALWAYS try importing first:
+   ```typescript
+   // ✅ GOOD: Import existing function
+   import { getComboType } from "./comboDetection";
+   
+   // ❌ BAD: Create duplicate without checking
+   const getComboType = (cards, trumpInfo) => { ... }
+   ```
+
+3. **Use specific naming** for truly local helpers:
+   ```typescript
+   // ✅ GOOD: Specific local name
+   const analyzeLocalComboStructure = () => { ... }
+   
+   // ❌ BAD: Generic name that might conflict
+   const getComboType = () => { ... }
+   ```
+
+#### **Function Naming Convention**
+- **Generic utility names** (`getComboType`, `validatePlay`, `processData`) → **MUST be imports**
+- **Local helpers** → Use descriptive prefixes (`local`, `internal`, `analyze`, `calculate`)
+- **Module-specific functions** → Include module context in name
+
+#### **Documentation Pattern**
+When creating local helpers, always document the decision:
+```typescript
+// Local helper - verified no existing export available [DATE]
+// Specific to this module's internal logic
+const calculateLocalRankValue = () => { ... }
+```
+
+#### **Known Duplicate Bugs Prevented**
+- `getComboType()` duplication (comboDetection.ts vs combinationGeneration.ts) 
+- Future: Any function with generic utility names
+
+#### **Pre-Commit Validation**
+Run this check before commits:
+```bash
+# Find potential function name conflicts
+rg "export\s+(function|const)\s+(\w+)" -o | sort | uniq -d
+```
+
+**Zero tolerance policy**: Duplicate functions create subtle bugs that are hard to debug and compromise system reliability.
+
 ## Internationalization (i18n) System
 
 The game features **comprehensive multilingual support** with type-safe translations and automatic language detection:
