@@ -312,23 +312,22 @@ export function endRound(state: GameState): RoundResult {
     const trickPoints = attackingTeam.points; // Get trick points before bonus
 
     // Calculate final points (including kitty bonus)
-    const points = attackingTeam.points + kittyBonus;
-    finalPoints = points;
+    finalPoints = attackingTeam.points + kittyBonus;
 
     if (kittyInfo) {
       pointsBreakdown = kittyInfo.kittyBonus
-        ? `\n(${trickPoints} + ${kittyInfo.kittyPoints} × ${kittyInfo.kittyBonus.multiplier} kitty bonus)`
+        ? `\n${finalPoints} = ${trickPoints} + ${kittyInfo.kittyPoints} × ${kittyInfo.kittyBonus.multiplier}`
         : ``;
     }
 
     // Attacking team needs 80+ points to win
-    if (points >= 80) {
+    if (finalPoints >= 80) {
       attackingTeamWon = true;
 
       // Calculate rank advancement based on points
       let rankAdvancement = 0;
-      if (points >= 120) {
-        rankAdvancement = Math.floor((points - 80) / 40);
+      if (finalPoints >= 120) {
+        rankAdvancement = Math.floor((finalPoints - 80) / 40);
       }
 
       // Calculate new rank for attacking team
@@ -344,7 +343,7 @@ export function endRound(state: GameState): RoundResult {
         "attacking_team_victory",
         {
           attackingTeam: attackingTeam.id,
-          finalPoints: points,
+          finalPoints,
           trickPoints,
           kittyBonus,
           rankAdvancement,
@@ -352,7 +351,7 @@ export function endRound(state: GameState): RoundResult {
           newRank,
           roundNumber: state.roundNumber,
         },
-        `Attacking team ${attackingTeam.id} won with ${points} points (${trickPoints} + ${kittyBonus} kitty), advancing ${rankAdvancement} ranks to ${newRank}`,
+        `Attacking team ${attackingTeam.id} won with ${finalPoints} points (${trickPoints} + ${kittyBonus} kitty), advancing ${rankAdvancement} ranks to ${newRank}`,
       );
     } else {
       // Defending team successfully defended
@@ -366,10 +365,10 @@ export function endRound(state: GameState): RoundResult {
       } else {
         // Calculate rank advancement based on attacker's points
         let rankAdvancement = 1; // Default advancement
-        if (points < 40) {
+        if (finalPoints < 40) {
           rankAdvancement = 2;
         }
-        if (points === 0) {
+        if (finalPoints === 0) {
           rankAdvancement = 3;
         }
 
@@ -386,7 +385,7 @@ export function endRound(state: GameState): RoundResult {
           "defending_team_victory",
           {
             defendingTeam: defendingTeam.id,
-            attackingTeamPoints: points,
+            attackingTeamPoints: finalPoints,
             trickPoints,
             kittyBonus,
             rankAdvancement,
@@ -395,7 +394,7 @@ export function endRound(state: GameState): RoundResult {
             roundNumber: state.roundNumber,
             gameOver: false,
           },
-          `Defending team ${defendingTeam.id} held attackers to ${points} points, advancing ${rankAdvancement} ranks to ${newRank}`,
+          `Defending team ${defendingTeam.id} held attackers to ${finalPoints} points, advancing ${rankAdvancement} ranks to ${newRank}`,
         );
       }
     }

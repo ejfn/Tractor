@@ -28,8 +28,6 @@ const GameScreenController: React.FC = () => {
   const {
     gameState,
     selectedCards,
-    gameOver,
-    winner,
     showRoundComplete,
     isProcessingPlay,
     trickCompletionDataRef,
@@ -171,17 +169,13 @@ const GameScreenController: React.FC = () => {
       selectedCards={selectedCards}
       humanPlayerIndex={humanPlayerIndex}
       // UI state
-      gameOver={gameOver}
-      winner={winner}
       waitingForAI={waitingForAI}
       waitingPlayerId={waitingPlayerId}
       showTrickResult={showTrickResult}
       lastTrickWinnerId={lastTrickWinnerId}
       lastTrickPoints={lastTrickPoints}
       lastCompletedTrick={lastCompletedTrick}
-      showRoundComplete={showRoundComplete}
       roundResultRef={roundResultRef}
-      teamNames={["Team A", "Team B"]}
       isProcessingPlay={isProcessingPlay}
       // Animations
       fadeAnim={fadeAnim}

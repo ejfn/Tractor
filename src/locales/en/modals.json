@@ -22,8 +22,6 @@
   },
   "gameOver": {
     "title": "Victory!",
-    "message": "{{teamName}} wins the game!",
-    "congratulations": "Congratulations!",
     "newGame": "NEW GAME"
   }
 }
