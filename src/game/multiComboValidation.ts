@@ -4,7 +4,6 @@ import {
   Combo,
   ComboType,
   GameState,
-  MultiComboStructure,
   PlayerId,
   Rank,
   Suit,
@@ -12,7 +11,6 @@ import {
 } from "../types";
 import { MultiComboValidation } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
-import { analyzeMultiComboComponents } from "./multiComboAnalysis";
 import { sortCards } from "../utils/cardSorting";
 import { compareCards } from "./cardComparison";
 
@@ -120,7 +118,7 @@ export function checkOpponentVoidStatus(
 }
 
 /**
- * Validate each combo component is unbeatable using played cards + memory
+ * Validate each combo component is unbeatable using played cards + memory + kitty visibility
  * @param components Component combos to validate
  * @param suit Suit of the multi-combo
  * @param gameState Current game state
@@ -141,12 +139,21 @@ export function validateUnbeatableComponents(
   const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
   const ownHand = currentPlayer?.hand || [];
 
+  // Determine if current player can see kitty cards
+  const currentPlayerIndex = gameState.players.findIndex(
+    (p) => p.id === currentPlayerId,
+  );
+  const isRoundStarter =
+    currentPlayerIndex === gameState.roundStartingPlayerIndex;
+
   const beatableComponents: {
     combo: Combo;
     beatenBy: string;
   }[] = [];
 
-  // Check each component combo for unbeatable status
+  // Check each component combo for unbeatable status with kitty visibility
+  const visibleKittyCards = isRoundStarter ? gameState.kittyCards : [];
+
   for (const combo of components) {
     const isUnbeatable = isComboUnbeatable(
       combo,
@@ -154,6 +161,7 @@ export function validateUnbeatableComponents(
       playedCards,
       ownHand,
       gameState.trumpInfo,
+      visibleKittyCards,
     );
 
     if (!isUnbeatable) {
@@ -171,14 +179,16 @@ export function validateUnbeatableComponents(
 }
 
 /**
- * Find all possible combos that can be formed from unseen cards (not played, not in own hand)
+ * Find all possible combos that can be formed from unseen cards (not played, not in own hand, not in visible kitty)
  * This unified function replaces individual per-type generation for better performance
+ * Pass actual kitty cards for round starter, empty array for other players
  */
 export function findAllPossibleUnseenCombos(
   suit: Suit,
   playedCards: Card[],
   ownHand: Card[],
   trumpInfo: TrumpInfo,
+  visibleKittyCards: Card[],
 ): {
   singles: Card[];
   pairs: Card[][];
@@ -196,6 +206,7 @@ export function findAllPossibleUnseenCombos(
   const accountedCardIds = new Set([
     ...playedCards.map((c) => c.id),
     ...ownHand.map((c) => c.id),
+    ...visibleKittyCards.map((c) => c.id),
   ]);
 
   // Find unseen individual card instances
@@ -211,6 +222,7 @@ export function findAllPossibleUnseenCombos(
   const accountedCommonIds = new Set([
     ...playedCards.map((c) => c.commonId),
     ...ownHand.map((c) => c.commonId),
+    ...visibleKittyCards.map((c) => c.commonId),
   ]);
 
   // Find ranks that can still form pairs (both copies not accounted)
@@ -253,8 +265,9 @@ function createAllCardsInSuit(suit: Suit, trumpInfo: TrumpInfo): Card[] {
 }
 
 /**
- * Check if a specific combo is unbeatable based on played cards and own hand
+ * Check if a specific combo is unbeatable based on played cards, own hand, and visible kitty cards
  * UNIFIED VERSION: Uses findAllPossibleUnseenCombos for better performance
+ * Accounts for kitty card visibility - pass actual kitty for round starter, [] for others
  */
 export function isComboUnbeatable(
   combo: Combo,
@@ -262,18 +275,20 @@ export function isComboUnbeatable(
   playedCards: Card[],
   ownHand: Card[],
   trumpInfo: TrumpInfo,
+  visibleKittyCards: Card[],
 ): boolean {
   // For trump cards (suit === Suit.None), use conservative approach for now
   if (suit === Suit.None) {
     return false; // Conservative approach - trump logic not implemented
   }
 
-  // Get all possible unseen combos once
+  // Get all possible unseen combos once, accounting for kitty visibility
   const unseenCombos = findAllPossibleUnseenCombos(
     suit,
     playedCards,
     ownHand,
     trumpInfo,
+    visibleKittyCards,
   );
 
   switch (combo.type) {
@@ -367,141 +382,4 @@ function getAllOtherPlayerIds(
   return gameState.players
     .filter((player) => player.id !== currentPlayerId)
     .map((player) => player.id);
-}
-
-/**
- * Validate following multi-combo matches lead structure
- * @param followingCards Cards being played to follow
- * @param leadingStructure Structure of the leading multi-combo
- * @param playerHand Player's full hand
- * @param trumpInfo Trump information
- * @returns Validation result
- */
-export function validateFollowingMultiCombo(
-  followingCards: Card[],
-  leadingStructure: MultiComboStructure,
-  playerHand: Card[],
-  trumpInfo: TrumpInfo,
-): MultiComboValidation {
-  const validation: MultiComboValidation = {
-    isValid: false,
-    invalidReasons: [],
-    voidStatus: { allOpponentsVoid: false, voidPlayers: [] },
-    unbeatableStatus: { allUnbeatable: false, beatableComponents: [] },
-  };
-
-  // Rule 1: Must match total length exactly
-  if (followingCards.length !== leadingStructure.components.totalLength) {
-    validation.invalidReasons.push(
-      `Wrong total length: ${followingCards.length} vs required ${leadingStructure.components.totalLength}`,
-    );
-    return validation;
-  }
-
-  // Rule 2: Must match combination structure
-  // Use analyzeMultiComboComponents to get non-overlapping components
-  const followingComponents = analyzeMultiComboComponents(
-    followingCards,
-    trumpInfo,
-  );
-  const structureMatch = matchesMultiComboStructure(
-    followingComponents,
-    leadingStructure,
-    followingCards,
-  );
-
-  if (!structureMatch.matches) {
-    validation.invalidReasons.push(structureMatch.reason);
-    return validation;
-  }
-
-  // Following multi-combos don't need unbeatable validation
-  validation.isValid = true;
-  return validation;
-}
-
-/**
- * Check if following multi-combo matches required structure using 5-step algorithm
- * @param followingComponents Components of following multi-combo
- * @param requiredStructure Required structure from lead
- * @param followingCards Original following cards for length validation
- * @returns Match result
- */
-function matchesMultiComboStructure(
-  followingComponents: Combo[],
-  requiredStructure: MultiComboStructure,
-  followingCards: Card[],
-): { matches: boolean; reason: string } {
-  // Step 1: Total length check already done at higher level
-  // Step 2: Same suit check already done at higher level
-
-  const actualStructure = {
-    singles: 0,
-    pairs: 0,
-    tractors: 0,
-    tractorSizes: [] as number[],
-  };
-
-  // Count actual components
-  followingComponents.forEach((combo) => {
-    switch (combo.type) {
-      case "Single":
-        actualStructure.singles++;
-        break;
-      case "Pair":
-        actualStructure.pairs++;
-        break;
-      case "Tractor":
-        actualStructure.tractors++;
-        actualStructure.tractorSizes.push(combo.cards.length / 2);
-        break;
-    }
-  });
-
-  // Step 3: If leading has pairs/tractors, check total number of pairs, if less, false
-  const leadingTotalPairs = requiredStructure.components.totalPairs;
-
-  if (leadingTotalPairs > 0) {
-    const actualTotalPairs =
-      actualStructure.pairs +
-      actualStructure.tractorSizes.reduce((sum, size) => sum + size, 0);
-
-    if (actualTotalPairs < leadingTotalPairs) {
-      return {
-        matches: false,
-        reason: `Not enough total pairs: ${actualTotalPairs} vs required ${leadingTotalPairs}`,
-      };
-    }
-  }
-
-  // Step 4: If leading has tractors, check number of tractors first, if less, false;
-  // then check length of longest tractor, if less, false
-  if (requiredStructure.components.tractors > 0) {
-    // First check: number of tractors
-    if (actualStructure.tractors < requiredStructure.components.tractors) {
-      return {
-        matches: false,
-        reason: `Not enough tractors: ${actualStructure.tractors} vs required ${requiredStructure.components.tractors}`,
-      };
-    }
-
-    // Second check: length of longest tractor
-    const longestRequiredTractor = Math.max(
-      ...requiredStructure.components.tractorSizes,
-    );
-    const longestActualTractor =
-      actualStructure.tractorSizes.length > 0
-        ? Math.max(...actualStructure.tractorSizes)
-        : 0;
-
-    if (longestActualTractor < longestRequiredTractor) {
-      return {
-        matches: false,
-        reason: `Longest tractor too short: ${longestActualTractor} pairs vs required ${longestRequiredTractor} pairs`,
-      };
-    }
-  }
-
-  // Step 5: Return true
-  return { matches: true, reason: "" };
 }

@@ -36,7 +36,6 @@ interface GameStateOptions {
   roundNumber?: number;
   deck?: Card[];
   kittyCards?: Card[];
-  lastRoundStartingPlayerIndex?: number;
 }
 
 /**
@@ -54,7 +53,6 @@ export const createGameState = (options: GameStateOptions = {}): GameState => ({
   deck: options.deck || [],
   kittyCards: options.kittyCards || [],
   roundNumber: options.roundNumber || 1,
-  lastRoundStartingPlayerIndex: options.lastRoundStartingPlayerIndex,
 });
 
 /**

@@ -24,6 +24,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // No pairs higher than A♥A♥ exist (trump rank 2 excluded from Hearts)
       expect(result).toBe(true);
@@ -46,6 +47,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Can be beaten by A♥A♥ (both A♥ copies available outside)
       expect(result).toBe(false);
@@ -70,6 +72,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Still beatable by A♥(deck1)A♥(deck1) - wait, that's impossible!
       // Actually: we accounted for A♥(deck0), so only A♥(deck1) remains outside - can't form A♥A♥ pair
@@ -96,6 +99,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // No A♥A♥ possible - both A♥ accounted for
       expect(result).toBe(true);
@@ -122,6 +126,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Both A♥ copies accounted for (one played, one in hand) - no A♥A♥ possible outside
       expect(result).toBe(true);
@@ -146,6 +151,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // K♥K♥ still possible (both K♥ unaccounted), A♥A♥ impossible (only one A♥ remaining)
       expect(result).toBe(false);
@@ -171,6 +177,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Both A♥A♥ and K♥K♥ impossible - only one copy of each rank remaining outside
       expect(result).toBe(true);
@@ -193,6 +200,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Many higher pairs possible: A♥A♥, K♥K♥, Q♥Q♥, J♥J♥, 10♥10♥, 9♥9♥, 8♥8♥, 7♥7♥, 6♥6♥, 5♥5♥, 4♥4♥
       expect(result).toBe(false);
@@ -228,6 +236,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher pairs broken - only one copy of each higher rank remaining outside
       expect(result).toBe(true);
@@ -257,6 +266,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfoAce,
+        [], // visibleKittyCards (empty for tests)
       );
       // With trump rank A, no Hearts cards higher than K♥ available - K♥K♥ is highest possible Hearts pair
       expect(result).toBe(true);
@@ -284,6 +294,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfoKing,
+        [], // visibleKittyCards (empty for tests)
       );
       // With trump rank K, only A♥A♥ possible in Hearts, but both A♥ still available
       expect(result).toBe(false);
@@ -313,6 +324,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfoKing,
+        [], // visibleKittyCards (empty for tests)
       );
       // With trump rank K, K♥ excluded, and A♥A♥ broken - Q♥Q♥ is now highest possible Hearts pair
       expect(result).toBe(true);
@@ -337,6 +349,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Higher pairs possible: A♥A♥, K♥K♥, Q♥Q♥, J♥J♥, 10♥10♥
       expect(result).toBe(false);
@@ -365,6 +378,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher pairs broken - 9♥9♥ is now unbeatable
       expect(result).toBe(true);
@@ -392,6 +406,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Still beatable by: J♥J♥, 10♥10♥, 9♥9♥, 8♥8♥
       expect(result).toBe(false);
@@ -424,6 +439,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher pairs broken - 6♥6♥ is now unbeatable
       expect(result).toBe(true);
@@ -450,6 +466,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Still beatable by: K♥K♥, J♥J♥
       expect(result).toBe(false);
@@ -477,6 +494,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher pairs broken: A♥A♥ (played one), K♥K♥ (played one), Q♥Q♥ (we hold one)
       expect(result).toBe(true);
@@ -506,6 +524,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher pairs broken - only one copy of each higher rank remaining outside
       expect(result).toBe(true);
@@ -547,6 +566,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       const result2 = isComboUnbeatable(
         combo2,
@@ -554,6 +574,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
 
       // 9♥9♥ unbeatable (all higher pairs broken), 7♥7♥ also unbeatable (same reasoning)
@@ -584,6 +605,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Still beatable by: K♥K♥, J♥J♥, 9♥9♥
       expect(result).toBe(false);
@@ -619,6 +641,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       const diamondsResult = isComboUnbeatable(
         diamondsCombo,
@@ -626,6 +649,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
 
       // Hearts 10♥10♥ unbeatable (higher Hearts pairs broken), Diamonds 10♦10♦ beatable (Diamonds pairs intact)
@@ -661,6 +685,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher pairs broken by single card accounting
       expect(result).toBe(true);
@@ -695,6 +720,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Still beatable by remaining pairs: 9♥9♥, 8♥8♥, 7♥7♥, 6♥6♥
       expect(result).toBe(false);
@@ -729,6 +755,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Still beatable by 5♥5♥
       expect(result).toBe(false);
@@ -753,6 +780,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Trump suit logic not implemented - conservative false
       expect(result).toBe(false);
@@ -781,6 +809,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Both A♥A♥ and K♥K♥ impossible - all A♥ and K♥ copies accounted for
       expect(result).toBe(true);
@@ -804,6 +833,7 @@ describe("Pair Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Many higher pairs still possible (trump rank 2 doesn't affect most ranks)
       expect(result).toBe(false);

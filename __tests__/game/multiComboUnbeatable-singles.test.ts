@@ -46,6 +46,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(true);
     });
@@ -68,6 +69,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(false);
     });
@@ -93,6 +95,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(false);
     });
@@ -117,6 +120,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(true);
     });
@@ -142,6 +146,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(true);
     });
@@ -169,6 +174,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(true);
     });
@@ -202,6 +208,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(true);
     });
@@ -230,6 +237,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(false);
     });
@@ -256,6 +264,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfoAceRank,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(true);
     });
@@ -297,6 +306,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(true);
       // When all other cards accounted for, any remaining card is unbeatable
@@ -327,6 +337,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(false);
     });
@@ -378,6 +389,7 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       expect(result).toBe(true);
     });

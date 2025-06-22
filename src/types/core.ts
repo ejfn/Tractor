@@ -1,7 +1,7 @@
 // Core game enums and basic types
-import { TrumpDeclarationState } from "./trumpDeclaration";
+import { Card, Rank, TrumpInfo } from "./card";
 import { DealingState } from "./dealing";
-import { Card, TrumpInfo, Rank } from "./card";
+import { TrumpDeclarationState } from "./trumpDeclaration";
 
 export enum PlayerId {
   Human = "human",
@@ -61,7 +61,6 @@ export type GameState = {
   roundNumber: number;
   currentPlayerIndex: number;
   roundStartingPlayerIndex: number; // Index of the player who starts the current round (for crown display)
-  lastRoundStartingPlayerIndex?: number; // Stores index of the player who started last round
   gamePhase: GamePhase;
   roundEndKittyInfo?: {
     // Track kitty info for round result display (use gameState.kittyCards for the actual cards)
