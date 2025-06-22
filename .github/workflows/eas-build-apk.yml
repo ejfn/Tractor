@@ -36,10 +36,6 @@ jobs:
     - name: Run quality checks
       run: npm run qualitycheck
 
-    - name: Run simulation tests
-      run: npm run test:simulation
-      timeout-minutes: 1
-
     - name: Setup Expo
       uses: expo/expo-github-action@v8
       with:

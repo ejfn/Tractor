@@ -51,6 +51,14 @@ jobs:
       run: npm run test:simulation
       timeout-minutes: 1
 
+    - name: Archive simulation logs
+      uses: actions/upload-artifact@v4
+      if: failure() # Only upload logs when tests fail
+      with:
+        name: simulation-logs-${{ github.run_number }}
+        path: logs/
+        retention-days: 30
+
     - name: Update test count badge
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
