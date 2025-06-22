@@ -305,7 +305,7 @@ describe("Unattended Game Integration", () => {
   beforeAll(() => {
     // Configure the singleton gameLogger to capture all game events to file
     gameLogger.configure({
-      logLevel: LogLevel.DEBUG,
+      logLevel: LogLevel.INFO,
       enableFileLogging: true,
       enableConsoleLog: false, // Disable console output for clean unattended test
       includePlayerHands: false, // Do not log sensitive player hands

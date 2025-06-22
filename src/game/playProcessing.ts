@@ -9,16 +9,16 @@ import {
   Trick,
   TrumpInfo,
 } from "../types";
+import { gameLogger } from "../utils/gameLogger";
 import {
-  evaluateTrickPlay,
   compareCards,
   compareRanks,
+  evaluateTrickPlay,
 } from "./cardComparison";
-import { calculateKittyBonusInfo } from "./kittyManager";
-import { isTrump } from "./gameHelpers";
 import { getComboType } from "./comboDetection";
+import { isTrump } from "./gameHelpers";
+import { calculateKittyBonusInfo } from "./kittyManager";
 import { isValidPlay } from "./playValidation";
-import { gameLogger } from "../utils/gameLogger";
 
 /**
  * Play Processing Module
@@ -248,7 +248,7 @@ export function processPlay(
     );
   }
 
-  gameLogger.debug(
+  gameLogger.info(
     "card_play",
     logData,
     `${currentPlayer.id} plays: ${cards.map((c) => c.getDisplayName()).join(", ")} (${cards.length} cards)`,
@@ -594,7 +594,7 @@ export function getAIMoveWithErrorHandling(state: GameState): {
       );
 
       // Log detailed debug information for investigation
-      gameLogger.debug(
+      gameLogger.info(
         "ai_invalid_move_details",
         {
           playerId: currentPlayer.id,
