@@ -108,8 +108,6 @@ export interface ModalsTranslations {
   };
   gameOver: {
     title: string;
-    message: string;
-    congratulations: string;
     newGame: string;
   };
 }

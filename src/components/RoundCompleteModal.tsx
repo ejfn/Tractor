@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Dimensions,
 } from "react-native";
 import { Card, RoundResult, Rank } from "../types";
 import AnimatedCardComponent from "./AnimatedCard";
@@ -95,6 +96,7 @@ function generateModalMessage(
 
 interface RoundCompleteModalProps {
   onNextRound: () => void;
+  onNewGame?: () => void; // For game over scenarios
   fadeAnim?: Animated.Value;
   scaleAnim?: Animated.Value;
   kittyCards?: Card[]; // Kitty cards to display
@@ -106,6 +108,7 @@ interface RoundCompleteModalProps {
  */
 const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   onNextRound,
+  onNewGame,
   kittyCards,
   roundResult,
 }) => {
@@ -115,14 +118,34 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Game over celebration animations
+  const firework1 = useRef(new Animated.Value(0)).current;
+  const firework2 = useRef(new Animated.Value(0)).current;
+  const firework3 = useRef(new Animated.Value(0)).current;
+  const confetti1 = useRef(new Animated.Value(0)).current;
+  const confetti2 = useRef(new Animated.Value(0)).current;
+  const confetti3 = useRef(new Animated.Value(0)).current;
+  const sparkle1 = useRef(new Animated.Value(0)).current;
+  const sparkle2 = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     // Reset animations
     scaleAnim.setValue(0);
     bounceAnim.setValue(0);
     fadeAnim.setValue(0);
 
-    // Start animations
-    Animated.parallel([
+    // Reset celebration animations
+    firework1.setValue(0);
+    firework2.setValue(0);
+    firework3.setValue(0);
+    confetti1.setValue(0);
+    confetti2.setValue(0);
+    confetti3.setValue(0);
+    sparkle1.setValue(0);
+    sparkle2.setValue(0);
+
+    // Start basic animations
+    const basicAnimations = [
       Animated.spring(scaleAnim, {
         toValue: 1,
         tension: 100,
@@ -139,13 +162,191 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
         duration: 300,
         useNativeDriver: true,
       }),
-    ]).start();
-  }, [bounceAnim, fadeAnim, scaleAnim]);
+    ];
+
+    // Add celebration animations for game over
+    if (roundResult.gameOver) {
+      const celebrationAnimations = [
+        // Fireworks with staggered timing
+        Animated.sequence([
+          Animated.delay(500),
+          Animated.timing(firework1, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.delay(700),
+          Animated.timing(firework2, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.delay(900),
+          Animated.timing(firework3, {
+            toValue: 1,
+            duration: 1100,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Confetti falling
+        Animated.sequence([
+          Animated.delay(400),
+          Animated.timing(confetti1, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.delay(600),
+          Animated.timing(confetti2, {
+            toValue: 1,
+            duration: 2200,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.delay(800),
+          Animated.timing(confetti3, {
+            toValue: 1,
+            duration: 1800,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Sparkles
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(sparkle1, {
+              toValue: 1,
+              duration: 800,
+              useNativeDriver: true,
+            }),
+            Animated.timing(sparkle1, {
+              toValue: 0,
+              duration: 800,
+              useNativeDriver: true,
+            }),
+          ]),
+        ),
+        Animated.loop(
+          Animated.sequence([
+            Animated.delay(400),
+            Animated.timing(sparkle2, {
+              toValue: 1,
+              duration: 1000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(sparkle2, {
+              toValue: 0,
+              duration: 1000,
+              useNativeDriver: true,
+            }),
+          ]),
+        ),
+      ];
+
+      Animated.parallel([...basicAnimations, ...celebrationAnimations]).start();
+    } else {
+      Animated.parallel(basicAnimations).start();
+    }
+  }, [
+    bounceAnim,
+    fadeAnim,
+    scaleAnim,
+    roundResult.gameOver,
+    firework1,
+    firework2,
+    firework3,
+    confetti1,
+    confetti2,
+    confetti3,
+    sparkle1,
+    sparkle2,
+  ]);
 
   const translateY = bounceAnim.interpolate({
     inputRange: [0, 0.5, 0.7, 0.85, 1],
     outputRange: [50, -10, 5, -2, 0],
   });
+
+  // Celebration animation transforms
+  const { height: screenHeight } = Dimensions.get("window");
+
+  const firework1Transform = {
+    opacity: firework1,
+    scale: firework1.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0, 1.5, 0.3],
+    }),
+    translateY: firework1.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, -50],
+    }),
+  };
+
+  const firework2Transform = {
+    opacity: firework2,
+    scale: firework2.interpolate({
+      inputRange: [0, 0.6, 1],
+      outputRange: [0, 1.2, 0.2],
+    }),
+    translateY: firework2.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, -30],
+    }),
+  };
+
+  const firework3Transform = {
+    opacity: firework3,
+    scale: firework3.interpolate({
+      inputRange: [0, 0.4, 1],
+      outputRange: [0, 1.8, 0.4],
+    }),
+    translateY: firework3.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, -70],
+    }),
+  };
+
+  const confetti1Transform = {
+    opacity: confetti1,
+    translateY: confetti1.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-50, screenHeight * 0.8],
+    }),
+    rotate: confetti1.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["0deg", "720deg"],
+    }),
+  };
+
+  const confetti2Transform = {
+    opacity: confetti2,
+    translateY: confetti2.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-30, screenHeight * 0.9],
+    }),
+    rotate: confetti2.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["0deg", "-540deg"],
+    }),
+  };
+
+  const confetti3Transform = {
+    opacity: confetti3,
+    translateY: confetti3.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-70, screenHeight * 0.7],
+    }),
+    rotate: confetti3.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["0deg", "900deg"],
+    }),
+  };
 
   return (
     <Modal
@@ -168,12 +369,150 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
             <View style={styles.backgroundDeco1} />
             <View style={styles.backgroundDeco2} />
 
+            {/* Game Over Celebration Effects */}
+            {roundResult.gameOver && (
+              <>
+                {/* Fireworks */}
+                <Animated.View
+                  style={[
+                    styles.firework,
+                    styles.firework1,
+                    {
+                      opacity: firework1Transform.opacity,
+                      transform: [
+                        { scale: firework1Transform.scale },
+                        { translateY: firework1Transform.translateY },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.fireworkEmoji}>✨</Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={[
+                    styles.firework,
+                    styles.firework2,
+                    {
+                      opacity: firework2Transform.opacity,
+                      transform: [
+                        { scale: firework2Transform.scale },
+                        { translateY: firework2Transform.translateY },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.fireworkEmoji}>🎆</Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={[
+                    styles.firework,
+                    styles.firework3,
+                    {
+                      opacity: firework3Transform.opacity,
+                      transform: [
+                        { scale: firework3Transform.scale },
+                        { translateY: firework3Transform.translateY },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.fireworkEmoji}>🎇</Text>
+                </Animated.View>
+
+                {/* Confetti */}
+                <Animated.View
+                  style={[
+                    styles.confetti,
+                    styles.confetti1,
+                    {
+                      opacity: confetti1Transform.opacity,
+                      transform: [
+                        { translateY: confetti1Transform.translateY },
+                        { rotate: confetti1Transform.rotate },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.confettiEmoji}>🎊</Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={[
+                    styles.confetti,
+                    styles.confetti2,
+                    {
+                      opacity: confetti2Transform.opacity,
+                      transform: [
+                        { translateY: confetti2Transform.translateY },
+                        { rotate: confetti2Transform.rotate },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.confettiEmoji}>🎉</Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={[
+                    styles.confetti,
+                    styles.confetti3,
+                    {
+                      opacity: confetti3Transform.opacity,
+                      transform: [
+                        { translateY: confetti3Transform.translateY },
+                        { rotate: confetti3Transform.rotate },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.confettiEmoji}>🌟</Text>
+                </Animated.View>
+
+                {/* Sparkles */}
+                <Animated.View
+                  style={[
+                    styles.sparkle,
+                    styles.sparkle1,
+                    {
+                      opacity: sparkle1,
+                      transform: [{ scale: sparkle1 }],
+                    },
+                  ]}
+                >
+                  <Text style={styles.sparkleEmoji}>💫</Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={[
+                    styles.sparkle,
+                    styles.sparkle2,
+                    {
+                      opacity: sparkle2,
+                      transform: [{ scale: sparkle2 }],
+                    },
+                  ]}
+                >
+                  <Text style={styles.sparkleEmoji}>⭐</Text>
+                </Animated.View>
+              </>
+            )}
+
             {/* Trophy/Crown emoji for winner */}
             <Text style={styles.trophy}>
-              {roundResult.attackingTeamWon ? "⚔️" : "🛡️"}
+              {roundResult.gameOver
+                ? "🏆"
+                : roundResult.attackingTeamWon
+                  ? "⚔️"
+                  : "🛡️"}
             </Text>
 
-            <Text style={styles.title}>{tModals("roundComplete.title")}</Text>
+            <Text style={styles.title}>
+              {roundResult.gameOver
+                ? tModals("gameOver.title")
+                : tModals("roundComplete.title")}
+            </Text>
             <Text style={styles.message}>
               {generateModalMessage(roundResult, tModals)}
             </Text>
@@ -204,13 +543,23 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
             )}
 
             <TouchableOpacity
-              style={styles.button}
-              onPress={onNextRound}
+              style={[
+                styles.button,
+                roundResult.gameOver && styles.gameOverButton,
+              ]}
+              onPress={roundResult.gameOver ? onNewGame : onNextRound}
               activeOpacity={0.8}
             >
-              <View style={styles.buttonGradient}>
+              <View
+                style={[
+                  styles.buttonGradient,
+                  roundResult.gameOver && styles.gameOverButtonGradient,
+                ]}
+              >
                 <Text style={styles.buttonText}>
-                  {tModals("roundComplete.nextRound")}
+                  {roundResult.gameOver
+                    ? tModals("gameOver.newGame")
+                    : tModals("roundComplete.nextRound")}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -391,6 +740,80 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     borderTopWidth: 0,
     borderBottomRightRadius: 16,
+  },
+  gameOverButton: {
+    shadowColor: "#FFD700",
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  gameOverButtonGradient: {
+    backgroundColor: "#FF6B35",
+    borderColor: "#E55100",
+    shadowColor: "#FFD700",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  // Celebration Effects Styles
+  firework: {
+    position: "absolute",
+    zIndex: 1000,
+  },
+  firework1: {
+    top: 20,
+    left: 60,
+  },
+  firework2: {
+    top: 40,
+    right: 50,
+  },
+  firework3: {
+    top: 80,
+    left: 30,
+  },
+  fireworkEmoji: {
+    fontSize: 30,
+    textAlign: "center",
+  },
+  confetti: {
+    position: "absolute",
+    zIndex: 999,
+  },
+  confetti1: {
+    top: -50,
+    left: 80,
+  },
+  confetti2: {
+    top: -30,
+    right: 60,
+  },
+  confetti3: {
+    top: -70,
+    left: 140,
+  },
+  confettiEmoji: {
+    fontSize: 20,
+    textAlign: "center",
+  },
+  sparkle: {
+    position: "absolute",
+    zIndex: 1001,
+  },
+  sparkle1: {
+    top: 30,
+    right: 20,
+  },
+  sparkle2: {
+    top: 120,
+    left: 10,
+  },
+  sparkleEmoji: {
+    fontSize: 25,
+    textAlign: "center",
   },
 });
 

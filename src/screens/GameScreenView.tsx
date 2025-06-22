@@ -8,7 +8,6 @@ import { useCommonTranslation } from "../hooks/useTranslation";
 import AIPlayerView from "../components/AIPlayerView";
 import CardPlayArea from "../components/CardPlayArea";
 import { ExpandableTrumpDeclaration } from "../components/ExpandableTrumpDeclaration";
-import GameOverScreen from "../components/GameOverScreen";
 import GameStatus from "../components/GameStatus";
 import GameTable from "../components/GameTable";
 import HumanPlayerView from "../components/HumanPlayerView";
@@ -23,7 +22,6 @@ import {
   GameState,
   PlayerId,
   RoundResult,
-  TeamId,
   Trick,
 } from "../types";
 
@@ -38,17 +36,13 @@ interface GameScreenViewProps {
   humanPlayerIndex: number;
 
   // UI state
-  gameOver: boolean;
-  winner: TeamId | null;
   waitingForAI: boolean;
   waitingPlayerId: PlayerId;
   showTrickResult: boolean;
   lastTrickWinnerId: PlayerId;
   lastTrickPoints: number;
   lastCompletedTrick: (Trick & { winningPlayerId?: string }) | null;
-  showRoundComplete: boolean;
   roundResultRef: React.RefObject<RoundResult | null>;
-  teamNames: [string, string];
   isProcessingPlay: boolean;
 
   // Animations
@@ -84,17 +78,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   humanPlayerIndex,
 
   // UI state
-  gameOver,
-  winner,
   waitingForAI,
   waitingPlayerId,
   showTrickResult,
   lastTrickWinnerId,
   lastTrickPoints,
   lastCompletedTrick,
-  showRoundComplete,
   roundResultRef,
-  teamNames,
   isProcessingPlay,
 
   // Animations
@@ -116,17 +106,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   shouldShowOpportunities,
 }) => {
   const { t: tCommon } = useCommonTranslation();
-  // Game over screen
-  if (gameOver) {
-    return (
-      <GameOverScreen
-        winner={winner}
-        onNewGame={onStartNewGame}
-        fadeAnim={fadeAnim}
-        scaleAnim={scaleAnim}
-      />
-    );
-  }
 
   // Loading state
   if (!gameState) {
@@ -331,6 +310,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         <RoundCompleteModal
           roundResult={roundResultRef.current}
           onNextRound={onNextRound}
+          onNewGame={onStartNewGame}
           fadeAnim={fadeAnim}
           scaleAnim={scaleAnim}
           kittyCards={
