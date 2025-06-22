@@ -15,6 +15,7 @@ import { isBiggestRemainingInSuit } from "../aiCardMemory";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
 import { getPointCardPriority } from "../utils/aiHelpers";
 import { analyzePointCardTiming } from "../analysis/pointCardTiming";
+import { gameLogger } from "../../utils/gameLogger";
 
 /**
  * Point Contribution - Strategic point card selection for team coordination
@@ -113,7 +114,15 @@ export function selectEnhancedPointContribution(
       }
     }
   } catch (error) {
-    console.warn("Enhanced point contribution analysis failed:", error);
+    gameLogger.warn(
+      "enhanced_point_contribution_analysis_failed",
+      {
+        error: error instanceof Error ? error.message : String(error),
+        currentPlayerId,
+        hasMemoryContext: !!context.memoryContext?.cardMemory,
+      },
+      "Enhanced point contribution analysis failed",
+    );
   }
 
   return null;

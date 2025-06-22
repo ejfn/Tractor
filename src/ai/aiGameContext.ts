@@ -18,11 +18,13 @@ import {
 } from "../types";
 import { isTrump, calculateCardStrategicValue } from "../game/gameHelpers";
 import { compareCards } from "../game/cardComparison";
+import { isTeammate } from "./utils/aiHelpers";
 import {
   createCardMemory,
   enhanceGameContextWithMemory,
   analyzeTrumpDistribution,
 } from "./aiCardMemory";
+import { gameLogger } from "../utils/gameLogger";
 
 /**
  * Analyzes the current game state to provide strategic context for AI decision making
@@ -133,19 +135,6 @@ export function analyzeTrickWinner(
     shouldTryToBeat,
     shouldPlayConservatively,
   };
-}
-
-/**
- * Helper function to determine if two players are teammates
- */
-function isTeammate(
-  gameState: GameState,
-  playerId1: PlayerId,
-  playerId2: PlayerId,
-): boolean {
-  const player1 = gameState.players.find((p) => p.id === playerId1);
-  const player2 = gameState.players.find((p) => p.id === playerId2);
-  return player1?.team === player2?.team;
 }
 
 /**
@@ -560,9 +549,13 @@ export function calculateMemoryEnhancedTrumpConservationValue(
     return Math.round(baseValue * memoryMultiplier);
   } catch (error) {
     // Fallback to base calculation if memory analysis fails
-    console.warn(
-      "Memory-enhanced trump conservation failed, using base calculation:",
-      error,
+    gameLogger.warn(
+      "memory_enhanced_trump_conservation_failed",
+      {
+        error: error instanceof Error ? error.message : String(error),
+        baseValue,
+      },
+      "Memory-enhanced trump conservation failed, using base calculation",
     );
     return baseValue;
   }

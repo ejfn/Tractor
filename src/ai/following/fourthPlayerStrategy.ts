@@ -12,6 +12,7 @@ import {
 } from "../../types";
 import { analyze4thPlayerMemoryContext } from "../aiCardMemory";
 import { getPointCardPriority } from "../utils/aiHelpers";
+import { gameLogger } from "../../utils/gameLogger";
 
 /**
  * Fourth Player Strategy - Position 4 specific optimizations
@@ -52,12 +53,12 @@ export function analyzeFourthPlayerAdvantage(
     currentPlayer = gameState.players[gameState.currentPlayerIndex]?.id || null;
 
     if (currentPlayer) {
-      try {
-        const allPlayedCards = gameState.currentTrick.plays.flatMap(
-          (play) => play.cards,
-        );
-        const trickPoints = gameState.currentTrick.points || 0;
+      const allPlayedCards = gameState.currentTrick.plays.flatMap(
+        (play) => play.cards,
+      );
+      const trickPoints = gameState.currentTrick.points || 0;
 
+      try {
         memoryAnalysis = analyze4thPlayerMemoryContext(
           context.memoryContext.cardMemory,
           allPlayedCards,
@@ -66,7 +67,15 @@ export function analyzeFourthPlayerAdvantage(
           trickPoints,
         );
       } catch (error) {
-        console.warn("4th player memory analysis failed:", error);
+        gameLogger.warn(
+          "fourth_player_memory_analysis_failed",
+          {
+            error: error instanceof Error ? error.message : String(error),
+            currentPlayer,
+            trickPoints,
+          },
+          "4th player memory analysis failed",
+        );
       }
     }
   }

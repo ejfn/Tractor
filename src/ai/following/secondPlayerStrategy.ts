@@ -10,6 +10,7 @@ import {
   Rank,
 } from "../../types";
 import { analyze2ndPlayerMemoryContext } from "../aiCardMemory";
+import { gameLogger } from "../../utils/gameLogger";
 
 /**
  * Second Player Strategy - Position 2 specific optimizations
@@ -56,7 +57,15 @@ export function analyzeSecondPlayerStrategy(
           currentPlayer,
         );
       } catch (error) {
-        console.warn("2nd player memory analysis failed:", error);
+        gameLogger.warn(
+          "second_player_memory_analysis_failed",
+          {
+            error: error instanceof Error ? error.message : String(error),
+            currentPlayer,
+            hasLeadingCards: !!gameState.currentTrick?.plays?.[0]?.cards,
+          },
+          "2nd player memory analysis failed",
+        );
       }
     }
   }

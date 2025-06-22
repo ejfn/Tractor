@@ -16,6 +16,7 @@ import {
 } from "../../types";
 import { isTrump, isPointCard } from "../../game/gameHelpers";
 import { analyzePointCardTiming } from "../analysis/pointCardTiming";
+import { gameLogger } from "../../utils/gameLogger";
 
 /**
  * Enhanced Point-Focused AI Strategy Implementation
@@ -208,7 +209,15 @@ export function selectMemoryEnhancedPointPlay(
       return pointTimingAnalysis.opportunisticPointPlays[0];
     }
   } catch (error) {
-    console.warn("Point card timing analysis failed:", error);
+    gameLogger.warn(
+      "point_card_timing_analysis_failed",
+      {
+        error: error instanceof Error ? error.message : String(error),
+        currentPlayerId,
+        hasMemoryContext: !!context.memoryContext?.cardMemory,
+      },
+      "Point card timing analysis failed",
+    );
   }
 
   return null;
