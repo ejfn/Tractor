@@ -311,7 +311,6 @@ export function compareTrumpMultiCombos(
   return cardComparison > 0;
 }
 
-// TODO: Review if this function is still needed after trump comparison consolidation
 export function compareMultiCombos(
   proposedCombo: Card[],
   currentWinningCombo: Card[],

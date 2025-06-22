@@ -1,9 +1,9 @@
+import { GamePhase, GameState, Rank, RoundResult, TeamId } from "../types";
 import {
   createDeck,
-  shuffleDeck,
   initializeTrumpDeclarationState,
+  shuffleDeck,
 } from "../utils/gameInitialization";
-import { GamePhase, GameState, Rank, RoundResult, TeamId } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 
 /**
@@ -115,9 +115,6 @@ export function prepareNextRound(
   // Reset trick history
   newState.tricks = [];
   newState.currentTrick = null;
-
-  // Note: lastRoundStartingPlayerIndex is now saved when transitioning to Playing phase
-  // in declareTrumpSuit to avoid issues with AI rotation during declaring phase
 
   // Determine first player for the round based on rules:
   // First round: Trump declarer goes first (their team becomes defending)

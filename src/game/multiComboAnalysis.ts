@@ -42,6 +42,13 @@ export function detectOptimalMultiCombo(
   const memory = createCardMemory(gameState);
   const ownHand = playerHand;
 
+  // Determine if current player can see kitty cards
+  const currentPlayerIndex = gameState.players.findIndex(
+    (p) => p.id === playerId,
+  );
+  const isRoundStarter =
+    currentPlayerIndex === gameState.roundStartingPlayerIndex;
+
   // Group hand by suit/trump
   const cardGroups = groupCardsBySuitOrTrump(playerHand, trumpInfo);
 
@@ -54,6 +61,7 @@ export function detectOptimalMultiCombo(
 
     // Find all possible unbeatable components in this suit
     const allComponents = analyzeMultiComboComponents(cards, trumpInfo);
+    const visibleKittyCards = isRoundStarter ? gameState.kittyCards : [];
     const unbeatableComponents = allComponents.filter((combo) => {
       return isComboUnbeatable(
         combo,
@@ -61,6 +69,7 @@ export function detectOptimalMultiCombo(
         memory.playedCards,
         ownHand,
         trumpInfo,
+        visibleKittyCards,
       );
     });
 

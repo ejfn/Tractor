@@ -222,23 +222,32 @@ function findOptimalComboDecomposition(cards: Card[], allCombos: Combo[]): Combo
 
 **Location**: `multiComboValidation.ts` → `isComboUnbeatable()`
 
-**Purpose**: Determine if a combo cannot be beaten by cards available to other players
+**Purpose**: Determine if a combo cannot be beaten by cards available to all other players
+
+**Memory System Integration**: Uses AI card memory system to track played cards and determine what's available to all other players
+
+**Kitty Card Visibility**: 
+- **Round Starter Only**: Kitty cards are visible only to the round starter (first trick leader of each round)
+- **Other Players**: Kitty cards remain hidden and must be considered as potentially available to all other players
+- **Asymmetric Information**: Unbeatable analysis differs based on player's kitty visibility
 
 **Algorithm Logic**:
 ```
-Available to others = Total cards (108) - playedCards - currentPlayer'sHand
+Available to others = Total cards (108) - playedCards - currentPlayer'sHand - kittyCards (if visible)
+(playedCards sourced from memory.playedCards for accurate tracking)
+(kittyCards included only if current player is the round starter)
 
 For Singles (e.g., K♥):
-  ✅ Unbeatable if A♥ already played
-  ⚠️ Beatable if A♥ could exist in other hands
+  ✅ Unbeatable if A♥ already played (tracked in memory) OR A♥ in visible kitty
+  ⚠️ Beatable if A♥ could exist in all other players' hands OR hidden kitty
 
 For Pairs (e.g., Q♥Q♥):
-  ✅ Unbeatable if ANY higher rank played (A♥ OR K♥)
-  ⚠️ Beatable if both A♥A♥ and K♥K♥ could exist
+  ✅ Unbeatable if ANY higher rank played (A♥ OR K♥ in memory/kitty)
+  ⚠️ Beatable if both A♥A♥ and K♥K♥ could exist in all other players' hands/hidden kitty
 
 For Tractors (e.g., A♥A♥-K♥K♥):
   ✅ Always unbeatable (highest possible)
-  ⚠️ Beatable only if higher tractor possible
+  ⚠️ Beatable only if higher tractor possible in all other players' hands/hidden kitty
 ```
 
 **Implementation Example**:
@@ -246,12 +255,19 @@ For Tractors (e.g., A♥A♥-K♥K♥):
 function isComboUnbeatable(
   combo: Combo,
   suit: Suit,
-  playedCards: Card[],
+  playedCards: Card[], // From memory.playedCards
   ownHand: Card[],
-  trumpInfo: TrumpInfo
+  trumpInfo: TrumpInfo,
+  visibleKittyCards: Card[], // Actual kitty for round starter, [] for others
 ): boolean {
-  // Get all possible unseen combos
-  const unseenCombos = findAllPossibleUnseenCombos(suit, playedCards, ownHand, trumpInfo);
+  // Get all possible unseen combos considering kitty visibility
+  const unseenCombos = findAllPossibleUnseenCombos(
+    suit, 
+    playedCards,
+    ownHand,
+    trumpInfo,
+    visibleKittyCards
+  );
   
   switch (combo.type) {
     case ComboType.Single:
@@ -267,6 +283,20 @@ function isComboUnbeatable(
         isTractorStronger(tractor, combo.cards, trumpInfo)
       );
   }
+}
+
+// Usage with memory system and kitty visibility:
+const memory = createCardMemory(gameState);
+const isRoundStarter = gameState.currentPlayerIndex === gameState.roundStartingPlayerIndex;
+const visibleKittyCards = isRoundStarter ? gameState.kittyCards : [];
+const isUnbeatable = isComboUnbeatable(
+  combo, 
+  suit, 
+  memory.playedCards, 
+  ownHand, 
+  trumpInfo,
+  visibleKittyCards
+);
 }
 ```
 

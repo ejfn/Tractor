@@ -27,6 +27,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Always unbeatable - no 2-pair tractor higher than A♥A♥-K♥K♥ possible
       expect(result).toBe(true);
@@ -52,6 +53,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Beatable by: A♥A♥-K♥K♥, K♥K♥-Q♥Q♥, Q♥Q♥-J♥J♥, J♥J♥-10♥10♥ (but we hold 10♥10♥)
       // Actually beatable by: A♥A♥-K♥K♥, K♥K♥-Q♥Q♥, Q♥Q♥-J♥J♥
@@ -88,6 +90,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher 2-pair tractors blocked by breaking key pairs with single card accounting
       expect(result).toBe(true);
@@ -113,6 +116,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Many higher tractors possible: A♥A♥-K♥K♥, K♥K♥-Q♥Q♥, Q♥Q♥-J♥J♥, J♥J♥-10♥10♥, 10♥10♥-9♥9♥, 9♥9♥-8♥8♥ (but we hold 8♥8♥)
       // Actually: A♥A♥-K♥K♥, K♥K♥-Q♥Q♥, Q♥Q♥-J♥J♥, J♥J♥-10♥10♥, 10♥10♥-9♥9♥
@@ -147,6 +151,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher pairs broken by single card accounting - no consecutive pair sequences possible
       expect(result).toBe(true);
@@ -179,6 +184,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Still beatable by: K♥K♥-Q♥Q♥, Q♥Q♥-J♥J♥, J♥J♥-9♥9♥, 9♥9♥-7♥7♥
       expect(result).toBe(false);
@@ -212,6 +218,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // No consecutive 2-pair tractors possible: A-K (A broken), K-Q (Q broken), Q-J (Q broken), J-10 (10 broken), 10-9 (10 broken), 9-8 (8 broken), 8-7 (8 broken), 7-6 (6 broken), 6-5 (6 broken)
       expect(result).toBe(true);
@@ -240,6 +247,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Always unbeatable - no 3-pair tractor higher than A♥A♥-K♥K♥-Q♥Q♥ possible
       expect(result).toBe(true);
@@ -266,6 +274,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Beatable by: A♥A♥-K♥K♥-Q♥Q♥, K♥K♥-Q♥Q♥-J♥J♥, Q♥Q♥-J♥J♥-10♥10♥, J♥J♥-10♥10♥-9♥9♥ (but we hold 9♥9♥)
       // Actually: A♥A♥-K♥K♥-Q♥Q♥, K♥K♥-Q♥Q♥-J♥J♥, Q♥Q♥-J♥J♥-10♥10♥
@@ -303,6 +312,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // All higher 3-pair tractors blocked by single card accounting - no consecutive 3-pair sequences possible above 9♥
       expect(result).toBe(true);
@@ -337,6 +347,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Still beatable by: J♥J♥-10♥10♥-9♥9♥, 10♥10♥-9♥9♥-8♥8♥, 9♥9♥-8♥8♥-7♥7♥ (but we hold 7♥7♥)
       // Actually beatable by: J♥J♥-10♥10♥-9♥9♥, 10♥10♥-9♥9♥-8♥8♥
@@ -364,6 +375,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Many higher 3-pair tractors possible: A-K-Q, K-Q-J, Q-J-10, J-10-9, 10-9-8, 9-8-7, 8-7-6 (but we hold 6♥6♥)
       // Actually: A-K-Q, K-Q-J, Q-J-10, J-10-9, 10-9-8, 9-8-7
@@ -393,6 +405,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfoJack,
+        [], // visibleKittyCards (empty for tests)
       );
       // With trump rank J: Q-[J]-10 becomes consecutive, so Q♥Q♥-10♥10♥ is a valid tractor
       // BUT higher tractors are still possible: A♥A♥-K♥K♥, K♥K♥-Q♥Q♥ (we hold Q♥Q♥ so blocked)
@@ -426,6 +439,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfoJack,
+        [], // visibleKittyCards (empty for tests)
       );
       // With trump rank J: Q-[J]-10 consecutive, but A♥A♥-K♥K♥ blocked, K♥K♥-Q♥Q♥ blocked (we hold Q♥Q♥)
       expect(result).toBe(true);
@@ -455,6 +469,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo7,
+        [], // visibleKittyCards (empty for tests)
       );
       // With trump rank 7: 8-[7]-6 becomes consecutive, so 8♥8♥-6♥6♥ is a valid tractor
       // BUT higher tractors are still possible: A♥A♥-K♥K♥, K♥K♥-Q♥Q♥, Q♥Q♥-J♥J♥, J♥J♥-10♥10♥, 10♥10♥-9♥9♥, 9♥9♥-8♥8♥ (we hold 8♥8♥)
@@ -484,6 +499,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfo,
+        [], // visibleKittyCards (empty for tests)
       );
       // Trump suit analysis not implemented yet - conservative false
       expect(result).toBe(false);
@@ -514,6 +530,7 @@ describe("Tractor Cards - isComboUnbeatable Tests", () => {
         playedCards,
         ownHand,
         trumpInfoAce,
+        [], // visibleKittyCards (empty for tests)
       );
       // With trump rank A, no Hearts cards higher than K♥ available - K♥K♥-Q♥Q♥ is highest possible
       expect(result).toBe(true);

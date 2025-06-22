@@ -158,6 +158,14 @@ function getAllUnbeatableCardsInSuit(
   const allCombos = identifyCombos(suitCards, gameState.trumpInfo);
   const unbeatableCards: Card[] = [];
 
+  // Determine if current player can see kitty cards
+  const currentPlayerIndex = gameState.players.findIndex(
+    (p) => p.id === playerId,
+  );
+  const isRoundStarter =
+    currentPlayerIndex === gameState.roundStartingPlayerIndex;
+  const visibleKittyCards = isRoundStarter ? gameState.kittyCards : [];
+
   for (const combo of allCombos) {
     const memory = createCardMemory(gameState);
     const isUnbeatable = isComboUnbeatable(
@@ -166,6 +174,7 @@ function getAllUnbeatableCardsInSuit(
       memory.playedCards,
       playerHand,
       gameState.trumpInfo,
+      visibleKittyCards,
     );
 
     if (isUnbeatable) {

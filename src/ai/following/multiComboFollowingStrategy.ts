@@ -656,29 +656,6 @@ function selectStructureMatchingCards(
 }
 
 /**
- * Select best beating combination - prioritizes highest trump combos for trump vs trump
- */
-// TODO: Remove if not used after full implementation
-// function selectBestBeatingCombination(
-//   availableCombos: Combo[],
-//   leadingCards: Card[],
-//   trumpInfo: TrumpInfo,
-//   isTrump: boolean,
-// ): Card[] {
-//   const allCards = availableCombos.flatMap((combo) => combo.cards);
-
-//   if (isTrump) {
-//     // For trump beats, use HIGHEST combos because trump vs trump compares highest type
-//     return selectOptimalTrumpBeatingCards(allCards, leadingCards, trumpInfo);
-//   } else {
-//     // For same-suit, use regular disposal logic (lowest value)
-//     return selectOptimalCardSelection(allCards, leadingCards, trumpInfo);
-//   }
-// }
-
-// TODO: Clean up unused functions after implementation is complete
-
-/**
  * Check if trump cards can beat leading combo (trump vs non-trump structure matching)
  */
 function canBeatLeadingCombo(
