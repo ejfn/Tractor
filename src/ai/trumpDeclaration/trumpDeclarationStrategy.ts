@@ -171,11 +171,11 @@ function suitMeetsThresholds(
 ): boolean {
   // Progressive suit length requirements based on timing
   if (progressRatio < 0.3) {
-    return suitLength >= 6; // Early (0-30%): need exceptional suit
+    return suitLength >= 4; // Early (0-30%): need exceptional suit
   } else if (progressRatio < 0.7) {
-    return suitLength >= 8; // Mid (30-70%): need good suit
+    return suitLength >= 5; // Mid (30-70%): need good suit
   } else {
-    return suitLength >= 7; // Late (70-100%): acceptable suit
+    return suitLength >= 6; // Late (70-100%): acceptable suit
   }
 }
 
