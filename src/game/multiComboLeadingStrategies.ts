@@ -3,7 +3,10 @@ import { Card, GameState, PlayerId, Suit } from "../types";
 import { MultiComboValidation } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
-import { analyzeMultiComboComponents } from "./multiComboAnalysis";
+import {
+  analyzeMultiComboComponents,
+  getMultiComboStructure,
+} from "./multiComboAnalysis";
 import {
   checkOpponentVoidStatus,
   isComboUnbeatable,
@@ -121,8 +124,57 @@ export function selectAIMultiComboLead(
     }
   }
 
-  // Bundle ALL unbeatable combos from longest suit → Lead multi-combo
-  return mostUnbeatableCards.length > 1 ? mostUnbeatableCards : null;
+  // Analyze structure to ensure we have a valid multi-combo (multiple components)
+  if (mostUnbeatableCards.length > 1) {
+    const components = analyzeMultiComboComponents(
+      mostUnbeatableCards,
+      gameState.trumpInfo,
+    );
+
+    // Only return if we have multiple component combos (true multi-combo)
+    if (components.length >= 2) {
+      const suit = mostUnbeatableCards[0].suit;
+      const structure = getMultiComboStructure(components, suit, true);
+
+      // If we have a strong multi-combo structure (pairs or 4+ cards), always play it
+      if (
+        structure.components.totalPairs > 0 ||
+        structure.components.totalLength >= 4
+      ) {
+        return mostUnbeatableCards;
+      }
+
+      // If we have a weak multi-combo (only small singles), determine by game stage and role
+      const player = gameState.players.find((p) => p.id === playerId);
+      const playerTeam = gameState.teams.find((t) => t.id === player?.team);
+      const isDefending = playerTeam?.isDefending || false;
+      const attackingTeam = gameState.teams.find((t) => !t.isDefending);
+      const points = attackingTeam?.points || 0;
+
+      let weakComboChance = 0;
+
+      // Game stage analysis based on attacking team's progress
+      if (points < 20) {
+        // Early game - both teams very aggressive with weak multi-combos
+        weakComboChance = isDefending ? 1 : 1;
+      } else if (points < 40) {
+        // Early-mid game - defending more conservative, attacking moderate
+        weakComboChance = isDefending ? 0.8 : 0.4;
+      } else if (points < 60) {
+        // Mid-late game - roles reverse, attacking more aggressive
+        weakComboChance = isDefending ? 0.5 : 0.6;
+      } else {
+        // Late game - attacking very aggressive, defending very conservative
+        weakComboChance = isDefending ? 0.2 : 0.8;
+      }
+
+      if (Math.random() < weakComboChance) {
+        return mostUnbeatableCards;
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
