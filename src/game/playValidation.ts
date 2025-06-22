@@ -100,6 +100,29 @@ const validateAntiCheatStructure = (
 
   // Anti-cheat checks following the algorithm
 
+  // EARLY SUCCESS: If player meets or exceeds requirements, they're valid
+  if (
+    playedStructure.totalPairs >= requiredPairs &&
+    playedStructure.tractors >= requiredTractors
+  ) {
+    // Also check tractor lengths when tractors are present
+    if (playedStructure.tractors > 0 && requiredTractors > 0) {
+      const requiredLengths = leadingStructure.components.tractorSizes || [];
+      const playedLengths = playedStructure.tractorSizes || [];
+
+      // Check if tractor lengths are adequate
+      if (!matchesTractorLengths(playedLengths, requiredLengths)) {
+        // Tractor lengths inadequate - continue to anti-cheat validation
+      } else {
+        // Player met all requirements including tractor lengths
+        return true;
+      }
+    } else {
+      // No tractors required or played - structure requirements met
+      return true;
+    }
+  }
+
   // 1) Check pairs: Did player play enough pairs?
   if (playedStructure.totalPairs < requiredPairs) {
     // Could player have played more pairs?
@@ -173,6 +196,40 @@ const analyzeComboStructure = (
     tractors: tractorCount,
     tractorSizes, // Array of tractor lengths (in pairs)
   };
+};
+
+// Helper function to check if tractor lengths match requirements
+const matchesTractorLengths = (
+  playedLengths: number[],
+  requiredLengths: number[],
+): boolean => {
+  // If no tractors required, any played tractors are acceptable
+  if (requiredLengths.length === 0) {
+    return true;
+  }
+
+  // If tractors required but none played, doesn't match
+  if (playedLengths.length === 0) {
+    return false;
+  }
+
+  // Sort lengths in descending order for comparison (longest first)
+  const sortedPlayed = [...playedLengths].sort((a, b) => b - a);
+  const sortedRequired = [...requiredLengths].sort((a, b) => b - a);
+
+  // Must have at least as many tractors as required
+  if (sortedPlayed.length < sortedRequired.length) {
+    return false;
+  }
+
+  // Each played tractor must be at least as long as the corresponding required tractor
+  for (let i = 0; i < sortedRequired.length; i++) {
+    if (sortedPlayed[i] < sortedRequired[i]) {
+      return false;
+    }
+  }
+
+  return true;
 };
 
 /**

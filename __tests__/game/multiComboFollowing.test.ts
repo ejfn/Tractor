@@ -770,6 +770,92 @@ describe("Multi-Combo Following Rules", () => {
   });
 
   describe("Edge Cases and Invalid Attempts", () => {
+    test("MCF-BUG: Single + 2-pair tractor multi-combo following should be valid", () => {
+      const gameState = initializeGame();
+      gameState.trumpInfo = { trumpRank: Rank.Queen, trumpSuit: Suit.None };
+
+      // Leading multi-combo: A♣ + J♣J♣-10♣10♣ (single + 2-pair tractor, 5 cards)
+      // This is a valid multi-combo lead (each component unbeatable)
+      gameState.currentTrick = {
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: [
+              Card.createCard(Suit.Clubs, Rank.Ace, 0), // A♣ (single)
+              Card.createCard(Suit.Clubs, Rank.Jack, 0), // J♣J♣ (pair 1 of tractor)
+              Card.createCard(Suit.Clubs, Rank.Jack, 1),
+              Card.createCard(Suit.Clubs, Rank.Ten, 0), // 10♣10♣ (pair 2 of tractor)
+              Card.createCard(Suit.Clubs, Rank.Ten, 1),
+            ],
+          },
+        ],
+        winningPlayerId: PlayerId.Bot1,
+        points: 20,
+        isFinalTrick: false,
+      };
+
+      // Bot3's hand: Has valid multi-combo response components
+      const playerHand = [
+        Card.createCard(Suit.Clubs, Rank.Two, 0), // 2♣
+        Card.createCard(Suit.Clubs, Rank.Two, 1), // 2♣ (pair)
+        Card.createCard(Suit.Clubs, Rank.Three, 0), // 3♣
+        Card.createCard(Suit.Clubs, Rank.Three, 1), // 3♣ (pair)
+        Card.createCard(Suit.Clubs, Rank.Four, 0), // 4♣
+        Card.createCard(Suit.Clubs, Rank.Four, 1), // 4♣ (pair)
+        Card.createCard(Suit.Clubs, Rank.Five, 0), // 5♣
+        Card.createCard(Suit.Clubs, Rank.King, 0), // K♣
+        Card.createCard(Suit.Clubs, Rank.King, 1), // K♣ (pair)
+        Card.createCard(Suit.Diamonds, Rank.Ten, 0),
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),
+        Card.createCard(Suit.Diamonds, Rank.Six, 0),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+        Card.createCard(Suit.Diamonds, Rank.Ace, 0),
+        Card.createCard(Suit.Hearts, Rank.Four, 0),
+        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Eight, 0),
+        Card.createCard(Suit.Hearts, Rank.Jack, 0),
+        Card.createCard(Suit.Hearts, Rank.King, 0),
+        Card.createJoker(JokerType.Small, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Six, 1),
+        Card.createCard(Suit.Spades, Rank.Jack, 0),
+        Card.createCard(Suit.Spades, Rank.King, 0),
+      ];
+
+      // Bot3's attempted response: 4♣ + 3♣3♣-2♣2♣ (single + 2-pair tractor, 5 cards)
+      // This matches the leading structure exactly and should be valid
+      const validMultiComboResponse = [
+        Card.createCard(Suit.Clubs, Rank.Four, 0), // 4♣ (single)
+        Card.createCard(Suit.Clubs, Rank.Three, 0), // 3♣3♣ (pair 1 of tractor)
+        Card.createCard(Suit.Clubs, Rank.Three, 1),
+        Card.createCard(Suit.Clubs, Rank.Two, 0), // 2♣2♣ (pair 2 of tractor)
+        Card.createCard(Suit.Clubs, Rank.Two, 1),
+      ];
+
+      // This should be valid - matches structure and length of leading multi-combo
+      expect(
+        isValidPlay(
+          validMultiComboResponse,
+          playerHand,
+          PlayerId.Bot3,
+          gameState,
+        ),
+      ).toBe(true);
+
+      // Verify this correctly follows multi-combo structure rules
+      const result = evaluateTrickPlay(
+        validMultiComboResponse,
+        gameState.currentTrick,
+        gameState.trumpInfo,
+        playerHand,
+      );
+
+      expect(result.isLegal).toBe(true);
+      // Bot3's response should not beat bot1's lead (bot1 has higher cards)
+      expect(result.canBeat).toBe(false); // 4♣ + 3♣3♣-2♣2♣ < A♣ + J♣J♣-10♣10♣
+    });
+
     test("MCF-7: Cannot respond with non-matching structure when have matching cards", () => {
       const gameState = initializeGame();
       gameState.trumpInfo = trumpInfo;
