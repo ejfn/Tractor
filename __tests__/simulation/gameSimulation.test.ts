@@ -295,7 +295,7 @@ ${statusEmoji} Game ${index + 1} (${game.gameId})
 
 describe("Unattended Game Integration", () => {
   // Test configuration
-  const TARGET_GAMES = 1; // Number of games to run for reliability testing
+  const TARGET_GAMES = 3; // Number of games to run for reliability testing
   const GAME_TIMEOUT_SECONDS = 60; // Timeout per game in seconds
   const MAX_ROUNDS_PER_GAME = 60; // Safety limit for rounds per game
 

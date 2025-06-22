@@ -2,6 +2,7 @@ import { compareTrumpMultiCombos } from "../../game/cardComparison";
 import { getComboType, identifyCombos } from "../../game/comboDetection";
 import { calculateCardStrategicValue, isTrump } from "../../game/gameHelpers";
 import { detectLeadingMultiCombo } from "../../game/multiComboDetection";
+import { isTeammate } from "../utils/aiHelpers";
 import {
   Card,
   Combo,
@@ -58,6 +59,7 @@ export function selectMultiComboFollowingPlay(
     playerHand,
     trumpInfo,
     gameState,
+    playerId,
   );
 }
 
@@ -69,6 +71,7 @@ function executeMultiComboFollowingAlgorithm(
   playerHand: Card[],
   trumpInfo: TrumpInfo,
   gameState: GameState,
+  playerId: PlayerId,
 ): MultiComboFollowingResult {
   const leadingSuit = leadingCards[0]?.suit;
   const isLeadingTrump = leadingCards.some((card) => isTrump(card, trumpInfo));
@@ -91,6 +94,7 @@ function executeMultiComboFollowingAlgorithm(
       playerHand,
       trumpInfo,
       gameState,
+      playerId,
     );
     if (trumpResult) {
       return trumpResult;
@@ -104,6 +108,7 @@ function executeMultiComboFollowingAlgorithm(
       playerHand,
       trumpInfo,
       gameState,
+      playerId,
     );
     if (trumpResult) {
       return trumpResult;
@@ -179,6 +184,7 @@ function tryTrumpFollowing(
   playerHand: Card[],
   trumpInfo: TrumpInfo,
   gameState: GameState,
+  playerId: PlayerId,
 ): MultiComboFollowingResult | null {
   // B1: Do I have remaining trump cards?
   const trumpCards = playerHand.filter((card) => isTrump(card, trumpInfo));
@@ -218,6 +224,7 @@ function tryTrumpFollowing(
     trumpInfo,
     gameState,
     playerHand,
+    playerId,
   );
 }
 
@@ -464,6 +471,7 @@ function makeStrategicTrumpDecision(
   trumpInfo: TrumpInfo,
   gameState: GameState,
   playerHand: Card[],
+  playerId: PlayerId,
 ): MultiComboFollowingResult {
   // Check if there's already a trump response to beat
   const currentWinner = getCurrentWinningCombo(gameState.currentTrick);
@@ -471,8 +479,23 @@ function makeStrategicTrumpDecision(
     isTrump(card, trumpInfo),
   );
 
+  // Get current winning player for teammate analysis
+  const currentWinningPlayerId =
+    gameState.currentTrick?.winningPlayerId ||
+    gameState.currentTrick?.plays?.[0]?.playerId;
+
+  const isTeammateWinning =
+    currentWinningPlayerId &&
+    isTeammate(gameState, playerId, currentWinningPlayerId);
+
+  // Early return: Don't trump if teammate is winning
+  if (isTeammateWinning) {
+    return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo);
+  }
+
+  // Opponent is winning - handle trump vs non-trump scenarios
   if (isCurrentWinnerTrump) {
-    // First, generate the actual trump response that would be played
+    // Opponent is winning with trump - try to beat them
     const trumpResponse = selectOptimalTrumpBeatingCards(
       trumpCards,
       leadingCards,
@@ -498,7 +521,7 @@ function makeStrategicTrumpDecision(
         return {
           cards: trumpResponse,
           strategy: "trump_beat",
-          reasoning: `Trump vs trump: using highest trump combos to beat existing trump response`,
+          reasoning: `Trump vs trump: using highest trump combos to beat opponent's trump response`,
           canBeat: true,
         };
       }
@@ -506,8 +529,7 @@ function makeStrategicTrumpDecision(
     // Cannot beat existing trump, use cross-suit disposal
     return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo);
   } else {
-    // No trump response yet, decide whether to trump
-    // For now, always trump when we can (can be enhanced with team strategy)
+    // Opponent is winning with non-trump - trump to beat them
     return playMatchingMultiCombo(trumpCards, leadingCards, trumpInfo, true);
   }
 }
