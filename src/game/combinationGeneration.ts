@@ -8,10 +8,9 @@ import {
   Suit,
   TrumpInfo,
 } from "../types";
-import { identifyCombos } from "./comboDetection";
+import { identifyCombos, getComboType } from "./comboDetection";
 import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
 import { isValidPlay } from "./playValidation";
-import { isValidTractor } from "./tractorLogic";
 import { gameLogger } from "../utils/gameLogger";
 
 // Local helper functions to avoid circular dependencies
@@ -25,26 +24,6 @@ const getLeadingSuit = (combo: Card[]): Suit | undefined => {
     }
   }
   return undefined;
-};
-
-// Get the combo type (single, pair, etc.) based on the cards
-const getComboType = (cards: Card[], trumpInfo: TrumpInfo): ComboType => {
-  if (cards.length === 1) {
-    return ComboType.Single;
-  } else if (cards.length === 2) {
-    // Pairs must be identical cards (same cardId)
-    if (cards[0].isIdenticalTo(cards[1])) {
-      return ComboType.Pair;
-    }
-  } else if (cards.length >= 4 && cards.length % 2 === 0) {
-    // Use existing tractor detection logic
-    if (isValidTractor(cards, trumpInfo)) {
-      return ComboType.Tractor;
-    }
-  }
-
-  // Default to Single as fallback
-  return ComboType.Single;
 };
 
 /**
