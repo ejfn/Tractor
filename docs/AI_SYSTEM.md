@@ -2,7 +2,7 @@
 
 **Comprehensive AI Intelligence & Strategic Decision Making**
 
-*Related Documentation: [Game Rules](GAME_RULES.md) | [CLAUDE.md](../CLAUDE.md)*
+*Related Documentation: [Game Rules](GAME_RULES.md) | [Multi-Combo Architecture](MULTI_COMBO_SYSTEM_ARCHITECTURE.md) | [Multi-Combo Algorithms](MULTI_COMBO_ALGORITHMS.md) | [CLAUDE.md](../CLAUDE.md)*
 
 ## Overview
 
@@ -571,4 +571,6 @@ The AI system successfully balances **strategic sophistication** with **enjoyabl
 **See Also:**
 
 - **[Game Rules](GAME_RULES.md)** - Complete Tractor/Shengji rules and strategy guide
+- **[Multi-Combo Architecture](MULTI_COMBO_SYSTEM_ARCHITECTURE.md)** - Comprehensive multi-combo system architecture and integration
+- **[Multi-Combo Algorithms](MULTI_COMBO_ALGORITHMS.md)** - Detailed multi-combo leading and following algorithms
 - **[CLAUDE.md](../CLAUDE.md)** - Development guidelines and project architecture

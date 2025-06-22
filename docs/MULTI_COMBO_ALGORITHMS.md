@@ -2,7 +2,7 @@
 
 **Comprehensive Multi-Combo Leading and Following Logic**
 
-*Related Documentation: [Game Rules](GAME_RULES.md) | [AI System](AI_SYSTEM.md) | [CLAUDE.md](../CLAUDE.md)*
+*Related Documentation: [Game Rules](GAME_RULES.md) | [AI System](AI_SYSTEM.md) | [Multi-Combo Architecture](MULTI_COMBO_SYSTEM_ARCHITECTURE.md) | [CLAUDE.md](../CLAUDE.md)*
 
 ---
 

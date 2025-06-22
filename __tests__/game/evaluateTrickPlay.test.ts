@@ -1,4 +1,5 @@
 import { evaluateTrickPlay } from "../../src/game/cardComparison";
+import { getComboType } from "../../src/game/comboDetection";
 import { Card, PlayerId, Rank, Suit } from "../../src/types";
 
 describe("evaluateTrickPlay - Context-Aware Trick Evaluation", () => {
@@ -330,6 +331,77 @@ describe("evaluateTrickPlay - Context-Aware Trick Evaluation", () => {
 
       expect(result.canBeat).toBe(true); // ✅ A♦-A♦ beats 7♦-7♦ (current winner)
       expect(result.isLegal).toBe(true);
+    });
+  });
+
+  describe("GitHub Issue #259: Multi-combo trump beat non-trump", () => {
+    test("Trump pair should beat non-trump multi-combo (A♠, K♠)", () => {
+      // Leading Non trump A♠, K♠ (multi-combo)
+      const leadingCombo = [
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.King, 1),
+      ];
+
+      const currentTrick = {
+        plays: [
+          {
+            playerId: PlayerId.Human,
+            cards: leadingCombo,
+          },
+          // 2nd & 3rd player dispose the same suit
+          {
+            playerId: PlayerId.Bot1,
+            cards: [
+              Card.createCard(Suit.Spades, Rank.Seven, 0),
+              Card.createCard(Suit.Spades, Rank.Eight, 1),
+            ],
+          },
+          {
+            playerId: PlayerId.Bot2,
+            cards: [
+              Card.createCard(Suit.Spades, Rank.Nine, 0),
+              Card.createCard(Suit.Spades, Rank.Ten, 1),
+            ],
+          },
+        ],
+        winningPlayerId: PlayerId.Human, // Human is winning with A♠, K♠
+        points: 20, // Ace + King = 20 points
+      };
+
+      // 4th player Trump with 10♥-10♥ (trump pair)
+      const proposedPlay = [
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),
+        Card.createCard(Suit.Hearts, Rank.Ten, 1),
+      ];
+
+      // Player hand that's void in spades (so trump is legal)
+      const playerHand = [
+        ...proposedPlay,
+        Card.createCard(Suit.Clubs, Rank.Seven, 0),
+        Card.createCard(Suit.Diamonds, Rank.Eight, 1),
+      ];
+
+      const result = evaluateTrickPlay(
+        proposedPlay,
+        currentTrick,
+        trumpInfo,
+        playerHand,
+      );
+
+      // Trump should beat non-trump, but it didn't win according to the issue
+      expect(result.canBeat).toBe(true); // ✅ Trump pair should beat non-trump multi-combo
+      expect(result.isLegal).toBe(true); // Legal because void in spades
+      expect(result.reason).toContain("Can beat current winner");
+    });
+
+    test("getComboType should return Invalid for multi-combos", () => {
+      const multiCombo = [
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.King, 1),
+      ];
+
+      const comboType = getComboType(multiCombo, trumpInfo);
+      expect(comboType).toBe("Invalid"); // This should be Invalid for multi-combos
     });
   });
 });

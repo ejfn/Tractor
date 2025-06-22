@@ -137,7 +137,11 @@ export function evaluateTrickPlay(
   const currentWinningCombo = getCurrentWinningCombo(currentTrick);
 
   // Step 1: Validate combo type matching
-  if (leadingComboType !== proposedComboType) {
+  // Allow trump responses to multi-combos (when leadingComboType is Invalid)
+  if (
+    leadingComboType !== proposedComboType &&
+    leadingComboType !== ComboType.Invalid
+  ) {
     return {
       canBeat: false,
       isLegal: false,
