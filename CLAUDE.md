@@ -5,6 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @README.md
 @docs/AI_SYSTEM.md
 @docs/GAME_RULES.md
+@docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md
+@docs/MULTI_COMBO_ALGORITHMS.md
 
 ## Project Overview
 
@@ -12,7 +14,7 @@ Tractor is a React Native Expo app implementing a single-player version of the C
 
 **Platform Support:** Mobile-only (iOS and Android). Currently tested on Android only.
 
-*Game details in [Game Rules](docs/GAME_RULES.md) | AI system in [AI System](docs/AI_SYSTEM.md)*
+*Game details in [Game Rules](docs/GAME_RULES.md) | AI system in [AI System](docs/AI_SYSTEM.md) | Multi-combo system in [Architecture](docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md) & [Algorithms](docs/MULTI_COMBO_ALGORITHMS.md)*
 
 ## 🚨 CRITICAL MULTI-COMBO UNDERSTANDING 🚨
 
@@ -58,7 +60,7 @@ A combo is "unbeatable" when **ALL OTHER THREE PLAYERS COMBINED** cannot beat it
 
 ## 🚨 CRITICAL MULTI-COMBO VALIDATION UNDERSTANDING 🚨
 
-**For Development Context Only** - Detailed implementation in [Multi-Combo Algorithms](docs/MULTI_COMBO_ALGORITHMS.md)
+**For Development Context Only** - Complete system documentation in [Multi-Combo Architecture](docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md) and [Multi-Combo Algorithms](docs/MULTI_COMBO_ALGORITHMS.md)
 
 ### **Key Developer Insights**
 - **Exhaustion Rule**: Mixed-suit plays can be valid when player exhausts relevant suit
