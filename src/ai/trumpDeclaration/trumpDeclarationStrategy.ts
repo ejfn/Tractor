@@ -1,8 +1,8 @@
-import { GameState, PlayerId, Card, Suit, Rank } from "../../types";
 import {
-  getPlayerDeclarationOptions,
   getDealingProgress,
+  getPlayerDeclarationOptions,
 } from "../../game/dealingAndDeclaration";
+import { Card, GameState, PlayerId, Rank, Suit } from "../../types";
 import {
   DeclarationType,
   TrumpDeclaration,
@@ -16,7 +16,6 @@ export interface AIDeclarationDecision {
     cards: Card[];
     suit: Suit;
   };
-  confidence: number; // 0-1, how confident the AI is about this decision
   reasoning: string;
 }
 
@@ -32,7 +31,6 @@ export function getAITrumpDeclarationDecision(
   if (declarationOptions.length === 0) {
     return {
       shouldDeclare: false,
-      confidence: 1.0,
       reasoning: "No valid declaration options available",
     };
   }
@@ -45,284 +43,188 @@ export function getAITrumpDeclarationDecision(
   if (!player) {
     return {
       shouldDeclare: false,
-      confidence: 1.0,
       reasoning: "Player not found",
     };
   }
 
-  // Evaluate the strongest available declaration
-  const strongestDeclaration = declarationOptions[0]; // Options are sorted by strength
-
-  // Calculate base probability based on declaration strength
-  let declarationProbability = getBaseDeclarationProbability(
-    strongestDeclaration.type,
-  );
-
-  // Adjust based on dealing progress
-  declarationProbability *= getDealingProgressMultiplier(dealingProgress);
-
-  // Adjust based on current declaration status
-  declarationProbability *= getCurrentDeclarationMultiplier(
+  // NEW APPROACH: Evaluate suits first, then pick best declaration for chosen suit
+  const bestSuitEvaluation = evaluateAllPossibleTrumpSuits(
+    declarationOptions,
+    dealingProgress,
     currentDeclaration,
-    strongestDeclaration,
-  );
-
-  // Adjust based on hand quality
-  declarationProbability *= getHandQualityMultiplier(
     player.hand,
     gameState.trumpInfo.trumpRank,
   );
 
-  // Adjust based on team strategy
-  declarationProbability *= getTeamStrategyMultiplier(gameState, playerId);
+  // If no suit is worth declaring, don't declare
+  if (!bestSuitEvaluation) {
+    return {
+      shouldDeclare: false,
+      reasoning: "No suit meets declaration thresholds",
+    };
+  }
 
-  // Add some randomness to make AI less predictable
-  const randomFactor = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
-  declarationProbability *= randomFactor;
-
-  // Cap probability at reasonable limits
-  declarationProbability = Math.min(
-    0.9,
-    Math.max(0.05, declarationProbability),
-  );
-
-  // Make declaration decision based on calculated probability
-  const shouldDeclare = Math.random() < declarationProbability;
+  const shouldDeclare = true; // Already passed threshold evaluation
 
   return {
     shouldDeclare,
-    declaration: shouldDeclare ? strongestDeclaration : undefined,
-    confidence: declarationProbability,
-    reasoning: generateDecisionReasoning(
-      shouldDeclare,
-      strongestDeclaration.type,
-      currentDeclaration,
-      dealingProgress,
-    ),
+    declaration: shouldDeclare ? bestSuitEvaluation.declaration : undefined,
+    reasoning: bestSuitEvaluation.reasoning,
   };
 }
 
 // Helper functions
 
-function getBaseDeclarationProbability(type: DeclarationType): number {
-  switch (type) {
-    case DeclarationType.Single:
-      return 0.3; // Conservative for single cards - only with good hand
-    case DeclarationType.Pair:
-      return 0.7; // Likely for pairs - strong declaration
-    case DeclarationType.SmallJokerPair:
-      return 0.85; // Very likely for small joker pairs - excellent declaration
-    case DeclarationType.BigJokerPair:
-      return 0.95; // Almost always declare big joker pairs - strongest possible
-    default:
-      return 0.1;
-  }
+interface SuitEvaluation {
+  declaration: { type: DeclarationType; cards: Card[]; suit: Suit };
+  reasoning: string;
+  suitStrength: number;
 }
 
-function getDealingProgressMultiplier(progress: {
-  current: number;
-  total: number;
-}): number {
-  const progressRatio = progress.current / progress.total;
-
-  // Early in dealing: very conservative chance (wait to see more cards)
-  if (progressRatio < 0.2) {
-    return 0.5;
-  }
-  // Early-mid dealing: moderate chance (good timing to establish trump)
-  else if (progressRatio < 0.4) {
-    return 1.1;
-  }
-  // Mid dealing: peak chance (optimal timing)
-  else if (progressRatio < 0.7) {
-    return 1.3;
-  }
-  // Late dealing: moderate urgency (last opportunity)
-  else if (progressRatio < 0.9) {
-    return 1.1;
-  }
-  // Very late: conservative chance (very limited benefit)
-  else {
-    return 0.5;
-  }
-}
-
-function getCurrentDeclarationMultiplier(
+/**
+ * Evaluate all possible trump suits and return the best one that meets thresholds
+ */
+function evaluateAllPossibleTrumpSuits(
+  declarationOptions: { type: DeclarationType; cards: Card[]; suit: Suit }[],
+  dealingProgress: { current: number; total: number },
   currentDeclaration: TrumpDeclaration | undefined,
-  proposedDeclaration: { type: DeclarationType },
-): number {
-  if (!currentDeclaration) {
-    return 1.0; // Neutral when no one has declared - wait for better information
+  hand: Card[],
+  trumpRank: Rank,
+): SuitEvaluation | null {
+  const progressRatio = dealingProgress.current / dealingProgress.total;
+
+  // Group declaration options by suit
+  const suitGroups = new Map<Suit, typeof declarationOptions>();
+  for (const option of declarationOptions) {
+    const existing = suitGroups.get(option.suit) || [];
+    existing.push(option);
+    suitGroups.set(option.suit, existing);
   }
 
-  const currentStrength = getDeclarationStrength(currentDeclaration.type);
-  const proposedStrength = getDeclarationStrength(proposedDeclaration.type);
-  const strengthDiff = proposedStrength - currentStrength;
-
-  if (strengthDiff <= 0) {
-    return 0.05; // Almost never declare if not stronger
-  } else if (strengthDiff === 1) {
-    return 0.6; // Good chance if slightly stronger - competitive override
-  } else if (strengthDiff === 2) {
-    return 0.9; // Very high chance if significantly stronger
-  } else {
-    return 1.0; // Always override if much stronger (e.g., big joker vs single)
+  // Get current declaration suit strength if it exists
+  let currentSuitStrength = 0;
+  if (currentDeclaration) {
+    currentSuitStrength = calculateSuitStrength(
+      hand,
+      currentDeclaration.suit,
+      trumpRank,
+    ).strength;
   }
-}
 
-function getHandQualityMultiplier(hand: Card[], trumpRank: Rank): number {
-  // Analyze suit distribution and combinations - what actually matters for trump declaration
-  const suitCounts = new Map<Suit, number>();
-  const suitCards = new Map<Suit, Card[]>();
+  let bestSuit: SuitEvaluation | null = null;
 
-  hand.forEach((card) => {
-    // Skip jokers and trump rank cards - they're always trump regardless of suit
-    if (card.joker || card.rank === trumpRank) {
-      return;
+  for (const [suit, options] of suitGroups) {
+    const suitResult = calculateSuitStrength(hand, suit, trumpRank);
+
+    // Skip if suit doesn't meet basic requirements
+    if (!suitMeetsThresholds(suitResult.length, progressRatio)) {
+      continue;
     }
 
-    // Group cards by suit (excluding trump rank cards)
-    if (card.suit) {
-      if (!suitCards.has(card.suit)) {
-        suitCards.set(card.suit, []);
+    // Find best declaration type for this suit
+    const bestDeclaration = options.sort(
+      (a, b) => getDeclarationStrength(b.type) - getDeclarationStrength(a.type),
+    )[0];
+
+    // Skip if current declaration exists and we can't/shouldn't override
+    if (currentDeclaration) {
+      // Can't override by declaration strength
+      if (!canOverrideByStrength(currentDeclaration, bestDeclaration)) {
+        continue;
       }
-      const suitCardArray = suitCards.get(card.suit);
-      if (!suitCardArray) {
-        throw new Error("evaluateHandQuality: Suit card array not found");
+
+      // Don't redeclare same suit
+      if (suit === currentDeclaration.suit) {
+        continue;
       }
-      suitCardArray.push(card);
-      suitCounts.set(card.suit, (suitCounts.get(card.suit) || 0) + 1);
+
+      // Don't override unless significantly better
+      if (currentSuitStrength > 0) {
+        const OVERRIDE_THRESHOLD = 16;
+        if (suitResult.strength <= currentSuitStrength + OVERRIDE_THRESHOLD) {
+          continue;
+        }
+      }
+    }
+
+    // This suit is valid - check if it's the best so far
+    const evaluation: SuitEvaluation = {
+      declaration: bestDeclaration,
+      reasoning: `Declaring ${suit} with ${suitResult.length} cards (${Math.round(progressRatio * 100)}% dealt)`,
+      suitStrength: suitResult.strength,
+    };
+
+    if (!bestSuit || suitResult.strength > bestSuit.suitStrength) {
+      bestSuit = evaluation;
+    }
+  }
+
+  return bestSuit;
+}
+
+/**
+ * Check if a suit meets basic threshold requirements
+ */
+function suitMeetsThresholds(
+  suitLength: number,
+  progressRatio: number,
+): boolean {
+  // Progressive suit length requirements based on timing
+  if (progressRatio < 0.3) {
+    return suitLength >= 6; // Early (0-30%): need exceptional suit
+  } else if (progressRatio < 0.7) {
+    return suitLength >= 8; // Mid (30-70%): need good suit
+  } else {
+    return suitLength >= 7; // Late (70-100%): acceptable suit
+  }
+}
+
+/**
+ * Calculate overall strength of a suit (length + pairs only)
+ * Returns both the strength score and the suit length
+ */
+function calculateSuitStrength(
+  hand: Card[],
+  suit: Suit,
+  trumpRank: Rank,
+): { strength: number; length: number } {
+  const suitCards = hand.filter(
+    (card) => card.suit === suit && !card.joker && card.rank !== trumpRank,
+  );
+
+  const length = suitCards.length;
+  if (length === 0) return { strength: 0, length: 0 };
+
+  // Base strength from length (primary factor)
+  const strength = length * 10;
+
+  // Count pairs for strategic value
+  const rankCounts = new Map<Rank, number>();
+  suitCards.forEach((card) => {
+    if (card.rank) {
+      rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1);
     }
   });
 
-  // Start with baseline multiplier
-  let multiplier = 1.0;
-
-  // Find best suit based on length and combinations
-  let bestSuitScore = 0;
-  let bestSuitLength = 0;
-  let bestCombinations = 0;
-
-  for (const [, cards] of suitCards.entries()) {
-    const length = cards.length;
-
-    // Count pairs in this suit (same rank, same suit)
-    const rankCounts = new Map<Rank, number>();
-    cards.forEach((card) => {
-      if (card.rank) {
-        rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1);
-      }
-    });
-
-    let pairs = 0;
-    for (const [, count] of rankCounts.entries()) {
-      if (count >= 2) {
-        pairs++;
-      }
-    }
-
-    // Score this suit: length is most important, then pairs
-    const score = length * 3 + pairs * 2;
-
-    if (score > bestSuitScore) {
-      bestSuitScore = score;
-      bestSuitLength = length;
-      bestCombinations = pairs;
+  // Pair bonuses (strategic value for combinations)
+  let pairBonus = 0;
+  for (const count of rankCounts.values()) {
+    if (count >= 2) {
+      pairBonus += 8; // Each pair adds strategic value
     }
   }
 
-  // CRITICAL: Suit length evaluation (most important factor)
-  // Note: 24 trump suit cards ÷ 4 players = 6 average per player
-  if (bestSuitLength <= 2) {
-    multiplier *= 0.2; // Very bad - way below average
-  } else if (bestSuitLength <= 3) {
-    multiplier *= 0.4; // Bad - well below average
-  } else if (bestSuitLength <= 4) {
-    multiplier *= 0.7; // Poor - below average
-  } else if (bestSuitLength <= 5) {
-    multiplier *= 0.8; // Below average
-  } else if (bestSuitLength === 6) {
-    multiplier *= 0.9; // Slightly below average
-  } else if (bestSuitLength === 7) {
-    multiplier *= 1.0; // Average trump suit length
-  } else if (bestSuitLength === 8) {
-    multiplier *= 1.2; // Good - above average
-  } else if (bestSuitLength >= 9) {
-    multiplier *= 1.4; // Excellent - well above average
-  }
-
-  // Pair bonus in the trump suit
-  if (bestCombinations >= 3) {
-    multiplier *= 1.4; // Excellent - multiple pairs
-  } else if (bestCombinations >= 2) {
-    multiplier *= 1.2; // Very good - two pairs
-  } else if (bestCombinations >= 1) {
-    multiplier *= 1.1; // Good - one pair
-  }
-  // No penalty for no pairs - length is more important
-
-  // Penalty if no decent suits at all
-  if (bestSuitLength === 0) {
-    multiplier *= 0.1; // No suits to declare - very bad
-  }
-
-  return Math.min(2.0, Math.max(0.05, multiplier));
+  return { strength: strength + pairBonus, length };
 }
 
-function getTeamStrategyMultiplier(
-  gameState: GameState,
-  playerId: PlayerId,
-): number {
-  const player = gameState.players.find((p) => p.id === playerId);
-  if (!player) return 1.0;
-
-  // Team strategy could be enhanced here - for now neutral
-  // Could consider: teammate positions in dealing order, team coordination, etc.
-
-  return 1.0;
-}
-
-function getDeclarationTypeDisplayName(type: DeclarationType): string {
-  switch (type) {
-    case DeclarationType.Single:
-      return "single";
-    case DeclarationType.Pair:
-      return "pair";
-    case DeclarationType.SmallJokerPair:
-      return "small joker pair";
-    case DeclarationType.BigJokerPair:
-      return "big joker pair";
-    default:
-      return type;
-  }
-}
-
-function generateDecisionReasoning(
-  shouldDeclare: boolean,
-  declarationType: DeclarationType,
-  currentDeclaration: TrumpDeclaration | undefined,
-  dealingProgress: { current: number; total: number },
-): string {
-  const currentTypeDisplay = currentDeclaration
-    ? getDeclarationTypeDisplayName(currentDeclaration.type)
-    : "unknown";
-  const newTypeDisplay = getDeclarationTypeDisplayName(declarationType);
-
-  if (!shouldDeclare) {
-    if (currentDeclaration) {
-      return `Holding back - ${currentDeclaration.playerId} already declared ${currentTypeDisplay}`;
-    } else {
-      return `Waiting for better opportunity - only ${newTypeDisplay} available`;
-    }
-  } else {
-    if (currentDeclaration) {
-      return `Overriding ${currentDeclaration.playerId}'s ${currentTypeDisplay} with ${newTypeDisplay}`;
-    } else {
-      const progressPercent =
-        dealingProgress.total > 0
-          ? Math.round((dealingProgress.current / dealingProgress.total) * 100)
-          : 0;
-      return `Declaring ${newTypeDisplay} early (${progressPercent}% dealt) to establish trump`;
-    }
-  }
+/**
+ * Check if proposed declaration can override current one by strength
+ */
+function canOverrideByStrength(
+  current: TrumpDeclaration,
+  proposed: { type: DeclarationType },
+): boolean {
+  const currentStrength = getDeclarationStrength(current.type);
+  const proposedStrength = getDeclarationStrength(proposed.type);
+  return proposedStrength > currentStrength;
 }
