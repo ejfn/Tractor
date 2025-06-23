@@ -117,7 +117,13 @@ function evaluateAllPossibleTrumpSuits(
     const suitResult = calculateSuitStrength(hand, suit, trumpRank);
 
     // Skip if suit doesn't meet basic requirements
-    if (!suitMeetsThresholds(suitResult.length, progressRatio)) {
+    if (
+      !suitMeetsThresholds(
+        suitResult.length,
+        progressRatio,
+        suitResult.strength,
+      )
+    ) {
       continue;
     }
 
@@ -163,20 +169,49 @@ function evaluateAllPossibleTrumpSuits(
 }
 
 /**
- * Check if a suit meets basic threshold requirements
+ * Check if a suit meets basic threshold requirements with randomness
  */
 function suitMeetsThresholds(
   suitLength: number,
   progressRatio: number,
+  suitStrength?: number,
 ): boolean {
-  // Progressive suit length requirements based on timing
-  if (progressRatio < 0.3) {
-    return suitLength >= 4; // Early (0-30%): need exceptional suit
-  } else if (progressRatio < 0.7) {
-    return suitLength >= 5; // Mid (30-70%): need good suit
-  } else {
-    return suitLength >= 6; // Late (70-100%): acceptable suit
+  // 1. Minimum threshold - never declare with tiny suits regardless of progress
+  if (suitLength < 3) {
+    return false;
   }
+
+  // Comprehensive probability calculation combining suit length + dealing phase + randomness
+
+  // 2. Suit Length Factor (0.0 to 1.0+)
+  // Longer suits are exponentially more likely to declare
+  const suitLengthFactor = Math.min(1.0, Math.pow(suitLength / 6, 1.5));
+
+  // 3. Progress Factor (0.2 to 1.0)
+  // Later in dealing = more aggressive declarations
+  const progressFactor = 0.2 + progressRatio * 0.8;
+
+  // 4. Suit Quality Factor (1.0 to 1.5)
+  // High pairs and good cards boost probability
+  const qualityFactor = suitStrength
+    ? 1.0 + Math.min(0.5, (suitStrength - suitLength * 10) / 40)
+    : 1.0;
+
+  // 5. Base Probability (combining all factors)
+  const baseProbability = suitLengthFactor * progressFactor * qualityFactor;
+
+  // 6. Randomness Modifier (-0.2 to +0.2)
+  // Adds unpredictability while maintaining trends
+  const randomModifier = (Math.random() - 0.5) * 0.4;
+
+  // 7. Final Probability (clamped between 0 and 1)
+  const finalProbability = Math.max(
+    0,
+    Math.min(1, baseProbability + randomModifier),
+  );
+
+  // 8. Decision based on final probability
+  return Math.random() < finalProbability;
 }
 
 /**
