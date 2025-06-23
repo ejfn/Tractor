@@ -4,12 +4,11 @@ import {
   ComboType,
   JokerType,
   Rank,
-  Suit,
   Trick,
   TrumpInfo,
 } from "../types";
-import { getRankValue, isTrump } from "./gameHelpers";
 import { getComboType, identifyCombos } from "./comboDetection";
+import { getRankValue, isTrump } from "./gameHelpers";
 import {
   analyzeMultiComboComponents,
   detectMultiComboAttempt,
@@ -174,8 +173,8 @@ export function evaluateTrickPlay(
   const canBeat = canComboBeaten(
     proposedPlay,
     currentWinningCombo,
-    leadingSuit,
     trumpInfo,
+    leadingCards,
   );
   const strength = calculateComboStrength(
     proposedPlay,
@@ -218,9 +217,25 @@ export function compareTrumpMultiCombos(
   responseCards: Card[],
   currentWinningCards: Card[],
   trumpInfo: TrumpInfo,
+  leadingCards: Card[],
 ): boolean {
   const responseCombos = identifyCombos(responseCards, trumpInfo);
   const winningCombos = identifyCombos(currentWinningCards, trumpInfo);
+
+  // If leading combo is provided, constrain comparison to leading combo types
+  const allowedComboTypes: ComboType[] = [];
+  const leadingCombos = identifyCombos(leadingCards, trumpInfo);
+  const leadingTypes = leadingCombos.map((combo) =>
+    getComboType(combo.cards, trumpInfo),
+  );
+  const hasTracker = leadingTypes.includes(ComboType.Tractor);
+  const hasPairs = leadingTypes.includes(ComboType.Pair);
+  const hasSingles = leadingTypes.includes(ComboType.Single);
+
+  // Determine allowed combo types based on leading structure
+  if (hasTracker) allowedComboTypes.push(ComboType.Tractor);
+  if (hasPairs) allowedComboTypes.push(ComboType.Pair);
+  if (hasSingles) allowedComboTypes.push(ComboType.Single);
 
   // Find highest combo type and representative card/pair for comparison
   const getHighestComboForComparison = (combos: Combo[]) => {
@@ -234,7 +249,12 @@ export function compareTrumpMultiCombos(
       (c) => getComboType(c.cards, trumpInfo) === ComboType.Single,
     );
 
-    if (tractors.length > 0) {
+    // If allowed combo types are specified, only consider those types
+    const useTracker = allowedComboTypes.includes(ComboType.Tractor);
+    const usePairs = allowedComboTypes.includes(ComboType.Pair);
+    const useSingles = allowedComboTypes.includes(ComboType.Single);
+
+    if (tractors.length > 0 && useTracker) {
       // For tractors: find the highest pair from ALL tractor pairs
       let highestPair: Card[] | null = null;
 
@@ -264,7 +284,7 @@ export function compareTrumpMultiCombos(
       };
     }
 
-    if (pairs.length > 0) {
+    if (pairs.length > 0 && usePairs) {
       // Find highest pair
       let highestPair = pairs[0].cards;
       for (const pair of pairs) {
@@ -275,7 +295,7 @@ export function compareTrumpMultiCombos(
       return { type: ComboType.Pair, representativeCards: highestPair };
     }
 
-    if (singles.length > 0) {
+    if (singles.length > 0 && useSingles) {
       // Find highest single
       let highestSingle = singles[0].cards[0];
       for (const single of singles) {
@@ -437,11 +457,11 @@ function getComboTypePriority(type: ComboType): number {
 /**
  * Core logic: Can proposedCombo beat currentWinningCombo?
  */
-export function canComboBeaten(
+function canComboBeaten(
   proposedCombo: Card[],
   currentWinningCombo: Card[],
-  leadingSuit: Suit | undefined,
   trumpInfo: TrumpInfo,
+  leadingCards: Card[],
 ): boolean {
   const proposedSuit = proposedCombo[0]?.suit;
   const winningSuit = currentWinningCombo[0]?.suit;
@@ -487,6 +507,7 @@ export function canComboBeaten(
           proposedCombo,
           currentWinningCombo,
           trumpInfo,
+          leadingCards, // Pass leading cards for structure constraint
         );
       } else {
         // Use general multi-combo comparison logic

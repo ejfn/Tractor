@@ -299,17 +299,35 @@ function canMatchTractorStructure(
   requiredTractors: { length: number; pairs: number }[],
   availableTractors: { length: number; pairs: number }[],
 ): boolean {
-  // For each required tractor, check if we have a matching one available
-  for (const required of requiredTractors) {
-    const hasMatch = availableTractors.some(
-      (available) =>
-        available.length >= required.length &&
-        available.pairs >= required.pairs,
+  // Calculate total pairs required and available
+  const totalRequiredPairs = requiredTractors.reduce(
+    (sum, tractor) => sum + tractor.pairs,
+    0,
+  );
+  const totalAvailablePairs = availableTractors.reduce(
+    (sum, tractor) => sum + tractor.pairs,
+    0,
+  );
+
+  // Check if we have enough pairs total
+  if (totalAvailablePairs < totalRequiredPairs) {
+    return false;
+  }
+
+  // Check if longest available tractor can match longest required tractor
+  if (requiredTractors.length > 0 && availableTractors.length > 0) {
+    const longestRequiredLength = Math.max(
+      ...requiredTractors.map((t) => t.length),
     );
-    if (!hasMatch) {
+    const longestAvailableLength = Math.max(
+      ...availableTractors.map((t) => t.length),
+    );
+
+    if (longestAvailableLength < longestRequiredLength) {
       return false;
     }
   }
+
   return true;
 }
 
@@ -515,6 +533,7 @@ function makeStrategicTrumpDecision(
         trumpResponse,
         currentWinner,
         trumpInfo,
+        leadingCards, // Pass leading combo to constrain comparison
       );
       if (canBeatPreviousTrump) {
         // Beat existing trump using the selected trump response
@@ -587,7 +606,7 @@ function selectStructureMatchingCards(
   availableCombos: Combo[],
   leadingAnalysis: ComboStructureAnalysis,
   trumpInfo: TrumpInfo,
-  prioritizeLowest: boolean = false, // true for trump beating, false for same-suit
+  _prioritizeLowest: boolean = false, // true for trump beating, false for same-suit
 ): Card[] {
   const selectedCards: Card[] = [];
   const usedCardIds = new Set<string>();
