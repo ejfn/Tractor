@@ -39,13 +39,18 @@ export const createDeck = (): Card[] => {
   return deck;
 };
 
-// Shuffle deck using Fisher-Yates algorithm
+// Shuffle deck using multiple Fisher-Yates algorithm passes for enhanced randomness
 export const shuffleDeck = (deck: Card[]): Card[] => {
   const newDeck = [...deck];
-  for (let i = newDeck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+
+  // Perform 3 Fisher-Yates shuffle passes for enhanced mixing
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = newDeck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+    }
   }
+
   return newDeck;
 };
 
