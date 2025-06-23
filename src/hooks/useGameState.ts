@@ -387,18 +387,17 @@ export function useGameState() {
   const handleEndRound = (state: GameState) => {
     const roundResult = endRound(state);
 
+    setShowRoundComplete(true);
+    // Store the round result and current state for processing after modal dismissal
+    roundResultRef.current = roundResult;
+    pendingStateRef.current = state; // Store current state, not modified state
+
     if (roundResult.gameOver) {
       // Set game phase to 'gameOver' to prevent AI moves
       const gameOverState = { ...state, gamePhase: GamePhase.GameOver };
       setGameState(gameOverState);
       setGameOver(true);
       setWinner(roundResult.gameWinner || null);
-    } else {
-      setShowRoundComplete(true);
-
-      // Store the round result and current state for processing after modal dismissal
-      roundResultRef.current = roundResult;
-      pendingStateRef.current = state; // Store current state, not modified state
     }
   };
 
