@@ -139,33 +139,24 @@ export function selectAIMultiComboLead(
       // If we have a strong multi-combo structure (pairs or 4+ cards), always play it
       if (
         structure.components.totalPairs > 0 ||
-        structure.components.totalLength >= 4
+        structure.components.totalLength > 3 ||
+        structure.components.totalLength === playerHand.length // last combo
       ) {
         return mostUnbeatableCards;
       }
 
       // If we have a weak multi-combo (only small singles), determine by game stage and role
-      const player = gameState.players.find((p) => p.id === playerId);
-      const playerTeam = gameState.teams.find((t) => t.id === player?.team);
-      const isDefending = playerTeam?.isDefending || false;
-      const attackingTeam = gameState.teams.find((t) => !t.isDefending);
-      const points = attackingTeam?.points || 0;
-
       let weakComboChance = 0;
+      const cardsLeft = playerHand.length;
 
-      // Game stage analysis based on attacking team's progress
-      if (points < 20) {
-        // Early game - both teams very aggressive with weak multi-combos
-        weakComboChance = isDefending ? 1 : 1;
-      } else if (points < 40) {
-        // Early-mid game - defending more conservative, attacking moderate
-        weakComboChance = isDefending ? 0.8 : 0.4;
-      } else if (points < 60) {
-        // Mid-late game - roles reverse, attacking more aggressive
-        weakComboChance = isDefending ? 0.5 : 0.6;
+      if (cardsLeft > 18) {
+        weakComboChance = 1;
+      } else if (cardsLeft > 12) {
+        weakComboChance = 0.7;
+      } else if (cardsLeft > 6) {
+        weakComboChance = 0.5;
       } else {
-        // Late game - attacking very aggressive, defending very conservative
-        weakComboChance = isDefending ? 0.2 : 0.8;
+        weakComboChance = 0.2;
       }
 
       if (Math.random() < weakComboChance) {
