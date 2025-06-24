@@ -76,7 +76,6 @@ function findOptimalComboDecomposition(
       [ComboType.Tractor]: 3,
       [ComboType.Pair]: 2,
       [ComboType.Single]: 1,
-      [ComboType.MultiCombo]: 0, // Should not appear in component analysis
       [ComboType.Invalid]: -1, // Should not appear in component analysis
     };
 
@@ -236,6 +235,7 @@ function calculateComponentsFromCombos(
 export function analyzeComboStructure(
   cards: Card[],
   trumpInfo: TrumpInfo,
+  isLeading?: boolean,
 ): MultiCombo | null {
   // Handle empty cards case
   if (cards.length === 0) {
@@ -257,7 +257,7 @@ export function analyzeComboStructure(
   const combos = findOptimalComboDecomposition(cards, allCombos);
 
   // Return null if this doesn't represent a multi-combo (less than 2 combos)
-  if (combos.length < 2) {
+  if (isLeading && combos.length < 2) {
     return null;
   }
 

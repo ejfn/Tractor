@@ -1,5 +1,3 @@
-import { createCardMemory } from "../aiCardMemory";
-import { Card, GameState, PlayerId, Suit } from "../../types";
 import { identifyCombos } from "../../game/comboDetection";
 import { isTrump } from "../../game/gameHelpers";
 import { analyzeComboStructure } from "../../game/multiComboAnalysis";
@@ -7,6 +5,8 @@ import {
   checkOpponentVoidStatus,
   isComboUnbeatable,
 } from "../../game/multiComboValidation";
+import { Card, GameState, PlayerId, Suit } from "../../types";
+import { createCardMemory } from "../aiCardMemory";
 
 /**
  * Multi-Combo Leading Strategy for AI

@@ -299,7 +299,6 @@ export enum ComboType {
   Single = "Single",
   Pair = "Pair",
   Tractor = "Tractor", // Consecutive pairs of same suit
-  MultiCombo = "MultiCombo", // Strategic unbeatable leading combos from non-trump suit
   Invalid = "Invalid", // Invalid combination that doesn't form any valid combo type
 }
 

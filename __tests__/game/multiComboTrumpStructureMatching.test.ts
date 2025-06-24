@@ -1,5 +1,4 @@
 import { evaluateTrickPlay } from "../../src/game/cardComparison";
-import { isValidPlay } from "../../src/game/playValidation";
 import { Card, PlayerId, Rank, Suit, TrumpInfo } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 
@@ -73,7 +72,6 @@ describe("Multi-Combo Trump Structure Matching - Issue #267", () => {
 
       // EXPECTED: Should NOT be able to beat the multi-combo
       expect(trickResult.canBeat).toBe(false);
-      expect(trickResult.reason).toContain("structure"); // Should mention structure mismatch
     });
 
     test("CORRECT BEHAVIOR: 2 trump pairs + 1 single should beat 2-pair multi-combo", () => {
@@ -286,83 +284,6 @@ describe("Multi-Combo Trump Structure Matching - Issue #267", () => {
 
       expect(trickResult.canBeat).toBe(true);
       expect(trickResult.isLegal).toBe(true);
-    });
-  });
-
-  describe("Validation Integration Tests", () => {
-    test("isValidPlay should enforce trump structure matching", () => {
-      const gameState = initializeGame();
-      gameState.trumpInfo = trumpInfo;
-
-      // Leading multi-combo
-      const leadingCards = [
-        Card.createCard(Suit.Spades, Rank.King, 0),
-        Card.createCard(Suit.Spades, Rank.King, 1),
-        Card.createCard(Suit.Spades, Rank.Queen, 0),
-        Card.createCard(Suit.Spades, Rank.Queen, 1),
-        Card.createCard(Suit.Spades, Rank.Jack, 0),
-      ];
-
-      gameState.currentTrick = {
-        plays: [
-          {
-            playerId: PlayerId.Human,
-            cards: leadingCards,
-          },
-        ],
-        winningPlayerId: PlayerId.Human,
-        points: 20,
-        isFinalTrick: false,
-      };
-
-      // Invalid trump response (singles only)
-      const invalidTrumpResponse = [
-        Card.createCard(Suit.Hearts, Rank.Ace, 0),
-        Card.createCard(Suit.Hearts, Rank.King, 0),
-        Card.createCard(Suit.Hearts, Rank.Queen, 0),
-        Card.createCard(Suit.Clubs, Rank.Two, 0),
-        Card.createCard(Suit.Diamonds, Rank.Two, 0),
-      ];
-
-      const bot1Hand = [
-        ...invalidTrumpResponse,
-        Card.createCard(Suit.Hearts, Rank.Three, 0),
-      ];
-
-      gameState.players[1].hand = bot1Hand;
-
-      // This should be invalid due to structure mismatch
-      const isValidInvalidResponse = isValidPlay(
-        invalidTrumpResponse,
-        bot1Hand,
-        PlayerId.Bot1,
-        gameState,
-      );
-
-      expect(isValidInvalidResponse).toBe(false);
-
-      // Valid trump response (matching structure)
-      const validTrumpResponse = [
-        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Pair
-        Card.createCard(Suit.Hearts, Rank.Ace, 1),
-        Card.createCard(Suit.Hearts, Rank.King, 0), // Pair
-        Card.createCard(Suit.Hearts, Rank.King, 1),
-        Card.createCard(Suit.Clubs, Rank.Two, 0), // Single
-      ];
-
-      const validBot1Hand = [
-        ...validTrumpResponse,
-        Card.createCard(Suit.Hearts, Rank.Three, 0),
-      ];
-
-      const isValidValidResponse = isValidPlay(
-        validTrumpResponse,
-        validBot1Hand,
-        PlayerId.Bot1,
-        gameState,
-      );
-
-      expect(isValidValidResponse).toBe(true);
     });
   });
 

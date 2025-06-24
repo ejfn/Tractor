@@ -614,7 +614,8 @@ export function validateMultiComboLead(
 
   // Step 4: Analyze component combos
   const components =
-    analyzeComboStructure(selectedCards, gameState.trumpInfo)?.combos || [];
+    analyzeComboStructure(selectedCards, gameState.trumpInfo, true)?.combos ||
+    [];
   if (components.length === 0) {
     validation.invalidReasons.push("No valid component combos found");
     return validation;
