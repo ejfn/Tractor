@@ -104,8 +104,14 @@ function findMatchingMultiCombo(
   }
 
   // Check if we can match the required structure
-  if (!matchesRequiredComponents(availableAnalysis, leadingAnalysis)) {
-    return null; // Cannot match structure requirements
+  // Same-suit responses: Must match structure exactly (strict rule compliance)
+  // Trump responses: More flexible structure matching allowed because:
+  //   - Trump responses only need to match total length, not exact structure
+  //   - Strategic trump decisions handled later by makeStrategicTrumpDecision
+  if (!isTrumpResponse) {
+    if (!matchesRequiredComponents(availableAnalysis, leadingAnalysis)) {
+      return null; // Cannot match structure requirements for same-suit response
+    }
   }
 
   // Can match structure - create matching multi-combo

@@ -17,7 +17,7 @@ import {
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
 import {
-  analyzeComboStructure as analyzeMultiComboStructure,
+  analyzeComboStructure,
   detectLeadingMultiCombo,
 } from "./multiComboAnalysis";
 import { validateLeadingMultiCombo } from "./multiComboValidation";
@@ -108,7 +108,10 @@ const validateAntiCheatStructure = (
     trumpInfo,
   );
 
-  // Anti-cheat checks following the algorithm
+  // Check if analysis succeeded
+  if (!playedStructure || !bestPossibleStructure) {
+    return true; // If analysis fails, allow the play
+  }
 
   // Compute tractor pairs from structure
   const playedTractorPairs =
@@ -142,42 +145,6 @@ const validateAntiCheatStructure = (
   }
 
   return true; // Player used best possible structure - VALID
-};
-
-// Analyze the structure of combo cards to get counts
-const analyzeComboStructure = (
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-): {
-  totalPairs: number;
-  tractors: number;
-  tractorSizes: number[];
-} => {
-  // Use optimal decomposition to avoid counting overlapping combinations
-  const optimalCombos =
-    analyzeMultiComboStructure(cards, trumpInfo)?.combos || [];
-
-  let totalPairs = 0;
-  let tractorCount = 0;
-  const tractorSizes: number[] = [];
-
-  optimalCombos.forEach((combo) => {
-    if (combo.type === ComboType.Pair) {
-      totalPairs += 1; // Each pair combo contributes 1 pair
-    } else if (combo.type === ComboType.Tractor) {
-      tractorCount++;
-      const tractorPairCount = combo.cards.length / 2;
-      totalPairs += tractorPairCount; // Add to total pairs
-      tractorSizes.push(tractorPairCount); // Track tractor length in pairs
-    }
-    // Singles are implicit: totalLength - (totalPairs * 2)
-  });
-
-  return {
-    totalPairs, // Total number of pairs across all combos (standalone + tractor pairs)
-    tractors: tractorCount,
-    tractorSizes, // Array of tractor lengths (in pairs)
-  };
 };
 
 /**
@@ -647,8 +614,7 @@ export function validateMultiComboLead(
 
   // Step 4: Analyze component combos
   const components =
-    analyzeMultiComboStructure(selectedCards, gameState.trumpInfo)?.combos ||
-    [];
+    analyzeComboStructure(selectedCards, gameState.trumpInfo)?.combos || [];
   if (components.length === 0) {
     validation.invalidReasons.push("No valid component combos found");
     return validation;

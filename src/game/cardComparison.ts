@@ -9,10 +9,7 @@ import {
 } from "../types";
 import { getComboType, identifyCombos } from "./comboDetection";
 import { getRankValue, isTrump } from "./gameHelpers";
-import {
-  analyzeComboStructure,
-  detectMultiComboAttempt,
-} from "./multiComboAnalysis";
+import { analyzeComboStructure } from "./multiComboAnalysis";
 
 // Get trump hierarchy level (for comparing trumps)
 export const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
@@ -170,22 +167,20 @@ export function evaluateTrickPlay(
   }
 
   // Step 3: Determine if play can beat current winner
-  const canBeat = canComboBeaten(
-    proposedPlay,
-    currentWinningCombo,
-    trumpInfo,
-    leadingCards,
-  );
-  const strength = calculateComboStrength(
-    proposedPlay,
-    currentWinningCombo,
-    trumpInfo,
-  );
+  const canBeat =
+    leadingComboType === ComboType.Invalid
+      ? canMultiComboBeaten(
+          proposedPlay,
+          currentWinningCombo,
+          trumpInfo,
+          leadingCards,
+        )
+      : canComboBeaten(proposedPlay, currentWinningCombo, trumpInfo);
 
   return {
     canBeat,
     isLegal: true,
-    strength,
+    strength: canBeat ? 75 : 25, // Simple strength for AI decisions
     reason: canBeat ? "Can beat current winner" : "Cannot beat current winner",
   };
 }
@@ -451,9 +446,9 @@ function getComboTypePriority(type: ComboType): number {
 }
 
 /**
- * Core logic: Can proposedCombo beat currentWinningCombo?
+ * Handle multi-combo specific beating logic
  */
-function canComboBeaten(
+function canMultiComboBeaten(
   proposedCombo: Card[],
   currentWinningCombo: Card[],
   trumpInfo: TrumpInfo,
@@ -484,41 +479,24 @@ function canComboBeaten(
     return false;
   }
 
-  // Same suit or both trump - compare by rank/strength
+  // Same suit or both trump - compare multi-combos
   if (proposedSuit === winningSuit || (proposedIsTrump && winningIsTrump)) {
-    // Check if these are actual multi-combos (multiple separate combos from same suit)
-    const proposedIsMultiCombo = detectMultiComboAttempt(
-      proposedCombo,
-      trumpInfo,
-    ).isMultiCombo;
-    const winningIsMultiCombo = detectMultiComboAttempt(
-      currentWinningCombo,
-      trumpInfo,
-    ).isMultiCombo;
-
-    if (proposedIsMultiCombo && winningIsMultiCombo) {
-      // For trump vs trump multi-combo comparison, use specialized logic
-      if (proposedIsTrump && winningIsTrump) {
-        return compareTrumpMultiCombos(
-          proposedCombo,
-          currentWinningCombo,
-          trumpInfo,
-          leadingCards, // Pass leading cards for structure constraint
-        );
-      } else {
-        // Use general multi-combo comparison logic
-        const multiComboResult = compareMultiCombos(
-          proposedCombo,
-          currentWinningCombo,
-          trumpInfo,
-        );
-        return multiComboResult > 0;
-      }
-    } else {
-      // Use existing compareCards for simple combos (singles, pairs, tractors)
-      return (
-        compareCards(proposedCombo[0], currentWinningCombo[0], trumpInfo) > 0
+    // For trump vs trump multi-combo comparison, use specialized logic
+    if (proposedIsTrump && winningIsTrump) {
+      return compareTrumpMultiCombos(
+        proposedCombo,
+        currentWinningCombo,
+        trumpInfo,
+        leadingCards, // Pass leading cards for structure constraint
       );
+    } else {
+      // Use general multi-combo comparison logic
+      const multiComboResult = compareMultiCombos(
+        proposedCombo,
+        currentWinningCombo,
+        trumpInfo,
+      );
+      return multiComboResult > 0;
     }
   }
 
@@ -526,14 +504,13 @@ function canComboBeaten(
 }
 
 /**
- * Calculate relative strength for AI decision making
- * This function handles cross-suit comparisons safely for trick context
+ * Handle straight combo beating logic (singles, pairs, tractors)
  */
-export function calculateComboStrength(
+function canComboBeaten(
   proposedCombo: Card[],
   currentWinningCombo: Card[],
   trumpInfo: TrumpInfo,
-): number {
+): boolean {
   const proposedSuit = proposedCombo[0]?.suit;
   const winningSuit = currentWinningCombo[0]?.suit;
 
@@ -544,21 +521,27 @@ export function calculateComboStrength(
     isTrump(card, trumpInfo),
   );
 
-  // For cross-suit trick comparisons, use trump-aware strength calculation
-  if (proposedSuit !== winningSuit && !proposedIsTrump && !winningIsTrump) {
-    // Different non-trump suits - cannot beat, assign low strength
-    return 25;
+  // Trump beats non-trump
+  if (proposedIsTrump && !winningIsTrump) {
+    return true;
   }
 
-  // Same suit or trump involved - safe to use compareCards
-  const comparison = compareCards(
-    proposedCombo[0],
-    currentWinningCombo[0],
-    trumpInfo,
-  );
+  // Non-trump cannot beat trump
+  if (!proposedIsTrump && winningIsTrump) {
+    return false;
+  }
 
-  // Normalize to 0-100 scale for AI use
-  if (comparison > 0) return 75 + Math.min(comparison * 5, 25); // 75-100 for winning
-  if (comparison === 0) return 50; // 50 for equal
-  return Math.max(25 + comparison * 5, 0); // 0-25 for losing
+  // Different suits (both non-trump) - cannot beat
+  if (proposedSuit !== winningSuit && !proposedIsTrump && !winningIsTrump) {
+    return false;
+  }
+
+  // Same suit or both trump - compare by rank/strength using compareCards
+  if (proposedSuit === winningSuit || (proposedIsTrump && winningIsTrump)) {
+    return (
+      compareCards(proposedCombo[0], currentWinningCombo[0], trumpInfo) > 0
+    );
+  }
+
+  return false;
 }
