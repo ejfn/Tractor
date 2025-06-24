@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals";
-import { detectLeadingMultiCombo } from "../../src/game/multiComboDetection";
+import { detectLeadingMultiCombo } from "../../src/game/multiComboAnalysis";
 import {
   isComboUnbeatable,
   validateLeadingMultiCombo,

@@ -1,5 +1,5 @@
 import { getComboType } from "../../game/comboDetection";
-import { detectLeadingMultiCombo } from "../../game/multiComboDetection";
+import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
 import {
   Card,
   Combo,

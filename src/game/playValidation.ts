@@ -15,8 +15,10 @@ import {
   identifyCombos,
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
-import { analyzeComboStructure as analyzeMultiComboStructure } from "./multiComboAnalysis";
-import { detectLeadingMultiCombo } from "./multiComboDetection";
+import {
+  analyzeComboStructure as analyzeMultiComboStructure,
+  detectLeadingMultiCombo,
+} from "./multiComboAnalysis";
 import { validateMultiComboLead } from "./multiComboLeadingStrategies";
 
 // Local helper function to avoid circular dependencies
