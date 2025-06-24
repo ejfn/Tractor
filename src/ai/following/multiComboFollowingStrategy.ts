@@ -495,37 +495,57 @@ function selectStructureMatchingCards(
   const usedCardIds = new Set<string>();
 
   // Sort function for strategic value
-  const sortByStrategicValue = (a: Combo, b: Combo) => {
+  const sortByMode = (
+    a: Combo,
+    b: Combo,
+    mode: "combo" | "conservation" | "strategic",
+  ) => {
     const aValue = a.cards.reduce(
-      (sum, card) =>
-        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
+      (sum, card) => sum + calculateCardStrategicValue(card, trumpInfo, mode),
       0,
     );
     const bValue = b.cards.reduce(
-      (sum, card) =>
-        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
+      (sum, card) => sum + calculateCardStrategicValue(card, trumpInfo, mode),
       0,
     );
     // For trump beating, use lowest value; for same-suit disposal, use lowest value too
     return aValue - bValue;
   };
 
+  const sortByStrategicValue = (a: Combo, b: Combo) =>
+    sortByMode(a, b, "strategic");
+
+  const sortByConservationValue = (a: Combo, b: Combo) =>
+    sortByMode(a, b, "conservation");
+
   // Filter and sort combos by type and strategic value
   const availableTractors = availableCombos
     .filter(
       (combo) => getComboType(combo.cards, trumpInfo) === ComboType.Tractor,
     )
-    .sort(sortByStrategicValue);
+    .sort(
+      leadingAnalysis.tractors > 0
+        ? sortByStrategicValue
+        : sortByConservationValue,
+    );
 
   const availablePairs = availableCombos
     .filter((combo) => getComboType(combo.cards, trumpInfo) === ComboType.Pair)
-    .sort(sortByStrategicValue);
+    .sort(
+      leadingAnalysis.tractors === 0 && leadingAnalysis.totalPairs > 0
+        ? sortByStrategicValue
+        : sortByConservationValue,
+    );
 
   const availableSingles = availableCombos
     .filter(
       (combo) => getComboType(combo.cards, trumpInfo) === ComboType.Single,
     )
-    .sort(sortByStrategicValue);
+    .sort(
+      leadingAnalysis.tractors === 0 && leadingAnalysis.totalPairs === 0
+        ? sortByStrategicValue
+        : sortByConservationValue,
+    );
 
   // 1. Match tractors first (if leading has tractors)
   let tractorsNeeded = leadingAnalysis.tractors;
