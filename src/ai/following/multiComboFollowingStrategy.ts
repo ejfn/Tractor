@@ -181,8 +181,8 @@ function tryTrumpFollowing(
   // B1: Do I have remaining trump cards?
   const trumpCards = playerHand.filter((card) => isTrump(card, trumpInfo));
 
-  if (trumpCards.length === 0) {
-    return null; // No trump cards, move to cross-suit disposal
+  if (trumpCards.length < leadingCards.length) {
+    return null; // No enough trump cards, move to cross-suit disposal
   }
 
   // B2-B4: Try to find matching trump multi-combo
@@ -347,7 +347,7 @@ function playMatchingMultiCombo(
   );
 
   const canBeat =
-    isTrump || canBeatLeadingCombo(selectedCards, leadingCards, trumpInfo);
+    isTrump && canBeatLeadingCombo(selectedCards, leadingCards, trumpInfo);
 
   return {
     cards: selectedCards,
@@ -490,7 +490,6 @@ function selectStructureMatchingCards(
   availableCombos: Combo[],
   leadingAnalysis: MultiCombo,
   trumpInfo: TrumpInfo,
-  _prioritizeLowest: boolean = false, // true for trump beating, false for same-suit
 ): Card[] {
   const selectedCards: Card[] = [];
   const usedCardIds = new Set<string>();
@@ -563,7 +562,7 @@ function selectStructureMatchingCards(
 
   // 3. Fill remaining with singles (lowest strategic value first)
   const remainingSinglesNeeded =
-    leadingAnalysis.totalLength - leadingAnalysis.totalPairs * 2;
+    leadingAnalysis.totalLength - selectedCards.length;
   let singlesSelected = 0;
 
   for (const single of availableSingles) {

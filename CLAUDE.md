@@ -525,6 +525,8 @@ enum ComboStrength {
 
 ### Testing Best Practices
 
+- **⚠️ CRITICAL: Always read existing tests first before generating tests**: Examine similar test files to understand patterns, imports, and structure
+- **⚠️ CRITICAL: Always typecheck generated tests before running**: Run `npm run typecheck` to catch TypeScript errors before test execution
 - **Avoid unnecessary mocks**: Since Shengji has deterministic initialization, prefer using real `initializeGame` over mocking
 - **⚠️ CRITICAL: Always import and use enums in tests**: Import all relevant enums at the top of test files
 - **Use type-safe test utilities**: Never use magic strings in test assertions
