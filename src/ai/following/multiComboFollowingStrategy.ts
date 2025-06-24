@@ -617,21 +617,12 @@ function canBeatLeadingCombo(
     return false; // Analysis failed
   }
 
-  // 3. If leading combo contains pairs or tractors, does trump contain same amount of pairs?
-  if (leadingAnalysis.totalPairs > 0) {
-    if (trumpAnalysis.totalPairs < leadingAnalysis.totalPairs) {
-      return false; // Can't beat - not enough trump pairs
-    }
+  // 3. Check if trump cards can match the required structure
+  if (!matchesRequiredComponents(trumpAnalysis, leadingAnalysis)) {
+    return false; // Can't beat - can't match structure requirements
   }
 
-  // 4. If leading combo contains tractors, does trump contain same structure?
-  if (leadingAnalysis.tractors > 0) {
-    if (!matchesRequiredComponents(trumpAnalysis, leadingAnalysis)) {
-      return false; // Can't beat - can't match structure
-    }
-  }
-
-  // 5. true (can beat) - trump with matching structure always beats non-trump
+  // 4. true (can beat) - trump with matching structure always beats non-trump
   return true;
 }
 
