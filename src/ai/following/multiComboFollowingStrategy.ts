@@ -1,18 +1,22 @@
 import { compareTrumpMultiCombos } from "../../game/cardComparison";
 import { getComboType, identifyCombos } from "../../game/comboDetection";
 import { calculateCardStrategicValue, isTrump } from "../../game/gameHelpers";
-import { detectLeadingMultiCombo } from "../../game/multiComboDetection";
-import { isTeammate } from "../utils/aiHelpers";
+import {
+  analyzeComboStructure,
+  matchesRequiredComponents,
+} from "../../game/multiComboAnalysis";
 import {
   Card,
   Combo,
   ComboType,
   GameState,
+  MultiCombo,
   PlayerId,
   Suit,
   Trick,
   TrumpInfo,
 } from "../../types";
+import { isTeammate } from "../utils/aiHelpers";
 
 /**
  * Multi-Combo Following Strategy for AI
@@ -31,92 +35,92 @@ export interface MultiComboFollowingResult {
 }
 
 /**
- * Main entry point for multi-combo following decisions using systematic algorithm
+ * Execute the systematic multi-combo following algorithm
  */
-export function selectMultiComboFollowingPlay(
+export function executeMultiComboFollowingAlgorithm(
+  leadingCards: Card[],
   playerHand: Card[],
   gameState: GameState,
   playerId: PlayerId,
-  validCombos: Combo[],
-): MultiComboFollowingResult | null {
-  const { currentTrick, trumpInfo } = gameState;
+): MultiComboFollowingResult {
+  const trumpInfo = gameState.trumpInfo;
+  const leadingSuit = leadingCards[0]?.suit;
 
-  if (!currentTrick?.plays?.[0]?.cards) {
-    return null; // No leading combo to follow
+  // Multi-combo leads are always non-trump, so we follow the standard flow:
+  const hasAnyTrump = leadingCards.some((card) => isTrump(card, trumpInfo));
+  if (hasAnyTrump) {
+    throw new Error("Multi-combo leads cannot contain trump cards");
   }
 
-  const leadingCards = currentTrick.plays[0].cards;
-
-  // Check if leading combo is a multi-combo
-  const leadingMultiCombo = detectLeadingMultiCombo(leadingCards, trumpInfo);
-  if (!leadingMultiCombo.isMultiCombo) {
-    return null; // Not a multi-combo lead, use regular following strategy
+  // Section A: Same-suit following
+  const sameSuitResult = trySameSuitFollowing(
+    leadingCards,
+    playerHand,
+    trumpInfo,
+    leadingSuit,
+  );
+  if (sameSuitResult) {
+    return sameSuitResult;
   }
 
-  // Execute systematic multi-combo following algorithm
-  return executeMultiComboFollowingAlgorithm(
+  // Section B: Trump following (when void in led suit)
+  const trumpResult = tryTrumpFollowing(
     leadingCards,
     playerHand,
     trumpInfo,
     gameState,
     playerId,
   );
-}
-
-/**
- * Execute the systematic multi-combo following algorithm
- */
-function executeMultiComboFollowingAlgorithm(
-  leadingCards: Card[],
-  playerHand: Card[],
-  trumpInfo: TrumpInfo,
-  gameState: GameState,
-  playerId: PlayerId,
-): MultiComboFollowingResult {
-  const leadingSuit = leadingCards[0]?.suit;
-  const isLeadingTrump = leadingCards.some((card) => isTrump(card, trumpInfo));
-
-  // Section A: Same-suit following
-  if (!isLeadingTrump) {
-    const sameSuitResult = trySameSuitFollowing(
-      leadingCards,
-      playerHand,
-      trumpInfo,
-      leadingSuit,
-    );
-    if (sameSuitResult) {
-      return sameSuitResult;
-    }
-  } else {
-    // For trump leads, skip to trump following logic
-    const trumpResult = tryTrumpFollowing(
-      leadingCards,
-      playerHand,
-      trumpInfo,
-      gameState,
-      playerId,
-    );
-    if (trumpResult) {
-      return trumpResult;
-    }
-  }
-
-  // Section B: Trump following (for non-trump leads)
-  if (!isLeadingTrump) {
-    const trumpResult = tryTrumpFollowing(
-      leadingCards,
-      playerHand,
-      trumpInfo,
-      gameState,
-      playerId,
-    );
-    if (trumpResult) {
-      return trumpResult;
-    }
+  if (trumpResult) {
+    return trumpResult;
   }
 
   // Section C: Cross-suit disposal/contribution
   return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo);
+}
+
+/**
+ * Generic function to find matching multi-combo from available cards
+ * Used by both same-suit and trump following logic
+ */
+function findMatchingMultiCombo(
+  leadingCards: Card[],
+  availableCards: Card[],
+  trumpInfo: TrumpInfo,
+  isTrumpResponse: boolean,
+): MultiComboFollowingResult | null {
+  // Check if we have enough cards (by comparing length)
+  if (availableCards.length < leadingCards.length) {
+    return null; // Not enough cards
+  }
+
+  // Analyze structure requirements
+  const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
+  const availableAnalysis = analyzeComboStructure(availableCards, trumpInfo);
+
+  // Check if analysis succeeded
+  if (!leadingAnalysis || !availableAnalysis) {
+    return null; // Analysis failed
+  }
+
+  // Check if we can match the required structure
+  // Same-suit responses: Must match structure exactly (strict rule compliance)
+  // Trump responses: More flexible structure matching allowed because:
+  //   - Trump responses only need to match total length, not exact structure
+  //   - Strategic trump decisions handled later by makeStrategicTrumpDecision
+  if (!isTrumpResponse) {
+    if (!matchesRequiredComponents(availableAnalysis, leadingAnalysis)) {
+      return null; // Cannot match structure requirements for same-suit response
+    }
+  }
+
+  // Can match structure - create matching multi-combo
+  return playMatchingMultiCombo(
+    availableCards,
+    leadingCards,
+    trumpInfo,
+    isTrumpResponse,
+  );
 }
 
 /**
@@ -148,32 +152,20 @@ function trySameSuitFollowing(
     );
   }
 
-  // A3: If leading has pairs/tractors, do I have enough pairs?
-  const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
-  const availableAnalysis = analyzeComboStructure(sameSuitCards, trumpInfo);
+  // A3-A5: Try to find matching multi-combo
+  const matchingResult = findMatchingMultiCombo(
+    leadingCards,
+    sameSuitCards,
+    trumpInfo,
+    false, // Not trump response
+  );
 
-  if (
-    leadingAnalysis.totalPairs > 0 &&
-    availableAnalysis.totalPairs < leadingAnalysis.totalPairs
-  ) {
-    // Same-suit disposal/contribution
-    return selectSameSuitDisposal(sameSuitCards, leadingCards, trumpInfo);
+  if (matchingResult) {
+    return matchingResult;
   }
 
-  // A4: If leading has tractors, do I have matching tractors?
-  if (
-    leadingAnalysis.tractors.length > 0 &&
-    !canMatchTractorStructure(
-      leadingAnalysis.tractors,
-      availableAnalysis.tractors,
-    )
-  ) {
-    // Same-suit disposal/contribution
-    return selectSameSuitDisposal(sameSuitCards, leadingCards, trumpInfo);
-  }
-
-  // A5: Play matching multi-combo
-  return playMatchingMultiCombo(sameSuitCards, leadingCards, trumpInfo, false);
+  // Cannot match structure - use same-suit disposal
+  return selectSameSuitDisposal(sameSuitCards, leadingCards, trumpInfo);
 }
 
 /**
@@ -189,32 +181,20 @@ function tryTrumpFollowing(
   // B1: Do I have remaining trump cards?
   const trumpCards = playerHand.filter((card) => isTrump(card, trumpInfo));
 
-  if (trumpCards.length === 0) {
-    return null; // No trump cards, move to cross-suit disposal
-  }
-
-  // B2: Do I have enough trump cards (by comparing length)?
   if (trumpCards.length < leadingCards.length) {
-    return null; // Not enough trump cards
+    return null; // No enough trump cards, move to cross-suit disposal
   }
 
-  // B3: If leading has pairs/tractors, do I have enough trump pairs?
-  const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
-  const trumpAnalysis = analyzeComboStructure(trumpCards, trumpInfo);
+  // B2-B4: Try to find matching trump multi-combo
+  const matchingResult = findMatchingMultiCombo(
+    leadingCards,
+    trumpCards,
+    trumpInfo,
+    true, // Trump response
+  );
 
-  if (
-    leadingAnalysis.totalPairs > 0 &&
-    trumpAnalysis.totalPairs < leadingAnalysis.totalPairs
-  ) {
-    return null; // Don't have enough trump pairs
-  }
-
-  // B4: If leading has tractors, do I have matching trump tractors?
-  if (
-    leadingAnalysis.tractors.length > 0 &&
-    !canMatchTractorStructure(leadingAnalysis.tractors, trumpAnalysis.tractors)
-  ) {
-    return null; // Don't have matching trump tractors
+  if (!matchingResult) {
+    return null; // Cannot match structure with trump cards
   }
 
   // B5: Strategic decision - trump it, beat existing trump, or dispose
@@ -226,109 +206,6 @@ function tryTrumpFollowing(
     playerHand,
     playerId,
   );
-}
-
-/**
- * Analyze combo structure to count pairs, tractors, and singles
- */
-interface ComboStructureAnalysis {
-  totalPairs: number;
-  tractors: { length: number; pairs: number }[];
-  singles: number;
-  totalCards: number;
-}
-
-function analyzeComboStructure(
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-): ComboStructureAnalysis {
-  // For multi-combo structure analysis, we need to identify the actual intended structure
-  // without double-counting cards that appear in both pairs and singles
-
-  // First, identify all possible combinations
-  const allCombos = identifyCombos(cards, trumpInfo);
-
-  // Filter to get only pairs and tractors (higher priority combinations)
-  const pairsAndTractors = allCombos.filter((combo) => {
-    const type = getComboType(combo.cards, trumpInfo);
-    return type === ComboType.Pair || type === ComboType.Tractor;
-  });
-
-  // Track which cards are already used in pairs/tractors
-  const usedCardIds = new Set<string>();
-  let totalPairs = 0;
-  const tractors: { length: number; pairs: number }[] = [];
-
-  // Process pairs and tractors first
-  pairsAndTractors.forEach((combo) => {
-    const comboType = getComboType(combo.cards, trumpInfo);
-
-    // Only count if none of these cards are already used
-    const comboCardIds = combo.cards.map((c) => c.id);
-    const hasUsedCard = comboCardIds.some((id) => usedCardIds.has(id));
-
-    if (!hasUsedCard) {
-      if (comboType === ComboType.Pair) {
-        totalPairs += 1;
-        comboCardIds.forEach((id) => usedCardIds.add(id));
-      } else if (comboType === ComboType.Tractor) {
-        const pairCount = combo.cards.length / 2;
-        totalPairs += pairCount;
-        tractors.push({ length: combo.cards.length, pairs: pairCount });
-        comboCardIds.forEach((id) => usedCardIds.add(id));
-      }
-    }
-  });
-
-  // Count remaining cards as singles
-  const remainingCards = cards.filter((card) => !usedCardIds.has(card.id));
-  const singles = remainingCards.length;
-
-  return {
-    totalPairs,
-    tractors,
-    singles,
-    totalCards: cards.length,
-  };
-}
-
-/**
- * Check if available tractors can match required tractor structure
- */
-function canMatchTractorStructure(
-  requiredTractors: { length: number; pairs: number }[],
-  availableTractors: { length: number; pairs: number }[],
-): boolean {
-  // Calculate total pairs required and available
-  const totalRequiredPairs = requiredTractors.reduce(
-    (sum, tractor) => sum + tractor.pairs,
-    0,
-  );
-  const totalAvailablePairs = availableTractors.reduce(
-    (sum, tractor) => sum + tractor.pairs,
-    0,
-  );
-
-  // Check if we have enough pairs total
-  if (totalAvailablePairs < totalRequiredPairs) {
-    return false;
-  }
-
-  // Check if longest available tractor can match longest required tractor
-  if (requiredTractors.length > 0 && availableTractors.length > 0) {
-    const longestRequiredLength = Math.max(
-      ...requiredTractors.map((t) => t.length),
-    );
-    const longestAvailableLength = Math.max(
-      ...availableTractors.map((t) => t.length),
-    );
-
-    if (longestAvailableLength < longestRequiredLength) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 /**
@@ -470,7 +347,7 @@ function playMatchingMultiCombo(
   );
 
   const canBeat =
-    isTrump || canBeatLeadingCombo(selectedCards, leadingCards, trumpInfo);
+    isTrump && canBeatLeadingCombo(selectedCards, leadingCards, trumpInfo);
 
   return {
     cards: selectedCards,
@@ -590,6 +467,13 @@ function selectBestMatchingCombination(
   // Analyze the leading structure to understand what we need to match
   const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
 
+  // This should not be null in normal flow - multi-combo is already validated
+  if (!leadingAnalysis) {
+    throw new Error(
+      "analyzeComboStructure returned null for validated multi-combo",
+    );
+  }
+
   // For structure matching, we need to select specific combinations that match the lead
   return selectStructureMatchingCards(
     availableCombos,
@@ -604,9 +488,8 @@ function selectBestMatchingCombination(
  */
 function selectStructureMatchingCards(
   availableCombos: Combo[],
-  leadingAnalysis: ComboStructureAnalysis,
+  leadingAnalysis: MultiCombo,
   trumpInfo: TrumpInfo,
-  _prioritizeLowest: boolean = false, // true for trump beating, false for same-suit
 ): Card[] {
   const selectedCards: Card[] = [];
   const usedCardIds = new Set<string>();
@@ -645,24 +528,23 @@ function selectStructureMatchingCards(
     .sort(sortByStrategicValue);
 
   // 1. Match tractors first (if leading has tractors)
-  for (const requiredTractor of leadingAnalysis.tractors) {
-    // Find the best matching tractor (lowest strategic value)
-    const matchingTractor = availableTractors.find((tractor) => {
-      const tractorCards = tractor.cards.map((c) => c.id);
-      const hasUsedCard = tractorCards.some((id) => usedCardIds.has(id));
-      return !hasUsedCard && tractor.cards.length >= requiredTractor.length;
-    });
+  let tractorsNeeded = leadingAnalysis.tractors;
+  for (const tractor of availableTractors) {
+    if (tractorsNeeded <= 0) break;
 
-    if (matchingTractor) {
-      selectedCards.push(...matchingTractor.cards);
-      matchingTractor.cards.forEach((card) => usedCardIds.add(card.id));
+    const tractorCards = tractor.cards.map((c) => c.id);
+    const hasUsedCard = tractorCards.some((id) => usedCardIds.has(id));
+
+    if (!hasUsedCard) {
+      selectedCards.push(...tractor.cards);
+      tractor.cards.forEach((card) => usedCardIds.add(card.id));
+      tractorsNeeded--;
     }
   }
 
   // 2. Match remaining pairs (total pairs - pairs already used in tractors)
   const remainingPairsNeeded =
-    leadingAnalysis.totalPairs -
-    leadingAnalysis.tractors.reduce((sum, t) => sum + t.pairs, 0);
+    leadingAnalysis.totalPairs - leadingAnalysis.totalTractorPairs;
   let pairsSelected = 0;
 
   for (const pair of availablePairs) {
@@ -679,7 +561,8 @@ function selectStructureMatchingCards(
   }
 
   // 3. Fill remaining with singles (lowest strategic value first)
-  const remainingSinglesNeeded = leadingAnalysis.singles;
+  const remainingSinglesNeeded =
+    leadingAnalysis.totalLength - selectedCards.length;
   let singlesSelected = 0;
 
   for (const single of availableSingles) {
@@ -719,26 +602,17 @@ function canBeatLeadingCombo(
   const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
   const trumpAnalysis = analyzeComboStructure(responseCards, trumpInfo);
 
-  // 3. If leading combo contains pairs or tractors, does trump contain same amount of pairs?
-  if (leadingAnalysis.totalPairs > 0) {
-    if (trumpAnalysis.totalPairs < leadingAnalysis.totalPairs) {
-      return false; // Can't beat - not enough trump pairs
-    }
+  // Check if analysis succeeded
+  if (!leadingAnalysis || !trumpAnalysis) {
+    return false; // Analysis failed
   }
 
-  // 4. If leading combo contains tractors, does trump contain same number of tractors with same length?
-  if (leadingAnalysis.tractors.length > 0) {
-    if (
-      !canMatchTractorStructure(
-        leadingAnalysis.tractors,
-        trumpAnalysis.tractors,
-      )
-    ) {
-      return false; // Can't beat - can't match tractor structure
-    }
+  // 3. Check if trump cards can match the required structure
+  if (!matchesRequiredComponents(trumpAnalysis, leadingAnalysis)) {
+    return false; // Can't beat - can't match structure requirements
   }
 
-  // 5. true (can beat) - trump with matching structure always beats non-trump
+  // 4. true (can beat) - trump with matching structure always beats non-trump
   return true;
 }
 

@@ -1,7 +1,7 @@
 // Phase 4: Advanced Combination Logic Types
 
-import { ComboType, Card, MultiComboStructure, Combo } from "./card";
 import { ComboStrength } from "./ai";
+import { Card, Combo, ComboType, MultiCombo } from "./card";
 import { PlayerId } from "./core";
 
 export enum CombinationPotential {
@@ -76,8 +76,7 @@ export interface MultiComboValidation {
 
 export interface MultiComboDetection {
   isMultiCombo: boolean;
-  structure?: MultiComboStructure;
-  components?: Combo[]; // Individual combos within multi-combo
+  components?: MultiCombo; // Contains combos field with individual combos
   validation?: MultiComboValidation;
 }
 

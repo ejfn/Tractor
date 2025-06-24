@@ -299,23 +299,18 @@ export enum ComboType {
   Single = "Single",
   Pair = "Pair",
   Tractor = "Tractor", // Consecutive pairs of same suit
-  MultiCombo = "MultiCombo", // Strategic unbeatable leading combos from non-trump suit
   Invalid = "Invalid", // Invalid combination that doesn't form any valid combo type
 }
 
 // Multi-combo components breakdown
-export type MultiComboComponents = {
+export type MultiCombo = {
+  combos: Combo[]; // Individual combo components within the multi-combo
   totalLength: number; // Total cards in multi-combo
   totalPairs: number; // Total pairs (includes standalone pairs + pairs within tractors)
+  totalTractorPairs: number; // Total pairs from all tractors (for AI analysis)
   tractors: number; // Count of tractors
   tractorSizes: number[]; // Length of each tractor (in pairs)
-};
-
-// Multi-combo structure for tracking component types
-export type MultiComboStructure = {
-  suit: Suit; // Specific suit or Suit.None for trump multi-combos
-  components: MultiComboComponents;
-  isLeading: boolean; // Leading vs following context
+  isTrump: boolean; // Whether this multi-combo consists of trump cards
 };
 
 export type Combo = {
@@ -323,5 +318,4 @@ export type Combo = {
   cards: Card[];
   value: number; // Relative hand strength for comparison
   isBreakingPair?: boolean; // Whether this combo breaks up a valuable pair
-  multiComboStructure?: MultiComboStructure; // For MultiCombo type only
 };

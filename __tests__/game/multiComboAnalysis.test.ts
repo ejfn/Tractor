@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { isTrump } from "../../src/game/gameHelpers";
-import {
-  analyzeMultiComboComponents,
-  getMultiComboStructure,
-} from "../../src/game/multiComboAnalysis";
+import { analyzeComboStructure } from "../../src/game/multiComboAnalysis";
 import { Rank, Suit, TrumpInfo } from "../../src/types";
 import { Card } from "../../src/types/card";
 
@@ -28,12 +25,11 @@ describe("Multi-Combo Structure Analysis Tests", () => {
       const hand = [...spadeApair, ...spadeKpair, spadeQ, spadeJ];
 
       // Analyze multi-combo structure
-      const components = analyzeMultiComboComponents(hand, trumpInfo);
-      const structure = getMultiComboStructure(components, Suit.Spades, true);
+      const structure = analyzeComboStructure(hand, trumpInfo);
 
-      expect(structure.components.tractors).toBe(1); // One tractor: A-A-K-K
-      expect(structure.components.totalPairs).toBe(2); // Two pairs in tractor
-      expect(structure.components.totalLength).toBe(6);
+      expect(structure?.tractors).toBe(1); // One tractor: A-A-K-K
+      expect(structure?.totalPairs).toBe(2); // Two pairs in tractor
+      expect(structure?.totalLength).toBe(6);
     });
 
     it("Should correctly analyze tractor + single structure", () => {
@@ -45,12 +41,11 @@ describe("Multi-Combo Structure Analysis Tests", () => {
       const hand = [...spadeApair, ...spadeKpair, spadeQ];
 
       // Analyze structure components
-      const components = analyzeMultiComboComponents(hand, trumpInfo);
-      const structure = getMultiComboStructure(components, Suit.Spades, true);
+      const structure = analyzeComboStructure(hand, trumpInfo);
 
-      expect(structure.components.tractors).toBe(1); // One tractor: A-A-K-K
-      expect(structure.components.totalPairs).toBe(2); // Two pairs in tractor
-      expect(structure.components.totalLength).toBe(5);
+      expect(structure?.tractors).toBe(1); // One tractor: A-A-K-K
+      expect(structure?.totalPairs).toBe(2); // Two pairs in tractor
+      expect(structure?.totalLength).toBe(5);
     });
 
     it("Should correctly analyze pair + multiple singles structure", () => {
@@ -63,12 +58,11 @@ describe("Multi-Combo Structure Analysis Tests", () => {
       const hand = [...spadeKpair, spadeQ, spade9, spade7];
 
       // Analyze structure components
-      const components = analyzeMultiComboComponents(hand, trumpInfo);
-      const structure = getMultiComboStructure(components, Suit.Spades, true);
+      const structure = analyzeComboStructure(hand, trumpInfo);
 
-      expect(structure.components.tractors).toBe(0); // No tractors
-      expect(structure.components.totalPairs).toBe(1); // One pair: K-K
-      expect(structure.components.totalLength).toBe(5);
+      expect(structure?.tractors).toBe(0); // No tractors
+      expect(structure?.totalPairs).toBe(1); // One pair: K-K
+      expect(structure?.totalLength).toBe(5);
     });
 
     it("Should correctly analyze complex tractor + pairs + single structure", () => {
@@ -88,12 +82,11 @@ describe("Multi-Combo Structure Analysis Tests", () => {
       ];
 
       // Analyze structure components
-      const components = analyzeMultiComboComponents(hand, trumpInfo);
-      const structure = getMultiComboStructure(components, Suit.Spades, true);
+      const structure = analyzeComboStructure(hand, trumpInfo);
 
-      expect(structure.components.tractors).toBe(1); // One tractor: A-A-K-K
-      expect(structure.components.totalPairs).toBe(4); // Four pairs total: 2 in tractor + 2 standalone
-      expect(structure.components.totalLength).toBe(9);
+      expect(structure?.tractors).toBe(1); // One tractor: A-A-K-K
+      expect(structure?.totalPairs).toBe(4); // Four pairs total: 2 in tractor + 2 standalone
+      expect(structure?.totalLength).toBe(9);
     });
   });
 
@@ -110,11 +103,10 @@ describe("Multi-Combo Structure Analysis Tests", () => {
       expect(isTrump(trumpSpade5, trumpInfo)).toBe(true);
 
       // Analyze trump multi-combo structure
-      const components = analyzeMultiComboComponents(hand, trumpInfo);
-      const structure = getMultiComboStructure(components, Suit.Spades, true); // Trump multi-combo
+      const structure = analyzeComboStructure(hand, trumpInfo); // Trump multi-combo
 
-      expect(structure.components.totalPairs).toBe(1); // One trump rank pair
-      expect(structure.components.totalLength).toBe(3);
+      expect(structure?.totalPairs).toBe(1); // One trump rank pair
+      expect(structure?.totalLength).toBe(3);
     });
   });
 
@@ -130,11 +122,10 @@ describe("Multi-Combo Structure Analysis Tests", () => {
       const hand = [...spadeApair, ...spadeKpair, spadeQ, spadeJ, spade10];
 
       // Should be considered well-structured (3+ singles)
-      const components = analyzeMultiComboComponents(hand, trumpInfo);
-      const structure = getMultiComboStructure(components, Suit.Spades, true);
+      const structure = analyzeComboStructure(hand, trumpInfo);
 
-      expect(structure.components.tractors).toBe(1);
-      expect(structure.components.totalLength).toBe(7); // 4 cards in tractor + 3 singles
+      expect(structure?.tractors).toBe(1);
+      expect(structure?.totalLength).toBe(7); // 4 cards in tractor + 3 singles
     });
 
     it("Should identify poorly structured multi-combos", () => {
@@ -145,11 +136,10 @@ describe("Multi-Combo Structure Analysis Tests", () => {
       const hand = [...spadeKpair, spadeQ];
 
       // Should be considered poorly structured (only 1 single)
-      const components = analyzeMultiComboComponents(hand, trumpInfo);
-      const structure = getMultiComboStructure(components, Suit.Spades, true);
+      const structure = analyzeComboStructure(hand, trumpInfo);
 
-      expect(structure.components.totalPairs).toBe(1);
-      expect(structure.components.totalLength).toBe(3); // 2 cards in pair + 1 single
+      expect(structure?.totalPairs).toBe(1);
+      expect(structure?.totalLength).toBe(3); // 2 cards in pair + 1 single
     });
   });
 });

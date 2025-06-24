@@ -717,8 +717,8 @@ describe("Multi-Combo Following Rules", () => {
             cards: [
               Card.createCard(Suit.Clubs, Rank.Two, 0), // Trump rank tractor (2♣2♣-2♠2♠)
               Card.createCard(Suit.Clubs, Rank.Two, 1),
-              Card.createCard(Suit.Spades, Rank.Two, 0), // (Trump rank in trump suit)
-              Card.createCard(Suit.Spades, Rank.Two, 1),
+              Card.createCard(Suit.Hearts, Rank.Two, 0), // (Trump rank in trump suit)
+              Card.createCard(Suit.Hearts, Rank.Two, 1),
               Card.createCard(Suit.Hearts, Rank.Ace, 0), // Trump suit single
             ],
           },

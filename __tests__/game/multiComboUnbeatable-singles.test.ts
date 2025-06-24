@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals";
-import { detectLeadingMultiCombo } from "../../src/game/multiComboDetection";
+import { detectLeadingMultiCombo } from "../../src/game/multiComboAnalysis";
 import {
   isComboUnbeatable,
   validateLeadingMultiCombo,
@@ -455,25 +455,19 @@ describe("Single Cards - isComboUnbeatable Tests", () => {
         gameState.trumpInfo,
       );
       expect(detection.isMultiCombo).toBe(true);
-      expect(detection.structure).toBeDefined();
       expect(detection.components).toBeDefined();
 
-      if (detection.structure && detection.components) {
-        expect(detection.structure.suit).toBe(Suit.Diamonds);
-        expect(detection.structure.components.totalPairs).toBe(0);
-        expect(detection.structure.components.totalLength).toBe(2);
-        expect(detection.components).toHaveLength(2); // Two single-card combos
+      if (detection.components) {
+        expect(detection.components.totalPairs).toBe(0);
+        expect(detection.components.totalLength).toBe(2);
+        expect(detection.components.combos).toHaveLength(2); // Two single-card combos
       }
 
       // Step 2: Should pass validation (unbeatable because other A♦,K♦ already played)
-      if (
-        detection.isMultiCombo &&
-        detection.components &&
-        detection.structure
-      ) {
+      if (detection.isMultiCombo && detection.components) {
         const validation = validateLeadingMultiCombo(
-          detection.components,
-          detection.structure.suit,
+          detection.components.combos,
+          Suit.Diamonds,
           gameState,
           PlayerId.Human,
         );

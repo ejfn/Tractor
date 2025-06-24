@@ -50,7 +50,7 @@ In Tractor/Shengji, a **MultiCombo** is multiple combos from the same suit playe
 - **Logic**: Scans each non-trump suit for unbeatable combos, selects suit with maximum unbeatable cards using memory system
 
 #### 3. **AI following selection and strategy**: AI systematic algorithm for responding to multi-combo leads
-- **Implementation**: `ai/following/multiComboFollowingStrategy.ts` → `selectMultiComboFollowingPlay()`
+- **Implementation**: `ai/following/multiComboFollowingStrategy.ts` → `executeMultiComboFollowingAlgorithm()`
 - **Integration**: Called by main AI following logic when multi-combo detected
 - **Logic**: 3-section algorithm (same-suit → trump → cross-suit) with progressive filtering and strategic decisions, includes AI trump response strategy when exhausted of leading suit
 
@@ -63,8 +63,9 @@ In Tractor/Shengji, a **MultiCombo** is multiple combos from the same suit playe
 - **Implementation**: `cardComparison.ts` → `compareTrumpMultiCombos()` function - core logic for determining if one multi-combo beats another
 - **Integration**: 
   - Called by AI following strategy for trump vs trump decision-making
-  - Used by `canComboBeaten()` for trick winner determination
+  - Used by `canMultiComboBeaten()` for multi-combo trick winner determination (separated from straight combo logic)
 - **Logic**: Compares highest combo type first (tractors > pairs > singles), then compares strength within that type using trump hierarchy
+- **Key Enhancement**: `getHighestComboOfType()` allows higher combo types to satisfy lower requirements (e.g., trump pair can beat single multi-combo)
 
 ### System Architecture Philosophy
 
@@ -84,20 +85,25 @@ The MultiCombo system follows a **modular, separation-of-concerns approach**:
 
 ```
 src/game/
-├── multiComboAnalysis.ts          # Core detection and component analysis
-├── multiComboDetection.ts         # Contextual multi-combo detection for validation
+├── multiComboAnalysis.ts          # Core detection and component analysis with isLeading flag
 ├── multiComboValidation.ts        # Unbeatable analysis and void detection
-├── multiComboLeadingStrategies.ts # Leading validation and AI selection
+├── cardComparison.ts              # Enhanced trump comparison with canMultiComboBeaten()
 └── playValidation.ts              # Integration with main game validation
 
 src/ai/following/
 └── multiComboFollowingStrategy.ts # AI following algorithm implementation
 
+src/ai/leading/
+└── multiComboLeadingStrategy.ts   # AI leading selection and strategy
+
 __tests__/game/
 ├── multiComboAnalysis.test.ts     # Structure analysis tests
 ├── multiComboFollowing.test.ts    # Following validation tests
 ├── multiComboUnbeatable-*.test.ts # Unbeatable detection tests
-└── __tests__/ai/multiComboFollowingAI.test.ts # AI strategy tests
+└── multiComboTrumpStructureMatching.test.ts # Trump structure matching tests
+
+__tests__/ai/
+└── multiComboFollowingAI.test.ts  # AI strategy tests
 ```
 
 ---
@@ -173,13 +179,18 @@ type Combo = {
 
 ### 1. Multi-Combo Detection Algorithm
 
-**Location**: `multiComboAnalysis.ts` → `analyzeMultiComboComponents()`
+**Location**: `multiComboAnalysis.ts` → `analyzeComboStructure()`
 
-**Purpose**: Break down cards into optimal non-overlapping combinations
+**Purpose**: Break down cards into optimal non-overlapping combinations with context-aware multi-combo detection
+
+**Key Enhancement**: **`isLeading` Flag**
+- **Leading combos** (`isLeading=true`): Must have ≥2 combos to be considered multi-combo
+- **Following combos** (`isLeading=false`): Can be single combo (e.g., trump pair beating two singles)
+- **Use case**: Trump pair can beat single multi-combo by providing highest single card
 
 **Algorithm Flow**:
 ```
-Input: Cards from same suit/trump group
+Input: Cards from same suit/trump group + isLeading flag
 ↓
 1. Use identifyCombos() to find all possible combinations
 ↓
@@ -188,7 +199,11 @@ Input: Cards from same suit/trump group
    - Use largest combos first
    - Ensure no card overlap
 ↓
-3. Return non-overlapping combination set
+3. Check multi-combo requirement:
+   - If isLeading=true AND combos.length < 2 → return null
+   - Otherwise → return component analysis
+↓
+4. Return non-overlapping combination set with structure metadata
 ```
 
 **Key Implementation**:
@@ -302,7 +317,7 @@ const isUnbeatable = isComboUnbeatable(
 
 ### 3. Multi-Combo Following Algorithm
 
-**Location**: `multiComboFollowingStrategy.ts` → `selectMultiComboFollowingPlay()`
+**Location**: `multiComboFollowingStrategy.ts` → `executeMultiComboFollowingAlgorithm()`
 
 **Purpose**: Systematic approach to following multi-combo leads
 
@@ -353,21 +368,53 @@ B5: Strategic decision (trump it, beat existing trump, or dispose)
 Play lowest value cards to match required length
 ```
 
-### 4. Structure Matching Algorithm
+### 4. Enhanced Trump Comparison Algorithm
 
-**Location**: `multiComboValidation.ts` → `matchesMultiComboStructure()`
+**Location**: `cardComparison.ts` → `getHighestComboOfType()`
+
+**Purpose**: Extract highest card of required type, allowing higher combo types to satisfy lower requirements
+
+**Problem Solved**: Previously, when leading required "singles" but response had "pairs", the filter logic couldn't find matching combos because it looked for exact type matches. This caused trump pairs to be unable to beat single multi-combos.
+
+**Key Innovation**: **Hierarchical Type Satisfaction**
+- **Tractor requirement**: Only tractors can satisfy (most restrictive)
+- **Pair requirement**: Pairs OR tractors can satisfy (tractors contain pairs)  
+- **Single requirement**: Any combo can satisfy (all combos contain single cards)
+
+**Algorithm Flow**:
+```
+Input: Combos + target combo type + trump info
+↓
+1. Collect candidate cards based on type hierarchy:
+   - Tractor target → Only tractor cards qualify
+   - Pair target → Pair + tractor cards qualify  
+   - Single target → All combo cards qualify
+↓
+2. Find highest card among candidates using trump comparison
+↓
+3. Return strongest card that satisfies requirement
+```
+
+**Critical Use Case**:
+```
+Leading: K♠ + Q♠ (2 singles) → required type = Single
+Response: A♥A♥ (trump pair) → candidates = [A♥, A♥] → highest = A♥
+Result: Trump pair beats singles by providing A♥ as highest single
+```
+
+### 5. Structure Matching Algorithm
+
+**Location**: `multiComboAnalysis.ts` → `matchesRequiredComponents()`
 
 **Purpose**: Validate that following multi-combo matches required structure
 
 **5-Step Validation**:
 ```
-Step 1: Total length check (already done at higher level)
-Step 2: Same suit check (already done at higher level)
-Step 3: If leading has pairs/tractors, check total pairs ≥ required
-Step 4: If leading has tractors, check:
-        - Number of tractors ≥ required
-        - Longest tractor length ≥ required
-Step 5: Return true (all checks passed)
+Step 1: Total length check (must match exactly)
+Step 2: Total pairs check (≥ required pairs)
+Step 3: Tractors count check (≥ required tractors)
+Step 4: Tractor pairs check (≥ required tractor pairs)
+Step 5: Maximum tractor size check (≥ longest required tractor)
 ```
 
 ---
@@ -489,7 +536,7 @@ if (!leadingMultiCombo.isMultiCombo) {
 }
 
 // Execute multi-combo specific algorithm
-return selectMultiComboFollowingPlay(/* ... */);
+return executeMultiComboFollowingAlgorithm(/* ... */);
 ```
 
 **AI Strategic Decisions**:
@@ -561,12 +608,23 @@ if (leadingDetection.isMultiCombo) {
 
 ### Card Comparison System
 
-**Integration**: Uses existing `compareCards()` and `evaluateTrickPlay()` functions
+**Integration**: Enhanced with architectural separation of multi-combo vs straight combo logic
+
+**Key Enhancement**: **Architectural Split**
+- **`canMultiComboBeaten()`**: Handles multi-combo specific beating logic with trump structure matching
+- **`canComboBeaten()`**: Handles straight combo logic (singles, pairs, tractors)
+- **`evaluateTrickPlay()`**: Routes to appropriate function based on leading combo type
 
 **Usage**:
-- **Strength comparison**: Within-suit card comparison for unbeatable analysis
+- **Multi-combo comparison**: Uses `compareTrumpMultiCombos()` with enhanced `getHighestComboOfType()`
 - **Trump hierarchy**: Proper trump ordering for trump vs trump comparison
+- **Structure validation**: Uses `matchesRequiredComponents()` for trump structure matching
 - **Cross-suit validation**: Trick evaluation for complex scenarios
+
+**Critical Rules**:
+- **Non-trump cannot beat multi-combos**: Only trump responses can beat multi-combo leads
+- **Trump structure matching**: Trump responses must match leading combo structure
+- **Higher type satisfaction**: Trump pairs can beat single multi-combos by providing highest single card
 
 ### Memory System Integration
 

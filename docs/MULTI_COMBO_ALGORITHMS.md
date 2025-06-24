@@ -10,6 +10,11 @@
 
 This document details the algorithms for multi-combo leading (matching) and following in the Tractor card game. These algorithms ensure proper game rule compliance and strategic decision-making for complex multi-combo scenarios.
 
+**🚨 RECENT ARCHITECTURAL UPDATES**:
+1. **`analyzeComboStructure()` with `isLeading` flag**: Only leading combos must be "multi" (≥2 combos), following combos can be single (e.g., trump pair beating two singles)
+2. **Enhanced `getHighestComboOfType()`**: Higher combo types can satisfy lower requirements (trump pair provides highest single card)
+3. **Architectural separation**: `canMultiComboBeaten()` vs `canComboBeaten()` for proper multi-combo vs straight combo logic
+
 ---
 
 ## Multi-Combo Leading Systems
@@ -374,23 +379,94 @@ if (shouldTrumpIt(context)) {
 
 ## Algorithm Comparison
 
-### **Current Implementation vs New Algorithm**
+### **Current Implementation vs Enhanced Algorithm**
 
-| **Aspect** | **Current Implementation** | **New Algorithm** |
+| **Aspect** | **Previous Implementation** | **Enhanced Algorithm** |
 |------------|---------------------------|-------------------|
 | **Structure** | Complex strategy selection | Clear step-by-step flow |
+| **Multi-combo Detection** | Leading/following same logic | Context-aware with `isLeading` flag |
+| **Trump Comparison** | Exact type matching only | Hierarchical type satisfaction |
+| **Architectural Split** | Mixed combo logic | Separated `canMultiComboBeaten()` vs `canComboBeaten()` |
 | **Debugging** | Hard to trace failures | Easy to identify failure points |
-| **Maintainability** | Multiple interdependent functions | Simple, independent steps |
-| **Performance** | Multiple combo generations | Progressive filtering |
-| **Readability** | Technical implementation focus | Human-intuitive logic |
+| **Trump Pair vs Singles** | Couldn't beat singles | Can beat by providing highest single card |
 
 ### **Key Improvements**
 
-1. **Progressive Filtering**: Each step eliminates impossible scenarios early
-2. **Clear Failure Points**: Easy to identify why a multi-combo cannot be followed
-3. **Strategic Clarity**: Explicit decision points for trump usage
-4. **Rule Compliance**: Direct mapping to Tractor/Shengji game rules
-5. **Testability**: Each step can be unit tested independently
+1. **Context-Aware Detection**: `isLeading` flag allows different rules for leading vs following
+2. **Hierarchical Type Satisfaction**: Higher combo types can satisfy lower requirements
+3. **Architectural Separation**: Clean split between multi-combo and straight combo logic
+4. **Enhanced Trump Logic**: Trump pairs can beat single multi-combos properly
+5. **Progressive Filtering**: Each step eliminates impossible scenarios early
+6. **Clear Failure Points**: Easy to identify why a multi-combo cannot be followed
+7. **Strategic Clarity**: Explicit decision points for trump usage
+8. **Rule Compliance**: Direct mapping to Tractor/Shengji game rules
+9. **Testability**: Each step can be unit tested independently
+
+---
+
+## Enhanced Algorithm Implementation
+
+### **Context-Aware Multi-Combo Detection**
+
+**Function**: `analyzeComboStructure(cards, trumpInfo, isLeading?)`
+
+**Key Enhancement**: Different rules for leading vs following combos
+
+```typescript
+// Leading combo validation - must be true multi-combo
+const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo, true);
+// Returns null if less than 2 combos (not a true multi-combo)
+
+// Following combo analysis - allows single combos  
+const responseAnalysis = analyzeComboStructure(responseCards, trumpInfo);
+// Returns structure even for single combo (e.g., trump pair)
+```
+
+**Critical Use Case**:
+```
+Leading: K♠ + Q♠ (2 singles) → isLeading=true → valid multi-combo
+Response: A♥A♥ (trump pair) → isLeading=false → valid single combo that can beat leading
+```
+
+### **Hierarchical Type Satisfaction Algorithm**
+
+**Function**: `getHighestComboOfType(combos, targetType, trumpInfo)`
+
+**Problem Solved**: Trump pair couldn't beat single multi-combo due to exact type matching
+
+**Enhanced Logic**:
+```typescript
+// OLD: Exact type matching only
+if (targetType === ComboType.Single) {
+  targetCards = combos.filter(combo => combo.type === ComboType.Single);
+}
+
+// NEW: Hierarchical type satisfaction
+if (targetType === ComboType.Single) {
+  // ANY combo can provide single cards
+  targetCards = combos.flatMap(combo => combo.cards);
+}
+```
+
+**Result**: Trump pair A♥A♥ can beat single multi-combo by providing A♥ as highest single
+
+### **Architectural Separation Algorithm**
+
+**Function**: `evaluateTrickPlay()` routing logic
+
+**Enhancement**: Clean separation between multi-combo and straight combo logic
+
+```typescript
+// Route to appropriate comparison function
+const canBeat = leadingComboType === ComboType.Invalid
+  ? canMultiComboBeaten(proposedPlay, currentWinningCombo, trumpInfo, leadingCards)
+  : canComboBeaten(proposedPlay, currentWinningCombo, trumpInfo);
+```
+
+**Benefits**:
+- **`canMultiComboBeaten()`**: Enforces trump structure matching, uses `compareTrumpMultiCombos()`
+- **`canComboBeaten()`**: Handles straight combo logic without multi-combo complexity
+- **Clean separation**: No mixed logic, easier to debug and maintain
 
 ---
 
@@ -460,19 +536,32 @@ function followMultiCombo(
 
 ## Summary
 
-The new multi-combo algorithms provide:
+The enhanced multi-combo algorithms provide:
 
 **Leading Algorithm Benefits:**
 - ✅ Clear void detection and unbeatable analysis
 - ✅ Explicit rule compliance checking
+- ✅ Context-aware detection with `isLeading` flag
 - ✅ Easy to understand and maintain
 
 **Following Algorithm Benefits:**  
 - ✅ Systematic same-suit → trump → cross-suit progression
 - ✅ Progressive filtering eliminates impossible scenarios early
 - ✅ Strategic decision points for optimal play
+- ✅ Enhanced trump logic: pairs can beat single multi-combos
 
-Both algorithms align with human intuition and game rules while providing robust technical implementation for the AI system.
+**Architectural Benefits:**
+- ✅ Clean separation: `canMultiComboBeaten()` vs `canComboBeaten()`
+- ✅ Hierarchical type satisfaction: higher combos can satisfy lower requirements
+- ✅ Context-aware multi-combo detection for leading vs following
+- ✅ Proper trump structure matching with flexible combo type handling
+
+**Key Problem Solved:**
+- 🔧 **Trump Pair vs Single Multi-Combo**: Trump pairs can now beat single multi-combos by providing their highest single card
+- 🔧 **Context Awareness**: Leading combos must be true multi-combos (≥2 combos), following combos can be single combos
+- 🔧 **Architectural Clarity**: Clean separation eliminates mixed logic and improves maintainability
+
+Both algorithms align with human intuition and game rules while providing robust technical implementation for the AI system. The enhancements solve critical edge cases and improve the overall system architecture.
 
 ---
 

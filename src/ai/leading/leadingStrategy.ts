@@ -19,7 +19,7 @@ import {
   selectEarlyGameLeadingPlay,
   selectMemoryEnhancedPointPlay,
 } from "./pointFocusedStrategy";
-import { selectAIMultiComboLead } from "../../game/multiComboLeadingStrategies";
+import { selectAIMultiComboLead } from "./multiComboLeadingStrategy";
 import { analyzeCombo } from "../aiGameContext";
 import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
 import { getRankValue } from "../analysis/comboAnalysis";
