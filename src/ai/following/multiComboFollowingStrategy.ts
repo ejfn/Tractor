@@ -103,24 +103,9 @@ function findMatchingMultiCombo(
     return null; // Analysis failed
   }
 
-  // Check if we have enough pairs
-  if (
-    leadingAnalysis.totalPairs > 0 &&
-    availableAnalysis.totalPairs < leadingAnalysis.totalPairs
-  ) {
-    return null; // Not enough pairs
-  }
-
-  // Check if we have matching structure (including tractors)
-  // For trump responses, be more permissive - only check if we can match the basic requirements
-  if (isTrumpResponse) {
-    // For trump, we just need enough cards and enough pairs/tractors to beat
-    // The exact structure matching will be handled by canBeatLeadingCombo
-  } else {
-    // For same-suit responses, require exact structure matching
-    if (!matchesRequiredComponents(availableAnalysis, leadingAnalysis)) {
-      return null; // Cannot match structure
-    }
+  // Check if we can match the required structure
+  if (!matchesRequiredComponents(availableAnalysis, leadingAnalysis)) {
+    return null; // Cannot match structure requirements
   }
 
   // Can match structure - create matching multi-combo
