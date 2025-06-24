@@ -86,21 +86,22 @@ function findOptimalComboDecomposition(
     return b.cards.length - a.cards.length;
   });
 
-  const usedCardIds = new Set<string>();
+  // Track individual card instances, not just card IDs (identical cards have same ID)
+  const usedCardInstances = new Set<Card>();
   const selectedCombos: Combo[] = [];
 
   for (const combo of sortedCombos) {
-    // Check if any card in this combo is already used
-    const hasOverlap = combo.cards.some((card) => usedCardIds.has(card.id));
+    // Check if any specific card instance in this combo is already used
+    const hasOverlap = combo.cards.some((card) => usedCardInstances.has(card));
 
     if (!hasOverlap) {
       selectedCombos.push(combo);
-      combo.cards.forEach((card) => usedCardIds.add(card.id));
+      combo.cards.forEach((card) => usedCardInstances.add(card));
     }
   }
 
   // Verify all cards are accounted for
-  if (usedCardIds.size !== cards.length) {
+  if (usedCardInstances.size !== cards.length) {
     // Fallback: treat all as singles if optimal decomposition fails
     return cards.map((card) => ({
       type: ComboType.Single,
