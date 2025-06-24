@@ -44,22 +44,17 @@ describe("AI Tractor Following Behavior", () => {
       const bot1Player = getPlayerById(gameState, PlayerId.Bot1);
       // Bot1 has trump cards that could form pairs
       bot1Player.hand = [
-        Card.createCard(Suit.Hearts, Rank.Seven, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Hearts pair (trump suit)
-        Card.createCard(Suit.Hearts, Rank.Eight, 0),
-        Card.createCard(Suit.Hearts, Rank.Eight, 0), // Hearts pair (trump suit)
+        ...Card.createPair(Suit.Hearts, Rank.Seven), // Hearts pair (trump suit)
+        ...Card.createPair(Suit.Hearts, Rank.Eight), // Hearts pair (trump suit)
         Card.createCard(Suit.Hearts, Rank.Nine, 0), // Single trump
-        Card.createCard(Suit.Spades, Rank.Two, 0),
-        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank pair in other suit
+        ...Card.createPair(Suit.Spades, Rank.Two), // Trump rank pair in other suit
         Card.createCard(Suit.Clubs, Rank.Ten, 0),
       ];
 
       // Human leads with Hearts tractor (trump suit tractor)
       const leadingTractor = [
-        Card.createCard(Suit.Hearts, Rank.Five, 0),
-        Card.createCard(Suit.Hearts, Rank.Five, 0),
-        Card.createCard(Suit.Hearts, Rank.Six, 0),
-        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six),
       ];
 
       gameState.currentTrick = {
@@ -168,10 +163,8 @@ describe("AI Tractor Following Behavior", () => {
       const bot1Player = getPlayerById(gameState, PlayerId.Bot1);
       // Bot1 has a trump tractor available
       bot1Player.hand = [
-        Card.createCard(Suit.Hearts, Rank.Seven, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Hearts pair
-        Card.createCard(Suit.Hearts, Rank.Eight, 0),
-        Card.createCard(Suit.Hearts, Rank.Eight, 0), // Hearts pair (consecutive = tractor!)
+        ...Card.createPair(Suit.Hearts, Rank.Seven), // Hearts pair
+        ...Card.createPair(Suit.Hearts, Rank.Eight), // Hearts pair (consecutive = tractor!)
         Card.createCard(Suit.Hearts, Rank.Nine, 0),
         Card.createCard(Suit.Hearts, Rank.Ten, 0), // Singles
         Card.createCard(Suit.Clubs, Rank.King, 0),
@@ -179,10 +172,8 @@ describe("AI Tractor Following Behavior", () => {
 
       // Human leads with non-trump tractor
       const leadingTractor = [
-        Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0),
+        ...Card.createPair(Suit.Spades, Rank.Five),
+        ...Card.createPair(Suit.Spades, Rank.Six),
       ];
 
       gameState.currentTrick = {
@@ -253,22 +244,17 @@ describe("AI Tractor Following Behavior", () => {
 
       // Bot1 has both: consecutive pairs (tractor) AND non-consecutive pairs
       bot1Player.hand = [
-        Card.createCard(Suit.Spades, Rank.Seven, 0),
-        Card.createCard(Suit.Spades, Rank.Seven, 0), // Consecutive
-        Card.createCard(Suit.Spades, Rank.Eight, 0),
-        Card.createCard(Suit.Spades, Rank.Eight, 0), // pair (tractor)
-        Card.createCard(Suit.Spades, Rank.Jack, 0),
-        Card.createCard(Suit.Spades, Rank.Jack, 0), // Non-consecutive
+        ...Card.createPair(Suit.Spades, Rank.Seven), // Consecutive
+        ...Card.createPair(Suit.Spades, Rank.Eight), // pair (tractor)
+        ...Card.createPair(Suit.Spades, Rank.Jack), // Non-consecutive
         Card.createCard(Suit.Spades, Rank.Queen, 0), // Single to complete hand
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       // Human leads with Spades tractor
       const leadingTractor = [
-        Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0),
+        ...Card.createPair(Suit.Spades, Rank.Five),
+        ...Card.createPair(Suit.Spades, Rank.Six),
       ];
 
       gameState.currentTrick = {
@@ -369,21 +355,16 @@ describe("AI Tractor Following Behavior", () => {
 
       // Bot1 has trump rank pairs and non-trump pairs
       bot1Player.hand = [
-        Card.createCard(Suit.Spades, Rank.Two, 0),
-        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank pair
-        Card.createCard(Suit.Clubs, Rank.Two, 0),
-        Card.createCard(Suit.Clubs, Rank.Two, 0), // Trump rank pair
-        Card.createCard(Suit.Diamonds, Rank.Three, 0),
-        Card.createCard(Suit.Diamonds, Rank.Three, 0), // Non-trump pair
+        ...Card.createPair(Suit.Spades, Rank.Two), // Trump rank pair
+        ...Card.createPair(Suit.Clubs, Rank.Two), // Trump rank pair
+        ...Card.createPair(Suit.Diamonds, Rank.Three), // Non-trump pair
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       // Human leads with trump tractor (Hearts trump suit)
       const leadingTrumpTractor = [
-        Card.createCard(Suit.Hearts, Rank.Five, 0),
-        Card.createCard(Suit.Hearts, Rank.Five, 0),
-        Card.createCard(Suit.Hearts, Rank.Six, 0),
-        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six),
       ];
 
       gameState.currentTrick = {
@@ -419,23 +400,17 @@ describe("AI Tractor Following Behavior", () => {
 
       // Bot1 has mixed trump combinations
       bot1Player.hand = [
-        Card.createCard(Suit.Hearts, Rank.Seven, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Trump suit pair
-        Card.createCard(Suit.Spades, Rank.Two, 0),
-        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank pair
-        Card.createJoker(JokerType.Small, 0),
-        Card.createJoker(JokerType.Small, 0), // Joker pair
+        ...Card.createPair(Suit.Hearts, Rank.Seven), // Trump suit pair
+        ...Card.createPair(Suit.Spades, Rank.Two), // Trump rank pair
+        ...Card.createJokerPair(JokerType.Small), // Joker pair
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       // Human leads with trump tractor (3 consecutive pairs = 6 cards)
       const leadingTrumpTractor = [
-        Card.createCard(Suit.Hearts, Rank.Five, 0),
-        Card.createCard(Suit.Hearts, Rank.Five, 0),
-        Card.createCard(Suit.Hearts, Rank.Six, 0),
-        Card.createCard(Suit.Hearts, Rank.Six, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0),
+        ...Card.createPair(Suit.Hearts, Rank.Five),
+        ...Card.createPair(Suit.Hearts, Rank.Six),
+        ...Card.createPair(Suit.Hearts, Rank.Seven),
       ];
 
       gameState.currentTrick = {
@@ -479,20 +454,16 @@ describe("AI Tractor Following Behavior", () => {
 
       // Bot1 has NO Spades but has a trump tractor
       bot1Player.hand = [
-        Card.createCard(Suit.Hearts, Rank.Seven, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Trump tractor
-        Card.createCard(Suit.Hearts, Rank.Eight, 0),
-        Card.createCard(Suit.Hearts, Rank.Eight, 0), // (consecutive pairs)
+        ...Card.createPair(Suit.Hearts, Rank.Seven), // Trump tractor
+        ...Card.createPair(Suit.Hearts, Rank.Eight), // (consecutive pairs)
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
         Card.createCard(Suit.Diamonds, Rank.King, 0),
       ];
 
       // Human leads with Spades tractor (non-trump)
       const leadingTractor = [
-        Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0),
+        ...Card.createPair(Suit.Spades, Rank.Five),
+        ...Card.createPair(Suit.Spades, Rank.Six),
       ];
 
       gameState.currentTrick = {
@@ -551,8 +522,7 @@ describe("AI Tractor Following Behavior", () => {
 
       // Bot1 has NO Spades and cannot form a tractor (only 1 trump pair + singles)
       bot1Player.hand = [
-        Card.createCard(Suit.Hearts, Rank.Seven, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Trump pair
+        ...Card.createPair(Suit.Hearts, Rank.Seven), // Trump pair
         Card.createCard(Suit.Hearts, Rank.Nine, 0),
         Card.createCard(Suit.Hearts, Rank.Ten, 0), // Trump singles
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
@@ -561,10 +531,8 @@ describe("AI Tractor Following Behavior", () => {
 
       // Human leads with Spades tractor
       const leadingTractor = [
-        Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Five, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0),
-        Card.createCard(Suit.Spades, Rank.Six, 0),
+        ...Card.createPair(Suit.Spades, Rank.Five),
+        ...Card.createPair(Suit.Spades, Rank.Six),
       ];
 
       gameState.currentTrick = {
@@ -601,20 +569,20 @@ describe("AI Tractor Following Behavior", () => {
       // Bot1 has mixed trump combinations
       bot1Player.hand = [
         Card.createCard(Suit.Hearts, Rank.Seven, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Trump suit pair
+        Card.createCard(Suit.Hearts, Rank.Seven, 1), // Trump suit pair
         Card.createCard(Suit.Spades, Rank.Two, 0),
-        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank pair
+        Card.createCard(Suit.Spades, Rank.Two, 1), // Trump rank pair
         Card.createJoker(JokerType.Small, 0),
-        Card.createJoker(JokerType.Small, 0), // Joker pair
+        Card.createJoker(JokerType.Small, 1), // Joker pair
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       // Human leads with 2-pair trump tractor (5♥-5♥-6♥-6♥)
       const leadingTrumpTractor = [
         Card.createCard(Suit.Hearts, Rank.Five, 0),
-        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 1),
         Card.createCard(Suit.Hearts, Rank.Six, 0),
-        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Six, 1),
       ];
 
       gameState.currentTrick = {
@@ -668,22 +636,20 @@ describe("AI Tractor Following Behavior", () => {
       // Bot1 has multiple trump pairs to choose from
       bot1Player.hand = [
         Card.createCard(Suit.Hearts, Rank.Three, 0),
-        Card.createCard(Suit.Hearts, Rank.Three, 0), // Low trump suit pair
+        Card.createCard(Suit.Hearts, Rank.Three, 1), // Low trump suit pair
         Card.createCard(Suit.Hearts, Rank.Seven, 0),
-        Card.createCard(Suit.Hearts, Rank.Seven, 0), // Mid trump suit pair
-        Card.createCard(Suit.Spades, Rank.Two, 0),
-        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank pair
-        Card.createJoker(JokerType.Small, 0),
-        Card.createJoker(JokerType.Small, 0), // Joker pair
+        Card.createCard(Suit.Hearts, Rank.Seven, 1), // Mid trump suit pair
+        ...Card.createPair(Suit.Spades, Rank.Two), // Trump rank pair
+        ...Card.createJokerPair(JokerType.Small), // Joker pair
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       // Human leads with 2-pair trump tractor
       const leadingTrumpTractor = [
         Card.createCard(Suit.Hearts, Rank.Five, 0),
-        Card.createCard(Suit.Hearts, Rank.Five, 0),
+        Card.createCard(Suit.Hearts, Rank.Five, 1),
         Card.createCard(Suit.Hearts, Rank.Six, 0),
-        Card.createCard(Suit.Hearts, Rank.Six, 0),
+        Card.createCard(Suit.Hearts, Rank.Six, 1),
       ];
 
       gameState.currentTrick = {
@@ -728,6 +694,143 @@ describe("AI Tractor Following Behavior", () => {
     });
   });
 
+  describe("AI Rank-Skip Tractor Recognition", () => {
+    test("AI correctly follows rank-skip tractor when trump rank creates gap", () => {
+      const gameState = initializeGame();
+      gameState.gamePhase = GamePhase.Playing;
+      gameState.trumpInfo = {
+        trumpSuit: Suit.Clubs,
+        trumpRank: Rank.Four, // 4s are trump, creating gap in sequences
+      };
+
+      const bot3Player = getPlayerById(gameState, PlayerId.Bot3);
+
+      // Bot3 has diamonds that can form valid tractor responses
+      bot3Player.hand = [
+        Card.createCard(Suit.Clubs, Rank.Ten, 0), // Trump suit card
+        Card.createCard(Suit.Clubs, Rank.Five, 0), // Trump suit card
+        Card.createCard(Suit.Clubs, Rank.Nine, 0), // Trump suit card
+        Card.createCard(Suit.Clubs, Rank.Ace, 0), // Trump suit card
+        Card.createCard(Suit.Clubs, Rank.Ace, 0), // Trump suit card
+        Card.createCard(Suit.Clubs, Rank.Jack, 0), // Trump suit card
+        Card.createCard(Suit.Diamonds, Rank.Six, 0),
+        Card.createCard(Suit.Diamonds, Rank.Seven, 0),
+        Card.createCard(Suit.Diamonds, Rank.Eight, 0),
+        Card.createCard(Suit.Diamonds, Rank.Nine, 0),
+        Card.createCard(Suit.Diamonds, Rank.Nine, 1), // Can form pairs
+        Card.createCard(Suit.Diamonds, Rank.Jack, 0),
+        Card.createCard(Suit.Diamonds, Rank.Jack, 1), // Can form pairs
+        Card.createCard(Suit.Diamonds, Rank.Queen, 0),
+        Card.createCard(Suit.Diamonds, Rank.Queen, 1), // Can form pairs
+        Card.createCard(Suit.Hearts, Rank.Four, 0), // Trump rank card
+        Card.createCard(Suit.Hearts, Rank.Seven, 0),
+        Card.createCard(Suit.Hearts, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+        Card.createCard(Suit.Spades, Rank.Ace, 0),
+        Card.createCard(Suit.Spades, Rank.Queen, 0),
+      ];
+
+      // Bot1 leads with rank-skip tractor: 5♦5♦-3♦3♦
+      // (5-[4]-3 where trump rank 4 bridges the gap)
+      const leadingRankSkipTractor = [
+        ...Card.createPair(Suit.Diamonds, Rank.Five),
+        ...Card.createPair(Suit.Diamonds, Rank.Three),
+      ];
+
+      // Bot2 also plays to match simulation scenario
+      const bot2Cards = [
+        Card.createCard(Suit.Spades, Rank.Nine, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Hearts, Rank.Eight, 0),
+        Card.createCard(Suit.Hearts, Rank.Three, 0),
+      ];
+
+      gameState.currentTrick = {
+        plays: [
+          { playerId: PlayerId.Bot1, cards: leadingRankSkipTractor },
+          { playerId: PlayerId.Human, cards: bot2Cards }, // Bot2 played after Bot1
+        ],
+        winningPlayerId: PlayerId.Bot1,
+        points: 10,
+      };
+      gameState.currentPlayerIndex = 3; // Bot3 is at index 3
+
+      gameLogger.info(
+        "test_rank_skip_tractor_scenario",
+        {
+          leadingCombo: "5♦5♦-3♦3♦",
+          trumpRank: "4",
+          trumpSuit: "Clubs",
+          playerHand: bot3Player.hand
+            .map((c) => `${c.rank}${c.suit}`)
+            .join(", "),
+        },
+        "Rank-skip tractor scenario: 5♦5♦-3♦3♦ with trump rank 4 creating gap",
+      );
+
+      const aiMove = getAIMove(gameState, PlayerId.Bot3);
+
+      gameLogger.info(
+        "test_ai_rank_skip_response",
+        {
+          aiMove: aiMove.map((c) => `${c.rank}${c.suit}`).join(", "),
+          moveLength: aiMove.length,
+        },
+        "AI response to rank-skip tractor",
+      );
+
+      // Verify the move is valid
+      const isValid = isValidPlay(
+        aiMove,
+        bot3Player.hand,
+        PlayerId.Bot3,
+        gameState,
+      );
+
+      expect(isValid).toBe(true);
+      expect(aiMove.length).toBe(4);
+
+      // AI should use diamonds to follow suit when possible
+      const diamondCards = aiMove.filter((card) => card.suit === Suit.Diamonds);
+
+      // If AI uses diamonds, it should form a valid tractor (consecutive pairs)
+      if (diamondCards.length === 4) {
+        // Check if AI formed a proper tractor from diamonds
+        const jackCount = aiMove.filter(
+          (card) => card.rank === Rank.Jack && card.suit === Suit.Diamonds,
+        ).length;
+        const queenCount = aiMove.filter(
+          (card) => card.rank === Rank.Queen && card.suit === Suit.Diamonds,
+        ).length;
+
+        // Should have formed exactly 1 tractor (consecutive pairs)
+        const hasValidTractor = jackCount === 2 && queenCount === 2; // J♦J♦-Q♦Q♦ tractor (consecutive)
+
+        expect(hasValidTractor).toBe(true);
+
+        gameLogger.info(
+          "test_rank_skip_success",
+          { usedDiamondTractor: true },
+          "SUCCESS: AI correctly formed diamond tractor for rank-skip tractor",
+        );
+      } else {
+        // If AI couldn't use diamonds, should be due to exhaustion or trump strategy
+        gameLogger.info(
+          "test_rank_skip_fallback",
+          {
+            diamondCount: diamondCards.length,
+            trumpUsed:
+              aiMove.filter(
+                (card) => card.suit === Suit.Clubs || card.rank === Rank.Four,
+              ).length > 0,
+          },
+          "AI used non-diamond strategy (trump or mixed suits)",
+        );
+      }
+    });
+  });
+
   describe("AI Strategic Decision Making", () => {
     test("AI conserves high trump when cannot win but uses trump when leading is trump", () => {
       const gameState = initializeGame();
@@ -741,20 +844,16 @@ describe("AI Tractor Following Behavior", () => {
 
       // Bot1 has trump cards but cannot beat a high trump tractor
       bot1Player.hand = [
-        Card.createCard(Suit.Hearts, Rank.Three, 0),
-        Card.createCard(Suit.Hearts, Rank.Three, 0), // Low trump pair
-        Card.createCard(Suit.Hearts, Rank.Four, 0),
-        Card.createCard(Suit.Hearts, Rank.Four, 0), // Low trump pair
+        ...Card.createPair(Suit.Hearts, Rank.Three), // Low trump pair
+        ...Card.createPair(Suit.Hearts, Rank.Four), // Low trump pair
         Card.createCard(Suit.Hearts, Rank.Five, 0), // Low trump single
         Card.createCard(Suit.Clubs, Rank.Ace, 0),
       ];
 
       // Human leads with high trump tractor (A♥-A♥-K♥-K♥)
       const leadingHighTrumpTractor = [
-        Card.createCard(Suit.Hearts, Rank.Ace, 0),
-        Card.createCard(Suit.Hearts, Rank.Ace, 0),
-        Card.createCard(Suit.Hearts, Rank.King, 0),
-        Card.createCard(Suit.Hearts, Rank.King, 0),
+        ...Card.createPair(Suit.Hearts, Rank.Ace),
+        ...Card.createPair(Suit.Hearts, Rank.King),
       ];
 
       gameState.currentTrick = {

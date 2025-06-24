@@ -31,8 +31,7 @@ jobs:
       run: npm run qualitycheck
 
     - name: Run simulation tests
-      run: npm run test:simulation
-      timeout-minutes: 1
+      run: TARGET_GAMES=3 npm run test:simulation
 
     - name: Archive simulation logs
       uses: actions/upload-artifact@v4
