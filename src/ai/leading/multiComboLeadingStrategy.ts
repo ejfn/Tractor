@@ -1,88 +1,19 @@
-import { createCardMemory } from "../ai/aiCardMemory";
-import { Card, GameState, PlayerId, Suit } from "../types";
-import { MultiComboValidation } from "../types/combinations";
-import { identifyCombos } from "./comboDetection";
-import { isTrump } from "./gameHelpers";
-import { analyzeComboStructure } from "./multiComboAnalysis";
+import { createCardMemory } from "../aiCardMemory";
+import { Card, GameState, PlayerId, Suit } from "../../types";
+import { identifyCombos } from "../../game/comboDetection";
+import { isTrump } from "../../game/gameHelpers";
+import { analyzeComboStructure } from "../../game/multiComboAnalysis";
 import {
   checkOpponentVoidStatus,
   isComboUnbeatable,
-  validateLeadingMultiCombo,
-} from "./multiComboValidation";
+} from "../../game/multiComboValidation";
 
 /**
- * Multi-Combo Leading Strategies Module
+ * Multi-Combo Leading Strategy for AI
  *
- * Implements both human validation tool and AI selection strategy for multi-combo leading.
+ * Implements AI selection strategy for multi-combo leading.
+ * Uses unbeatable analysis to identify and select optimal multi-combo opportunities.
  */
-
-/**
- * Validate if selected cards form a valid multi-combo lead
- * Can be used for both human and AI validation
- * @param selectedCards Cards selected for multi-combo lead
- * @param gameState Current game state
- * @param playerId Player attempting the multi-combo
- * @returns Validation result with detailed reasoning
- */
-export function validateMultiComboLead(
-  selectedCards: Card[],
-  gameState: GameState,
-  playerId: PlayerId,
-): MultiComboValidation {
-  const validation: MultiComboValidation = {
-    isValid: false,
-    invalidReasons: [],
-    voidStatus: {
-      allOpponentsVoid: false,
-      voidPlayers: [],
-    },
-    unbeatableStatus: {
-      allUnbeatable: false,
-      beatableComponents: [],
-    },
-  };
-
-  // IMPORTANT: This function should ONLY be called for confirmed multi-combos!
-  // detectLeadingMultiCombo() should have already verified this is a multi-combo
-  // Do NOT call getComboType() here - it's for straight combos only!
-
-  // Step 1: Check if all cards are non-trump
-  const hasAnyTrump = selectedCards.some((card) =>
-    isTrump(card, gameState.trumpInfo),
-  );
-  if (hasAnyTrump) {
-    validation.invalidReasons.push(
-      "Trump multi-combos not allowed for leading",
-    );
-    return validation;
-  }
-
-  // Step 3: Check if all cards are same suit
-  const suits = new Set(selectedCards.map((card) => card.suit));
-  if (suits.size !== 1) {
-    validation.invalidReasons.push("Multi-combo must be same suit");
-    return validation;
-  }
-
-  const suit = selectedCards[0].suit;
-
-  // Step 4: Analyze component combos
-  const components =
-    analyzeComboStructure(selectedCards, gameState.trumpInfo)?.combos || [];
-  if (components.length === 0) {
-    validation.invalidReasons.push("No valid component combos found");
-    return validation;
-  }
-
-  // Step 5: Check each component combo for unbeatability using shared detection
-  const result = validateLeadingMultiCombo(
-    components,
-    suit,
-    gameState,
-    playerId,
-  );
-  return result;
-}
 
 /**
  * AI Selection Strategy: Find and select multi-combo from unbeatable cards

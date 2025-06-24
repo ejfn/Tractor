@@ -7,6 +7,7 @@ import {
   Suit,
   TrumpInfo,
 } from "../types";
+import { MultiComboValidation } from "../types/combinations";
 import { gameLogger } from "../utils/gameLogger";
 import {
   checkSameSuitPairPreservation,
@@ -19,7 +20,7 @@ import {
   analyzeComboStructure as analyzeMultiComboStructure,
   detectLeadingMultiCombo,
 } from "./multiComboAnalysis";
-import { validateMultiComboLead } from "./multiComboLeadingStrategies";
+import { validateLeadingMultiCombo } from "./multiComboValidation";
 
 // Local helper function to avoid circular dependencies
 const getLeadingSuit = (combo: Card[]) => {
@@ -593,3 +594,72 @@ export const isValidPlay = (
   // Default - should only reach here in edge cases
   return true;
 };
+
+/**
+ * Validate if selected cards form a valid multi-combo lead
+ * Can be used for both human and AI validation
+ * @param selectedCards Cards selected for multi-combo lead
+ * @param gameState Current game state
+ * @param playerId Player attempting the multi-combo
+ * @returns Validation result with detailed reasoning
+ */
+export function validateMultiComboLead(
+  selectedCards: Card[],
+  gameState: GameState,
+  playerId: PlayerId,
+): MultiComboValidation {
+  const validation: MultiComboValidation = {
+    isValid: false,
+    invalidReasons: [],
+    voidStatus: {
+      allOpponentsVoid: false,
+      voidPlayers: [],
+    },
+    unbeatableStatus: {
+      allUnbeatable: false,
+      beatableComponents: [],
+    },
+  };
+
+  // IMPORTANT: This function should ONLY be called for confirmed multi-combos!
+  // detectLeadingMultiCombo() should have already verified this is a multi-combo
+  // Do NOT call getComboType() here - it's for straight combos only!
+
+  // Step 1: Check if all cards are non-trump
+  const hasAnyTrump = selectedCards.some((card) =>
+    isTrump(card, gameState.trumpInfo),
+  );
+  if (hasAnyTrump) {
+    validation.invalidReasons.push(
+      "Trump multi-combos not allowed for leading",
+    );
+    return validation;
+  }
+
+  // Step 3: Check if all cards are same suit
+  const suits = new Set(selectedCards.map((card) => card.suit));
+  if (suits.size !== 1) {
+    validation.invalidReasons.push("Multi-combo must be same suit");
+    return validation;
+  }
+
+  const suit = selectedCards[0].suit;
+
+  // Step 4: Analyze component combos
+  const components =
+    analyzeMultiComboStructure(selectedCards, gameState.trumpInfo)?.combos ||
+    [];
+  if (components.length === 0) {
+    validation.invalidReasons.push("No valid component combos found");
+    return validation;
+  }
+
+  // Step 5: Check each component combo for unbeatability using shared detection
+  const result = validateLeadingMultiCombo(
+    components,
+    suit,
+    gameState,
+    playerId,
+  );
+  return result;
+}
