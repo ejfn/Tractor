@@ -194,9 +194,9 @@ describe("playProcessing", () => {
 
         const result = validatePlay(mockState, cardsToPlay);
 
-        // Verify identifyCombos was called with the player's hand
-        expect(comboDetection.identifyCombos).toHaveBeenCalledWith(
-          mockState.players[0].hand,
+        // Verify getComboType was called with the played cards
+        expect(comboDetection.getComboType).toHaveBeenCalledWith(
+          cardsToPlay,
           mockState.trumpInfo,
         );
 

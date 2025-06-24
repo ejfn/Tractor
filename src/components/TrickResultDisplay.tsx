@@ -37,7 +37,7 @@ const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
     <View style={styles.container}>
       <Text style={styles.winnerText}>
         {winningPlayer.id === PlayerId.Human
-          ? t("tricks.youWin")
+          ? t("tricks.youWin", { playerName: winnerName })
           : t("tricks.playerWins", { playerName: winnerName })}
       </Text>
       {points > 0 && isAttackingTeamWin && (

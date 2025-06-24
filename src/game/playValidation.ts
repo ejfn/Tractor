@@ -179,7 +179,15 @@ export const isValidPlay = (
 
   // If no leading combo, any valid combo is acceptable (including multi-combo)
   if (!leadingCombo) {
-    // Check for leading multi-combo using contextual detection
+    // STEP 1: Try getComboType first - handles all straight combos
+    const comboType = getComboType(playedCards, trumpInfo);
+
+    if (comboType !== ComboType.Invalid) {
+      // It's a valid straight combo (Single, Pair, Tractor)
+      return true;
+    }
+
+    // STEP 2: Only if Invalid, check for multi-combo
     const multiComboDetection = detectLeadingMultiCombo(playedCards, trumpInfo);
 
     if (multiComboDetection.isMultiCombo) {
@@ -202,82 +210,7 @@ export const isValidPlay = (
       return validation.isValid;
     }
 
-    // Standard combo validation
-    const combos = identifyCombos(playerHand, trumpInfo);
-    const hasExactCombo = combos.some(
-      (combo) =>
-        combo.cards.length === playedCards.length &&
-        combo.cards.every((card) =>
-          playedCards.some((played) => played.id === card.id),
-        ),
-    );
-
-    if (hasExactCombo) {
-      return true;
-    }
-
-    // TRACTOR RULE: Allow leading multiple singles from same suit (exhausting scenarios)
-    // BUT cards must be genuinely different (no identical cards allowed)
-    const allFromPlayerHand = playedCards.every((played) =>
-      playerHand.some((handCard) => handCard.id === played.id),
-    );
-
-    if (!allFromPlayerHand) {
-      return false;
-    }
-
-    // Check for duplicate ranks - this is NEVER allowed in Tractor
-    const rankCounts = new Map<string, number>();
-    playedCards.forEach((card) => {
-      const rankKey = `${card.rank}-${card.suit}`;
-      rankCounts.set(rankKey, (rankCounts.get(rankKey) || 0) + 1);
-    });
-
-    // If any rank appears more than twice, it's invalid (max pair)
-    for (const count of rankCounts.values()) {
-      if (count > 2) {
-        return false; // Invalid: more than 2 of same rank+suit (e.g., 9♣, 9♣, 9♣)
-      }
-    }
-
-    // Group played cards by suit
-    const nonTrumpPlayedCards = playedCards.filter(
-      (card) => !isTrump(card, trumpInfo),
-    );
-    const trumpPlayedCards = playedCards.filter((card) =>
-      isTrump(card, trumpInfo),
-    );
-
-    // Case 1: All non-trump cards from same suit (allow multiple singles/pairs)
-    if (
-      nonTrumpPlayedCards.length === playedCards.length &&
-      nonTrumpPlayedCards.length > 1
-    ) {
-      const firstSuit = nonTrumpPlayedCards[0].suit;
-      const allSameSuit = nonTrumpPlayedCards.every(
-        (card) => card.suit === firstSuit,
-      );
-
-      if (allSameSuit) {
-        // Valid: Multiple different cards from same non-trump suit (exhausting scenario)
-        return true;
-      }
-    }
-
-    // Case 2: All trump cards (allow trump exhausting)
-    if (
-      trumpPlayedCards.length === playedCards.length &&
-      trumpPlayedCards.length > 1
-    ) {
-      // Valid: Multiple different trump cards (trump exhausting scenario)
-      return true;
-    }
-
-    // Case 3: Single card (always valid if from hand)
-    if (playedCards.length === 1) {
-      return true;
-    }
-
+    // STEP 3: Not a valid combo or multi-combo
     return false;
   }
 
