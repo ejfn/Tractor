@@ -16,7 +16,7 @@
     "gameOver": "游戏结束"
   },
   "tricks": {
-    "youWin": "你赢了!",
+    "youWin": "{{playerName}}获胜!",
     "playerWins": "{{playerName}}获胜!",
     "pointsAwarded": "+{{points}}分"
   },

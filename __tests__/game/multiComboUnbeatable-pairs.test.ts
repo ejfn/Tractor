@@ -1,10 +1,43 @@
 import { describe, expect, test } from "@jest/globals";
 import { isComboUnbeatable } from "../../src/game/multiComboValidation";
-import { Card, ComboType, Rank, Suit } from "../../src/types";
-import { createTrumpScenarios } from "../helpers";
+import { isValidPlay } from "../../src/game/playValidation";
+import { Card, ComboType, PlayerId, Rank, Suit } from "../../src/types";
+import { createGameState, createTrumpScenarios } from "../helpers";
 
 describe("Pair Cards - isComboUnbeatable Tests", () => {
   const trumpInfo = createTrumpScenarios.spadesTrump(); // Rank 2, Spades trump
+
+  describe("Trump Multi-Combo Validation - Negative Cases", () => {
+    test("Trump multi-combo leading should be rejected - Q♥Q♥-8♥8♥ when trump is 2♥", () => {
+      // Trump: 2 Hearts, so Q♥Q♥ and 8♥8♥ are trump cards
+      const trumpInfoHearts = createTrumpScenarios.customTrump(
+        Rank.Two,
+        Suit.Hearts,
+      );
+
+      // Try to lead Q♥Q♥ + 8♥8♥ (both are trump pairs)
+      const trumpMultiCombo = [
+        ...Card.createPair(Suit.Hearts, Rank.Queen), // Q♥Q♥ - trump suit cards
+        ...Card.createPair(Suit.Hearts, Rank.Eight), // 8♥8♥ - trump suit cards
+      ];
+
+      // Create game state with human leading
+      const gameState = createGameState({
+        currentPlayerIndex: 0, // Human player
+        trumpInfo: trumpInfoHearts,
+        currentTrick: null, // No trick yet (human is leading)
+      });
+
+      // This should be false - trump multi-combos are not allowed for leading
+      const result = isValidPlay(
+        trumpMultiCombo,
+        trumpMultiCombo, // Player hand contains the cards they want to play
+        PlayerId.Human,
+        gameState,
+      );
+      expect(result).toBe(false);
+    });
+  });
 
   describe("REALISTIC Pair Tests - Two Deck Understanding", () => {
     test("Pair A♥A♥ is ALWAYS unbeatable (no higher pairs possible)", () => {
