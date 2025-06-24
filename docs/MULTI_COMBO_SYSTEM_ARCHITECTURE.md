@@ -50,7 +50,7 @@ In Tractor/Shengji, a **MultiCombo** is multiple combos from the same suit playe
 - **Logic**: Scans each non-trump suit for unbeatable combos, selects suit with maximum unbeatable cards using memory system
 
 #### 3. **AI following selection and strategy**: AI systematic algorithm for responding to multi-combo leads
-- **Implementation**: `ai/following/multiComboFollowingStrategy.ts` → `selectMultiComboFollowingPlay()`
+- **Implementation**: `ai/following/multiComboFollowingStrategy.ts` → `executeMultiComboFollowingAlgorithm()`
 - **Integration**: Called by main AI following logic when multi-combo detected
 - **Logic**: 3-section algorithm (same-suit → trump → cross-suit) with progressive filtering and strategic decisions, includes AI trump response strategy when exhausted of leading suit
 
@@ -302,7 +302,7 @@ const isUnbeatable = isComboUnbeatable(
 
 ### 3. Multi-Combo Following Algorithm
 
-**Location**: `multiComboFollowingStrategy.ts` → `selectMultiComboFollowingPlay()`
+**Location**: `multiComboFollowingStrategy.ts` → `executeMultiComboFollowingAlgorithm()`
 
 **Purpose**: Systematic approach to following multi-combo leads
 
@@ -489,7 +489,7 @@ if (!leadingMultiCombo.isMultiCombo) {
 }
 
 // Execute multi-combo specific algorithm
-return selectMultiComboFollowingPlay(/* ... */);
+return executeMultiComboFollowingAlgorithm(/* ... */);
 ```
 
 **AI Strategic Decisions**:

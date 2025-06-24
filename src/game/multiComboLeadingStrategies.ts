@@ -3,10 +3,7 @@ import { Card, GameState, PlayerId, Suit } from "../types";
 import { MultiComboValidation } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
-import {
-  analyzeMultiComboComponents,
-  getMultiComboStructure,
-} from "./multiComboAnalysis";
+import { analyzeComboStructure } from "./multiComboAnalysis";
 import {
   checkOpponentVoidStatus,
   isComboUnbeatable,
@@ -70,10 +67,8 @@ export function validateMultiComboLead(
   const suit = selectedCards[0].suit;
 
   // Step 4: Analyze component combos
-  const components = analyzeMultiComboComponents(
-    selectedCards,
-    gameState.trumpInfo,
-  );
+  const components =
+    analyzeComboStructure(selectedCards, gameState.trumpInfo)?.combos || [];
   if (components.length === 0) {
     validation.invalidReasons.push("No valid component combos found");
     return validation;
@@ -126,21 +121,18 @@ export function selectAIMultiComboLead(
 
   // Analyze structure to ensure we have a valid multi-combo (multiple components)
   if (mostUnbeatableCards.length > 1) {
-    const components = analyzeMultiComboComponents(
+    const structure = analyzeComboStructure(
       mostUnbeatableCards,
       gameState.trumpInfo,
     );
 
     // Only return if we have multiple component combos (true multi-combo)
-    if (components.length >= 2) {
-      const suit = mostUnbeatableCards[0].suit;
-      const structure = getMultiComboStructure(components, suit, true);
-
+    if (structure && structure.combos.length >= 2) {
       // If we have a strong multi-combo structure (pairs or 4+ cards), always play it
       if (
-        structure.components.totalPairs > 0 ||
-        structure.components.totalLength > 3 ||
-        structure.components.totalLength === playerHand.length // last combo
+        structure.totalPairs > 0 ||
+        structure.totalLength > 3 ||
+        structure.totalLength === playerHand.length // last combo
       ) {
         return mostUnbeatableCards;
       }

@@ -1,9 +1,6 @@
-import { Card, Combo, MultiComboStructure, TrumpInfo } from "../types";
-import {
-  detectMultiComboAttempt,
-  isNonTrumpMultiCombo,
-} from "./multiComboAnalysis";
+import { Card, MultiCombo, TrumpInfo } from "../types";
 import { isTrump } from "./gameHelpers";
+import { detectMultiComboAttempt } from "./multiComboAnalysis";
 
 /**
  * Multi-Combo Detection for Game Rule Validation
@@ -21,8 +18,7 @@ import { isTrump } from "./gameHelpers";
 
 export interface MultiComboDetectionResult {
   isMultiCombo: boolean;
-  structure?: MultiComboStructure;
-  components?: Combo[];
+  components?: MultiCombo;
 }
 
 /**
@@ -35,12 +31,12 @@ export const detectLeadingMultiCombo = (
 ): MultiComboDetectionResult => {
   const detection = detectMultiComboAttempt(cards, trumpInfo);
 
-  if (!detection.isMultiCombo || !detection.structure) {
+  if (!detection.isMultiCombo || !detection.components) {
     return { isMultiCombo: false };
   }
 
   // RESTRICTIVE: Only allow leading multi-combos from non-trump suits
-  if (!isNonTrumpMultiCombo(detection.structure)) {
+  if (detection.components && detection.components.isTrump) {
     return { isMultiCombo: false };
   }
 
@@ -58,7 +54,6 @@ export const detectLeadingMultiCombo = (
 
   return {
     isMultiCombo: true,
-    structure: detection.structure,
     components: detection.components,
   };
 };

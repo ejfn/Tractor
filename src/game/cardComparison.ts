@@ -10,7 +10,7 @@ import {
 import { getComboType, identifyCombos } from "./comboDetection";
 import { getRankValue, isTrump } from "./gameHelpers";
 import {
-  analyzeMultiComboComponents,
+  analyzeComboStructure,
   detectMultiComboAttempt,
 } from "./multiComboAnalysis";
 
@@ -341,14 +341,10 @@ export function compareMultiCombos(
   trumpInfo: TrumpInfo,
 ): number {
   // Analyze components of both multi-combos
-  const proposedComponents = analyzeMultiComboComponents(
-    proposedCombo,
-    trumpInfo,
-  );
-  const winningComponents = analyzeMultiComboComponents(
-    currentWinningCombo,
-    trumpInfo,
-  );
+  const proposedComponents =
+    analyzeComboStructure(proposedCombo, trumpInfo)?.combos || [];
+  const winningComponents =
+    analyzeComboStructure(currentWinningCombo, trumpInfo)?.combos || [];
 
   // Get highest combo type from each multi-combo
   const proposedHighest = getHighestComboComponent(

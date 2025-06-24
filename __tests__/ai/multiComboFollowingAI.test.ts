@@ -1,5 +1,5 @@
 import { getAIMove } from "../../src/ai/aiLogic";
-import { selectMultiComboFollowingPlay } from "../../src/ai/following/multiComboFollowingStrategy";
+import { executeMultiComboFollowingAlgorithm } from "../../src/ai/following/multiComboFollowingStrategy";
 import {
   Card,
   GameState,
@@ -128,13 +128,16 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
       ];
 
-      const validCombos: never[] = []; // Will be generated internally
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+      if (!leadingCards) {
+        throw new Error("No leading cards found in current trick");
+      }
 
-      const result = selectMultiComboFollowingPlay(
+      const result = executeMultiComboFollowingAlgorithm(
+        leadingCards, // leadingCards
         playerHand,
         gameState,
         PlayerId.Bot1,
-        validCombos,
       );
 
       expect(result).not.toBeNull();
@@ -177,13 +180,16 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
       ];
 
-      const validCombos: never[] = []; // Will be generated internally
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+      if (!leadingCards) {
+        throw new Error("No leading cards found in current trick");
+      }
 
-      const result = selectMultiComboFollowingPlay(
+      const result = executeMultiComboFollowingAlgorithm(
+        leadingCards, // leadingCards
         playerHand,
         gameState,
         PlayerId.Bot1,
-        validCombos,
       );
 
       expect(result).not.toBeNull();
@@ -235,13 +241,16 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0), // Other suit
       ];
 
-      const validCombos: never[] = []; // Will be generated internally
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+      if (!leadingCards) {
+        throw new Error("No leading cards found in current trick");
+      }
 
-      const result = selectMultiComboFollowingPlay(
+      const result = executeMultiComboFollowingAlgorithm(
+        leadingCards, // leadingCards
         playerHand,
         gameState,
         PlayerId.Bot1,
-        validCombos,
       );
 
       expect(result).not.toBeNull();
@@ -284,13 +293,16 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Nine, 0),
       ];
 
-      const validCombos: never[] = []; // Will be generated internally
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+      if (!leadingCards) {
+        throw new Error("No leading cards found in current trick");
+      }
 
-      const result = selectMultiComboFollowingPlay(
+      const result = executeMultiComboFollowingAlgorithm(
+        leadingCards, // leadingCards
         playerHand,
         gameState,
         PlayerId.Bot1,
-        validCombos,
       );
 
       expect(result).not.toBeNull();
@@ -347,13 +359,16 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Seven, 0),
       ];
 
-      const validCombos: never[] = [];
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+      if (!leadingCards) {
+        throw new Error("No leading cards found in current trick");
+      }
 
-      const result = selectMultiComboFollowingPlay(
+      const result = executeMultiComboFollowingAlgorithm(
+        leadingCards, // leadingCards
         playerHand,
         gameState,
         PlayerId.Bot2,
-        validCombos,
       );
 
       expect(result).not.toBeNull();
@@ -398,26 +413,16 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Four, 0), // Low card
       ];
 
-      const validCombos = [
-        {
-          cards: [
-            Card.createCard(Suit.Clubs, Rank.Seven, 0),
-            Card.createCard(Suit.Clubs, Rank.Six, 0),
-            Card.createCard(Suit.Clubs, Rank.Five, 0),
-          ],
-          type: "mixed" as never,
-          value: 100,
-          canBeat: false,
-          isBreakingPair: false,
-          reason: "disposal",
-        },
-      ];
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+      if (!leadingCards) {
+        throw new Error("No leading cards found in current trick");
+      }
 
-      const result = selectMultiComboFollowingPlay(
+      const result = executeMultiComboFollowingAlgorithm(
+        leadingCards, // leadingCards
         playerHand,
         gameState,
         PlayerId.Bot1,
-        validCombos,
       );
 
       expect(result).not.toBeNull();
@@ -487,13 +492,16 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Spades, Rank.Queen, 1), // Q♠Q♠ pair available!
       ];
 
-      const validCombos: never[] = []; // Will be generated internally
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+      if (!leadingCards) {
+        throw new Error("No leading cards found in current trick");
+      }
 
-      const result = selectMultiComboFollowingPlay(
+      const result = executeMultiComboFollowingAlgorithm(
+        leadingCards, // leadingCards
         playerHand,
         gameState,
         PlayerId.Bot2,
-        validCombos,
       );
 
       expect(result).not.toBeNull();
@@ -566,21 +574,32 @@ describe("AI Multi-Combo Following Strategy", () => {
         Card.createCard(Suit.Clubs, Rank.Eight, 0),
       ];
 
-      const validCombos: never[] = []; // Will be generated internally
+      const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+      if (!leadingCards) {
+        throw new Error("No leading cards found in current trick");
+      }
 
-      const result = selectMultiComboFollowingPlay(
+      const result = executeMultiComboFollowingAlgorithm(
+        leadingCards, // leadingCards
         playerHand,
         gameState,
         PlayerId.Bot1,
-        validCombos,
       );
 
-      // Should return null or no_valid_response when can't form proper structure
-      if (result) {
-        expect(result.strategy).toBe("no_valid_response");
-      } else {
-        expect(result).toBeNull();
-      }
+      // Should return a response but validate the actual cards returned
+      expect(result).not.toBeNull();
+      if (!result) return;
+
+      // Check that all remaining spades are played (J♠J♠)
+      const spadesInResponse = result.cards.filter(
+        (card) => card.suit === Suit.Spades,
+      );
+      expect(spadesInResponse.length).toBe(2); // Should play both J♠ cards
+
+      const jackCount = spadesInResponse.filter(
+        (card) => card.rank === Rank.Jack,
+      ).length;
+      expect(jackCount).toBe(2); // Both should be Jacks
     });
   });
 });

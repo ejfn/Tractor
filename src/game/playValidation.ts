@@ -2,7 +2,7 @@ import {
   Card,
   ComboType,
   GameState,
-  MultiComboStructure,
+  MultiCombo,
   PlayerId,
   Suit,
   TrumpInfo,
@@ -15,7 +15,7 @@ import {
   identifyCombos,
 } from "./comboDetection";
 import { isTrump } from "./gameHelpers";
-import { analyzeMultiComboComponents } from "./multiComboAnalysis";
+import { analyzeComboStructure as analyzeMultiComboStructure } from "./multiComboAnalysis";
 import { detectLeadingMultiCombo } from "./multiComboDetection";
 import { validateMultiComboLead } from "./multiComboLeadingStrategies";
 
@@ -33,17 +33,24 @@ const getLeadingSuit = (combo: Card[]) => {
 // Validation for multi-combo following
 export const validateMultiComboFollowing = (
   playedCards: Card[],
-  leadingStructure: MultiComboStructure,
+  leadingMultiCombo: MultiCombo,
   playerHand: Card[],
   trumpInfo: TrumpInfo,
 ): boolean => {
   // Step 1: Basic length check
-  if (playedCards.length !== leadingStructure.components.totalLength) {
+  if (playedCards.length !== leadingMultiCombo.totalLength) {
     return false;
   }
 
   // Step 2: Leading multi-combos are always non-trump
-  const leadingSuit = leadingStructure.suit;
+  // For now, we'll determine the suit from the first combo's cards
+  const leadingSuit =
+    leadingMultiCombo.combos.length > 0
+      ? leadingMultiCombo.combos[0].cards[0]?.suit
+      : undefined;
+  if (leadingSuit === undefined) {
+    throw new Error("Leading suit not determined from structure");
+  }
 
   // Get remaining cards in the leading suit after this play
   const remainingRelevantCards = playerHand.filter(
@@ -63,7 +70,7 @@ export const validateMultiComboFollowing = (
   return validateAntiCheatStructure(
     playedCards,
     playerHand,
-    leadingStructure,
+    leadingMultiCombo,
     trumpInfo,
     leadingSuit,
   );
@@ -73,17 +80,13 @@ export const validateMultiComboFollowing = (
 const validateAntiCheatStructure = (
   playedCards: Card[],
   playerHand: Card[],
-  leadingStructure: MultiComboStructure,
+  leadingMultiCombo: MultiCombo,
   trumpInfo: TrumpInfo,
   leadingSuit: Suit,
 ): boolean => {
   // Get leading combo requirements
-  const requiredTotalPairs = leadingStructure.components.totalPairs;
-  const requiredTractorPairs =
-    leadingStructure.components.tractorSizes?.reduce(
-      (sum, size) => sum + size,
-      0,
-    ) || 0;
+  const requiredTotalPairs = leadingMultiCombo.totalPairs;
+  const requiredTractorPairs = leadingMultiCombo.totalTractorPairs;
 
   // Filter relevant cards from player's hand (leading is always non-trump)
   const allRelevantCards = playerHand.filter(
@@ -148,7 +151,8 @@ const analyzeComboStructure = (
   tractorSizes: number[];
 } => {
   // Use optimal decomposition to avoid counting overlapping combinations
-  const optimalCombos = analyzeMultiComboComponents(cards, trumpInfo);
+  const optimalCombos =
+    analyzeMultiComboStructure(cards, trumpInfo)?.combos || [];
 
   let totalPairs = 0;
   let tractorCount = 0;
@@ -319,13 +323,13 @@ export const isValidPlay = (
 
   if (leadingDetection.isMultiCombo) {
     // Following a multi-combo - delegate to the dedicated validation function
-    if (!leadingDetection.structure) {
+    if (!leadingDetection.components) {
       return false;
     }
 
     return validateMultiComboFollowing(
       playedCards,
-      leadingDetection.structure,
+      leadingDetection.components,
       playerHand,
       trumpInfo,
     );

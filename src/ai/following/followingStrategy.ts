@@ -1,7 +1,10 @@
+import { getComboType } from "../../game/comboDetection";
+import { detectLeadingMultiCombo } from "../../game/multiComboDetection";
 import {
   Card,
   Combo,
   ComboAnalysis,
+  ComboType,
   GameContext,
   GameState,
   PlayerId,
@@ -9,14 +12,14 @@ import {
   TrickPosition,
   TrumpInfo,
 } from "../../types";
-import { handleTeammateWinning } from "./teammateSupport";
+import { executeMultiComboFollowingAlgorithm } from "./multiComboFollowingStrategy";
 import { handleOpponentWinning } from "./opponentBlocking";
 import {
-  selectStrategicDisposal,
   selectFourthPlayerPointAvoidance,
+  selectStrategicDisposal,
 } from "./strategicDisposal";
+import { handleTeammateWinning } from "./teammateSupport";
 import { selectOptimalWinningCombo } from "./trickContention";
-import { selectMultiComboFollowingPlay } from "./multiComboFollowingStrategy";
 
 /**
  * Following Strategy - Main following logic with 4-priority decision chain
@@ -41,20 +44,39 @@ export function selectOptimalFollowPlay(
 ): Card[] {
   // === PRIORITY 0: MULTI-COMBO SPECIALIZED HANDLING ===
   // Check for multi-combo following scenarios first
-  if (currentPlayerId) {
-    const player = gameState.players.find((p) => p.id === currentPlayerId);
-    const playerHand = player?.hand || [];
-    const validCombos = comboAnalyses.map((ca) => ca.combo);
+  const leadingCards = gameState.currentTrick?.plays[0].cards;
 
-    const multiComboResult = selectMultiComboFollowingPlay(
-      playerHand,
-      gameState,
-      currentPlayerId,
-      validCombos,
-    );
+  if (leadingCards == null) {
+    throw new Error("No leading cards found in current trick");
+  }
 
-    if (multiComboResult && multiComboResult.strategy !== "no_valid_response") {
-      return multiComboResult.cards;
+  if (currentPlayerId == null) {
+    throw new Error("Current player ID must be provided for following play");
+  }
+
+  const leadingComboType = getComboType(leadingCards, trumpInfo);
+
+  if (leadingComboType === ComboType.Invalid) {
+    // If leading cards are a multi-combo, handle specialized following logic
+    const leadingMultiCombo = detectLeadingMultiCombo(leadingCards, trumpInfo);
+
+    if (leadingMultiCombo.isMultiCombo) {
+      const player = gameState.players.find((p) => p.id === currentPlayerId);
+      const playerHand = player?.hand || [];
+
+      const multiComboResult = executeMultiComboFollowingAlgorithm(
+        leadingCards,
+        playerHand,
+        gameState,
+        currentPlayerId,
+      );
+
+      if (
+        multiComboResult &&
+        multiComboResult.strategy !== "no_valid_response"
+      ) {
+        return multiComboResult.cards;
+      }
     }
   }
 
