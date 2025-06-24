@@ -21,6 +21,9 @@ export * from "./ai";
 // Mock setup and assertion helpers
 export * from "./mocks";
 
+// Simulation tracking utilities
+export * from "./simulationTracker";
+
 // Re-export commonly used Jest functions for convenience
 export {
   jest,

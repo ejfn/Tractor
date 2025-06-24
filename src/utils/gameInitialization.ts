@@ -39,19 +39,41 @@ export const createDeck = (): Card[] => {
   return deck;
 };
 
-// Shuffle deck using multiple Fisher-Yates algorithm passes for enhanced randomness
+// Shuffle deck using individual deck shuffling then combined shuffling for enhanced randomness
 export const shuffleDeck = (deck: Card[]): Card[] => {
-  const newDeck = [...deck];
+  // Separate the two decks by deckId
+  const deck0Cards = deck.filter((card) => card.deckId === 0);
+  const deck1Cards = deck.filter((card) => card.deckId === 1);
 
-  // Perform 3 Fisher-Yates shuffle passes for enhanced mixing
-  for (let pass = 0; pass < 3; pass++) {
-    for (let i = newDeck.length - 1; i > 0; i--) {
+  // Shuffle cards using Fisher-Yates algorithm
+  const shuffleCards = (cards: Card[]): Card[] => {
+    const shuffled = [...cards];
+    for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  const shuffledDeck0 = shuffleCards(deck0Cards);
+  const shuffledDeck1 = shuffleCards(deck1Cards);
+
+  // Join the two shuffled decks alternately (deck0, deck1, deck0, deck1...)
+  const combinedDeck: Card[] = [];
+  const maxLength = Math.max(shuffledDeck0.length, shuffledDeck1.length);
+  for (let i = 0; i < maxLength; i++) {
+    if (i < shuffledDeck0.length) {
+      combinedDeck.push(shuffledDeck0[i]);
+    }
+    if (i < shuffledDeck1.length) {
+      combinedDeck.push(shuffledDeck1[i]);
     }
   }
 
-  return newDeck;
+  // Perform final shuffle on the combined deck
+  const finalDeck = shuffleCards(combinedDeck);
+
+  return finalDeck;
 };
 
 /**
