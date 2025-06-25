@@ -28,6 +28,9 @@ export interface CommonTranslations {
     clubs: string;
     spades: string;
   };
+  language: {
+    shortCode: string;
+  };
 }
 
 export interface GameTranslations {

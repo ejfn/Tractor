@@ -24,5 +24,8 @@
     "diamonds": "Diamonds",
     "clubs": "Clubs",
     "spades": "Spades"
+  },
+  "language": {
+    "shortCode": "Eng"
   }
 }

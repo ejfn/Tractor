@@ -6,22 +6,22 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
 import {
   Platform,
-  Text,
-  View,
   StatusBar as RNStatusBar,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
 import "react-native-reanimated";
-import { useState } from "react";
 
 // Import the color scheme hook
 import { useColorScheme } from "../hooks/useColorScheme";
 
 // Initialize i18n and import language functions
-import { changeLanguageCustom, getCurrentLanguage } from "../src/locales";
 import { useCommonTranslation } from "../src/hooks/useTranslation";
+import { changeLanguageCustom, getCurrentLanguage } from "../src/locales";
 
 // Header title with i18n support
 const HeaderTitle = () => {
@@ -79,14 +79,9 @@ const HeaderLeftSpacer = () => {
   );
 };
 
-// Short language codes
-const SHORT_LANGUAGES = {
-  en: "EN",
-  zh: "中文",
-} as const;
-
 // Language switcher button for header
 const HeaderLanguageButton = () => {
+  const { t } = useCommonTranslation();
   const [currentLanguage, setCurrentLanguage] = useState(getCurrentLanguage());
 
   const handleLanguageToggle = async () => {
@@ -95,6 +90,7 @@ const HeaderLanguageButton = () => {
       await changeLanguageCustom(newLanguage);
       setCurrentLanguage(newLanguage);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Failed to change language:", error);
     }
   };
@@ -104,7 +100,7 @@ const HeaderLanguageButton = () => {
       onPress={handleLanguageToggle}
       style={{ ...languageButtonStyle, marginRight: -8 }}
     >
-      <Text style={languageTextStyle}>{SHORT_LANGUAGES[currentLanguage]}</Text>
+      <Text style={languageTextStyle}>{t("language.shortCode")}</Text>
     </TouchableOpacity>
   );
 };
