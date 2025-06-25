@@ -1,6 +1,21 @@
 import { endRound, prepareNextRound } from "../../src/game/gameRoundManager";
-import { GameState, Team, Rank, TeamId } from "../../src/types";
-import { createScoringGameState } from "../helpers";
+import { processPlay } from "../../src/game/playProcessing";
+import {
+  Card,
+  GameState,
+  Team,
+  Rank,
+  TeamId,
+  PlayerId,
+  Suit,
+  GamePhase,
+  TrumpInfo,
+} from "../../src/types";
+import {
+  createScoringGameState,
+  createGameState,
+  givePlayerCards,
+} from "../helpers";
 
 describe("Advanced Scoring Rules", () => {
   const createMockGameState = (
@@ -404,6 +419,195 @@ describe("Advanced Scoring Rules", () => {
 
       expect(newState.teams[0].points).toBe(0);
       expect(newState.teams[1].points).toBe(0);
+    });
+  });
+
+  describe("Multi-Combo Point Collection Bug #272", () => {
+    let trumpInfo: TrumpInfo;
+    let gameState: GameState;
+
+    beforeEach(() => {
+      trumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Hearts };
+
+      // Create a game state in playing phase
+      gameState = createGameState({
+        gamePhase: GamePhase.Playing,
+        trumpInfo,
+        currentPlayerIndex: 0, // Human leads
+      });
+
+      // Reset team points
+      gameState.teams[0].points = 0; // Team A (Human + Bot2) - DEFENDING
+      gameState.teams[1].points = 0; // Team B (Bot1 + Bot3) - ATTACKING
+    });
+
+    it("should collect points when attacking team wins multi-combo leading trick", () => {
+      // Setup: Bot1 (attacking team) leads multi-combo with point cards
+      // Multi-combo: A♠ + K♠ + Q♠ (single + single + single from Spades)
+      // Point values: K♠ = 10pts, A♠ = 0pts, Q♠ = 0pts → Plus points from other players
+
+      gameState.currentPlayerIndex = 1; // Bot1 leads
+
+      const multiComboCards = [
+        Card.createCard(Suit.Spades, Rank.Ace, 0), // 0 points (highest)
+        Card.createCard(Suit.Spades, Rank.King, 0), // 10 points
+        Card.createCard(Suit.Spades, Rank.Queen, 0), // 0 points
+      ];
+
+      // Give Bot1 (attacking team) the multi-combo cards
+      gameState = givePlayerCards(gameState, 1, multiComboCards);
+
+      // Give other players lower cards so Bot1 wins
+      gameState = givePlayerCards(gameState, 0, [
+        // Human (defending)
+        Card.createCard(Suit.Spades, Rank.Nine, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+      ]);
+      gameState = givePlayerCards(gameState, 2, [
+        // Bot2 (defending)
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0), // 5 points
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+      ]);
+      gameState = givePlayerCards(gameState, 3, [
+        // Bot3 (attacking)
+        Card.createCard(Suit.Spades, Rank.Three, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0), // 10 points
+        Card.createCard(Suit.Clubs, Rank.Two, 0), // Cross-suit (not trump rank since not Hearts)
+      ]);
+
+      const initialAttackingTeamPoints = gameState.teams[1].points; // Team B (attacking)
+
+      // Bot1 leads multi-combo
+      const result1 = processPlay(gameState, multiComboCards);
+      expect(result1.trickComplete).toBe(false);
+      gameState = result1.newState;
+
+      // Human follows (defending team)
+      const humanCards = [
+        Card.createCard(Suit.Spades, Rank.Nine, 0),
+        Card.createCard(Suit.Spades, Rank.Eight, 0),
+        Card.createCard(Suit.Spades, Rank.Seven, 0),
+      ];
+      const result2 = processPlay(gameState, humanCards);
+      expect(result2.trickComplete).toBe(false);
+      gameState = result2.newState;
+
+      // Bot2 follows (defending team)
+      const bot2Cards = [
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+      ];
+      const result3 = processPlay(gameState, bot2Cards);
+      expect(result3.trickComplete).toBe(false);
+      gameState = result3.newState;
+
+      // Bot3 follows (attacking team, last player)
+      const bot3Cards = [
+        Card.createCard(Suit.Spades, Rank.Three, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Clubs, Rank.Two, 0),
+      ];
+      const result4 = processPlay(gameState, bot3Cards);
+
+      // Trick should be complete with Bot1 (attacking team) winning
+      expect(result4.trickComplete).toBe(true);
+      expect(result4.trickWinnerId).toBe(PlayerId.Bot1);
+
+      // CRITICAL TEST: Points should be collected
+      // Total points in trick: K♠(10) + 5♠(5) + 10♠(10) = 25 points
+      const expectedPoints = 25;
+      expect(result4.trickPoints).toBe(expectedPoints);
+
+      // Team B (Bot1 + Bot3) - ATTACKING TEAM should have gained the points
+      const finalAttackingTeamPoints = result4.newState.teams[1].points;
+      expect(finalAttackingTeamPoints).toBe(
+        initialAttackingTeamPoints + expectedPoints,
+      );
+    });
+
+    it("should collect points when attacking team wins with trump multi-combo response", () => {
+      // Setup: Human (defending) leads multi-combo, Bot3 (attacking) responds with trump multi-combo to win
+      // Leading: 9♠ + 8♠ + 7♠ (3 singles from Spades)
+      // Trump response: A♥ + K♥ + Q♥ (3 trump singles, K♥ = 10 points)
+      // Bot3 must be void in Spades to play trump
+
+      gameState.currentPlayerIndex = 0; // Human leads (defending team)
+
+      const leadingCards = [
+        Card.createCard(Suit.Spades, Rank.Nine, 0), // 0 points
+        Card.createCard(Suit.Spades, Rank.Eight, 0), // 0 points
+        Card.createCard(Suit.Spades, Rank.Seven, 0), // 0 points
+      ];
+
+      const trumpResponseCards = [
+        Card.createCard(Suit.Hearts, Rank.Ace, 0), // Trump suit, 0 points
+        Card.createCard(Suit.Hearts, Rank.King, 0), // Trump suit, 10 points
+        Card.createCard(Suit.Hearts, Rank.Queen, 0), // Trump suit, 0 points
+      ];
+
+      // Give players their cards
+      gameState = givePlayerCards(gameState, 0, leadingCards); // Human leads (defending)
+      gameState = givePlayerCards(gameState, 1, [
+        // Bot1 follows (attacking)
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0), // 5 points
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+      ]);
+      gameState = givePlayerCards(gameState, 2, [
+        // Bot2 follows (defending)
+        Card.createCard(Suit.Spades, Rank.Three, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0), // 10 points
+        Card.createCard(Suit.Spades, Rank.Two, 1), // Trump rank in Spades (still follows suit)
+      ]);
+      gameState = givePlayerCards(gameState, 3, trumpResponseCards); // Bot3 follows (attacking, void in Spades)
+
+      const initialAttackingTeamPoints = gameState.teams[1].points; // Team B (attacking)
+
+      // Human leads multi-combo (defending team)
+      const result1 = processPlay(gameState, leadingCards);
+      expect(result1.trickComplete).toBe(false);
+      gameState = result1.newState;
+
+      // Bot1 follows (attacking team) with Spades
+      const bot1Cards = [
+        Card.createCard(Suit.Spades, Rank.Six, 0),
+        Card.createCard(Suit.Spades, Rank.Five, 0),
+        Card.createCard(Suit.Spades, Rank.Four, 0),
+      ];
+      const result2 = processPlay(gameState, bot1Cards);
+      expect(result2.trickComplete).toBe(false);
+      gameState = result2.newState;
+
+      // Bot2 follows (defending team) with Spades
+      const bot2Cards = [
+        Card.createCard(Suit.Spades, Rank.Three, 0),
+        Card.createCard(Suit.Spades, Rank.Ten, 0),
+        Card.createCard(Suit.Spades, Rank.Two, 1),
+      ];
+      const result3 = processPlay(gameState, bot2Cards);
+      expect(result3.trickComplete).toBe(false);
+      gameState = result3.newState;
+
+      // Bot3 responds with trump multi-combo (attacking team, void in Spades)
+      const result4 = processPlay(gameState, trumpResponseCards);
+
+      // Trick should be complete with Bot3 (attacking team) winning (trump beats non-trump)
+      expect(result4.trickComplete).toBe(true);
+      expect(result4.trickWinnerId).toBe(PlayerId.Bot3);
+
+      // CRITICAL TEST: Points should be collected
+      // Total points in trick: 5♠(5) + 10♠(10) + K♥(10) = 25 points
+      const expectedPoints = 25;
+      expect(result4.trickPoints).toBe(expectedPoints);
+
+      // Team B (Bot1 + Bot3) - ATTACKING TEAM should have gained the points
+      const finalAttackingTeamPoints = result4.newState.teams[1].points;
+      expect(finalAttackingTeamPoints).toBe(
+        initialAttackingTeamPoints + expectedPoints,
+      );
     });
   });
 });
