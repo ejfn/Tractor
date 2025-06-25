@@ -19,7 +19,7 @@ The Tractor AI system implements **sophisticated strategic decision-making** wit
 
 ## Modular AI Architecture
 
-The AI system has been completely **modularized into 23 specialized components** organized by functional domain for optimal maintainability and strategic coherence.
+The AI system has been completely **modularized into 25 specialized components** organized by functional domain for optimal maintainability and strategic coherence.
 
 ### **Architectural Organization**
 
@@ -31,9 +31,10 @@ src/ai/
 │   ├── aiGameContext.ts        # Game state analysis and context creation
 │   ├── aiCardMemory.ts         # Memory system and tracking
 │   └── aiMemoryOptimization.ts # Performance optimization and caching
-├── Following Strategies (10 modules)
+├── Following Strategies (11 modules)
 │   ├── followingStrategy.ts    # Main 4-priority decision chain
 │   ├── fourthPlayerStrategy.ts # Perfect information 4th player logic
+│   ├── multiComboFollowingStrategy.ts # AI following algorithm for multi-combos
 │   ├── opponentBlocking.ts     # Strategic opponent countering
 │   ├── pointContribution.ts    # Memory-enhanced point management
 │   ├── secondPlayerStrategy.ts # Early follower tactical decisions
@@ -42,13 +43,15 @@ src/ai/
 │   ├── thirdPlayerRiskAnalysis.ts # Risk assessment for 3rd player
 │   ├── thirdPlayerStrategy.ts  # Mid-trick positioning strategy
 │   └── trickContention.ts      # Optimal winning combo selection
-├── Leading Strategies (3 modules)
+├── Leading Strategies (4 modules)
 │   ├── leadingStrategy.ts      # Main leading decision logic
 │   ├── firstPlayerLeadingAnalysis.ts # Strategic leading analysis
+│   ├── multiComboLeadingStrategy.ts   # AI leading selection for multi-combos
 │   └── pointFocusedStrategy.ts # Memory-enhanced point collection
-├── Analysis Modules (2 modules)
-│   ├── advancedCombinations.ts # Complex combination analysis
-│   └── comboAnalysis.ts        # Combo evaluation and ranking
+├── Analysis Modules (3 modules)
+│   ├── comboAnalysis.ts        # Combo evaluation and ranking
+│   ├── pointCardTiming.ts      # Memory-enhanced point timing optimization
+│   └── voidExploitation.ts     # Advanced void analysis and exploitation
 ├── Specialized Systems (3 modules)
 │   ├── kittySwap/
 │   │   └── kittySwapStrategy.ts # Rule-based exclusion and suit elimination
@@ -61,9 +64,9 @@ src/ai/
 ### **Modular Benefits**
 
 **Functional Coherence:**
-- **Following Module**: 10 specialized modules for position-based following strategies
-- **Leading Module**: 3 modules for strategic leading decisions and analysis
-- **Analysis Module**: 2 modules for combination evaluation and advanced analysis
+- **Following Module**: 11 specialized modules for position-based following strategies
+- **Leading Module**: 4 modules for strategic leading decisions and analysis
+- **Analysis Module**: 3 modules for combination evaluation and advanced analysis
 - **Core System**: 5 modules for fundamental AI operations, memory, and performance optimization
 
 **Development Advantages:**
@@ -118,6 +121,7 @@ flowchart TD
     LeadingMods --> LeadStrategy[leadingStrategy.ts<br/>Main Leading Logic]
     LeadingMods --> FirstAnalysis[firstPlayerLeadingAnalysis.ts<br/>Strategic Analysis]
     LeadingMods --> PointFocus[pointFocusedStrategy.ts<br/>Memory-Enhanced Collection]
+    LeadingMods --> MultiComboLead[multiComboLeadingStrategy.ts<br/>Multi-Combo Leading]
     
     FollowingMods --> FollowStrategy[followingStrategy.ts<br/>4-Priority Decision Chain]
     FollowStrategy --> P1{🤝 PRIORITY 1<br/>Teammate Winning?}
@@ -134,10 +138,12 @@ flowchart TD
     PositionMods --> Third[thirdPlayerStrategy.ts<br/>Tactical Decisions]
     PositionMods --> ThirdRisk[thirdPlayerRiskAnalysis.ts<br/>Risk Assessment]
     PositionMods --> Fourth[fourthPlayerStrategy.ts<br/>Perfect Information]
+    FollowingMods --> MultiComboFollow[multiComboFollowingStrategy.ts<br/>Multi-Combo Following]
     
     Memory --> Analysis[🔍 Analysis Modules]
-    Analysis --> AdvCombo[advancedCombinations.ts<br/>Complex Analysis]
     Analysis --> ComboAnalysis[comboAnalysis.ts<br/>Combo Evaluation]
+    Analysis --> PointCardTiming[pointCardTiming.ts<br/>Point Card Timing]
+    Analysis --> VoidExploitation[voidExploitation.ts<br/>Void Exploitation]
     
     Strategy --> Specialized[⚙️ Specialized Systems]
     Specialized --> KittySwap[kittySwapStrategy.ts<br/>Rule-Based Exclusion]
@@ -151,6 +157,8 @@ flowchart TD
     LeadStrategy --> Execute
     FirstAnalysis --> Execute
     PointFocus --> Execute
+    MultiComboLead --> Execute
+    MultiComboFollow --> Execute
 ```
 
 ### **Priority Levels**
