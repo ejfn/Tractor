@@ -8,6 +8,16 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 ![EAS Update](https://github.com/ejfn/Tractor/actions/workflows/eas-update.yml/badge.svg?branch=main)
 ![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ejfn/675aef37358f9f2b3b290cbf79440460/raw/tractor-test-count.json)
 
+## Screenshots
+
+<img src="assets/screenshots/Screenshot_20250626-073331.png" alt="Card Selection" width="250"/>
+<img src="assets/screenshots/Screenshot_20250626-073633.png" alt="Round Progress" width="250"/>
+<img src="assets/screenshots/Screenshot_20250626-073829.png" alt="Game Results" width="250"/>
+
+<img src="assets/screenshots/Screenshot_20250615-190534.png" alt="Gameplay View" width="250"/>
+<img src="assets/screenshots/Screenshot_20250626-073557.png" alt="Trump Declaration" width="250"/>
+<img src="assets/screenshots/Screenshot_20250614-094133.png" alt="Game Interface" width="250"/>
+
 ## What is Tractor?
 
 **Tractor** (升级/Shengji) is a challenging Chinese trick-taking card game where strategy and teamwork are essential. You partner with an AI teammate to collect points and advance through card ranks from 2 to Ace.
