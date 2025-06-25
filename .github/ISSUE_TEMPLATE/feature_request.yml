@@ -1,0 +1,132 @@
+name: Feature Request
+description: Suggest an idea or improvement for the Tractor card game
+title: "[FEATURE] "
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! We appreciate your ideas for improving the Tractor card game. Please provide as much detail as possible about your suggestion.
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: Feature Category
+      description: What type of feature are you requesting?
+      options:
+        - Game Rules & Logic (new rules, rule corrections)
+        - AI Improvements (smarter bots, difficulty levels)
+        - User Interface (UI/UX improvements, new screens)
+        - Game Modes (multiplayer, variations, custom rules)
+        - Settings & Preferences (options, customization)
+        - Performance & Optimization
+        - Accessibility (language support, accessibility features)
+        - Statistics & Analytics (game history, stats tracking)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is.
+      placeholder: "I'm always frustrated when... [explain the problem this feature would solve]"
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution-description
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen or the feature you would like to see.
+      placeholder: Describe your ideal solution in detail...
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User Story (Optional)
+      description: Describe how this feature would be used from a user's perspective
+      placeholder: |
+        As a [type of user], I want [some goal] so that [some reason].
+        
+        Example: "As a new player, I want a tutorial mode so that I can learn the game rules without feeling overwhelmed."
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives-considered
+    attributes:
+      label: Describe alternatives you've considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+      placeholder: Have you thought of any other ways to solve this problem?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: feature-priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Low (nice to have)
+        - Medium (would improve my experience)
+        - High (significantly impacts my experience)
+        - Critical (prevents me from enjoying the game)
+    validations:
+      required: false
+
+  - type: dropdown
+    id: implementation-complexity
+    attributes:
+      label: Implementation Complexity (Your Estimate)
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple (small UI change, text update)
+        - Medium (new screen, moderate logic change)
+        - Complex (major feature, significant development)
+        - I'm not sure
+    validations:
+      required: false
+
+  - type: textarea
+    id: mockups-examples
+    attributes:
+      label: Mockups or Examples
+      description: If you have any mockups, screenshots from other apps, or examples that illustrate your idea, please share them here.
+      placeholder: Drag and drop images here or provide links to examples
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples about the feature request here.
+      placeholder: Any other details that would help us understand your request?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: feature-research
+    attributes:
+      label: Research
+      description: Please confirm you have done the following before submitting this feature request
+      options:
+        - label: I have searched existing issues to make sure this feature hasn't been requested already
+          required: true
+        - label: I have read the project documentation and game rules
+          required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/ejfn/Tractor/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
