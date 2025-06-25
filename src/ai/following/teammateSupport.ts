@@ -24,7 +24,7 @@ import {
 import { analyzeThirdPlayerAdvantage } from "./thirdPlayerStrategy";
 import { getPointCardPriority } from "../utils/aiHelpers";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
-import { isTrump } from "../../game/gameHelpers";
+import { isTrump } from "../../game/cardValue";
 
 /**
  * Teammate Support - Team coordination when teammate is winning

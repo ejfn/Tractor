@@ -8,7 +8,7 @@ import {
   ThirdPlayerAnalysis,
   Rank,
 } from "../../types";
-import { isTrump } from "../../game/gameHelpers";
+import { isTrump } from "../../game/cardValue";
 
 /**
  * Third Player Strategy - Position 3 specific optimizations

@@ -9,7 +9,7 @@ import {
   Rank,
   TrumpInfo,
 } from "../../types";
-import { isTrump } from "../../game/gameHelpers";
+import { isTrump } from "../../game/cardValue";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 
 /**

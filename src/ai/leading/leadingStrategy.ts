@@ -23,7 +23,7 @@ import { selectAIMultiComboLead } from "./multiComboLeadingStrategy";
 import { analyzeCombo } from "../aiGameContext";
 import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
 import { getRankValue } from "../analysis/comboAnalysis";
-import { isTrump } from "../../game/gameHelpers";
+import { isTrump } from "../../game/cardValue";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 import { VoidExploitationAnalysis } from "../analysis/voidExploitation";
 import { isTeammate } from "../utils/aiHelpers";

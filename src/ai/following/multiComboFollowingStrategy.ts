@@ -1,6 +1,6 @@
 import { compareTrumpMultiCombos } from "../../game/cardComparison";
+import { calculateCardStrategicValue, isTrump } from "../../game/cardValue";
 import { getComboType, identifyCombos } from "../../game/comboDetection";
-import { calculateCardStrategicValue, isTrump } from "../../game/gameHelpers";
 import {
   analyzeComboStructure,
   matchesRequiredComponents,
@@ -46,6 +46,8 @@ export function executeMultiComboFollowingAlgorithm(
   const trumpInfo = gameState.trumpInfo;
   const leadingSuit = leadingCards[0]?.suit;
 
+  const teammateWinning = isTeammateWinning(gameState, playerId);
+
   // Multi-combo leads are always non-trump, so we follow the standard flow:
   const hasAnyTrump = leadingCards.some((card) => isTrump(card, trumpInfo));
   if (hasAnyTrump) {
@@ -58,6 +60,7 @@ export function executeMultiComboFollowingAlgorithm(
     playerHand,
     trumpInfo,
     leadingSuit,
+    teammateWinning,
   );
   if (sameSuitResult) {
     return sameSuitResult;
@@ -70,13 +73,19 @@ export function executeMultiComboFollowingAlgorithm(
     trumpInfo,
     gameState,
     playerId,
+    teammateWinning,
   );
   if (trumpResult) {
     return trumpResult;
   }
 
   // Section C: Cross-suit disposal/contribution
-  return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo);
+  return selectCrossSuitDisposal(
+    leadingCards,
+    playerHand,
+    trumpInfo,
+    teammateWinning,
+  );
 }
 
 /**
@@ -131,6 +140,7 @@ function trySameSuitFollowing(
   playerHand: Card[],
   trumpInfo: TrumpInfo,
   leadingSuit: Suit,
+  teammateWinning: boolean,
 ): MultiComboFollowingResult | null {
   // A1: Do I have remaining cards in the led suit?
   const sameSuitCards = playerHand.filter(
@@ -149,6 +159,7 @@ function trySameSuitFollowing(
       playerHand,
       leadingCards,
       trumpInfo,
+      teammateWinning,
     );
   }
 
@@ -165,7 +176,12 @@ function trySameSuitFollowing(
   }
 
   // Cannot match structure - use same-suit disposal
-  return selectSameSuitDisposal(sameSuitCards, leadingCards, trumpInfo);
+  return selectSameSuitDisposal(
+    sameSuitCards,
+    leadingCards,
+    trumpInfo,
+    teammateWinning,
+  );
 }
 
 /**
@@ -177,6 +193,7 @@ function tryTrumpFollowing(
   trumpInfo: TrumpInfo,
   gameState: GameState,
   playerId: PlayerId,
+  teammateWinning: boolean,
 ): MultiComboFollowingResult | null {
   // B1: Do I have remaining trump cards?
   const trumpCards = playerHand.filter((card) => isTrump(card, trumpInfo));
@@ -205,6 +222,7 @@ function tryTrumpFollowing(
     gameState,
     playerHand,
     playerId,
+    teammateWinning,
   );
 }
 
@@ -216,6 +234,7 @@ function createAllRemainingAndFillResponse(
   playerHand: Card[],
   leadingCards: Card[],
   trumpInfo: TrumpInfo,
+  teammateWinning: boolean,
 ): MultiComboFollowingResult {
   const remainingNeeded = leadingCards.length - sameSuitCards.length;
   const otherCards = playerHand.filter(
@@ -223,10 +242,11 @@ function createAllRemainingAndFillResponse(
   );
 
   // Sort other cards by strategic value (lowest first for disposal)
+  const sortingValue = teammateWinning ? "contribute" : "strategic";
   const sortedOthers = otherCards.sort(
     (a, b) =>
-      calculateCardStrategicValue(a, trumpInfo, "strategic") -
-      calculateCardStrategicValue(b, trumpInfo, "strategic"),
+      calculateCardStrategicValue(a, trumpInfo, sortingValue) -
+      calculateCardStrategicValue(b, trumpInfo, sortingValue),
   );
 
   const fillCards = sortedOthers.slice(0, remainingNeeded);
@@ -248,11 +268,13 @@ function selectSameSuitDisposal(
   sameSuitCards: Card[],
   leadingCards: Card[],
   trumpInfo: TrumpInfo,
+  teammateWinning: boolean,
 ): MultiComboFollowingResult {
   // Find available combinations, prioritizing tractors and pairs
   const availableCombos = identifyCombos(sameSuitCards, trumpInfo);
 
   // Sort combos by priority: tractors first, then pairs, then singles
+  const sortingValue = teammateWinning ? "contribute" : "strategic";
   const sortedCombos = availableCombos.sort((a, b) => {
     const aType = getComboType(a.cards, trumpInfo);
     const bType = getComboType(b.cards, trumpInfo);
@@ -268,14 +290,15 @@ function selectSameSuitDisposal(
     if (priorityDiff !== 0) return -priorityDiff; // Higher priority first
 
     // Within same type, use lowest strategic value
+
     const aValue = a.cards.reduce(
       (sum, card) =>
-        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
+        sum + calculateCardStrategicValue(card, trumpInfo, sortingValue),
       0,
     );
     const bValue = b.cards.reduce(
       (sum, card) =>
-        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
+        sum + calculateCardStrategicValue(card, trumpInfo, sortingValue),
       0,
     );
     return aValue - bValue; // Lower value first
@@ -309,8 +332,8 @@ function selectSameSuitDisposal(
 
     const sortedUnused = unusedCards.sort(
       (a, b) =>
-        calculateCardStrategicValue(a, trumpInfo, "strategic") -
-        calculateCardStrategicValue(b, trumpInfo, "strategic"),
+        calculateCardStrategicValue(a, trumpInfo, sortingValue) -
+        calculateCardStrategicValue(b, trumpInfo, sortingValue),
     );
 
     const additionalCards = sortedUnused.slice(0, remainingNeeded);
@@ -336,14 +359,12 @@ function playMatchingMultiCombo(
   trumpInfo: TrumpInfo,
   isTrump: boolean,
 ): MultiComboFollowingResult {
-  // Find best matching combination that mirrors the leading structure
-  const combos = identifyCombos(availableCards, trumpInfo);
-
   // Select combinations that best match the leading structure
   const selectedCards = selectBestMatchingCombination(
-    combos,
+    availableCards,
     leadingCards,
     trumpInfo,
+    isTrump,
   );
 
   const canBeat =
@@ -366,7 +387,8 @@ function makeStrategicTrumpDecision(
   trumpInfo: TrumpInfo,
   gameState: GameState,
   playerHand: Card[],
-  playerId: PlayerId,
+  _playerId: PlayerId,
+  teammateWinning: boolean,
 ): MultiComboFollowingResult {
   // Check if there's already a trump response to beat
   const currentWinner = getCurrentWinningCombo(gameState.currentTrick);
@@ -374,27 +396,19 @@ function makeStrategicTrumpDecision(
     isTrump(card, trumpInfo),
   );
 
-  // Get current winning player for teammate analysis
-  const currentWinningPlayerId =
-    gameState.currentTrick?.winningPlayerId ||
-    gameState.currentTrick?.plays?.[0]?.playerId;
-
-  const isTeammateWinning =
-    currentWinningPlayerId &&
-    isTeammate(gameState, playerId, currentWinningPlayerId);
-
   // Early return: Don't trump if teammate is winning
-  if (isTeammateWinning) {
-    return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo);
+  if (teammateWinning) {
+    return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo, true);
   }
 
   // Opponent is winning - handle trump vs non-trump scenarios
   if (isCurrentWinnerTrump) {
     // Opponent is winning with trump - try to beat them
-    const trumpResponse = selectOptimalTrumpBeatingCards(
+    const trumpResponse = selectBestMatchingCombination(
       trumpCards,
       leadingCards,
       trumpInfo,
+      true,
     );
 
     // Two-step check for beating existing trump:
@@ -423,7 +437,7 @@ function makeStrategicTrumpDecision(
       }
     }
     // Cannot beat existing trump, use cross-suit disposal
-    return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo);
+    return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo, false);
   } else {
     // Opponent is winning with non-trump - trump to beat them
     return playMatchingMultiCombo(trumpCards, leadingCards, trumpInfo, true);
@@ -437,12 +451,15 @@ function selectCrossSuitDisposal(
   leadingCards: Card[],
   playerHand: Card[],
   trumpInfo: TrumpInfo,
+  teammateWinning: boolean,
 ): MultiComboFollowingResult {
+  const sortingValue = teammateWinning ? "contribute" : "strategic";
+
   // Sort all cards by strategic value (lowest first for disposal)
   const sortedCards = playerHand.sort(
     (a, b) =>
-      calculateCardStrategicValue(a, trumpInfo, "strategic") -
-      calculateCardStrategicValue(b, trumpInfo, "strategic"),
+      calculateCardStrategicValue(a, trumpInfo, sortingValue) -
+      calculateCardStrategicValue(b, trumpInfo, sortingValue),
   );
 
   const responseCards = sortedCards.slice(0, leadingCards.length);
@@ -455,14 +472,28 @@ function selectCrossSuitDisposal(
   };
 }
 
+function isTeammateWinning(gameState: GameState, playerId: PlayerId): boolean {
+  // Get current winning player for teammate analysis
+  const currentWinningPlayerId =
+    gameState.currentTrick?.winningPlayerId ||
+    gameState.currentTrick?.plays?.[0]?.playerId;
+
+  if (!currentWinningPlayerId) {
+    return false;
+  }
+
+  return isTeammate(gameState, playerId, currentWinningPlayerId);
+}
+
 /**
  * Helper function to select best matching combination from available combos
  * IMPORTANT: This function should match the STRUCTURE of the leading combo
  */
 function selectBestMatchingCombination(
-  availableCombos: Combo[],
+  availableCards: Card[],
   leadingCards: Card[],
   trumpInfo: TrumpInfo,
+  isTrumpResponse: boolean,
 ): Card[] {
   // Analyze the leading structure to understand what we need to match
   const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
@@ -474,11 +505,14 @@ function selectBestMatchingCombination(
     );
   }
 
+  const availableCombos = identifyCombos(availableCards, trumpInfo);
+
   // For structure matching, we need to select specific combinations that match the lead
   return selectStructureMatchingCards(
     availableCombos,
     leadingAnalysis,
     trumpInfo,
+    isTrumpResponse,
   );
 }
 
@@ -490,33 +524,31 @@ function selectStructureMatchingCards(
   availableCombos: Combo[],
   leadingAnalysis: MultiCombo,
   trumpInfo: TrumpInfo,
+  isTrumpResponse: boolean,
 ): Card[] {
   const selectedCards: Card[] = [];
   const usedCardIds = new Set<string>();
 
   // Sort function for strategic value
-  const sortByMode = (
-    a: Combo,
-    b: Combo,
-    mode: "combo" | "conservation" | "strategic",
-  ) => {
+  // loweset first
+  const sortByStrategicValue = (a: Combo, b: Combo) => {
     const aValue = a.cards.reduce(
-      (sum, card) => sum + calculateCardStrategicValue(card, trumpInfo, mode),
+      (sum, card) =>
+        sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
       0,
     );
     const bValue = b.cards.reduce(
-      (sum, card) => sum + calculateCardStrategicValue(card, trumpInfo, mode),
+      (sum, card) =>
+        sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
       0,
     );
     // For trump beating, use lowest value; for same-suit disposal, use lowest value too
     return aValue - bValue;
   };
 
-  const sortByStrategicValue = (a: Combo, b: Combo) =>
-    sortByMode(a, b, "strategic");
-
-  const sortByConservationValue = (a: Combo, b: Combo) =>
-    sortByMode(a, b, "conservation");
+  // highest first
+  const reverseSortByStrategicValue = (a: Combo, b: Combo) =>
+    -1 * sortByStrategicValue(a, b);
 
   // Filter and sort combos by type and strategic value
   const availableTractors = availableCombos
@@ -524,17 +556,19 @@ function selectStructureMatchingCards(
       (combo) => getComboType(combo.cards, trumpInfo) === ComboType.Tractor,
     )
     .sort(
-      leadingAnalysis.tractors > 0
-        ? sortByStrategicValue
-        : sortByConservationValue,
+      isTrumpResponse && leadingAnalysis.tractors > 0
+        ? reverseSortByStrategicValue
+        : sortByStrategicValue,
     );
 
   const availablePairs = availableCombos
     .filter((combo) => getComboType(combo.cards, trumpInfo) === ComboType.Pair)
     .sort(
-      leadingAnalysis.tractors === 0 && leadingAnalysis.totalPairs > 0
-        ? sortByStrategicValue
-        : sortByConservationValue,
+      isTrumpResponse &&
+        leadingAnalysis.tractors === 0 &&
+        leadingAnalysis.totalPairs > 0
+        ? reverseSortByStrategicValue
+        : sortByStrategicValue,
     );
 
   const availableSingles = availableCombos
@@ -542,9 +576,11 @@ function selectStructureMatchingCards(
       (combo) => getComboType(combo.cards, trumpInfo) === ComboType.Single,
     )
     .sort(
-      leadingAnalysis.tractors === 0 && leadingAnalysis.totalPairs === 0
-        ? sortByStrategicValue
-        : sortByConservationValue,
+      isTrumpResponse &&
+        leadingAnalysis.tractors === 0 &&
+        leadingAnalysis.totalPairs === 0
+        ? reverseSortByStrategicValue
+        : sortByStrategicValue,
     );
 
   // 1. Match tractors first (if leading has tractors)
@@ -634,85 +670,6 @@ function canBeatLeadingCombo(
 
   // 4. true (can beat) - trump with matching structure always beats non-trump
   return true;
-}
-
-/**
- * Select optimal trump cards for beating - prioritizes tractors, pairs, then singles
- * Uses HIGHEST strategic values for trump vs trump comparisons
- */
-function selectOptimalTrumpBeatingCards(
-  availableCards: Card[],
-  leadingCards: Card[],
-  trumpInfo: TrumpInfo,
-): Card[] {
-  // Find available combinations, prioritizing tractors and pairs
-  const availableCombos = identifyCombos(availableCards, trumpInfo);
-
-  // Sort combos by priority: tractors first, then pairs, then singles
-  // BUT use HIGHEST values for trump beating (opposite of disposal)
-  const sortedCombos = availableCombos.sort((a, b) => {
-    const aType = getComboType(a.cards, trumpInfo);
-    const bType = getComboType(b.cards, trumpInfo);
-
-    // Priority: Tractor > Pair > Single
-    const getPriority = (type: ComboType) => {
-      if (type === ComboType.Tractor) return 3;
-      if (type === ComboType.Pair) return 2;
-      return 1; // Singles
-    };
-
-    const priorityDiff = getPriority(aType) - getPriority(bType);
-    if (priorityDiff !== 0) return -priorityDiff; // Higher priority first
-
-    // Within same type, use HIGHEST strategic value for trump beating
-    const aValue = a.cards.reduce(
-      (sum, card) =>
-        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
-      0,
-    );
-    const bValue = b.cards.reduce(
-      (sum, card) =>
-        sum + calculateCardStrategicValue(card, trumpInfo, "strategic"),
-      0,
-    );
-    return bValue - aValue; // Higher value first for trump beating
-  });
-
-  // Select combinations to fill the required length, avoiding card reuse
-  const responseCards: Card[] = [];
-  const usedCardIds = new Set<string>();
-  let remainingNeeded = leadingCards.length;
-
-  for (const combo of sortedCombos) {
-    if (remainingNeeded <= 0) break;
-
-    // Check if any cards in this combo are already used
-    const comboCardIds = combo.cards.map((card) => card.id);
-    const hasUsedCard = comboCardIds.some((id) => usedCardIds.has(id));
-
-    if (!hasUsedCard && combo.cards.length <= remainingNeeded) {
-      responseCards.push(...combo.cards);
-      comboCardIds.forEach((id) => usedCardIds.add(id));
-      remainingNeeded -= combo.cards.length;
-    }
-  }
-
-  // If we still need more cards, add individual singles by HIGHEST value
-  if (remainingNeeded > 0) {
-    const usedCardIds = new Set(responseCards.map((card) => card.id));
-    const unusedCards = availableCards.filter(
-      (card) => !usedCardIds.has(card.id),
-    );
-    const sortedUnused = unusedCards.sort(
-      (a, b) =>
-        calculateCardStrategicValue(b, trumpInfo, "strategic") -
-        calculateCardStrategicValue(a, trumpInfo, "strategic"),
-    );
-
-    responseCards.push(...sortedUnused.slice(0, remainingNeeded));
-  }
-
-  return responseCards.slice(0, leadingCards.length); // Ensure exact length
 }
 
 /**

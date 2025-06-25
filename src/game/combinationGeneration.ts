@@ -8,10 +8,10 @@ import {
   Suit,
   TrumpInfo,
 } from "../types";
-import { identifyCombos, getComboType } from "./comboDetection";
-import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
-import { isValidPlay } from "./playValidation";
 import { gameLogger } from "../utils/gameLogger";
+import { calculateCardStrategicValue, isTrump } from "./cardValue";
+import { getComboType, identifyCombos } from "./comboDetection";
+import { isValidPlay } from "./playValidation";
 
 // Local helper functions to avoid circular dependencies
 
@@ -199,8 +199,8 @@ export const generateMixedCombinations = (
 
     // Sort cards by trump conservation hierarchy (weakest first)
     const sortedCards = [...cards].sort((a, b) => {
-      const valueA = calculateCardStrategicValue(a, trumpInfo, "conservation");
-      const valueB = calculateCardStrategicValue(b, trumpInfo, "conservation");
+      const valueA = calculateCardStrategicValue(a, trumpInfo, "basic");
+      const valueB = calculateCardStrategicValue(b, trumpInfo, "basic");
       return valueA - valueB; // Weakest first for disposal
     });
 
@@ -309,12 +309,12 @@ export const generateMixedCombinations = (
           const valueA = calculateCardStrategicValue(
             a.cards[0],
             trumpInfo,
-            "conservation",
+            "basic",
           );
           const valueB = calculateCardStrategicValue(
             b.cards[0],
             trumpInfo,
-            "conservation",
+            "basic",
           );
           return valueA - valueB;
         });
@@ -333,16 +333,8 @@ export const generateMixedCombinations = (
         const remainingCards = requiredSuitCards
           .filter((card) => !usedCardIds.has(card.id))
           .sort((a, b) => {
-            const valueA = calculateCardStrategicValue(
-              a,
-              trumpInfo,
-              "conservation",
-            );
-            const valueB = calculateCardStrategicValue(
-              b,
-              trumpInfo,
-              "conservation",
-            );
+            const valueA = calculateCardStrategicValue(a, trumpInfo, "basic");
+            const valueB = calculateCardStrategicValue(b, trumpInfo, "basic");
             return valueA - valueB; // Weakest first
           });
 
@@ -518,7 +510,7 @@ export const generateMixedCombinations = (
       validMixedCombos.push({
         type: ComboType.Single,
         cards: optimalCombo,
-        value: calculateCardStrategicValue(optimalCombo[0], trumpInfo, "combo"),
+        value: calculateCardStrategicValue(optimalCombo[0], trumpInfo, "basic"),
         isBreakingPair: determineIsBreakingPair(optimalCombo),
       });
     } else {
@@ -530,16 +522,8 @@ export const generateMixedCombinations = (
             : card.suit === leadingSuit && !isTrump(card, trumpInfo),
         )
         .sort((a, b) => {
-          const valueA = calculateCardStrategicValue(
-            a,
-            trumpInfo,
-            "conservation",
-          );
-          const valueB = calculateCardStrategicValue(
-            b,
-            trumpInfo,
-            "conservation",
-          );
+          const valueA = calculateCardStrategicValue(a, trumpInfo, "basic");
+          const valueB = calculateCardStrategicValue(b, trumpInfo, "basic");
           return valueA - valueB;
         })
         .slice(0, leadingLength);
@@ -576,7 +560,7 @@ export const generateMixedCombinations = (
           value: calculateCardStrategicValue(
             simpleCombo[0],
             trumpInfo,
-            "combo",
+            "basic",
           ),
           isBreakingPair: determineIsBreakingPair(simpleCombo),
         });
@@ -619,7 +603,7 @@ export const generateMixedCombinations = (
       validMixedCombos.push({
         type: ComboType.Single,
         cards,
-        value: calculateCardStrategicValue(cards[0], trumpInfo, "combo"),
+        value: calculateCardStrategicValue(cards[0], trumpInfo, "basic"),
         isBreakingPair: determineIsBreakingPair(cards),
       });
     }

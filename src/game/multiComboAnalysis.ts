@@ -1,7 +1,7 @@
 import { Card, Combo, ComboType, MultiCombo, Suit, TrumpInfo } from "../types";
 import { MultiComboDetection } from "../types/combinations";
 import { identifyCombos } from "./comboDetection";
-import { isTrump } from "./gameHelpers";
+import { isTrump } from "./cardValue";
 
 /**
  * Multi-Combo Detection for Game Rule Validation

@@ -1,30 +1,30 @@
+import { compareCards } from "../game/cardComparison";
+import { calculateCardStrategicValue, isTrump } from "../game/cardValue";
 import {
-  GameState,
+  Card,
+  CardMemory,
+  Combo,
+  ComboAnalysis,
+  ComboStrength,
   GameContext,
-  TrickPosition,
-  PointPressure,
+  GameState,
   PlayerId,
   PlayStyle,
-  ComboStrength,
-  ComboAnalysis,
+  PointPressure,
   PositionStrategy,
-  Combo,
-  Card,
-  TrumpInfo,
-  TrickWinnerAnalysis,
   Rank,
   Trick,
-  CardMemory,
+  TrickPosition,
+  TrickWinnerAnalysis,
+  TrumpInfo,
 } from "../types";
-import { isTrump, calculateCardStrategicValue } from "../game/gameHelpers";
-import { compareCards } from "../game/cardComparison";
-import { isTeammate } from "./utils/aiHelpers";
+import { gameLogger } from "../utils/gameLogger";
 import {
+  analyzeTrumpDistribution,
   createCardMemory,
   enhanceGameContextWithMemory,
-  analyzeTrumpDistribution,
 } from "./aiCardMemory";
-import { gameLogger } from "../utils/gameLogger";
+import { isTeammate } from "./utils/aiHelpers";
 
 /**
  * Analyzes the current game state to provide strategic context for AI decision making
@@ -473,11 +473,7 @@ function calculateTrumpConservationValue(
   let totalValue = 0;
 
   for (const card of cards) {
-    const cardValue = calculateCardStrategicValue(
-      card,
-      trumpInfo,
-      "conservation",
-    );
+    const cardValue = calculateCardStrategicValue(card, trumpInfo, "basic");
     totalValue += cardValue;
   }
 

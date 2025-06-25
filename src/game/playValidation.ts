@@ -15,7 +15,7 @@ import {
   getComboType,
   identifyCombos,
 } from "./comboDetection";
-import { isTrump } from "./gameHelpers";
+import { isTrump } from "./cardValue";
 import {
   analyzeComboStructure,
   detectLeadingMultiCombo,

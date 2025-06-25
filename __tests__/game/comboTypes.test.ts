@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@jest/globals";
 import { compareCards } from "../../src/game/cardComparison";
 import { getComboType, identifyCombos } from "../../src/game/comboDetection";
-import { isTrump } from "../../src/game/gameHelpers";
+import { isTrump } from "../../src/game/cardValue";
 import {
   Card,
   ComboType,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import { isTrump } from "../../src/game/gameHelpers";
+import { isTrump } from "../../src/game/cardValue";
 import { analyzeComboStructure } from "../../src/game/multiComboAnalysis";
 import { Rank, Suit, TrumpInfo } from "../../src/types";
 import { Card } from "../../src/types/card";

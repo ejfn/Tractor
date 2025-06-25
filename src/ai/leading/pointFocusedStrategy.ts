@@ -1,22 +1,22 @@
+import { isTrump } from "../../game/cardValue";
 import {
   Combo,
-  TrumpInfo,
-  GameState,
   ComboType,
   GameContext,
-  PointPressure,
-  PointFocusedContext,
-  TrumpConservationStrategy,
   GamePhaseStrategy,
-  PointCardStrategy,
-  TrumpTiming,
-  Rank,
+  GameState,
   Player,
   PlayerId,
+  PointCardStrategy,
+  PointFocusedContext,
+  PointPressure,
+  Rank,
+  TrumpConservationStrategy,
+  TrumpInfo,
+  TrumpTiming,
 } from "../../types";
-import { isTrump, isPointCard } from "../../game/gameHelpers";
-import { analyzePointCardTiming } from "../analysis/pointCardTiming";
 import { gameLogger } from "../../utils/gameLogger";
+import { analyzePointCardTiming } from "../analysis/pointCardTiming";
 
 /**
  * Enhanced Point-Focused AI Strategy Implementation
@@ -338,7 +338,7 @@ function calculateTeamPoints(
 
 function calculatePointCardDensity(gameState: GameState): number {
   const allRemainingCards = gameState.players.flatMap((p) => p.hand);
-  const pointCards = allRemainingCards.filter((card) => isPointCard(card));
+  const pointCards = allRemainingCards.filter((card) => card.points > 0);
   return allRemainingCards.length > 0
     ? pointCards.length / allRemainingCards.length
     : 0;
@@ -399,7 +399,7 @@ function checkPartnerPointEscape(
   );
   if (!partner) return false;
 
-  const partnerPointCards = partner.hand.filter((card) => isPointCard(card));
+  const partnerPointCards = partner.hand.filter((card) => card.points > 0);
   return partnerPointCards.length >= 3; // Partner has many point cards
 }
 

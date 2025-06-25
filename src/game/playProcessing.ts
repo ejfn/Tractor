@@ -16,7 +16,7 @@ import {
   evaluateTrickPlay,
 } from "./cardComparison";
 import { getComboType } from "./comboDetection";
-import { isTrump } from "./gameHelpers";
+import { isTrump } from "./cardValue";
 import { calculateKittyBonusInfo } from "./kittyManager";
 import { isValidPlay } from "./playValidation";
 

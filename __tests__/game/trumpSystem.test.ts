@@ -1,6 +1,6 @@
 import { compareCards } from "../../src/game/cardComparison";
 import { identifyCombos } from "../../src/game/comboDetection";
-import { isTrump } from "../../src/game/gameHelpers";
+import { isTrump } from "../../src/game/cardValue";
 import { compareCardCombos } from "../../src/game/playProcessing";
 import {
   Card,

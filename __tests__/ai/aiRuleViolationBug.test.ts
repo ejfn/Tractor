@@ -1,6 +1,6 @@
 import { getAIMove } from "../../src/ai/aiLogic";
 import { getValidCombinations } from "../../src/game/combinationGeneration";
-import { isTrump } from "../../src/game/gameHelpers";
+import { isTrump } from "../../src/game/cardValue";
 import { isValidPlay } from "../../src/game/playValidation";
 import {
   Card,
