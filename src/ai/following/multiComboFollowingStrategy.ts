@@ -529,8 +529,7 @@ function selectStructureMatchingCards(
   const selectedCards: Card[] = [];
   const usedCardIds = new Set<string>();
 
-  // Sort function for strategic value
-  // loweset first
+  // Sort function for strategic value (lowest first)
   const sortByStrategicValue = (a: Combo, b: Combo) => {
     const aValue = a.cards.reduce(
       (sum, card) =>
@@ -542,46 +541,58 @@ function selectStructureMatchingCards(
         sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
       0,
     );
-    // For trump beating, use lowest value; for same-suit disposal, use lowest value too
     return aValue - bValue;
   };
 
-  // highest first
-  const reverseSortByStrategicValue = (a: Combo, b: Combo) =>
-    -1 * sortByStrategicValue(a, b);
+  // Helper function to move highest value combo to front for optimal trump usage
+  const moveHighestToFront = (combos: Combo[]) => {
+    if (combos.length > 0) {
+      const highest = combos.pop(); // Remove last item (highest value)
+      if (highest) {
+        combos.unshift(highest); // Add to front
+      }
+    }
+  };
 
-  // Filter and sort combos by type and strategic value
+  // Filter and sort combos by type and strategic value (always lowest first)
   const availableTractors = availableCombos
     .filter(
       (combo) => getComboType(combo.cards, trumpInfo) === ComboType.Tractor,
     )
-    .sort(
-      isTrumpResponse && leadingAnalysis.tractors > 0
-        ? reverseSortByStrategicValue
-        : sortByStrategicValue,
-    );
+    .sort(sortByStrategicValue);
+
+  // For trump responses, move highest tractor to front (optimal trump usage)
+  if (isTrumpResponse && leadingAnalysis.tractors > 0) {
+    moveHighestToFront(availableTractors);
+  }
 
   const availablePairs = availableCombos
     .filter((combo) => getComboType(combo.cards, trumpInfo) === ComboType.Pair)
-    .sort(
-      isTrumpResponse &&
-        leadingAnalysis.tractors === 0 &&
-        leadingAnalysis.totalPairs > 0
-        ? reverseSortByStrategicValue
-        : sortByStrategicValue,
-    );
+    .sort(sortByStrategicValue);
+
+  // For trump responses to pair leads, move highest pair to front
+  if (
+    isTrumpResponse &&
+    leadingAnalysis.tractors === 0 &&
+    leadingAnalysis.totalPairs > 0
+  ) {
+    moveHighestToFront(availablePairs);
+  }
 
   const availableSingles = availableCombos
     .filter(
       (combo) => getComboType(combo.cards, trumpInfo) === ComboType.Single,
     )
-    .sort(
-      isTrumpResponse &&
-        leadingAnalysis.tractors === 0 &&
-        leadingAnalysis.totalPairs === 0
-        ? reverseSortByStrategicValue
-        : sortByStrategicValue,
-    );
+    .sort(sortByStrategicValue);
+
+  // For trump responses to single leads, move highest single to front
+  if (
+    isTrumpResponse &&
+    leadingAnalysis.tractors === 0 &&
+    leadingAnalysis.totalPairs === 0
+  ) {
+    moveHighestToFront(availableSingles);
+  }
 
   // 1. Match tractors first (if leading has tractors)
   let tractorsNeeded = leadingAnalysis.tractors;
