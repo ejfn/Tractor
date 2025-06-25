@@ -1,0 +1,141 @@
+name: Bug Report
+description: Create a report to help us improve the Tractor card game
+title: "[BUG] "
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible to help us reproduce and fix the issue.
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what happened!
+    validations:
+      required: true
+
+  - type: dropdown
+    id: bug-category
+    attributes:
+      label: Bug Category
+      description: What type of issue is this?
+      options:
+        - Game Logic (cards, rules, scoring)
+        - AI Behavior (bot actions, strategy)
+        - UI/UX (interface, animations, display)
+        - Performance (lag, crashes, slowness)
+        - Audio/Visual (graphics, sounds)
+        - Persistence (save/load issues)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: game-situation
+    attributes:
+      label: Game Situation
+      description: Describe the specific game context when the bug occurred
+      placeholder: |
+        - Trump Info: [e.g., "Rank 2, Hearts trump"]
+        - Current phase: [e.g., "Playing", "Trump declaration", "Kitty swap"]
+        - Round number: [e.g., "Round 3"]
+        - Your team's current rank: [e.g., "Rank 5"]
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the bug
+      placeholder: |
+        1. Lead play: [Describe the lead player's action]
+        2. 2nd play: [Describe the second player's action]
+        3. 3rd play: [Describe the third player's action]
+        4. 4th play: [Describe the fourth player's action]
+        5. [Additional steps if needed]
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+      placeholder: What should have happened according to the game rules?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Please describe what you observed.
+      placeholder: What did you see instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device-type
+    attributes:
+      label: Device Type
+      description: What device are you using?
+      options:
+        - Android Phone
+        - Android Tablet
+        - iOS iPhone
+        - iOS iPad
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: device-details
+    attributes:
+      label: Device Details (Optional)
+      description: Device model and OS version
+      placeholder: e.g., "Samsung Galaxy S21, Android 13" or "iPhone 14 Pro, iOS 17.1"
+    validations:
+      required: false
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App Version
+      description: What version of the Tractor app are you using?
+      placeholder: e.g., "1.0.0" or "latest from main branch"
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem. You can drag and drop images here.
+      placeholder: Drag and drop screenshots here or click to upload
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
+      placeholder: Any other details that might help us understand the issue?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/ejfn/Tractor/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

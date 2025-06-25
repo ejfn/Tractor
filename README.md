@@ -10,13 +10,11 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 ## Screenshots
 
-<img src="assets/screenshots/Screenshot_20250626-073331.png" alt="Card Selection" width="250"/>
-<img src="assets/screenshots/Screenshot_20250626-073633.png" alt="Round Progress" width="250"/>
-<img src="assets/screenshots/Screenshot_20250626-073829.png" alt="Game Results" width="250"/>
-
+<p align="center">
 <img src="assets/screenshots/Screenshot_20250615-190534.png" alt="Gameplay View" width="250"/>
 <img src="assets/screenshots/Screenshot_20250626-073557.png" alt="Trump Declaration" width="250"/>
 <img src="assets/screenshots/Screenshot_20250614-094133.png" alt="Game Interface" width="250"/>
+</p>
 
 ## What is Tractor?
 
@@ -118,6 +116,14 @@ This project is fully developed using [Claude Code](https://claude.ai/code), Ant
 - **Difficulty Scaling** - Adaptive challenge based on player skill
 - **Advanced Psychology** - Deep behavioral modeling
 - **iOS Testing** - Comprehensive iOS platform validation
+
+## More Screenshots
+
+<p align="center">
+<img src="assets/screenshots/Screenshot_20250626-073331.png" alt="Card Selection" width="250"/>
+<img src="assets/screenshots/Screenshot_20250626-073633.png" alt="Round Progress" width="250"/>
+<img src="assets/screenshots/Screenshot_20250626-073829.png" alt="Game Results" width="250"/>
+</p>
 
 ## License
 
