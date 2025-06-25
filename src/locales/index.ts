@@ -1,18 +1,18 @@
-import i18next, { use as i18nUse, changeLanguage } from "i18next";
-import { initReactI18next } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLocales } from "expo-localization";
+import i18next, { changeLanguage, use as i18nUse } from "i18next";
+import { initReactI18next } from "react-i18next";
 
 // Import translation files
 import commonEn from "./en/common.json";
 import gameEn from "./en/game.json";
-import trumpDeclarationEn from "./en/trumpDeclaration.json";
 import modalsEn from "./en/modals.json";
+import trumpDeclarationEn from "./en/trumpDeclaration.json";
 
 import commonZh from "./zh/common.json";
 import gameZh from "./zh/game.json";
-import trumpDeclarationZh from "./zh/trumpDeclaration.json";
 import modalsZh from "./zh/modals.json";
+import trumpDeclarationZh from "./zh/trumpDeclaration.json";
 
 // Language resources
 const resources = {
@@ -93,12 +93,6 @@ export default i18next;
 // Export types for TypeScript support
 export type Language = "en" | "zh";
 export type Namespace = "common" | "game" | "trumpDeclaration" | "modals";
-
-// Language display names
-export const LANGUAGES = {
-  en: "English",
-  zh: "中文",
-} as const;
 
 // Helper function to get current language
 export const getCurrentLanguage = (): Language => {
