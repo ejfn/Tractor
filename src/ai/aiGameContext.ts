@@ -44,7 +44,11 @@ export function createGameContext(
     ? analyzeTrickWinner(gameState, playerId)
     : undefined;
   const trickPosition = getTrickPosition(gameState, playerId);
-  const pointPressure = calculatePointPressure(currentPoints, pointsNeeded);
+  const pointPressure = calculatePointPressure(
+    currentPoints,
+    pointsNeeded,
+    isAttackingTeam,
+  );
   const playStyle = determinePlayStyle(
     isAttackingTeam,
     pointPressure,
@@ -396,20 +400,37 @@ export function getTrickPosition(
 }
 
 /**
- * Calculates point pressure based on attacking team's progress
+ * Calculates point pressure based on attacking team's progress and player's team affiliation
+ *
+ * Point pressure is team-specific:
+ * - Attacking team: Low points = HIGH pressure (need to catch up)
+ * - Defending team: Low attacking points = LOW pressure (they're winning)
  */
 export function calculatePointPressure(
   currentPoints: number,
   pointsNeeded: number,
+  isAttackingTeam: boolean,
 ): PointPressure {
   const progressRatio = currentPoints / pointsNeeded;
 
-  if (progressRatio < 0.3) {
-    return PointPressure.LOW; // < 24 points
-  } else if (progressRatio < 0.7) {
-    return PointPressure.MEDIUM; // 24-56 points
+  if (isAttackingTeam) {
+    // Attacking team: pressure increases as they fall behind
+    if (progressRatio < 0.3) {
+      return PointPressure.HIGH; // < 24 points - need to catch up urgently
+    } else if (progressRatio < 0.7) {
+      return PointPressure.MEDIUM; // 24-56 points - moderate pressure
+    } else {
+      return PointPressure.LOW; // 56+ points - on track or ahead
+    }
   } else {
-    return PointPressure.HIGH; // 56+ points
+    // Defending team: pressure increases as attacking team catches up
+    if (progressRatio < 0.3) {
+      return PointPressure.LOW; // < 24 points - defending successfully
+    } else if (progressRatio < 0.7) {
+      return PointPressure.MEDIUM; // 24-56 points - need to tighten defense
+    } else {
+      return PointPressure.HIGH; // 56+ points - attacking team close to winning
+    }
   }
 }
 
