@@ -1,30 +1,30 @@
+import { compareCards } from "../game/cardComparison";
+import { calculateCardStrategicValue, isTrump } from "../game/cardValue";
 import {
-  GameState,
+  Card,
+  CardMemory,
+  Combo,
+  ComboAnalysis,
+  ComboStrength,
   GameContext,
-  TrickPosition,
-  PointPressure,
+  GameState,
   PlayerId,
   PlayStyle,
-  ComboStrength,
-  ComboAnalysis,
+  PointPressure,
   PositionStrategy,
-  Combo,
-  Card,
-  TrumpInfo,
-  TrickWinnerAnalysis,
   Rank,
   Trick,
-  CardMemory,
+  TrickPosition,
+  TrickWinnerAnalysis,
+  TrumpInfo,
 } from "../types";
-import { isTrump, calculateCardStrategicValue } from "../game/gameHelpers";
-import { compareCards } from "../game/cardComparison";
-import { isTeammate } from "./utils/aiHelpers";
+import { gameLogger } from "../utils/gameLogger";
 import {
+  analyzeTrumpDistribution,
   createCardMemory,
   enhanceGameContextWithMemory,
-  analyzeTrumpDistribution,
 } from "./aiCardMemory";
-import { gameLogger } from "../utils/gameLogger";
+import { isTeammate } from "./utils/aiHelpers";
 
 /**
  * Analyzes the current game state to provide strategic context for AI decision making
@@ -44,7 +44,11 @@ export function createGameContext(
     ? analyzeTrickWinner(gameState, playerId)
     : undefined;
   const trickPosition = getTrickPosition(gameState, playerId);
-  const pointPressure = calculatePointPressure(currentPoints, pointsNeeded);
+  const pointPressure = calculatePointPressure(
+    currentPoints,
+    pointsNeeded,
+    isAttackingTeam,
+  );
   const playStyle = determinePlayStyle(
     isAttackingTeam,
     pointPressure,
@@ -396,20 +400,37 @@ export function getTrickPosition(
 }
 
 /**
- * Calculates point pressure based on attacking team's progress
+ * Calculates point pressure based on attacking team's progress and player's team affiliation
+ *
+ * Point pressure is team-specific:
+ * - Attacking team: Low points = HIGH pressure (need to catch up)
+ * - Defending team: Low attacking points = LOW pressure (they're winning)
  */
 export function calculatePointPressure(
   currentPoints: number,
   pointsNeeded: number,
+  isAttackingTeam: boolean,
 ): PointPressure {
   const progressRatio = currentPoints / pointsNeeded;
 
-  if (progressRatio < 0.3) {
-    return PointPressure.LOW; // < 24 points
-  } else if (progressRatio < 0.7) {
-    return PointPressure.MEDIUM; // 24-56 points
+  if (isAttackingTeam) {
+    // Attacking team: pressure increases as they fall behind
+    if (progressRatio < 0.3) {
+      return PointPressure.HIGH; // < 24 points - need to catch up urgently
+    } else if (progressRatio < 0.7) {
+      return PointPressure.MEDIUM; // 24-56 points - moderate pressure
+    } else {
+      return PointPressure.LOW; // 56+ points - on track or ahead
+    }
   } else {
-    return PointPressure.HIGH; // 56+ points
+    // Defending team: pressure increases as attacking team catches up
+    if (progressRatio < 0.3) {
+      return PointPressure.LOW; // < 24 points - defending successfully
+    } else if (progressRatio < 0.7) {
+      return PointPressure.MEDIUM; // 24-56 points - need to tighten defense
+    } else {
+      return PointPressure.HIGH; // 56+ points - attacking team close to winning
+    }
   }
 }
 
@@ -473,11 +494,7 @@ function calculateTrumpConservationValue(
   let totalValue = 0;
 
   for (const card of cards) {
-    const cardValue = calculateCardStrategicValue(
-      card,
-      trumpInfo,
-      "conservation",
-    );
+    const cardValue = calculateCardStrategicValue(card, trumpInfo, "basic");
     totalValue += cardValue;
   }
 

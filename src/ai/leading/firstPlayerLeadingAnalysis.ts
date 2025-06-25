@@ -8,7 +8,7 @@ import {
   PointPressure,
   TrumpInfo,
 } from "../../types";
-import { isTrump } from "../../game/gameHelpers";
+import { isTrump } from "../../game/cardValue";
 import { getRankValue } from "../analysis/comboAnalysis";
 
 /**

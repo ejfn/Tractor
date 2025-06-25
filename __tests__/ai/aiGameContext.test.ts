@@ -63,22 +63,50 @@ describe("AI Game Context", () => {
   });
 
   describe("calculatePointPressure", () => {
-    it("should return LOW pressure for less than 30% of points", () => {
-      expect(calculatePointPressure(20, 80)).toBe(PointPressure.LOW);
-      expect(calculatePointPressure(0, 80)).toBe(PointPressure.LOW);
-      expect(calculatePointPressure(23, 80)).toBe(PointPressure.LOW);
+    describe("attacking team perspective", () => {
+      it("should return HIGH pressure for less than 30% of points (need to catch up)", () => {
+        expect(calculatePointPressure(20, 80, true)).toBe(PointPressure.HIGH);
+        expect(calculatePointPressure(0, 80, true)).toBe(PointPressure.HIGH);
+        expect(calculatePointPressure(23, 80, true)).toBe(PointPressure.HIGH);
+      });
+
+      it("should return MEDIUM pressure for 30-70% of points", () => {
+        expect(calculatePointPressure(24, 80, true)).toBe(PointPressure.MEDIUM);
+        expect(calculatePointPressure(40, 80, true)).toBe(PointPressure.MEDIUM);
+        expect(calculatePointPressure(55, 80, true)).toBe(PointPressure.MEDIUM);
+      });
+
+      it("should return LOW pressure for 70%+ of points (on track to win)", () => {
+        expect(calculatePointPressure(56, 80, true)).toBe(PointPressure.LOW);
+        expect(calculatePointPressure(70, 80, true)).toBe(PointPressure.LOW);
+        expect(calculatePointPressure(79, 80, true)).toBe(PointPressure.LOW);
+      });
     });
 
-    it("should return MEDIUM pressure for 30-70% of points", () => {
-      expect(calculatePointPressure(24, 80)).toBe(PointPressure.MEDIUM);
-      expect(calculatePointPressure(40, 80)).toBe(PointPressure.MEDIUM);
-      expect(calculatePointPressure(55, 80)).toBe(PointPressure.MEDIUM);
-    });
+    describe("defending team perspective", () => {
+      it("should return LOW pressure for less than 30% of attacking points (defending successfully)", () => {
+        expect(calculatePointPressure(20, 80, false)).toBe(PointPressure.LOW);
+        expect(calculatePointPressure(0, 80, false)).toBe(PointPressure.LOW);
+        expect(calculatePointPressure(23, 80, false)).toBe(PointPressure.LOW);
+      });
 
-    it("should return HIGH pressure for 70%+ of points", () => {
-      expect(calculatePointPressure(56, 80)).toBe(PointPressure.HIGH);
-      expect(calculatePointPressure(70, 80)).toBe(PointPressure.HIGH);
-      expect(calculatePointPressure(79, 80)).toBe(PointPressure.HIGH);
+      it("should return MEDIUM pressure for 30-70% of attacking points", () => {
+        expect(calculatePointPressure(24, 80, false)).toBe(
+          PointPressure.MEDIUM,
+        );
+        expect(calculatePointPressure(40, 80, false)).toBe(
+          PointPressure.MEDIUM,
+        );
+        expect(calculatePointPressure(55, 80, false)).toBe(
+          PointPressure.MEDIUM,
+        );
+      });
+
+      it("should return HIGH pressure for 70%+ of attacking points (need to stop them)", () => {
+        expect(calculatePointPressure(56, 80, false)).toBe(PointPressure.HIGH);
+        expect(calculatePointPressure(70, 80, false)).toBe(PointPressure.HIGH);
+        expect(calculatePointPressure(79, 80, false)).toBe(PointPressure.HIGH);
+      });
     });
   });
 
@@ -170,7 +198,7 @@ describe("AI Game Context", () => {
       expect(context.pointsNeeded).toBe(80);
       expect(context.cardsRemaining).toBeGreaterThan(0);
       expect(context.trickPosition).toBe(TrickPosition.First);
-      expect(context.pointPressure).toBe(PointPressure.LOW);
+      expect(context.pointPressure).toBe(PointPressure.HIGH); // Attacking team with 0 points has HIGH pressure
     });
 
     it("should create complete game context for defending team player", () => {

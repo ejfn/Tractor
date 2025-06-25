@@ -1,6 +1,6 @@
 import { getAIKittySwap } from "../../src/ai/aiLogic";
 import { selectAIKittySwapCards } from "../../src/ai/kittySwap/kittySwapStrategy";
-import { isTrump } from "../../src/game/gameHelpers";
+import { isTrump } from "../../src/game/cardValue";
 import {
   Card,
   DeckId,

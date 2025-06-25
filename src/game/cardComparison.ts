@@ -8,7 +8,7 @@ import {
   TrumpInfo,
 } from "../types";
 import { getComboType } from "./comboDetection";
-import { getRankValue, isTrump } from "./gameHelpers";
+import { getRankValue, isTrump } from "./cardValue";
 import {
   analyzeComboStructure,
   matchesRequiredComponents,

@@ -10,7 +10,7 @@ import {
   TrumpInfo,
   PlayerId,
 } from "../../types";
-import { isTrump } from "../../game/gameHelpers";
+import { isTrump } from "../../game/cardValue";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
 import { getPointCardPriority } from "../utils/aiHelpers";

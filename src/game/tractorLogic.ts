@@ -1,5 +1,5 @@
 import { Card, Combo, ComboType, JokerType, TrumpInfo } from "../types";
-import { calculateCardStrategicValue, getRankValue } from "./gameHelpers";
+import { calculateCardStrategicValue, getRankValue } from "./cardValue";
 
 /**
  * Tractor Detection Module
@@ -191,7 +191,7 @@ export const findTractorsInContext = (
         // Calculate value based on the highest rank in the tractor
         const value = Math.max(
           ...tractorPairs.map((pair) =>
-            calculateCardStrategicValue(pair.cards[0], trumpInfo, "combo"),
+            calculateCardStrategicValue(pair.cards[0], trumpInfo, "basic"),
           ),
         );
 
@@ -221,8 +221,8 @@ export const findTractorsInContext = (
       for (const offSuitPair of offSuitPairs) {
         const tractorCards = [...trumpPair.cards, ...offSuitPair.cards];
         const value = Math.max(
-          calculateCardStrategicValue(trumpPair.cards[0], trumpInfo, "combo"),
-          calculateCardStrategicValue(offSuitPair.cards[0], trumpInfo, "combo"),
+          calculateCardStrategicValue(trumpPair.cards[0], trumpInfo, "basic"),
+          calculateCardStrategicValue(offSuitPair.cards[0], trumpInfo, "basic"),
         );
 
         combos.push({

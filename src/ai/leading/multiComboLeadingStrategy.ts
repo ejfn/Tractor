@@ -1,5 +1,5 @@
 import { identifyCombos } from "../../game/comboDetection";
-import { isTrump } from "../../game/gameHelpers";
+import { isTrump } from "../../game/cardValue";
 import { analyzeComboStructure } from "../../game/multiComboAnalysis";
 import {
   checkOpponentVoidStatus,

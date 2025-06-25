@@ -1,9 +1,6 @@
+import { calculateCardStrategicValue, isTrump } from "../../src/game/cardValue";
 import { getValidCombinations } from "../../src/game/combinationGeneration";
 import { getComboType, identifyCombos } from "../../src/game/comboDetection";
-import {
-  calculateCardStrategicValue,
-  isTrump,
-} from "../../src/game/gameHelpers";
 import { isValidPlay } from "../../src/game/playValidation";
 import {
   Card,
@@ -149,12 +146,12 @@ describe("Combo Generation Comprehensive Tests", () => {
       const weakestCombo = validCombos.reduce((weakest, current) => {
         const weakestValue = weakest.cards.reduce(
           (sum, card) =>
-            sum + calculateCardStrategicValue(card, trumpInfo, "conservation"),
+            sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
           0,
         );
         const currentValue = current.cards.reduce(
           (sum, card) =>
-            sum + calculateCardStrategicValue(card, trumpInfo, "conservation"),
+            sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
           0,
         );
         return currentValue < weakestValue ? current : weakest;
@@ -162,7 +159,7 @@ describe("Combo Generation Comprehensive Tests", () => {
 
       // Should prefer 3♠ (5) and 4♠ (10) over Big Joker (100) and Small Joker (90)
       const usedConservationValues = weakestCombo.cards.map((card) =>
-        calculateCardStrategicValue(card, trumpInfo, "conservation"),
+        calculateCardStrategicValue(card, trumpInfo, "basic"),
       );
 
       gameLogger.info(
@@ -394,11 +391,7 @@ describe("Combo Generation Comprehensive Tests", () => {
 
       const values = cards.map((card) => ({
         card: card.joker || `${card.rank}${card.suit}`,
-        conservation: calculateCardStrategicValue(
-          card,
-          trumpInfo,
-          "conservation",
-        ),
+        conservation: calculateCardStrategicValue(card, trumpInfo, "basic"),
         strategic: calculateCardStrategicValue(card, trumpInfo, "strategic"),
       }));
 
@@ -409,10 +402,10 @@ describe("Combo Generation Comprehensive Tests", () => {
       );
 
       // Big Joker should have highest conservation value
-      expect(values[0].conservation).toBe(100);
+      expect(values[0].conservation).toBe(1000);
 
       // Small Joker should be second highest
-      expect(values[1].conservation).toBe(90);
+      expect(values[1].conservation).toBe(999);
 
       // Trump rank in trump suit should be higher than trump rank off-suit
       expect(values[2].conservation).toBeGreaterThan(values[3].conservation);

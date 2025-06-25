@@ -1,5 +1,5 @@
 import { Card, Combo, ComboType, Suit, TrumpInfo } from "../types";
-import { calculateCardStrategicValue, isTrump } from "./gameHelpers";
+import { calculateCardStrategicValue, isTrump } from "./cardValue";
 import { findAllTractors, isValidTractor } from "./tractorLogic";
 
 // Identify valid combinations in a player's hand
@@ -62,7 +62,7 @@ export const identifyCombos = (
 
 // Legacy function for backward compatibility
 export const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
-  return calculateCardStrategicValue(card, trumpInfo, "combo");
+  return calculateCardStrategicValue(card, trumpInfo, "basic");
 };
 
 // Count total pairs in cards (including pairs within tractors) - Algorithm Flow Diagram compliance

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { isTrump } from "../game/gameHelpers";
+import { isTrump } from "../game/cardValue";
 import {
   Card as CardType,
   GamePhase,

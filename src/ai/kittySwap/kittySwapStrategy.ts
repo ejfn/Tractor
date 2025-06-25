@@ -1,5 +1,5 @@
 import { identifyCombos } from "../../game/comboDetection";
-import { calculateCardStrategicValue, isTrump } from "../../game/gameHelpers";
+import { calculateCardStrategicValue, isTrump } from "../../game/cardValue";
 import {
   Card,
   ComboType,

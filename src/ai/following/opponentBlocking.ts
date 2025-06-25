@@ -11,7 +11,7 @@ import {
   TrumpInfo,
   TrickWinnerAnalysis,
 } from "../../types";
-import { isTrump } from "../../game/gameHelpers";
+import { isTrump } from "../../game/cardValue";
 import { getComboType } from "../../game/comboDetection";
 import {
   selectOptimalWinningCombo,

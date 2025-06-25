@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Card as CardType, Player, PlayerId, Trick, TrumpInfo } from "../types"; // Using Card as CardType to avoid naming conflict
-import { isTrump } from "../game/gameHelpers";
+import { isTrump } from "../game/cardValue";
 import {
   ANIMATION_COMPLETION_DELAY,
   CARD_ANIMATION_FALLBACK,

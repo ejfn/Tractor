@@ -1,8 +1,8 @@
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import React from "react";
-import { render, waitFor, fireEvent } from "@testing-library/react-native";
-import { View, Text, Button } from "react-native";
+import { Button, Text, View } from "react-native";
 import { useGameState } from "../../src/hooks/useGameState";
-import { Card, Rank, Suit, GamePhase, PlayerId } from "../../src/types";
+import { Card, GamePhase, PlayerId, Rank, Suit } from "../../src/types";
 import { createComponentTestGameState } from "../helpers";
 
 import { initializeGame } from "../../src/utils/gameInitialization";
@@ -16,7 +16,7 @@ jest.mock("../../src/game/playProcessing", () => ({
   isValidPlay: jest.fn(),
 }));
 
-jest.mock("../../src/game/gameHelpers", () => ({
+jest.mock("../../src/game/cardValue", () => ({
   isTrump: jest.fn(),
 }));
 
