@@ -33,7 +33,6 @@ const getLeadingSuit = (combo: Card[]) => {
   return undefined;
 };
 
-// Validation for multi-combo following
 export const validateMultiComboFollowing = (
   playedCards: Card[],
   leadingMultiCombo: MultiCombo,
@@ -46,13 +45,29 @@ export const validateMultiComboFollowing = (
   }
 
   // Step 2: Leading multi-combos are always non-trump
-  // For now, we'll determine the suit from the first combo's cards
   const leadingSuit =
     leadingMultiCombo.combos.length > 0
       ? leadingMultiCombo.combos[0].cards[0]?.suit
       : undefined;
   if (leadingSuit === undefined) {
     throw new Error("Leading suit not determined from structure");
+  }
+
+  // Check if all played cards are non-trump and match the leading suit
+  const playerCardsOfLeadingSuit = playerHand.filter(
+    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+  );
+
+  const playedCardsOfLeadingSuit = playedCards.filter(
+    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+  );
+
+  // Step3: If player plays mixed suits, they must have no cards left in the leading suit
+  if (
+    playedCardsOfLeadingSuit.length < playerCardsOfLeadingSuit.length &&
+    playedCardsOfLeadingSuit.length < playedCards.length
+  ) {
+    return false;
   }
 
   // Get remaining cards in the leading suit after this play
@@ -63,13 +78,12 @@ export const validateMultiComboFollowing = (
       !isTrump(card, trumpInfo),
   );
 
-  // Step 3: EXHAUSTION CHECK - If player is void in leading suit AFTER the play → ALWAYS VALID
-  // This is the fundamental exhaustion rule in Tractor/Shengji
+  // Step 4: EXHAUSTION CHECK - If player is void in leading suit AFTER the play → ALWAYS VALID
   if (remainingRelevantCards.length === 0) {
-    return true; // Player exhausted the leading suit - always valid regardless of structure
+    return true;
   }
 
-  // Step 4: ANTI-CHEAT VALIDATION - Check if player used best possible structure
+  // Step 5: ANTI-CHEAT VALIDATION - Check if player used best possible structure
   return validateAntiCheatStructure(
     playedCards,
     playerHand,
