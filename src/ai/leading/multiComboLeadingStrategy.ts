@@ -5,8 +5,9 @@ import {
   checkOpponentVoidStatus,
   isComboUnbeatable,
 } from "../../game/multiComboValidation";
-import { Card, GameState, PlayerId, Suit } from "../../types";
+import { Card, GameState, PlayerId, PointPressure, Suit } from "../../types";
 import { createCardMemory } from "../aiCardMemory";
+import { createGameContext } from "../aiGameContext";
 
 /**
  * Multi-Combo Leading Strategy for AI
@@ -68,21 +69,12 @@ export function selectAIMultiComboLead(
         return mostUnbeatableCards;
       }
 
-      // If we have a weak multi-combo (only small singles), determine by game stage and role
-      let weakComboChance = 0;
-      const cardsLeft = playerHand.length;
-
-      if (cardsLeft > 18) {
-        weakComboChance = 1;
-      } else if (cardsLeft > 12) {
-        weakComboChance = 0.7;
-      } else if (cardsLeft > 6) {
-        weakComboChance = 0.5;
-      } else {
-        weakComboChance = 0.2;
-      }
-
-      if (Math.random() < weakComboChance) {
+      // If we have a weak multi-combo (only small singles), decide based on game context
+      const context = createGameContext(gameState, playerId);
+      if (
+        context.isAttackingTeam ||
+        context.pointPressure === PointPressure.LOW
+      ) {
         return mostUnbeatableCards;
       }
     }

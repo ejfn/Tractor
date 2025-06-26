@@ -382,6 +382,14 @@ The AI adapts its strategy based on trick position, leveraging unique advantages
 - **Information Management** - Balance between learning and hand concealment
 - **Point Collection Priority** - Aces and Kings before tractors when guaranteed
 
+#### **Weak Multi-Combo Leading**
+
+The AI uses a context-aware approach to leading weak multi-combos (e.g., two or three small, non-point singles). This prevents the AI from making risky, low-value leads in critical game situations.
+
+**Decision Logic:**
+- **Attacking Team**: The AI will lead a weak multi-combo to probe for opponent responses and gain information.
+- **Defending Team**: The AI will only lead a weak multi-combo when the `pointPressure` is `LOW`. This ensures the defending team plays conservatively and avoids giving up the lead unnecessarily when the attacking team is close to winning.
+
 ### **Following Player Strategy**
 
 All following positions use the same priority framework but with position-specific tactical advantages:
