@@ -948,5 +948,74 @@ describe("Multi-Combo Following Rules", () => {
         isValidPlay(mixedTrumpResponse, playerHand, PlayerId.Bot1, gameState),
       ).toBe(true);
     });
+
+    test("BUG-FollowSuit: Should not allow mixed-suit play when holding lead suit cards", () => {
+      const gameState = initializeGame();
+      // Set trump to something other than Clubs or Hearts to keep it simple
+      gameState.trumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.Spades };
+
+      // Bot 1 leads a multi-combo of Clubs
+      gameState.currentTrick = {
+        plays: [
+          {
+            playerId: PlayerId.Bot1,
+            cards: [
+              Card.createCard(Suit.Clubs, Rank.King, 0),
+              Card.createCard(Suit.Clubs, Rank.Queen, 0),
+              Card.createCard(Suit.Clubs, Rank.Nine, 0),
+              Card.createCard(Suit.Clubs, Rank.Nine, 1),
+            ],
+          },
+        ],
+        winningPlayerId: PlayerId.Bot1,
+        points: 10,
+        isFinalTrick: false,
+      };
+
+      // Human's hand contains cards of the lead suit (Clubs) and other suits
+      const humanHand = [
+        Card.createCard(Suit.Clubs, Rank.Queen, 1), // Has lead suit
+        Card.createCard(Suit.Clubs, Rank.Six, 0), // Has lead suit
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),
+        Card.createCard(Suit.Hearts, Rank.Ten, 1),
+        Card.createCard(Suit.Clubs, Rank.Ten, 0),
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),
+      ];
+
+      // Human attempts to play a mixed-suit hand, which should be illegal
+      const illegalMixedPlay = [
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),
+        Card.createCard(Suit.Hearts, Rank.Ten, 1),
+        Card.createCard(Suit.Clubs, Rank.Ten, 0),
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),
+      ];
+
+      // This play should be invalid because the player has not exhausted their Clubs
+      expect(
+        isValidPlay(illegalMixedPlay, humanHand, PlayerId.Human, gameState),
+      ).toBe(false);
+
+      const betterHumanHand = [
+        Card.createCard(Suit.Clubs, Rank.Queen, 1),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Clubs, Rank.Ten, 0),
+        Card.createCard(Suit.Clubs, Rank.Five, 0), // 4th club
+        Card.createCard(Suit.Hearts, Rank.Ten, 0),
+        Card.createCard(Suit.Hearts, Rank.Ten, 1),
+        Card.createCard(Suit.Diamonds, Rank.Five, 0),
+      ];
+
+      const validClubPlay = [
+        Card.createCard(Suit.Clubs, Rank.Queen, 1),
+        Card.createCard(Suit.Clubs, Rank.Six, 0),
+        Card.createCard(Suit.Clubs, Rank.Ten, 0),
+        Card.createCard(Suit.Clubs, Rank.Five, 0),
+      ];
+
+      // This play should be valid
+      expect(
+        isValidPlay(validClubPlay, betterHumanHand, PlayerId.Human, gameState),
+      ).toBe(true);
+    });
   });
 });
