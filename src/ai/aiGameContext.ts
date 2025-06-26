@@ -98,6 +98,7 @@ export function analyzeTrickWinner(
   }
 
   // Determine team relationships
+  const isLeadWinning = currentWinner === currentTrick.plays[0]?.playerId;
   const isSelfWinning = currentWinner === playerId;
   const isTeammateWinning =
     !isSelfWinning && isTeammate(gameState, playerId, currentWinner);
@@ -134,6 +135,7 @@ export function analyzeTrickWinner(
     isTeammateWinning,
     isOpponentWinning,
     isSelfWinning,
+    isLeadWinning,
     trickPoints,
     canBeatCurrentWinner,
     shouldTryToBeat,

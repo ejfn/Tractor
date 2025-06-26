@@ -11,10 +11,10 @@ import {
   TrickPosition,
   TrumpInfo,
 } from "../../src/types";
-import { createTestCardsGameState, getPlayerById } from "../helpers/gameStates";
-import { createMockTrick } from "../helpers/mocks";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { gameLogger } from "../../src/utils/gameLogger";
+import { createTestCardsGameState, getPlayerById } from "../helpers/gameStates";
+import { createMockTrick } from "../helpers/mocks";
 
 describe("3rd Player Strategy Tests", () => {
   describe("Point Card Prioritization", () => {
@@ -251,6 +251,7 @@ describe("3rd Player Strategy Tests", () => {
         isTeammateWinning: true,
         isOpponentWinning: false,
         isSelfWinning: false,
+        isLeadWinning: false,
         trickPoints: 15,
         canBeatCurrentWinner: false,
         shouldTryToBeat: false,

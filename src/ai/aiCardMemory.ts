@@ -1644,6 +1644,50 @@ function determinePrimaryGoal(
   return "endgame_setup";
 }
 
+function getNextPlayerId(
+  gameState: GameState,
+  currentPlayerIndex: number,
+): PlayerId | null {
+  const currentTrick = gameState.currentTrick;
+  if (!currentTrick) {
+    return null; // No active trick
+  }
+
+  // Check if current player is the 4th player (no next player)
+  if (currentTrick.plays.length >= 3) {
+    return null; // 4th player has no next player
+  }
+
+  const allPlayerIds = gameState.players.map((player) => player.id);
+  if (currentPlayerIndex < 0 || currentPlayerIndex >= allPlayerIds.length) {
+    return null;
+  }
+
+  // Return next player in sequence
+  const nextIndex = (currentPlayerIndex + 1) % allPlayerIds.length;
+  return allPlayerIds[nextIndex];
+}
+
+export function isNextPlayerVoidInSuit(
+  nextPlayerId: PlayerId,
+  suit: Suit,
+  cardMemory: CardMemory,
+): boolean {
+  // Use memory system to check for confirmed voids
+  const nextPlayerMemory = cardMemory.playerMemories[nextPlayerId];
+  if (!nextPlayerMemory) {
+    return false;
+  }
+
+  if (suit === Suit.None) {
+    // Check for trump void
+    return nextPlayerMemory.trumpVoid;
+  } else {
+    // Check for suit void
+    return nextPlayerMemory.suitVoids.has(suit);
+  }
+}
+
 /**
  * Integrates memory-based insights into existing game context
  */
@@ -1652,26 +1696,23 @@ export function enhanceGameContextWithMemory(
   memory: CardMemory,
   gameState: GameState,
 ): GameContext {
-  const memoryContext = createMemoryContext(memory, gameState);
+  const memoryContext = createEnhancedMemoryContext(memory, gameState);
+  const leadCard = gameState.currentTrick?.plays[0]?.cards[0];
+  const nextPlayerId = getNextPlayerId(gameState, gameState.currentPlayerIndex);
+
+  if (leadCard && nextPlayerId) {
+    const leadSuit = isTrump(leadCard, gameState.trumpInfo)
+      ? Suit.None
+      : leadCard.suit;
+    memoryContext.nextPlayerVoidLed = isNextPlayerVoidInSuit(
+      nextPlayerId,
+      leadSuit,
+      memory,
+    );
+  }
 
   return {
     ...baseContext,
     memoryContext,
-  };
-}
-
-/**
- * Enhanced version that includes historical analysis
- */
-export function enhanceGameContextWithHistoricalMemory(
-  baseContext: GameContext,
-  memory: CardMemory,
-  gameState: GameState,
-): GameContext {
-  const enhancedMemoryContext = createEnhancedMemoryContext(memory, gameState);
-
-  return {
-    ...baseContext,
-    memoryContext: enhancedMemoryContext,
   };
 }

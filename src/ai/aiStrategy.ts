@@ -1,12 +1,9 @@
 import { Card, Combo, GameState, Player, PositionStrategy } from "../types";
-import {
-  createCardMemory,
-  enhanceGameContextWithHistoricalMemory,
-} from "./aiCardMemory";
+import { createCardMemory, enhanceGameContextWithMemory } from "./aiCardMemory";
 import { analyzeCombo, createGameContext } from "./aiGameContext";
+import { analyzeVoidExploitation } from "./analysis/voidExploitation";
 import { selectOptimalFollowPlay } from "./following/followingStrategy";
 import { selectAdvancedLeadingPlay } from "./leading/leadingStrategy";
-import { analyzeVoidExploitation } from "./analysis/voidExploitation";
 
 /**
  * Main AI strategy function - replaces the class-based approach
@@ -30,7 +27,7 @@ export function makeAIPlay(
 
   // Apply historical insights when sufficient trick data is available
   if (gameState.tricks.length >= 3) {
-    const enhancedContext = enhanceGameContextWithHistoricalMemory(
+    const enhancedContext = enhanceGameContextWithMemory(
       context,
       cardMemory,
       gameState,

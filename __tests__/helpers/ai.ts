@@ -47,6 +47,7 @@ export const createAIGameContext = (
     isTeammateWinning: false,
     isOpponentWinning: false,
     isSelfWinning: false,
+    isLeadWinning: false,
     trickPoints: 0,
     canBeatCurrentWinner: false,
     shouldTryToBeat: false,

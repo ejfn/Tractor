@@ -43,6 +43,7 @@ export interface MemoryContext {
   cardMemory?: CardMemory; // Enhanced: Direct access to card memory for biggest remaining detection
   voidExploitation?: VoidExploitationAnalysis; // Advanced void exploitation analysis
   pointTiming?: PointCardTimingAnalysis; // Point card timing analysis
+  nextPlayerVoidLed?: boolean;
 }
 
 // Position-based strategy matrices
@@ -123,6 +124,7 @@ export interface TrickWinnerAnalysis {
   currentWinner: PlayerId; // Player ID of current trick winner
   isTeammateWinning: boolean; // Is AI's teammate currently winning
   isOpponentWinning: boolean; // Is an opponent currently winning
+  isLeadWinning: boolean; // Is the leading player currently winning
   isSelfWinning: boolean; // Is this AI currently winning
   trickPoints: number; // Total points in current trick
   canBeatCurrentWinner: boolean; // Can this AI beat current winner
