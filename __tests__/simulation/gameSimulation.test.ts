@@ -37,6 +37,10 @@ import { GameStats, TestSessionTracker } from "../helpers";
 describe("Unattended Game Simulation", () => {
   // Test configuration
   const TARGET_GAMES = parseInt(process.env.TARGET_GAMES || "3", 10); // Number of games to run for reliability testing
+  const LOG_LEVEL_STR = (process.env.LOG_LEVEL || "INFO").toUpperCase();
+  const LOG_LEVEL: LogLevel =
+    (LogLevel[LOG_LEVEL_STR as keyof typeof LogLevel] as LogLevel) ||
+    LogLevel.INFO;
   const GAME_TIMEOUT_SECONDS = TARGET_GAMES * 10; // Dynamic timeout based on number of games
   const MAX_ROUNDS_PER_GAME = 60; // Safety limit for rounds per game
 
@@ -60,7 +64,7 @@ describe("Unattended Game Simulation", () => {
 
           // Configure the singleton gameLogger to capture all game events to file
           gameLogger.configure({
-            logLevel: LogLevel.INFO,
+            logLevel: LOG_LEVEL,
             enableFileLogging: true,
             enableConsoleLog: false, // Disable console output for clean unattended test
             includePlayerHands: false, // Do not log sensitive player hands

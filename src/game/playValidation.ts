@@ -9,13 +9,13 @@ import {
 } from "../types";
 import { MultiComboValidation } from "../types/combinations";
 import { gameLogger } from "../utils/gameLogger";
+import { isTrump } from "./cardValue";
 import {
   checkSameSuitPairPreservation,
   checkTractorFollowingPriority,
   getComboType,
   identifyCombos,
 } from "./comboDetection";
-import { isTrump } from "./cardValue";
 import {
   analyzeComboStructure,
   detectLeadingMultiCombo,
@@ -164,19 +164,6 @@ export const isValidPlay = (
       ? gameState.currentTrick.plays[0].cards
       : null;
 
-  // DEBUG: Log validation attempt
-  gameLogger.debug(
-    "play_validation_attempt",
-    {
-      playerId,
-      playedCards: playedCards.map((c) => c.getDisplayName()),
-      playerHandSize: playerHand.length,
-      leadingCombo: leadingCombo?.map((c) => c.getDisplayName()) || null,
-      trumpInfo,
-    },
-    `Validating play for ${playerId}: ${playedCards.map((c) => c.getDisplayName()).join(", ")}`,
-  );
-
   // If no leading combo, any valid combo is acceptable (including multi-combo)
   if (!leadingCombo) {
     // STEP 1: Try getComboType first - handles all straight combos
@@ -258,47 +245,11 @@ export const isValidPlay = (
         (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
       );
 
-  // DEBUG: Log relevant cards analysis
-  gameLogger.debug(
-    "play_validation_relevant_cards_analysis",
-    {
-      playerId,
-      leadingSuit,
-      isLeadingTrump,
-      leadingType,
-      playedType,
-      relevantCards: relevantCards.map((c) => c.getDisplayName()),
-      relevantCardsCount: relevantCards.length,
-      leadingComboLength: leadingCombo.length,
-      playerHandSize: playerHand.length,
-    },
-    `Relevant cards: ${relevantCards.length} cards, leading type: ${leadingType}, played type: ${playedType}`,
-  );
-
-  // (combo types already declared above for multi-combo validation)
-
   // UNIFIED: Check if player can form matching combo in relevant suit
   const canFormMatchingCombo = relevantCards.length >= leadingCombo.length;
 
   if (canFormMatchingCombo) {
     const relevantCombos = identifyCombos(relevantCards, trumpInfo);
-
-    // DEBUG: Log identified combos
-    gameLogger.debug(
-      "play_validation_relevant_combos",
-      {
-        playerId,
-        relevantCombosCount: relevantCombos.length,
-        relevantCombos: relevantCombos.map((combo) => ({
-          type: combo.type,
-          cards: combo.cards.map((c) => c.getDisplayName()),
-          length: combo.cards.length,
-        })),
-        lookingForType: leadingType,
-        lookingForLength: leadingCombo.length,
-      },
-      `Found ${relevantCombos.length} combos from relevant cards`,
-    );
 
     const hasMatchingCombo = relevantCombos.some(
       (combo) =>
@@ -306,26 +257,8 @@ export const isValidPlay = (
         combo.cards.length === leadingCombo.length,
     );
 
-    // DEBUG: Log matching combo check
-    gameLogger.debug(
-      "play_validation_matching_check",
-      {
-        playerId,
-        hasMatchingCombo,
-        playedType,
-        leadingType,
-        shouldReject: hasMatchingCombo && playedType !== leadingType,
-      },
-      `Has matching combo: ${hasMatchingCombo}, played type matches: ${playedType === leadingType}`,
-    );
-
     // If player can form matching combo but didn't use it, invalid
     if (hasMatchingCombo && playedType !== leadingType) {
-      gameLogger.debug(
-        "play_validation_rejected_type_mismatch",
-        { playerId },
-        `REJECTED: Player has matching combo but played wrong type`,
-      );
       return false;
     }
   }
