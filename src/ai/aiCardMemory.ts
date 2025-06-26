@@ -1709,6 +1709,8 @@ export function enhanceGameContextWithMemory(
       leadSuit,
       memory,
     );
+  } else {
+    memoryContext.nextPlayerVoidLed = false; // No lead card or next player
   }
 
   return {

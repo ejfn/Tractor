@@ -400,10 +400,11 @@ function makeStrategicTrumpDecision(
     isTrump(card, trumpInfo),
   );
 
-  // Early return: Don't trump if teammate is winning
+  // Early return: Don't trump if teammate is winning, next opponent not void and we have yet full-trump
   if (
     context.trickWinnerAnalysis?.isTeammateWinning &&
-    !context.memoryContext?.nextPlayerVoidLed
+    !context.memoryContext?.nextPlayerVoidLed &&
+    playerHand.some((card) => !isTrump(card, trumpInfo))
   ) {
     return selectCrossSuitDisposal(
       leadingCards,
@@ -463,7 +464,7 @@ function makeStrategicTrumpDecision(
       leadingCards,
       trumpInfo,
       true,
-      true,
+      context.memoryContext?.nextPlayerVoidLed ? false : true, // Conservation mode if next player not void led suit
     );
   }
 }

@@ -1,3 +1,4 @@
+import { isTrump } from "../../game/cardValue";
 import {
   Combo,
   ComboType,
@@ -8,7 +9,6 @@ import {
   PointPressure,
   TrumpInfo,
 } from "../../types";
-import { isTrump } from "../../game/cardValue";
 import { getRankValue } from "../analysis/comboAnalysis";
 
 /**
@@ -108,7 +108,7 @@ export function selectOptimalLeadingComboForPhase(
       candidates = validCombos.filter(
         (combo) =>
           !combo.cards.some((card) => isTrump(card, trumpInfo)) &&
-          combo.cards.every((card) => (card.points || 0) === 0),
+          combo.cards.every((card) => card.points === 0),
       );
       break;
 
@@ -116,8 +116,12 @@ export function selectOptimalLeadingComboForPhase(
       // Prefer strong, point-collecting leads
       candidates = validCombos.filter(
         (combo) =>
-          combo.cards.some((card) => (card.points || 0) > 0) ||
-          combo.cards.some((card) => isTrump(card, trumpInfo)),
+          combo.cards.some(
+            (card) => !isTrump(card, trumpInfo) && card.points > 0,
+          ) ||
+          combo.cards.some(
+            (card) => isTrump(card, trumpInfo) && card.points === 0,
+          ),
       );
       break;
 
@@ -205,9 +209,9 @@ function calculateLeadingComboValue(
       break;
 
     case "aggressive":
-      // Bonus for point cards and strong combinations
+      // Bonus for non-trump point cards and strong combinations
       const points = combo.cards.reduce(
-        (sum, card) => sum + (card.points || 0),
+        (sum, card) => sum + (!isTrump(card, trumpInfo) ? card.points : 0),
         0,
       );
       value += points * 2;
@@ -228,7 +232,7 @@ function calculateLeadingComboValue(
       const totalValue = combo.cards.reduce(
         (sum, card) =>
           sum +
-          (card.points || 0) +
+          card.points +
           (isTrump(card, trumpInfo)
             ? 10
             : card.rank
