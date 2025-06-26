@@ -1,32 +1,32 @@
+import { isTrump } from "../../game/cardValue";
 import {
   Card,
   Combo,
   ComboAnalysis,
   ComboStrength,
   ComboType,
+  EnhancedMemoryContext,
   FirstPlayerAnalysis,
   GameContext,
   GamePhaseStrategy,
   GameState,
+  MemoryContext,
   PlayerId,
   Suit,
   TrumpInfo,
-  MemoryContext,
-  EnhancedMemoryContext,
 } from "../../types";
+import { isBiggestRemainingInSuit } from "../aiCardMemory";
+import { analyzeCombo } from "../aiGameContext";
+import { getRankValue } from "../analysis/comboAnalysis";
+import { VoidExploitationAnalysis } from "../analysis/voidExploitation";
+import { isTeammate } from "../utils/aiHelpers";
+import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
+import { selectAIMultiComboLead } from "./multiComboLeadingStrategy";
 import {
   createPointFocusedContext,
   selectEarlyGameLeadingPlay,
   selectMemoryEnhancedPointPlay,
 } from "./pointFocusedStrategy";
-import { selectAIMultiComboLead } from "./multiComboLeadingStrategy";
-import { analyzeCombo } from "../aiGameContext";
-import { analyzeFirstPlayerStrategy } from "./firstPlayerLeadingAnalysis";
-import { getRankValue } from "../analysis/comboAnalysis";
-import { isTrump } from "../../game/cardValue";
-import { isBiggestRemainingInSuit } from "../aiCardMemory";
-import { VoidExploitationAnalysis } from "../analysis/voidExploitation";
-import { isTeammate } from "../utils/aiHelpers";
 
 /**
  * Leading Strategy - Main leading logic and first position tactics
@@ -445,7 +445,7 @@ export function selectProbeLeadingPlay(
   const safeCombos = validCombos.filter(
     (combo) =>
       !combo.cards.some((card) => isTrump(card, trumpInfo)) &&
-      combo.cards.every((card) => (card.points || 0) === 0) &&
+      combo.cards.every((card) => card.points === 0) &&
       combo.cards.every(
         (card) => (card.rank ? getRankValue(card.rank) : 0) <= 9,
       ), // Avoid high cards
@@ -463,13 +463,15 @@ export function selectProbeLeadingPlay(
  */
 export function selectAggressiveLeadingPlay(
   validCombos: Combo[],
-  _trumpInfo: TrumpInfo,
+  trumpInfo: TrumpInfo,
   analysis: FirstPlayerAnalysis,
 ): Card[] | null {
   // Aggressive strategy: Lead strong combinations to force early pressure
   const strongCombos = validCombos.filter(
     (combo) =>
-      combo.cards.some((card) => (card.points || 0) > 0) ||
+      combo.cards.some(
+        (card) => !isTrump(card, trumpInfo) && card.points > 0,
+      ) ||
       combo.type === ComboType.Tractor ||
       combo.type === ComboType.Pair,
   );
@@ -478,13 +480,10 @@ export function selectAggressiveLeadingPlay(
     // Select combo with highest point value or strongest combination
     const bestCombo = strongCombos.reduce((best, combo) => {
       const comboPoints = combo.cards.reduce(
-        (sum, card) => sum + (card.points || 0),
+        (sum, card) => sum + card.points,
         0,
       );
-      const bestPoints = best.cards.reduce(
-        (sum, card) => sum + (card.points || 0),
-        0,
-      );
+      const bestPoints = best.cards.reduce((sum, card) => sum + card.points, 0);
 
       if (comboPoints > bestPoints) return combo;
       if (comboPoints === bestPoints && combo.type > best.type) return combo;
@@ -657,10 +656,7 @@ function isRiskyPointCardLead(
   currentPlayerId: PlayerId,
 ): boolean {
   // Calculate total point value at risk
-  const pointsAtRisk = combo.cards.reduce(
-    (sum, card) => sum + (card.points || 0),
-    0,
-  );
+  const pointsAtRisk = combo.cards.reduce((sum, card) => sum + card.points, 0);
 
   // Only protect valuable point cards (5+ points)
   if (pointsAtRisk < 5) {
