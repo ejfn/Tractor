@@ -1,7 +1,7 @@
 import {
   analyzeTrickHistory,
   createEnhancedMemoryContext,
-  enhanceGameContextWithHistoricalMemory,
+  enhanceGameContextWithMemory,
 } from "../../src/ai/aiCardMemory";
 import {
   Card,
@@ -447,7 +447,7 @@ describe("Historical Trick Analysis", () => {
     });
   });
 
-  describe("enhanceGameContextWithHistoricalMemory", () => {
+  describe("enhanceGameContextWithMemory", () => {
     it("should enhance context while preserving base properties", () => {
       const baseContext: GameContext = {
         isAttackingTeam: true,
@@ -496,7 +496,7 @@ describe("Historical Trick Analysis", () => {
         tricksAnalyzed: 1,
       };
 
-      const enhancedContext = enhanceGameContextWithHistoricalMemory(
+      const enhancedContext = enhanceGameContextWithMemory(
         baseContext,
         mockMemory,
         gameState,
