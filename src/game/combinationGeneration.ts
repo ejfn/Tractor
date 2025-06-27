@@ -182,7 +182,12 @@ export const generateMixedCombinations = (
 
     // For large hands, use strategic sampling instead of exhaustive generation
     if (cards.length > MAX_CARDS_FOR_FULL_GENERATION) {
-      return generateStrategicSample(cards, length, MAX_COMBINATIONS);
+      return generateStrategicSample(
+        cards,
+        length,
+        MAX_COMBINATIONS,
+        leadingCards,
+      );
     }
 
     // For smaller hands, use optimized iterative generation
@@ -194,6 +199,7 @@ export const generateMixedCombinations = (
     cards: Card[],
     length: number,
     maxCombos: number,
+    leadingCards: Card[],
   ): Card[][] => {
     const combinations: Card[][] = [];
 
@@ -223,23 +229,44 @@ export const generateMixedCombinations = (
       }
     }
 
-    // Strategy 3: Mixed trump/non-trump when possible
+    // Strategy 3: Mixed trump/non-trump when appropriate (NOT when following suit/trump)
     const trumpCards = sortedCards.filter((card) => isTrump(card, trumpInfo));
     const nonTrumpCards = sortedCards.filter(
       (card) => !isTrump(card, trumpInfo),
     );
 
-    if (trumpCards.length > 0 && nonTrumpCards.length > 0 && length >= 2) {
-      const trumpCount = Math.min(1, trumpCards.length, length - 1);
-      const nonTrumpCount = length - trumpCount;
+    // CRITICAL FIX: Determine if we're following a suit-specific lead
+    const leadingSuit = getLeadingSuit(leadingCards);
+    const isLeadingTrump = leadingCards.some((card) =>
+      isTrump(card, trumpInfo),
+    );
 
-      if (nonTrumpCards.length >= nonTrumpCount) {
-        const mixedCombo = [
-          ...trumpCards.slice(0, trumpCount),
-          ...nonTrumpCards.slice(0, nonTrumpCount),
-        ];
-        if (mixedCombo.length === length) {
-          combinations.push(mixedCombo);
+    // Check if player has sufficient relevant cards to properly follow
+    const relevantCards = isLeadingTrump
+      ? trumpCards
+      : cards.filter(
+          (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+        );
+    const hasSufficientRelevantCards = relevantCards.length >= length;
+
+    if (trumpCards.length > 0 && nonTrumpCards.length > 0 && length >= 2) {
+      // CRITICAL FIX: Skip Strategy 3 when following suit/trump leads with sufficient relevant cards
+      // This prevents invalid mixed combinations like [3♠,6♣,9♠,8♠] when player has enough trump
+      const shouldSkipMixedStrategy =
+        (isLeadingTrump || leadingSuit) && hasSufficientRelevantCards;
+
+      if (!shouldSkipMixedStrategy) {
+        const trumpCount = Math.min(1, trumpCards.length, length - 1);
+        const nonTrumpCount = length - trumpCount;
+
+        if (nonTrumpCards.length >= nonTrumpCount) {
+          const mixedCombo = [
+            ...trumpCards.slice(0, trumpCount),
+            ...nonTrumpCards.slice(0, nonTrumpCount),
+          ];
+          if (mixedCombo.length === length) {
+            combinations.push(mixedCombo);
+          }
         }
       }
     }
@@ -301,8 +328,18 @@ export const generateMixedCombinations = (
       // 🚨 CRITICAL FIX: Preserve pairs when following trump tractors
       // Must use ALL pairs before ANY singles when following trump leads
 
-      // First, identify all pairs in required suit cards
-      const pairsInRequiredSuit = identifyCombos(requiredSuitCards, trumpInfo)
+      // First, identify all combos including tractors in required suit cards
+      const allCombosInRequiredSuit = identifyCombos(
+        requiredSuitCards,
+        trumpInfo,
+      );
+
+      // CRITICAL FIX: Prioritize tractors over pairs for trump tractor following
+      const tractorsInRequiredSuit = allCombosInRequiredSuit
+        .filter((combo) => combo.type === ComboType.Tractor)
+        .sort((a, b) => b.cards.length - a.cards.length); // Largest tractors first
+
+      const pairsInRequiredSuit = allCombosInRequiredSuit
         .filter((combo) => combo.type === ComboType.Pair)
         .sort((a, b) => {
           // Sort pairs by conservation value of the pair (weakest pairs first)
@@ -319,10 +356,27 @@ export const generateMixedCombinations = (
           return valueA - valueB;
         });
 
-      // Use as many complete pairs as possible
+      // Use tractors first, then pairs
       const selectedCards: Card[] = [];
+
+      // Priority 1: Use the largest tractor that fits
+      for (const tractor of tractorsInRequiredSuit) {
+        if (selectedCards.length + tractor.cards.length <= leadingLength) {
+          selectedCards.push(...tractor.cards);
+          break; // Only use one tractor
+        }
+      }
+
+      // Priority 2: Use remaining pairs
       for (const pair of pairsInRequiredSuit) {
-        if (selectedCards.length + 2 <= leadingLength) {
+        // Skip pairs that are already part of selected tractor
+        const pairOverlapsWithSelected = pair.cards.some((card) =>
+          selectedCards.some((selected) => selected.id === card.id),
+        );
+        if (
+          !pairOverlapsWithSelected &&
+          selectedCards.length + 2 <= leadingLength
+        ) {
           selectedCards.push(...pair.cards);
         }
       }
@@ -618,8 +672,10 @@ export const generateMixedCombinations = (
         leadingCards: leadingCards.map((c) => c.getDisplayName()),
         leadingSuit,
         isLeadingTrump,
-        spadesInHand: playerHand
-          .filter((c) => c.suit === "Spades")
+        relevantSuitCards: playerHand
+          .filter((c) =>
+            isLeadingTrump ? isTrump(c, trumpInfo) : c.suit === leadingSuit,
+          )
           .map((c) => c.getDisplayName()),
       },
       "No valid mixed combinations found, entering fallback logic",
