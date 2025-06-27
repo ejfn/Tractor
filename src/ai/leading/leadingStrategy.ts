@@ -1,3 +1,4 @@
+import { gameLogger } from "../../utils/gameLogger";
 import { isTrump } from "../../game/cardValue";
 import {
   Card,
@@ -69,6 +70,12 @@ export function selectAdvancedLeadingPlay(
     currentPlayer.id,
   );
   if (multiComboPlay) {
+    gameLogger.debug("AI leading decision: multi-combo", {
+      decisionPoint: "lead_multi_combo",
+      player: currentPlayer.id,
+      decision: multiComboPlay,
+      context,
+    });
     return multiComboPlay;
   }
 
@@ -82,6 +89,12 @@ export function selectAdvancedLeadingPlay(
       gameState,
     );
     if (earlyGamePlay) {
+      gameLogger.debug("AI leading decision: early game ace", {
+        decisionPoint: "lead_early_game_ace",
+        player: currentPlayer.id,
+        decision: earlyGamePlay.cards,
+        context,
+      });
       return earlyGamePlay.cards;
     }
   }
@@ -96,6 +109,12 @@ export function selectAdvancedLeadingPlay(
       trumpInfo,
     );
     if (voidExploitationPlay) {
+      gameLogger.debug("AI leading decision: void exploitation", {
+        decisionPoint: "lead_void_exploitation",
+        player: currentPlayer.id,
+        decision: voidExploitationPlay,
+        context,
+      });
       return voidExploitationPlay;
     }
   }
@@ -127,6 +146,12 @@ export function selectAdvancedLeadingPlay(
       currentPlayer.id,
     );
     if (pointTimingPlay) {
+      gameLogger.debug("AI leading decision: memory-enhanced point timing", {
+        decisionPoint: "lead_point_timing",
+        player: currentPlayer.id,
+        decision: pointTimingPlay.cards,
+        context,
+      });
       return pointTimingPlay.cards;
     }
   }
@@ -143,6 +168,12 @@ export function selectAdvancedLeadingPlay(
       trumpInfo,
     );
     if (guaranteedWinner) {
+      gameLogger.debug("AI leading decision: memory guaranteed winner", {
+        decisionPoint: "lead_guaranteed_winner",
+        player: currentPlayer.id,
+        decision: guaranteedWinner,
+        context,
+      });
       return guaranteedWinner;
     }
   }
@@ -157,6 +188,12 @@ export function selectAdvancedLeadingPlay(
       gameState,
     );
     if (historicalPlay) {
+      gameLogger.debug("AI leading decision: historical insights", {
+        decisionPoint: "lead_historical_insights",
+        player: currentPlayer.id,
+        decision: historicalPlay,
+        context,
+      });
       return historicalPlay;
     }
   }
@@ -170,6 +207,12 @@ export function selectAdvancedLeadingPlay(
     pointContext,
     gameState,
   );
+  gameLogger.debug("First player analysis", {
+    decisionPoint: "first_player_analysis",
+    player: currentPlayer.id,
+    analysis: firstPlayerAnalysis,
+    context,
+  });
 
   if (firstPlayerAnalysis.optimalLeadingCombo) {
     // Apply game phase specific leading logic using FirstPlayerAnalysis

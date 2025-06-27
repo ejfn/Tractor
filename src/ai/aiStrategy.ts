@@ -1,3 +1,4 @@
+import { gameLogger } from "../utils/gameLogger";
 import { Card, Combo, GameState, Player, PositionStrategy } from "../types";
 import { createCardMemory, enhanceGameContextWithMemory } from "./aiCardMemory";
 import { analyzeCombo, createGameContext } from "./aiGameContext";
@@ -18,6 +19,11 @@ export function makeAIPlay(
 
   // Create strategic context for this AI player
   const context = createGameContext(gameState, player.id);
+  gameLogger.debug("Initial GameContext created", {
+    decisionPoint: "initial_context",
+    player: player.id,
+    context,
+  });
 
   // Phase 4: Enhanced memory context with historical analysis
   const cardMemory = createCardMemory(gameState);
@@ -62,12 +68,19 @@ export function makeAIPlay(
   // Determine if leading or following
   if (!currentTrick || currentTrick.plays.length === 0) {
     // LEADING: Use unified advanced leading strategy
-    return selectAdvancedLeadingPlay(
+    const leadingPlay = selectAdvancedLeadingPlay(
       validCombos,
       trumpInfo,
       context,
       gameState,
     );
+    gameLogger.debug("AI leading decision", {
+      decisionPoint: "leading_play",
+      player: player.id,
+      decision: leadingPlay,
+      context,
+    });
+    return leadingPlay;
   } else {
     // Following play with RESTRUCTURED priority chain
     // Convert validCombos to comboAnalyses format using proper analysis
@@ -85,6 +98,12 @@ export function makeAIPlay(
       gameState,
       player.id,
     );
+    gameLogger.debug("AI following decision", {
+      decisionPoint: "following_play",
+      player: player.id,
+      decision: restructuredPlay,
+      context,
+    });
     return restructuredPlay;
   }
 }

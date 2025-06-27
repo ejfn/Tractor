@@ -4,7 +4,16 @@
 
 *Related Documentation: [AI System](AI_SYSTEM.md) | [Game Rules](GAME_RULES.md)*
 
-## 1. Overview
+## 1. Progress Update (June 27, 2025)
+
+The foundational framework for the AI Learning Strategy has been successfully implemented.
+
+- **Phase 1 (Data Generation)** is complete. The system can now generate detailed, structured logs of AI decisions.
+- **Phase 2 (Analysis Pipeline)** has been initiated. A Python-based analysis script has been created to parse the logs and is ready for KPI implementation.
+
+The project is now positioned to begin the iterative cycle of generating data, analyzing it for insights, and refining the AI's strategic logic.
+
+## 2. Overview
 
 The current AI system is built on a robust, modular architecture with sophisticated, rule-based strategic logic. While effective, this logic is based on established heuristics. The next evolution of the AI is to introduce a **data-driven feedback loop** where the AI can learn and improve from gameplay data.
 
@@ -12,7 +21,7 @@ The `test:simulation` command provides the capability to run thousands of full g
 
 **The core goal is to move from heuristic-based strategy to data-validated strategy.**
 
-## 2. The Four-Phase Improvement Framework
+## 3. The Four-Phase Improvement Framework
 
 We will implement a cyclical, four-phase framework for continuous AI improvement:
 
@@ -29,17 +38,11 @@ The foundation of this system is high-quality, structured data. The existing `ga
 
 **Key Actions:**
 
-1.  **Activate `DEBUG` Logging in Simulations**: Modify the simulation environment (e.g., in `__tests__/setup.js` or the simulation test file itself) to set the `gameLogger`'s `logLevel` to `DEBUG`. This will ensure that the detailed AI decision logs are captured during simulation runs.
+1.  **Activate `DEBUG` Logging in Simulations**: ✅ **Completed**. The simulation environment is configured to use `DEBUG` level logging via the `LOG_LEVEL` environment variable, which is set in the `run_simulations.sh` script.
 
-2.  **Log `GameContext` at Decision Points**: Go through the key AI modules (`aiStrategy.ts`, `leadingStrategy.ts`, `followingStrategy.ts`, etc.) and add `gameLogger.debug()` calls at every significant decision point. Each log entry must include:
-    *   `decisionPoint`: A unique, descriptive name for the decision being made (e.g., `lead_weak_multi_combo`, `third_player_takeover_assessment`).
-    *   `context`: A complete snapshot of the `GameContext` object at the moment of the decision. This is the most critical piece of data, as it tells us *why* the AI made its choice.
-    *   `decision`: The action the AI ultimately took (e.g., the specific cards played, the suit declared for trump).
-    *   `optionsConsidered` (Optional but Recommended): An array of the other valid plays the AI considered but did not choose.
+2.  **Log `GameContext` at Decision Points**: ✅ **Completed**. `gameLogger.debug()` calls have been added to key AI modules (`aiStrategy.ts`, `leadingStrategy.ts`, `followingStrategy.ts`) to capture the full `GameContext` at every significant decision point.
 
-3.  **Simulation Runner**: Create a script (e.g., `run_simulations.sh`) that can:
-    *   Run the `npm run test:simulation` command for a specified number of iterations (e.g., 10,000 games).
-    *   Pipe the structured JSON output into a dedicated directory, such as `simulation_data/`, with each game having its own log file.
+3.  **Simulation Runner**: ✅ **Completed**. A script named `run_simulations.sh` has been created. It runs the `npm run test:simulation` command with the `TARGET_GAMES` and `LOG_LEVEL` environment variables, piping the structured JSON output into a dedicated `simulation_data/` directory. The `gameLogger` has been made configurable to support this.
 
 ### Phase 2: Automated Analysis Pipeline
 
@@ -47,7 +50,7 @@ With a large dataset of structured logs, we need an automated way to process it 
 
 **Key Actions:**
 
-1.  **Data Ingestion and Parsing**: Develop a suite of scripts (e.g., in Python using the `pandas` library) to efficiently parse the millions of JSON log entries from the `simulation_data/` directory into a structured, queryable format like a DataFrame or a database (e.g., SQLite for local analysis).
+1.  **Data Ingestion and Parsing**: ✅ **Completed**. A Python script, `analysis/analyze_logs.py`, has been created to parse the JSON log entries from the `simulation_data/` directory. A Python virtual environment has been set up with dependencies managed in `requirements.txt`.
 
 2.  **Define Key Performance Indicators (KPIs)**: The analysis pipeline will compute and track a range of KPIs to provide a multi-faceted view of AI performance. These will include:
     *   **Primary KPI**: Attacking Team Win Rate (the ultimate measure of success).
@@ -104,8 +107,8 @@ To ensure that a change is a genuine improvement and not just a random fluctuati
 
 ## Proposed Workflow
 
-1.  **Generate Data**: Run 100,000 simulations overnight to generate a rich dataset.
-2.  **Run Analysis**: Execute the analysis pipeline to produce an insight report.
+1.  **Generate Data**: Run `./run_simulations.sh [number_of_games]` to generate a rich dataset.
+2.  **Run Analysis**: Execute `python analysis/analyze_logs.py` to produce an insight report.
 3.  **Identify Hypothesis**: Review the report and form a hypothesis (e.g., "The AI is wasting high-value trump cards too early").
 4.  **Implement Change**: Create a new feature branch and modify the relevant AI module(s) to test the hypothesis.
 5.  **Validate with A/B Test**: Run the new branch against `main` in the A/B testing framework.
