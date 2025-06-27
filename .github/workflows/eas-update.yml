@@ -55,7 +55,7 @@ jobs:
       if: failure() # Only upload logs when tests fail
       with:
         name: simulation-logs-${{ github.run_number }}
-        path: logs/
+        path: simulation_data/
         retention-days: 30
 
     - name: Update test count badge

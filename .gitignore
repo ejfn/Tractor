@@ -32,6 +32,10 @@ yarn-error.*
 
 # local env files
 .env*.local
+.venv/
+
+# Analysis reports
+analysis/reports/*
 
 # typescript
 *.tsbuildinfo
@@ -46,5 +50,8 @@ coverage/
 src/dev-version.json
 
 # log files
-logs/
-!logs/.gitkeep
+logs/*
+simulation_data/*
+
+!**/.gitkeep
+

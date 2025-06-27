@@ -1,3 +1,4 @@
+import { gameLogger } from "../../utils/gameLogger";
 import { getComboType } from "../../game/comboDetection";
 import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
 import {
@@ -75,6 +76,12 @@ export function selectOptimalFollowPlay(
         multiComboResult &&
         multiComboResult.strategy !== "no_valid_response"
       ) {
+        gameLogger.debug("AI following decision: multi-combo", {
+          decisionPoint: "follow_multi_combo",
+          player: currentPlayerId,
+          decision: multiComboResult.cards,
+          context,
+        });
         return multiComboResult.cards;
       }
     }
@@ -88,13 +95,20 @@ export function selectOptimalFollowPlay(
   // === PRIORITY 1: TEAM COORDINATION ===
   if (trickWinner?.isTeammateWinning) {
     // Teammate is winning - help collect points or play conservatively
-    return handleTeammateWinning(
+    const decision = handleTeammateWinning(
       comboAnalyses,
       context,
       trumpInfo,
       gameState,
       currentPlayerId,
     );
+    gameLogger.debug("AI following decision: teammate winning", {
+      decisionPoint: "follow_teammate_winning",
+      player: currentPlayerId,
+      decision,
+      context,
+    });
+    return decision;
   }
 
   // === PRIORITY 2: OPPONENT BLOCKING ===
@@ -108,6 +122,12 @@ export function selectOptimalFollowPlay(
       gameState,
     );
     if (opponentResponse) {
+      gameLogger.debug("AI following decision: opponent blocking", {
+        decisionPoint: "follow_opponent_blocking",
+        player: currentPlayerId,
+        decision: opponentResponse,
+        context,
+      });
       return opponentResponse;
     }
 
@@ -124,21 +144,35 @@ export function selectOptimalFollowPlay(
   // === PRIORITY 3: TRICK CONTENTION ===
   if (trickWinner?.canBeatCurrentWinner && trickWinner?.shouldTryToBeat) {
     // Can win the trick and it's worth winning
-    return selectOptimalWinningCombo(
+    const decision = selectOptimalWinningCombo(
       comboAnalyses,
       context,
       positionStrategy,
       trumpInfo,
       gameState,
     );
+    gameLogger.debug("AI following decision: trick contention", {
+      decisionPoint: "follow_trick_contention",
+      player: currentPlayerId,
+      decision,
+      context,
+    });
+    return decision;
   }
 
   // === PRIORITY 4: STRATEGIC DISPOSAL ===
   // Can't/shouldn't win - play optimally for future tricks
-  return selectStrategicDisposal(
+  const decision = selectStrategicDisposal(
     comboAnalyses,
     context,
     positionStrategy,
     gameState,
   );
+  gameLogger.debug("AI following decision: strategic disposal", {
+    decisionPoint: "follow_strategic_disposal",
+    player: currentPlayerId,
+    decision,
+    context,
+  });
+  return decision;
 }

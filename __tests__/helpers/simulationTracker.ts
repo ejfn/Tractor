@@ -37,15 +37,17 @@ export class TestSessionTracker {
   private currentGameStats: GameStats | null = null;
   private summaryLogFile: string;
   private timestamp: string;
+  private logDir: string;
 
-  constructor(timestamp: string) {
+  constructor(timestamp: string, logDir = "logs") {
     this.sessionStats = {
       sessionStartTime: Date.now(),
       gamesCompleted: 0,
       gameStats: [],
     };
     this.timestamp = timestamp;
-    this.summaryLogFile = path.join("logs", `${timestamp}-summary.txt`);
+    this.logDir = logDir;
+    this.summaryLogFile = path.join(this.logDir, `${timestamp}-summary.txt`);
   }
 
   startGame(gameId: string): void {
@@ -220,7 +222,7 @@ ${statusEmoji} Game ${index + 1} (${game.gameId})
 
 📁 LOG FILES
 ------------
-• Game Log: logs/${this.timestamp}-x-game.log (unified timeline with all events including errors)
+• Game Log: ${this.logDir}/${this.timestamp}-x-game.log (unified timeline with all events including errors)
 • Summary: ${this.summaryLogFile}
 
 🔍 NEXT STEPS

@@ -35,6 +35,7 @@ export interface GameLoggerConfig {
   enableConsoleLog?: boolean;
   includePlayerHands?: boolean;
   logFileName?: string;
+  logDir?: string;
   gameId?: string;
 }
 
@@ -102,6 +103,10 @@ class GameLogger {
   public configure(config: GameLoggerConfig): void {
     if (config.logLevel !== undefined) {
       this.logLevel = config.logLevel;
+    }
+
+    if (config.logDir !== undefined) {
+      this.logDir = config.logDir;
     }
 
     if (config.gameId !== undefined) {
