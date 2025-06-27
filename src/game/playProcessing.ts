@@ -598,10 +598,7 @@ export function getAIMoveWithErrorHandling(state: GameState): {
         "ai_invalid_move_details",
         {
           playerId: currentPlayer.id,
-          playerHand: currentPlayer.hand
-            .slice()
-            .sort((a, b) => a.id.localeCompare(b.id))
-            .map((card) => card.getDisplayName()),
+          playerHand: currentPlayer.hand.map((card) => card.getDisplayName()),
           playerHandSize: currentPlayer.hand.length,
           aiMove: aiMove.map((card) => card.getDisplayName()),
           currentTrick: state.currentTrick
