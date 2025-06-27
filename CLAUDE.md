@@ -1,972 +1,259 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with this repository.
 
-@README.md
-@docs/AI_SYSTEM.md
-@docs/GAME_RULES.md
-@docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md
-@docs/MULTI_COMBO_ALGORITHMS.md
+@README.md | @docs/AI_SYSTEM.md | @docs/GAME_RULES.md | @docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md | @docs/MULTI_COMBO_ALGORITHMS.md
 
 ## Project Overview
 
-Tractor is a React Native Expo app implementing a single-player version of the Chinese card game Shengji (升级), also known as Tractor.
+Tractor is a React Native Expo app implementing the Chinese card game Shengji (升级/Tractor) with AI opponents.
 
-**Platform Support:** Mobile-only (iOS and Android). Currently tested on Android only.
+**Platform**: Mobile-only (iOS and Android). Currently tested on Android.  
+**Stack**: React Native + Expo, TypeScript, React i18next, Jest
 
-*Game details in [Game Rules](docs/GAME_RULES.md) | AI system in [AI System](docs/AI_SYSTEM.md) | Multi-combo system in [Architecture](docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md) & [Algorithms](docs/MULTI_COMBO_ALGORITHMS.md)*
+*Complete details in linked documentation above*
 
-## 🚨 CRITICAL MULTI-COMBO UNDERSTANDING 🚨
+## 🚨 CRITICAL MULTI-COMBO RULES 🚨
 
-**NEVER FORGET: Multi-combo validation is about ALL OTHER THREE PLAYERS, not opponents vs teammates!**
+**Multi-combo validation involves ALL OTHER THREE PLAYERS (teammates + opponents combined)**
 
-### **Core Semantics**
-- **Current Player**: The one trying to play the multi-combo
-- **ALL OTHER THREE PLAYERS**: Everyone else at the table (teammates AND opponents combined)
-- **Question**: "Can ANY of the other three players beat this combo with cards available to them?"
+### Core Concepts
+- **Multi-combo**: Multiple combos from same suit played simultaneously
+- **Unbeatable**: When ALL OTHER THREE PLAYERS cannot beat it with available cards  
+- **Available cards** = Total cards (108) - playedCards - currentPlayer'sHand
+- **Exhaustion Rule**: Mixed-suit plays valid when player exhausts relevant suit
 
-### **"Unbeatable" Definition**
-A combo is "unbeatable" when **ALL OTHER THREE PLAYERS COMBINED** cannot beat it with their available cards.
-
-**Available cards to other 3 players** = **Total cards (108) - playedCards - currentPlayer'sHand**
-
-### **Testing Logic**
-- **"Possibly Beatable"**: Higher combinations could exist in other players' hands
-- **"Guaranteed Unbeatable"**: No higher combinations mathematically possible
-
-**Examples:**
+### Examples
+- ✅ `A♥ + K♥ + Q♥` = Multi-combo (3 singles from Hearts)
+- ✅ `A♥A♥ + K♥` = Multi-combo (pair + single from Hearts)
 - ✅ `A♥A♥-K♥K♥` → Always unbeatable (highest possible 2-pair tractor)
-- ✅ `Q♥Q♥-J♥J♥-10♥10♥` → Always unbeatable (no higher 3-pair possible)  
 - ⚠️ `10♥10♥-9♥9♥` → Possibly beatable if `K♥K♥-Q♥Q♥` available to others
-- ⚠️ `5♥5♥` → Possibly beatable if `A♥A♥`, `K♥K♥`, etc. available to others
 
-### **Test Design Principles**
-- **Test realistic scenarios** where detection logic matters
-- **Focus on "possibly beatable"** cases (like `10♥10♥-9♥9♥`)
-- **Account for cards in current player's hand** correctly
-- **Remember: It's about mathematical possibility, not strategic likelihood**
-
-## 🚨 CRITICAL MULTI-COMBO UNDERSTANDING 🚨
-
-**MULTI-COMBO**: Multiple combos from same suit played simultaneously
-
-**Examples:**
-- ✅ `A♥ + K♥ + Q♥` = Multi-combo (3 singles from same suit)
-- ✅ `A♥A♥ + K♥` = Multi-combo (pair + single from same suit)  
-- ✅ `K♥ + Q♥` = Multi-combo (2 singles from same suit)
-- ✅ `8♦ + 5♦ + 3♦` = Multi-combo (3 singles from same suit)
-
-**Key Rule**: ANY multiple combos from same suit = multi-combo!
-
-## 🚨 CRITICAL MULTI-COMBO VALIDATION UNDERSTANDING 🚨
-
-**For Development Context Only** - Complete system documentation in [Multi-Combo Architecture](docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md) and [Multi-Combo Algorithms](docs/MULTI_COMBO_ALGORITHMS.md)
-
-### **Key Developer Insights**
-- **Exhaustion Rule**: Mixed-suit plays can be valid when player exhausts relevant suit
-- **Anti-Cheat Logic**: Players cannot hide better combinations (pairs/tractors) when required
-- **Validation Flow**: Exhaustion check → Structure validation → Anti-cheat detection
-
-**Critical Simulation Bug**: The "4♦, J♥, 8♥, 6♥" scenario from logs was valid due to exhaustion rule (player had no more hearts after play), not a validation error.
+*Complete system documentation in [Multi-Combo Architecture](docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md)*
 
 ## Quick Start
 
 ```bash
-# Install dependencies
+# Install and run
 npm install
-
-# Start development server
 npx expo start
 
-# Run on specific platforms
-npm run android    # Start on Android
-npm run ios        # Start on iOS
-
-# Quality checks
+# Quality checks (REQUIRED before commits)
 npm run qualitycheck  # Runs typecheck, lint, and test
-npm run lint          # Run ESLint
-npm run typecheck     # Type checking
-npm test              # Run tests
-npm run test:simulation # Run simulation tests (bypasses ignore pattern)
+npm run android       # Android platform
+npm run ios          # iOS platform
 ```
-
-## Game State Persistence
-
-The game features **automatic save/restore functionality** with seamless user experience:
-
-### **Auto-Save System**
-- **Phase Changes**: Automatically saves when transitioning between game phases
-- **Round Transitions**: Saves at the start of each new round
-- **Trick Completions**: Saves after each completed trick
-- **Player Turns**: Saves when turn passes to next player
-- **Smart Throttling**: Prevents excessive saves (2-second minimum interval)
-
-### **Auto-Restoration**
-- **Seamless Recovery**: Automatically detects and offers to restore saved games on app startup
-- **UI Timing**: Proper timing delays ensure modals display correctly after restoration
-- **Trick Handling**: Automatically clears completed tricks when resuming mid-game
-- **Round Results**: Shows round result modals for games saved during round end
-
-### **Technical Implementation**
-- **AsyncStorage Integration**: Uses React Native AsyncStorage for reliable local persistence
-- **Card Deserialization**: Maintains Card class methods after JSON parsing with deep deserialization
-- **Version Management**: Simple numeric versioning (bump when making breaking GameState changes)
-- **Error Handling**: Robust retry logic and graceful fallback to new games
-- **Validation**: Comprehensive validation of saved game data integrity
-
-### **Developer Guidelines**
-- **Breaking Changes**: Bump `PERSISTENCE_VERSION` number when modifying GameState structure
-- **Testing**: All persistence functions have comprehensive test coverage
-- **Logging**: Uses `gameLogger` for all persistence operations and errors
-
-*Project structure and architectural highlights detailed in [README.md](README.md)*
 
 ## Development Guidelines
 
-### File Organization Philosophy
-
-The codebase is organized by **logical domain** rather than just file type:
-
-- **`src/ai/`** - All AI-related modules for strategic decision-making
-- **`src/game/`** - Core game logic, rules, and management systems  
-- **`src/types/`** - Modular type definitions with clean re-exports
-- **`src/utils/`** - True utilities that don't belong to specific domains
-- **`__tests__/`** - Test structure mirrors source code organization
-
-This structure makes it easy to:
-
-- Find related functionality quickly
-- Understand dependencies between modules
-- Add new features in the right place
-- Maintain clean separation of concerns
-
-### Documentation Philosophy
-
-The project uses a streamlined documentation approach:
-
-- **README.md** - Project overview with accurate features and technology details
-- **CLAUDE.md** - Comprehensive development guidelines (this file)
-- **docs/AI_SYSTEM.md** - Complete AI intelligence documentation with decision trees and strategic flowcharts
-- **docs/GAME_RULES.md** - Comprehensive rules reference with quick start guide for new players
-
-This provides complete coverage while eliminating redundancy and maintenance overhead.
-
-**Documentation Guidelines:**
-
-- **README.md** should be scannable and focus on project overview and key features
-- **CLAUDE.md** contains all development standards, architecture details, and coding guidelines
-- **docs/AI_SYSTEM.md** for comprehensive AI system documentation including decision trees and strategic logic
-- **docs/GAME_RULES.md** for complete game rules, quick start guide, and strategy reference
-- **Single source of truth**: No duplicate content between files - each document has clear scope
-- **Cross-references**: Link between documents rather than duplicating content
-
-### Code Quality
-
-Always run these checks before committing:
+### Code Quality - Zero Tolerance Policy
+**ALL quality checks must pass before any commit:**
+- ✅ Tests: All tests pass (no failures)
+- ✅ TypeScript: Zero compilation errors/warnings  
+- ✅ Lint: Zero ESLint warnings/errors
 
 ```bash
-npm run qualitycheck  # Runs all checks
+npm run qualitycheck  # MUST pass completely
 ```
 
-**CRITICAL QUALITY REQUIREMENTS:**
-- **ALL TESTS MUST PASS**: The main branch has no existing failing tests. Any test failures introduced must be fixed.
-- **NO LINT WARNINGS/ERRORS**: All ESLint warnings and errors must be resolved.
-- **TYPECHECK MUST PASS**: No TypeScript compilation errors allowed.
-- **Zero Tolerance Policy**: `npm run qualitycheck` must pass completely with no failures or warnings before any commit.
+### File Organization
+**Organized by logical domain:**
+- `src/ai/` - AI strategic decision-making (22 specialized modules)
+- `src/game/` - Core game logic and rules
+- `src/types/` - Type definitions with clean re-exports
+- `src/utils/` - Domain-agnostic utilities
+- `__tests__/` - Mirrors source code structure
+
+### Documentation Strategy
+- **README.md** - Project overview and key features
+- **CLAUDE.md** - Development guidelines (this file)
+- **docs/** - Specialized documentation (AI, game rules, multi-combo system)
+- **Single source of truth** - No duplicate content between files
 
 ### Git Workflow
+🚨 **NEVER COMMIT TO MAIN BRANCH** 🚨
 
-**IMPORTANT: The main branch is protected. All changes MUST go through pull requests.**
-
+**Required workflow:**
 ```bash
-# 1. ALWAYS create a feature branch (format: {user}/{feature-name})
-git checkout -b ejfn/add-new-feature
+# 1. Create feature branch
+git checkout -b ejfn/feature-name
 
-# 2. Make changes and commit
-git add .
-git commit -m "Your commit message"
+# 2. Make changes and commit  
+git add . && git commit -m "Description"
 
-# 3. Push to origin (NEVER push to main directly)
-git push origin ejfn/add-new-feature -u
-
-# 4. Create PR for review
-gh pr create --title "Your PR title" --body "Description"
+# 3. Push and create PR
+git push origin ejfn/feature-name -u
+gh pr create --title "Title" --body "Description"
 ```
 
-### Git Workflow Rules
-
-🚨 **CLAUDE CODE AI: DO NOT COMMIT TO MAIN BRANCH!!!!** 🚨
-
-- **NEVER commit or push directly to main branch**
-- **ALWAYS create a feature branch for any changes**
-- **ALWAYS create a pull request for code review**
-- The main branch requires PR approval before merging
+**Rules:**
+- Main branch is protected - requires PR approval
 - Use descriptive branch names: `ejfn/fix-scoring`, `ejfn/add-tests`
+- Always use `npx eas` for EAS CLI commands
 
-### EAS CLI
+## Architecture Overview
 
-EAS CLI is a project dependency. Always use `npx`:
-
-```bash
-npx eas update
-npx eas build
-npx eas --version
-```
-
-## Game Architecture
-
-### Core Architecture Principles
-
-- **Modular Game System**: 22 specialized modules organized by functional domain
-- **Unified Trick Structure**: Single `plays` array eliminates data inconsistencies
+### Core Principles
+- **Modular Design**: 22 AI modules + focused game modules
+- **Unified Trick Structure**: Single `plays` array eliminates inconsistencies  
 - **Direct Imports**: Clean dependencies without re-export hubs
 - **Pure Computation**: Separation of calculations from state mutations
-- **Type Safety**: Strict TypeScript with zero tolerance for unsafe patterns
+- **Strict Type Safety**: Zero tolerance for unsafe TypeScript patterns
 
-*Complete architecture details in [README.md](README.md)*
+### Key Systems
+- **Game State Persistence**: Auto-save/restore with AsyncStorage
+- **Memory-Enhanced AI**: Card tracking with guaranteed winner detection
+- **Multi-Combo System**: Complex combination validation and strategy
+- **Internationalization**: English/Chinese with type-safe translations
 
-*Timing constants in `src/utils/gameTimings.ts` | UI layout details available as needed*
+*Complete details in [README.md](README.md) and docs/ folder*
 
-## Type Safety and Code Quality
+## Type Safety & Code Standards
 
-⚠️ **CRITICAL**: This codebase enforces **STRICT TYPE SAFETY** with zero tolerance for unsafe patterns. All TypeScript compilation must pass with **ZERO ERRORS** and **ZERO WARNINGS**.
+⚠️ **STRICT TYPE SAFETY** - Zero tolerance for unsafe patterns
 
-### Mandatory Parameter Enforcement ⚠️ CRITICAL
+### Critical Rules
+1. **Mandatory Parameters**: Never make parameters optional when always provided
+2. **Use Defined Interfaces**: No inline object types when interfaces exist  
+3. **Enum Usage**: Always use enums instead of magic strings
+4. **Filter Enums**: Always filter `Suit.None` and `Rank.None` in iterations
+5. **No Type Assertions**: Fix root type mismatches with proper type guards
+6. **Clean Interfaces**: Simple unified interfaces over complex hierarchies
 
-**NEVER make parameters optional when they should always be provided!** 
-
-**✅ Correct Pattern - Mandatory Parameters:**
+### Enum Examples
 ```typescript
-// GOOD: trumpInfo is always required
-export const getComboType = (cards: Card[], trumpInfo: TrumpInfo): ComboType => {
-  // Implementation
-}
+// ✅ GOOD: Use enums
+PlayerId.Human, GamePhase.Playing, TrickPosition.First
 
-// GOOD: All test calls provide required parameter
-expect(getComboType(pair, trumpInfo)).toBe(ComboType.Pair);
+// ❌ BAD: Magic strings  
+'human', 'playing', 'first'
 ```
 
-**❌ Incorrect Pattern - False Optionals:**
+### Key Enums
 ```typescript
-// BAD: Making trumpInfo optional when it's always needed
-export const getComboType = (cards: Card[], trumpInfo?: TrumpInfo): ComboType => {
-  // This leads to unsafe assumptions and runtime errors
-}
-
-// BAD: Non-null assertions to work around bad typing
-expect(getComboType(pair, trumpInfo!)).toBe(ComboType.Pair);
+enum PlayerId { Human = 'human', Bot1 = 'bot1', Bot2 = 'bot2', Bot3 = 'bot3' }
+enum GamePhase { Dealing = 'dealing', Playing = 'playing', Scoring = 'scoring' }
+enum TrickPosition { First = 'first', Second = 'second', Third = 'third', Fourth = 'fourth' }
+enum PointPressure { LOW = 'low', MEDIUM = 'medium', HIGH = 'high' }
 ```
-
-**🚨 Rules for Parameter Design:**
-- If a parameter is used in 100% of cases → Make it **MANDATORY**
-- If a parameter has safe defaults → Provide **DEFAULT VALUES**
-- If a parameter is contextual → Use **FUNCTION OVERLOADS**
-- **NEVER use `?:` for parameters that are always provided**
-
-### Interface vs Inline Types ⚠️ CRITICAL
-
-**ALWAYS use defined interfaces instead of inline object types!**
-
-**✅ Correct Pattern - Defined Interfaces:**
-```typescript
-// GOOD: Use existing interface
-function processDeclaration(declaration: TrumpDeclarationStatus): void {
-  // Implementation uses well-defined type
-}
-
-// GOOD: Return proper interface
-function getDeclarationStatus(): TrumpDeclarationStatus {
-  return gameState.trumpDeclarationState?.currentDeclaration;
-}
-```
-
-**❌ Incorrect Pattern - Inline Objects:**
-```typescript
-// BAD: Returning inline object when interface exists
-function getDeclarationStatus(): { suit: Suit; type: string; player: string } {
-  // Duplicates existing TrumpDeclarationStatus interface
-}
-
-// BAD: Using inline types in parameters
-function processDeclaration(declaration: { suit: Suit; type: string }): void {
-  // Should use TrumpDeclarationStatus interface
-}
-```
-
-### Null vs Undefined Discipline ⚠️ CRITICAL
-
-**Be explicit about nullability patterns!**
-
-**✅ Correct Patterns:**
-```typescript
-// GOOD: Explicit about what values are allowed
-function processPlayer(player: Player | null): void {
-  if (player === null) return;
-  // Handle non-null player
-}
-
-// GOOD: Use proper type guards
-function hasCards(hand: Card[] | undefined): hand is Card[] {
-  return hand !== undefined && hand.length > 0;
-}
-```
-
-**❌ Incorrect Patterns:**
-```typescript
-// BAD: Mixing null and undefined without clear pattern
-function processPlayer(player?: Player | null): void {
-  // Confusing - what does undefined vs null mean?
-}
-
-// BAD: Using non-null assertion instead of proper checking
-function processCards(hand?: Card[]): void {
-  hand!.forEach(card => /* unsafe */);
-}
-```
-
-### Enum Filtering for Iterations ⚠️ CRITICAL
-
-**ALWAYS filter out placeholder enum values in iterations!**
-
-**✅ Correct Pattern - Filtered Iterations:**
-```typescript
-// GOOD: Filter out placeholder values
-Object.values(Suit)
-  .filter((suit) => suit !== Suit.None)
-  .forEach((suit) => {
-    // Only process real suits
-  });
-
-Object.values(Rank)
-  .filter((rank) => rank !== Rank.None)
-  .forEach((rank) => {
-    // Only process real ranks
-  });
-```
-
-**❌ Incorrect Pattern - Unfiltered Iterations:**
-```typescript
-// BAD: Includes placeholder values
-Object.values(Suit).forEach((suit) => {
-  // Creates invalid cards with Suit.None
-  deck.push(Card.createCard(suit, rank, deckId));
-});
-
-Object.values(Rank).forEach((rank) => {
-  // Creates invalid cards with Rank.None
-  deck.push(Card.createCard(suit, rank, deckId));
-});
-```
-
-**🚨 Mandatory Enum Filters:**
-- `Suit.None` → Only for jokers, NEVER for deck creation
-- `Rank.None` → Only for jokers, NEVER for deck creation
-- **Always filter placeholder values in iterations**
-
-### Type Assertion Prevention ⚠️ CRITICAL
-
-**AVOID type assertions - fix root type mismatches instead!**
-
-**✅ Correct Pattern - Proper Type Guards:**
-```typescript
-// GOOD: Proper conditional with type guard
-if (!isLeading && leadingCombo && leadingCombo.length > 1 && trumpInfo) {
-  const leadingComboType = getComboType(leadingCombo, trumpInfo);
-  // Safe usage
-}
-
-// GOOD: Explicit validation
-function processGameState(state: GameState | null): void {
-  if (!state) throw new Error('GameState is required');
-  // Proceed with guaranteed non-null state
-}
-```
-
-**❌ Incorrect Pattern - Type Assertions:**
-```typescript
-// BAD: Non-null assertion
-const leadingComboType = getComboType(leadingCombo, trumpInfo!);
-
-// BAD: Type casting
-const gameState = state as GameState;
-
-// BAD: Any type escape hatch
-const result = (someValue as any).doSomething();
-```
-
-### Interface Hierarchy Best Practices ⚠️ CRITICAL
-
-**Design clear inheritance relationships!**
-
-**✅ Correct Pattern - Clean Interface:**
-```typescript
-// GOOD: Single unified interface
-interface GameContext {
-  trumpInfo: TrumpInfo;
-  currentPlayer: PlayerId;
-  memoryContext?: MemoryContext; // Optional memory enhancement
-}
-```
-
-**❌ Incorrect Pattern - Complex Hierarchy:**
-```typescript
-// BAD: Unnecessary inheritance complexity
-interface GameContextBase {
-  trumpInfo: TrumpInfo;
-  currentPlayer: PlayerId;
-}
-
-interface GameContext extends GameContextBase {
-  memoryContext?: MemoryContext;
-}
-
-// BAD: Type intersection when simple interface works
-type GameContext = GameContextBase & { memoryContext?: MemoryContext };
-```
-
-### Quality Gates ⚠️ CRITICAL
-
-**ALL TYPE SAFETY REQUIREMENTS MUST PASS:**
-
-```bash
-npm run qualitycheck  # MUST return with zero errors
-```
-
-**Zero Tolerance Policy:**
-- ✅ **TypeCheck: PASSED** (0 errors) - MANDATORY
-- ✅ **Lint: PASSED** (0 warnings) - MANDATORY  
-- ✅ **Tests: PASSED** (all tests) - MANDATORY
-
-**Any TypeScript compilation error or lint warning blocks development until resolved.**
-
-### Enum Usage ⚠️ CRITICAL
-
-**ALWAYS USE ENUMS INSTEAD OF MAGIC STRINGS!** The codebase uses TypeScript enums extensively to eliminate magic strings and ensure type safety:
-
-```typescript
-// Player identification - use instead of magic strings
-enum PlayerId {
-  Human = 'human',
-  Bot1 = 'bot1', 
-  Bot2 = 'bot2',
-  Bot3 = 'bot3'
-}
-
-// Player display names
-enum PlayerName {
-  Human = 'You',
-  Bot1 = 'Bot 1',
-  Bot2 = 'Bot 2',
-  Bot3 = 'Bot 3'
-}
-
-// Game phases - replaces string literals
-enum GamePhase {
-  Dealing = 'dealing',
-  Declaring = 'declaring', 
-  Playing = 'playing',
-  Scoring = 'scoring',
-  RoundEnd = 'roundEnd',
-  GameOver = 'gameOver'
-}
-
-// AI Strategy Enums (Memory-Enhanced System)
-enum TrickPosition {
-  First = 'first',
-  Second = 'second', 
-  Third = 'third',
-  Fourth = 'fourth'
-}
-
-enum PointPressure {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high'
-}
-
-enum PlayStyle {
-  Conservative = 'conservative',
-  Balanced = 'balanced',
-  Aggressive = 'aggressive', 
-  Desperate = 'desperate'
-}
-
-enum ComboStrength {
-  Weak = 'weak',
-  Medium = 'medium',
-  Strong = 'strong',
-  Critical = 'critical'
-}
-```
-
-**⚠️ ALWAYS use enums instead of magic strings:**
-
-- ✅ `PlayerId.Human` instead of `'human'`
-- ✅ `GamePhase.Playing` instead of `'playing'`  
-- ✅ `PlayerName.Bot1` instead of `'Bot 1'`
-- ✅ `TrickPosition.First` instead of `'first'`
-- ✅ `PointPressure.HIGH` instead of `'high'` or `'HIGH'`
-- ✅ `PlayStyle.Aggressive` instead of `'aggressive'`
-- ✅ `ComboStrength.Critical` instead of `'critical'`
-
-**❌ NEVER use magic strings:**
-
-- ❌ `'human'`, `'bot1'`, `'playing'`, `'high'`, `'aggressive'`
-- ❌ String literals in conditional checks
-- ❌ Hardcoded strings in function parameters
-- ❌ String comparisons without enum references
-
-**🔍 Common Enum Mistakes to Avoid:**
-
-- Using `player.id === 'human'` instead of `player.id === PlayerId.Human`
-- Returning `'aggressive'` instead of `PlayStyle.Aggressive` from functions
-- Comparing with `pointPressure === 'HIGH'` instead of `pointPressure === PointPressure.HIGH`
-- Hardcoding position strings like `'first'` instead of `TrickPosition.First`
 
 ### Testing Best Practices
-
-- **⚠️ CRITICAL: Always read existing tests first before generating tests**: Examine similar test files to understand patterns, imports, and structure
-- **⚠️ CRITICAL: Always typecheck generated tests before running**: Run `npm run typecheck` to catch TypeScript errors before test execution
-- **Avoid unnecessary mocks**: Since Shengji has deterministic initialization, prefer using real `initializeGame` over mocking
-- **⚠️ CRITICAL: Always import and use enums in tests**: Import all relevant enums at the top of test files
-- **Use type-safe test utilities**: Never use magic strings in test assertions
-- **Jest mock limitations**: Only mock what needs to be controlled for the specific test
-- **Test realism**: Use actual game logic when possible for more realistic test coverage
-
-**✅ Correct Test Enum Usage:**
-
-```typescript
-import { PlayerId, GamePhase, TrickPosition, PointPressure } from '../../src/types';
-
-// Good
-expect(gameState.currentPlayer).toBe(PlayerId.Human);
-expect(context.trickPosition).toBe(TrickPosition.First);
-expect(strategy.pointPressure).toBe(PointPressure.HIGH);
-
-// Bad
-expect(gameState.currentPlayer).toBe('human');
-expect(context.trickPosition).toBe('first');
-expect(strategy.pointPressure).toBe('HIGH');
-```
-
-```typescript
-// Good: Use real initialization + targeted mocking
-jest.mock('../../src/game/cardComparison', () => ({
-  ...jest.requireActual('../../src/game/cardComparison'),
-  compareCards: jest.fn() // Only mock what you need to control for tests
-}));
-
-// Good: Test validation errors for invalid usage
-expect(() => {
-  compareCards(aceClubs, fourDiamonds, trumpInfo);
-}).toThrow('compareCards: Invalid comparison between different non-trump suits');
-
-// Good: Use evaluateTrickPlay for cross-suit trick testing
-const result = evaluateTrickPlay(proposedCards, currentTrick, trumpInfo, playerHand);
-expect(result.canBeat).toBe(true);
-
-// Avoid: Large mock objects that duplicate real code
-```
+- **Read existing tests first** before writing new ones
+- **Always import enums** at top of test files
+- **Use real initialization** + targeted mocking
+- **No magic strings** in test assertions
+- **Run typecheck** before running tests
 
 ## Technical Implementation
 
-### Key Implementation Rules
-
-- **Unified Trick Structure**: Leading cards accessed via `trick.plays[0].cards`
-- **Real-time Winner Tracking**: `winningPlayerId` field tracks current trick winner
+### Core Game Rules  
+- **Unified Trick Structure**: Access leading cards via `trick.plays[0].cards`
+- **Real-time Winner Tracking**: Use `winningPlayerId` field (don't recalculate)
 - **Trump Group Unity**: ALL trump cards treated as same suit for combinations
 - **Pure Computation**: Separate calculations from state mutations
 
-*Complete game rules and mechanics in [Game Rules](docs/GAME_RULES.md)*
-
 ### Card Comparison Functions ⚠️ CRITICAL
 
-The codebase provides two distinct functions for card evaluation with strict usage requirements:
+**`compareCards(cardA, cardB, trumpInfo)`** - Direct card comparison
+- ✅ Same suit or trump group only
+- ❌ Cross-suit non-trump comparison (throws error)
 
-#### `compareCards(cardA, cardB, trumpInfo)` - Direct Card Comparison
-
-**Purpose**: Compare two individual cards within the same suit or trump group
-
-**Valid Usage**:
-- ✅ Same suit cards: `compareCards(7♠, A♠, trumpInfo)`
-- ✅ Trump vs non-trump: `compareCards(BigJoker, A♠, trumpInfo)`
-- ✅ Both trump cards: `compareCards(2♠, SmallJoker, trumpInfo)`
-
-**Invalid Usage** (throws error):
-- ❌ Different non-trump suits: `compareCards(A♣, 4♦, trumpInfo)`
-- ❌ Cross-suit pair comparison without trick context
-
-**Protection**: Automatically validates and throws descriptive errors for invalid cross-suit non-trump comparisons.
-
-#### `evaluateTrickPlay(cards, trick, trumpInfo, hand)` - Trick Context Evaluation
-
-**Purpose**: Evaluate card plays within trick-taking game context
-
-**Usage**:
-- ✅ Trick winner determination across different suits
-- ✅ Legal play validation (follow suit, combo type matching)
-- ✅ Cross-suit play evaluation in trick context
-- ✅ AI strategy decisions for trick competition
-
-**Returns**: `{ canBeat: boolean, isLegal: boolean, strength: number, reason?: string }`
-
-#### Development Guidelines
-
-**When to use `compareCards`:**
-- Sorting cards within the same suit
-- Trump hierarchy evaluation
-- Card strength comparison for same-suit scenarios
-
-**When to use `evaluateTrickPlay`:**
-- AI strategy decisions ("Can I beat this trick?")
-- Cross-suit trick evaluation
-- Legal play validation
-- Any trick-taking game logic
-
-**Error Message Guidance:**
-```
-compareCards: Invalid comparison between different non-trump suits: A♣ vs 4♦. 
-Use evaluateTrickPlay() for cross-suit trick comparisons.
-```
-
-This protection ensures Shengji/Tractor game rule compliance and prevents invalid card comparisons that could lead to incorrect AI decisions or game logic bugs.
-
-*AI implementation patterns and guidelines detailed in [AI System](docs/AI_SYSTEM.md)*
+**`evaluateTrickPlay(cards, trick, trumpInfo, hand)`** - Trick context evaluation  
+- ✅ Cross-suit trick evaluation, legal play validation, AI decisions
+- Returns: `{ canBeat: boolean, isLegal: boolean, strength: number }`
 
 ## Best Practices
 
-- ⚠️ **CRITICAL**: Always import and use enums instead of magic strings
-- 🚨 **NO SPECIAL CASE!!!!** - Always prefer general solutions over special case handling. Never add player-specific hacks or special case conditions to solve problems.
-- **Import Strategy**: Use direct module imports instead of re-export hubs for cleaner dependencies
-- **Modular Design**: Keep modules focused (150-300 lines) with single responsibilities
-- Use modular imports from `src/types` index file for clean code
-- Read file references with `file_path:line_number` format
-- Prefer general solutions over special cases
-- Maintain consistent player transitions
-- Follow existing code conventions
-- Import all relevant enums at the top of every file
-- Use shared test utilities from `__tests__/helpers` for consistent testing
-- Organize files by logical domain (ai/, game/, utils/) not just file type
-- Keep README.md concise and direct detailed information to docs/ files
-- Update documentation when adding new features or changing architecture
-- Use real-time `winningPlayerId` tracking instead of calculating trick winners
-- Avoid redundant winner determination functions
-- **AI Strategy**: Use restructured 4-priority decision chain to avoid conflicts and rabbit holes
-- **Point Card Strategy**: Implement strategic disposal avoiding point cards when opponent winning
-- **Trump Conservation**: Use proper trump hierarchy with conservation values when AI cannot beat opponents
-- **Low-Value Trick Handling**: Always use conservation logic for 0-4 point tricks to avoid wasting valuable cards
-- **Debugging**: When AI behavior changes, check the priority chain order and handler logic
-- **Testing**: Always include point card management and trump conservation in AI tests
-- **Logging**: Use `gameLogger` for all logging instead of `console.log()` - provides structured logging with levels and context
+### Core Principles
+- 🚨 **NO SPECIAL CASES** - Always prefer general solutions over player-specific hacks
+- **Direct Imports** - No re-export hubs for cleaner dependencies  
+- **Modular Design** - Keep modules focused (150-300 lines) with single responsibilities
+- **Use Enums** - Always import and use enums instead of magic strings
+- **File References** - Use `file_path:line_number` format when referencing code
+
+### AI Strategy Guidelines
+- **4-Priority Decision Chain** - Avoid conflicts and rabbit holes
+- **Point Card Strategy** - Strategic disposal avoiding point cards when opponent winning
+- **Trump Conservation** - Use hierarchy with conservation values
+- **Memory System** - Leverage card tracking for guaranteed winner detection
+
+### Development Standards
+- **Logging** - Use `gameLogger` instead of `console.log()`
+- **Testing** - Include point card management and trump conservation in AI tests
+- **Documentation** - Update when adding features or changing architecture
 
 ### 🚨 CRITICAL: Duplicate Function Prevention
 
-**NEVER create duplicate functions!** This has caused multiple subtle bugs where two functions with the same name return different values, breaking validation consistency.
+**NEVER create duplicate functions** - causes subtle validation bugs
 
-#### **Mandatory Pre-Implementation Checks**
-Before writing ANY new function:
+**Before writing ANY new function:**
+1. Search existing: `rg "functionName" --type ts`
+2. Try importing first: `import { getComboType } from "./comboDetection"`
+3. Use specific names for local helpers: `analyzeLocalComboStructure`
 
-1. **Search for existing implementations**:
-   ```bash
-   rg "functionName" --type ts
-   rg "export.*functionName" --type ts
-   ```
+**Naming Rules:**
+- Generic names (`getComboType`, `validatePlay`) → **MUST be imports**
+- Local helpers → Use prefixes (`local`, `internal`, `analyze`)
 
-2. **Check for existing exports** - ALWAYS try importing first:
-   ```typescript
-   // ✅ GOOD: Import existing function
-   import { getComboType } from "./comboDetection";
-   
-   // ❌ BAD: Create duplicate without checking
-   const getComboType = (cards, trumpInfo) => { ... }
-   ```
-
-3. **Use specific naming** for truly local helpers:
-   ```typescript
-   // ✅ GOOD: Specific local name
-   const analyzeLocalComboStructure = () => { ... }
-   
-   // ❌ BAD: Generic name that might conflict
-   const getComboType = () => { ... }
-   ```
-
-#### **Function Naming Convention**
-- **Generic utility names** (`getComboType`, `validatePlay`, `processData`) → **MUST be imports**
-- **Local helpers** → Use descriptive prefixes (`local`, `internal`, `analyze`, `calculate`)
-- **Module-specific functions** → Include module context in name
-
-#### **Documentation Pattern**
-When creating local helpers, always document the decision:
-```typescript
-// Local helper - verified no existing export available [DATE]
-// Specific to this module's internal logic
-const calculateLocalRankValue = () => { ... }
-```
-
-#### **Known Duplicate Bugs Prevented**
-- `getComboType()` duplication (comboDetection.ts vs combinationGeneration.ts) 
-- Future: Any function with generic utility names
-
-#### **Pre-Commit Validation**
-Run this check before commits:
 ```bash
-# Find potential function name conflicts
+# Pre-commit check for duplicates
 rg "export\s+(function|const)\s+(\w+)" -o | sort | uniq -d
 ```
 
-**Zero tolerance policy**: Duplicate functions create subtle bugs that are hard to debug and compromise system reliability.
+## Additional Systems
 
-## Internationalization (i18n) System
+### Internationalization (i18n)
+- **Languages**: English (primary), Chinese (Traditional/Simplified)
+- **Type-Safe Hooks**: `useCommonTranslation()`, `useGameTranslation()`, etc.
+- **Auto-Detection**: Device locale with persistent user preferences
+- **Namespaces**: `common`, `game`, `trumpDeclaration`, `modals`
 
-The game features **comprehensive multilingual support** with type-safe translations and automatic language detection:
-
-### **Supported Languages**
-- **English (en)**: Primary language with complete translations
-- **Chinese (zh)**: Full Traditional/Simplified Chinese support
-- **System Detection**: Automatic language detection based on device locale
-- **User Preference**: Manual language switching with persistent storage
-
-### **Translation Architecture**
-- **Modular Namespaces**: Organized by functional domain for maintainability
-  - `common` - Core UI elements (buttons, loading, basic game terms)
-  - `game` - Game-specific content (phases, status, actions)
-  - `trumpDeclaration` - Trump declaration system messages
-  - `modals` - Modal dialogs and results (round complete, game over)
-- **Type Safety**: Full TypeScript support with auto-generated types
-- **React i18next Integration**: Efficient translation hooks with caching
-
-### **Translation Hooks**
-```typescript
-// Namespace-specific hooks for type safety
-useCommonTranslation()     // Basic UI elements
-useGameTranslation()       // Game-specific content  
-useTrumpDeclarationTranslation() // Trump declaration system
-useModalsTranslation()     // Modal dialogs and results
-```
-
-### **Key Features**
-- **Automatic Language Detection**: Uses expo-localization for system language
-- **Persistent Preferences**: AsyncStorage integration for user language choice
-- **Separation of Concerns**: Game logic returns structured data, UI handles message generation
-- **Dynamic Language Switching**: Real-time language changes without app restart
-- **Fallback Support**: Graceful fallback to English for missing translations
-
-### **Development Guidelines**
-- **Always use translation hooks** instead of hardcoded strings
-- **Import relevant enums** for type-safe translation keys
-- **Test with both languages** to ensure proper text rendering
-- **Update types** when adding new translation keys
-- **Follow namespace conventions** when organizing translations
-
-*Translation files located in `src/locales/` with type definitions in `src/locales/types.ts`*
-
-## Hook Architecture
-
-**Single-responsibility hooks with minimal interdependencies:**
-- `useGameState` - Core game state management with integrated persistence
-- `useGameStatePersistence` - Automatic save/load with AsyncStorage integration
-- `useProgressiveDealing` - Unified dealing and trump declarations
+### Hook Architecture
+**Single-responsibility hooks:**
+- `useGameState` - Core state management + integrated persistence
+- `useProgressiveDealing` - Unified dealing and trump declarations  
 - `useAITurns` - AI turn handling
 - `useTrickResults` - Trick completion and display
-- `useAnimations` - UI animations and timing
-- `useTranslation` - Type-safe internationalization hooks
+- `useTranslation` - Type-safe internationalization
 
-**RoundResult System:**
-- Pure computation approach with `endRound()` and `prepareNextRound()`
-- Separates calculations from state mutations for clean UI timing
+### Automated Badge System
+**Dynamic test count badge** auto-updates via EAS workflow:
+- Extracts Jest test count during quality checks
+- Updates GitHub Gist with shield.io endpoint JSON
+- Zero maintenance, always accurate
 
-**Game State Persistence System:**
-- Auto-save triggers on phase changes, round transitions, trick completions, and player turns
-- Auto-restoration on app startup with proper UI timing for modals and completed tricks
-- Card deserialization maintains class methods after JSON parsing
-- Validation and error handling with automatic fallback to new game
-- Simple numeric versioning system for migration compatibility
+## Development Lessons
 
-## Automated Badge System
+### Key Insights from Project Evolution
 
-**Dynamic Test Count Badge**: The README test count badge automatically updates via the EAS workflow using the Dynamic Badges Action.
+**Architecture Lessons:**
+- **Modular AI Design**: Split 1,844-line monolithic file into 22 specialized modules organized by domain
+- **Unified Data Structures**: Eliminate dual fields (`leadingCombo`/`plays`) that cause inconsistencies
+- **Direct Imports**: Remove re-export hubs for cleaner dependencies and IDE navigation
+- **Pure Computation**: Separate calculations from state mutations for testability
 
-**How it works:**
-- EAS workflow extracts test count from Jest output during quality checks
-- Dynamic Badges Action updates a GitHub Gist with shield.io endpoint JSON
-- README badge pulls from: `https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ejfn/675aef37358f9f2b3b290cbf79440460/raw/tractor-test-count.json`
+**Type Safety Enforcement:**
+- **Zero Tolerance**: All TypeScript compilation must pass with 0 errors/warnings
+- **Mandatory Parameters**: Never make parameters optional when always provided
+- **Systematic Parameter Audit**: Review all function signatures to eliminate unsafe patterns
 
-**Setup requirements:**
-- `GIST_SECRET`: GitHub token with gist scope (repository secret)
-- `GIST_ID`: GitHub gist ID for badge data storage (repository secret)
-- Public gist with `tractor-test-count.json` filename
+**AI Development Patterns:**
+- **4-Priority Decision Chain**: Structured approach avoids conflicts and rabbit holes
+- **Memory-Enhanced Intelligence**: 15-25% improvement through card tracking and guaranteed winner detection  
+- **Trump Conservation Hierarchy**: Dynamic values based on exhaustion analysis
+- **Position-Specific Logic**: Specialized strategies for 2nd, 3rd, 4th player positions
 
-**Benefits:**
-- ✅ Zero manual maintenance - badge updates automatically
-- ✅ Always accurate - reflects actual test count from Jest
-- ✅ Real-time updates - badge refreshes after workflow completion
+**Critical Bug Fixes:**
+- **Trump Group Unification**: Fixed fundamental rule where trump cards incorrectly separated by suit
+- **Multi-Combo Validation**: ALL OTHER THREE PLAYERS logic (not just opponents)
+- **Exhaustion Rule**: Mixed-suit plays valid when player exhausts relevant suit
 
-## Development Memories
+**Persistence System:**
+- **Auto-Save Strategy**: Phase changes, round transitions, trick completions, player turns
+- **Card Deserialization**: Maintains class methods after JSON parsing
+- **Version Management**: Simple numeric versioning with automatic fallback
 
-These are lessons learned and principles established through development experience on this project.
-
-### Testing & Debugging
-
-- **Bug reproduction**: When fixing a bug, always try to reproduce it with existing test or a debug test
-- **Automated test count badge**: Test count badge automatically updates via EAS workflow using Dynamic Badges Action
-- **Test realism**: Use actual game logic when possible for more realistic test coverage
-- **API evolution**: When improving APIs, update tests to use the new, better patterns instead of creating legacy compatibility wrappers
-
-### Code Architecture & Quality
-
-- **No special handling**: Do not add any player-specific hacks into AI strategy or special case handling to solve problems
-- **General solutions**: Prefer general solutions over special cases to maintain code consistency
-- **Hook consolidation**: Always prefer single-responsibility hooks over multiple interdependent hooks
-- **Circular dependencies**: Use refs and careful dependency management to avoid useCallback circular dependencies
-- **Phase-specific AI handling**: Ensure AI detection hooks handle all relevant game phases (Playing AND KittySwap) to prevent bot players from getting stuck
-- **Pure computation**: Use pure functions for complex calculations to improve testability and UI timing consistency
-- **State timing**: When UI timing is critical, use refs to preserve state during modal displays and transitions
-- **Unified data structures**: Maintain single source of truth for game state - eliminate dual fields that can become inconsistent
-- **Modular AI organization**: Group AI logic by functional domain (following/, leading/, analysis/) rather than mixing strategies
-- **Game state persistence**: Auto-save integrates seamlessly with existing game state management without architectural disruption
-
-### Type Safety Enforcement
-
-- **Zero tolerance policy**: All TypeScript compilation must pass with 0 errors and 0 warnings - no exceptions
-- **Mandatory parameters**: Never make parameters optional when they're always provided (e.g., `trumpInfo` in `getComboType`)
-- **Interface over inline types**: Always use defined interfaces instead of inline object types for consistency
-- **Proper enum filtering**: Always filter out placeholder values (`Suit.None`, `Rank.None`) in iterations to prevent invalid data
-- **Type assertion elimination**: Avoid type assertions (`!`, `as`) - fix root type mismatches instead with proper type guards
-- **Null vs undefined discipline**: Be explicit about nullability patterns and use consistent approaches
-- **Clean inheritance hierarchies**: Design clear interface relationships instead of type intersection hacks
-- **Parameter audit methodology**: Systematically review all function signatures to ensure proper type safety
-
-### AI Development Patterns
-
-- **Enum usage**: Always import and use enums instead of magic strings throughout AI code
-- **Priority chains**: Use structured priority decision chains to avoid conflicts and rabbit holes
-- **Strategic disposal**: Implement strategic disposal patterns that avoid wasting point cards when opponent is winning
-- **Trump conservation**: Use proper trump hierarchy with conservation values when AI cannot beat opponents
-- **Phase-specific timing**: Use appropriate delays for different game phases (1000ms for kitty swap vs 600ms for regular moves) to enhance user experience
-
-### Memory System Implementation
-
-The AI system now includes a **comprehensive memory-enhanced intelligence system** that tracks cards, analyzes patterns, and makes strategic decisions based on accumulated game knowledge.
-
-#### **Core Memory Features**
-
-- **Card Memory Tracking**: Complete tracking of played cards, estimated hand sizes, and suit void detection
-- **Trump Exhaustion Analysis**: Dynamic trump depletion tracking with conservation value calculations  
-- **Memory-Enhanced Trump Timing**: Optimal trump usage based on opponent trump exhaustion levels
-- **Position-Specific Memory Queries**: Specialized memory analysis for 2nd, 3rd, and 4th player positions
-- **Advanced Void Exploitation**: Sophisticated void detection with teammate vs opponent strategic differentiation
-- **Point Card Timing Optimization**: Memory-based analysis for optimal point collection timing
-
-#### **Memory System Architecture**
-
-```typescript
-// Core memory components
-src/ai/aiCardMemory.ts           // Central memory tracking and analysis
-src/ai/analysis/voidExploitation.ts    // Advanced void analysis and exploitation
-src/ai/analysis/pointCardTiming.ts     // Memory-enhanced point timing optimization
-
-// Position-specific enhancements
-src/ai/following/secondPlayerStrategy.ts    // Partial information analysis
-src/ai/following/thirdPlayerStrategy.ts     // Risk assessment with memory
-src/ai/following/fourthPlayerStrategy.ts    // Perfect information + memory combination
-```
-
-#### **Memory-Enhanced Decision Making**
-
-- **Guaranteed Winner Detection**: Uses card memory to identify cards certain to win based on played cards
-- **Smart Teammate Void Strategy**: Analyzes when to lead teammate voids for point collection vs protection
-- **Trump Conservation Hierarchy**: Dynamic conservation values based on trump exhaustion analysis
-- **Memory-Based Point Priority**: Optimal point card selection using memory analysis and guaranteed winners
-- **Void-Based Leading**: Strategic leading recommendations based on confirmed and probable voids
-
-#### **Key Memory System Benefits**
-
-- **Intelligence Enhancement**: 15-25% improvement in strategic decision quality through card tracking
-- **Strategic Depth**: Complex void exploitation and point timing optimization
-- **Team Coordination**: Smart teammate void analysis for optimal point collection
-- **Trump Management**: Memory-enhanced trump conservation and timing
-- **Test Coverage**: Comprehensive unit tests for all memory system components
-
-#### **Memory System Development Lessons**
-
-- **Modular Memory Integration**: Memory system cleanly integrates across 22 AI modules without architectural disruption
-- **Smart Strategy Differentiation**: Teammate void strategy requires different logic than opponent void exploitation
-- **Memory-Enhanced Testing**: Memory system enables more realistic AI testing with guaranteed winner scenarios
-- **Type Safety in Memory**: Proper typing for memory contexts prevents runtime errors in complex card tracking
-- **Conservation Value Hierarchy**: Trump conservation benefits from dynamic memory-based value calculations
-
-### Major Refactoring Lessons
-
-- **Trick Structure Unification**: Eliminated dual `leadingCombo`/`plays` fields that caused inconsistencies across 100+ files
-- **AI Modularization**: Split monolithic AI files into 22 specialized modules organized by functional domain (following/, leading/, analysis/, etc.)
-- **Game Logic Modularization**: Successfully broke down massive 1,844-line gameLogic.ts into focused, manageable modules
-- **Re-export Hub Elimination**: Removed gameLogic.ts re-export pattern and updated 100+ files to use direct module imports for cleaner dependencies
-- **Comprehensive Type Safety Overhaul**: Systematic elimination of 40+ TypeScript errors through mandatory parameter enforcement, enum filtering fixes, and interface discipline
-- **Systematic Approach**: Large refactoring requires systematic file-by-file updates with comprehensive testing at each step
-- **Test-Driven Validation**: Maintain 100% test coverage during refactoring to catch breaking changes immediately
-- **Critical Bug Discovery**: Major refactoring often reveals hidden bugs (4th player skip, mixed combinations, hierarchical point avoidance, invalid card creation from `Rank.None`)
-- **Performance Optimization**: Consolidating related logic improves performance and eliminates redundant function calls
-- **Type Safety Benefits**: Unified structures improve TypeScript inference and eliminate type casting
-- **Parameter Audit Value**: Systematic review of all function signatures reveals widespread unsafe optional patterns that should be mandatory
-- **Direct Import Benefits**: Eliminating re-export hubs improves IDE navigation, reduces circular dependency risks, and makes import relationships explicit
-
-### Game Rule Compliance Fixes
-
-- **Trump Group Unification (Issue #176)**: Fixed fundamental game logic where trump cards were incorrectly separated by original suit instead of being treated as unified trump group
-- **Root Cause**: `groupCardsBySuit` function was creating separate groups (`trump_Hearts`, `trump_Spades`) for trump rank cards, preventing cross-suit trump combinations
-- **Solution**: Modified card grouping to treat ALL trump cards (jokers + trump rank cards + trump suit cards) as single "trump" group for combination formation
-- **Impact**: AI now correctly forms trump rank pairs across suits (e.g., 2♠-2♥) and uses ALL trump pairs before ANY trump singles when following trump tractors
-- **Rule Enforced**: "ALL trump cards are treated as the same suit when following trump leads" - fundamental Tractor/Shengji rule now properly implemented
-
-### Game State Persistence Implementation
-
-The game includes a **comprehensive persistence system** that automatically saves and restores game progress with seamless user experience.
-
-#### **Core Persistence Features**
-
-- **Auto-Save Triggers**: Automatic saves on phase changes, round transitions, trick completions, and player turns
-- **Auto-Restoration**: Seamless game restoration on app startup with proper timing for UI modals
-- **AsyncStorage Integration**: Reliable local storage with retry logic and error handling
-- **Card Deserialization**: Maintains Card class methods after JSON parsing using `Card.deepDeserializeCards()`
-- **Validation System**: Comprehensive validation prevents corrupted save files from breaking the game
-- **Version Management**: Simple numeric versioning with automatic fallback to new game on version mismatches
-
-#### **Persistence Architecture**
-
-```typescript
-src/utils/gameStatePersistence.ts    // Core persistence utilities with AsyncStorage wrapper
-src/hooks/useGameStatePersistence.ts // React hook with auto-save logic and status tracking
-src/hooks/useGameState.ts           // Integrated persistence in main game state management
-```
-
-#### **Auto-Save Strategy**
-
-- **Phase Changes**: `dealing` → `playing` → `scoring` → `roundEnd`
-- **Round Transitions**: New round initialization and advancement
-- **Trick Completions**: Each completed trick saved for progress preservation
-- **Player Turns**: Current player changes during active gameplay
-- **Throttling**: Minimum 2-second intervals prevent excessive saves
-- **Game Over Exclusion**: Completed games not auto-saved to prevent unnecessary storage
-
-#### **Restoration Logic**
-
-- **Startup Check**: Automatically attempts restoration on app launch
-- **UI Timing Fixes**: Proper delays for modals and completed trick displays
-- **Validation**: Only restores valid, recent saves (within 7 days)
-- **Fallback Strategy**: Invalid saves automatically trigger new game initialization
-- **Version Compatibility**: Breaking changes increment version number for clean migration
-
-#### **Developer Guidelines**
-
-- **No Manual Calls**: Persistence is fully automatic - no manual save/load calls needed in game logic
-- **State Integration**: Persistence hooks integrate cleanly with existing `useGameState` hook
-- **Error Resilience**: All persistence operations include comprehensive error handling
-- **Testing**: Persistence system includes unit tests and integration tests for reliability
-- **Performance**: Throttling and efficient serialization prevent performance impact
-
-### Project Management
-
-- **Documentation sync**: Update documentation when adding new features or changing architecture
-- **File naming**: Use descriptive names that reflect actual complexity (avoid "Simple" for sophisticated implementations)
-- **Modular organization**: Organize files by logical domain (ai/, game/, utils/) rather than just file type
-- **Persistence integration**: New features automatically benefit from persistence without additional implementation
+**Major Refactoring Benefits:**
+- **Test-Driven Validation**: Maintain 100% coverage during large changes
+- **Systematic Approach**: File-by-file updates with comprehensive testing
+- **Performance Gains**: Consolidating logic eliminates redundant function calls

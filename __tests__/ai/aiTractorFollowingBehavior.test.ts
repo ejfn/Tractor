@@ -879,4 +879,116 @@ describe("AI Tractor Following Behavior", () => {
       expect(usedPairs).toBe(true);
     });
   });
+
+  describe("Bug Reproduction: Emergency Fallback Critical", () => {
+    test("reproduces exact scenario from game log with hand order from log", () => {
+      // Exact reproduction test for the bug where AI selects invalid combination
+      // Hand order from log: "8♠","9♠","6♣","3♠","6♣","7♣","7♠","K♦","4♣","5♠","SJ","7♣","4♣"
+      const gameState = initializeGame();
+
+      // Set exact conditions from log
+      gameState.currentPlayerIndex = 1; // Bot1's turn
+      gameState.gamePhase = GamePhase.Playing;
+      gameState.roundNumber = 3;
+
+      // Set exact trump info from log
+      gameState.trumpInfo = {
+        trumpRank: Rank.Three,
+        trumpSuit: Suit.Clubs,
+      };
+
+      // Set Bot1's exact hand from log in exact order
+      const bot1Player = getPlayerById(gameState, PlayerId.Bot1);
+      bot1Player.hand = [
+        Card.createCard(Suit.Spades, Rank.Eight, 0), // 8♠
+        Card.createCard(Suit.Spades, Rank.Nine, 0), // 9♠
+        Card.createCard(Suit.Clubs, Rank.Six, 0), // 6♣
+        Card.createCard(Suit.Spades, Rank.Three, 0), // 3♠ (trump rank)
+        Card.createCard(Suit.Clubs, Rank.Six, 1), // 6♣ (second copy)
+        Card.createCard(Suit.Clubs, Rank.Seven, 0), // 7♣
+        Card.createCard(Suit.Spades, Rank.Seven, 0), // 7♠
+        Card.createCard(Suit.Diamonds, Rank.King, 0), // K♦
+        Card.createCard(Suit.Clubs, Rank.Four, 0), // 4♣
+        Card.createCard(Suit.Spades, Rank.Five, 0), // 5♠
+        Card.createJoker(JokerType.Small, 0), // SJ
+        Card.createCard(Suit.Clubs, Rank.Seven, 1), // 7♣ (second copy)
+        Card.createCard(Suit.Clubs, Rank.Four, 1), // 4♣ (second copy)
+      ];
+
+      // Set exact current trick from log: Bot3 leads 9♣9♣8♣8♣, Human follows K♣K♣10♣10♣
+      gameState.currentTrick = {
+        plays: [
+          {
+            playerId: PlayerId.Bot3,
+            cards: [
+              ...Card.createPair(Suit.Clubs, Rank.Nine), // 9♣9♣
+              ...Card.createPair(Suit.Clubs, Rank.Eight), // 8♣8♣
+            ],
+          },
+          {
+            playerId: PlayerId.Human,
+            cards: [
+              ...Card.createPair(Suit.Clubs, Rank.King), // K♣K♣
+              ...Card.createPair(Suit.Clubs, Rank.Ten), // 10♣10♣
+            ],
+          },
+        ],
+        winningPlayerId: PlayerId.Bot3, // From log (current winner)
+        points: 40,
+        isFinalTrick: false,
+      };
+
+      gameLogger.info(
+        "bug_reproduction_test",
+        {
+          handOrder: bot1Player.hand.map((c) => c.getDisplayName()),
+          leadingTractor: "9♣9♣8♣8♣",
+          expectedTractor: "6♣6♣7♣7♣",
+          trumpInfo: gameState.trumpInfo,
+        },
+        "Reproducing exact scenario from game log",
+      );
+
+      // Get AI move
+      const aiMove = getAIMove(gameState, PlayerId.Bot1);
+
+      gameLogger.info(
+        "bug_reproduction_result",
+        {
+          aiSelected: aiMove.map((c) => c.getDisplayName()),
+          expectedValid: ["6♣", "6♣", "7♣", "7♣"],
+        },
+        "AI move result from exact reproduction",
+      );
+
+      // Verify the move is valid
+      const isValid = isValidPlay(
+        aiMove,
+        bot1Player.hand,
+        PlayerId.Bot1,
+        gameState,
+      );
+
+      expect(isValid).toBe(true);
+      expect(aiMove.length).toBe(4);
+
+      // The AI should select the trump tractor 6♣6♣7♣7♣
+      const aiMoveNames = aiMove.map((c) => c.getDisplayName()).sort();
+      const expectedTractor = ["6♣", "6♣", "7♣", "7♣"].sort();
+
+      // Log the comparison for debugging
+      gameLogger.info(
+        "bug_reproduction_expectation",
+        {
+          expected: expectedTractor,
+          actual: aiMoveNames,
+          match:
+            JSON.stringify(aiMoveNames) === JSON.stringify(expectedTractor),
+        },
+        "Expected vs actual move comparison",
+      );
+
+      expect(aiMoveNames).toEqual(expectedTractor);
+    });
+  });
 });
