@@ -450,23 +450,24 @@ function makeStrategicTrumpDecision(
         };
       }
     }
-    // Cannot beat existing trump, use cross-suit disposal
-    return selectCrossSuitDisposal(
-      leadingCards,
-      playerHand,
-      trumpInfo,
-      context,
-    );
   } else {
     // Opponent is winning with non-trump - trump to beat them with conservation
-    return playMatchingMultiCombo(
+    const matchingResult = playMatchingMultiCombo(
       trumpCards,
       leadingCards,
       trumpInfo,
       true,
       context.memoryContext?.nextPlayerVoidLed ? false : true, // Conservation mode if next player not void led suit
     );
+
+    if (matchingResult.canBeat) {
+      // Can beat existing non-trump with trump
+      return matchingResult;
+    }
   }
+
+  // Cannot beat existing trump, use cross-suit disposal
+  return selectCrossSuitDisposal(leadingCards, playerHand, trumpInfo, context);
 }
 
 /**

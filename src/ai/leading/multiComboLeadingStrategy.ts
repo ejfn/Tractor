@@ -1,13 +1,12 @@
-import { identifyCombos } from "../../game/comboDetection";
 import { isTrump } from "../../game/cardValue";
+import { identifyCombos } from "../../game/comboDetection";
 import { analyzeComboStructure } from "../../game/multiComboAnalysis";
 import {
   checkOpponentVoidStatus,
   isComboUnbeatable,
 } from "../../game/multiComboValidation";
-import { Card, GameState, PlayerId, PointPressure, Suit } from "../../types";
+import { Card, GameState, PlayerId, Suit } from "../../types";
 import { createCardMemory } from "../aiCardMemory";
-import { createGameContext } from "../aiGameContext";
 
 /**
  * Multi-Combo Leading Strategy for AI
@@ -69,14 +68,15 @@ export function selectAIMultiComboLead(
         return mostUnbeatableCards;
       }
 
+      // Note: Let's not return weak multi-combos (only singles) unless we have no other options
       // If we have a weak multi-combo (only small singles), decide based on game context
-      const context = createGameContext(gameState, playerId);
-      if (
-        context.isAttackingTeam ||
-        context.pointPressure === PointPressure.LOW
-      ) {
-        return mostUnbeatableCards;
-      }
+      // const context = createGameContext(gameState, playerId);
+      // if (
+      //   context.isAttackingTeam ||
+      //   context.pointPressure === PointPressure.LOW
+      // ) {
+      //   return mostUnbeatableCards;
+      // }
     }
   }
 
