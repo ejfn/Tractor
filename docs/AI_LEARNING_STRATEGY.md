@@ -54,7 +54,9 @@ With a large dataset of structured logs, we need an automated way to process it 
 
 2.  **Define Key Performance Indicators (KPIs)**: The analysis pipeline will compute and track a range of KPIs to provide a multi-faceted view of AI performance. These will include:
     *   **Primary KPI**: Attacking Team Win Rate (the ultimate measure of success).
-    *   **Secondary KPIs**:
+    *   **Secondary KPIs (All to be analyzed per Team Role - Attacking/Defending - and per Team ID - A/B)**:
+        *   *Performance by Team Role*: Metrics (e.g., win rate, points captured) broken down by whether a team was Attacking or Defending in a given round.
+        *   *Performance by Team ID*: Metrics (e.g., win rate, points captured) broken down by specific Team IDs (e.g., Team A vs. Team B).
         *   *Point Capture Efficiency*: Average points captured per round by the attacking team.
         *   *Trump Efficiency*: Points won per trump card played. A high value indicates effective trump usage.
         *   *Kitty Swap Effectiveness*: Net points gained or lost from the kitty (points buried vs. points lost from the kitty bonus).
