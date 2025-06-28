@@ -1,3 +1,4 @@
+import { isTrump } from "../../game/cardValue";
 import {
   Card,
   CardMemory,
@@ -9,7 +10,6 @@ import {
   Rank,
   TrumpInfo,
 } from "../../types";
-import { isTrump } from "../../game/cardValue";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 
 /**
@@ -265,7 +265,7 @@ function analyzePointsRemaining(
 ): PointRemainingAnalysis {
   // Calculate total points played from card memory
   const totalPointsPlayed = cardMemory.playedCards.reduce(
-    (sum, card) => sum + (card.points || 0),
+    (sum, card) => sum + card.points,
     0,
   );
   const totalPointsRemaining = 200 - totalPointsPlayed;
@@ -349,8 +349,7 @@ function estimatePlayerPointDistribution(
     if (trick.winningPlayerId) {
       const trickPoints = trick.plays.reduce((sum, play) => {
         return (
-          sum +
-          play.cards.reduce((cardSum, card) => cardSum + (card.points || 0), 0)
+          sum + play.cards.reduce((cardSum, card) => cardSum + card.points, 0)
         );
       }, 0);
       if (distribution[trick.winningPlayerId] !== undefined) {
@@ -378,7 +377,12 @@ function identifyGuaranteedPointWins(
 
   // Find point cards that are guaranteed to win
   currentPlayer.hand.forEach((card) => {
-    if (card.points && card.points > 0 && card.rank && card.suit) {
+    if (
+      card.points > 0 &&
+      card.rank &&
+      card.suit &&
+      !isTrump(card, gameState.trumpInfo)
+    ) {
       const isGuaranteed = isBiggestRemainingInSuit(
         cardMemory,
         card.suit,
@@ -462,10 +466,7 @@ function identifyPointTimingOpportunities(
   const opportunities: PointOpportunity[] = [];
 
   validCombos.forEach((combo) => {
-    const totalPoints = combo.cards.reduce(
-      (sum, card) => sum + (card.points || 0),
-      0,
-    );
+    const totalPoints = combo.cards.reduce((sum, card) => sum + card.points, 0);
 
     if (totalPoints > 0) {
       const opportunity = analyzePointOpportunity(
@@ -498,7 +499,7 @@ function analyzePointOpportunity(
   currentPlayerId: PlayerId,
 ): PointOpportunity | null {
   const guaranteedPoints = combo.cards.reduce(
-    (sum, card) => sum + (card.points || 0),
+    (sum, card) => sum + card.points,
     0,
   );
 
@@ -668,9 +669,7 @@ function identifyOpportunisticPointPlays(
   trumpInfo: TrumpInfo,
 ): Combo[] {
   return validCombos.filter((combo) => {
-    const hasPoints = combo.cards.some(
-      (card) => card.points && card.points > 0,
-    );
+    const hasPoints = combo.cards.some((card) => card.points > 0);
     return hasPoints;
   });
 }
