@@ -222,7 +222,7 @@ ${statusEmoji} Game ${index + 1} (${game.gameId})
 
 📁 LOG FILES
 ------------
-• Game Log: ${this.logDir}/${this.timestamp}-x-game.log (unified timeline with all events including errors)
+• Game Log: ${this.logDir}/${this.timestamp}-game-xx.log (unified timeline with all events including errors)
 • Summary: ${this.summaryLogFile}
 
 🔍 NEXT STEPS

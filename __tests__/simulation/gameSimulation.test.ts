@@ -53,14 +53,13 @@ describe("Unattended Game Simulation", () => {
       const gameId = Date.now();
 
       // Initialize session tracking with shared timestamp
-      const sessionTracker = new TestSessionTracker(
-        timestamp,
-        "simulation_data",
-      );
+      const sessionTracker = new TestSessionTracker(timestamp, "logs");
 
       try {
         for (let gameNum = 1; gameNum <= targetGames; gameNum++) {
-          const currentGameId = `${gameId}-${gameNum}`;
+          const padding = String(targetGames).length;
+          const paddedGameNum = String(gameNum).padStart(padding, "0");
+          const currentGameId = `${gameId}-${paddedGameNum}`;
           let roundCount = 0;
           let gameWinner: TeamId | null = null;
           let gameState: GameState | undefined;
@@ -71,8 +70,8 @@ describe("Unattended Game Simulation", () => {
             enableFileLogging: true,
             enableConsoleLog: false, // Disable console output for clean unattended test
             includePlayerHands: false, // Do not log sensitive player hands
-            logDir: "simulation_data",
-            logFileName: `${timestamp}-${gameNum}-game.log`,
+            logDir: "logs",
+            logFileName: `${timestamp}-game-${paddedGameNum}.log`,
           });
 
           try {

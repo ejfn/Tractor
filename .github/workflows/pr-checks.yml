@@ -38,5 +38,5 @@ jobs:
       if: failure() # Only upload logs when tests fail
       with:
         name: pr-simulation-logs-${{ github.event.number }}
-        path: simulation_data/
+        path: logs/
         retention-days: 14

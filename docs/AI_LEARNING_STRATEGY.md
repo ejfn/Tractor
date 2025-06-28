@@ -42,7 +42,7 @@ The foundation of this system is high-quality, structured data. The existing `ga
 
 2.  **Log `GameContext` at Decision Points**: ✅ **Completed**. `gameLogger.debug()` calls have been added to key AI modules (`aiStrategy.ts`, `leadingStrategy.ts`, `followingStrategy.ts`) to capture the full `GameContext` at every significant decision point.
 
-3.  **Simulation Runner**: ✅ **Completed**. A script named `run_simulations.sh` has been created. It runs the `npm run test:simulation` command with the `TARGET_GAMES` and `LOG_LEVEL` environment variables, piping the structured JSON output into a dedicated `simulation_data/` directory. The `gameLogger` has been made configurable to support this.
+3.  **Simulation Runner**: ✅ **Completed**. A script named `run_simulations.sh` has been created. It runs the `npm run test:simulation` command with the `TARGET_GAMES` and `LOG_LEVEL` environment variables, piping the structured JSON output into a dedicated `logs/` directory. The `gameLogger` has been made configurable to support this.
 
 ### Phase 2: Automated Analysis Pipeline
 
@@ -50,7 +50,7 @@ With a large dataset of structured logs, we need an automated way to process it 
 
 **Key Actions:**
 
-1.  **Data Ingestion and Parsing**: ✅ **Completed**. A Python script, `analysis/analyze_logs.py`, has been created to parse the JSON log entries from the `simulation_data/` directory. A Python virtual environment has been set up with dependencies managed in `requirements.txt`.
+1.  **Data Ingestion and Parsing**: ✅ **Completed**. A Python script, `analysis/analyze_logs.py`, has been created to parse the JSON log entries from the `logs/` directory. A Python virtual environment has been set up with dependencies managed in `requirements.txt`.
 
 2.  **Define Key Performance Indicators (KPIs)**: The analysis pipeline will compute and track a range of KPIs to provide a multi-faceted view of AI performance. These will include:
     *   **Primary KPI**: Attacking Team Win Rate (the ultimate measure of success).

@@ -51,7 +51,7 @@ src/dev-version.json
 
 # log files
 logs/*
-simulation_data/*
 
 !**/.gitkeep
 
+.env
