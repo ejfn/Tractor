@@ -1,4 +1,7 @@
 import { PlayerId } from "../types";
+import { getAppVersion } from "./versioning";
+
+const APP_VERSION: string | undefined = getAppVersion();
 
 /**
  * Simple Game Logging System
@@ -21,6 +24,7 @@ export interface LogEntry {
   timestamp: string;
   level: LogLevel;
   event: string;
+  appVersion?: string; // Added appVersion field
   gameId?: string;
   roundNumber?: number;
   trickNumber?: number;
@@ -175,6 +179,7 @@ class GameLogger {
       timestamp: this.formatTimestamp(),
       level,
       event,
+      appVersion: APP_VERSION, // Include appVersion
       gameId: this.currentGameId || undefined,
       data,
       message,
