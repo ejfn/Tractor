@@ -2,7 +2,7 @@ name: EAS Update
 
 on:
   push:
-    branches: [ main, 'release/*' ]
+    branches: [ main ]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'  # Semver tags like v1.2.3
   workflow_dispatch:

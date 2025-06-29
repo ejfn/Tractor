@@ -1,6 +1,5 @@
-import { gameLogger } from "../utils/gameLogger";
 import { Card, Combo, GameState, Player, PositionStrategy } from "../types";
-import { createCardMemory, enhanceGameContextWithMemory } from "./aiCardMemory";
+import { gameLogger } from "../utils/gameLogger";
 import { analyzeCombo, createGameContext } from "./aiGameContext";
 import { analyzeVoidExploitation } from "./analysis/voidExploitation";
 import { selectOptimalFollowPlay } from "./following/followingStrategy";
@@ -24,23 +23,6 @@ export function makeAIPlay(
     player: player.id,
     context,
   });
-
-  // Phase 4: Enhanced memory context with historical analysis
-  const cardMemory = createCardMemory(gameState);
-  if (context.memoryContext) {
-    context.memoryContext.cardMemory = cardMemory;
-  }
-
-  // Apply historical insights when sufficient trick data is available
-  if (gameState.tricks.length >= 3) {
-    const enhancedContext = enhanceGameContextWithMemory(
-      context,
-      cardMemory,
-      gameState,
-    );
-    // Update context with historical enhancements
-    Object.assign(context, enhancedContext);
-  }
 
   // Phase 3: Advanced Void Exploitation Analysis
   let voidExploitationAnalysis = null;

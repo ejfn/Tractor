@@ -39,6 +39,7 @@ describe("Point Card Timing Optimization", () => {
 
       const context = createGameContext(gameState, PlayerId.Human);
       context.trickPosition = TrickPosition.First;
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }
@@ -86,6 +87,7 @@ describe("Point Card Timing Optimization", () => {
       );
 
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }
@@ -131,6 +133,7 @@ describe("Point Card Timing Optimization", () => {
       ];
 
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }
@@ -187,6 +190,7 @@ describe("Point Card Timing Optimization", () => {
       ];
 
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }
@@ -236,6 +240,7 @@ describe("Point Card Timing Optimization", () => {
       ];
 
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }
@@ -278,6 +283,7 @@ describe("Point Card Timing Optimization", () => {
       });
 
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }
@@ -330,6 +336,7 @@ describe("Point Card Timing Optimization", () => {
       );
 
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }
@@ -372,6 +379,7 @@ describe("Point Card Timing Optimization", () => {
       ];
 
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }

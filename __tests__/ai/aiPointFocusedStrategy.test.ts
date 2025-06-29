@@ -43,6 +43,7 @@ const createTestGameContext = (
   trickPosition: TrickPosition.First,
   pointPressure: PointPressure.MEDIUM,
   playStyle: PlayStyle.Balanced,
+  currentPlayer: PlayerId.Human, // Default current player
   ...overrides,
 });
 

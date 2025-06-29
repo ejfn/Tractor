@@ -39,6 +39,7 @@ describe("Smart Teammate Void Strategy", () => {
 
       const context = createGameContext(gameState, PlayerId.Human);
       context.trickPosition = TrickPosition.First; // Human is leading
+      context.currentPlayer = PlayerId.Human;
       if (context.memoryContext) {
         context.memoryContext.cardMemory = cardMemory;
       }

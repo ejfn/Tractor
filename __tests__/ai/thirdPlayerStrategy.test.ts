@@ -229,6 +229,7 @@ describe("3rd Player Strategy Tests", () => {
     it("should use enhanced strategy weights for TrickPosition.Third", () => {
       const context = createGameContext(gameState, PlayerId.Human);
       context.trickPosition = TrickPosition.Third;
+      context.currentPlayer = PlayerId.Human;
 
       // Verify that 3rd position has enhanced weights
       expect(context.trickPosition).toBe(TrickPosition.Third);
@@ -257,6 +258,7 @@ describe("3rd Player Strategy Tests", () => {
         shouldTryToBeat: false,
         shouldPlayConservatively: true,
       };
+      context.currentPlayer = PlayerId.Human;
 
       // The context should be properly set up for tactical analysis
       expect(context.trickWinnerAnalysis?.isTeammateWinning).toBe(true);
@@ -313,6 +315,7 @@ describe("3rd Player Strategy Tests", () => {
     it("should integrate with memory system for guaranteed winner detection", () => {
       const gameState = createTestCardsGameState();
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
 
       // Memory context should be available for enhanced decision making
       expect(context.memoryContext).toBeDefined();
@@ -330,6 +333,7 @@ describe("3rd Player Strategy Tests", () => {
       const gameState = createTestCardsGameState();
       // Test with minimal game state
       const context = createGameContext(gameState, PlayerId.Human);
+      context.currentPlayer = PlayerId.Human;
 
       // Should not throw errors even with minimal context
       expect(context.trickPosition).toBeDefined();
