@@ -90,10 +90,42 @@ export function selectOptimalFollowPlay(
   // RESTRUCTURED: Clear priority chain for following play decisions
   const trickWinner = context.trickWinnerAnalysis;
 
+  // DEBUG: Log decision flow entry point
+  gameLogger.debug(
+    "ai_following_decision_start",
+    {
+      player: currentPlayerId,
+      trickPosition: context.trickPosition,
+      trickWinner: trickWinner
+        ? {
+            isTeammateWinning: trickWinner.isTeammateWinning,
+            isOpponentWinning: trickWinner.isOpponentWinning,
+            canBeatCurrentWinner: trickWinner.canBeatCurrentWinner,
+            shouldTryToBeat: trickWinner.shouldTryToBeat,
+            trickPoints: trickWinner.trickPoints,
+            currentWinner: trickWinner.currentWinner,
+          }
+        : null,
+      availableCombos: comboAnalyses.length,
+      leadingCards: leadingCards?.map((c) => `${c.rank}${c.suit}`),
+    },
+    "=== AI Following Decision Analysis ===",
+  );
+
   // Clear priority-based decision making
 
   // === PRIORITY 1: TEAM COORDINATION ===
   if (trickWinner?.isTeammateWinning) {
+    gameLogger.debug(
+      "ai_following_path",
+      {
+        player: currentPlayerId,
+        path: "PRIORITY_1_TEAM_COORDINATION",
+        reason: "teammate_is_winning",
+      },
+      "Following Path: Team Coordination (Teammate Winning)",
+    );
+
     // Teammate is winning - help collect points or play conservatively
     const decision = handleTeammateWinning(
       comboAnalyses,

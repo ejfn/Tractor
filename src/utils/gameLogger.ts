@@ -45,7 +45,7 @@ export interface GameLoggerConfig {
 
 class GameLogger {
   private static instance: GameLogger;
-  private logLevel: LogLevel = LogLevel.INFO;
+  private logLevel: LogLevel = LogLevel.DEBUG;
   private logDir: string = "logs";
   private gameLogFile: string = "";
   private enableFileLogging: boolean = false;

@@ -56,7 +56,7 @@ export function createGameContext(
   );
 
   // Phase 3: Enhanced context with memory-based intelligence
-  const baseContext = {
+  const baseContext: GameContext = {
     isAttackingTeam,
     currentPoints,
     pointsNeeded,
@@ -64,7 +64,8 @@ export function createGameContext(
     trickPosition,
     pointPressure,
     playStyle,
-    ...(trickWinnerAnalysis && { trickWinnerAnalysis }),
+    currentPlayer: playerId,
+    trickWinnerAnalysis,
   };
 
   // Integrate card memory for enhanced strategic intelligence
@@ -654,6 +655,8 @@ export function analyzeCombo(
     disruptionPotential,
     conservationValue,
     isBreakingPair,
+    canBeat: false, // This will be updated by the play validation logic
+    relativeStrength: 0, // This will be updated by the play validation logic
   };
 }
 

@@ -457,6 +457,7 @@ describe("Historical Trick Analysis", () => {
         trickPosition: TrickPosition.First,
         pointPressure: PointPressure.MEDIUM,
         playStyle: PlayStyle.Balanced,
+        currentPlayer: PlayerId.Human,
       };
 
       const tricks: Trick[] = [

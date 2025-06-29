@@ -33,6 +33,7 @@ export const createAIGameContext = (
   trickPosition: TrickPosition = TrickPosition.First,
   pointPressure: PointPressure = PointPressure.LOW,
   playStyle: PlayStyle = PlayStyle.Balanced,
+  currentPlayer: PlayerId = PlayerId.Human, // Add currentPlayer with a default value
   trickWinnerAnalysis?: TrickWinnerAnalysis,
 ): GameContext => ({
   isAttackingTeam,
@@ -42,6 +43,7 @@ export const createAIGameContext = (
   trickPosition,
   pointPressure,
   playStyle,
+  currentPlayer,
   trickWinnerAnalysis: trickWinnerAnalysis ?? {
     currentWinner: PlayerId.Human, // Default to human for test scenarios
     isTeammateWinning: false,
