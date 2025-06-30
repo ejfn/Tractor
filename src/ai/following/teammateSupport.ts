@@ -22,6 +22,8 @@ import {
 } from "./pointContribution";
 import {
   analyzeSecondPlayerStrategy,
+  selectOptimalSameSuitResponse,
+  selectOptimalTrumpResponse,
   selectSecondPlayerContribution,
 } from "./secondPlayerStrategy";
 import { selectLowestValueNonPointCombo } from "./strategicDisposal";
@@ -153,8 +155,50 @@ export function handleTeammateWinning(
       break;
 
     case TrickPosition.Second:
-      // Phase 3: Second Player Strategy Enhancement
-      const secondPlayerAnalysis = analyzeSecondPlayerStrategy(
+      // Enhanced Second Player Strategy: Same-suit following or trump response
+      
+      // Priority 1: Try optimal same-suit response (higher card selection)
+      const sameSuitResponse = selectOptimalSameSuitResponse(
+        comboAnalyses,
+        context,
+        trumpInfo,
+        gameState,
+      );
+      if (sameSuitResponse) {
+        gameLogger.debug(
+          "second_player_same_suit_response",
+          {
+            player: currentPlayerId || "unknown",
+            selectedCards: sameSuitResponse.map((c) => `${c.rank}${c.suit}`),
+            strategy: "same_suit_following",
+          },
+          "2nd player uses enhanced same-suit following strategy",
+        );
+        return sameSuitResponse;
+      }
+      
+      // Priority 2: Try optimal trump response (when void in leading suit)
+      const trumpResponse = selectOptimalTrumpResponse(
+        comboAnalyses,
+        context,
+        trumpInfo,
+        gameState,
+      );
+      if (trumpResponse) {
+        gameLogger.debug(
+          "second_player_trump_response",
+          {
+            player: currentPlayerId || "unknown",
+            selectedCards: trumpResponse.map((c) => `${c.rank}${c.suit}`),
+            strategy: "strategic_trump_response",
+          },
+          "2nd player uses enhanced trump response strategy",
+        );
+        return trumpResponse;
+      }
+      
+      // Priority 3: Fall back to legacy analysis-based strategy
+            const secondPlayerAnalysis = analyzeSecondPlayerStrategy(
         comboAnalyses,
         context,
         trumpInfo,

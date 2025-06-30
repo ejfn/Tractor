@@ -444,6 +444,9 @@ export function analyze2ndPlayerMemoryContext(
   trumpExhaustionAdvantage: number;
   recommendedInfluenceLevel: "low" | "moderate" | "high";
   optimalResponseStrategy: "support" | "pressure" | "block" | "setup";
+  leadingSuitPointPotential: number;
+  nextOpponentsVoidProbability: number;
+  recommendedTrumpStrategy: "conserve" | "compete" | "pressure";
   reasoning: string;
 } {
   // Analyze opponents (3rd and 4th players)
@@ -522,6 +525,9 @@ export function analyze2ndPlayerMemoryContext(
     trumpExhaustionAdvantage,
     recommendedInfluenceLevel,
     optimalResponseStrategy,
+    leadingSuitPointPotential: 0,
+    nextOpponentsVoidProbability: 0,
+    recommendedTrumpStrategy: "conserve" as const,
     reasoning,
   };
 }
