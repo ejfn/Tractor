@@ -12,5 +12,6 @@ jest.mock("expo-localization", () => ({
 }));
 
 // Set DEBUG log level for all tests
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { gameLogger, LogLevel } = require("../src/utils/gameLogger");
 gameLogger.setLogLevel(LogLevel.DEBUG);
