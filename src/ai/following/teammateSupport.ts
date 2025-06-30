@@ -508,6 +508,44 @@ function shouldThirdPlayerContribute(
           "4th player void but 3rd player has suit cards - can contribute safely",
         );
       }
+
+      // NEW: Check if 2nd player already trumped - 3rd should beat trump, not contribute points
+      // Only apply this logic for 3rd player (TrickPosition.Third)
+      if (context.trickPosition === TrickPosition.Third) {
+        const secondPlayerCards = currentTrick.plays[1]?.cards;
+        if (secondPlayerCards && secondPlayerCards.length > 0) {
+          const secondPlayerIsTrump =
+            secondPlayerCards[0] && isTrump(secondPlayerCards[0], trumpInfo);
+
+          if (secondPlayerIsTrump) {
+            // Check if 3rd player is void in leading suit (check actual hand, not memory)
+            const currentPlayer = gameState.players.find(
+              (p) => p.id === context.currentPlayer,
+            );
+            const hasLeadingSuit =
+              currentPlayer?.hand.some(
+                (card) => card.suit === ledSuit && !isTrump(card, trumpInfo),
+              ) || false;
+
+            if (!hasLeadingSuit) {
+              // 2nd player (opponent) trumped and we're void - should beat trump, not contribute points
+              gameLogger.debug(
+                "should_third_player_contribute_result",
+                {
+                  result: false,
+                  reason: "second_player_trumped_third_void",
+                  hasLeadingSuit,
+                  secondPlayerIsTrump,
+                  secondPlayerCard: `${secondPlayerCards[0].rank}${secondPlayerCards[0].suit}`,
+                  ledSuit,
+                },
+                "Third player contribution: NO - 2nd player trumped and 3rd player void, should beat trump instead",
+              );
+              return false; // This will trigger takeover logic
+            }
+          }
+        }
+      }
     }
   }
 
