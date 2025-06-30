@@ -10,3 +10,7 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 jest.mock("expo-localization", () => ({
   getLocales: jest.fn(() => [{ languageCode: "en" }]),
 }));
+
+// Set DEBUG log level for all tests
+const { gameLogger, LogLevel } = require("../src/utils/gameLogger");
+gameLogger.setLogLevel(LogLevel.DEBUG);
