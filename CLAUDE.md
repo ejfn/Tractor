@@ -257,3 +257,8 @@ rg "export\s+(function|const)\s+(\w+)" -o | sort | uniq -d
 - **Test-Driven Validation**: Maintain 100% coverage during large changes
 - **Systematic Approach**: File-by-file updates with comprehensive testing
 - **Performance Gains**: Consolidating logic eliminates redundant function calls
+
+## Test Development Insights
+
+### Testing Best Practices
+- **Always check existing tests to learn what patterns and helpers are available when making new tests**

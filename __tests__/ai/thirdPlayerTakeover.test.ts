@@ -1,118 +1,27 @@
-import {
-  createCardMemory,
-  enhanceGameContextWithMemory,
-} from "../../src/ai/aiCardMemory";
 import { getAIMove } from "../../src/ai/aiLogic";
 import { GameState, PlayerId, Rank, Suit, TrumpInfo } from "../../src/types";
-import { CardMemory, GameContext } from "../../src/types/ai";
 import { Card } from "../../src/types/card";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { getPlayerById } from "../helpers/gameStates";
+import { createMockCardMemory, setupMemoryMocking } from "../helpers/mocks";
 
-jest.mock("../../src/ai/aiCardMemory", () => ({
-  __esModule: true,
-  createCardMemory: jest.fn(),
-  enhanceGameContextWithMemory: jest.fn(),
-}));
-
-const mockCreateCardMemory = createCardMemory as jest.MockedFunction<
-  (gameState: GameState) => CardMemory
->;
-
-const mockEnhanceGameContextWithMemory =
-  enhanceGameContextWithMemory as jest.MockedFunction<
-    (
-      baseContext: GameContext,
-      memory: CardMemory,
-      gameState: GameState,
-    ) => GameContext
-  >;
-
-// Helper function to create a mock memory with proper structure
-function createMockCardMemory(): CardMemory {
-  return {
-    playedCards: [],
-    trumpCardsPlayed: 0,
-    pointCardsPlayed: 0,
-    suitDistribution: {},
-    roundStartCards: 25,
-    tricksAnalyzed: 0,
-    cardProbabilities: [],
-    playerMemories: {
-      [PlayerId.Human]: {
-        playerId: PlayerId.Human,
-        knownCards: [],
-        estimatedHandSize: 25,
-        suitVoids: new Set(),
-        trumpVoid: false,
-        trumpUsed: 0,
-        pointCardsProbability: 0.5,
-        playPatterns: [],
-      },
-      [PlayerId.Bot1]: {
-        playerId: PlayerId.Bot1,
-        knownCards: [],
-        estimatedHandSize: 25,
-        suitVoids: new Set(),
-        trumpVoid: false,
-        trumpUsed: 0,
-        pointCardsProbability: 0.5,
-        playPatterns: [],
-      },
-      [PlayerId.Bot2]: {
-        playerId: PlayerId.Bot2,
-        knownCards: [],
-        estimatedHandSize: 25,
-        suitVoids: new Set(),
-        trumpVoid: false,
-        trumpUsed: 0,
-        pointCardsProbability: 0.5,
-        playPatterns: [],
-      },
-      [PlayerId.Bot3]: {
-        playerId: PlayerId.Bot3,
-        knownCards: [],
-        estimatedHandSize: 25,
-        suitVoids: new Set(),
-        trumpVoid: false,
-        trumpUsed: 0,
-        pointCardsProbability: 0.5,
-        playPatterns: [],
-      },
-    },
-  };
-}
+jest.mock("../../src/ai/aiCardMemory");
 
 describe("Third Player Takeover Logic", () => {
   let gameState: GameState;
   let trumpInfo: TrumpInfo;
+  let mockCreateCardMemory: jest.MockedFunction<
+    typeof import("../../src/ai/aiCardMemory").createCardMemory
+  >;
 
   beforeEach(() => {
     gameState = initializeGame();
     trumpInfo = { trumpSuit: Suit.Hearts, trumpRank: Rank.Two };
     gameState.trumpInfo = trumpInfo;
 
-    // Reset mocks before each test
-    mockCreateCardMemory.mockClear();
-    mockEnhanceGameContextWithMemory.mockClear();
-
-    // Set up default mock implementations
-    mockCreateCardMemory.mockImplementation(createMockCardMemory);
-
-    // Mock enhanceGameContextWithMemory to add memory context
-    mockEnhanceGameContextWithMemory.mockImplementation(
-      (baseContext: GameContext, memory: CardMemory) => ({
-        ...baseContext,
-        memoryContext: {
-          cardMemory: memory,
-          cardsRemaining: 25,
-          knownCards: 0,
-          uncertaintyLevel: 0.5,
-          trumpExhaustion: 0.2,
-          opponentHandStrength: {},
-        },
-      }),
-    );
+    // Set up memory mocking
+    const mocks = setupMemoryMocking();
+    mockCreateCardMemory = mocks.createCardMemory;
   });
 
   it("should take over a weak lead with a stronger card in the same suit", () => {

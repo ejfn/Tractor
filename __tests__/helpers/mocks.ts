@@ -7,6 +7,7 @@ import {
   Suit,
   Trick,
 } from "../../src/types";
+import { CardMemory, GameContext } from "../../src/types/ai";
 import { createTrumpInfo } from "./trump";
 import { gameLogger } from "../../src/utils/gameLogger";
 
@@ -49,6 +50,101 @@ export const mockConfigs = {
 export const getMockModule = (modulePath: string) => {
   return jest.requireMock(modulePath);
 };
+
+// ============================================================================
+// MEMORY MOCKING HELPERS
+// ============================================================================
+
+/**
+ * Helper function to create a mock memory with proper structure
+ */
+export function createMockCardMemory(): CardMemory {
+  return {
+    playedCards: [],
+    trumpCardsPlayed: 0,
+    pointCardsPlayed: 0,
+    suitDistribution: {},
+    roundStartCards: 25,
+    tricksAnalyzed: 0,
+    cardProbabilities: [],
+    playerMemories: {
+      [PlayerId.Human]: {
+        playerId: PlayerId.Human,
+        knownCards: [],
+        estimatedHandSize: 25,
+        suitVoids: new Set(),
+        trumpVoid: false,
+        trumpUsed: 0,
+        pointCardsProbability: 0.5,
+        playPatterns: [],
+      },
+      [PlayerId.Bot1]: {
+        playerId: PlayerId.Bot1,
+        knownCards: [],
+        estimatedHandSize: 25,
+        suitVoids: new Set(),
+        trumpVoid: false,
+        trumpUsed: 0,
+        pointCardsProbability: 0.5,
+        playPatterns: [],
+      },
+      [PlayerId.Bot2]: {
+        playerId: PlayerId.Bot2,
+        knownCards: [],
+        estimatedHandSize: 25,
+        suitVoids: new Set(),
+        trumpVoid: false,
+        trumpUsed: 0,
+        pointCardsProbability: 0.5,
+        playPatterns: [],
+      },
+      [PlayerId.Bot3]: {
+        playerId: PlayerId.Bot3,
+        knownCards: [],
+        estimatedHandSize: 25,
+        suitVoids: new Set(),
+        trumpVoid: false,
+        trumpUsed: 0,
+        pointCardsProbability: 0.5,
+        playPatterns: [],
+      },
+    },
+  };
+}
+
+/**
+ * Sets up memory mocking for tests that need AI memory functionality
+ * Call this in your test beforeEach to mock the aiCardMemory module
+ */
+export function setupMemoryMocking() {
+  const { createCardMemory, enhanceGameContextWithMemory } = jest.requireMock(
+    "../../src/ai/aiCardMemory",
+  );
+
+  // Reset mocks
+  createCardMemory.mockClear();
+  enhanceGameContextWithMemory.mockClear();
+
+  // Set up default mock implementations
+  createCardMemory.mockImplementation(createMockCardMemory);
+
+  // Mock enhanceGameContextWithMemory to add memory context
+  enhanceGameContextWithMemory.mockImplementation(
+    (baseContext: GameContext, memory: CardMemory) => ({
+      ...baseContext,
+      memoryContext: {
+        cardMemory: memory,
+        cardsRemaining: 25,
+        knownCards: 0,
+        uncertaintyLevel: 0.5,
+        trumpExhaustion: 0.2,
+        opponentHandStrength: {},
+      },
+    }),
+  );
+
+  return { createCardMemory, enhanceGameContextWithMemory };
+}
 
 // ============================================================================
 // ASSERTION HELPERS
