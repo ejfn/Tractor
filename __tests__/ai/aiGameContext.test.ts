@@ -24,6 +24,7 @@ import {
   Suit,
   TrickPosition,
   TrumpInfo,
+  GameContext,
 } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { createTestCardsGameState } from "../helpers/gameStates";
@@ -191,7 +192,7 @@ describe("AI Game Context", () => {
       // Default: Team B attacking, so use Bot1 (Team B)
       gameState.currentTrick = null;
 
-      const context = createGameContext(gameState, PlayerId.Bot1);
+      const context: GameContext = createGameContext(gameState, PlayerId.Bot1);
 
       expect(context.isAttackingTeam).toBe(true);
       expect(context.currentPoints).toBe(0); // Placeholder value
@@ -199,13 +200,14 @@ describe("AI Game Context", () => {
       expect(context.cardsRemaining).toBeGreaterThan(0);
       expect(context.trickPosition).toBe(TrickPosition.First);
       expect(context.pointPressure).toBe(PointPressure.HIGH); // Attacking team with 0 points has HIGH pressure
+      expect(context.currentPlayer).toBe(PlayerId.Bot1);
     });
 
     it("should create complete game context for defending team player", () => {
       // Default: Team A defending, so use Human (Team A)
       gameState.currentTrick = null;
 
-      const context = createGameContext(gameState, PlayerId.Human);
+      const context: GameContext = createGameContext(gameState, PlayerId.Human);
 
       expect(context.isAttackingTeam).toBe(false);
       expect(context.currentPoints).toBe(0); // Placeholder value
@@ -213,6 +215,7 @@ describe("AI Game Context", () => {
       expect(context.cardsRemaining).toBeGreaterThan(0);
       expect(context.trickPosition).toBe(TrickPosition.First);
       expect(context.pointPressure).toBe(PointPressure.LOW);
+      expect(context.currentPlayer).toBe(PlayerId.Human);
     });
   });
 
@@ -236,7 +239,7 @@ describe("AI Game Context", () => {
     });
 
     it("should consider trick worth fighting with LOW pressure and high points", () => {
-      const context = createGameContext(gameState, PlayerId.Human);
+      const context: GameContext = createGameContext(gameState, PlayerId.Human);
       context.pointPressure = PointPressure.LOW;
 
       // Total points: 5 + 10 = 15, threshold for LOW is 15
@@ -257,7 +260,10 @@ describe("AI Game Context", () => {
           },
         ];
 
-        const context = createGameContext(gameState, PlayerId.Human);
+        const context: GameContext = createGameContext(
+          gameState,
+          PlayerId.Human,
+        );
         context.pointPressure = PointPressure.LOW;
 
         // Total points: 0 + 5 = 5, threshold for LOW is 15
@@ -279,7 +285,10 @@ describe("AI Game Context", () => {
           },
         ];
 
-        const context = createGameContext(gameState, PlayerId.Human);
+        const context: GameContext = createGameContext(
+          gameState,
+          PlayerId.Human,
+        );
         context.pointPressure = PointPressure.MEDIUM;
 
         // Total points: 0 + 10 = 10, threshold for MEDIUM is 10
@@ -301,7 +310,10 @@ describe("AI Game Context", () => {
           },
         ];
 
-        const context = createGameContext(gameState, PlayerId.Human);
+        const context: GameContext = createGameContext(
+          gameState,
+          PlayerId.Human,
+        );
         context.pointPressure = PointPressure.HIGH;
 
         // Total points: 0 + 5 = 5, threshold for HIGH is 5
@@ -362,7 +374,7 @@ describe("AI Game Context", () => {
     it("should identify critical trump combo strength", () => {
       const cards = [Card.createCard(Suit.Hearts, Rank.Ace, 0)];
       const combo = createTestCombo(cards, ComboType.Single, 90);
-      const context = {
+      const context: GameContext = {
         isAttackingTeam: true,
         currentPoints: 20,
         pointsNeeded: 80,
@@ -370,6 +382,7 @@ describe("AI Game Context", () => {
         trickPosition: TrickPosition.First,
         pointPressure: PointPressure.MEDIUM,
         playStyle: PlayStyle.Balanced,
+        currentPlayer: PlayerId.Human,
       };
 
       const result = analyzeCombo(combo, trumpInfo, context);
@@ -382,7 +395,7 @@ describe("AI Game Context", () => {
     it("should identify weak non-trump combo", () => {
       const cards = [Card.createCard(Suit.Spades, Rank.Three, 0)];
       const combo = createTestCombo(cards, ComboType.Single, 15);
-      const context = {
+      const context: GameContext = {
         isAttackingTeam: false,
         currentPoints: 10,
         pointsNeeded: 80,
@@ -390,6 +403,7 @@ describe("AI Game Context", () => {
         trickPosition: TrickPosition.Second,
         pointPressure: PointPressure.LOW,
         playStyle: PlayStyle.Conservative,
+        currentPlayer: PlayerId.Human,
       };
 
       const result = analyzeCombo(combo, trumpInfo, context);
@@ -403,7 +417,7 @@ describe("AI Game Context", () => {
     it("should calculate point value correctly", () => {
       const cards = [Card.createCard(Suit.Diamonds, Rank.King, 0)];
       const combo = createTestCombo(cards, ComboType.Single, 40);
-      const context = {
+      const context: GameContext = {
         isAttackingTeam: true,
         currentPoints: 30,
         pointsNeeded: 80,
@@ -411,6 +425,7 @@ describe("AI Game Context", () => {
         trickPosition: TrickPosition.Third,
         pointPressure: PointPressure.MEDIUM,
         playStyle: PlayStyle.Aggressive,
+        currentPlayer: PlayerId.Human,
       };
 
       const result = analyzeCombo(combo, trumpInfo, context);
@@ -423,7 +438,7 @@ describe("AI Game Context", () => {
     it("should adjust conservation value for endgame", () => {
       const cards = [Card.createCard(Suit.Clubs, Rank.Queen, 0)];
       const combo = createTestCombo(cards, ComboType.Single, 50);
-      const endgameContext = {
+      const endgameContext: GameContext = {
         isAttackingTeam: true,
         currentPoints: 70,
         pointsNeeded: 80,
@@ -431,6 +446,7 @@ describe("AI Game Context", () => {
         trickPosition: TrickPosition.Fourth,
         pointPressure: PointPressure.HIGH,
         playStyle: PlayStyle.Desperate,
+        currentPlayer: PlayerId.Human,
       };
 
       const result = analyzeCombo(combo, trumpInfo, endgameContext);
@@ -444,7 +460,7 @@ describe("AI Game Context", () => {
         Card.createCard(Suit.Hearts, Rank.Queen, 0),
       ];
       const combo = createTestCombo(cards, ComboType.Tractor, 70);
-      const context = {
+      const context: GameContext = {
         isAttackingTeam: false,
         currentPoints: 40,
         pointsNeeded: 80,
@@ -452,6 +468,7 @@ describe("AI Game Context", () => {
         trickPosition: TrickPosition.First,
         pointPressure: PointPressure.MEDIUM,
         playStyle: PlayStyle.Aggressive,
+        currentPlayer: PlayerId.Human,
       };
 
       const result = analyzeCombo(combo, trumpInfo, context);
@@ -657,7 +674,7 @@ describe("AI Game Context", () => {
 
       const cards = [Card.createCard(Suit.Hearts, Rank.Two, 0)];
       const combo = { type: ComboType.Single, cards, value: 30 };
-      const context = {
+      const context: GameContext = {
         isAttackingTeam: true,
         currentPoints: 20,
         pointsNeeded: 80,
@@ -665,6 +682,7 @@ describe("AI Game Context", () => {
         trickPosition: TrickPosition.First,
         pointPressure: PointPressure.MEDIUM,
         playStyle: PlayStyle.Balanced,
+        currentPlayer: PlayerId.Human,
       };
 
       expect(() => analyzeCombo(combo, noSuitTrump, context)).not.toThrow();

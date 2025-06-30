@@ -56,6 +56,9 @@ npm run ios          # iOS platform
 npm run qualitycheck  # MUST pass completely
 ```
 
+### Git Workflow Warning
+- **IMPORTANT: Do not commit code when there are failing tests**
+
 ### File Organization
 **Organized by logical domain:**
 - `src/ai/` - AI strategic decision-making (22 specialized modules)
@@ -257,3 +260,9 @@ rg "export\s+(function|const)\s+(\w+)" -o | sort | uniq -d
 - **Test-Driven Validation**: Maintain 100% coverage during large changes
 - **Systematic Approach**: File-by-file updates with comprehensive testing
 - **Performance Gains**: Consolidating logic eliminates redundant function calls
+
+## Test Development Insights
+
+### Testing Best Practices
+- **Always check existing tests to learn what patterns and helpers are available when making new tests**
+```

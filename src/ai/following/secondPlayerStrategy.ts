@@ -1,16 +1,19 @@
+import { calculateCardStrategicValue, isTrump } from "../../game/cardValue";
 import {
+  Card,
   Combo,
   ComboAnalysis,
   GameContext,
   GameState,
-  TrickPosition,
-  TrumpInfo,
-  SecondPlayerAnalysis,
   PlayerId,
   Rank,
+  SecondPlayerAnalysis,
+  Suit,
+  TrickPosition,
+  TrumpInfo,
 } from "../../types";
-import { analyze2ndPlayerMemoryContext } from "../aiCardMemory";
 import { gameLogger } from "../../utils/gameLogger";
+import { analyze2ndPlayerMemoryContext } from "../aiCardMemory";
 
 /**
  * Second Player Strategy - Position 2 specific optimizations
@@ -224,4 +227,187 @@ export function selectSecondPlayerContribution(
 
   // Default to first available combo
   return comboAnalyses.length > 0 ? comboAnalyses[0].combo.cards : [];
+}
+
+/**
+ * Enhanced 2nd Player Same-Suit Following Strategy
+ *
+ * For non-trump suit following, 2nd player should generally play higher
+ * than the leader when possible to either win the trick or set up teammates.
+ */
+export function selectOptimalSameSuitResponse(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  _context: GameContext,
+  trumpInfo: TrumpInfo,
+  gameState: GameState,
+): Card[] | null {
+  const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+  if (!leadingCards || leadingCards.length === 0) {
+    return null;
+  }
+
+  const leadingSuit = leadingCards[0].suit;
+  const leadingCard = leadingCards[0];
+
+  // Only handle non-trump suit following
+  if (isTrump(leadingCard, trumpInfo)) {
+    return null;
+  }
+
+  // Filter combos that are in the same suit and non-trump
+  const sameSuitCombos = comboAnalyses.filter((ca) => {
+    return (
+      ca.combo.cards.length > 0 &&
+      ca.combo.cards[0].suit === leadingSuit &&
+      !ca.analysis.isTrump
+    );
+  });
+
+  if (sameSuitCombos.length === 0) {
+    return null; // Player is void in leading suit
+  }
+
+  // 2nd player strategy: Always play HIGHEST card available (limited visibility)
+  // No need to differentiate between teammate/opponent - just maximize win chance
+
+  // Sort all same-suit combos by strategic value (highest first)
+  const sortedCombos = sameSuitCombos.sort((a, b) => {
+    const aValue = calculateCardStrategicValue(
+      a.combo.cards[0],
+      trumpInfo,
+      "basic",
+    );
+    const bValue = calculateCardStrategicValue(
+      b.combo.cards[0],
+      trumpInfo,
+      "basic",
+    );
+    return bValue - aValue; // Highest first
+  });
+
+  gameLogger.debug(
+    "second_player_plays_highest",
+    {
+      leadingCard: `${leadingCard.rank}${leadingCard.suit}`,
+      selectedCard: `${sortedCombos[0].combo.cards[0].rank}${sortedCombos[0].combo.cards[0].suit}`,
+      strategy: "play_highest_available",
+    },
+    "2nd player plays highest available card (limited visibility)",
+  );
+
+  return sortedCombos[0].combo.cards;
+}
+
+/**
+ * Enhanced 2nd Player Trump Response Strategy
+ *
+ * When 2nd player is void in leading suit, strategically select trump cards
+ * based on remaining point potential and opponent void analysis.
+ */
+export function selectOptimalTrumpResponse(
+  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
+  context: GameContext,
+  trumpInfo: TrumpInfo,
+  gameState: GameState,
+): Card[] | null {
+  const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+  if (!leadingCards || leadingCards.length === 0) {
+    return null;
+  }
+
+  const leadingSuit = leadingCards[0].suit;
+
+  // Only handle non-trump suit leads (when we're void and can trump)
+  if (isTrump(leadingCards[0], trumpInfo)) {
+    return null;
+  }
+
+  // Filter trump combos only
+  const trumpCombos = comboAnalyses.filter((ca) => ca.analysis.isTrump);
+  if (trumpCombos.length === 0) {
+    return null; // No trump cards available
+  }
+
+  // Assess remaining point potential in leading suit
+  const remainingPointPotential = assessRemainingPointPotential(
+    leadingSuit,
+    context,
+  );
+
+  // 2nd player trump strategy: Simple point potential based selection
+  // High point potential = use higher trump, Low point potential = conserve trump
+
+  if (remainingPointPotential >= 20) {
+    // High point potential - worth using higher trump (medium/high value trump)
+    const higherTrumpCombos = trumpCombos.filter(
+      (ca) => ca.analysis.conservationValue >= 110, // Higher value trump only
+    );
+
+    if (higherTrumpCombos.length > 0) {
+      gameLogger.debug(
+        "second_player_trump_high_points",
+        {
+          pointPotential: remainingPointPotential,
+          strategy: "higher_trump_for_high_points",
+        },
+        "2nd player uses higher trump for high point potential",
+      );
+
+      // Use lowest among higher trump (efficient use)
+      const sortedHigherTrump = higherTrumpCombos.sort(
+        (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+      );
+      return sortedHigherTrump[0].combo.cards;
+    }
+  }
+
+  // Low point potential - conserve trump (use lowest available)
+  const sortedTrumpCombos = trumpCombos.sort(
+    (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+  );
+
+  gameLogger.debug(
+    "second_player_trump_conserve",
+    {
+      pointPotential: remainingPointPotential,
+      strategy: "low_trump_conservation",
+    },
+    "2nd player conserves trump (low point potential)",
+  );
+
+  return sortedTrumpCombos[0].combo.cards;
+}
+
+/**
+ * Assess remaining point potential in the leading suit
+ * Uses memory system to estimate points still in play
+ */
+function assessRemainingPointPotential(
+  leadingSuit: Suit,
+  context: GameContext,
+): number {
+  // Base assessment: typical point cards in suit
+  let basePoints = 0;
+
+  // 5s (5 points each), 10s (10 points each), Kings (10 points each)
+  // Estimate based on standard deck (2 of each per suit)
+  basePoints += 10; // 2 fives = 10 points
+  basePoints += 20; // 2 tens = 20 points
+  basePoints += 20; // 2 kings = 20 points
+  // Total: 50 points per suit in a full deck
+
+  // If memory system is available, use it for more accurate assessment
+  if (context.memoryContext?.cardMemory) {
+    const playedCards = context.memoryContext.cardMemory.playedCards;
+
+    // Subtract points already played in this suit
+    const playedPointsInSuit = playedCards
+      .filter((card) => card.suit === leadingSuit)
+      .reduce((total, card) => total + (card.points || 0), 0);
+
+    return Math.max(0, basePoints - playedPointsInSuit);
+  }
+
+  // Conservative estimate when no memory available
+  return Math.floor(basePoints * 0.7); // Assume some points already played
 }

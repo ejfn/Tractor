@@ -267,7 +267,7 @@ describe("Issue #61: AI Bad Ace Following", () => {
 
     // Give Bot3 an Ace and small cards
     bot3Player.hand = [
-      Card.createCard(Suit.Spades, Rank.Ace, 0), // Ace that shouldn't be wasted
+      Card.createCard(Suit.Spades, Rank.Ace, 1), // Ace that shouldn't be wasted
       Card.createCard(Suit.Spades, Rank.Four, 0), // Small card (better choice)
       Card.createCard(Suit.Hearts, Rank.Six, 0), // Trump
       Card.createCard(Suit.Clubs, Rank.Nine, 0), // Random card

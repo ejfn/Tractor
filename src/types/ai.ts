@@ -65,6 +65,7 @@ export interface GameContext {
   trickWinnerAnalysis?: TrickWinnerAnalysis; // Real-time trick winner analysis
   trumpInfo?: TrumpInfo; // Enhanced: Trump information for card analysis
   memoryContext?: MemoryContext; // Memory-based decision context
+  currentPlayer: PlayerId;
 }
 
 export interface ComboAnalysis {
@@ -75,6 +76,8 @@ export interface ComboAnalysis {
   disruptionPotential: number; // How much this combo can disrupt opponents
   conservationValue: number; // How valuable this combo is to keep
   isBreakingPair: boolean; // Whether this combo breaks up a valuable pair
+  relativeStrength: number;
+  canBeat: boolean;
 }
 
 // Phase 3: Enhanced Card Memory & Probability System

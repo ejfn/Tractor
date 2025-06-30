@@ -303,6 +303,7 @@ describe("AI Card Memory System - Phase 3", () => {
         trickPosition: TrickPosition.First,
         pointPressure: PointPressure.MEDIUM,
         playStyle: PlayStyle.Balanced,
+        currentPlayer: PlayerId.Human,
       };
 
       const memory = createCardMemory(gameState);
@@ -326,6 +327,7 @@ describe("AI Card Memory System - Phase 3", () => {
         trickPosition: TrickPosition.Fourth,
         pointPressure: PointPressure.HIGH,
         playStyle: PlayStyle.Desperate,
+        currentPlayer: PlayerId.Human,
       };
 
       const memory = createCardMemory(gameState);

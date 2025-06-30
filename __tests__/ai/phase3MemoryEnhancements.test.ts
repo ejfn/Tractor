@@ -181,6 +181,7 @@ describe("Phase 3: Memory Enhancement System", () => {
           },
           cardMemory,
         },
+        currentPlayer: PlayerId.Human,
       };
 
       const riskAnalysis = calculateMemoryEnhanced3rdPlayerRisk(
