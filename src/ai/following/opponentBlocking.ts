@@ -8,6 +8,7 @@ import {
   GameState,
   PositionStrategy,
   Rank,
+  TrickPosition,
   TrumpInfo,
   TrickWinnerAnalysis,
 } from "../../types";
@@ -37,6 +38,10 @@ export function handleOpponentWinning(
   trumpInfo: TrumpInfo,
   gameState: GameState,
 ): Card[] | null {
+  // CRITICAL FIX: 4th player can't "block" anyone - let dedicated 4th player logic handle it
+  if (context.trickPosition === TrickPosition.Fourth) {
+    return null;
+  }
   // MEMORY ENHANCEMENT: Check for guaranteed winners first, but only for valuable tricks AND when we can beat the opponent
   if (
     context.memoryContext?.cardMemory &&

@@ -6,9 +6,11 @@ import {
   GameContext,
   GameState,
   PositionStrategy,
+  Suit,
   TrumpInfo,
 } from "../../types";
 import { evaluateTrickPlay } from "../../game/cardComparison";
+import { isTrump } from "../../game/cardValue";
 
 /**
  * Trick Contention - Strategic trick winning when valuable
@@ -23,7 +25,7 @@ import { evaluateTrickPlay } from "../../game/cardComparison";
 export function selectOptimalWinningCombo(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
-  positionStrategy: PositionStrategy,
+  _positionStrategy: PositionStrategy,
   trumpInfo: TrumpInfo,
   gameState: GameState,
 ): Card[] {
@@ -55,11 +57,72 @@ export function selectOptimalWinningCombo(
     return comboAnalyses[0].combo.cards; // Fallback
   }
 
-  // Use the WEAKEST winning combo for trump conservation
-  // Sort by conservation value (ascending = weakest first)
+  // Enhanced strategy: Balance between conservation and suit establishment
+  const trickWinner = context.trickWinnerAnalysis;
+  const trickPoints = trickWinner?.trickPoints || 0;
+
+  // For high-value tricks (10+ points): Use weakest winning combo (conservation)
+  if (trickPoints >= 10) {
+    return winningCombos.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    )[0].combo.cards;
+  }
+
+  // For medium-value tricks (5-9 points): Balance conservation with strength
+  if (trickPoints >= 5) {
+    // Use medium-strength combo to establish position while conserving high cards
+    const sortedByConservation = winningCombos.sort(
+      (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
+    );
+
+    // Use combo that's not the weakest but also not the strongest (middle range)
+    const middleIndex = Math.min(1, sortedByConservation.length - 1);
+    return sortedByConservation[middleIndex].combo.cards;
+  }
+
+  // For low-value tricks (0-4 points): Focus on suit establishment
+  // Check if we're trying to establish a strong suit
+  const leadingSuit = currentTrick?.plays[0]?.cards[0]?.suit;
+  if (
+    leadingSuit &&
+    shouldUseSuitEstablishmentStrategy(gameState, leadingSuit, trumpInfo)
+  ) {
+    // Use stronger card to establish dominance in this suit
+    const nonTrumpCombos = winningCombos.filter((ca) => !ca.analysis.isTrump);
+    if (nonTrumpCombos.length > 0) {
+      // Use strongest non-trump combo for establishment
+      return nonTrumpCombos.sort((a, b) => b.combo.value - a.combo.value)[0]
+        .combo.cards;
+    }
+  }
+
+  // Default: Use weakest winning combo for conservation
   return winningCombos.sort(
     (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
   )[0].combo.cards;
+}
+
+/**
+ * Determines if we should use suit establishment strategy
+ */
+function shouldUseSuitEstablishmentStrategy(
+  gameState: GameState,
+  leadingSuit: Suit,
+  trumpInfo: TrumpInfo,
+): boolean {
+  // Don't establish trump suits (already strong)
+  if (leadingSuit === trumpInfo.trumpSuit) return false;
+
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  if (!currentPlayer) return false;
+
+  // Get cards in leading suit (non-trump)
+  const suitCards = currentPlayer.hand.filter(
+    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+  );
+
+  // Only establish if we have 4+ cards in the suit
+  return suitCards.length >= 4;
 }
 
 /**
@@ -67,7 +130,7 @@ export function selectOptimalWinningCombo(
  */
 export function selectAggressiveBeatPlay(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-  context: GameContext,
+  _context: GameContext,
 ): Card[] {
   // Filter for combinations that can win
   const winningCombos = comboAnalyses.filter((ca) => {

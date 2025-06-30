@@ -1,6 +1,7 @@
 import { gameLogger } from "../../utils/gameLogger";
 import { getComboType } from "../../game/comboDetection";
 import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
+import { isTrump, calculateCardStrategicValue } from "../../game/cardValue";
 import {
   Card,
   Combo,
@@ -143,7 +144,39 @@ export function selectOptimalFollowPlay(
     return decision;
   }
 
-  // === PRIORITY 2: OPPONENT BLOCKING ===
+  // === PRIORITY 2: SUIT ESTABLISHMENT ===
+  // NEW: Higher priority for suit establishment even when opponent is winning
+  if (
+    trickWinner?.canBeatCurrentWinner &&
+    shouldTryEstablishSuit(gameState, context, currentPlayerId)
+  ) {
+    gameLogger.debug(
+      "ai_following_path",
+      {
+        player: currentPlayerId,
+        path: "PRIORITY_2_SUIT_ESTABLISHMENT",
+        reason: "establishing_strong_suit",
+      },
+      "Following Path: Suit Establishment (Building Position)",
+    );
+
+    const decision = selectOptimalWinningCombo(
+      comboAnalyses,
+      context,
+      positionStrategy,
+      trumpInfo,
+      gameState,
+    );
+    gameLogger.debug("AI following decision: suit establishment", {
+      decisionPoint: "follow_suit_establishment",
+      player: currentPlayerId,
+      decision,
+      context,
+    });
+    return decision;
+  }
+
+  // === PRIORITY 3: OPPONENT BLOCKING ===
   if (trickWinner?.isOpponentWinning) {
     // Opponent is winning - try to beat them or minimize damage
     const opponentResponse = handleOpponentWinning(
@@ -173,7 +206,7 @@ export function selectOptimalFollowPlay(
     }
   }
 
-  // === PRIORITY 3: TRICK CONTENTION ===
+  // === PRIORITY 4: TRICK CONTENTION ===
   if (trickWinner?.canBeatCurrentWinner && trickWinner?.shouldTryToBeat) {
     // Can win the trick and it's worth winning
     const decision = selectOptimalWinningCombo(
@@ -192,7 +225,7 @@ export function selectOptimalFollowPlay(
     return decision;
   }
 
-  // === PRIORITY 4: STRATEGIC DISPOSAL ===
+  // === PRIORITY 5: STRATEGIC DISPOSAL ===
   // Can't/shouldn't win - play optimally for future tricks
   const decision = selectStrategicDisposal(
     comboAnalyses,
@@ -207,4 +240,57 @@ export function selectOptimalFollowPlay(
     context,
   });
   return decision;
+}
+
+/**
+ * Enhanced suit establishment check with more aggressive criteria
+ */
+function shouldTryEstablishSuit(
+  gameState: GameState,
+  context: GameContext,
+  currentPlayerId: PlayerId,
+): boolean {
+  const currentTrick = gameState.currentTrick;
+  if (!currentTrick?.plays[0]?.cards) return false;
+
+  const leadingSuit = currentTrick.plays[0].cards[0]?.suit;
+  if (!leadingSuit) return false;
+
+  // Don't establish trump suits (already strong)
+  if (leadingSuit === gameState.trumpInfo.trumpSuit) return false;
+
+  const player = gameState.players.find((p) => p.id === currentPlayerId);
+  if (!player) return false;
+
+  // Get cards in leading suit (non-trump)
+  // Use the same filtering logic as other parts of the codebase
+  const suitCards = player.hand.filter(
+    (card) => card.suit === leadingSuit && !isTrump(card, gameState.trumpInfo),
+  );
+
+  // More aggressive: Try to establish with 3+ cards (reduced from 4+)
+  if (suitCards.length < 3) return false;
+
+  // Check for cards with decent strategic value (more robust than rank-based filtering)
+  const decentCards = suitCards.filter((card) => {
+    const strategicValue = calculateCardStrategicValue(
+      card,
+      gameState.trumpInfo,
+      "basic",
+    );
+    // Consider cards with strategic value >= 10 as "decent" (roughly Queen+ level)
+    return strategicValue >= 10;
+  });
+
+  // More aggressive: Establish with just 1+ decent card (reduced from 2+)
+  if (decentCards.length >= 1) return true;
+
+  // Even establish with many low cards (5+ total cards)
+  if (suitCards.length >= 5) return true;
+
+  // Low-value tricks: Always try to establish if we have the length
+  const trickPoints = context.trickWinnerAnalysis?.trickPoints || 0;
+  if (trickPoints <= 4 && suitCards.length >= 3) return true;
+
+  return false;
 }

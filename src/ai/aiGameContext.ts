@@ -1,5 +1,6 @@
-import { compareCards } from "../game/cardComparison";
+import { compareCards, evaluateTrickPlay } from "../game/cardComparison";
 import { calculateCardStrategicValue, isTrump } from "../game/cardValue";
+import { getValidCombinations } from "../game/combinationGeneration";
 import {
   Card,
   CardMemory,
@@ -13,6 +14,7 @@ import {
   PointPressure,
   PositionStrategy,
   Rank,
+  Suit,
   Trick,
   TrickPosition,
   TrickWinnerAnalysis,
@@ -146,19 +148,207 @@ export function analyzeTrickWinner(
 
 /**
  * Determines if the current player can beat the current trick winner
- * (Simplified heuristic - checks if player has stronger cards)
+ * Enhanced with combo type validation and actual game logic
  */
 function canPlayerBeatCurrentWinner(
   gameState: GameState,
   playerId: PlayerId,
   currentTrick: Trick,
 ): boolean {
-  // Simplified implementation - checks if player has trump cards when current winner is non-trump
-  // or higher cards when current winner is same suit
+  const player = gameState.players.find((p) => p.id === playerId);
+  if (!player || !currentTrick) {
+    gameLogger.debug(
+      "canBeatCurrentWinner_early_exit",
+      {
+        player: playerId,
+        hasPlayer: !!player,
+        hasTrick: !!currentTrick,
+      },
+      "Early exit: no player or trick",
+    );
+    return false;
+  }
+
+  // Get current winner's cards for strength comparison
+  const winningPlayerId = currentTrick.winningPlayerId;
+  const winningPlay = currentTrick.plays.find(
+    (play) => play.playerId === winningPlayerId,
+  );
+  const currentWinnerCards = winningPlay?.cards || [];
+  if (currentWinnerCards.length === 0) {
+    gameLogger.debug(
+      "canBeatCurrentWinner_no_winner_cards",
+      {
+        player: playerId,
+        winningPlayerId,
+      },
+      "No winner cards found",
+    );
+    return false;
+  }
+
+  gameLogger.debug(
+    "canBeatCurrentWinner_analysis_start",
+    {
+      player: playerId,
+      winningPlayer: winningPlayerId,
+      winnerCards: currentWinnerCards.map((c) => `${c.rank}${c.suit}`),
+      playerHand: player.hand.map((c) => `${c.rank}${c.suit}`),
+    },
+    "Starting canBeatCurrentWinner analysis",
+  );
+
+  // CRITICAL FIX: Use filtered valid combos instead of unfiltered identifyCombos
+  // This prevents the AI from considering illegal moves like trump when it must follow suit
+  const availableCombos = getValidCombinations(player.hand, gameState);
+  if (availableCombos.length === 0) {
+    gameLogger.debug(
+      "canBeatCurrentWinner_no_combos",
+      {
+        player: playerId,
+      },
+      "No available combos",
+    );
+    return false;
+  }
+
+  gameLogger.debug(
+    "canBeatCurrentWinner_combos_found",
+    {
+      player: playerId,
+      comboCount: availableCombos.length,
+      combos: availableCombos.map((c) => ({
+        type: c.type,
+        cards: c.cards.map((card) => `${card.rank}${card.suit}`),
+      })),
+    },
+    "Available combos for evaluation",
+  );
+
+  // Test each combo to see if any can beat the current trick
+  for (let i = 0; i < availableCombos.length; i++) {
+    const combo = availableCombos[i];
+    try {
+      const evaluation = evaluateTrickPlay(
+        combo.cards,
+        currentTrick,
+        gameState.trumpInfo,
+        player.hand,
+      );
+
+      gameLogger.debug(
+        "canBeatCurrentWinner_combo_eval",
+        {
+          player: playerId,
+          comboIndex: i,
+          comboCards: combo.cards.map((c) => `${c.rank}${c.suit}`),
+          canBeat: evaluation.canBeat,
+          isLegal: evaluation.isLegal,
+        },
+        `Combo ${i} evaluation result`,
+      );
+
+      // If this combo can legally beat the current winner, return true
+      if (evaluation.canBeat && evaluation.isLegal) {
+        // Double-check: ensure our cards are actually stronger than winner's cards
+        const winnerCard = currentWinnerCards[0];
+        const ourCard = combo.cards[0];
+
+        // Safety check: don't consider equal cards as "beatable"
+        const cardComparison = compareCards(
+          ourCard,
+          winnerCard,
+          gameState.trumpInfo,
+        );
+
+        gameLogger.debug(
+          "canBeatCurrentWinner_strength_check",
+          {
+            player: playerId,
+            ourCard: `${ourCard.rank}${ourCard.suit}`,
+            winnerCard: `${winnerCard.rank}${winnerCard.suit}`,
+            comparison: cardComparison,
+            canActuallyBeat: cardComparison > 0,
+          },
+          "Card strength comparison",
+        );
+
+        if (cardComparison > 0) {
+          gameLogger.debug(
+            "canBeatCurrentWinner_can_beat",
+            {
+              player: playerId,
+              winningCombo: combo.cards.map((c) => `${c.rank}${c.suit}`),
+            },
+            "Found combo that can beat current winner",
+          );
+          return true;
+        } else {
+          gameLogger.debug(
+            "canBeatCurrentWinner_equal_strength",
+            {
+              player: playerId,
+              ourCard: `${ourCard.rank}${ourCard.suit}`,
+              winnerCard: `${winnerCard.rank}${winnerCard.suit}`,
+            },
+            "Combo has equal strength - cannot beat",
+          );
+        }
+      }
+    } catch (error) {
+      gameLogger.debug(
+        "canBeatCurrentWinner_eval_error",
+        {
+          player: playerId,
+          comboIndex: i,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "evaluateTrickPlay failed",
+      );
+      continue;
+    }
+  }
+
+  gameLogger.debug(
+    "canBeatCurrentWinner_fallback",
+    {
+      player: playerId,
+    },
+    "No combos can beat - trying fallback",
+  );
+
+  // Fallback: Use simplified heuristic for edge cases
+  const fallbackResult = canPlayerBeatCurrentWinnerSimple(
+    gameState,
+    playerId,
+    currentTrick,
+  );
+
+  gameLogger.debug(
+    "canBeatCurrentWinner_final_result",
+    {
+      player: playerId,
+      result: fallbackResult,
+      source: "fallback",
+    },
+    "Final canBeatCurrentWinner result",
+  );
+
+  return fallbackResult;
+}
+
+/**
+ * Simplified fallback heuristic for edge cases
+ */
+function canPlayerBeatCurrentWinnerSimple(
+  gameState: GameState,
+  playerId: PlayerId,
+  currentTrick: Trick,
+): boolean {
   const player = gameState.players.find((p) => p.id === playerId);
   if (!player || !currentTrick) return false;
 
-  // Get current winner's cards directly from the trick
+  // Get current winner's cards
   const winningPlayerId = currentTrick.winningPlayerId;
   const winningPlay = currentTrick.plays.find(
     (play) => play.playerId === winningPlayerId,
@@ -177,40 +367,120 @@ function canPlayerBeatCurrentWinner(
     (card) => card.suit === leadingSuit,
   );
 
-  // Simplified logic: if current winner played non-trump, check if we have trump or higher cards
+  // Check trump availability for void scenarios
   const currentWinnerHasTrump = currentWinnerCards.some((card) =>
     isTrump(card, gameState.trumpInfo),
   );
 
   if (!currentWinnerHasTrump) {
-    // Current winner is non-trump, check if we have trump cards or higher same-suit cards
+    // Current winner is non-trump, check trump availability
     const hasTrump = player.hand.some((card) =>
       isTrump(card, gameState.trumpInfo),
     );
 
-    // Strategic heuristic: if we're out of leading suit and have trump, we might be able to beat it
-    // (Game validation will ensure only legal trump plays are actually allowed)
+    // Can potentially trump if void in leading suit
     if (hasTrump && followingCards.length === 0) return true;
 
-    // Check if we have higher same-suit cards
+    // Check for higher same-suit cards
     const winnerCard = currentWinnerCards[0];
-    const hasHigherCard = followingCards.some(
+    return followingCards.some(
       (card) => compareCards(card, winnerCard, gameState.trumpInfo) > 0,
     );
-
-    return hasHigherCard;
   }
 
-  // Current winner has trump - check if we have higher trump
+  // Current winner has trump - check for higher trump
   const winnerCard = currentWinnerCards[0];
   const trumpCards = player.hand.filter((card) =>
     isTrump(card, gameState.trumpInfo),
   );
-  const result = trumpCards.some(
+
+  return trumpCards.some(
     (card) => compareCards(card, winnerCard, gameState.trumpInfo) > 0,
   );
+}
 
-  return result;
+/**
+ * Prevents wasteful trump usage when player has equal-strength non-trump cards
+ */
+function shouldAvoidWastefulTrumpUsage(
+  gameState: GameState,
+  playerId: PlayerId,
+): boolean {
+  const player = gameState.players.find((p) => p.id === playerId);
+  const currentTrick = gameState.currentTrick;
+  if (!player || !currentTrick) return false;
+
+  // Get current winner's cards
+  const winningPlayerId = currentTrick.winningPlayerId;
+  const winningPlay = currentTrick.plays.find(
+    (play) => play.playerId === winningPlayerId,
+  );
+  const currentWinnerCards = winningPlay?.cards || [];
+  if (currentWinnerCards.length === 0) return false;
+
+  // Only apply to single card scenarios for now
+  if (currentWinnerCards.length !== 1) return false;
+
+  const winnerCard = currentWinnerCards[0];
+
+  // Check if we have the same card (equal strength) in our hand
+  const equalStrengthCard = player.hand.find(
+    (card) =>
+      card.suit === winnerCard.suit &&
+      card.rank === winnerCard.rank &&
+      !isTrump(card, gameState.trumpInfo),
+  );
+
+  if (equalStrengthCard) {
+    gameLogger.debug(
+      "shouldAvoidWastefulTrumpUsage",
+      {
+        player: playerId,
+        winnerCard: `${winnerCard.rank}${winnerCard.suit}`,
+        equalCard: `${equalStrengthCard.rank}${equalStrengthCard.suit}`,
+        avoidWaste: true,
+      },
+      "Avoiding wasteful trump usage - have equal strength card",
+    );
+    return true; // Avoid using trump when we have equal non-trump card
+  }
+
+  return false;
+}
+
+/**
+ * Checks if AI should try to establish suit dominance
+ */
+function shouldEstablishSuit(
+  gameState: GameState,
+  playerId: PlayerId,
+  leadingSuit: Suit,
+  trumpInfo: TrumpInfo,
+): boolean {
+  const player = gameState.players.find((p) => p.id === playerId);
+  if (!player) return false;
+
+  // Don't try to establish trump suits (already strong)
+  if (leadingSuit === trumpInfo.trumpSuit) return false;
+
+  // Get cards in leading suit (non-trump)
+  const suitCards = player.hand.filter(
+    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+  );
+
+  // Need at least 3 cards to consider establishment
+  if (suitCards.length < 3) return false;
+
+  // Check for strong cards (Ace, King, Queen)
+  const strongCards = suitCards.filter(
+    (card) =>
+      card.rank === Rank.Ace ||
+      card.rank === Rank.King ||
+      card.rank === Rank.Queen,
+  );
+
+  // Establish if we have 2+ strong cards in the suit
+  return strongCards.length >= 2;
 }
 
 /**
@@ -227,16 +497,54 @@ function determineIfShouldTryToBeat(
   // Don't try to beat teammate
   if (isTeammateWinning) return false;
 
-  // Try to beat opponent if we can and there are points worth taking
-  if (isOpponentWinning && canBeatCurrentWinner && trickPoints >= 10) {
+  // Can't beat current winner - no point trying
+  if (!canBeatCurrentWinner) return false;
+
+  // Always try to beat opponent for high-value tricks (10+ points)
+  if (isOpponentWinning && trickPoints >= 10) {
     return true;
   }
 
-  // Try to beat opponent if we can and it's high-value scenario
-  if (isOpponentWinning && canBeatCurrentWinner && trickPoints >= 5) {
-    const isAttacking = isPlayerOnAttackingTeam(gameState, playerId);
-    // Attacking team should be more aggressive about points
-    return isAttacking;
+  // Try to beat opponent for medium-value tricks (5+ points)
+  if (isOpponentWinning && trickPoints >= 5) {
+    return true; // Removed team role restriction
+  }
+
+  // ANTI-WASTE CHECK: Don't use trump when we have equal-strength non-trump cards
+  if (isOpponentWinning && shouldAvoidWastefulTrumpUsage(gameState, playerId)) {
+    return false;
+  }
+
+  // NEW: Try to beat for suit establishment (even 0-point tricks)
+  if (isOpponentWinning && gameState.currentTrick?.plays[0]?.cards) {
+    const leadingSuit = gameState.currentTrick.plays[0].cards[0]?.suit;
+    if (
+      leadingSuit &&
+      shouldEstablishSuit(gameState, playerId, leadingSuit, gameState.trumpInfo)
+    ) {
+      return true;
+    }
+  }
+
+  // NEW: Position-specific aggression (only if we can actually beat)
+  const currentTrick = gameState.currentTrick;
+  if (currentTrick && isOpponentWinning && canBeatCurrentWinner) {
+    const currentPosition = currentTrick.plays.length;
+
+    // 2nd player: More willing to contest early (probing) if beatable
+    if (currentPosition === 1 && trickPoints >= 0) {
+      return true;
+    }
+
+    // 3rd player: Contest if any points or good position and beatable
+    if (currentPosition === 2 && trickPoints >= 0) {
+      return true;
+    }
+
+    // 4th player: Perfect information - contest only if actually winnable
+    if (currentPosition === 3) {
+      return true;
+    }
   }
 
   return false;
