@@ -178,7 +178,18 @@ export function selectOptimalFollowPlay(
 
   // === PRIORITY 3: OPPONENT BLOCKING ===
   if (trickWinner?.isOpponentWinning) {
-    // Opponent is winning - try to beat them or minimize damage
+    gameLogger.debug(
+      "ai_following_path",
+      {
+        player: currentPlayerId,
+        path: "PRIORITY_3_OPPONENT_BLOCKING",
+        reason: "opponent_is_winning",
+        trickPosition: context.trickPosition,
+      },
+      "Following Path: Opponent Blocking (Opponent Winning)",
+    );
+
+    // Regular opponent blocking logic
     const opponentResponse = handleOpponentWinning(
       comboAnalyses,
       context,

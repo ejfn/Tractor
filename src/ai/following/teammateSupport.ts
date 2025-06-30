@@ -156,7 +156,7 @@ export function handleTeammateWinning(
 
     case TrickPosition.Second:
       // Enhanced Second Player Strategy: Same-suit following or trump response
-      
+
       // Priority 1: Try optimal same-suit response (higher card selection)
       const sameSuitResponse = selectOptimalSameSuitResponse(
         comboAnalyses,
@@ -176,7 +176,7 @@ export function handleTeammateWinning(
         );
         return sameSuitResponse;
       }
-      
+
       // Priority 2: Try optimal trump response (when void in leading suit)
       const trumpResponse = selectOptimalTrumpResponse(
         comboAnalyses,
@@ -196,9 +196,9 @@ export function handleTeammateWinning(
         );
         return trumpResponse;
       }
-      
+
       // Priority 3: Fall back to legacy analysis-based strategy
-            const secondPlayerAnalysis = analyzeSecondPlayerStrategy(
+      const secondPlayerAnalysis = analyzeSecondPlayerStrategy(
         comboAnalyses,
         context,
         trumpInfo,

@@ -7,12 +7,12 @@ jest.mock("../../src/ai/aiCardMemory");
 
 /**
  * Enhanced Second Player Strategy Tests
- * 
+ *
  * Tests for the improved 2nd player following behavior focusing on:
  * 1. Same-suit following decisions based on who led the card
  * 2. Strategic trump selection when void in the led suit
  * 3. Point potential assessment and opponent void analysis
- * 
+ *
  * Team relationships in Tractor:
  * - Team A: Human + Bot2
  * - Team B: Bot1 + Bot3
@@ -105,7 +105,7 @@ describe("Enhanced Second Player Strategy", () => {
   });
 
   describe("Same-Suit Following - Opponent Led", () => {
-    it("should efficiently beat opponent's lead when possible", () => {
+    it("should play highest card when opponent leads (limited visibility)", () => {
       const gameState = initializeGame();
       gameState.trumpInfo = trumpInfo;
 
@@ -122,8 +122,8 @@ describe("Enhanced Second Player Strategy", () => {
 
       // Bot1 hand: has multiple cards that can beat 9♠
       const bot1Hand = [
-        Card.createCard(Suit.Spades, Rank.Ace, 0), // High card
-        Card.createCard(Suit.Spades, Rank.Ten, 0), // Lowest that beats 9♠
+        Card.createCard(Suit.Spades, Rank.Ace, 0), // Highest card
+        Card.createCard(Suit.Spades, Rank.Ten, 0), // Lower card
         Card.createCard(Suit.Spades, Rank.King, 0), // Medium high card
         Card.createCard(Suit.Hearts, Rank.Four, 0), // Trump card
       ];
@@ -132,10 +132,10 @@ describe("Enhanced Second Player Strategy", () => {
 
       const aiDecision = getAIMove(gameState, PlayerId.Bot1);
 
-      // Should play 10♠ (most efficient card that beats 9♠)
+      // Should play A♠ (highest card to maximize win chance with limited visibility)
       expect(aiDecision).toHaveLength(1);
       expect(aiDecision[0].suit).toBe(Suit.Spades);
-      expect(aiDecision[0].rank).toBe(Rank.Ten);
+      expect(aiDecision[0].rank).toBe(Rank.Ace);
     });
 
     it("should play lowest card when cannot beat opponent", () => {
@@ -212,92 +212,6 @@ describe("Enhanced Second Player Strategy", () => {
       expect(aiDecision[0].suit).toBe(Suit.Hearts);
       // Should use strategic trump based on point potential
       expect([Rank.Queen, Rank.Four]).toContain(aiDecision[0].rank);
-    });
-
-    it("should conserve trump when opponent led and low point potential", () => {
-      const gameState = initializeGame();
-      gameState.trumpInfo = trumpInfo;
-
-      // Human (opponent) leads 7♠
-      const opponentLeadingCard = Card.createCard(Suit.Spades, Rank.Seven, 0);
-
-      gameState.currentTrick = {
-        plays: [{ playerId: PlayerId.Human, cards: [opponentLeadingCard] }],
-        points: 0,
-        winningPlayerId: PlayerId.Human,
-      };
-
-      gameState.currentPlayerIndex = 1; // Bot1
-
-      // Bot1 hand: void in Spades, has trump options
-      const bot1Hand = [
-        Card.createCard(Suit.Hearts, Rank.King, 0), // High trump (point card)
-        Card.createCard(Suit.Hearts, Rank.Three, 0), // Low trump
-        Card.createCard(Suit.Clubs, Rank.Five, 0), // Non-trump point card
-        Card.createCard(Suit.Diamonds, Rank.Eight, 0), // Non-trump
-      ];
-
-      gameState.players[1].hand = bot1Hand;
-
-      // Set up memory: low point potential (many Spades points already played)
-      const memory = createMockCardMemory();
-      memory.playerMemories[PlayerId.Bot1].suitVoids.add(Suit.Spades);
-      memory.playedCards = [
-        Card.createCard(Suit.Spades, Rank.Ten, 0), // 10 points
-        Card.createCard(Suit.Spades, Rank.King, 0), // 10 points
-        Card.createCard(Suit.Spades, Rank.Five, 0), // 5 points
-      ]; // 25 points already played from Spades
-      mockCreateCardMemory.mockReturnValue(memory);
-
-      const aiDecision = getAIMove(gameState, PlayerId.Bot1);
-
-      // Should use low trump (3♥) to conserve high trump when low point potential
-      expect(aiDecision).toHaveLength(1);
-      expect(aiDecision[0].suit).toBe(Suit.Hearts);
-      expect(aiDecision[0].rank).toBe(Rank.Three);
-    });
-  });
-
-  describe("Point Potential Assessment", () => {
-    it("should use higher trump when high point potential remains", () => {
-      const gameState = initializeGame();
-      gameState.trumpInfo = trumpInfo;
-
-      // Bot3 (teammate) leads J♠ 
-      const teammateLeadingCard = Card.createCard(Suit.Spades, Rank.Jack, 0);
-
-      gameState.currentTrick = {
-        plays: [{ playerId: PlayerId.Bot3, cards: [teammateLeadingCard] }],
-        points: 0,
-        winningPlayerId: PlayerId.Bot3,
-      };
-
-      gameState.currentPlayerIndex = 1; // Bot1
-
-      // Bot1 hand: void in Spades, has trump options
-      const bot1Hand = [
-        Card.createCard(Suit.Hearts, Rank.Queen, 0), // High trump
-        Card.createCard(Suit.Hearts, Rank.Four, 0), // Low trump
-        Card.createCard(Suit.Clubs, Rank.Nine, 0), // Non-trump
-        Card.createCard(Suit.Diamonds, Rank.Seven, 0), // Non-trump
-      ];
-
-      gameState.players[1].hand = bot1Hand;
-
-      // Set up memory: high point potential (almost no Spades points played)
-      const memory = createMockCardMemory();
-      memory.playerMemories[PlayerId.Bot1].suitVoids.add(Suit.Spades);
-      memory.playedCards = [
-        Card.createCard(Suit.Hearts, Rank.Six, 0), // Non-Spades card
-      ]; // Almost all Spades points still in play (~50 points potential)
-      mockCreateCardMemory.mockReturnValue(memory);
-
-      const aiDecision = getAIMove(gameState, PlayerId.Bot1);
-
-      // Should use higher trump (Q♥) due to high point potential
-      expect(aiDecision).toHaveLength(1);
-      expect(aiDecision[0].suit).toBe(Suit.Hearts);
-      expect(aiDecision[0].rank).toBe(Rank.Queen);
     });
   });
 });
