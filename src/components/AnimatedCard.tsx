@@ -116,23 +116,23 @@ export const AnimatedCard: React.FC<CardProps> = ({
     }
   }, [selected, translateY, scale, opacity, cardScale]);
 
-  // Play animation - improved for cleaner, more refined appearance
+  // Play animation - improved for cleaner, more refined appearance with better Bot3 support
   useEffect(() => {
     if (isPlayed) {
       // Delay animations for sequential effect
       setTimeout(() => {
         // Set rotation to 0 for a neat stack with improved easing
         rotate.value = withTiming("0deg", {
-          duration: 250, // Slightly reduced duration for more responsive feel
-          easing: Easing.out(Easing.cubic), // Cubic easing for smoother deceleration
+          duration: 200, // Reduced duration for smoother Bot3 animations
+          easing: Easing.out(Easing.quad), // Quad easing for better performance
         });
 
         // Improved scale animation with completion callback
         scale.value = withTiming(
           1,
           {
-            duration: 250, // Match duration with rotation for consistent feel
-            easing: Easing.out(Easing.cubic), // Cubic easing for smoother deceleration
+            duration: 200, // Match duration with rotation for consistent feel
+            easing: Easing.out(Easing.quad), // Quad easing for better performance
           },
           (finished) => {
             if (finished && typeof onAnimationComplete === "function") {

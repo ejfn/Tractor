@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
-import { Card as CardType, Player, PlayerId, Trick, TrumpInfo } from "../types"; // Using Card as CardType to avoid naming conflict
 import { isTrump } from "../game/cardValue";
+import { Card as CardType, Player, PlayerId, Trick, TrumpInfo } from "../types"; // Using Card as CardType to avoid naming conflict
 import {
   ANIMATION_COMPLETION_DELAY,
   CARD_ANIMATION_FALLBACK,
@@ -247,14 +247,10 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     topCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
                     }),
-                  // Simple border for winning cards (works on Android)
+                  // Enhanced winner highlighting with card-matching radius
                   ...(isWinning(
                     players.find((p) => p.id === PlayerId.Bot2)?.id as PlayerId,
-                  ) && {
-                    borderWidth: 2,
-                    borderColor: "#FFC107",
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
-                  }),
+                  ) && styles.winningCard),
                 }}
               />
             ))}
@@ -290,15 +286,11 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       leftCards.length > 1 && {
                         marginLeft: 15, // Smaller shift for tighter centering
                       }),
-                    // Simple border for winning cards (works on Android)
+                    // Enhanced winner highlighting with card-matching radius
                     ...(isWinning(
                       players.find((p) => p.id === PlayerId.Bot3)
                         ?.id as PlayerId,
-                    ) && {
-                      borderWidth: 2,
-                      borderColor: "#FFC107",
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                    }),
+                    ) && styles.winningCard),
                   }}
                 />
               ))}
@@ -337,15 +329,11 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       rightCards.length > 1 && {
                         marginLeft: 15, // Smaller shift for tighter centering
                       }),
-                    // Simple border for winning cards (works on Android)
+                    // Enhanced winner highlighting with card-matching radius
                     ...(isWinning(
                       players.find((p) => p.id === PlayerId.Bot1)
                         ?.id as PlayerId,
-                    ) && {
-                      borderWidth: 2,
-                      borderColor: "#FFC107",
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                    }),
+                    ) && styles.winningCard),
                   }}
                 />
               ))}
@@ -380,14 +368,10 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                     bottomCards.length > 1 && {
                       marginLeft: 15, // Smaller shift for tighter centering
                     }),
-                  // Simple border for winning cards (works on Android)
+                  // Enhanced winner highlighting with card-matching radius
                   ...(isWinning(
                     players.find((p) => p.isHuman)?.id as PlayerId,
-                  ) && {
-                    borderWidth: 2,
-                    borderColor: "#FFC107",
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
-                  }),
+                  ) && styles.winningCard),
                 }}
               />
             ))}
@@ -541,6 +525,13 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  // Winner card highlighting style
+  winningCard: {
+    borderRadius: 6, // Match card border radius
+    borderWidth: 2,
+    borderColor: "#FFC107", // Gold color
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
   },
 });
 

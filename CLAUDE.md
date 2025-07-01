@@ -46,6 +46,15 @@ npm run ios          # iOS platform
 
 ## Development Guidelines
 
+### 🚨 CRITICAL: Git Workflow Rules
+**NEVER commit code until explicitly asked to do so**
+
+Claude must only commit changes when the user explicitly requests it. This includes:
+- ❌ **Never** commit automatically after making code changes
+- ❌ **Never** commit as part of "completing" a task
+- ✅ **Only** commit when user says "commit" or "commit these changes"
+- ✅ **Always** ask before committing if unclear
+
 ### Code Quality - Zero Tolerance Policy
 **ALL quality checks must pass before any commit:**
 - ✅ Tests: All tests pass (no failures)
