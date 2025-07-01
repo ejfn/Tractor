@@ -19,7 +19,6 @@ export function prepareNextRound(
   const newState = { ...state };
 
   newState.roundNumber++;
-  newState.gamePhase = GamePhase.Dealing;
 
   gameLogger.debug(
     "round_preparation_start",

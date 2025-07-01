@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { initializeGame } from "../utils/gameInitialization";
+import { endRound, prepareNextRound } from "../game/gameRoundManager";
 import { putbackKittyCards, validateKittySwap } from "../game/kittyManager";
-import { useGameStatePersistence } from "./useGameStatePersistence";
 import {
+  clearCompletedTrick,
   processPlay,
   validatePlay,
-  clearCompletedTrick,
 } from "../game/playProcessing";
-import { endRound, prepareNextRound } from "../game/gameRoundManager";
 import {
   Card,
   GamePhase,
@@ -19,13 +17,15 @@ import {
 } from "../types";
 import { getAutoSelectedCards } from "../utils/cardAutoSelection";
 import { sortCards } from "../utils/cardSorting";
+import { initializeGame } from "../utils/gameInitialization";
+import { gameLogger } from "../utils/gameLogger";
 import {
+  AI_MOVE_DELAY,
   CARD_SELECTION_DELAY,
   ROUND_COMPLETE_BUFFER,
   TRICK_RESULT_DISPLAY_TIME,
-  AI_MOVE_DELAY,
 } from "../utils/gameTimings";
-import { gameLogger } from "../utils/gameLogger";
+import { useGameStatePersistence } from "./useGameStatePersistence";
 
 // Interface for trick completion data
 interface TrickCompletionData {
@@ -371,7 +371,7 @@ export function useGameState() {
 
         // Add delay to ensure trick result displays before round complete modal
         setTimeout(() => {
-          handleEndRound(endingState);
+          handleEndRound(gameState);
         }, TRICK_RESULT_DISPLAY_TIME + ROUND_COMPLETE_BUFFER);
       }
     } else {
@@ -390,7 +390,7 @@ export function useGameState() {
     setShowRoundComplete(true);
     // Store the round result and current state for processing after modal dismissal
     roundResultRef.current = roundResult;
-    pendingStateRef.current = state; // Store current state, not modified state
+    pendingStateRef.current = JSON.parse(JSON.stringify(state)) as GameState; // Store current state, not modified state
 
     if (roundResult.gameOver) {
       // Set game phase to 'gameOver' to prevent AI moves
