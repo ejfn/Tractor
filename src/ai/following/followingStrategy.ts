@@ -16,10 +16,7 @@ import {
 } from "../../types";
 import { executeMultiComboFollowingAlgorithm } from "./multiComboFollowingStrategy";
 import { handleOpponentWinning } from "./opponentBlocking";
-import {
-  selectFourthPlayerPointAvoidance,
-  selectStrategicDisposal,
-} from "./strategicDisposal";
+import { selectStrategicDisposal } from "./strategicDisposal";
 import { handleTeammateWinning } from "./teammateSupport";
 import { selectOptimalWinningCombo } from "./trickContention";
 
@@ -209,11 +206,7 @@ export function selectOptimalFollowPlay(
 
     // Position-specific disposal when can't beat opponent
     if (context.trickPosition === TrickPosition.Fourth) {
-      return selectFourthPlayerPointAvoidance(
-        comboAnalyses,
-        context,
-        trumpInfo,
-      );
+      return selectStrategicDisposal(comboAnalyses, context, gameState);
     }
   }
 
@@ -238,12 +231,7 @@ export function selectOptimalFollowPlay(
 
   // === PRIORITY 5: STRATEGIC DISPOSAL ===
   // Can't/shouldn't win - play optimally for future tricks
-  const decision = selectStrategicDisposal(
-    comboAnalyses,
-    context,
-    positionStrategy,
-    gameState,
-  );
+  const decision = selectStrategicDisposal(comboAnalyses, context, gameState);
   gameLogger.debug("AI following decision: strategic disposal", {
     decisionPoint: "follow_strategic_disposal",
     player: currentPlayerId,

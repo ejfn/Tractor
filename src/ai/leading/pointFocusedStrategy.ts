@@ -1,4 +1,4 @@
-import { isTrump } from "../../game/cardValue";
+import { isBiggestInSuit, isTrump } from "../../game/cardValue";
 import {
   Combo,
   ComboType,
@@ -10,7 +10,6 @@ import {
   PointCardStrategy,
   PointFocusedContext,
   PointPressure,
-  Rank,
   TrumpConservationStrategy,
   TrumpInfo,
   TrumpTiming,
@@ -252,9 +251,8 @@ export function selectEarlyGameLeadingPlay(
   }
 
   // STEP 1: Priority for highest non-trump combos - they're guaranteed winners in early game
-  const highestRank = getHighestNonTrumpRank(trumpInfo);
   const highestRankCombos = nonTrumpCombos.filter((combo) =>
-    combo.cards.every((card) => card.rank === highestRank),
+    combo.cards.every((card) => isBiggestInSuit(card, trumpInfo)),
   );
 
   if (highestRankCombos.length > 0) {
@@ -297,15 +295,6 @@ export function selectEarlyGameLeadingPlay(
 }
 
 // Helper Functions
-
-/**
- * Determines the highest non-trump rank based on current trump rank
- * When trump rank is Ace, King becomes the highest non-trump card
- * For all other trump ranks, Ace remains the highest non-trump card
- */
-function getHighestNonTrumpRank(trumpInfo: TrumpInfo): Rank {
-  return trumpInfo.trumpRank === Rank.Ace ? Rank.King : Rank.Ace;
-}
 
 function determineGamePhase(gameProgress: number): GamePhaseStrategy {
   if (gameProgress <= 0.25) return GamePhaseStrategy.EarlyGame;

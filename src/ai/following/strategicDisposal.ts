@@ -4,14 +4,11 @@ import {
   ComboAnalysis,
   GameContext,
   GameState,
-  PositionStrategy,
-  Rank,
-  TrickPosition,
-  TrumpInfo,
   PlayerId,
+  TrickPosition,
 } from "../../types";
-import { calculateTrumpDeploymentTiming } from "../aiCardMemory";
 import { gameLogger } from "../../utils/gameLogger";
+import { calculateTrumpDeploymentTiming } from "../aiCardMemory";
 
 /**
  * Strategic Disposal - Optimal card disposal when can't influence trick outcome
@@ -26,7 +23,6 @@ import { gameLogger } from "../../utils/gameLogger";
 export function selectStrategicDisposal(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
-  positionStrategy: PositionStrategy,
   gameState?: GameState,
 ): Card[] {
   gameLogger.debug(
@@ -62,21 +58,13 @@ export function selectStrategicDisposal(
         (ca) => !ca.analysis.isTrump,
       );
       if (nonTrumpOptions.length > 0) {
-        // Use specialized disposal logic but only consider non-trump cards
-        return selectFourthPlayerPointAvoidance(
-          nonTrumpOptions,
-          context,
-          gameState.trumpInfo,
-        );
+        // Use general disposal logic but only consider non-trump cards
+        return selectStrategicDisposal(nonTrumpOptions, context, gameState);
       }
     }
 
-    // Use specialized 4th player logic with perfect information
-    return selectFourthPlayerPointAvoidance(
-      comboAnalyses,
-      context,
-      gameState.trumpInfo,
-    );
+    // Fourth player uses same logic as general strategic disposal
+    // No need for specialized function - general logic already handles perfect information
   }
 
   // When we can't win the trick, conserve valuable cards (trump + Aces + point cards)
@@ -86,7 +74,6 @@ export function selectStrategicDisposal(
     const nonValuable = comboAnalyses.filter(
       (ca) =>
         !ca.analysis.isTrump &&
-        !ca.combo.cards.some((card) => card.rank === Rank.Ace) &&
         !ca.combo.cards.some((card) => (card.points || 0) > 0),
     );
 
@@ -149,68 +136,6 @@ export function selectStrategicDisposal(
     "Strategic disposal using ultimate fallback",
   );
   return result;
-}
-
-/**
- * Fourth player point avoidance with perfect information
- */
-export function selectFourthPlayerPointAvoidance(
-  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
-  context: GameContext,
-  trumpInfo: TrumpInfo,
-): Card[] {
-  // Priority 1: Non-trump, non-point, non-Ace cards (safest disposal)
-  const safeCards = comboAnalyses.filter(
-    (ca) =>
-      !ca.analysis.isTrump &&
-      !ca.combo.cards.some((card) => (card.points || 0) > 0) &&
-      !ca.combo.cards.some((card) => card.rank === Rank.Ace),
-  );
-
-  if (safeCards.length > 0) {
-    const sorted = safeCards.sort((a, b) => a.combo.value - b.combo.value);
-    return sorted[0].combo.cards;
-  }
-
-  // Priority 2: Non-trump, non-point cards (lose Ace but avoid giving points)
-  const nonTrumpNonPoint = comboAnalyses.filter(
-    (ca) =>
-      !ca.analysis.isTrump &&
-      !ca.combo.cards.some((card) => (card.points || 0) > 0),
-  );
-
-  if (nonTrumpNonPoint.length > 0) {
-    const sorted = nonTrumpNonPoint.sort(
-      (a, b) => a.combo.value - b.combo.value,
-    );
-    return sorted[0].combo.cards;
-  }
-
-  // Priority 3: Non-trump cards (avoid giving away trump)
-  const nonTrump = comboAnalyses.filter((ca) => !ca.analysis.isTrump);
-  if (nonTrump.length > 0) {
-    // Among non-trump, prefer lowest point cards
-    const sorted = nonTrump.sort((a, b) => {
-      const aPoints = a.combo.cards.reduce(
-        (total, card) => total + (card.points || 0),
-        0,
-      );
-      const bPoints = b.combo.cards.reduce(
-        (total, card) => total + (card.points || 0),
-        0,
-      );
-      if (aPoints !== bPoints) return aPoints - bPoints; // Prefer lower points
-      return a.combo.value - b.combo.value; // Then by card value
-    });
-    return sorted[0].combo.cards;
-  }
-
-  // Last resort: Use memory-enhanced trump disposal (only when no non-trump available)
-  return selectMemoryEnhancedTrumpDisposal(
-    comboAnalyses,
-    context,
-    undefined, // No gameState needed for fallback
-  );
 }
 
 /**

@@ -470,7 +470,7 @@ export const generateMixedCombinations = (
     // Only Aces and high-value point cards (10s, Kings) trigger conservation over pair preservation
     // 5s are lower value and pairs may be more strategically valuable
     const hasHighValueCards = playerHand.some(
-      (card) => card.rank === Rank.Ace || (card.points && card.points >= 10),
+      (card) => card.rank === Rank.Ace || card.points >= 10,
     );
 
     // If we have high-value cards, use the original strategy (may break pairs for conservation)

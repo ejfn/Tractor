@@ -1,7 +1,6 @@
 import {
   analyze2ndPlayerMemoryContext,
   analyze3rdPlayerMemoryContext,
-  analyze4thPlayerMemoryContext,
   analyzeTrumpDistribution,
   calculateTrumpDeploymentTiming,
   createCardMemory,
@@ -125,34 +124,6 @@ describe("Phase 3: Memory Enhancement System", () => {
         analysis.recommendedAction,
       );
     });
-
-    it("should analyze 4th player memory context", () => {
-      const allPlayedCards = [
-        Card.createCard(Suit.Diamonds, Rank.King, 0),
-        Card.createCard(Suit.Diamonds, Rank.Ace, 0),
-        Card.createCard(Suit.Hearts, Rank.Two, 0), // Trump
-      ];
-
-      const analysis = analyze4thPlayerMemoryContext(
-        cardMemory,
-        allPlayedCards,
-        trumpInfo,
-        PlayerId.Human,
-        15, // High point trick
-      );
-
-      expect(["win", "lose", "minimize", "contribute"]).toContain(
-        analysis.optimalDecision,
-      );
-      expect(analysis.confidenceLevel).toBeGreaterThanOrEqual(0);
-      expect(analysis.confidenceLevel).toBeLessThanOrEqual(1);
-      expect(typeof analysis.futureRoundAdvantage).toBe("number");
-      expect(analysis.pointOptimization).toBeDefined();
-      expect(analysis.pointOptimization.maxContribution).toBeGreaterThanOrEqual(
-        0,
-      );
-      expect(analysis.reasoning).toBeDefined();
-    });
   });
 
   describe("Enhanced Risk Assessment", () => {
@@ -242,16 +213,7 @@ describe("Phase 3: Memory Enhancement System", () => {
         );
       }).not.toThrow();
 
-      const allPlayedCards = [...leadingCards, ...secondPlayerCards];
-      expect(() => {
-        analyze4thPlayerMemoryContext(
-          cardMemory,
-          allPlayedCards,
-          trumpInfo,
-          PlayerId.Human,
-          10,
-        );
-      }).not.toThrow();
+      // Fourth player memory analysis function has been removed as it was unused
     });
   });
 });

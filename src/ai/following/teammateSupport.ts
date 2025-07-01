@@ -1,4 +1,4 @@
-import { isTrump } from "../../game/cardValue";
+import { isTrump, calculateCardStrategicValue } from "../../game/cardValue";
 import { gameLogger } from "../../utils/gameLogger";
 import {
   Card,
@@ -412,28 +412,23 @@ function analyzeTeammateLeadStrength(
   const winningCard = winningCards[0];
   const trumpInfo = gameState.trumpInfo;
 
-  // Very strong: Trump cards OR high non-trump cards (Ace, King)
-  if (
-    winningCard.suit === trumpInfo?.trumpSuit ||
-    winningCard.rank === trumpInfo?.trumpRank ||
-    winningCard.rank === Rank.Ace ||
-    winningCard.rank === Rank.King
-  ) {
-    return "very_strong";
-  }
+  // Use strategic value for consistent strength analysis
+  const strategicValue = calculateCardStrategicValue(
+    winningCard,
+    trumpInfo,
+    "basic",
+  );
 
-  // Weak: Low non-trump cards
-  if (
-    winningCard.rank === Rank.Three ||
-    winningCard.rank === Rank.Four ||
-    winningCard.rank === Rank.Five ||
-    winningCard.rank === Rank.Six
-  ) {
-    return "weak";
+  // Very strong: High strategic value (trump cards, strong non-trump cards)
+  if (strategicValue >= 170) {
+    return "very_strong"; // Jokers, trump rank cards
+  } else if (strategicValue >= 110) {
+    return "very_strong"; // Trump suit cards > 10, or strong non-trump (A, K when strong)
+  } else if (strategicValue >= 10) {
+    return "moderate"; // Moderate cards (Q, J, or non-trump K when not strongest)
+  } else {
+    return "weak"; // Low value cards
   }
-
-  // Moderate: Everything else (7-A in non-trump suits)
-  return "moderate";
 }
 
 /**

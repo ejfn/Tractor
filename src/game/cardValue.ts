@@ -37,6 +37,29 @@ export const isTrump = (card: Card, trumpInfo: TrumpInfo): boolean => {
 };
 
 /**
+ * Check if a card is the biggest possible card in its non-trump suit
+ * considering trump rank (e.g., King is biggest when Ace is trump rank)
+ */
+export const isBiggestInSuit = (card: Card, trumpInfo: TrumpInfo): boolean => {
+  // Only applies to non-trump cards
+  if (isTrump(card, trumpInfo)) {
+    return false;
+  }
+
+  // If Ace is not trump rank, then Ace is biggest in non-trump suits
+  if (trumpInfo.trumpRank !== Rank.Ace && card.rank === Rank.Ace) {
+    return true;
+  }
+
+  // If Ace is trump rank, then King becomes biggest in non-trump suits
+  if (trumpInfo.trumpRank === Rank.Ace && card.rank === Rank.King) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * Get the numeric value of a rank for comparison purposes
  */
 export const getRankValue = (rank: Rank): number => {
