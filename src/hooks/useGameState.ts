@@ -362,16 +362,9 @@ export function useGameState() {
         (p) => p.hand.length === 0,
       );
       if (allCardsPlayed) {
-        // Set game phase to 'roundEnd' to prevent AI moves
-        const endingState = {
-          ...result.newState,
-          gamePhase: GamePhase.RoundEnd,
-        };
-        setGameState(endingState);
-
         // Add delay to ensure trick result displays before round complete modal
         setTimeout(() => {
-          handleEndRound(gameState);
+          handleEndRound(result.newState);
         }, TRICK_RESULT_DISPLAY_TIME + ROUND_COMPLETE_BUFFER);
       }
     } else {
@@ -390,7 +383,7 @@ export function useGameState() {
     setShowRoundComplete(true);
     // Store the round result and current state for processing after modal dismissal
     roundResultRef.current = roundResult;
-    pendingStateRef.current = JSON.parse(JSON.stringify(state)) as GameState; // Store current state, not modified state
+    pendingStateRef.current = JSON.parse(JSON.stringify(state)) as GameState; // Deepcopy current state, for next round preparation
 
     if (roundResult.gameOver) {
       // Set game phase to 'gameOver' to prevent AI moves
@@ -398,6 +391,9 @@ export function useGameState() {
       setGameState(gameOverState);
       setGameOver(true);
       setWinner(roundResult.gameWinner || null);
+    } else {
+      const endingState = { ...state, gamePhase: GamePhase.RoundEnd };
+      setGameState(endingState);
     }
   };
 
