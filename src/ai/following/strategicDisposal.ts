@@ -4,12 +4,11 @@ import {
   ComboAnalysis,
   GameContext,
   GameState,
-  Rank,
-  TrickPosition,
   PlayerId,
+  TrickPosition,
 } from "../../types";
-import { calculateTrumpDeploymentTiming } from "../aiCardMemory";
 import { gameLogger } from "../../utils/gameLogger";
+import { calculateTrumpDeploymentTiming } from "../aiCardMemory";
 
 /**
  * Strategic Disposal - Optimal card disposal when can't influence trick outcome
@@ -75,7 +74,6 @@ export function selectStrategicDisposal(
     const nonValuable = comboAnalyses.filter(
       (ca) =>
         !ca.analysis.isTrump &&
-        !ca.combo.cards.some((card) => card.rank === Rank.Ace) &&
         !ca.combo.cards.some((card) => (card.points || 0) > 0),
     );
 

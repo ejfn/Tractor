@@ -1,14 +1,17 @@
 import {
+  calculateCardStrategicValue,
+  isBiggestInSuit,
+  isTrump,
+} from "../../game/cardValue";
+import {
   Combo,
   ComboAnalysis,
   GameContext,
   GameState,
+  ThirdPlayerAnalysis,
   TrickPosition,
   TrumpInfo,
-  ThirdPlayerAnalysis,
-  Rank,
 } from "../../types";
-import { isTrump } from "../../game/cardValue";
 
 /**
  * Third Player Strategy - Position 3 specific optimizations
@@ -72,18 +75,32 @@ export function analyzeThirdPlayerAdvantage(
   const vulnerabilityFactors: string[] = [];
   let leadStrength: "weak" | "moderate" | "strong" = "moderate";
 
-  // Analyze trump vs non-trump
+  // Analyze lead strength using strategic value (handles trump hierarchy properly)
+  const strategicValue = calculateCardStrategicValue(
+    leadingCard,
+    trumpInfo,
+    "basic",
+  );
   const isTeammateTrump = isTrump(leadingCard, trumpInfo);
+
   if (isTeammateTrump) {
-    leadStrength = "strong"; // Trump is generally strong
-  } else {
-    // Non-trump analysis
-    if (leadingCard.rank === Rank.Ace) {
-      leadStrength = "strong";
-    } else if (leadingCard.rank === Rank.King) {
-      leadStrength = "moderate";
+    // Trump analysis based on strategic value
+    if (strategicValue >= 170) {
+      leadStrength = "strong"; // Jokers, trump rank cards
+    } else if (strategicValue > 110) {
+      leadStrength = "moderate"; // Trump suit cards > 10 (J, Q, K, A)
     } else {
-      leadStrength = "weak";
+      leadStrength = "weak"; // Trump suit cards ≤ 10 (forced play)
+      vulnerabilityFactors.push("low_trump_forced_play");
+    }
+  } else {
+    // Non-trump analysis using shared utility function
+    if (isBiggestInSuit(leadingCard, trumpInfo)) {
+      leadStrength = "strong"; // Biggest possible card in suit
+    } else if (strategicValue > 10) {
+      leadStrength = "moderate"; // Queen, Jack (strategic value ~12, 11)
+    } else {
+      leadStrength = "weak"; // 10 and below
       vulnerabilityFactors.push("low_rank");
     }
   }
