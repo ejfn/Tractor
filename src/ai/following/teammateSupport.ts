@@ -581,6 +581,22 @@ function shouldThirdPlayerContribute(
                 "Third player contribution: NO - 2nd player trumped and 3rd player void, should beat trump instead",
               );
               return false; // This will trigger takeover logic
+            } else {
+              // NEW: 2nd player trumped and 3rd player has leading suit cards
+              // Should NEVER contribute points - always dispose leading suit cards
+              gameLogger.debug(
+                "should_third_player_contribute_result",
+                {
+                  result: false,
+                  reason: "second_player_trumped_has_leading_suit",
+                  hasLeadingSuit,
+                  secondPlayerIsTrump,
+                  secondPlayerCard: `${secondPlayerCards[0].rank}${secondPlayerCards[0].suit}`,
+                  ledSuit,
+                },
+                "Third player contribution: NO - 2nd player trumped, should dispose leading suit cards instead of contributing points",
+              );
+              return false; // This will trigger disposal logic
             }
           }
         }
