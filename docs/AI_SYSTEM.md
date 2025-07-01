@@ -19,7 +19,7 @@ The Tractor AI system implements **sophisticated strategic decision-making** wit
 
 ## Modular AI Architecture
 
-The AI system has been completely **modularized into 25 specialized components** organized by functional domain for optimal maintainability and strategic coherence.
+The AI system has been completely **modularized into 22 specialized components** organized by functional domain for optimal maintainability and strategic coherence.
 
 ### **Architectural Organization**
 
@@ -31,9 +31,8 @@ src/ai/
 │   ├── aiGameContext.ts        # Game state analysis and context creation
 │   ├── aiCardMemory.ts         # Memory system and tracking
 │   └── aiMemoryOptimization.ts # Performance optimization and caching
-├── Following Strategies (11 modules)
+├── Following Strategies (10 modules)
 │   ├── followingStrategy.ts    # Main 4-priority decision chain
-│   ├── fourthPlayerStrategy.ts # Perfect information 4th player logic
 │   ├── multiComboFollowingStrategy.ts # AI following algorithm for multi-combos
 │   ├── opponentBlocking.ts     # Strategic opponent countering
 │   ├── pointContribution.ts    # Memory-enhanced point management
@@ -41,7 +40,7 @@ src/ai/
 │   ├── strategicDisposal.ts    # Hierarchical card disposal
 │   ├── teammateSupport.ts      # Team coordination and support
 │   ├── thirdPlayerRiskAnalysis.ts # Risk assessment for 3rd player
-│   ├── thirdPlayerStrategy.ts  # Mid-trick positioning strategy
+│   ├── thirdPlayerStrategy.ts  # Enhanced takeover logic with strategic value analysis
 │   └── trickContention.ts      # Optimal winning combo selection
 ├── Leading Strategies (4 modules)
 │   ├── leadingStrategy.ts      # Main leading decision logic
@@ -64,7 +63,7 @@ src/ai/
 ### **Modular Benefits**
 
 **Functional Coherence:**
-- **Following Module**: 11 specialized modules for position-based following strategies
+- **Following Module**: 10 specialized modules for position-based following strategies
 - **Leading Module**: 4 modules for strategic leading decisions and analysis
 - **Analysis Module**: 3 modules for combination evaluation and advanced analysis
 - **Core System**: 5 modules for fundamental AI operations, memory, and performance optimization
@@ -92,8 +91,8 @@ src/ai/
 
 **Position-Based Intelligence**: Specialized logic for each trick position:
 - **2nd Player** → `secondPlayerStrategy.ts` (early influence)
-- **3rd Player** → `thirdPlayerStrategy.ts` + `thirdPlayerRiskAnalysis.ts` (tactical decisions)
-- **4th Player** → `fourthPlayerStrategy.ts` (perfect information)
+- **3rd Player** → `thirdPlayerStrategy.ts` + `thirdPlayerRiskAnalysis.ts` (enhanced takeover logic with strategic value analysis)
+- **4th Player** → Unified strategic disposal logic (no specialized module needed)
 
 **Memory-Enhanced Decisions**: Memory system integrated throughout:
 - **Point Management** → `pointContribution.ts` (guaranteed winners)
@@ -401,10 +400,43 @@ All following positions use the same priority framework but with position-specif
 - **Setup Opportunities** - Position teammates for optimal responses
 - **Early Blocking** - Prevent opponent momentum
 
-**3rd Player (Tactical Position):**
-- **Enhanced Team Coordination** - Critical teammate support decisions
-- **Tactical Takeover** - Override teammate when beneficial
-- **Risk Assessment** - Informed decisions with 2 cards visible
+**3rd Player (Enhanced Takeover Logic):**
+- **Strategic Value Analysis** - Uses `calculateCardStrategicValue()` for lead strength assessment
+- **Trump Weakness Detection** - Recognizes that leading trump often indicates strategic weakness
+- **Intelligent Takeover Decisions** - Dynamic takeover vs support based on teammate lead strength
+- **Risk Assessment** - Comprehensive analysis with memory-enhanced decision making
+
+#### **Enhanced 3rd Player Takeover System**
+
+The AI now uses sophisticated strategic value analysis to determine when to take over from a teammate:
+
+**Strategic Value Thresholds:**
+- **Strong** (≥170): Jokers, trump rank cards → Support teammate
+- **Moderate** (110-169): High trump suit cards (J, Q, K, A) → Strategic evaluation  
+- **Weak** (<110): Low trump cards ≤ 10, forced plays → Consider takeover
+
+**Key Enhancement - Trump Analysis:**
+```typescript
+// Trump analysis based on strategic value
+if (strategicValue >= 170) {
+  leadStrength = "strong"; // Jokers, trump rank cards
+} else if (strategicValue > 110) {
+  leadStrength = "moderate"; // Trump suit cards > 10 (J, Q, K, A)
+} else {
+  leadStrength = "weak"; // Trump suit cards ≤ 10 (forced play)
+  vulnerabilityFactors.push("low_trump_forced_play");
+}
+```
+
+**Non-Trump Analysis:** Uses `isBiggestInSuit()` utility to identify theoretical card strength:
+- **Strong**: Ace when Ace is not trump rank, King when Ace is trump rank
+- **Moderate**: Queen, Jack (strategic value ~12, 11)  
+- **Weak**: 10 and below → potential takeover scenario
+
+**Takeover Decision Logic:**
+- **Weak + Vulnerable**: Immediate takeover recommendation
+- **Moderate**: Strategic evaluation based on risk assessment
+- **Strong**: Support teammate with point contribution
 
 **4th Player (Perfect Information):**
 - **Complete Visibility** - All 3 cards played before decision
@@ -475,6 +507,22 @@ When forced to dispose trump cards, the AI follows strict conservation values:
 - **Clean Codebase** - Simplified architecture with no redundant validation
 - **Conservation Hierarchy** - Optimal trump disposal when forced by exceptional hand scenarios
 - **Bug Prevention** - Rule-based approach eliminates previous issues with valuable card disposal
+
+### **Shared Utility Functions**
+
+The AI system uses several shared utility functions for consistent strategic analysis:
+
+**`isBiggestInSuit(card, trumpInfo)`** - Determines theoretical card strength:
+- Returns `true` for Ace when Ace is not trump rank
+- Returns `true` for King when Ace is trump rank (making King strongest)
+- Used across multiple AI modules for consistent strength evaluation
+- Critical for 3rd player takeover analysis and lead strength assessment
+
+**`calculateCardStrategicValue(card, trumpInfo, mode)`** - Core strategic evaluation:
+- Provides numerical values for strategic decision-making
+- Supports multiple modes: "basic", "strategic", "contribute"
+- Used throughout the AI system for consistent card evaluation
+- Forms the foundation of the enhanced 3rd player takeover logic
 
 ### **Trump Declaration Strategy**
 
@@ -547,6 +595,22 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 - **Existing Infrastructure** - Current behavioral analysis provides 80% of required foundation
 - **Clean Integration** - Memory system ready for persistence extension
 - **Natural Evolution** - Minimal architectural changes needed
+
+### **Recent Architecture Improvements (2025)**
+
+**Code Cleanup and Optimization:**
+- **Removed 540+ lines** of unused AI functions from fourth player strategy module
+- **Eliminated `fourthPlayerStrategy.ts`** - fourth player now uses unified strategic disposal
+- **Simplified strategic disposal API** - removed unused parameters and redundant functions
+- **Enhanced 3rd player takeover logic** - strategic value analysis with trump weakness detection
+- **Added shared utility functions** - `isBiggestInSuit()` for consistent trump rank handling
+
+**Technical Benefits:**
+- **Reduced technical debt** - 686+ lines of code removed total
+- **Improved maintainability** - fewer modules to maintain, cleaner call paths
+- **Enhanced strategic intelligence** - 3rd player properly identifies weak trump leads
+- **Consistent analysis** - unified strategic value approach across all AI modules
+- **Better testing** - focused modules enable comprehensive unit testing
 
 ---
 
