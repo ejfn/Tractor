@@ -131,7 +131,32 @@ export function useGameState() {
               }, 100);
             }
 
-            setGameState(result.gameState);
+            // Validate restored state to prevent AI crashes
+            const restoredState = result.gameState;
+            const allPlayersEmpty = restoredState.players.every(
+              (p) => p.hand.length === 0,
+            );
+
+            if (
+              allPlayersEmpty &&
+              restoredState.gamePhase === GamePhase.Playing
+            ) {
+              // Corrupted save: empty hands with Playing phase - need to end round
+              gameLogger.warn("corrupted_save_detected", {
+                gamePhase: restoredState.gamePhase,
+                playerHandSizes: restoredState.players.map(
+                  (p) => p.hand.length,
+                ),
+              });
+              restoredState.gamePhase = GamePhase.RoundEnd;
+
+              // Trigger round end after state is set
+              setTimeout(() => {
+                handleEndRound(restoredState);
+              }, TRICK_RESULT_DISPLAY_TIME + ROUND_COMPLETE_BUFFER);
+            }
+
+            setGameState(restoredState);
           } else {
             // No saved game or load failed, start new game
             gameLogger.info("game_new_start", {
@@ -354,18 +379,26 @@ export function useGameState() {
         // This ensures the trick structure is correct for display
       }
 
-      // Now update game state AFTER setting up the trick completion data
-      setGameState(result.newState);
-
-      // Check for end of round (no cards left)
+      // Check for end of round (no cards left) BEFORE updating state
       const allCardsPlayed = result.newState.players.every(
         (p) => p.hand.length === 0,
       );
+
       if (allCardsPlayed) {
+        // Set game phase to 'roundEnd' to prevent AI moves
+        const endingState = {
+          ...result.newState,
+          gamePhase: GamePhase.RoundEnd,
+        };
+        setGameState(endingState);
+
         // Add delay to ensure trick result displays before round complete modal
         setTimeout(() => {
-          handleEndRound(result.newState);
+          handleEndRound(endingState);
         }, TRICK_RESULT_DISPLAY_TIME + ROUND_COMPLETE_BUFFER);
+      } else {
+        // Normal trick completion - update game state
+        setGameState(result.newState);
       }
     } else {
       // Regular play (not completing a trick)
@@ -380,21 +413,21 @@ export function useGameState() {
   const handleEndRound = (state: GameState) => {
     const roundResult = endRound(state);
 
-    setShowRoundComplete(true);
     // Store the round result and current state for processing after modal dismissal
     roundResultRef.current = roundResult;
     pendingStateRef.current = JSON.parse(JSON.stringify(state)) as GameState; // Deepcopy current state, for next round preparation
 
     if (roundResult.gameOver) {
-      // Set game phase to 'gameOver' to prevent AI moves
+      // Set game phase to 'gameOver' to prevent AI moves (after storing state)
       const gameOverState = { ...state, gamePhase: GamePhase.GameOver };
-      setGameState(gameOverState);
       setGameOver(true);
       setWinner(roundResult.gameWinner || null);
-    } else {
-      const endingState = { ...state, gamePhase: GamePhase.RoundEnd };
-      setGameState(endingState);
+      setGameState(gameOverState);
     }
+    // Note: For non-game-over, state already has GamePhase.RoundEnd set
+
+    // Show modal after all state is safely stored
+    setShowRoundComplete(true);
   };
 
   // Handle proceeding to next round
