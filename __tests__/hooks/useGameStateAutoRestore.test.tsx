@@ -74,9 +74,9 @@ describe("useGameState Auto-Restoration", () => {
       expect(result.current.isInitializing).toBe(false);
     });
 
-    // Should have restored the saved game
+    // Should have restored the saved game and corrected corrupted state
     expect(result.current.gameState).toBeTruthy();
-    expect(result.current.gameState?.gamePhase).toBe(GamePhase.Playing);
+    expect(result.current.gameState?.gamePhase).toBe(GamePhase.RoundEnd); // Corrected from Playing to RoundEnd due to empty hands
     expect(result.current.gameState?.roundNumber).toBe(3);
     expect(result.current.gameState?.teams[0].currentRank).toBe(Rank.Five);
   });
