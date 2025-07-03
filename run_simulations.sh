@@ -25,11 +25,6 @@ npm run test:simulation
 
 echo "Simulations complete. Logs are located in the logs/ directory."
 
-# Process log files to add sequence numbers
-echo "Adding sequence numbers to log files..."
-python3 analysis/process_logs.py --log_dir logs
-echo "Log processing complete."
-
 # Gzip all generated log files
 echo "Compressing processed log files..."
 gzip logs/*.log
