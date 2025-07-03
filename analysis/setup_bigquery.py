@@ -13,12 +13,14 @@ DATASET_ID = "tractor_analytics"
 TABLE_ID = "simulation_logs"
 TABLE_DESCRIPTION = "Stores log data from AI simulations for the Tractor card game."
 SCHEMA = [
-    bigquery.SchemaField("event", "STRING", mode="REQUIRED", description="The type of event that occurred."),
-    bigquery.SchemaField("gameId", "STRING", mode="NULLABLE", description="The unique identifier for the game session."),
-    bigquery.SchemaField("roundNumber", "INTEGER", mode="NULLABLE", description="The round number within the game."),
     bigquery.SchemaField("timestamp", "TIMESTAMP", mode="REQUIRED", description="The timestamp of the event."),
-    bigquery.SchemaField("appVersion", "STRING", mode="NULLABLE", description="The version of the application that generated the log."),
+    bigquery.SchemaField("level", "STRING", mode="NULLABLE", description="The log level of the event (e.g., INFO, DEBUG, ERROR)."),
+    bigquery.SchemaField("gameId", "STRING", mode="NULLABLE", description="The unique identifier for the game session."),
+    bigquery.SchemaField("sequenceNumber", "INTEGER", mode="NULLABLE", description="The sequential number of the event within its log file."),
+    bigquery.SchemaField("event", "STRING", mode="REQUIRED", description="The type of event that occurred."),
+    bigquery.SchemaField("message", "STRING", mode="NULLABLE", description="A human-readable message associated with the event."),
     bigquery.SchemaField("data", "JSON", mode="NULLABLE", description="A JSON object containing detailed event data."),
+    bigquery.SchemaField("appVersion", "STRING", mode="NULLABLE", description="The version of the application that generated the log."),
 ]
 
 GCS_BUCKET_NAME = f"{PROJECT_ID}-simulation-logs"
@@ -141,9 +143,10 @@ def create_data_transfer_job(client: DataTransferServiceClient):
             "file_format": "JSON",
             "write_disposition": "APPEND",
             "ignore_unknown_values": "true", # Allow for schema evolution
+            "delete_source_files": "true", # Delete source files after successful transfer
             
         },
-        schedule="every 1 hour", # Adjust schedule as needed (e.g., "every 1 hour")
+        schedule="every 15 minutes", # Run every 15 minutes
         disabled=False,
     )
 

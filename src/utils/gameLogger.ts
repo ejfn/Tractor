@@ -24,6 +24,7 @@ export interface LogEntry {
   timestamp: string;
   level: LogLevel;
   event: string;
+  sequenceNumber: number;
   appVersion?: string; // Added appVersion field
   gameId?: string;
   roundNumber?: number;
@@ -52,6 +53,7 @@ class GameLogger {
   private enableConsoleLog: boolean = true;
   private includePlayerHands: boolean = true;
   private currentGameId: string | null = null;
+  private sequenceNumber = 0;
 
   constructor(config?: GameLoggerConfig) {
     if (config) {
@@ -128,11 +130,15 @@ class GameLogger {
     if (config.enableFileLogging) {
       this.enableFileLogging = true;
       if (config.logFileName) {
+        if (this.gameLogFile !== config.logFileName) {
+          this.sequenceNumber = 0; // Reset sequence on file change
+        }
         this.gameLogFile = config.logFileName;
       } else {
         // Generate default filename when file logging is enabled
         const sessionTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
         this.gameLogFile = `${sessionTimestamp}-game.log`;
+        this.sequenceNumber = 0;
       }
       this.setupLogFiles();
     }
@@ -175,10 +181,13 @@ class GameLogger {
   ): void {
     if (!this.shouldLog(level)) return;
 
+    this.sequenceNumber++;
+
     const logEntry: LogEntry = {
       timestamp: this.formatTimestamp(),
       level,
       event,
+      sequenceNumber: this.sequenceNumber,
       appVersion: APP_VERSION, // Include appVersion
       gameId: this.currentGameId || undefined,
       data,

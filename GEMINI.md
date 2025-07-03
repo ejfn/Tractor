@@ -970,3 +970,12 @@ src/hooks/useGameState.ts           // Integrated persistence in main game state
 - **File naming**: Use descriptive names that reflect actual complexity (avoid "Simple" for sophisticated implementations)
 - **Modular organization**: Organize files by logical domain (ai/, game/, utils/) rather than just file type
 - **Persistence integration**: New features automatically benefit from persistence without additional implementation
+
+### Commit Message and Pull Request Signature
+
+When creating a commit message or pull request, append the following signature at the end:
+
+```
+Generated with [Gemini Code](https://gemini.google.com)
+Co-authored-by: Gemini <noreply@google.com>
+```
