@@ -62,7 +62,9 @@ def main():
         print(f"Successfully created or found GCS bucket: {bucket.name}")
 
     # 4. Create Data Transfer Job
-    create_data_transfer_job(dts_client)
+    transfer_job = create_data_transfer_job(dts_client)
+    if transfer_job:
+        print(f"Data Transfer job ready: {transfer_job.display_name}")
 
     
 
@@ -121,7 +123,8 @@ def create_data_transfer_job(client: DataTransferServiceClient):
     """
     Creates a BigQuery Data Transfer Service job to load data from GCS.
     """
-    parent = client.common_project_path(PROJECT_ID)
+    # Use location-specific parent for transfer configs in australia-southeast1
+    parent = client.common_location_path(PROJECT_ID, LOCATION)
 
     # Check if a transfer config already exists for this source and destination
     existing_configs = client.list_transfer_configs(parent=parent)
@@ -146,7 +149,7 @@ def create_data_transfer_job(client: DataTransferServiceClient):
             "delete_source_files": "true", # Delete source files after successful transfer
             
         },
-        schedule="every 15 minutes", # Run every 15 minutes
+        schedule="every 1 hours", # Run every 1 hour
         disabled=False,
     )
 

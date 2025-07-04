@@ -1,16 +1,42 @@
 -- Performance-focused KPI report for Tractor AI simulation logs
 -- Focus on win rates, point efficiency, and AI decision effectiveness
 
--- Basic game performance
+-- Basic game performance with attacking/defending team analysis
 WITH GameStats AS (
     SELECT 
         appVersion,
-        COUNT(DISTINCT gameId) as total_games,
-        -- Team win rates
-        ROUND(SAFE_DIVIDE(COUNTIF(JSON_VALUE(data, '$.winner') = 'A'), COUNT(*)), 3) as team_a_win_rate,
-        ROUND(SAFE_DIVIDE(COUNTIF(JSON_VALUE(data, '$.winner') = 'B'), COUNT(*)), 3) as team_b_win_rate
+        COUNT(DISTINCT gameId) as total_games
     FROM `tractor_analytics.simulation_logs`
     WHERE event = 'game_over'
+    GROUP BY appVersion
+),
+
+-- Team role analysis from game initialization
+TeamRoleStats AS (
+    SELECT 
+        appVersion,
+        COUNT(*) as total_games_with_roles,
+        -- Overall attacking team performance across all games
+        ROUND(AVG(
+            CASE 
+                WHEN JSON_VALUE(data, '$.attackingTeam') = JSON_VALUE(go.winner_data, '$.winner') THEN 1.0
+                ELSE 0.0
+            END
+        ), 3) as attacking_team_win_rate,
+        -- Overall defending team performance  
+        ROUND(AVG(
+            CASE 
+                WHEN JSON_VALUE(data, '$.defendingTeam') = JSON_VALUE(go.winner_data, '$.winner') THEN 1.0
+                ELSE 0.0
+            END
+        ), 3) as defending_team_win_rate
+    FROM `tractor_analytics.simulation_logs` gi
+    JOIN (
+        SELECT gameId, data as winner_data 
+        FROM `tractor_analytics.simulation_logs` 
+        WHERE event = 'game_over'
+    ) go ON gi.gameId = go.gameId
+    WHERE gi.event = 'game_initialized'
     GROUP BY appVersion
 ),
 
@@ -122,8 +148,8 @@ EfficiencyStats AS (
 SELECT 
     gs.appVersion,
     gs.total_games,
-    gs.team_a_win_rate,
-    gs.team_b_win_rate,
+    trs.attacking_team_win_rate,
+    trs.defending_team_win_rate,
     
     -- Round performance
     re.total_rounds,
@@ -164,6 +190,7 @@ SELECT
     ) as top_ai_decisions
 
 FROM GameStats gs
+LEFT JOIN TeamRoleStats trs ON gs.appVersion = trs.appVersion
 LEFT JOIN RoundEfficiency re ON gs.appVersion = re.appVersion
 LEFT JOIN PositionStats ps ON gs.appVersion = ps.appVersion
 LEFT JOIN PlayerPerformance pp ON gs.appVersion = pp.appVersion
@@ -171,7 +198,7 @@ LEFT JOIN EfficiencyStats es ON gs.appVersion = es.appVersion
 LEFT JOIN AIDecisionEffectiveness ade ON gs.appVersion = ade.appVersion
 
 GROUP BY 
-    gs.appVersion, gs.total_games, gs.team_a_win_rate, gs.team_b_win_rate,
+    gs.appVersion, gs.total_games, trs.attacking_team_win_rate, trs.defending_team_win_rate,
     re.total_rounds, re.avg_final_points, re.attacking_round_win_rate,
     es.avg_kitty_points
 
