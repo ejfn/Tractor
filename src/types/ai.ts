@@ -131,8 +131,6 @@ export interface TrickWinnerAnalysis {
   isSelfWinning: boolean; // Is this AI currently winning
   trickPoints: number; // Total points in current trick
   canBeatCurrentWinner: boolean; // Can this AI beat current winner
-  shouldTryToBeat: boolean; // Strategic decision to try beating
-  shouldPlayConservatively: boolean; // Strategic decision for conservative play
 }
 
 // 1st Player (Leading) Strategy Analysis

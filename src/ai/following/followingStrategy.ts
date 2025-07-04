@@ -14,6 +14,7 @@ import {
   TrickPosition,
   TrumpInfo,
 } from "../../types";
+import { shouldAITryToBeatCurrentWinner } from "./strategicDecisions";
 import { executeMultiComboFollowingAlgorithm } from "./multiComboFollowingStrategy";
 import { handleOpponentWinning } from "./opponentBlocking";
 import { selectStrategicDisposal } from "./strategicDisposal";
@@ -169,7 +170,10 @@ export function selectOptimalFollowPlay(
   }
 
   // === PRIORITY 4: TRICK CONTENTION ===
-  if (trickWinner?.canBeatCurrentWinner && trickWinner?.shouldTryToBeat) {
+  if (
+    trickWinner?.canBeatCurrentWinner &&
+    shouldAITryToBeatCurrentWinner(trickWinner, gameState, currentPlayerId)
+  ) {
     // Can win the trick and it's worth winning
     const decision = selectOptimalWinningCombo(
       comboAnalyses,

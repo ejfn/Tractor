@@ -13,8 +13,6 @@ import {
   PlayStyle,
   PointPressure,
   PositionStrategy,
-  Rank,
-  Suit,
   Trick,
   TrickPosition,
   TrickWinnerAnalysis,
@@ -115,24 +113,6 @@ export function analyzeTrickWinner(
     currentTrick,
   );
 
-  // Strategic decision: should try to beat current winner?
-  const shouldTryToBeat = determineIfShouldTryToBeat(
-    isTeammateWinning,
-    isOpponentWinning,
-    trickPoints,
-    canBeatCurrentWinner,
-    gameState,
-    playerId,
-  );
-
-  // Strategic decision: should play conservatively?
-  const shouldPlayConservatively = determineIfShouldPlayConservatively(
-    isTeammateWinning,
-    trickPoints,
-    gameState,
-    playerId,
-  );
-
   return {
     currentWinner,
     isTeammateWinning,
@@ -141,8 +121,6 @@ export function analyzeTrickWinner(
     isLeadWinning,
     trickPoints,
     canBeatCurrentWinner,
-    shouldTryToBeat,
-    shouldPlayConservatively,
   };
 }
 
@@ -275,204 +253,6 @@ function canPlayerBeatCurrentWinnerSimple(
   return trumpCards.some(
     (card) => compareCards(card, winnerCard, gameState.trumpInfo) > 0,
   );
-}
-
-/**
- * Prevents wasteful trump usage when player has equal-strength non-trump cards
- */
-function shouldAvoidWastefulTrumpUsage(
-  gameState: GameState,
-  playerId: PlayerId,
-): boolean {
-  const player = gameState.players.find((p) => p.id === playerId);
-  const currentTrick = gameState.currentTrick;
-  if (!player || !currentTrick) return false;
-
-  // Get current winner's cards
-  const winningPlayerId = currentTrick.winningPlayerId;
-  const winningPlay = currentTrick.plays.find(
-    (play) => play.playerId === winningPlayerId,
-  );
-  const currentWinnerCards = winningPlay?.cards || [];
-  if (currentWinnerCards.length === 0) return false;
-
-  // Only apply to single card scenarios for now
-  if (currentWinnerCards.length !== 1) return false;
-
-  const winnerCard = currentWinnerCards[0];
-
-  // Check if we have the same card (equal strength) in our hand
-  const equalStrengthCard = player.hand.find(
-    (card) =>
-      card.suit === winnerCard.suit &&
-      card.rank === winnerCard.rank &&
-      !isTrump(card, gameState.trumpInfo),
-  );
-
-  if (equalStrengthCard) {
-    return true; // Avoid using trump when we have equal non-trump card
-  }
-
-  return false;
-}
-
-/**
- * Checks if AI should try to establish suit dominance
- */
-function shouldEstablishSuit(
-  gameState: GameState,
-  playerId: PlayerId,
-  leadingSuit: Suit,
-  trumpInfo: TrumpInfo,
-): boolean {
-  const player = gameState.players.find((p) => p.id === playerId);
-  if (!player) return false;
-
-  // Don't try to establish trump suits (already strong)
-  if (leadingSuit === trumpInfo.trumpSuit) return false;
-
-  // Get cards in leading suit (non-trump)
-  const suitCards = player.hand.filter(
-    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
-  );
-
-  // Need at least 3 cards to consider establishment
-  if (suitCards.length < 3) return false;
-
-  // Check for strong cards (Ace, King, Queen)
-  const strongCards = suitCards.filter(
-    (card) =>
-      card.rank === Rank.Ace ||
-      card.rank === Rank.King ||
-      card.rank === Rank.Queen,
-  );
-
-  // Establish if we have 2+ strong cards in the suit
-  return strongCards.length >= 2;
-}
-
-/**
- * Determines if AI should try to beat the current winner
- */
-function determineIfShouldTryToBeat(
-  isTeammateWinning: boolean,
-  isOpponentWinning: boolean,
-  trickPoints: number,
-  canBeatCurrentWinner: boolean,
-  gameState: GameState,
-  playerId: PlayerId,
-): boolean {
-  // Don't try to beat teammate
-  if (isTeammateWinning) return false;
-
-  // Can't beat current winner - no point trying
-  if (!canBeatCurrentWinner) return false;
-
-  // Always try to beat opponent for high-value tricks (10+ points)
-  if (isOpponentWinning && trickPoints >= 10) {
-    return true;
-  }
-
-  // Try to beat opponent for medium-value tricks (5+ points)
-  if (isOpponentWinning && trickPoints >= 5) {
-    return true; // Removed team role restriction
-  }
-
-  // ANTI-WASTE CHECK: Don't use trump when we have equal-strength non-trump cards
-  if (isOpponentWinning && shouldAvoidWastefulTrumpUsage(gameState, playerId)) {
-    return false;
-  }
-
-  // NEW: Try to beat for suit establishment (even 0-point tricks)
-  if (isOpponentWinning && gameState.currentTrick?.plays[0]?.cards) {
-    const leadingSuit = gameState.currentTrick.plays[0].cards[0]?.suit;
-    if (
-      leadingSuit &&
-      shouldEstablishSuit(gameState, playerId, leadingSuit, gameState.trumpInfo)
-    ) {
-      return true;
-    }
-  }
-
-  // NEW: Position-specific aggression (only if we can actually beat)
-  const currentTrick = gameState.currentTrick;
-  if (currentTrick && isOpponentWinning && canBeatCurrentWinner) {
-    const currentPosition = currentTrick.plays.length;
-
-    // 2nd player: More willing to contest early (probing) if beatable
-    if (currentPosition === 1 && trickPoints >= 0) {
-      return true;
-    }
-
-    // 3rd player: Contest if any points or good position and beatable
-    if (currentPosition === 2 && trickPoints >= 0) {
-      return true;
-    }
-
-    // 4th player: Perfect information - contest only if actually winnable
-    if (currentPosition === 3) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Determines if AI should play conservatively
- */
-function determineIfShouldPlayConservatively(
-  isTeammateWinning: boolean,
-  trickPoints: number,
-  gameState: GameState,
-  playerId: PlayerId,
-): boolean {
-  // If teammate is winning, decide between conservative play vs point contribution
-  if (isTeammateWinning) {
-    const player = gameState.players.find((p) => p.id === playerId);
-    if (!player) return true;
-
-    const hasHighValuePointCards = player.hand.some(
-      (card) =>
-        (card.rank === Rank.Ten || card.rank === Rank.King) && card.points > 0,
-    );
-
-    const hasLowValueCards = player.hand.some((card) => card.points === 0);
-
-    // Special case: Last player (4th position) should maximize point contribution
-    const currentTrick = gameState.currentTrick;
-    if (currentTrick && currentTrick.plays.length === 3) {
-      // This is the 4th player (last to play) - plays[0]=leader, plays[1]=2nd, plays[2]=3rd, current=4th
-      // Focus on optimal point contribution rather than conservation
-      return false;
-    }
-
-    // For earlier positions: if we have both high and low value cards, be conservative
-    if (hasHighValuePointCards && hasLowValueCards) {
-      return true; // Play conservatively (save high-value cards)
-    }
-
-    // If we only have high-value cards, we must contribute them
-    if (hasHighValuePointCards && !hasLowValueCards) {
-      return false; // Must contribute high-value cards
-    }
-
-    // Default to conservative when teammate winning
-    return true;
-  }
-
-  // Play conservatively if there are no significant points at stake
-  if (trickPoints < 5) return true;
-
-  // Play conservatively if we're defending and doing well
-  const isAttacking = isPlayerOnAttackingTeam(gameState, playerId);
-  if (!isAttacking) {
-    const attackingPoints = getCurrentAttackingPoints(gameState);
-    // If attacking team is struggling, be conservative as defender
-    if (attackingPoints < 40) return true;
-  }
-
-  return false;
 }
 
 /**

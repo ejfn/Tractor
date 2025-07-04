@@ -390,7 +390,6 @@ describe("AI Core Functionality", () => {
         expect(analysis.isOpponentWinning).toBe(false);
         expect(analysis.isSelfWinning).toBe(false);
         expect(analysis.trickPoints).toBe(10);
-        expect(analysis.shouldPlayConservatively).toBe(true);
       });
 
       it("should identify when opponent is winning", () => {
@@ -424,7 +423,6 @@ describe("AI Core Functionality", () => {
         expect(analysis.isOpponentWinning).toBe(true);
         expect(analysis.isSelfWinning).toBe(false);
         expect(analysis.trickPoints).toBe(10);
-        expect(analysis.shouldTryToBeat).toBe(true); // Should try to beat opponent with points
       });
 
       it("should identify when self is winning", () => {
@@ -450,7 +448,6 @@ describe("AI Core Functionality", () => {
         expect(analysis.isTeammateWinning).toBe(false); // Self winning, not teammate
         expect(analysis.isOpponentWinning).toBe(false); // Self winning, not opponent
         expect(analysis.isSelfWinning).toBe(true);
-        expect(analysis.shouldPlayConservatively).toBe(true); // Conservative when no points
       });
     });
 
@@ -581,7 +578,6 @@ describe("AI Core Functionality", () => {
         const analysis = analyzeTrickWinner(gameState, PlayerId.Human);
 
         expect(analysis.isTeammateWinning).toBe(true);
-        expect(analysis.shouldPlayConservatively).toBe(true);
       });
 
       it("should handle complex trick scenarios", () => {
@@ -611,7 +607,6 @@ describe("AI Core Functionality", () => {
         expect(analysis.isOpponentWinning).toBe(false); // Bot1 is teammate to Bot3 (both Team B)
         expect(analysis.isTeammateWinning).toBe(true); // Bot1 is teammate to Bot3
         expect(analysis.trickPoints).toBe(15);
-        expect(analysis.shouldTryToBeat).toBe(false); // Should not try to beat teammate
       });
     });
 

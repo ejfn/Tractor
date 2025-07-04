@@ -11,6 +11,7 @@ import {
   TrumpInfo,
   TrickWinnerAnalysis,
 } from "../../types";
+import { shouldAITryToBeatCurrentWinner } from "./strategicDecisions";
 import { isTrump } from "../../game/cardValue";
 import { getComboType } from "../../game/comboDetection";
 import {
@@ -114,7 +115,14 @@ export function handleOpponentWinning(
   }
 
   // Medium-value tricks: contest if strategically sound
-  if (trickWinner.trickPoints >= 5 && trickWinner.shouldTryToBeat) {
+  if (
+    trickWinner.trickPoints >= 5 &&
+    shouldAITryToBeatCurrentWinner(
+      trickWinner,
+      gameState,
+      context.currentPlayer,
+    )
+  ) {
     return selectAggressiveBeatPlay(comboAnalyses, context);
   }
 
@@ -247,7 +255,7 @@ function selectVoidExploitationBlock(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   voidAnalysis: VoidExploitationAnalysis,
   trickWinner: TrickWinnerAnalysis,
-  trumpInfo: TrumpInfo,
+  _trumpInfo: TrumpInfo,
 ): Card[] | null {
   // Only apply void exploitation if the opponent is winning
   if (!trickWinner.isOpponentWinning) {

@@ -255,8 +255,6 @@ describe("3rd Player Strategy Tests", () => {
         isLeadWinning: false,
         trickPoints: 15,
         canBeatCurrentWinner: false,
-        shouldTryToBeat: false,
-        shouldPlayConservatively: true,
       };
       context.currentPlayer = PlayerId.Human;
 

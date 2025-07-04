@@ -582,8 +582,6 @@ describe("AI Game Context", () => {
       const result = analyzeTrickWinner(gameState, PlayerId.Bot1);
 
       expect(result.canBeatCurrentWinner).toBeDefined();
-      expect(result.shouldTryToBeat).toBeDefined();
-      expect(result.shouldPlayConservatively).toBeDefined();
     });
   });
 
