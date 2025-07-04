@@ -2,16 +2,18 @@
 
 **A systematic framework for enhancing AI strategy through automated simulation and data analysis.**
 
-*Related Documentation: [AI System](AI_SYSTEM.md) | [Game Rules](GAME_RULES.md)*
+*Related Documentation: [AI System](AI_SYSTEM.md) | [Game Rules](GAME_RULES.md) | [Log Event Schema](LOG_EVENT_SCHEMA.md)*
 
-## 1. Progress Update (June 27, 2025)
+## 1. Progress Update (July 4, 2025)
 
-The foundational framework for the AI Learning Strategy has been successfully implemented.
+The AI Learning Strategy framework has been successfully implemented and is operational.
 
-- **Phase 1 (Data Generation)** is complete. The system can now generate detailed, structured logs of AI decisions.
-- **Phase 2 (Analysis Pipeline)** has been initiated. A Python-based analysis script has been created to parse the logs and is ready for KPI implementation.
+- **Phase 1 (Data Generation)** ✅ **Complete**. Standardized AI decision logging with `ai_leading_decision` and `ai_following_decision` events.
+- **Phase 2 (Analysis Pipeline)** ✅ **Complete**. Full BigQuery pipeline with automated log ingestion, performance-focused KPI analysis, and comprehensive reporting with embedded visualizations.
+- **Phase 3 (Strategy Refinement)** 🔄 **Ready**. Analysis system identifies specific decision patterns and strategic opportunities for improvement.
+- **Phase 4 (A/B Testing)** 📋 **Framework Ready**. Infrastructure supports comparing different AI strategies through simulation.
 
-The project is now positioned to begin the iterative cycle of generating data, analyzing it for insights, and refining the AI's strategic logic.
+The system now provides actionable insights into AI performance with position-based analysis, win rate tracking, and strategic decision effectiveness.
 
 ## 2. Overview
 
@@ -44,34 +46,35 @@ The foundation of this system is high-quality, structured data. The existing `ga
 
 3.  **Simulation Runner**: ✅ **Completed**. A script named `run_simulations.sh` has been created. It runs the `npm run test:simulation` command with the `TARGET_GAMES` and `LOG_LEVEL` environment variables, piping the structured JSON output into a dedicated `logs/` directory. The `gameLogger` has been made configurable to support this.
 
-### Phase 2: Automated Analysis Pipeline
+### Phase 2: Automated Analysis Pipeline ✅ **COMPLETE**
 
-With a large dataset of structured logs, we need an automated way to process it and find meaningful patterns. This phase focuses on transforming raw log data into actionable strategic insights.
+A comprehensive cloud-based analysis pipeline has been implemented to process simulation data and generate actionable insights.
 
-**Key Actions:**
+**Key Achievements:**
 
-1.  **Data Ingestion and Parsing**: ✅ **Completed**. A Python script, `analysis/analyze_logs.py`, has been created to parse the JSON log entries from the `logs/` directory. A Python virtual environment has been set up with dependencies managed in `requirements.txt`.
+1.  **BigQuery Data Warehouse**: ✅ **Completed**. Automated log ingestion pipeline uploads simulation logs to Google Cloud BigQuery for scalable analytics and complex SQL queries.
 
-2.  **Define Key Performance Indicators (KPIs)**: The analysis pipeline will compute and track a range of KPIs to provide a multi-faceted view of AI performance. These will include:
-    *   **Primary KPI**: Attacking Team Win Rate (the ultimate measure of success).
-    *   **Secondary KPIs (All to be analyzed per Team Role - Attacking/Defending - and per Team ID - A/B)**:
-        *   *Performance by Team Role*: Metrics (e.g., win rate, points captured) broken down by whether a team was Attacking or Defending in a given round.
-        *   *Performance by Team ID*: Metrics (e.g., win rate, points captured) broken down by specific Team IDs (e.g., Team A vs. Team B).
-        *   *Point Capture Efficiency*: Average points captured per round by the attacking team.
-        *   *Trump Efficiency*: Points won per trump card played. A high value indicates effective trump usage.
-        *   *Kitty Swap Effectiveness*: Net points gained or lost from the kitty (points buried vs. points lost from the kitty bonus).
-        *   *Trick Win Rate by Position*: The percentage of tricks won when playing in the 1st, 2nd, 3rd, and 4th positions.
-        *   *Successful Declaration Rate*: The percentage of rounds won when a team has declared trump.
+2.  **Performance-Focused KPIs**: ✅ **Completed**. The analysis system computes comprehensive performance metrics:
+    *   **Position-Based Analysis**: Win rates and point collection by trick position (Leading, 2nd, 3rd, 4th player)
+    *   **Team Performance**: Win rates by team (A vs B) and role (attacking vs defending)
+    *   **Point Efficiency**: Total points collected per round by position and overall game efficiency
+    *   **AI Strategy Effectiveness**: Usage frequency and context analysis of decision points
+    *   **Game Balance Metrics**: Average rounds per game, kitty effectiveness, trump utilization
 
-3.  **Correlation and Causal Analysis**: This is the core of the data analysis. The scripts will be designed to identify statistically significant correlations between specific AI decisions and the KPIs. The goal is to move beyond simple observation to data-backed conclusions. Examples of analyses include:
-    *   **Decision Impact on Win Rate**: *"What is the impact on the Attacking Team Win Rate when the AI, in the 3rd position, chooses to 'takeover' a teammate's lead with a weak trump, versus playing a supporting role?"* This would be segmented by `pointPressure` and the number of points in the trick.
-    *   **Threshold Optimization**: *"What is the optimal hand strength threshold for declaring trump?"* We can analyze the win rate for declarations made with different hand strengths (e.g., based on the number of trump cards, high-value cards, etc.).
-    *   **Behavioral Pattern Analysis**: *"Do bots that exhibit a more 'aggressive' `playStyle` early in the game tend to win more or less often?"* This helps validate the logic in `determinePlayStyle`.
+3.  **Advanced SQL Analytics**: ✅ **Completed**. Sophisticated BigQuery queries extract insights from trick-level data:
+    *   **Trick Position Analysis**: Flattens JSON play data to analyze player positions and performance
+    *   **Memory System Integration**: Tracks AI card memory usage and strategic decision effectiveness
+    *   **Strategic Decision Tracking**: Correlates specific AI decision points with game outcomes
 
-4.  **Automated Insight Reports**: The analysis pipeline will culminate in the generation of automated reports. These reports will:
-    *   Present the KPIs in a clear, easy-to-understand format (e.g., dashboards with graphs and charts).
-    *   Highlight the most significant positive and negative correlations between decisions and outcomes.
-    *   Propose specific, data-driven hypotheses for strategy improvements (e.g., *"Hypothesis: The AI is too conservative in leading trump when it has a significant trump advantage. The data shows a 5% increase in win rate when leading trump with a trump advantage > 0.4."*).
+4.  **Automated Reporting System**: ✅ **Completed**. Python-based report generator (`generate_kpi_report.py`) produces:
+    *   **Comprehensive Markdown Reports**: Detailed performance analysis with versioned filenames
+    *   **Embedded Visualizations**: Charts showing position win rates and point distribution patterns
+    *   **Strategic Insights**: Most-used AI decision points and their effectiveness
+    *   **Actionable Metrics**: Clear performance indicators for identifying improvement opportunities
+
+### Data Schema and Event Types
+
+For detailed documentation of all log event types and their data structures, see **[Log Event Schema](LOG_EVENT_SCHEMA.md)**.
 
 ### Phase 3: Data-Driven Strategy Refinement
 
@@ -107,15 +110,46 @@ To ensure that a change is a genuine improvement and not just a random fluctuati
 
 3.  **Merge Confirmation**: A pull request for a new AI strategy will only be merged into the `main` branch after the A/B test has demonstrated a clear, statistically significant improvement in performance. This prevents regressions and ensures that the AI is always evolving in a positive direction.
 
-## Proposed Workflow
+## Current Operational Workflow
 
-1.  **Generate Data**: Run `./run_simulations.sh [number_of_games]` to generate a rich dataset.
-2.  **Run Analysis**: Execute `python analysis/analyze_logs.py` to produce an insight report.
-3.  **Identify Hypothesis**: Review the report and form a hypothesis (e.g., "The AI is wasting high-value trump cards too early").
-4.  **Implement Change**: Create a new feature branch and modify the relevant AI module(s) to test the hypothesis.
-5.  **Validate with A/B Test**: Run the new branch against `main` in the A/B testing framework.
-6.  **Analyze Results**: If the new strategy shows a statistically significant improvement, create a pull request.
-7.  **Merge and Repeat**: Merge the improved strategy and begin the cycle again.
+1.  **Generate Data**: Run `./run_simulations.sh [number_of_games]` to generate comprehensive simulation logs.
+2.  **Upload to BigQuery**: Use `python analysis/setup_bigquery.py` to upload logs to cloud data warehouse.
+3.  **Generate KPI Report**: Execute `python analysis/generate_kpi_report.py` to produce performance analysis with visualizations.
+4.  **Analyze Insights**: Review position-based performance, AI strategy effectiveness, and identify improvement opportunities.
+5.  **Form Hypothesis**: Based on data patterns (e.g., "3rd player position shows suboptimal takeover decisions").
+6.  **Implement Change**: Create feature branch and modify relevant AI modules using data-driven insights.
+7.  **Validate with A/B Test**: Compare new strategy against baseline using simulation framework.
+8.  **Statistical Analysis**: Verify improvements are statistically significant before merging.
+9.  **Deploy and Monitor**: Merge improvements and generate new performance reports to track progress.
+
+## Current Analysis Capabilities
+
+The implemented system provides comprehensive insights into:
+
+- **Position Dominance**: Leading players win 42% of tricks, demonstrating strategic importance of trick leadership
+- **Point Distribution**: Clear hierarchy showing Leading > 4th > 2nd > 3rd player effectiveness
+- **AI Decision Patterns**: Analysis of 15+ strategic decision points and their usage frequency
+- **Game Balance**: 194.5 points captured per round out of ~200 available (97% efficiency)
+- **Strategic Effectiveness**: Identification of most/least effective AI strategies for targeted improvements
+
+## Analysis Pipeline Files
+
+The current implementation includes:
+
+**Core Analysis Scripts:**
+- `analysis/setup_bigquery.py` - BigQuery table setup and log upload automation
+- `analysis/kpi_report_query.sql` - Performance-focused SQL query for comprehensive metrics
+- `analysis/generate_kpi_report.py` - Python report generator with embedded visualizations
+- `analysis/upload_logs.sh` - Bash script for automated log uploading to BigQuery
+
+**Documentation:**
+- `docs/LOG_EVENT_SCHEMA.md` - Complete event type documentation with field specifications
+- `docs/AI_LEARNING_STRATEGY.md` - This strategy document (updated)
+
+**Generated Outputs:**
+- `analysis_reports/kpi_report_[version].md` - Versioned performance reports with embedded charts
+- `analysis_reports/position_win_rates_[version].png` - Position-based win rate visualizations
+- `analysis_reports/position_points_per_round_[version].png` - Point distribution charts
 
 ## Benefits of This Approach
 

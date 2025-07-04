@@ -74,7 +74,7 @@ export function selectOptimalFollowPlay(
         multiComboResult &&
         multiComboResult.strategy !== "no_valid_response"
       ) {
-        gameLogger.debug("AI following decision: multi-combo", {
+        gameLogger.debug("ai_following_decision", {
           decisionPoint: "follow_multi_combo",
           player: currentPlayerId,
           decision: multiComboResult.cards,
@@ -88,42 +88,21 @@ export function selectOptimalFollowPlay(
   // RESTRUCTURED: Clear priority chain for following play decisions
   const trickWinner = context.trickWinnerAnalysis;
 
-  // DEBUG: Log decision flow entry point
-  gameLogger.debug(
-    "ai_following_decision_start",
-    {
-      player: currentPlayerId,
-      trickPosition: context.trickPosition,
-      trickWinner: trickWinner
-        ? {
-            isTeammateWinning: trickWinner.isTeammateWinning,
-            isOpponentWinning: trickWinner.isOpponentWinning,
-            canBeatCurrentWinner: trickWinner.canBeatCurrentWinner,
-            shouldTryToBeat: trickWinner.shouldTryToBeat,
-            trickPoints: trickWinner.trickPoints,
-            currentWinner: trickWinner.currentWinner,
-          }
-        : null,
-      availableCombos: comboAnalyses.length,
-      leadingCards: leadingCards?.map((c) => `${c.rank}${c.suit}`),
-    },
-    "=== AI Following Decision Analysis ===",
-  );
+  // Strategic context tracking for AI learning
+  gameLogger.debug("ai_following_decision", {
+    decisionPoint: "analysis_start",
+    player: currentPlayerId,
+    trickPosition: context.trickPosition,
+    isTeammateWinning: trickWinner?.isTeammateWinning || false,
+    isOpponentWinning: trickWinner?.isOpponentWinning || false,
+    canBeatCurrentWinner: trickWinner?.canBeatCurrentWinner || false,
+    trickPoints: trickWinner?.trickPoints || 0,
+  });
 
   // Clear priority-based decision making
 
   // === PRIORITY 1: TEAM COORDINATION ===
   if (trickWinner?.isTeammateWinning) {
-    gameLogger.debug(
-      "ai_following_path",
-      {
-        player: currentPlayerId,
-        path: "PRIORITY_1_TEAM_COORDINATION",
-        reason: "teammate_is_winning",
-      },
-      "Following Path: Team Coordination (Teammate Winning)",
-    );
-
     // Teammate is winning - help collect points or play conservatively
     const decision = handleTeammateWinning(
       comboAnalyses,
@@ -132,7 +111,7 @@ export function selectOptimalFollowPlay(
       gameState,
       currentPlayerId,
     );
-    gameLogger.debug("AI following decision: teammate winning", {
+    gameLogger.debug("ai_following_decision", {
       decisionPoint: "follow_teammate_winning",
       player: currentPlayerId,
       decision,
@@ -147,16 +126,6 @@ export function selectOptimalFollowPlay(
     trickWinner?.canBeatCurrentWinner &&
     shouldTryEstablishSuit(gameState, context, currentPlayerId)
   ) {
-    gameLogger.debug(
-      "ai_following_path",
-      {
-        player: currentPlayerId,
-        path: "PRIORITY_2_SUIT_ESTABLISHMENT",
-        reason: "establishing_strong_suit",
-      },
-      "Following Path: Suit Establishment (Building Position)",
-    );
-
     const decision = selectOptimalWinningCombo(
       comboAnalyses,
       context,
@@ -164,7 +133,7 @@ export function selectOptimalFollowPlay(
       trumpInfo,
       gameState,
     );
-    gameLogger.debug("AI following decision: suit establishment", {
+    gameLogger.debug("ai_following_decision", {
       decisionPoint: "follow_suit_establishment",
       player: currentPlayerId,
       decision,
@@ -175,17 +144,6 @@ export function selectOptimalFollowPlay(
 
   // === PRIORITY 3: OPPONENT BLOCKING ===
   if (trickWinner?.isOpponentWinning) {
-    gameLogger.debug(
-      "ai_following_path",
-      {
-        player: currentPlayerId,
-        path: "PRIORITY_3_OPPONENT_BLOCKING",
-        reason: "opponent_is_winning",
-        trickPosition: context.trickPosition,
-      },
-      "Following Path: Opponent Blocking (Opponent Winning)",
-    );
-
     // Regular opponent blocking logic
     const opponentResponse = handleOpponentWinning(
       comboAnalyses,
@@ -195,7 +153,7 @@ export function selectOptimalFollowPlay(
       gameState,
     );
     if (opponentResponse) {
-      gameLogger.debug("AI following decision: opponent blocking", {
+      gameLogger.debug("ai_following_decision", {
         decisionPoint: "follow_opponent_blocking",
         player: currentPlayerId,
         decision: opponentResponse,
@@ -220,7 +178,7 @@ export function selectOptimalFollowPlay(
       trumpInfo,
       gameState,
     );
-    gameLogger.debug("AI following decision: trick contention", {
+    gameLogger.debug("ai_following_decision", {
       decisionPoint: "follow_trick_contention",
       player: currentPlayerId,
       decision,
@@ -232,7 +190,7 @@ export function selectOptimalFollowPlay(
   // === PRIORITY 5: STRATEGIC DISPOSAL ===
   // Can't/shouldn't win - play optimally for future tricks
   const decision = selectStrategicDisposal(comboAnalyses, context, gameState);
-  gameLogger.debug("AI following decision: strategic disposal", {
+  gameLogger.debug("ai_following_decision", {
     decisionPoint: "follow_strategic_disposal",
     player: currentPlayerId,
     decision,

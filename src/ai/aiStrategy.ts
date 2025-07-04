@@ -56,7 +56,7 @@ export function makeAIPlay(
       context,
       gameState,
     );
-    gameLogger.debug("AI leading decision", {
+    gameLogger.debug("ai_leading_decision", {
       decisionPoint: "leading_play",
       player: player.id,
       decision: leadingPlay,
@@ -80,7 +80,7 @@ export function makeAIPlay(
       gameState,
       player.id,
     );
-    gameLogger.debug("AI following decision", {
+    gameLogger.debug("ai_following_decision", {
       decisionPoint: "following_play",
       player: player.id,
       decision: restructuredPlay,

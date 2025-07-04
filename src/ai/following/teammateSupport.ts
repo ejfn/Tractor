@@ -165,15 +165,11 @@ export function handleTeammateWinning(
         gameState,
       );
       if (sameSuitResponse) {
-        gameLogger.debug(
-          "second_player_same_suit_response",
-          {
-            player: currentPlayerId || "unknown",
-            selectedCards: sameSuitResponse.map((c) => `${c.rank}${c.suit}`),
-            strategy: "same_suit_following",
-          },
-          "2nd player uses enhanced same-suit following strategy",
-        );
+        gameLogger.debug("ai_following_decision", {
+          decisionPoint: "teammate_winning_second_player",
+          strategy: "same_suit_following",
+          player: currentPlayerId || "unknown",
+        });
         return sameSuitResponse;
       }
 
@@ -185,15 +181,11 @@ export function handleTeammateWinning(
         gameState,
       );
       if (trumpResponse) {
-        gameLogger.debug(
-          "second_player_trump_response",
-          {
-            player: currentPlayerId || "unknown",
-            selectedCards: trumpResponse.map((c) => `${c.rank}${c.suit}`),
-            strategy: "strategic_trump_response",
-          },
-          "2nd player uses enhanced trump response strategy",
-        );
+        gameLogger.debug("ai_following_decision", {
+          decisionPoint: "teammate_winning_second_player",
+          strategy: "trump_response",
+          player: currentPlayerId || "unknown",
+        });
         return trumpResponse;
       }
 
@@ -217,18 +209,6 @@ export function handleTeammateWinning(
 
     case TrickPosition.Third:
       // 3rd Player Strategy Enhancement: Trump conservation when following teammate
-      gameLogger.debug(
-        "third_player_teammate_support_analysis",
-        {
-          player: currentPlayerId || "unknown",
-          trickPosition: "Third",
-          availablePointCards: comboAnalyses.filter((ca) =>
-            ca.combo.cards.some((card) => card.points > 0),
-          ).length,
-          totalCombos: comboAnalyses.length,
-        },
-        "=== Third Player Teammate Support Analysis ===",
-      );
 
       const shouldContributeThird = shouldThirdPlayerContribute(
         trickWinner,
@@ -238,16 +218,13 @@ export function handleTeammateWinning(
         trumpInfo,
       );
 
-      gameLogger.debug(
-        "third_player_contribution_decision",
-        {
-          player: currentPlayerId || "unknown",
-          shouldContribute: shouldContributeThird,
-          currentTrickPoints: gameState?.currentTrick?.points || 0,
-          teammateWinner: trickWinner?.currentWinner,
-        },
-        `Third Player Decision: ${shouldContributeThird ? "CONTRIBUTE POINTS" : "NO CONTRIBUTION - CHECK TAKEOVER"}`,
-      );
+      // Strategic decision tracking for AI learning
+      gameLogger.debug("ai_following_decision", {
+        decisionPoint: "teammate_winning_third_player",
+        shouldContribute: shouldContributeThird,
+        trickPoints: gameState?.currentTrick?.points || 0,
+        player: currentPlayerId || "unknown",
+      });
 
       if (shouldContributeThird) {
         const contribution = selectThirdPlayerContribution(
@@ -257,20 +234,6 @@ export function handleTeammateWinning(
           gameState,
         );
         if (contribution) {
-          gameLogger.debug(
-            "third_player_point_contribution",
-            {
-              player: currentPlayerId || "unknown",
-              selectedCards: contribution.cards.map(
-                (c) => `${c.rank}${c.suit}(${c.points}pts)`,
-              ),
-              totalPoints: contribution.cards.reduce(
-                (sum, c) => sum + (c.points || 0),
-                0,
-              ),
-            },
-            "Third Player: Contributing Points to Teammate",
-          );
           return contribution.cards;
         }
       } else {
@@ -282,15 +245,6 @@ export function handleTeammateWinning(
           trumpInfo,
         );
         if (takeoverPlay) {
-          gameLogger.debug(
-            "third_player_takeover",
-            {
-              player: currentPlayerId || "unknown",
-              selectedCards: takeoverPlay.map((c) => `${c.rank}${c.suit}`),
-              reason: "takeover_strategy_activated",
-            },
-            "Third Player: Takeover Strategy Activated",
-          );
           return takeoverPlay;
         }
       }
