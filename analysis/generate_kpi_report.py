@@ -17,7 +17,11 @@ load_dotenv()
 # Configuration
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT")
 KPI_QUERY_FILE = "kpi_report_query.sql"
-OUTPUT_DIR = "analysis_reports"
+
+# Always use the project root directory for output
+script_dir = os.path.dirname(__file__)
+project_root = os.path.dirname(script_dir)  # Go up one level from analysis/ to project root
+OUTPUT_DIR = os.path.join(project_root, "analysis_reports")
 
 def run_query():
     """Run the KPI query and return results."""
@@ -26,7 +30,6 @@ def run_query():
 
     client = bigquery.Client(project=PROJECT_ID)
     
-    script_dir = os.path.dirname(__file__)
     query_path = os.path.join(script_dir, KPI_QUERY_FILE)
     
     with open(query_path, "r") as f:
@@ -54,8 +57,8 @@ def generate_report(df):
         # Game performance overview
         lines.append("### 🏆 Game Performance\n")
         lines.append(f"- **Total Games:** {row['total_games']}\n")
-        lines.append(f"- **Team A Win Rate:** {row['team_a_win_rate']:.1%}\n")
-        lines.append(f"- **Team B Win Rate:** {row['team_b_win_rate']:.1%}\n")
+        lines.append(f"- **Attacking Team Win Rate:** {row['attacking_team_win_rate']:.1%}\n")
+        lines.append(f"- **Defending Team Win Rate:** {row['defending_team_win_rate']:.1%}\n")
         lines.append(f"- **Total Rounds:** {row['total_rounds']}\n")
         lines.append(f"- **Avg Rounds per Game:** {row['avg_rounds_per_game']:.1f}\n")
         lines.append(f"- **Attacking Round Win Rate:** {row['attacking_round_win_rate']:.1%}\n\n")
@@ -101,6 +104,9 @@ def generate_report(df):
         # Add charts to the report
         safe_version = row['appVersion'].replace('/', '_').replace('+', '_')
         lines.append("## 📊 Performance Visualizations\n\n")
+        
+        lines.append("### Team Performance: Attacking vs Defending\n")
+        lines.append(f"![Team Win Rates](team_win_rates_{safe_version}.png)\n\n")
         
         lines.append("### Position Win Rates\n")
         lines.append(f"![Position Win Rates](position_win_rates_{safe_version}.png)\n\n")
@@ -235,6 +241,34 @@ def create_visualizations(df):
             plt.ylim(0, max(round_points) * 1.15)
             plt.tight_layout()
             plt.savefig(f"{OUTPUT_DIR}/position_points_per_round_{safe_version}.png", dpi=300, bbox_inches='tight')
+            plt.close()
+        
+        # 3. Attacking vs Defending Team Win Rates
+        attacking_rate = row.get('attacking_team_win_rate')
+        defending_rate = row.get('defending_team_win_rate')
+        
+        if attacking_rate is not None and defending_rate is not None and not pd.isna(attacking_rate) and not pd.isna(defending_rate):
+            team_types = ['Attacking\nTeam', 'Defending\nTeam']
+            win_rates = [attacking_rate, defending_rate]
+            
+            plt.figure(figsize=(8, 6))
+            bars = plt.bar(team_types, win_rates, color=['#e74c3c', '#3498db'], alpha=0.8)
+            plt.title(f'Team Performance: Attacking vs Defending - {row["appVersion"]}')
+            plt.ylabel('Win Rate')
+            plt.xlabel('Team Role')
+            
+            # Add value labels on bars
+            for bar, rate in zip(bars, win_rates):
+                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                        f'{rate:.1%}', ha='center', va='bottom', fontweight='bold', fontsize=12)
+            
+            # Add a horizontal line at 50% for reference
+            plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='50% Balance')
+            
+            plt.ylim(0, max(win_rates) * 1.15)
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(f"{OUTPUT_DIR}/team_win_rates_{safe_version}.png", dpi=300, bbox_inches='tight')
             plt.close()
         
         # Note: Human vs AI comparison removed since all players are AI in simulations
