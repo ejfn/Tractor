@@ -25,18 +25,12 @@ export function selectStrategicDisposal(
   context: GameContext,
   gameState?: GameState,
 ): Card[] {
-  gameLogger.debug(
-    "strategic_disposal_start",
-    {
-      comboCount: comboAnalyses.length,
-      availableCombos: comboAnalyses.map((ca) => ({
-        cards: ca.combo.cards.map((c) => c.getDisplayName()),
-        type: ca.combo.type,
-        conservationValue: ca.analysis.conservationValue,
-      })),
-    },
-    `Strategic disposal called with ${comboAnalyses.length} combo options`,
-  );
+  // Strategic disposal decision tracking for AI learning
+  gameLogger.debug("ai_following_decision", {
+    decisionPoint: "strategic_disposal_start",
+    comboCount: comboAnalyses.length,
+    cardsRemaining: context.cardsRemaining,
+  });
   // REMOVED ISSUE #104 BAND-AID FIX - Game logic now properly handles mixed combinations
 
   // Strategic disposal when not contesting trick
@@ -128,13 +122,10 @@ export function selectStrategicDisposal(
   // Ultimate fallback (should rarely happen)
   const sorted = comboAnalyses.sort((a, b) => a.combo.value - b.combo.value);
   const result = sorted[0].combo.cards;
-  gameLogger.warn(
-    "strategic_disposal_fallback",
-    {
-      selectedCards: result.map((c) => c.getDisplayName()),
-    },
-    "Strategic disposal using ultimate fallback",
-  );
+  gameLogger.debug("ai_following_decision", {
+    decisionPoint: "strategic_disposal_fallback",
+    selectedCards: result.map((c) => c.getDisplayName()),
+  });
   return result;
 }
 

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code when working with this repository.
 
-@README.md | @docs/AI_SYSTEM.md | @docs/GAME_RULES.md | @docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md | @docs/MULTI_COMBO_ALGORITHMS.md
+@README.md | @docs/AI_SYSTEM.md | @docs/GAME_RULES.md | @docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md | @docs/MULTI_COMBO_ALGORITHMS.md | @docs/LOG_EVENT_SCHEMA.md
 
 ## Project Overview
 
@@ -190,7 +190,7 @@ enum PointPressure { LOW = 'low', MEDIUM = 'medium', HIGH = 'high' }
 - **Memory System** - Leverage card tracking for guaranteed winner detection
 
 ### Development Standards
-- **Logging** - Use `gameLogger` instead of `console.log()`
+- **Logging** - Use `gameLogger` instead of `console.log()` (see [Log Event Schema](docs/LOG_EVENT_SCHEMA.md))
 - **Testing** - Include point card management and trump conservation in AI tests
 - **Documentation** - Update when adding features or changing architecture
 

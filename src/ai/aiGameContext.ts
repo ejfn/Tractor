@@ -157,15 +157,6 @@ function canPlayerBeatCurrentWinner(
 ): boolean {
   const player = gameState.players.find((p) => p.id === playerId);
   if (!player || !currentTrick) {
-    gameLogger.debug(
-      "canBeatCurrentWinner_early_exit",
-      {
-        player: playerId,
-        hasPlayer: !!player,
-        hasTrick: !!currentTrick,
-      },
-      "Early exit: no player or trick",
-    );
     return false;
   }
 
@@ -176,54 +167,15 @@ function canPlayerBeatCurrentWinner(
   );
   const currentWinnerCards = winningPlay?.cards || [];
   if (currentWinnerCards.length === 0) {
-    gameLogger.debug(
-      "canBeatCurrentWinner_no_winner_cards",
-      {
-        player: playerId,
-        winningPlayerId,
-      },
-      "No winner cards found",
-    );
     return false;
   }
-
-  gameLogger.debug(
-    "canBeatCurrentWinner_analysis_start",
-    {
-      player: playerId,
-      winningPlayer: winningPlayerId,
-      winnerCards: currentWinnerCards.map((c) => `${c.rank}${c.suit}`),
-      playerHand: player.hand.map((c) => `${c.rank}${c.suit}`),
-    },
-    "Starting canBeatCurrentWinner analysis",
-  );
 
   // CRITICAL FIX: Use filtered valid combos instead of unfiltered identifyCombos
   // This prevents the AI from considering illegal moves like trump when it must follow suit
   const availableCombos = getValidCombinations(player.hand, gameState);
   if (availableCombos.length === 0) {
-    gameLogger.debug(
-      "canBeatCurrentWinner_no_combos",
-      {
-        player: playerId,
-      },
-      "No available combos",
-    );
     return false;
   }
-
-  gameLogger.debug(
-    "canBeatCurrentWinner_combos_found",
-    {
-      player: playerId,
-      comboCount: availableCombos.length,
-      combos: availableCombos.map((c) => ({
-        type: c.type,
-        cards: c.cards.map((card) => `${card.rank}${card.suit}`),
-      })),
-    },
-    "Available combos for evaluation",
-  );
 
   // Test each combo to see if any can beat the current trick
   for (let i = 0; i < availableCombos.length; i++) {
@@ -234,18 +186,6 @@ function canPlayerBeatCurrentWinner(
         currentTrick,
         gameState.trumpInfo,
         player.hand,
-      );
-
-      gameLogger.debug(
-        "canBeatCurrentWinner_combo_eval",
-        {
-          player: playerId,
-          comboIndex: i,
-          comboCards: combo.cards.map((c) => `${c.rank}${c.suit}`),
-          canBeat: evaluation.canBeat,
-          isLegal: evaluation.isLegal,
-        },
-        `Combo ${i} evaluation result`,
       );
 
       // If this combo can legally beat the current winner, return true
@@ -261,80 +201,18 @@ function canPlayerBeatCurrentWinner(
           gameState.trumpInfo,
         );
 
-        gameLogger.debug(
-          "canBeatCurrentWinner_strength_check",
-          {
-            player: playerId,
-            ourCard: `${ourCard.rank}${ourCard.suit}`,
-            winnerCard: `${winnerCard.rank}${winnerCard.suit}`,
-            comparison: cardComparison,
-            canActuallyBeat: cardComparison > 0,
-          },
-          "Card strength comparison",
-        );
-
         if (cardComparison > 0) {
-          gameLogger.debug(
-            "canBeatCurrentWinner_can_beat",
-            {
-              player: playerId,
-              winningCombo: combo.cards.map((c) => `${c.rank}${c.suit}`),
-            },
-            "Found combo that can beat current winner",
-          );
           return true;
-        } else {
-          gameLogger.debug(
-            "canBeatCurrentWinner_equal_strength",
-            {
-              player: playerId,
-              ourCard: `${ourCard.rank}${ourCard.suit}`,
-              winnerCard: `${winnerCard.rank}${winnerCard.suit}`,
-            },
-            "Combo has equal strength - cannot beat",
-          );
         }
       }
-    } catch (error) {
-      gameLogger.debug(
-        "canBeatCurrentWinner_eval_error",
-        {
-          player: playerId,
-          comboIndex: i,
-          error: error instanceof Error ? error.message : String(error),
-        },
-        "evaluateTrickPlay failed",
-      );
+    } catch {
+      // Skip combos that cause evaluation errors
       continue;
     }
   }
 
-  gameLogger.debug(
-    "canBeatCurrentWinner_fallback",
-    {
-      player: playerId,
-    },
-    "No combos can beat - trying fallback",
-  );
-
   // Fallback: Use simplified heuristic for edge cases
-  const fallbackResult = canPlayerBeatCurrentWinnerSimple(
-    gameState,
-    playerId,
-    currentTrick,
-  );
-
-  gameLogger.debug(
-    "canBeatCurrentWinner_final_result",
-    {
-      player: playerId,
-      result: fallbackResult,
-      source: "fallback",
-    },
-    "Final canBeatCurrentWinner result",
-  );
-
-  return fallbackResult;
+  return canPlayerBeatCurrentWinnerSimple(gameState, playerId, currentTrick);
 }
 
 /**
@@ -432,16 +310,6 @@ function shouldAvoidWastefulTrumpUsage(
   );
 
   if (equalStrengthCard) {
-    gameLogger.debug(
-      "shouldAvoidWastefulTrumpUsage",
-      {
-        player: playerId,
-        winnerCard: `${winnerCard.rank}${winnerCard.suit}`,
-        equalCard: `${equalStrengthCard.rank}${equalStrengthCard.suit}`,
-        avoidWaste: true,
-      },
-      "Avoiding wasteful trump usage - have equal strength card",
-    );
     return true; // Avoid using trump when we have equal non-trump card
   }
 

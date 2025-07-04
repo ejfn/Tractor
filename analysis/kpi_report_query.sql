@@ -1,164 +1,178 @@
--- This query generates a KPI report from simulation logs in BigQuery.
--- It aggregates metrics by appVersion.
+-- Performance-focused KPI report for Tractor AI simulation logs
+-- Focus on win rates, point efficiency, and AI decision effectiveness
 
--- To filter by a specific appVersion or a range of versions, uncomment the WHERE clause
--- at the end of the query and modify it as needed.
--- Examples:
---   WHERE appVersion = 'v1.0.0-beta.5+def5678'
---   WHERE appVersion LIKE 'v1.1.0-dev%'
---   WHERE appVersion IN ('v1.0.0+abc1234', 'v1.0.1+xyz5678')
+-- Basic game performance
+WITH GameStats AS (
+    SELECT 
+        appVersion,
+        COUNT(DISTINCT gameId) as total_games,
+        -- Team win rates
+        ROUND(SAFE_DIVIDE(COUNTIF(JSON_VALUE(data, '$.winner') = 'A'), COUNT(*)), 3) as team_a_win_rate,
+        ROUND(SAFE_DIVIDE(COUNTIF(JSON_VALUE(data, '$.winner') = 'B'), COUNT(*)), 3) as team_b_win_rate
+    FROM `tractor_analytics.simulation_logs`
+    WHERE event = 'game_over'
+    GROUP BY appVersion
+),
 
--- CTE to parse relevant event data from the 'data' JSON field
-WITH ParsedEvents AS (
-    SELECT
-        gameId,
-        roundNumber,
-        timestamp,
+-- Extract trick details with player positions and performance
+TrickPerformance AS (
+    SELECT 
         appVersion,
-        event,
-        -- Extract trump suit from 'trump_finalized' events
-        JSON_VALUE(data, '$.trumpInfo.trumpSuit') AS trumpSuit,
-        -- Extract game winner from 'game_over' events
-        JSON_VALUE(data, '$.winner') AS gameWinner,
-        -- Extract trick winner and points from 'trick_completed' events
-        JSON_VALUE(data, '$.winningPlayer') AS trickWinner,
-        CAST(JSON_VALUE(data, '$.trickPoints') AS INT64) AS trickPoints,
-        -- Extract the 'allPlays' array for later unnesting
-        JSON_QUERY(data, '$.allPlays') AS allPlaysJson,
-        -- Extract decision point from 'AI' events
-        JSON_VALUE(data, '$.decisionPoint') AS decisionPoint,
-        -- Extract current team ranks from 'round_preparation_start' events
-        JSON_QUERY(data, '$.currentTeamRanks') AS currentTeamRanksJson
-    FROM
-        `tractor_analytics.simulation_logs`
-),
--- CTE to determine attacking/defending teams per game
-GameTeams AS (
-    SELECT
         gameId,
-        MAX(CASE
-            WHEN JSON_VALUE(team_rank, '$.isDefending') = 'false' THEN JSON_VALUE(team_rank, '$.teamId')
-            ELSE NULL
-        END) AS attackingTeamId,
-        MAX(CASE
-            WHEN JSON_VALUE(team_rank, '$.isDefending') = 'true' THEN JSON_VALUE(team_rank, '$.teamId')
-            ELSE NULL
-        END) AS defendingTeamId
-    FROM
-        ParsedEvents,
-        UNNEST(JSON_QUERY_ARRAY(currentTeamRanksJson)) AS team_rank
-    WHERE
-        event = 'round_preparation_start'
-    GROUP BY
-        gameId
+        JSON_VALUE(data, '$.winningPlayer') as winningPlayer,
+        CAST(JSON_VALUE(data, '$.trickPoints') AS INT64) as trickPoints,
+        data
+    FROM `tractor_analytics.simulation_logs`
+    WHERE event = 'trick_completed'
+        AND JSON_VALUE(data, '$.trickPoints') IS NOT NULL
+        AND JSON_QUERY(data, '$.allPlays') IS NOT NULL
 ),
--- CTE to process trick details and identify trump plays
-TrickDetails AS (
-    SELECT
-        pe.gameId,
-        pe.roundNumber,
-        pe.appVersion,
-        gt.attackingTeamId,
-        gt.defendingTeamId,
-        pe.trickWinner,
-        pe.trickPoints,
-        pe.trumpSuit,
-        JSON_VALUE(play, '$.playerId') AS playerId,
-        JSON_VALUE(card_str) AS cardString,
-        -- Determine if card is trump (assuming 'BigJoker' and 'SmallJoker' are ranks)
-        (
-            JSON_VALUE(card_str, '$.suit') = pe.trumpSuit OR
-            JSON_VALUE(card_str, '$.rank') IN ('BigJoker', 'SmallJoker')
-        ) AS isTrumpCard,
-        -- Determine player's team based on predefined player IDs
-        CASE
-            WHEN JSON_VALUE(play, '$.playerId') IN ('human', 'bot2') THEN 'A'
-            WHEN JSON_VALUE(play, '$.playerId') IN ('bot1', 'bot3') THEN 'B'
-            ELSE NULL
-        END AS playerTeamId
-    FROM
-        ParsedEvents AS pe
-    INNER JOIN
-        GameTeams AS gt ON pe.gameId = gt.gameId
-    CROSS JOIN
-        UNNEST(JSON_QUERY_ARRAY(pe.allPlaysJson)) AS play
-    CROSS JOIN
-        UNNEST(JSON_QUERY_ARRAY(JSON_QUERY(play, '$.cards'))) AS card_str
-    WHERE
-        pe.event = 'trick_completed'
+
+-- Flatten trick data to get player positions and performance
+TrickPositions AS (
+    SELECT 
+        tp.appVersion,
+        tp.gameId,
+        tp.winningPlayer,
+        tp.trickPoints,
+        JSON_VALUE(play, '$.playerId') as playerId,
+        -- Position in this specific trick (1-4, based on play order)
+        play_offset + 1 as trickPosition,
+        -- Check if this player won the trick
+        (JSON_VALUE(play, '$.playerId') = tp.winningPlayer) as wonTrick
+    FROM TrickPerformance tp,
+    UNNEST(JSON_QUERY_ARRAY(tp.data, '$.allPlays')) as play WITH OFFSET play_offset
 ),
--- CTE to aggregate trick data per game and round
-AggregatedTrickStats AS (
-    SELECT
-        gameId,
-        roundNumber,
+
+-- Position-based performance metrics
+PositionStats AS (
+    SELECT 
         appVersion,
-        attackingTeamId,
-        defendingTeamId,
-        SUM(trickPoints) AS totalRoundPoints,
-        SUM(CASE WHEN trickWinner = playerId AND isTrumpCard THEN 1 ELSE 0 END) AS trumpWonTricks,
-        SUM(CASE WHEN trickWinner = playerId AND isTrumpCard THEN trickPoints ELSE 0 END) AS pointsFromTrumpWins,
-        SUM(CASE WHEN isTrumpCard THEN 1 ELSE 0 END) AS totalTrumpCardsPlayed
-    FROM
-        TrickDetails
-    GROUP BY
-        gameId, roundNumber, appVersion, attackingTeamId, defendingTeamId
+        trickPosition,
+        COUNT(*) as total_tricks_at_position,
+        SUM(CASE WHEN wonTrick THEN 1 ELSE 0 END) as tricks_won_at_position,
+        SUM(CASE WHEN wonTrick THEN trickPoints ELSE 0 END) as points_won_at_position,
+        -- Win rate for this position
+        ROUND(SAFE_DIVIDE(SUM(CASE WHEN wonTrick THEN 1 ELSE 0 END), COUNT(*)), 3) as position_win_rate,
+        -- Average points when winning from this position
+        ROUND(SAFE_DIVIDE(SUM(CASE WHEN wonTrick THEN trickPoints ELSE 0 END), 
+                         SUM(CASE WHEN wonTrick THEN 1 ELSE 0 END)), 2) as avg_points_when_winning,
+        -- Average points per round for this position (total points won / total rounds in dataset)
+        ROUND(SAFE_DIVIDE(SUM(CASE WHEN wonTrick THEN trickPoints ELSE 0 END), 
+                         (SELECT COUNT(*) FROM `tractor_analytics.simulation_logs` WHERE event = 'round_end')), 2) as avg_points_per_round
+    FROM TrickPositions
+    GROUP BY appVersion, trickPosition
 ),
--- CTE for game outcomes
-GameOutcomes AS (
-    SELECT
-        gameId,
+
+-- Player-specific performance (Human vs Bots)
+PlayerPerformance AS (
+    SELECT 
         appVersion,
-        gameWinner
-    FROM
-        ParsedEvents
-    WHERE
-        event = 'game_over'
+        playerId,
+        COUNT(*) as total_tricks,
+        SUM(CASE WHEN wonTrick THEN 1 ELSE 0 END) as tricks_won,
+        SUM(CASE WHEN wonTrick THEN trickPoints ELSE 0 END) as total_points_won,
+        ROUND(SAFE_DIVIDE(SUM(CASE WHEN wonTrick THEN 1 ELSE 0 END), COUNT(*)), 3) as player_win_rate,
+        ROUND(SAFE_DIVIDE(SUM(CASE WHEN wonTrick THEN trickPoints ELSE 0 END), COUNT(*)), 2) as avg_points_per_trick
+    FROM TrickPositions
+    GROUP BY appVersion, playerId
 ),
--- CTE for decision point frequency
-DecisionPointFrequency AS (
-    SELECT
+
+-- Round efficiency metrics
+RoundEfficiency AS (
+    SELECT 
         appVersion,
-        decisionPoint,
-        COUNT(*) AS count
-    FROM
-        ParsedEvents
-    WHERE
-        event LIKE 'AI %' AND decisionPoint IS NOT NULL
-    GROUP BY
-        appVersion, decisionPoint
+        COUNT(*) as total_rounds,
+        AVG(CAST(JSON_VALUE(data, '$.finalPoints') AS INT64)) as avg_final_points,
+        ROUND(SAFE_DIVIDE(COUNTIF(JSON_VALUE(data, '$.attackingTeamWon') = 'true'), COUNT(*)), 3) as attacking_round_win_rate
+    FROM `tractor_analytics.simulation_logs`
+    WHERE event = 'round_end'
+        AND JSON_VALUE(data, '$.finalPoints') IS NOT NULL
+    GROUP BY appVersion
+),
+
+-- AI Decision effectiveness (not just frequency)
+AIDecisionEffectiveness AS (
+    SELECT 
+        appVersion,
+        event as eventType,
+        JSON_VALUE(data, '$.decisionPoint') as decisionPoint,
+        COUNT(*) as usage_count
+    FROM `tractor_analytics.simulation_logs`
+    WHERE event IN ('ai_leading_decision', 'ai_following_decision')
+        AND JSON_VALUE(data, '$.decisionPoint') IS NOT NULL
+        AND JSON_VALUE(data, '$.decisionPoint') NOT IN ('leading_play', 'following_play')  -- Filter generic events
+    GROUP BY appVersion, event, JSON_VALUE(data, '$.decisionPoint')
+    HAVING COUNT(*) >= 100  -- Only show frequently used decisions
+),
+
+-- Trump and kitty efficiency
+EfficiencyStats AS (
+    SELECT 
+        appVersion,
+        AVG(CAST(JSON_VALUE(data, '$.kittyPoints') AS INT64)) as avg_kitty_points,
+        COUNT(*) as kitty_events
+    FROM `tractor_analytics.simulation_logs`
+    WHERE event = 'kitty_pickup'
+        AND JSON_VALUE(data, '$.kittyPoints') IS NOT NULL
+    GROUP BY appVersion
 )
--- Final KPI Calculation
-SELECT
-    appVersion,
-    COUNT(DISTINCT go.gameId) AS total_games,
 
-    -- Win Rates
-    SAFE_DIVIDE(SUM(CASE WHEN go.gameWinner = gt.attackingTeamId THEN 1 ELSE 0 END), COUNT(DISTINCT go.gameId)) AS attacking_win_rate,
-    SAFE_DIVIDE(SUM(CASE WHEN go.gameWinner = gt.defendingTeamId THEN 1 ELSE 0 END), COUNT(DISTINCT go.gameId)) AS defending_win_rate,
-    SAFE_DIVIDE(SUM(CASE WHEN go.gameWinner = 'A' THEN 1 ELSE 0 END), COUNT(DISTINCT go.gameId)) AS team_a_win_rate,
-    SAFE_DIVIDE(SUM(CASE WHEN go.gameWinner = 'B' THEN 1 ELSE 0 END), COUNT(DISTINCT go.gameId)) AS team_b_win_rate,
+-- Final performance report
+SELECT 
+    gs.appVersion,
+    gs.total_games,
+    gs.team_a_win_rate,
+    gs.team_b_win_rate,
+    
+    -- Round performance
+    re.total_rounds,
+    ROUND(re.total_rounds / gs.total_games, 1) as avg_rounds_per_game,
+    re.avg_final_points,
+    re.attacking_round_win_rate,
+    
+    -- Position-based win rates (pivoted)
+    MAX(CASE WHEN ps.trickPosition = 1 THEN ps.position_win_rate ELSE NULL END) as position_1_win_rate,
+    MAX(CASE WHEN ps.trickPosition = 2 THEN ps.position_win_rate ELSE NULL END) as position_2_win_rate,
+    MAX(CASE WHEN ps.trickPosition = 3 THEN ps.position_win_rate ELSE NULL END) as position_3_win_rate,
+    MAX(CASE WHEN ps.trickPosition = 4 THEN ps.position_win_rate ELSE NULL END) as position_4_win_rate,
+    
+    -- Position-based point efficiency (when winning)
+    MAX(CASE WHEN ps.trickPosition = 1 THEN ps.avg_points_when_winning ELSE NULL END) as position_1_avg_points,
+    MAX(CASE WHEN ps.trickPosition = 2 THEN ps.avg_points_when_winning ELSE NULL END) as position_2_avg_points,
+    MAX(CASE WHEN ps.trickPosition = 3 THEN ps.avg_points_when_winning ELSE NULL END) as position_3_avg_points,
+    MAX(CASE WHEN ps.trickPosition = 4 THEN ps.avg_points_when_winning ELSE NULL END) as position_4_avg_points,
+    
+    -- Position-based total points per round
+    MAX(CASE WHEN ps.trickPosition = 1 THEN ps.avg_points_per_round ELSE NULL END) as position_1_points_per_round,
+    MAX(CASE WHEN ps.trickPosition = 2 THEN ps.avg_points_per_round ELSE NULL END) as position_2_points_per_round,
+    MAX(CASE WHEN ps.trickPosition = 3 THEN ps.avg_points_per_round ELSE NULL END) as position_3_points_per_round,
+    MAX(CASE WHEN ps.trickPosition = 4 THEN ps.avg_points_per_round ELSE NULL END) as position_4_points_per_round,
+    
+    -- Player performance (all AI players)
+    ROUND(AVG(pp.player_win_rate), 3) as avg_player_win_rate,
+    ROUND(AVG(pp.avg_points_per_trick), 2) as avg_points_per_trick,
+    
+    -- Efficiency metrics
+    es.avg_kitty_points,
+    
+    -- Top AI decisions (as array for detailed analysis)
+    ARRAY_AGG(
+        STRUCT<eventType STRING, decisionPoint STRING, count INT64>(
+            ade.eventType, ade.decisionPoint, ade.usage_count
+        )
+    ) as top_ai_decisions
 
-    -- Average Points per Round (Overall)
-    SAFE_DIVIDE(SUM(ats.totalRoundPoints), COUNT(DISTINCT ats.gameId, ats.roundNumber)) AS avg_points_per_round,
+FROM GameStats gs
+LEFT JOIN RoundEfficiency re ON gs.appVersion = re.appVersion
+LEFT JOIN PositionStats ps ON gs.appVersion = ps.appVersion
+LEFT JOIN PlayerPerformance pp ON gs.appVersion = pp.appVersion
+LEFT JOIN EfficiencyStats es ON gs.appVersion = es.appVersion
+LEFT JOIN AIDecisionEffectiveness ade ON gs.appVersion = ade.appVersion
 
-    -- Trump Efficiency
-    SAFE_DIVIDE(SUM(ats.pointsFromTrumpWins), SUM(ats.trumpWonTricks)) AS avg_points_per_trump_won_trick,
-    SAFE_DIVIDE(SUM(ats.pointsFromTrumpWins), SUM(ats.totalTrumpCardsPlayed)) AS points_per_trump_card_played,
-    SUM(ats.totalTrumpCardsPlayed) AS total_trump_cards_played,
+GROUP BY 
+    gs.appVersion, gs.total_games, gs.team_a_win_rate, gs.team_b_win_rate,
+    re.total_rounds, re.avg_final_points, re.attacking_round_win_rate,
+    es.avg_kitty_points
 
-    -- Decision Point Frequency (as an array of structs)
-    ARRAY_AGG(STRUCT(dpf.decisionPoint, dpf.count) ORDER BY dpf.decisionPoint) AS decision_point_frequency
-FROM
-    GameOutcomes AS go
-INNER JOIN
-    GameTeams AS gt ON go.gameId = gt.gameId
-LEFT JOIN
-    AggregatedTrickStats AS ats ON go.gameId = ats.gameId AND go.appVersion = ats.appVersion
-LEFT JOIN
-    DecisionPointFrequency AS dpf ON go.appVersion = dpf.appVersion
--- WHERE go.appVersion = 'your_app_version_here' -- Uncomment and modify to filter by appVersion
-GROUP BY
-    appVersion
-ORDER BY
-    appVersion;
+ORDER BY gs.appVersion;

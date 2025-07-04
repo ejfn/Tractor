@@ -148,6 +148,7 @@ The project uses a streamlined documentation approach:
 - **GEMINI.md** - Comprehensive development guidelines (this file)
 - **docs/AI_SYSTEM.md** - Complete AI intelligence documentation with decision trees and strategic flowcharts
 - **docs/GAME_RULES.md** - Comprehensive rules reference with quick start guide for new players
+- **docs/LOG_EVENT_SCHEMA.md** - Detailed schema for log events, including JSON paths and data types.
 
 This provides complete coverage while eliminating redundancy and maintenance overhead.
 
@@ -976,6 +977,6 @@ src/hooks/useGameState.ts           // Integrated persistence in main game state
 When creating a commit message or pull request, append the following signature at the end:
 
 ```
-Generated with [Gemini Code](https://gemini.google.com)
+Generated with [Gemini](https://gemini.google.com)
 Co-authored-by: Gemini <noreply@google.com>
 ```

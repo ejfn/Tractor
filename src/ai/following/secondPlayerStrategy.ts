@@ -285,15 +285,14 @@ export function selectOptimalSameSuitResponse(
     return bValue - aValue; // Highest first
   });
 
-  gameLogger.debug(
-    "second_player_plays_highest",
-    {
-      leadingCard: `${leadingCard.rank}${leadingCard.suit}`,
-      selectedCard: `${sortedCombos[0].combo.cards[0].rank}${sortedCombos[0].combo.cards[0].suit}`,
-      strategy: "play_highest_available",
-    },
-    "2nd player plays highest available card (limited visibility)",
-  );
+  // Strategic decision recorded for AI learning
+  gameLogger.debug("ai_following_decision", {
+    decisionPoint: "second_player_same_suit",
+    player: "current_player",
+    strategy: "play_highest_available",
+    leadingCard: `${leadingCard.rank}${leadingCard.suit}`,
+    selectedCard: `${sortedCombos[0].combo.cards[0].rank}${sortedCombos[0].combo.cards[0].suit}`,
+  });
 
   return sortedCombos[0].combo.cards;
 }
@@ -344,14 +343,12 @@ export function selectOptimalTrumpResponse(
     );
 
     if (higherTrumpCombos.length > 0) {
-      gameLogger.debug(
-        "second_player_trump_high_points",
-        {
-          pointPotential: remainingPointPotential,
-          strategy: "higher_trump_for_high_points",
-        },
-        "2nd player uses higher trump for high point potential",
-      );
+      // Strategic decision recorded for AI learning
+      gameLogger.debug("ai_following_decision", {
+        decisionPoint: "second_player_trump",
+        strategy: "higher_trump_for_high_points",
+        pointPotential: remainingPointPotential,
+      });
 
       // Use lowest among higher trump (efficient use)
       const sortedHigherTrump = higherTrumpCombos.sort(
@@ -366,14 +363,12 @@ export function selectOptimalTrumpResponse(
     (a, b) => a.analysis.conservationValue - b.analysis.conservationValue,
   );
 
-  gameLogger.debug(
-    "second_player_trump_conserve",
-    {
-      pointPotential: remainingPointPotential,
-      strategy: "low_trump_conservation",
-    },
-    "2nd player conserves trump (low point potential)",
-  );
+  // Strategic decision recorded for AI learning
+  gameLogger.debug("ai_following_decision", {
+    decisionPoint: "second_player_trump",
+    strategy: "low_trump_conservation",
+    pointPotential: remainingPointPotential,
+  });
 
   return sortedTrumpCombos[0].combo.cards;
 }

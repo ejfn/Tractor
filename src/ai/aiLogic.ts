@@ -134,7 +134,7 @@ export const getAIMove = (gameState: GameState, playerId: PlayerId): Card[] => {
 
   // Handle empty hand case (should never happen - indicates game flow bug)
   if (player.hand.length === 0) {
-    gameLogger.warn(
+    gameLogger.error(
       "ai_empty_hand_bug",
       {
         playerId,

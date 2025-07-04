@@ -1,4 +1,3 @@
-import { gameLogger } from "../../utils/gameLogger";
 import { isTrump } from "../../game/cardValue";
 import {
   Card,
@@ -16,6 +15,7 @@ import {
   Suit,
   TrumpInfo,
 } from "../../types";
+import { gameLogger } from "../../utils/gameLogger";
 import { isBiggestRemainingInSuit } from "../aiCardMemory";
 import { analyzeCombo } from "../aiGameContext";
 import { getRankValue } from "../analysis/comboAnalysis";
@@ -70,7 +70,7 @@ export function selectAdvancedLeadingPlay(
     currentPlayer.id,
   );
   if (multiComboPlay) {
-    gameLogger.debug("AI leading decision: multi-combo", {
+    gameLogger.debug("ai_leading_decision", {
       decisionPoint: "lead_multi_combo",
       player: currentPlayer.id,
       decision: multiComboPlay,
@@ -89,7 +89,7 @@ export function selectAdvancedLeadingPlay(
       gameState,
     );
     if (earlyGamePlay) {
-      gameLogger.debug("AI leading decision: early game ace", {
+      gameLogger.debug("ai_leading_decision", {
         decisionPoint: "lead_early_game_ace",
         player: currentPlayer.id,
         decision: earlyGamePlay.cards,
@@ -109,7 +109,7 @@ export function selectAdvancedLeadingPlay(
       trumpInfo,
     );
     if (voidExploitationPlay) {
-      gameLogger.debug("AI leading decision: void exploitation", {
+      gameLogger.debug("ai_leading_decision", {
         decisionPoint: "lead_void_exploitation",
         player: currentPlayer.id,
         decision: voidExploitationPlay,
@@ -146,7 +146,7 @@ export function selectAdvancedLeadingPlay(
       currentPlayer.id,
     );
     if (pointTimingPlay) {
-      gameLogger.debug("AI leading decision: memory-enhanced point timing", {
+      gameLogger.debug("ai_leading_decision", {
         decisionPoint: "lead_point_timing",
         player: currentPlayer.id,
         decision: pointTimingPlay.cards,
@@ -168,7 +168,7 @@ export function selectAdvancedLeadingPlay(
       trumpInfo,
     );
     if (guaranteedWinner) {
-      gameLogger.debug("AI leading decision: memory guaranteed winner", {
+      gameLogger.debug("ai_leading_decision", {
         decisionPoint: "lead_guaranteed_winner",
         player: currentPlayer.id,
         decision: guaranteedWinner,
@@ -188,7 +188,7 @@ export function selectAdvancedLeadingPlay(
       gameState,
     );
     if (historicalPlay) {
-      gameLogger.debug("AI leading decision: historical insights", {
+      gameLogger.debug("ai_leading_decision", {
         decisionPoint: "lead_historical_insights",
         player: currentPlayer.id,
         decision: historicalPlay,
