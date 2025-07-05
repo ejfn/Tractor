@@ -354,7 +354,7 @@ describe("Game State Persistence", () => {
 
       // Verify original cards have methods
       const originalCard = gameState.players[0].hand[0];
-      expect(typeof originalCard.getDisplayName).toBe("function");
+      expect(typeof originalCard.toString).toBe("function");
       expect(typeof originalCard.isTrump).toBe("function");
       expect(typeof originalCard.isIdenticalTo).toBe("function");
 
@@ -388,12 +388,12 @@ describe("Game State Persistence", () => {
 
       // Verify loaded cards have methods restored
       const loadedCard = loadResult.gameState?.players[0].hand[0];
-      expect(typeof loadedCard?.getDisplayName).toBe("function");
+      expect(typeof loadedCard?.toString).toBe("function");
       expect(typeof loadedCard?.isTrump).toBe("function");
       expect(typeof loadedCard?.isIdenticalTo).toBe("function");
 
       // Verify the methods work correctly
-      expect(loadedCard?.getDisplayName()).toBe(originalCard.getDisplayName());
+      expect(loadedCard?.toString()).toBe(originalCard.toString());
       expect(loadedCard?.isTrump(gameState.trumpInfo)).toBe(
         originalCard.isTrump(gameState.trumpInfo),
       );
@@ -449,8 +449,8 @@ describe("Game State Persistence", () => {
       expect(loadedSmallJoker).toBeDefined();
 
       // Verify joker methods work
-      expect(loadedBigJoker?.getDisplayName()).toBe("BJ");
-      expect(loadedSmallJoker?.getDisplayName()).toBe("SJ");
+      expect(loadedBigJoker?.toString()).toBe("BJ");
+      expect(loadedSmallJoker?.toString()).toBe("SJ");
       expect(loadedBigJoker?.isTrump(gameState.trumpInfo)).toBe(true);
       expect(loadedSmallJoker?.isTrump(gameState.trumpInfo)).toBe(true);
     });
@@ -492,16 +492,16 @@ describe("Game State Persistence", () => {
       // Verify first kitty card
       const loadedKittyCard1 = loadedKittyCards?.[0];
       expect(loadedKittyCard1).toBeDefined();
-      expect(typeof loadedKittyCard1?.getDisplayName).toBe("function");
-      expect(loadedKittyCard1?.getDisplayName()).toBe("K♦");
+      expect(typeof loadedKittyCard1?.toString).toBe("function");
+      expect(loadedKittyCard1?.toString()).toBe("K♦");
       expect(loadedKittyCard1?.suit).toBe(Suit.Diamonds);
       expect(loadedKittyCard1?.rank).toBe(Rank.King);
       expect(loadedKittyCard1?.points).toBe(10);
 
       // Verify second kitty card
       const loadedKittyCard2 = loadedKittyCards?.[1];
-      expect(typeof loadedKittyCard2?.getDisplayName).toBe("function");
-      expect(loadedKittyCard2?.getDisplayName()).toBe("5♣");
+      expect(typeof loadedKittyCard2?.toString).toBe("function");
+      expect(loadedKittyCard2?.toString()).toBe("5♣");
       expect(loadedKittyCard2?.suit).toBe(Suit.Clubs);
       expect(loadedKittyCard2?.rank).toBe(Rank.Five);
       expect(loadedKittyCard2?.points).toBe(5);

@@ -1,7 +1,8 @@
-import { compareCards } from "../../../game/cardComparison";
-import { isTrump } from "../../../game/cardValue";
-import { getComboType } from "../../../game/comboDetection";
-import { Card, Combo, ComboType, Rank, Suit, TrumpInfo } from "../../../types";
+import { compareCards } from "../../game/cardComparison";
+import { calculateCardStrategicValue, isTrump } from "../../game/cardValue";
+import { getComboType } from "../../game/comboDetection";
+import { getTractorRank } from "../../game/tractorLogic";
+import { Card, Combo, ComboType, Suit, TrumpInfo } from "../../types";
 
 /**
  * Suit Availability Analysis - Core component for classifying following scenarios
@@ -196,7 +197,7 @@ function findStrictValidCombos(
 
     case ComboType.Pair:
       // Pair lead: MUST have actual pairs (not just 2 singles)
-      const pairs = findPairsInCards(availableCards, trumpInfo, leadingSuit);
+      const pairs = findPairsInCards(availableCards, trumpInfo);
       const tractors = findTractorsInCards(
         availableCards,
         trumpInfo,
@@ -236,38 +237,23 @@ function findStrictValidCombos(
 }
 
 /**
- * Find all pairs in the available cards (same rank, same suit or trump group)
+ * Find all pairs in the available cards (identical cards only)
  */
-function findPairsInCards(
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-  leadingSuit: Suit,
-): Combo[] {
+function findPairsInCards(cards: Card[], trumpInfo: TrumpInfo): Combo[] {
   const pairs: Combo[] = [];
-  const cardGroups = new Map<string, Card[]>();
+  const seen = new Set<string>();
 
-  // Group cards by rank for pair detection
-  for (const card of cards) {
-    const key = getPairKey(card, trumpInfo, leadingSuit);
-    if (!cardGroups.has(key)) {
-      cardGroups.set(key, []);
-    }
-    cardGroups.get(key)!.push(card);
-  }
-
-  // Find pairs (exactly 2 cards of same rank)
-  for (const [, group] of cardGroups) {
-    if (group.length >= 2) {
-      // Create pairs from available cards
-      for (let i = 0; i < group.length - 1; i += 2) {
-        if (i + 1 < group.length) {
-          const pairCards = [group[i], group[i + 1]];
-          pairs.push({
-            type: ComboType.Pair,
-            cards: pairCards,
-            value: calculateComboValue(pairCards, trumpInfo),
-          });
-        }
+  for (let i = 0; i < cards.length; i++) {
+    if (seen.has(cards[i].commonId)) continue;
+    for (let j = i + 1; j < cards.length; j++) {
+      if (cards[i].commonId === cards[j].commonId) {
+        pairs.push({
+          type: ComboType.Pair,
+          cards: [cards[i], cards[j]],
+          value: calculateComboValue([cards[i], cards[j]], trumpInfo),
+        });
+        seen.add(cards[i].commonId);
+        break;
       }
     }
   }
@@ -284,7 +270,7 @@ function findTractorsInCards(
   leadingSuit: Suit,
 ): Combo[] {
   const tractors: Combo[] = [];
-  const pairs = findPairsInCards(cards, trumpInfo, leadingSuit);
+  const pairs = findPairsInCards(cards, trumpInfo);
 
   if (pairs.length < 2) {
     return tractors; // Need at least 2 pairs for a tractor
@@ -328,152 +314,24 @@ function findTractorsInCards(
 }
 
 /**
- * Get pair key for grouping cards of same rank
- *
- * CRITICAL: Trump rank cards from different suits can form pairs
- */
-function getPairKey(
-  card: Card,
-  trumpInfo: TrumpInfo,
-  leadingSuit: Suit,
-): string {
-  if (isTrump(card, trumpInfo)) {
-    // For trump cards, group by their specific trump type
-    if (card.joker) {
-      // Jokers: Group by joker type (Big Joker vs Small Joker)
-      return `trump_joker_${card.joker}`;
-    } else if (card.rank === trumpInfo.trumpRank) {
-      // Trump rank cards: ALL trump rank cards can pair together regardless of suit
-      return `trump_rank_${trumpInfo.trumpRank}`;
-    } else {
-      // Trump suit cards: Group by rank within trump suit
-      return `trump_suit_${card.rank}`;
-    }
-  } else {
-    // For non-trump cards, group by rank only
-    return `nontrump_${card.rank}`;
-  }
-}
-
-/**
- * Check if two cards have consecutive ranks
+ * Check if two cards have consecutive tractor ranks
  */
 function areConsecutiveRanks(
   card1: Card,
   card2: Card,
   trumpInfo: TrumpInfo,
 ): boolean {
-  // This is a simplified check - full implementation would need trump hierarchy logic
-  const rankOrder = [
-    Rank.Three,
-    Rank.Four,
-    Rank.Five,
-    Rank.Six,
-    Rank.Seven,
-    Rank.Eight,
-    Rank.Nine,
-    Rank.Ten,
-    Rank.Jack,
-    Rank.Queen,
-    Rank.King,
-    Rank.Ace,
-  ];
-
-  const index1 = rankOrder.indexOf(card1.rank);
-  const index2 = rankOrder.indexOf(card2.rank);
-
-  return Math.abs(index1 - index2) === 1;
+  const rank1 = getTractorRank(card1, trumpInfo);
+  const rank2 = getTractorRank(card2, trumpInfo);
+  return Math.abs(rank1 - rank2) === 1;
 }
 
 /**
  * Calculate combo value for sorting/comparison
  */
 function calculateComboValue(cards: Card[], trumpInfo: TrumpInfo): number {
-  return cards.reduce((sum, card) => {
-    if (isTrump(card, trumpInfo)) {
-      return sum + 100; // Trump cards have higher base value
-    }
-    return sum + (card.points || 0) + 10; // Non-trump value
-  }, 0);
-}
-
-/**
- * Helper function to validate combo type compatibility
- *
- * Determines if a combo type can satisfy the requirements of a leading combo type.
- * This follows the hierarchy: Tractor > Pair > Single
- */
-export function isComboTypeCompatible(
-  comboType: ComboType,
-  leadingComboType: ComboType,
-): boolean {
-  // Exact match is always valid
-  if (comboType === leadingComboType) {
-    return true;
-  }
-
-  // Tractors can satisfy pair requirements (tractors contain pairs)
-  if (leadingComboType === ComboType.Pair && comboType === ComboType.Tractor) {
-    return true;
-  }
-
-  // Any combo can satisfy single requirements (all combos contain single cards)
-  if (leadingComboType === ComboType.Single) {
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Helper function to get combo requirements for analysis
- *
- * Returns the minimum requirements that must be met to respond to a leading combo.
- */
-export function getComboRequirements(
-  leadingComboType: ComboType,
-  requiredLength: number,
-): {
-  minimumPairs: number;
-  minimumTractors: number;
-  minimumSingles: number;
-  canUseMixed: boolean;
-} {
-  switch (leadingComboType) {
-    case ComboType.Tractor:
-      // Tractor requires specific tractor structure
-      return {
-        minimumPairs: 0,
-        minimumTractors: 1,
-        minimumSingles: 0,
-        canUseMixed: false,
-      };
-
-    case ComboType.Pair:
-      // Pair requires pair structure
-      return {
-        minimumPairs: 1,
-        minimumTractors: 0,
-        minimumSingles: 0,
-        canUseMixed: false,
-      };
-
-    case ComboType.Single:
-      // Single allows any structure
-      return {
-        minimumPairs: 0,
-        minimumTractors: 0,
-        minimumSingles: requiredLength,
-        canUseMixed: true,
-      };
-
-    default:
-      // Invalid combo type - treat as singles
-      return {
-        minimumPairs: 0,
-        minimumTractors: 0,
-        minimumSingles: requiredLength,
-        canUseMixed: true,
-      };
-  }
+  return cards.reduce(
+    (sum, card) => sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
+    0,
+  );
 }

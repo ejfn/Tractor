@@ -1,10 +1,10 @@
 import {
-  Card,
-  ComboType,
-  GamePhase,
-  GameState,
-  PlayerId,
-  Trick,
+    Card,
+    ComboType,
+    GamePhase,
+    GameState,
+    PlayerId,
+    Trick,
 } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import { identifyCombos } from "./comboDetection";
@@ -46,7 +46,7 @@ export const pickupKittyCards = (
   };
 
   if (gameLogger.isPlayerHandsIncluded()) {
-    logData.kittyCards = kittyCards.map((card) => card.getDisplayName());
+    logData.kittyCards = kittyCards.map((card) => card.toString());
   }
 
   gameLogger.debug(
@@ -145,7 +145,7 @@ export const putbackKittyCards = (
 
   if (gameLogger.isPlayerHandsIncluded()) {
     swapLogData.selectedCards = selectedCards.map((card) =>
-      card.getDisplayName(),
+      card.toString(),
     );
   }
 

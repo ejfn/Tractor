@@ -1,22 +1,22 @@
 import { getAIMove } from "../ai/aiLogic";
 import {
-  Card,
-  ComboType,
-  GameState,
-  PlayerId,
-  Suit,
-  Team,
-  Trick,
-  TrumpInfo,
+    Card,
+    ComboType,
+    GameState,
+    PlayerId,
+    Suit,
+    Team,
+    Trick,
+    TrumpInfo,
 } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import {
-  compareCards,
-  compareRanks,
-  evaluateTrickPlay,
+    compareCards,
+    compareRanks,
+    evaluateTrickPlay,
 } from "./cardComparison";
-import { getComboType } from "./comboDetection";
 import { isTrump } from "./cardValue";
+import { getComboType } from "./comboDetection";
 import { calculateKittyBonusInfo } from "./kittyManager";
 import { isValidPlay } from "./playValidation";
 
@@ -233,7 +233,7 @@ export function processPlay(
   const logData: Record<string, unknown> = {
     playerId: currentPlayer.id,
     isHuman: currentPlayer.isHuman,
-    cardsPlayed: cards.map((card) => card.getDisplayName()),
+    cardsPlayed: cards.map((card) => card.toString()),
     cardsPlayedCount: cards.length,
     handSizeBefore: currentPlayer.hand.length,
     handSizeAfter: currentPlayer.hand.length - cards.length,
@@ -244,14 +244,14 @@ export function processPlay(
 
   if (gameLogger.isPlayerHandsIncluded()) {
     logData.handBefore = currentPlayer.hand.map((card) =>
-      card.getDisplayName(),
+      card.toString(),
     );
   }
 
   gameLogger.info(
     "card_play",
     logData,
-    `${currentPlayer.id} plays: ${cards.map((c) => c.getDisplayName()).join(", ")} (${cards.length} cards)`,
+    `${currentPlayer.id} plays: ${cards.map((c) => c.toString()).join(", ")} (${cards.length} cards)`,
   );
 
   // Check if we should start a new trick
@@ -387,7 +387,7 @@ export function processPlay(
         isFinalTrick: isThisFinalTrick,
         allPlays: newState.currentTrick.plays.map((play) => ({
           playerId: play.playerId,
-          cards: play.cards.map((card) => card.getDisplayName()),
+          cards: play.cards.map((card) => card.toString()),
         })),
         roundNumber: newState.roundNumber,
       },
@@ -433,7 +433,7 @@ export function processPlay(
               winningPlayer: winningPlayerId,
               winningTeam: winningTeam.id,
               kittyCards: newState.kittyCards.map((card) =>
-                card.getDisplayName(),
+                card.toString(),
               ),
               kittyPoints: kittyInfo.kittyPoints,
               finalTrickType: kittyInfo.finalTrickType,
@@ -586,11 +586,11 @@ export function getAIMoveWithErrorHandling(state: GameState): {
         "ai_invalid_move",
         {
           playerId: currentPlayer.id,
-          aiMove: aiMove.map((card) => card.getDisplayName()),
+          aiMove: aiMove.map((card) => card.toString()),
           trickNumber: state.tricks.length + 1,
           roundNumber: state.roundNumber,
         },
-        `AI player ${currentPlayer.id} attempted invalid move: ${aiMove.map((c) => c.getDisplayName()).join(", ")}`,
+        `AI player ${currentPlayer.id} attempted invalid move: ${aiMove.map((c) => c.toString()).join(", ")}`,
       );
 
       // Log detailed debug information for investigation
@@ -598,14 +598,14 @@ export function getAIMoveWithErrorHandling(state: GameState): {
         "ai_invalid_move_details",
         {
           playerId: currentPlayer.id,
-          playerHand: currentPlayer.hand.map((card) => card.getDisplayName()),
+          playerHand: currentPlayer.hand.map((card) => card.toString()),
           playerHandSize: currentPlayer.hand.length,
-          aiMove: aiMove.map((card) => card.getDisplayName()),
+          aiMove: aiMove.map((card) => card.toString()),
           currentTrick: state.currentTrick
             ? {
                 plays: state.currentTrick.plays.map((play) => ({
                   playerId: play.playerId,
-                  cards: play.cards.map((card) => card.getDisplayName()),
+                  cards: play.cards.map((card) => card.toString()),
                 })),
                 winningPlayerId: state.currentTrick.winningPlayerId,
                 points: state.currentTrick.points,
@@ -613,7 +613,7 @@ export function getAIMoveWithErrorHandling(state: GameState): {
               }
             : null,
           leadingCards:
-            leadingCards?.map((card) => card.getDisplayName()) || [],
+            leadingCards?.map((card) => card.toString()) || [],
           trumpInfo: {
             trumpRank: state.trumpInfo.trumpRank,
             trumpSuit: state.trumpInfo.trumpSuit,
@@ -627,7 +627,7 @@ export function getAIMoveWithErrorHandling(state: GameState): {
       // Return both cards (to continue game) and error (for test detection)
       return {
         cards: aiMove,
-        error: `Invalid AI move: ${aiMove.map((c) => c.getDisplayName()).join(", ")}`,
+        error: `Invalid AI move: ${aiMove.map((c) => c.toString()).join(", ")}`,
       };
     }
 

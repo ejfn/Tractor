@@ -1,3 +1,5 @@
+import { getComboType } from "../../game/comboDetection";
+import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
 import {
   Card,
   Combo,
@@ -10,11 +12,9 @@ import {
   TrumpInfo,
 } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
-import { getComboType } from "../../game/comboDetection";
-import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
 import { executeMultiComboFollowingAlgorithm } from "../following/multiComboFollowingStrategy";
-import { routeToDecision } from "./core/routingLogic";
-import { analyzeSuitAvailability } from "./core/suitAvailabilityAnalysis";
+import { routeToDecision } from "./routingLogic";
+import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
 
 /**
  * Phase 2: Statistics tracking for enhanced following algorithm

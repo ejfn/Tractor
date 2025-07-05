@@ -1,26 +1,59 @@
 # Following V2 Implementation Plan
 
-**Current Status: Foundation Complete - Integration Required**
+**Current Status: Phase 1 Substantially Complete - Moving to Trump Lead Implementation**
 
 *Related Documentation: [Following V2 Design](FOLLOWING_V2_DESIGN.md) | [AI System](AI_SYSTEM.md) | [CLAUDE.md](../CLAUDE.md)*
 
 ---
 
-## Current Status: Phase 1 Partially Complete ⏳
+## Current Status: Phase 1 Near Complete ⏳
 
-### ✅ **Completed: Core Component Only**
+### ✅ **Completed: Core Components**
 - **`suitAvailabilityAnalysis.ts`** - Scenario classification with 96.33% test coverage
-- **Comprehensive testing** - 29/29 tests passing for scenario classification
-- **Clean implementation** - Non-nullable interfaces, proper trump handling
-- **Well-documented** - Clear reasoning and comprehensive edge cases
+- **`routingLogic.ts`** - Enhanced with sophisticated V2 logic for non-trump leads
+- **`comboSelection.ts`** - Generalized strategic value-based combo selection
+- **`strategicSelection.ts`** - Core strategic functions implemented
+- **Memory integration** - `getRemainingUnseenCards()` and `checkComboIsBiggestInSuit()` implemented
+- **Non-trump lead algorithm** - Complete sophisticated contribution/beating/disposal logic
+
+### ⏳ **In Progress**
+- **Trump lead algorithm** - `handleTrumpLeadValidCombos()` ready for implementation
+- **Integration testing** - Basic functionality working, needs comprehensive testing
+- **Feature toggle** - Core system ready, needs game integration
 
 ### ❌ **Still Missing for Phase 1**
-- **`routingLogic.ts`** - Exists but uses V1 placeholder functions, not true V2 implementation
-- **`memoryIntegration.ts`** - Stub file with basic utilities, needs full implementation
-- **`strategicSelection.ts`** - Empty stub, no strategic functions implemented
-- **`followingStrategy.ts`** - Main entry point exists but not integrated with game
-- **Integration testing** - No tests connecting components together
-- **Feature toggle** - No way to enable V2 in actual gameplay
+- **`followingStrategy.ts`** - Main entry point integration with game
+- **Complete testing suite** - Need tests for new routing logic and memory functions
+- **Trump lead implementation** - Specialized algorithm for trump vs trump scenarios
+
+### 🎯 **Recently Completed: Non-Trump Lead Algorithm**
+
+**Enhanced `handleNonTrumpLeadValidCombos()` Implementation**:
+
+1. **Memory-Based Teammate Analysis**: 
+   - `checkComboIsBiggestInSuit()` - Determines if current winner has biggest remaining cards
+   - Uses `getRemainingUnseenCards()` to analyze all unseen cards in the suit
+   - Leverages `analyzeSuitAvailability()` to check if unseen cards can form beating combos
+
+2. **Sophisticated Contribution Logic**:
+   - Checks if teammate is winning AND has biggest in suit
+   - Considers next player void status for safe contribution timing
+   - Uses memory system to verify teammate's cards are truly safe
+
+3. **Strategic Beating Logic**:
+   - Only attempts to beat when opponent is winning AND not trumped
+   - Uses `canBeatCombo()` to verify beating capability before attempting
+   - Selects highest strategic value combo for beating attempts
+
+4. **Intelligent Disposal**:
+   - Falls back to strategic disposal when contribution/beating not viable
+   - Uses strategic value calculation to minimize point loss
+
+**Key Architectural Improvements**:
+- Generic `checkComboIsBiggestInSuit()` function reusable for any combo analysis
+- Simplified helper functions using existing `isTrump()` API and `card.commonId`
+- Memory integration with `getRemainingUnseenCards()` supporting trump groups and regular suits
+- Clean separation of concerns with focused utility functions
 
 ---
 
@@ -689,12 +722,14 @@ export function createTestSuitAvailabilityScenario(
   - [x] Create folder structure (`followingV2/`, `core/`)
   - [x] Set up TypeScript configuration for new files
 
-- [ ] **Core Implementation**  
+- [x] **Core Implementation**  
   - [x] Implement `suitAvailabilityAnalysis.ts` ✅ **COMPLETE** (96.33% test coverage)
-  - [ ] Implement `memoryIntegration.ts` (stub exists, needs full implementation)
-  - [ ] Implement `routingLogic.ts` (exists but uses V1 placeholders)
-  - [ ] Implement `strategicSelection.ts` (stub exists, needs implementation)
-  - [ ] Implement `followingStrategy.ts` (exists but not integrated)
+  - [x] Implement memory integration utilities ✅ **COMPLETE** (`getRemainingUnseenCards`, `checkComboIsBiggestInSuit`)
+  - [x] Implement `routingLogic.ts` non-trump logic ✅ **COMPLETE** (sophisticated contribution/beating/disposal)
+  - [x] Implement `strategicSelection.ts` ✅ **COMPLETE** (core strategic functions)
+  - [x] Implement `comboSelection.ts` ✅ **COMPLETE** (generalized strategic value selection)
+  - [ ] Implement `routingLogic.ts` trump logic (handleTrumpLeadValidCombos pending)
+  - [ ] Implement `followingStrategy.ts` integration (exists but not integrated)
 
 - [ ] **Integration**
   - [ ] Add feature toggle in `followingStrategy.ts`
@@ -716,17 +751,24 @@ export function createTestSuitAvailabilityScenario(
 
 ### Success Criteria for Phase 1
 
-1. **Functional**: All components work correctly (❌ In Progress - 1/5 complete)
-2. **Tested**: Unit and integration tests pass (❌ In Progress - 1/5 components tested)
+1. **Functional**: All components work correctly (⏳ Near Complete - 5/7 core components done)
+2. **Tested**: Unit and integration tests pass (⏳ In Progress - core components need testing)
 3. **Compatible**: Existing tests are fixed, not broken (❌ Not yet validated)
 4. **Performant**: No significant performance degradation (❌ Not yet measured)
-5. **Maintainable**: Code is clean and well-documented (✅ For completed component)
+5. **Maintainable**: Code is clean and well-documented (✅ All completed components)
 
-### Current Phase 1 Progress: ~20% Complete
-- ✅ **1 component fully complete**: `suitAvailabilityAnalysis.ts`
-- ⏳ **4 components remaining**: `memoryIntegration.ts`, `routingLogic.ts`, `strategicSelection.ts`, `followingStrategy.ts`
-- ❌ **No integration testing yet**
-- ❌ **No feature toggle implementation**
+### Current Phase 1 Progress: ~75% Complete
+- ✅ **5 components fully complete**: 
+  - `suitAvailabilityAnalysis.ts` (with comprehensive tests)
+  - `routingLogic.ts` (non-trump lead algorithm)
+  - `strategicSelection.ts` (core functions)
+  - `comboSelection.ts` (strategic value selection) 
+  - Memory integration utilities (`getRemainingUnseenCards`, `checkComboIsBiggestInSuit`)
+- ⏳ **2 components remaining**: 
+  - `routingLogic.ts` trump lead algorithm (`handleTrumpLeadValidCombos`)
+  - `followingStrategy.ts` game integration
+- ❌ **Integration testing needed**
+- ❌ **Feature toggle implementation pending**
 
 ---
 

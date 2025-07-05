@@ -256,27 +256,6 @@ export class Card {
    */
   toString(): string {
     if (this.joker) {
-      return `${this.joker} Joker (${this.deckId})`;
-    } else {
-      return `${this.rank}${
-        this.suit === Suit.Hearts
-          ? "♥"
-          : this.suit === Suit.Diamonds
-            ? "♦"
-            : this.suit === Suit.Clubs
-              ? "♣"
-              : this.suit === Suit.Spades
-                ? "♠"
-                : "?"
-      } (${this.deckId})`;
-    }
-  }
-
-  /**
-   * Get a short display name for the card
-   */
-  getDisplayName(): string {
-    if (this.joker) {
       return this.joker === JokerType.Big ? "BJ" : "SJ";
     } else {
       const suitSymbol =

@@ -128,9 +128,9 @@ export interface TrickWinnerAnalysis {
   isTeammateWinning: boolean; // Is AI's teammate currently winning
   isOpponentWinning: boolean; // Is an opponent currently winning
   isLeadWinning: boolean; // Is the leading player currently winning
-  isSelfWinning: boolean; // Is this AI currently winning
+  isTrumpLead: boolean; // Leading combo was trump
+  isCurrentlyTrumped: boolean; // Non-trump lead got trumped by someone
   trickPoints: number; // Total points in current trick
-  canBeatCurrentWinner: boolean; // Can this AI beat current winner
 }
 
 // 1st Player (Leading) Strategy Analysis

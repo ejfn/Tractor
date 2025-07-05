@@ -1,22 +1,22 @@
 import {
-  Card,
-  DeclarationOpportunity,
-  DealingProgress,
-  GamePhase,
-  GameState,
-  PlayerId,
-  Suit,
-  canOverrideDeclaration,
-  detectPossibleDeclarations,
+    Card,
+    DealingProgress,
+    DeclarationOpportunity,
+    GamePhase,
+    GameState,
+    PlayerId,
+    Suit,
+    canOverrideDeclaration,
+    detectPossibleDeclarations,
 } from "../types";
-import { pickupKittyCards } from "./kittyManager";
-import { initializeTrumpDeclarationState } from "../utils/gameInitialization";
 import {
-  TrumpDeclaration,
-  DeclarationType,
-  validateDeclarationCards,
+    DeclarationType,
+    TrumpDeclaration,
+    validateDeclarationCards,
 } from "../types/trumpDeclaration";
+import { initializeTrumpDeclarationState } from "../utils/gameInitialization";
 import { gameLogger } from "../utils/gameLogger";
+import { pickupKittyCards } from "./kittyManager";
 
 /**
  * Dealing and Trump Declaration Module
@@ -298,7 +298,7 @@ export function makeTrumpDeclaration(
       declarationType: fullDeclaration.type,
       suit: fullDeclaration.suit,
       rank: fullDeclaration.rank,
-      cards: fullDeclaration.cards.map((card) => card.getDisplayName()),
+      cards: fullDeclaration.cards.map((card) => card.toString()),
       roundNumber: newState.roundNumber,
       dealingProgress: getDealingProgress(newState),
       previousDeclaration:
@@ -308,7 +308,7 @@ export function makeTrumpDeclaration(
             ]
           : null,
     },
-    `Trump declared by ${playerId}: ${fullDeclaration.type} with ${fullDeclaration.cards.map((c) => c.getDisplayName()).join(", ")}`,
+    `Trump declared by ${playerId}: ${fullDeclaration.type} with ${fullDeclaration.cards.map((c) => c.toString()).join(", ")}`,
   );
 
   // Update trump info if this is a valid declaration
@@ -451,7 +451,7 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
           type: finalDeclaration.type,
           suit: finalDeclaration.suit,
           rank: finalDeclaration.rank,
-          cards: finalDeclaration.cards.map((card) => card.getDisplayName()),
+          cards: finalDeclaration.cards.map((card) => card.toString()),
         },
         trumpInfo: {
           trumpRank: newState.trumpInfo.trumpRank,

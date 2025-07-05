@@ -1,12 +1,12 @@
 import { getAIMove } from "../../src/ai/aiLogic";
 import { isValidPlay } from "../../src/game/playValidation";
 import {
-  Card,
-  GamePhase,
-  JokerType,
-  PlayerId,
-  Rank,
-  Suit,
+    Card,
+    GamePhase,
+    JokerType,
+    PlayerId,
+    Rank,
+    Suit,
 } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { gameLogger } from "../../src/utils/gameLogger";
@@ -941,7 +941,7 @@ describe("AI Tractor Following Behavior", () => {
       gameLogger.info(
         "bug_reproduction_test",
         {
-          handOrder: bot1Player.hand.map((c) => c.getDisplayName()),
+          handOrder: bot1Player.hand.map((c) => c.toString()),
           leadingTractor: "9♣9♣8♣8♣",
           expectedTractor: "6♣6♣7♣7♣",
           trumpInfo: gameState.trumpInfo,
@@ -955,7 +955,7 @@ describe("AI Tractor Following Behavior", () => {
       gameLogger.info(
         "bug_reproduction_result",
         {
-          aiSelected: aiMove.map((c) => c.getDisplayName()),
+          aiSelected: aiMove.map((c) => c.toString()),
           expectedValid: ["6♣", "6♣", "7♣", "7♣"],
         },
         "AI move result from exact reproduction",
@@ -973,7 +973,7 @@ describe("AI Tractor Following Behavior", () => {
       expect(aiMove.length).toBe(4);
 
       // The AI should select the trump tractor 6♣6♣7♣7♣
-      const aiMoveNames = aiMove.map((c) => c.getDisplayName()).sort();
+      const aiMoveNames = aiMove.map((c) => c.toString()).sort();
       const expectedTractor = ["6♣", "6♣", "7♣", "7♣"].sort();
 
       // Log the comparison for debugging

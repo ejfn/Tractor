@@ -1,11 +1,11 @@
 import {
-  Card,
-  Combo,
-  ComboAnalysis,
-  GameContext,
-  GameState,
-  PlayerId,
-  TrickPosition,
+    Card,
+    Combo,
+    ComboAnalysis,
+    GameContext,
+    GameState,
+    PlayerId,
+    TrickPosition,
 } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
 import { calculateTrumpDeploymentTiming } from "../aiCardMemory";
@@ -124,7 +124,7 @@ export function selectStrategicDisposal(
   const result = sorted[0].combo.cards;
   gameLogger.debug("ai_following_decision", {
     decisionPoint: "strategic_disposal_fallback",
-    selectedCards: result.map((c) => c.getDisplayName()),
+    selectedCards: result.map((c) => c.toString()),
   });
   return result;
 }

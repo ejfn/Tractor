@@ -1,5 +1,5 @@
-import { Card, Combo, ComboAnalysis, TrumpInfo } from "../../../types";
-import { calculateCardStrategicValue } from "../../../game/cardValue";
+import { calculateCardStrategicValue } from "../../game/cardValue";
+import { Card, Combo, ComboAnalysis, TrumpInfo } from "../../types";
 
 /**
  * Strategic Selection Functions for Enhanced Following V2
