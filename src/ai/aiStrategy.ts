@@ -1,9 +1,9 @@
 import { Card, Combo, GameState, Player, PositionStrategy } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import { analyzeCombo, createGameContext } from "./aiGameContext";
-import { analyzeVoidExploitation } from "./analysis/voidExploitation";
-import { selectOptimalFollowPlay } from "./following/followingStrategy";
-import { selectAdvancedLeadingPlay } from "./leading/leadingStrategy";
+import { selectFollowingPlay } from "./following/followingStrategy";
+import { selectFollowingPlay as selectFollowingPlayV2 } from "./followingV2/followingStrategy";
+import { selectLeadingPlay } from "./leading/leadingStrategy";
 
 /**
  * Main AI strategy function - replaces the class-based approach
@@ -24,33 +24,12 @@ export function makeAIPlay(
     context,
   });
 
-  // Phase 3: Advanced Void Exploitation Analysis
-  let voidExploitationAnalysis = null;
-  if (context.memoryContext?.cardMemory && gameState.tricks.length >= 2) {
-    try {
-      voidExploitationAnalysis = analyzeVoidExploitation(
-        context.memoryContext.cardMemory,
-        gameState,
-        context,
-        trumpInfo,
-        player.id,
-      );
-
-      // Integrate void exploitation insights into context
-      if (context.memoryContext) {
-        context.memoryContext.voidExploitation = voidExploitationAnalysis;
-      }
-    } catch {
-      // Void exploitation analysis is optional - continue without it
-    }
-  }
-
   // Enhanced Point-Focused Strategy (Issue #61) - Used in leading play selection
 
   // Determine if leading or following
   if (!currentTrick || currentTrick.plays.length === 0) {
-    // LEADING: Use unified advanced leading strategy
-    const leadingPlay = selectAdvancedLeadingPlay(
+    // LEADING: Use unified leading strategy
+    const leadingPlay = selectLeadingPlay(
       validCombos,
       trumpInfo,
       context,
@@ -71,15 +50,32 @@ export function makeAIPlay(
       analysis: analyzeCombo(combo, trumpInfo, context),
     }));
 
-    // Use new restructured follow logic
-    const restructuredPlay = selectOptimalFollowPlay(
-      comboAnalyses,
-      context,
-      {} as PositionStrategy, // Simplified for now
-      trumpInfo,
-      gameState,
-      player.id,
-    );
+    // Feature toggle for enhanced following algorithm
+    const USE_ENHANCED_FOLLOWING = true; // Toggle to switch between V1 and V2
+
+    let restructuredPlay: Card[];
+
+    if (USE_ENHANCED_FOLLOWING) {
+      // V2: Enhanced following algorithm (no fallback - V2 handles its own errors)
+      restructuredPlay = selectFollowingPlayV2(
+        comboAnalyses,
+        context,
+        {} as PositionStrategy,
+        trumpInfo,
+        gameState,
+        player.id,
+      );
+    } else {
+      // V1: Original following algorithm
+      restructuredPlay = selectFollowingPlay(
+        comboAnalyses,
+        context,
+        {} as PositionStrategy,
+        trumpInfo,
+        gameState,
+        player.id,
+      );
+    }
     gameLogger.debug("ai_following_decision", {
       decisionPoint: "following_play",
       player: player.id,

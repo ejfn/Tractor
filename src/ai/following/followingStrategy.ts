@@ -12,6 +12,7 @@ import {
   PlayerId,
   PositionStrategy,
   TrickPosition,
+  TrickWinnerAnalysis,
   TrumpInfo,
 } from "../../types";
 import { shouldAITryToBeatCurrentWinner } from "./strategicDecisions";
@@ -20,6 +21,7 @@ import { handleOpponentWinning } from "./opponentBlocking";
 import { selectStrategicDisposal } from "./strategicDisposal";
 import { handleTeammateWinning } from "./teammateSupport";
 import { selectOptimalWinningCombo } from "./trickContention";
+import { selectPositionAwareFollowingPlay } from "./positionStrategy";
 
 /**
  * Following Strategy - Main following logic with 4-priority decision chain
@@ -34,7 +36,7 @@ import { selectOptimalWinningCombo } from "./trickContention";
 /**
  * Main following play selection using restructured 4-priority decision chain
  */
-export function selectOptimalFollowPlay(
+export function selectFollowingPlay(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
   positionStrategy: PositionStrategy,
@@ -99,6 +101,27 @@ export function selectOptimalFollowPlay(
     canBeatCurrentWinner: trickWinner?.canBeatCurrentWinner || false,
     trickPoints: trickWinner?.trickPoints || 0,
   });
+
+  // === PRIORITY 0.5: POSITION-AWARE STRATEGIC DECISIONS ===
+  // Check if position-specific strategy should override standard priorities
+  if (shouldUsePositionSpecificStrategy(context, trickWinner)) {
+    const positionDecision = selectPositionAwareFollowingPlay(
+      comboAnalyses,
+      context,
+      positionStrategy,
+      trumpInfo,
+      gameState,
+      currentPlayerId,
+    );
+    gameLogger.debug("ai_following_decision", {
+      decisionPoint: "position_specific_override",
+      player: currentPlayerId,
+      position: context.trickPosition,
+      decision: positionDecision,
+      context,
+    });
+    return positionDecision;
+  }
 
   // Clear priority-based decision making
 
@@ -252,6 +275,39 @@ function shouldTryEstablishSuit(
   // Low-value tricks: Always try to establish if we have the length
   const trickPoints = context.trickWinnerAnalysis?.trickPoints || 0;
   if (trickPoints <= 4 && suitCards.length >= 3) return true;
+
+  return false;
+}
+
+/**
+ * Determine if position-specific strategy should override standard priorities
+ */
+function shouldUsePositionSpecificStrategy(
+  context: GameContext,
+  trickWinner?: TrickWinnerAnalysis,
+): boolean {
+  // Use position-specific strategy when:
+
+  // 1. Second player with memory enhancement available (better void/trump analysis)
+  if (
+    context.trickPosition === TrickPosition.Second &&
+    context.memoryContext?.cardMemory
+  ) {
+    return true;
+  }
+
+  // 2. Third player when teammate is winning (for takeover analysis)
+  if (
+    context.trickPosition === TrickPosition.Third &&
+    trickWinner?.isTeammateWinning
+  ) {
+    return true;
+  }
+
+  // 3. Fourth player for perfect information optimization
+  if (context.trickPosition === TrickPosition.Fourth) {
+    return true;
+  }
 
   return false;
 }
