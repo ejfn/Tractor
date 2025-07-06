@@ -10,23 +10,22 @@
 
 ### ✅ **Completed: Core Components**
 - **`suitAvailabilityAnalysis.ts`** - Scenario classification with 96.33% test coverage
-- **`routingLogic.ts`** - Enhanced with sophisticated V2 logic for non-trump leads
-- **`comboSelection.ts`** - Generalized strategic value-based combo selection
+- **`routingLogic.ts`** - Enhanced scenario routing with clean modular architecture
+- **`validCombosDecision.ts`** - Complete valid combo algorithms with integrated combo selection
 - **`strategicSelection.ts`** - Core strategic functions implemented
 - **Memory integration** - `getRemainingUnseenCards()` and `checkComboIsBiggestInSuit()` implemented
 - **Non-trump lead algorithm** - Complete sophisticated contribution/beating/disposal logic
+- **Trump lead algorithm** - Complete with unified beating thresholds and teammate analysis
 
 ### ⏳ **In Progress**
-- **Trump lead algorithm** - `handleTrumpLeadValidCombos()` ready for implementation
 - **Integration testing** - Basic functionality working, needs comprehensive testing
 - **Feature toggle** - Core system ready, needs game integration
 
 ### ❌ **Still Missing for Phase 1**
 - **`followingStrategy.ts`** - Main entry point integration with game
 - **Complete testing suite** - Need tests for new routing logic and memory functions
-- **Trump lead implementation** - Specialized algorithm for trump vs trump scenarios
 
-### 🎯 **Recently Completed: Non-Trump Lead Algorithm**
+### 🎯 **Recently Completed: Trump and Non-Trump Lead Algorithms**
 
 **Enhanced `handleNonTrumpLeadValidCombos()` Implementation**:
 
@@ -49,11 +48,33 @@
    - Falls back to strategic disposal when contribution/beating not viable
    - Uses strategic value calculation to minimize point loss
 
+**Enhanced `handleTrumpLeadValidCombos()` Implementation**:
+
+1. **Unified Beating Logic**:
+   - `attemptToBeatWithThreshold()` - Single function handling both high/low point scenarios
+   - Dynamic thresholds: 150 for high points (≥10), 100 for low points (<10)
+   - Considers both opponent strength and teammate weakness conditions
+
+2. **Strategic Teammate Contribution**:
+   - `shouldContributeToTeammateInTrump()` - Analyzes 4th player position and teammate trump strength
+   - Contributes when teammate has strong trump (>150) or player is in final position
+   - Memory-enhanced teammate strength analysis using strategic card values
+
+3. **Intelligent Takeover Logic**:
+   - Beats opponents when trump strength exceeds threshold requirements
+   - Beats weak teammates in high-value tricks with additional rank constraints
+   - Preserves strong teammates while optimizing point collection timing
+
+4. **Conservative Disposal**:
+   - Falls back to strategic disposal when beating/contributing conditions aren't met
+   - Uses strategic value calculation to minimize trump waste
+
 **Key Architectural Improvements**:
 - Generic `checkComboIsBiggestInSuit()` function reusable for any combo analysis
 - Simplified helper functions using existing `isTrump()` API and `card.commonId`
 - Memory integration with `getRemainingUnseenCards()` supporting trump groups and regular suits
 - Clean separation of concerns with focused utility functions
+- Unified beating logic reducing code duplication between trump and non-trump scenarios
 
 ---
 
@@ -757,15 +778,15 @@ export function createTestSuitAvailabilityScenario(
 4. **Performant**: No significant performance degradation (❌ Not yet measured)
 5. **Maintainable**: Code is clean and well-documented (✅ All completed components)
 
-### Current Phase 1 Progress: ~75% Complete
-- ✅ **5 components fully complete**: 
+### Current Phase 1 Progress: ~90% Complete
+- ✅ **6 focused modules fully complete**: 
   - `suitAvailabilityAnalysis.ts` (with comprehensive tests)
-  - `routingLogic.ts` (non-trump lead algorithm)
+  - `routingLogic.ts` (clean scenario routing with modular architecture)
+  - `validCombosDecision.ts` (complete trump + non-trump algorithms + combo selection utilities)
   - `strategicSelection.ts` (core functions)
-  - `comboSelection.ts` (strategic value selection) 
   - Memory integration utilities (`getRemainingUnseenCards`, `checkComboIsBiggestInSuit`)
-- ⏳ **2 components remaining**: 
-  - `routingLogic.ts` trump lead algorithm (`handleTrumpLeadValidCombos`)
+  - Advanced helper functions (contribution analysis, beating thresholds, memory integration)
+- ⏳ **1 component remaining**: 
   - `followingStrategy.ts` game integration
 - ❌ **Integration testing needed**
 - ❌ **Feature toggle implementation pending**
