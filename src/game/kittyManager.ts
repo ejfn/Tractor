@@ -1,10 +1,10 @@
 import {
-    Card,
-    ComboType,
-    GamePhase,
-    GameState,
-    PlayerId,
-    Trick,
+  Card,
+  ComboType,
+  GamePhase,
+  GameState,
+  PlayerId,
+  Trick,
 } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import { identifyCombos } from "./comboDetection";
@@ -144,9 +144,7 @@ export const putbackKittyCards = (
   };
 
   if (gameLogger.isPlayerHandsIncluded()) {
-    swapLogData.selectedCards = selectedCards.map((card) =>
-      card.toString(),
-    );
+    swapLogData.selectedCards = selectedCards.map((card) => card.toString());
   }
 
   gameLogger.debug(

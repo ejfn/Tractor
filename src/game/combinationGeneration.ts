@@ -1,12 +1,12 @@
 import {
-    Card,
-    Combo,
-    ComboType,
-    GameState,
-    PlayerId,
-    Rank,
-    Suit,
-    TrumpInfo,
+  Card,
+  Combo,
+  ComboType,
+  GameState,
+  PlayerId,
+  Rank,
+  Suit,
+  TrumpInfo,
 } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import { calculateCardStrategicValue, isTrump } from "./cardValue";

@@ -1,11 +1,11 @@
 import {
-    Card,
-    Combo,
-    ComboAnalysis,
-    GameContext,
-    GameState,
-    PlayerId,
-    TrickPosition,
+  Card,
+  Combo,
+  ComboAnalysis,
+  GameContext,
+  GameState,
+  PlayerId,
+  TrickPosition,
 } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
 import { calculateTrumpDeploymentTiming } from "../aiCardMemory";

@@ -131,6 +131,8 @@ export interface TrickWinnerAnalysis {
   isTrumpLead: boolean; // Leading combo was trump
   isCurrentlyTrumped: boolean; // Non-trump lead got trumped by someone
   trickPoints: number; // Total points in current trick
+  isSelfWinning: boolean; // TODO: remove - legacy property for test compatibility
+  canBeatCurrentWinner: boolean; // TODO: remove - legacy property for test compatibility
 }
 
 // 1st Player (Leading) Strategy Analysis

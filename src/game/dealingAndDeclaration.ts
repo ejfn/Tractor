@@ -1,18 +1,18 @@
 import {
-    Card,
-    DealingProgress,
-    DeclarationOpportunity,
-    GamePhase,
-    GameState,
-    PlayerId,
-    Suit,
-    canOverrideDeclaration,
-    detectPossibleDeclarations,
+  Card,
+  DealingProgress,
+  DeclarationOpportunity,
+  GamePhase,
+  GameState,
+  PlayerId,
+  Suit,
+  canOverrideDeclaration,
+  detectPossibleDeclarations,
 } from "../types";
 import {
-    DeclarationType,
-    TrumpDeclaration,
-    validateDeclarationCards,
+  DeclarationType,
+  TrumpDeclaration,
+  validateDeclarationCards,
 } from "../types/trumpDeclaration";
 import { initializeTrumpDeclarationState } from "../utils/gameInitialization";
 import { gameLogger } from "../utils/gameLogger";

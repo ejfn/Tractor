@@ -1,12 +1,12 @@
 import { getAIMove } from "../../src/ai/aiLogic";
 import { isValidPlay } from "../../src/game/playValidation";
 import {
-    Card,
-    GamePhase,
-    JokerType,
-    PlayerId,
-    Rank,
-    Suit,
+  Card,
+  GamePhase,
+  JokerType,
+  PlayerId,
+  Rank,
+  Suit,
 } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { gameLogger } from "../../src/utils/gameLogger";

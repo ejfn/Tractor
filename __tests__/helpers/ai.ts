@@ -52,6 +52,8 @@ export const createAIGameContext = (
     isLeadWinning: false,
     trickPoints: 0,
     canBeatCurrentWinner: false,
+    isTrumpLead: false,
+    isCurrentlyTrumped: false,
   },
 });
 

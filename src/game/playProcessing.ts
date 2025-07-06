@@ -1,19 +1,19 @@
 import { getAIMove } from "../ai/aiLogic";
 import {
-    Card,
-    ComboType,
-    GameState,
-    PlayerId,
-    Suit,
-    Team,
-    Trick,
-    TrumpInfo,
+  Card,
+  ComboType,
+  GameState,
+  PlayerId,
+  Suit,
+  Team,
+  Trick,
+  TrumpInfo,
 } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import {
-    compareCards,
-    compareRanks,
-    evaluateTrickPlay,
+  compareCards,
+  compareRanks,
+  evaluateTrickPlay,
 } from "./cardComparison";
 import { isTrump } from "./cardValue";
 import { getComboType } from "./comboDetection";
@@ -243,9 +243,7 @@ export function processPlay(
   };
 
   if (gameLogger.isPlayerHandsIncluded()) {
-    logData.handBefore = currentPlayer.hand.map((card) =>
-      card.toString(),
-    );
+    logData.handBefore = currentPlayer.hand.map((card) => card.toString());
   }
 
   gameLogger.info(
@@ -432,9 +430,7 @@ export function processPlay(
             {
               winningPlayer: winningPlayerId,
               winningTeam: winningTeam.id,
-              kittyCards: newState.kittyCards.map((card) =>
-                card.toString(),
-              ),
+              kittyCards: newState.kittyCards.map((card) => card.toString()),
               kittyPoints: kittyInfo.kittyPoints,
               finalTrickType: kittyInfo.finalTrickType,
               multiplier: kittyInfo.multiplier,
@@ -612,8 +608,7 @@ export function getAIMoveWithErrorHandling(state: GameState): {
                 isFinalTrick: state.currentTrick.isFinalTrick,
               }
             : null,
-          leadingCards:
-            leadingCards?.map((card) => card.toString()) || [],
+          leadingCards: leadingCards?.map((card) => card.toString()) || [],
           trumpInfo: {
             trumpRank: state.trumpInfo.trumpRank,
             trumpSuit: state.trumpInfo.trumpSuit,

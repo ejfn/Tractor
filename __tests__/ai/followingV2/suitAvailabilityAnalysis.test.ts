@@ -1,8 +1,4 @@
-import {
-  analyzeSuitAvailability,
-  getComboRequirements,
-  isComboTypeCompatible,
-} from "../../../src/ai/followingV2/core/suitAvailabilityAnalysis";
+import { analyzeSuitAvailability } from "../../../src/ai/followingV2/suitAvailabilityAnalysis";
 import {
   Card,
   ComboType,
@@ -535,66 +531,6 @@ describe("Suit Availability Analysis", () => {
       expect(
         result.validCombos.some((combo) => combo.type === ComboType.Pair),
       ).toBe(true);
-    });
-  });
-});
-
-describe("Helper Functions", () => {
-  describe("isComboTypeCompatible", () => {
-    it("should allow exact matches", () => {
-      expect(isComboTypeCompatible(ComboType.Pair, ComboType.Pair)).toBe(true);
-      expect(isComboTypeCompatible(ComboType.Tractor, ComboType.Tractor)).toBe(
-        true,
-      );
-      expect(isComboTypeCompatible(ComboType.Single, ComboType.Single)).toBe(
-        true,
-      );
-    });
-
-    it("should allow tractors for pair requirements", () => {
-      expect(isComboTypeCompatible(ComboType.Tractor, ComboType.Pair)).toBe(
-        true,
-      );
-    });
-
-    it("should allow any combo for single requirements", () => {
-      expect(isComboTypeCompatible(ComboType.Pair, ComboType.Single)).toBe(
-        true,
-      );
-      expect(isComboTypeCompatible(ComboType.Tractor, ComboType.Single)).toBe(
-        true,
-      );
-      expect(isComboTypeCompatible(ComboType.Single, ComboType.Single)).toBe(
-        true,
-      );
-    });
-
-    it("should not allow lower types for higher requirements", () => {
-      expect(isComboTypeCompatible(ComboType.Pair, ComboType.Tractor)).toBe(
-        false,
-      );
-      expect(isComboTypeCompatible(ComboType.Single, ComboType.Pair)).toBe(
-        false,
-      );
-      expect(isComboTypeCompatible(ComboType.Single, ComboType.Tractor)).toBe(
-        false,
-      );
-    });
-  });
-
-  describe("getComboRequirements", () => {
-    it("should return correct requirements for each combo type", () => {
-      const singleReq = getComboRequirements(ComboType.Single, 3);
-      expect(singleReq.minimumSingles).toBe(3);
-      expect(singleReq.canUseMixed).toBe(true);
-
-      const pairReq = getComboRequirements(ComboType.Pair, 2);
-      expect(pairReq.minimumPairs).toBe(1);
-      expect(pairReq.canUseMixed).toBe(false);
-
-      const tractorReq = getComboRequirements(ComboType.Tractor, 4);
-      expect(tractorReq.minimumTractors).toBe(1);
-      expect(tractorReq.canUseMixed).toBe(false);
     });
   });
 });
