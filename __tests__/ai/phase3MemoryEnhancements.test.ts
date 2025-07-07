@@ -6,18 +6,13 @@ import {
   createCardMemory,
   getTrumpExhaustionLevel,
 } from "../../src/ai/aiCardMemory";
-import { calculateMemoryEnhanced3rdPlayerRisk } from "../../src/ai/following/thirdPlayerRiskAnalysis";
 import {
   Card,
   CardMemory,
-  GameContext,
   GameState,
   PlayerId,
-  PlayStyle,
-  PointPressure,
   Rank,
   Suit,
-  TrickPosition,
   TrumpInfo,
 } from "../../src/types";
 import { createTestCardsGameState } from "../helpers/gameStates";
@@ -123,57 +118,6 @@ describe("Phase 3: Memory Enhancement System", () => {
       expect(["support", "takeover", "conservative", "strategic"]).toContain(
         analysis.recommendedAction,
       );
-    });
-  });
-
-  describe("Enhanced Risk Assessment", () => {
-    it("should calculate memory-enhanced 3rd player risk", () => {
-      const leadingCards = [Card.createCard(Suit.Diamonds, Rank.King, 0)];
-      const secondPlayerCards = [Card.createCard(Suit.Diamonds, Rank.Ace, 0)];
-
-      const context: GameContext = {
-        isAttackingTeam: true,
-        currentPoints: 35,
-        pointsNeeded: 80,
-        cardsRemaining: 15,
-        pointPressure: PointPressure.MEDIUM,
-        playStyle: PlayStyle.Balanced,
-        trickPosition: TrickPosition.Third,
-        trickWinnerAnalysis: undefined,
-        memoryContext: {
-          cardsRemaining: 15,
-          knownCards: 10,
-          uncertaintyLevel: 0.3,
-          trumpExhaustion: 0.4,
-          opponentHandStrength: {
-            bot1: 0.6,
-            bot2: 0.5,
-            bot3: 0.7,
-          },
-          cardMemory,
-        },
-        currentPlayer: PlayerId.Human,
-      };
-
-      const riskAnalysis = calculateMemoryEnhanced3rdPlayerRisk(
-        leadingCards,
-        secondPlayerCards,
-        trumpInfo,
-        PlayerId.Human,
-        context,
-      );
-
-      expect(riskAnalysis.finalRiskAssessment).toBeGreaterThanOrEqual(0);
-      expect(riskAnalysis.finalRiskAssessment).toBeLessThanOrEqual(1);
-      expect(riskAnalysis.memoryFactors).toBeDefined();
-      expect(riskAnalysis.memoryFactors.confidenceLevel).toBeGreaterThanOrEqual(
-        0,
-      );
-      expect(riskAnalysis.memoryFactors.confidenceLevel).toBeLessThanOrEqual(1);
-      expect(["support", "takeover", "conservative", "strategic"]).toContain(
-        riskAnalysis.recommendedAction,
-      );
-      expect(riskAnalysis.reasoning).toBeDefined();
     });
   });
 

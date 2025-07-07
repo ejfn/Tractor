@@ -1,4 +1,3 @@
-import { compareCards } from "../../game/cardComparison";
 import { calculateCardStrategicValue, isTrump } from "../../game/cardValue";
 import { getComboType } from "../../game/comboDetection";
 import { getTractorRank } from "../../game/tractorLogic";
@@ -108,7 +107,6 @@ export function analyzeSuitAvailability(
     leadingComboType,
     requiredLength,
     trumpInfo,
-    leadingSuit,
   );
 
   // Scenario 3: Valid combos available (STRICT matches only)
@@ -179,7 +177,6 @@ function findStrictValidCombos(
   leadingComboType: ComboType,
   requiredLength: number,
   trumpInfo: TrumpInfo,
-  leadingSuit: Suit,
 ): Combo[] {
   const validCombos: Combo[] = [];
 
@@ -196,27 +193,23 @@ function findStrictValidCombos(
       break;
 
     case ComboType.Pair:
+      // GAME RULE (CLAUDE.md): "Pairs and tractors are different combo types"
       // Pair lead: MUST have actual pairs (not just 2 singles)
+      // CANNOT respond with tractors - they are different combo type
       const pairs = findPairsInCards(availableCards, trumpInfo);
-      const tractors = findTractorsInCards(
-        availableCards,
-        trumpInfo,
-        leadingSuit,
-      );
 
-      // Add pairs
+      // Add pairs only - tractors are different combo type per CLAUDE.md
       validCombos.push(...pairs);
-
-      // Add tractors (tractors can satisfy pair requirements)
-      validCombos.push(...tractors);
       break;
 
     case ComboType.Tractor:
+      // GAME RULE (CLAUDE.md): "Tractor lead → Must have tractors (not just pairs)"
+      // GAME RULE (GAME_RULES.md): "Tractor Following Rules - Same number of pairs"
       // Tractor lead: MUST have actual tractors (not just pairs)
       const availableTractors = findTractorsInCards(
         availableCards,
         trumpInfo,
-        leadingSuit,
+        requiredLength,
       );
       validCombos.push(...availableTractors);
       break;
@@ -267,41 +260,55 @@ function findPairsInCards(cards: Card[], trumpInfo: TrumpInfo): Combo[] {
 function findTractorsInCards(
   cards: Card[],
   trumpInfo: TrumpInfo,
-  leadingSuit: Suit,
+  requiredLength: number,
 ): Combo[] {
   const tractors: Combo[] = [];
   const pairs = findPairsInCards(cards, trumpInfo);
 
-  if (pairs.length < 2) {
-    return tractors; // Need at least 2 pairs for a tractor
+  // GAME RULE: Tractor length matching - if leading is 2-pair tractor (AA-KK),
+  // only find 2-pair tractors, NOT 3-pair tractors (per user feedback)
+  // Calculate required number of pairs from total card length
+  const requiredPairCount = requiredLength / 2;
+
+  if (pairs.length < requiredPairCount) {
+    return tractors; // Not enough pairs for required tractor length
   }
 
-  // Sort pairs by rank for consecutive checking
-  const sortedPairs = pairs.sort((a, b) =>
-    compareCards(a.cards[0], b.cards[0], trumpInfo),
-  );
+  // GAME RULE: Use tractor rank ordering for consecutive checking
+  // Must use getTractorRank (not compareCards) for proper tractor formation
+  const sortedPairs = pairs.sort((a, b) => {
+    const rankA = getTractorRank(a.cards[0], trumpInfo);
+    const rankB = getTractorRank(b.cards[0], trumpInfo);
+    return rankA - rankB;
+  });
 
-  // Find consecutive pairs
-  for (let i = 0; i < sortedPairs.length - 1; i++) {
-    const consecutivePairs = [sortedPairs[i]];
+  // Find all possible tractors of exact required length
+  // Simple sliding window approach: try each possible starting position
+  for (
+    let start = 0;
+    start <= sortedPairs.length - requiredPairCount;
+    start++
+  ) {
+    // Check if we can form a tractor starting at position 'start'
+    let canFormTractor = true;
 
-    // Look for consecutive pairs
-    for (let j = i + 1; j < sortedPairs.length; j++) {
-      const currentPair = sortedPairs[j];
-      const lastPair = consecutivePairs[consecutivePairs.length - 1];
+    for (let i = 0; i < requiredPairCount - 1; i++) {
+      const currentPair = sortedPairs[start + i];
+      const nextPair = sortedPairs[start + i + 1];
 
       if (
-        areConsecutiveRanks(lastPair.cards[0], currentPair.cards[0], trumpInfo)
+        !areConsecutiveRanks(currentPair.cards[0], nextPair.cards[0], trumpInfo)
       ) {
-        consecutivePairs.push(currentPair);
-      } else {
+        canFormTractor = false;
         break;
       }
     }
 
-    // If we found 2+ consecutive pairs, it's a tractor
-    if (consecutivePairs.length >= 2) {
-      const tractorCards = consecutivePairs.flatMap((pair) => pair.cards);
+    if (canFormTractor) {
+      // Create tractor from exactly requiredPairCount consecutive pairs
+      const tractorPairs = sortedPairs.slice(start, start + requiredPairCount);
+      const tractorCards = tractorPairs.flatMap((pair) => pair.cards);
+
       tractors.push({
         type: ComboType.Tractor,
         cards: tractorCards,

@@ -1,4 +1,4 @@
-import { analyzeSuitAvailability } from "../../../src/ai/followingV2/suitAvailabilityAnalysis";
+import { analyzeSuitAvailability } from "../../../src/ai/following/suitAvailabilityAnalysis";
 import {
   Card,
   ComboType,
@@ -405,11 +405,9 @@ describe("Suit Availability Analysis", () => {
     it("should find trump pairs correctly", () => {
       const leadingCards = Card.createPair(Suit.Hearts, Rank.Ace); // Trump pair lead
       const playerHand = [
-        Card.createCard(Suit.Spades, Rank.Two, 0),
-        Card.createCard(Suit.Diamonds, Rank.Two, 1), // Trump rank pair
+        ...Card.createPair(Suit.Spades, Rank.Two), // Valid trump rank pair (2♠2♠)
         ...Card.createPair(Suit.Hearts, Rank.King), // Trump suit pair
-        Card.createJoker(JokerType.Big, 0),
-        Card.createJoker(JokerType.Big, 1), // Big joker pair
+        ...Card.createJokerPair(JokerType.Big), // Big joker pair
       ];
 
       const result = analyzeSuitAvailability(
@@ -421,16 +419,18 @@ describe("Suit Availability Analysis", () => {
       expect(result.scenario).toBe("valid_combos");
       expect(result.leadingSuit).toBe(Suit.None); // Trump leads should have Suit.None
 
-      // Should find at least 3 pairs: trump rank pair, trump suit pair, and joker pair
+      // Should find exactly 3 pairs: trump rank pair, trump suit pair, and joker pair
       const pairCombos = result.validCombos.filter(
         (combo) => combo.type === ComboType.Pair,
       );
-      expect(pairCombos.length).toBeGreaterThanOrEqual(3);
+      expect(pairCombos.length).toBe(3);
 
       // Validate specific pairs exist:
-      // 1. Trump rank pair (2♠ + 2♦)
+      // 1. Trump rank pair (2♠2♠)
       const hasTrumpRankPair = pairCombos.some((combo) =>
-        combo.cards.every((card) => card.rank === Rank.Two),
+        combo.cards.every(
+          (card) => card.rank === Rank.Two && card.suit === Suit.Spades,
+        ),
       );
 
       // 2. Trump suit pair (K♥K♥)
@@ -445,7 +445,7 @@ describe("Suit Availability Analysis", () => {
         combo.cards.every((card) => card.joker === JokerType.Big),
       );
 
-      expect(hasTrumpRankPair).toBe(true); // Should have 2♠2♦ trump rank pair
+      expect(hasTrumpRankPair).toBe(true); // Should have 2♠2♠ trump rank pair
       expect(hasTrumpSuitPair).toBe(true); // Should have K♥K♥ trump suit pair
       expect(hasBigJokerPair).toBe(true); // Should have Big Joker pair
     });
@@ -511,28 +511,6 @@ describe("Suit Availability Analysis", () => {
       ).toBe(true);
     });
   });
-
-  describe("Edge Cases", () => {
-    it("should handle mixed rank pairs in trump", () => {
-      const leadingCards = Card.createPair(Suit.Hearts, Rank.Ace); // Trump pair lead
-      const playerHand = [
-        Card.createCard(Suit.Spades, Rank.Two, 0), // Trump rank
-        Card.createCard(Suit.Clubs, Rank.Two, 1), // Different trump rank suit
-        Card.createCard(Suit.Hearts, Rank.King, 0),
-      ];
-
-      const result = analyzeSuitAvailability(
-        leadingCards,
-        playerHand,
-        trumpInfo,
-      );
-
-      expect(result.scenario).toBe("valid_combos");
-      expect(
-        result.validCombos.some((combo) => combo.type === ComboType.Pair),
-      ).toBe(true);
-    });
-  });
 });
 
 describe("Integration Tests", () => {
@@ -579,11 +557,12 @@ describe("Integration Tests", () => {
       expect(hasTenPair).toBe(true); // Should have 10♠10♠ pair
       expect(hasNinePair).toBe(true); // Should have 9♠9♠ pair
 
-      // Should also find the 10-9 tractor they can form
+      // GAME RULE (CLAUDE.md): "Pairs and tractors are different combo types"
+      // Should NOT find tractors for pair lead - this is fundamental rule!
       const hasTractor = result.validCombos.some(
         (combo) => combo.type === ComboType.Tractor,
       );
-      expect(hasTractor).toBe(true); // Should have 10♠10♠-9♠9♠ tractor
+      expect(hasTractor).toBe(false); // RULE: Pair lead = pairs only, NO tractors
     });
 
     it("should handle trump takeover scenario", () => {
@@ -630,6 +609,247 @@ describe("Integration Tests", () => {
 
       expect(result.scenario).toBe("enough_remaining");
       expect(result.remainingCards).toHaveLength(2);
+    });
+  });
+});
+
+describe("Tractor Length Matching Tests", () => {
+  const trumpInfo: TrumpInfo = {
+    trumpSuit: Suit.Hearts,
+    trumpRank: Rank.Two,
+  };
+
+  describe("Two-Pair Tractor Lead", () => {
+    it("should only find 2-pair tractors when 2-pair tractor is led", () => {
+      // GAME RULE: Tractor length matching - 2-pair lead = 2-pair response only
+      // Leading: AA-KK (2-pair tractor)
+      const leadingCards = [
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.King),
+      ];
+
+      // Hand: 66-77-88 (3 consecutive pairs)
+      const playerHand = [
+        ...Card.createPair(Suit.Spades, Rank.Six),
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight),
+      ];
+
+      const result = analyzeSuitAvailability(
+        leadingCards,
+        playerHand,
+        trumpInfo,
+      );
+
+      expect(result.scenario).toBe("valid_combos");
+
+      // Should find tractors
+      const tractorCombos = result.validCombos.filter(
+        (combo) => combo.type === ComboType.Tractor,
+      );
+
+      // Should find exactly 2 different 2-pair tractors: 66-77 and 77-88
+      expect(tractorCombos.length).toBe(2);
+
+      // All tractors should be exactly 4 cards (2 pairs)
+      expect(tractorCombos.every((tractor) => tractor.cards.length === 4)).toBe(
+        true,
+      );
+
+      // Verify the specific tractors exist
+      const has67Tractor = tractorCombos.some((tractor) => {
+        const ranks = tractor.cards.map((card) => card.rank).sort();
+        return ranks.join("") === "6677";
+      });
+
+      const has78Tractor = tractorCombos.some((tractor) => {
+        const ranks = tractor.cards.map((card) => card.rank).sort();
+        return ranks.join("") === "7788";
+      });
+
+      expect(has67Tractor).toBe(true); // Should have 66-77 tractor
+      expect(has78Tractor).toBe(true); // Should have 77-88 tractor
+
+      // Should NOT find the full 3-pair tractor 66-77-88
+      const has678Tractor = tractorCombos.some((tractor) => {
+        const ranks = tractor.cards.map((card) => card.rank).sort();
+        return ranks.join("") === "667788";
+      });
+      expect(has678Tractor).toBe(false); // Should NOT have 66-77-88 tractor
+    });
+
+    it("should find all possible 2-pair tractor combinations", () => {
+      // Leading: AA-KK (2-pair tractor)
+      const leadingCards = [
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.King),
+      ];
+
+      // Hand: 55-66-77-88-99 (5 consecutive pairs)
+      const playerHand = [
+        ...Card.createPair(Suit.Spades, Rank.Five),
+        ...Card.createPair(Suit.Spades, Rank.Six),
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight),
+        ...Card.createPair(Suit.Spades, Rank.Nine),
+      ];
+
+      const result = analyzeSuitAvailability(
+        leadingCards,
+        playerHand,
+        trumpInfo,
+      );
+
+      expect(result.scenario).toBe("valid_combos");
+
+      const tractorCombos = result.validCombos.filter(
+        (combo) => combo.type === ComboType.Tractor,
+      );
+
+      // Should find exactly 4 different 2-pair tractors: 55-66, 66-77, 77-88, 88-99
+      expect(tractorCombos.length).toBe(4);
+
+      // All should be 2-pair tractors (4 cards each)
+      expect(tractorCombos.every((tractor) => tractor.cards.length === 4)).toBe(
+        true,
+      );
+    });
+  });
+
+  describe("Three-Pair Tractor Lead", () => {
+    it("should only find 3-pair tractors when 3-pair tractor is led", () => {
+      // Leading: AAA-KKK-QQQ (3-pair tractor)
+      const leadingCards = [
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.King),
+        ...Card.createPair(Suit.Spades, Rank.Queen),
+      ];
+
+      // Hand: 55-66-77-88-99 (5 consecutive pairs)
+      const playerHand = [
+        ...Card.createPair(Suit.Spades, Rank.Five),
+        ...Card.createPair(Suit.Spades, Rank.Six),
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight),
+        ...Card.createPair(Suit.Spades, Rank.Nine),
+      ];
+
+      const result = analyzeSuitAvailability(
+        leadingCards,
+        playerHand,
+        trumpInfo,
+      );
+
+      expect(result.scenario).toBe("valid_combos");
+
+      const tractorCombos = result.validCombos.filter(
+        (combo) => combo.type === ComboType.Tractor,
+      );
+
+      // Should find exactly 3 different 3-pair tractors: 55-66-77, 66-77-88, 77-88-99
+      expect(tractorCombos.length).toBe(3);
+
+      // All should be 3-pair tractors (6 cards each)
+      expect(tractorCombos.every((tractor) => tractor.cards.length === 6)).toBe(
+        true,
+      );
+    });
+  });
+
+  describe("No Overlapping Combinations", () => {
+    it("should not return overlapping pairs and tractors for pair lead", () => {
+      // Leading: AA (pair lead)
+      const leadingCards = Card.createPair(Suit.Spades, Rank.Ace);
+
+      // Hand: 66-77-88 (can form tractor but lead is pair)
+      const playerHand = [
+        ...Card.createPair(Suit.Spades, Rank.Six),
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Eight),
+      ];
+
+      const result = analyzeSuitAvailability(
+        leadingCards,
+        playerHand,
+        trumpInfo,
+      );
+
+      expect(result.scenario).toBe("valid_combos");
+
+      // GAME RULE (CLAUDE.md): "Pairs and tractors are different combo types"
+      // Should ONLY find pairs, NOT tractors (since pair was led)
+      const pairCombos = result.validCombos.filter(
+        (combo) => combo.type === ComboType.Pair,
+      );
+      const tractorCombos = result.validCombos.filter(
+        (combo) => combo.type === ComboType.Tractor,
+      );
+
+      expect(pairCombos.length).toBe(3); // 66, 77, 88 pairs
+      expect(tractorCombos.length).toBe(0); // RULE: No tractors for pair lead
+
+      // All combos should be exactly 2 cards (pairs only)
+      expect(
+        result.validCombos.every((combo) => combo.cards.length === 2),
+      ).toBe(true);
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle exactly matching tractor length", () => {
+      // Leading: AA-KK (2-pair tractor)
+      const leadingCards = [
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.King),
+      ];
+
+      // Hand: exactly 66-77 (2-pair tractor, perfect match)
+      const playerHand = [
+        ...Card.createPair(Suit.Spades, Rank.Six),
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+      ];
+
+      const result = analyzeSuitAvailability(
+        leadingCards,
+        playerHand,
+        trumpInfo,
+      );
+
+      expect(result.scenario).toBe("valid_combos");
+
+      const tractorCombos = result.validCombos.filter(
+        (combo) => combo.type === ComboType.Tractor,
+      );
+
+      // Should find exactly 1 tractor: 66-77
+      expect(tractorCombos.length).toBe(1);
+      expect(tractorCombos[0].cards.length).toBe(4);
+    });
+
+    it("should handle insufficient pairs for tractor length", () => {
+      // Leading: AA-KK-QQ (3-pair tractor)
+      const leadingCards = [
+        ...Card.createPair(Suit.Spades, Rank.Ace),
+        ...Card.createPair(Suit.Spades, Rank.King),
+        ...Card.createPair(Suit.Spades, Rank.Queen),
+      ];
+
+      // Hand: 66-77 + 99-33 (4 non-consecutive pairs, enough cards but wrong structure)
+      const playerHand = [
+        ...Card.createPair(Suit.Spades, Rank.Six),
+        ...Card.createPair(Suit.Spades, Rank.Seven),
+        ...Card.createPair(Suit.Spades, Rank.Nine),
+        ...Card.createPair(Suit.Spades, Rank.Three),
+      ];
+
+      const result = analyzeSuitAvailability(
+        leadingCards,
+        playerHand,
+        trumpInfo,
+      );
+
+      expect(result.scenario).toBe("enough_remaining");
+      expect(result.validCombos.length).toBe(0); // No valid 3-pair tractors
     });
   });
 });

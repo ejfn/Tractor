@@ -138,7 +138,7 @@ function fallbackSelection(
   // Use V2 strategic disposal as fallback
   try {
     if (trumpInfo) {
-      return selectStrategicDisposal(playerHand, 1, trumpInfo);
+      return selectStrategicDisposal(playerHand, trumpInfo, 1);
     } else {
       // Ultimate fallback without trump info - just return first card
       return [playerHand[0]];

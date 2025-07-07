@@ -1,6 +1,13 @@
 import { canBeatCombo } from "../../game/cardComparison";
 import { isTrump } from "../../game/cardValue";
-import { Card, GameContext, GameState, PlayerId, Suit } from "../../types";
+import {
+  Card,
+  GameContext,
+  GameState,
+  PlayerId,
+  Suit,
+  Trick,
+} from "../../types";
 import { getRemainingUnseenCards } from "../aiGameContext";
 import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
 
@@ -132,7 +139,7 @@ function checkComboIsBiggestInSuit(
   combo: Card[],
   context: GameContext,
   gameState: GameState,
-  currentTrick: NonNullable<GameState["currentTrick"]>,
+  currentTrick: Trick,
 ): boolean {
   const leadingSuit = currentTrick.plays[0]?.cards[0]?.suit;
   const trumpInfo = context.trumpInfo || gameState.trumpInfo;
@@ -196,7 +203,7 @@ function checkComboIsBiggestInTrump(
   combo: Card[],
   context: GameContext,
   gameState: GameState,
-  currentTrick: NonNullable<GameState["currentTrick"]>,
+  currentTrick: Trick,
 ): boolean {
   const trumpInfo = context.trumpInfo || gameState.trumpInfo;
 

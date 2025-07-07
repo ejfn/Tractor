@@ -251,10 +251,10 @@ describe("3rd Player Strategy Tests", () => {
         currentWinner: PlayerId.Bot2,
         isTeammateWinning: true,
         isOpponentWinning: false,
-        isSelfWinning: false,
         isLeadWinning: false,
         trickPoints: 15,
-        canBeatCurrentWinner: false,
+        isTrumpLead: false,
+        isCurrentlyTrumped: false,
       };
       context.currentPlayer = PlayerId.Human;
 

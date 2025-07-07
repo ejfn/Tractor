@@ -125,8 +125,6 @@ export function analyzeTrickWinner(
     isTrumpLead,
     isCurrentlyTrumped,
     trickPoints,
-    isSelfWinning: false, // TODO: remove - legacy property for test compatibility
-    canBeatCurrentWinner: false, // TODO: remove - legacy property for test compatibility
   };
 }
 
