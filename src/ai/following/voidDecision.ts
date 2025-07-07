@@ -1,6 +1,14 @@
 import { canBeatCombo } from "../../game/cardComparison";
 import { calculateCardStrategicValue, isTrump } from "../../game/cardValue";
-import { Card, GameContext, GameState, PlayerId, TrumpInfo } from "../../types";
+import {
+  Card,
+  GameContext,
+  GameState,
+  PlayerId,
+  Suit,
+  TrickPosition,
+  TrumpInfo,
+} from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
 import {
   selectCardsByStrategicValue,
@@ -23,11 +31,11 @@ import { shouldContributeToTeammate } from "./teammateAnalysis";
  * Evaluate trump selection for void scenario
  */
 function evaluateTrumpSelection(
-  trumpCards: Card[],
+  playerHand: Card[],
   context: GameContext,
   trumpInfo: TrumpInfo,
   gameState: GameState,
-  currentPlayerId: PlayerId,
+  _currentPlayerId: PlayerId,
   analysis: SuitAvailabilityResult,
 ): Card[] | null {
   const currentTrick = gameState.currentTrick;
@@ -37,8 +45,9 @@ function evaluateTrumpSelection(
   const leadingCards = currentTrick?.plays[0]?.cards || [];
   const trumpAvailability = analyzeSuitAvailability(
     leadingCards,
-    trumpCards,
+    playerHand,
     trumpInfo,
+    Suit.None, // Analyze trump cards (Suit.None)
   );
 
   if (
@@ -70,7 +79,11 @@ function evaluateTrumpSelection(
 
       const isTractor = beatingCombos[0]?.type === "Tractor";
 
-      if (isTractor && !isTeammateWinning && trickPoints >= 10) {
+      if (
+        isTractor &&
+        !isTeammateWinning &&
+        (trickPoints >= 10 || context.trickPosition === TrickPosition.Second)
+      ) {
         // If tractor: always beat it with lowest one
         return selectComboByStrategicValue(
           beatingCombos,
@@ -84,7 +97,7 @@ function evaluateTrumpSelection(
       // If pair/single: more complex logic
       if (!isTractor) {
         // Check if last player or next player void status
-        const isLastPlayer = currentTrick?.plays.length === 3;
+        const isLastPlayer = context.trickPosition === TrickPosition.Fourth;
         let isNextPlayerVoid = false;
 
         if (!isLastPlayer) {

@@ -18,6 +18,7 @@ import { Card, Combo, ComboType, Suit, TrumpInfo } from "../../types";
 export interface SuitAvailabilityResult {
   scenario: "valid_combos" | "enough_remaining" | "void" | "insufficient";
   leadingSuit: Suit;
+  evaluateSuit: Suit;
   leadingComboType: ComboType;
   requiredLength: number;
 
@@ -46,6 +47,7 @@ export function analyzeSuitAvailability(
   leadingCards: Card[],
   playerHand: Card[],
   trumpInfo: TrumpInfo,
+  targetSuit?: Suit,
 ): SuitAvailabilityResult {
   const reasoning: string[] = [];
 
@@ -53,30 +55,35 @@ export function analyzeSuitAvailability(
   const leadingSuit = isTrump(leadingCards[0], trumpInfo)
     ? Suit.None
     : leadingCards[0].suit;
+  const evaluateSuit = targetSuit ?? leadingSuit; // Use provided suit or default to leading suit
   const leadingComboType = getComboType(leadingCards, trumpInfo);
   const requiredLength = leadingCards.length;
 
   reasoning.push(`leading_suit_${leadingSuit}`);
+  reasoning.push(`evaluate_suit_${evaluateSuit}`);
   reasoning.push(`leading_combo_${leadingComboType}`);
   reasoning.push(`required_length_${requiredLength}`);
 
-  // Filter available cards in leading suit
+  // Filter available cards in evaluated suit
   // CRITICAL: For trump suits, include ALL trump cards (cross-suit trump allowed)
   const availableCards = getAvailableCardsInSuit(
     playerHand,
-    leadingSuit,
+    evaluateSuit,
     trumpInfo,
   );
 
   const availableCount = availableCards.length;
   reasoning.push(`available_count_${availableCount}`);
 
-  // Scenario 1: Void in leading suit
+  // Scenario 1: Void in evaluated suit
   if (availableCount === 0) {
-    reasoning.push("void_in_leading_suit");
+    reasoning.push(
+      `void_in_${evaluateSuit === Suit.None ? "trump" : "suit"}_${evaluateSuit}`,
+    );
     return {
       scenario: "void",
       leadingSuit,
+      evaluateSuit,
       leadingComboType,
       requiredLength,
       validCombos: [],
@@ -88,10 +95,13 @@ export function analyzeSuitAvailability(
 
   // Scenario 2: Insufficient cards (some but not enough)
   if (availableCount < requiredLength) {
-    reasoning.push("insufficient_cards_available");
+    reasoning.push(
+      `insufficient_${evaluateSuit === Suit.None ? "trump" : "suit"}_cards`,
+    );
     return {
       scenario: "insufficient",
       leadingSuit,
+      evaluateSuit,
       leadingComboType,
       requiredLength,
       validCombos: [],
@@ -111,12 +121,17 @@ export function analyzeSuitAvailability(
 
   // Scenario 3: Valid combos available (STRICT matches only)
   if (validCombos.length > 0) {
-    reasoning.push(`valid_combos_found_${validCombos.length}`);
-    reasoning.push(`combo_types_${validCombos.map((c) => c.type).join(",")}`);
+    reasoning.push(
+      `${evaluateSuit === Suit.None ? "trump" : "suit"}_combos_found_${validCombos.length}`,
+    );
+    reasoning.push(
+      `${evaluateSuit === Suit.None ? "trump" : "suit"}_combo_types_${validCombos.map((c) => c.type).join(",")}`,
+    );
 
     return {
       scenario: "valid_combos",
       leadingSuit,
+      evaluateSuit,
       leadingComboType,
       requiredLength,
       validCombos,
@@ -128,10 +143,13 @@ export function analyzeSuitAvailability(
 
   // Scenario 4: Enough remaining cards but can't form required combo types
   // This goes to disposal/contribution route
-  reasoning.push("enough_cards_wrong_structure");
+  reasoning.push(
+    `enough_${evaluateSuit === Suit.None ? "trump" : "suit"}_wrong_structure`,
+  );
   return {
     scenario: "enough_remaining",
     leadingSuit,
+    evaluateSuit,
     leadingComboType,
     requiredLength,
     validCombos: [],

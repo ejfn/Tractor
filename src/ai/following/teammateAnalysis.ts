@@ -7,6 +7,7 @@ import {
   PlayerId,
   Suit,
   Trick,
+  TrickPosition,
 } from "../../types";
 import { getRemainingUnseenCards } from "../aiGameContext";
 import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
@@ -39,7 +40,7 @@ export function shouldContributeToTeammate(
   if (!currentTrick) return false;
 
   // Check if I'm 4th player
-  const isLastPlayer = currentTrick.plays.length === 3;
+  const isLastPlayer = context.trickPosition === TrickPosition.Fourth;
 
   // Determine if this is a trump lead
   const trumpInfo = context.trumpInfo || gameState.trumpInfo;

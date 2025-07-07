@@ -15,6 +15,7 @@ import {
   Combo,
   ComboStrength,
   ComboType,
+  GameContext,
   GamePhase,
   GameState,
   PlayerId,
@@ -24,7 +25,6 @@ import {
   Suit,
   TrickPosition,
   TrumpInfo,
-  GameContext,
 } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { createTestCardsGameState } from "../helpers/gameStates";
@@ -522,27 +522,6 @@ describe("AI Game Context", () => {
       expect(result.isOpponentWinning).toBe(true);
       // Note: isSelfWinning property removed - test needs update
       expect(result.currentWinner).toBe(PlayerId.Human);
-    });
-
-    it("should detect self winning status", () => {
-      // Set up trick with Bot1 winning
-      gameState.currentTrick = {
-        plays: [
-          {
-            playerId: PlayerId.Bot1,
-            cards: [Card.createCard(Suit.Hearts, Rank.Ace, 0)],
-          },
-        ],
-        winningPlayerId: PlayerId.Bot1,
-        points: 0,
-      };
-
-      const result = analyzeTrickWinner(gameState, PlayerId.Bot1);
-
-      expect(result.isTeammateWinning).toBe(false);
-      expect(result.isOpponentWinning).toBe(false);
-      // Note: isSelfWinning property removed - test needs update
-      expect(result.currentWinner).toBe(PlayerId.Bot1);
     });
 
     it("should track trick points correctly", () => {

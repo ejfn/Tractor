@@ -82,7 +82,7 @@ This phase is about translating the data-driven insights from Phase 2 into concr
 
 **Key Actions:**
 
-1.  **Targeted Code Modifications**: Based on the hypotheses generated in the insight reports, developers will make precise changes to the AI's logic. For example, if the data suggests that the `thirdPlayerRiskAnalysis` is too risk-averse, the thresholds in that module will be adjusted.
+1.  **Targeted Code Modifications**: Based on the hypotheses generated in the insight reports, developers will make precise changes to the AI's logic. For example, if the data suggests that the 3rd player takeover analysis in `followingStrategy.ts` is too risk-averse, the thresholds in that logic will be adjusted.
 
 2.  **Evidence-Based Commits and Pull Requests**: Every change made to the AI's strategy must be justified by the data. Commit messages and pull request descriptions will explicitly reference the analysis that prompted the change. This creates a clear, auditable trail of how the AI is evolving.
     *   **Example Commit Message**:

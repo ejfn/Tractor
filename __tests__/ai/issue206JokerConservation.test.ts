@@ -1,15 +1,15 @@
 import { getAIMove } from "../../src/ai/aiLogic";
-import { initializeGame } from "../../src/utils/gameInitialization";
 import {
   Card,
-  GameState,
-  Suit,
-  Rank,
-  PlayerId,
   GamePhase,
-  TrumpInfo,
+  GameState,
   JokerType,
+  PlayerId,
+  Rank,
+  Suit,
+  TrumpInfo,
 } from "../../src/types";
+import { initializeGame } from "../../src/utils/gameInitialization";
 import { gameLogger } from "../../src/utils/gameLogger";
 
 describe("Issue 206: AI Joker Conservation Strategy", () => {
@@ -169,8 +169,8 @@ describe("Issue 206: AI Joker Conservation Strategy", () => {
     );
   });
 
-  it("should conserve Small Jokers even when teammate Bot3 could potentially win", () => {
-    // Corrected test: Even when strategic considerations exist, Small Jokers shouldn't be wasted on 0-point tricks
+  it("should use Small Jokers to block opponent even on 0-point tricks", () => {
+    // New aggressive logic: Block opponents by taking over even on 0-point tricks
 
     const leadingPair = [
       Card.createCard(Suit.Diamonds, Rank.Six, 0),
@@ -206,21 +206,21 @@ describe("Issue 206: AI Joker Conservation Strategy", () => {
     ];
 
     gameLogger.info(
-      "test_zero_point_conservation",
+      "test_zero_point_aggressive",
       {
-        testCase: "zero_point_trick_conservation",
+        testCase: "zero_point_trick_blocking",
         pointsOnTable: 0,
-        expectedBehavior: "conserve_small_jokers",
+        expectedBehavior: "use_small_jokers_to_block",
       },
-      "\n=== Corrected Test: 0-Point Trick Conservation ===",
+      "\n=== Aggressive Test: 0-Point Trick Blocking ===",
     );
     gameLogger.info(
       "test_zero_point_strategy",
       {
         pointsOnTable: 0,
-        strategicConsideration: "irrelevant_when_zero_points",
+        strategicConsideration: "block_opponent_momentum",
       },
-      "0 points on table - should conserve Small Jokers regardless of strategic considerations",
+      "0 points on table - should use Small Jokers to block opponent and take control",
     );
 
     const aiMove = getAIMove(gameState, PlayerId.Bot2);
@@ -239,13 +239,13 @@ describe("Issue 206: AI Joker Conservation Strategy", () => {
           .join(", "),
     );
 
-    // Should conserve Small Jokers on 0-point tricks
+    // Should use Small Jokers to block opponent (new aggressive logic)
     const usedSmallJokers = aiMove.filter(
       (c) => c.joker === JokerType.Small,
     ).length;
 
     expect(aiMove).toHaveLength(2);
-    expect(usedSmallJokers).toBe(0); // Should NOT waste Small Jokers on 0-point trick
+    expect(usedSmallJokers).toBe(2); // Should use Small Jokers to block opponent
 
     gameLogger.info(
       "test_joker_analysis",
@@ -256,13 +256,13 @@ describe("Issue 206: AI Joker Conservation Strategy", () => {
       "Small Jokers used: " + usedSmallJokers,
     );
     gameLogger.info(
-      "test_zero_point_conservation_success",
+      "test_zero_point_blocking_success",
       {
         testPassed: true,
-        conservationBehavior: "small_jokers_conserved",
+        aggressiveBehavior: "small_jokers_used_to_block",
         trickValue: 0,
       },
-      "✅ AI correctly conserves Small Jokers on 0-point tricks",
+      "✅ AI correctly uses Small Jokers to block opponents on 0-point tricks",
     );
   });
 

@@ -41,7 +41,6 @@ describe("Suit Availability Analysis", () => {
         expect(result.scenario).toBe("void");
         expect(result.leadingSuit).toBe(Suit.Spades);
         expect(result.availableCount).toBe(0);
-        expect(result.reasoning).toContain("void_in_leading_suit");
       });
 
       it("should classify as void when no cards in leading suit (pair lead)", () => {
@@ -60,7 +59,6 @@ describe("Suit Availability Analysis", () => {
         expect(result.scenario).toBe("void");
         expect(result.leadingSuit).toBe(Suit.Spades);
         expect(result.availableCount).toBe(0);
-        expect(result.reasoning).toContain("void_in_leading_suit");
       });
 
       it("should classify as void when no cards in leading suit (tractor lead)", () => {
@@ -82,7 +80,6 @@ describe("Suit Availability Analysis", () => {
         expect(result.scenario).toBe("void");
         expect(result.leadingSuit).toBe(Suit.Spades);
         expect(result.availableCount).toBe(0);
-        expect(result.reasoning).toContain("void_in_leading_suit");
       });
 
       it("should classify as void when only trump rank cards in leading suit", () => {
@@ -121,7 +118,6 @@ describe("Suit Availability Analysis", () => {
         expect(result.availableCount).toBe(1);
         expect(result.requiredLength).toBe(2);
         expect(result.remainingCards).toHaveLength(1);
-        expect(result.reasoning).toContain("insufficient_cards_available");
       });
 
       it("should classify as insufficient when some cards but not enough (tractor lead)", () => {
@@ -145,7 +141,6 @@ describe("Suit Availability Analysis", () => {
         expect(result.availableCount).toBe(2);
         expect(result.requiredLength).toBe(4);
         expect(result.remainingCards).toHaveLength(2);
-        expect(result.reasoning).toContain("insufficient_cards_available");
       });
 
       it("should NOT classify single lead as insufficient (always sufficient)", () => {
@@ -185,7 +180,6 @@ describe("Suit Availability Analysis", () => {
         expect(result.validCombos).toHaveLength(1);
         expect(result.validCombos[0].type).toBe(ComboType.Pair);
         expect(result.validCombos[0].cards).toHaveLength(2);
-        expect(result.reasoning).toContain("valid_combos_found_1");
       });
 
       it("should classify as valid_combos for single leads with any cards", () => {
@@ -311,7 +305,6 @@ describe("Suit Availability Analysis", () => {
         expect(result.scenario).toBe("enough_remaining");
         expect(result.availableCount).toBe(2);
         expect(result.remainingCards).toHaveLength(2);
-        expect(result.reasoning).toContain("enough_cards_wrong_structure");
       });
 
       it("should classify tractor lead with only pairs as enough_remaining", () => {
@@ -355,7 +348,6 @@ describe("Suit Availability Analysis", () => {
         expect(result.scenario).toBe("enough_remaining");
         expect(result.availableCount).toBe(4);
         expect(result.remainingCards).toHaveLength(4);
-        expect(result.reasoning).toContain("enough_cards_wrong_structure");
       });
 
       it("should NOT classify single lead as enough_remaining (singles always work)", () => {

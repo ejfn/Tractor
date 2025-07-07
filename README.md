@@ -95,7 +95,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **Guaranteed Winner Detection**: Uses card tracking to identify cards certain to win
 - **Smart Void Exploitation**: Differentiates teammate vs opponent void strategies for optimal point collection
 - **Trump Exhaustion Tracking**: Dynamic trump conservation based on opponent depletion analysis
-- **Position-Specific Memory**: Specialized memory analysis for 2nd, 3rd, and 4th player positions
+- **Context-Aware Memory**: Unified memory analysis integrated across all trick positions
 - **Point Timing Optimization**: Memory-enhanced analysis for optimal point card collection timing
 
 *Complete AI documentation in **[AI System Guide](docs/AI_SYSTEM.md)***

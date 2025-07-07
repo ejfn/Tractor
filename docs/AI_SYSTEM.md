@@ -99,15 +99,15 @@ The V2 following system implements a **scenario-based approach** with strict gam
 
 ### **Key Architectural Principles**
 
-**Position-Based Intelligence**: Specialized logic for each trick position:
-- **2nd Player** → `secondPlayerStrategy.ts` (early influence)
-- **3rd Player** → `thirdPlayerStrategy.ts` + `thirdPlayerRiskAnalysis.ts` (enhanced takeover logic with strategic value analysis)
-- **4th Player** → Unified strategic disposal logic (no specialized module needed)
+**Unified Following Logic**: Consolidated position-aware decision making:
+- **Context-Aware Decisions** → Single followingStrategy.ts handles all positions with context-specific logic
+- **Strategic Routing** → routingLogic.ts routes decisions based on scenario analysis, not position
+- **Team Analysis** → teammateAnalysis.ts provides position-aware teammate evaluation
 
 **Memory-Enhanced Decisions**: Memory system integrated throughout:
-- **Point Management** → `pointContribution.ts` (guaranteed winners)
+- **Point Timing** → `pointCardTiming.ts` (guaranteed winner optimization)
 - **Leading Strategy** → `pointFocusedStrategy.ts` (memory-enhanced leading)
-- **Disposal Logic** → `strategicDisposal.ts` (conservation hierarchy)
+- **Void Analysis** → `voidExploitation.ts` (memory-based void exploitation)
 
 ---
 
@@ -289,22 +289,21 @@ Big Joker (100) > Small Joker (90) > Trump Rank in Trump Suit (80) >
 Trump Rank in Off-Suits (70) > Trump Suit Cards (A♠:60 → 3♠:5)
 ```
 
-### **Position-Specific Memory Integration**
+### **Unified Memory Integration**
 
-#### 2nd Player (Partial Information)
+The memory system is seamlessly integrated across all AI decision modules:
 
-- **Memory-Enhanced Influence**: Use card tracking to guide early decisions
-- **Pattern Recognition**: Analyze opponent tendencies from memory
+#### Following Decision Integration
 
-#### 3rd Player (Tactical Decisions)
+- **Context-Aware Memory**: All trick positions receive memory-enhanced context through aiGameContext.ts
+- **Scenario Analysis**: suitAvailabilityAnalysis.ts uses memory for void detection and card tracking
+- **Team Coordination**: teammateAnalysis.ts leverages memory for optimal teammate support decisions
 
-- **Risk Assessment**: Memory-based analysis of opponent capabilities
-- **Teammate Coordination**: Enhanced support decisions using card tracking
+#### Strategic Enhancement
 
-#### 4th Player (Perfect Information + Memory)
-
-- **Optimal Point Contribution**: Combine visible cards with memory analysis
-- **Future Round Advantage**: Consider long-term positioning based on memory
+- **Guaranteed Winner Detection**: Memory identifies cards certain to win based on played card tracking
+- **Void Exploitation**: Real-time void analysis using memory-tracked suit exhaustion
+- **Conservation Decisions**: Memory-informed trump and point card conservation strategies
 
 ### **Memory System Benefits**
 
@@ -641,17 +640,18 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 
 **Code Cleanup and Optimization:**
 - **Removed 540+ lines** of unused AI functions from fourth player strategy module
-- **Eliminated `fourthPlayerStrategy.ts`** - fourth player now uses unified strategic disposal
+- **Eliminated position-specific strategy files** - consolidated into unified followingStrategy.ts
+- **Enhanced suit availability analysis** - unified trump and non-trump analysis with optional targetSuit parameter
 - **Simplified strategic disposal API** - removed unused parameters and redundant functions
-- **Enhanced 3rd player takeover logic** - strategic value analysis with trump weakness detection
+- **Comprehensive test cleanup** - removed invalid tests and outdated strategy assumptions
 - **Added shared utility functions** - `isBiggestInSuit()` for consistent trump rank handling
 
 **Technical Benefits:**
-- **Reduced technical debt** - 686+ lines of code removed total
-- **Improved maintainability** - fewer modules to maintain, cleaner call paths
-- **Enhanced strategic intelligence** - 3rd player properly identifies weak trump leads
-- **Consistent analysis** - unified strategic value approach across all AI modules
-- **Better testing** - focused modules enable comprehensive unit testing
+- **Reduced technical debt** - Significant code reduction through consolidation
+- **Improved maintainability** - Unified architecture with cleaner call paths
+- **Enhanced strategic intelligence** - Context-aware decisions across all positions
+- **Consistent analysis** - Single analyzeSuitAvailability function for all scenarios
+- **Better testing** - Focused on important strategic decisions, removed micro-optimization tests
 
 ---
 
