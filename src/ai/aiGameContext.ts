@@ -1,6 +1,4 @@
-import { compareCards, evaluateTrickPlay } from "../game/cardComparison";
 import { calculateCardStrategicValue, isTrump } from "../game/cardValue";
-import { getValidCombinations } from "../game/combinationGeneration";
 import {
   Card,
   CardMemory,
@@ -9,13 +7,13 @@ import {
   ComboStrength,
   GameContext,
   GameState,
+  JokerType,
   PlayerId,
   PlayStyle,
   PointPressure,
   PositionStrategy,
   Rank,
   Suit,
-  Trick,
   TrickPosition,
   TrickWinnerAnalysis,
   TrumpInfo,
@@ -102,377 +100,32 @@ export function analyzeTrickWinner(
 
   // Determine team relationships
   const isLeadWinning = currentWinner === currentTrick.plays[0]?.playerId;
-  const isSelfWinning = currentWinner === playerId;
-  const isTeammateWinning =
-    !isSelfWinning && isTeammate(gameState, playerId, currentWinner);
-  const isOpponentWinning = !isSelfWinning && !isTeammateWinning;
+  const isTeammateWinning = isTeammate(gameState, playerId, currentWinner);
+  const isOpponentWinning = !isTeammateWinning;
   const trickPoints = currentTrick.points;
 
-  // Determine if AI can beat current winner (simplified analysis)
-  const canBeatCurrentWinner = canPlayerBeatCurrentWinner(
-    gameState,
-    playerId,
-    currentTrick,
-  );
+  // Determine trump situation
+  const leadingCards = currentTrick.plays[0]?.cards || [];
+  const winningCards =
+    currentTrick.plays.find((play) => play.playerId === currentWinner)?.cards ||
+    leadingCards;
 
-  // Strategic decision: should try to beat current winner?
-  const shouldTryToBeat = determineIfShouldTryToBeat(
-    isTeammateWinning,
-    isOpponentWinning,
-    trickPoints,
-    canBeatCurrentWinner,
-    gameState,
-    playerId,
+  const isTrumpLead = leadingCards.some((card) =>
+    isTrump(card, gameState.trumpInfo),
   );
-
-  // Strategic decision: should play conservatively?
-  const shouldPlayConservatively = determineIfShouldPlayConservatively(
-    isTeammateWinning,
-    trickPoints,
-    gameState,
-    playerId,
-  );
+  const isCurrentlyTrumped =
+    !isTrumpLead &&
+    winningCards.some((card) => isTrump(card, gameState.trumpInfo));
 
   return {
     currentWinner,
     isTeammateWinning,
     isOpponentWinning,
-    isSelfWinning,
     isLeadWinning,
+    isTrumpLead,
+    isCurrentlyTrumped,
     trickPoints,
-    canBeatCurrentWinner,
-    shouldTryToBeat,
-    shouldPlayConservatively,
   };
-}
-
-/**
- * Determines if the current player can beat the current trick winner
- * Enhanced with combo type validation and actual game logic
- */
-function canPlayerBeatCurrentWinner(
-  gameState: GameState,
-  playerId: PlayerId,
-  currentTrick: Trick,
-): boolean {
-  const player = gameState.players.find((p) => p.id === playerId);
-  if (!player || !currentTrick) {
-    return false;
-  }
-
-  // Get current winner's cards for strength comparison
-  const winningPlayerId = currentTrick.winningPlayerId;
-  const winningPlay = currentTrick.plays.find(
-    (play) => play.playerId === winningPlayerId,
-  );
-  const currentWinnerCards = winningPlay?.cards || [];
-  if (currentWinnerCards.length === 0) {
-    return false;
-  }
-
-  // CRITICAL FIX: Use filtered valid combos instead of unfiltered identifyCombos
-  // This prevents the AI from considering illegal moves like trump when it must follow suit
-  const availableCombos = getValidCombinations(player.hand, gameState);
-  if (availableCombos.length === 0) {
-    return false;
-  }
-
-  // Test each combo to see if any can beat the current trick
-  for (let i = 0; i < availableCombos.length; i++) {
-    const combo = availableCombos[i];
-    try {
-      const evaluation = evaluateTrickPlay(
-        combo.cards,
-        currentTrick,
-        gameState.trumpInfo,
-        player.hand,
-      );
-
-      // If this combo can legally beat the current winner, return true
-      if (evaluation.canBeat && evaluation.isLegal) {
-        // Double-check: ensure our cards are actually stronger than winner's cards
-        const winnerCard = currentWinnerCards[0];
-        const ourCard = combo.cards[0];
-
-        // Safety check: don't consider equal cards as "beatable"
-        const cardComparison = compareCards(
-          ourCard,
-          winnerCard,
-          gameState.trumpInfo,
-        );
-
-        if (cardComparison > 0) {
-          return true;
-        }
-      }
-    } catch {
-      // Skip combos that cause evaluation errors
-      continue;
-    }
-  }
-
-  // Fallback: Use simplified heuristic for edge cases
-  return canPlayerBeatCurrentWinnerSimple(gameState, playerId, currentTrick);
-}
-
-/**
- * Simplified fallback heuristic for edge cases
- */
-function canPlayerBeatCurrentWinnerSimple(
-  gameState: GameState,
-  playerId: PlayerId,
-  currentTrick: Trick,
-): boolean {
-  const player = gameState.players.find((p) => p.id === playerId);
-  if (!player || !currentTrick) return false;
-
-  // Get current winner's cards
-  const winningPlayerId = currentTrick.winningPlayerId;
-  const winningPlay = currentTrick.plays.find(
-    (play) => play.playerId === winningPlayerId,
-  );
-  const currentWinnerCards =
-    winningPlay?.cards || currentTrick.plays[0]?.cards || [];
-
-  if (currentWinnerCards.length === 0) return false;
-
-  // Get the suit to follow
-  const leadingSuit = currentTrick.plays[0]?.cards[0]?.suit;
-  if (!leadingSuit) return false;
-
-  // Find cards that can follow the leading suit
-  const followingCards = player.hand.filter(
-    (card) => card.suit === leadingSuit,
-  );
-
-  // Check trump availability for void scenarios
-  const currentWinnerHasTrump = currentWinnerCards.some((card) =>
-    isTrump(card, gameState.trumpInfo),
-  );
-
-  if (!currentWinnerHasTrump) {
-    // Current winner is non-trump, check trump availability
-    const hasTrump = player.hand.some((card) =>
-      isTrump(card, gameState.trumpInfo),
-    );
-
-    // Can potentially trump if void in leading suit
-    if (hasTrump && followingCards.length === 0) return true;
-
-    // Check for higher same-suit cards
-    const winnerCard = currentWinnerCards[0];
-    return followingCards.some(
-      (card) => compareCards(card, winnerCard, gameState.trumpInfo) > 0,
-    );
-  }
-
-  // Current winner has trump - check for higher trump
-  const winnerCard = currentWinnerCards[0];
-  const trumpCards = player.hand.filter((card) =>
-    isTrump(card, gameState.trumpInfo),
-  );
-
-  return trumpCards.some(
-    (card) => compareCards(card, winnerCard, gameState.trumpInfo) > 0,
-  );
-}
-
-/**
- * Prevents wasteful trump usage when player has equal-strength non-trump cards
- */
-function shouldAvoidWastefulTrumpUsage(
-  gameState: GameState,
-  playerId: PlayerId,
-): boolean {
-  const player = gameState.players.find((p) => p.id === playerId);
-  const currentTrick = gameState.currentTrick;
-  if (!player || !currentTrick) return false;
-
-  // Get current winner's cards
-  const winningPlayerId = currentTrick.winningPlayerId;
-  const winningPlay = currentTrick.plays.find(
-    (play) => play.playerId === winningPlayerId,
-  );
-  const currentWinnerCards = winningPlay?.cards || [];
-  if (currentWinnerCards.length === 0) return false;
-
-  // Only apply to single card scenarios for now
-  if (currentWinnerCards.length !== 1) return false;
-
-  const winnerCard = currentWinnerCards[0];
-
-  // Check if we have the same card (equal strength) in our hand
-  const equalStrengthCard = player.hand.find(
-    (card) =>
-      card.suit === winnerCard.suit &&
-      card.rank === winnerCard.rank &&
-      !isTrump(card, gameState.trumpInfo),
-  );
-
-  if (equalStrengthCard) {
-    return true; // Avoid using trump when we have equal non-trump card
-  }
-
-  return false;
-}
-
-/**
- * Checks if AI should try to establish suit dominance
- */
-function shouldEstablishSuit(
-  gameState: GameState,
-  playerId: PlayerId,
-  leadingSuit: Suit,
-  trumpInfo: TrumpInfo,
-): boolean {
-  const player = gameState.players.find((p) => p.id === playerId);
-  if (!player) return false;
-
-  // Don't try to establish trump suits (already strong)
-  if (leadingSuit === trumpInfo.trumpSuit) return false;
-
-  // Get cards in leading suit (non-trump)
-  const suitCards = player.hand.filter(
-    (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
-  );
-
-  // Need at least 3 cards to consider establishment
-  if (suitCards.length < 3) return false;
-
-  // Check for strong cards (Ace, King, Queen)
-  const strongCards = suitCards.filter(
-    (card) =>
-      card.rank === Rank.Ace ||
-      card.rank === Rank.King ||
-      card.rank === Rank.Queen,
-  );
-
-  // Establish if we have 2+ strong cards in the suit
-  return strongCards.length >= 2;
-}
-
-/**
- * Determines if AI should try to beat the current winner
- */
-function determineIfShouldTryToBeat(
-  isTeammateWinning: boolean,
-  isOpponentWinning: boolean,
-  trickPoints: number,
-  canBeatCurrentWinner: boolean,
-  gameState: GameState,
-  playerId: PlayerId,
-): boolean {
-  // Don't try to beat teammate
-  if (isTeammateWinning) return false;
-
-  // Can't beat current winner - no point trying
-  if (!canBeatCurrentWinner) return false;
-
-  // Always try to beat opponent for high-value tricks (10+ points)
-  if (isOpponentWinning && trickPoints >= 10) {
-    return true;
-  }
-
-  // Try to beat opponent for medium-value tricks (5+ points)
-  if (isOpponentWinning && trickPoints >= 5) {
-    return true; // Removed team role restriction
-  }
-
-  // ANTI-WASTE CHECK: Don't use trump when we have equal-strength non-trump cards
-  if (isOpponentWinning && shouldAvoidWastefulTrumpUsage(gameState, playerId)) {
-    return false;
-  }
-
-  // NEW: Try to beat for suit establishment (even 0-point tricks)
-  if (isOpponentWinning && gameState.currentTrick?.plays[0]?.cards) {
-    const leadingSuit = gameState.currentTrick.plays[0].cards[0]?.suit;
-    if (
-      leadingSuit &&
-      shouldEstablishSuit(gameState, playerId, leadingSuit, gameState.trumpInfo)
-    ) {
-      return true;
-    }
-  }
-
-  // NEW: Position-specific aggression (only if we can actually beat)
-  const currentTrick = gameState.currentTrick;
-  if (currentTrick && isOpponentWinning && canBeatCurrentWinner) {
-    const currentPosition = currentTrick.plays.length;
-
-    // 2nd player: More willing to contest early (probing) if beatable
-    if (currentPosition === 1 && trickPoints >= 0) {
-      return true;
-    }
-
-    // 3rd player: Contest if any points or good position and beatable
-    if (currentPosition === 2 && trickPoints >= 0) {
-      return true;
-    }
-
-    // 4th player: Perfect information - contest only if actually winnable
-    if (currentPosition === 3) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Determines if AI should play conservatively
- */
-function determineIfShouldPlayConservatively(
-  isTeammateWinning: boolean,
-  trickPoints: number,
-  gameState: GameState,
-  playerId: PlayerId,
-): boolean {
-  // If teammate is winning, decide between conservative play vs point contribution
-  if (isTeammateWinning) {
-    const player = gameState.players.find((p) => p.id === playerId);
-    if (!player) return true;
-
-    const hasHighValuePointCards = player.hand.some(
-      (card) =>
-        (card.rank === Rank.Ten || card.rank === Rank.King) && card.points > 0,
-    );
-
-    const hasLowValueCards = player.hand.some((card) => card.points === 0);
-
-    // Special case: Last player (4th position) should maximize point contribution
-    const currentTrick = gameState.currentTrick;
-    if (currentTrick && currentTrick.plays.length === 3) {
-      // This is the 4th player (last to play) - plays[0]=leader, plays[1]=2nd, plays[2]=3rd, current=4th
-      // Focus on optimal point contribution rather than conservation
-      return false;
-    }
-
-    // For earlier positions: if we have both high and low value cards, be conservative
-    if (hasHighValuePointCards && hasLowValueCards) {
-      return true; // Play conservatively (save high-value cards)
-    }
-
-    // If we only have high-value cards, we must contribute them
-    if (hasHighValuePointCards && !hasLowValueCards) {
-      return false; // Must contribute high-value cards
-    }
-
-    // Default to conservative when teammate winning
-    return true;
-  }
-
-  // Play conservatively if there are no significant points at stake
-  if (trickPoints < 5) return true;
-
-  // Play conservatively if we're defending and doing well
-  const isAttacking = isPlayerOnAttackingTeam(gameState, playerId);
-  if (!isAttacking) {
-    const attackingPoints = getCurrentAttackingPoints(gameState);
-    // If attacking team is struggling, be conservative as defender
-    if (attackingPoints < 40) return true;
-  }
-
-  return false;
 }
 
 /**
@@ -937,20 +590,127 @@ export function isTrickWorthFighting(
   }
 }
 
-// Note: analyzeTeammateLeadSecurity functionality has been consolidated into
-// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+/**
+ * Generate remaining unseen cards for a specific suit or trump group
+ *
+ * @param suit - The suit to analyze (or Suit.None for all trump cards)
+ * @param context - Game context containing all necessary state and memory
+ * @param gameState - Current game state
+ * @returns Array of unseen cards in the specified suit/trump group
+ */
+export function getRemainingUnseenCards(
+  suit: Suit,
+  context: GameContext,
+  gameState: GameState,
+): Card[] {
+  const currentPlayerId = context.currentPlayer;
+  const trumpInfo = context.trumpInfo || gameState.trumpInfo;
 
-// Note: assessFourthPlayerThreat functionality has been consolidated into
-// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+  if (!trumpInfo) return [];
 
-// Note: calculateCurrentTrickPoints functionality has been consolidated into
-// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+  const cardMemory =
+    context.memoryContext?.cardMemory || createCardMemory(gameState);
+  const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
+  if (!currentPlayer) return [];
 
-// Note: calculatePotentialAdditionalPoints functionality has been consolidated into
-// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+  // Generate all cards for the suit/trump group (from 2 decks)
+  const allCardsInGroup = generateAllCardsForSuitOrTrump(suit, trumpInfo);
 
-// Note: calculateSupportValue functionality has been consolidated into
-// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+  // Helper to check if card belongs to the target suit/trump group
+  const belongsToGroup = (card: Card): boolean =>
+    suit === Suit.None
+      ? isTrump(card, trumpInfo)
+      : !isTrump(card, trumpInfo) && card.suit === suit;
 
-// Note: shouldRecommendTakeover functionality has been consolidated into
-// ThirdPlayerAnalysis in aiStrategy.ts to reduce redundancy
+  // Get all seen cards
+  const seenCards = new Set<string>();
+
+  // 1. All played cards from memory
+  cardMemory.playedCards.forEach((card) => {
+    if (belongsToGroup(card)) {
+      seenCards.add(card.commonId);
+    }
+  });
+
+  // 2. Current trick cards (if not already in played cards)
+  const currentTrick = gameState.currentTrick;
+  if (currentTrick) {
+    currentTrick.plays.forEach((play) => {
+      play.cards.forEach((card) => {
+        if (belongsToGroup(card)) {
+          seenCards.add(card.commonId);
+        }
+      });
+    });
+  }
+
+  // 3. Current player's hand
+  currentPlayer.hand.forEach((card) => {
+    if (belongsToGroup(card)) {
+      seenCards.add(card.commonId);
+    }
+  });
+
+  // 4. Kitty cards (if current player is round starter and kitty is visible)
+  const isRoundStarter =
+    gameState.currentPlayerIndex === gameState.roundStartingPlayerIndex;
+  if (isRoundStarter && gameState.kittyCards) {
+    gameState.kittyCards.forEach((card) => {
+      if (belongsToGroup(card)) {
+        seenCards.add(card.commonId);
+      }
+    });
+  }
+
+  // Filter out seen cards
+  return allCardsInGroup.filter((card) => !seenCards.has(card.commonId));
+}
+
+/**
+ * Helper: Generate all cards for a suit or trump group (2 decks)
+ */
+function generateAllCardsForSuitOrTrump(
+  suit: Suit,
+  trumpInfo: TrumpInfo,
+): Card[] {
+  const allCards: Card[] = [];
+
+  if (suit === Suit.None) {
+    // Trump group: all trump cards
+    // Add jokers (4 total: 2 big, 2 small)
+    allCards.push(Card.createJoker(JokerType.Big, 0));
+    allCards.push(Card.createJoker(JokerType.Big, 1));
+    allCards.push(Card.createJoker(JokerType.Small, 0));
+    allCards.push(Card.createJoker(JokerType.Small, 1));
+
+    // Add trump rank cards from all suits (8 total: 2 per suit)
+    [Suit.Spades, Suit.Hearts, Suit.Diamonds, Suit.Clubs].forEach((s) => {
+      allCards.push(Card.createCard(s, trumpInfo.trumpRank, 0));
+      allCards.push(Card.createCard(s, trumpInfo.trumpRank, 1));
+    });
+
+    // Add trump suit cards (excluding trump rank, 24 total: 2 per rank)
+    if (trumpInfo.trumpSuit) {
+      Object.values(Rank).forEach((rank) => {
+        if (
+          rank !== Rank.None &&
+          rank !== trumpInfo.trumpRank &&
+          trumpInfo.trumpSuit
+        ) {
+          allCards.push(Card.createCard(trumpInfo.trumpSuit, rank, 0));
+          allCards.push(Card.createCard(trumpInfo.trumpSuit, rank, 1));
+        }
+      });
+    }
+  } else {
+    // Specific non-trump suit (excluding trump rank cards, 24 total: 2 per rank)
+    Object.values(Rank).forEach((rank) => {
+      if (rank !== Rank.None && rank !== trumpInfo.trumpRank) {
+        allCards.push(Card.createCard(suit, rank, 0));
+        allCards.push(Card.createCard(suit, rank, 1));
+      }
+    });
+  }
+
+  return allCards;
+}

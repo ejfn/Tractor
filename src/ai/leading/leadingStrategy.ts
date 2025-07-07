@@ -40,7 +40,7 @@ import {
  * UNIFIED LEADING PLAYER STRATEGY - Single Priority Chain
  * Main entry point for all leading play decisions
  */
-export function selectAdvancedLeadingPlay(
+export function selectLeadingPlay(
   validCombos: Combo[],
   trumpInfo: TrumpInfo,
   context: GameContext,

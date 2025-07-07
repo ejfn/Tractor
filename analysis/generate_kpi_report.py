@@ -156,7 +156,7 @@ def generate_report(df):
                     lines.append(f"- `{decision_point}`: {count:,} uses\n")
             
             if following_decisions:
-                lines.append("**🤝 Following Strategies:**\n") 
+                lines.append("\n**🤝 Following Strategies:**\n") 
                 # Sort by count descending
                 sorted_following = sorted(following_decisions.items(), key=lambda x: x[1], reverse=True)
                 for decision_point, count in sorted_following[:5]:  # Top 5

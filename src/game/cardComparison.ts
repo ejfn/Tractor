@@ -7,8 +7,8 @@ import {
   Trick,
   TrumpInfo,
 } from "../types";
-import { getComboType } from "./comboDetection";
 import { getRankValue, isTrump } from "./cardValue";
+import { getComboType } from "./comboDetection";
 import {
   analyzeComboStructure,
   matchesRequiredComponents,
@@ -172,13 +172,13 @@ export function evaluateTrickPlay(
   // Step 3: Determine if play can beat current winner
   const canBeat =
     leadingComboType === ComboType.Invalid
-      ? canMultiComboBeaten(
+      ? canBeatMultiCombo(
           proposedPlay,
           currentWinningCombo,
           trumpInfo,
           leadingCards,
         )
-      : canComboBeaten(proposedPlay, currentWinningCombo, trumpInfo);
+      : canBeatCombo(proposedPlay, currentWinningCombo, trumpInfo);
 
   return {
     canBeat,
@@ -372,7 +372,7 @@ function getHighestComboOfType(
 /**
  * Handle multi-combo specific beating logic
  */
-function canMultiComboBeaten(
+function canBeatMultiCombo(
   proposedCombo: Card[],
   currentWinningCombo: Card[],
   trumpInfo: TrumpInfo,
@@ -399,7 +399,7 @@ function canMultiComboBeaten(
 /**
  * Handle straight combo beating logic (singles, pairs, tractors)
  */
-function canComboBeaten(
+export function canBeatCombo(
   proposedCombo: Card[],
   currentWinningCombo: Card[],
   trumpInfo: TrumpInfo,

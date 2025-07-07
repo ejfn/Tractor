@@ -359,7 +359,7 @@ describe("4th Player Strategy Tests", () => {
       expect(playedPointValue).toBeGreaterThan(0);
     });
 
-    it("should use hierarchical point avoidance when no safe cards available", () => {
+    it("should use trump to beat opponent rather than waste non-trump point cards", () => {
       // Set up opponent winning scenario with NON-trump lead so player has choice
       gameState.currentTrick = {
         plays: [
@@ -382,7 +382,7 @@ describe("4th Player Strategy Tests", () => {
 
       // Give Bot3 hand with only point cards and trump (no Spades to force choice)
       gameState.players[3].hand = [
-        Card.createCard(Suit.Hearts, Rank.Three, 0), // Trump (worst option)
+        Card.createCard(Suit.Hearts, Rank.Ten, 0), // Trump (worst option)
         Card.createCard(Suit.Clubs, Rank.King, 0), // Non-trump point card (10 pts)
         Card.createCard(Suit.Clubs, Rank.Five, 0), // Lower point non-trump (5 pts)
         Card.createCard(Suit.Diamonds, Rank.Ace, 0), // Non-trump Ace (0 pts but valuable)
@@ -391,12 +391,8 @@ describe("4th Player Strategy Tests", () => {
       const aiMove = getAIMove(gameState, fourthPlayerId);
 
       // Should prefer non-trump over trump when not required to follow suit
-      expect(aiMove[0].suit).not.toBe(Suit.Hearts);
-
-      // Among non-trump options, should prefer lowest point cards (5 pts over 10 pts)
-      if (aiMove[0].points && aiMove[0].points > 0) {
-        expect(aiMove[0].points).toBeLessThanOrEqual(5); // Prefer 5 over 10
-      }
+      expect(aiMove[0].suit).toBe(Suit.Hearts);
+      expect(aiMove[0].rank).toBe(Rank.Ten); // Should play 10 of Hearts (trump) over King of Clubs
     });
   });
 

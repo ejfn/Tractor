@@ -31,17 +31,16 @@ src/ai/
 │   ├── aiGameContext.ts        # Game state analysis and context creation
 │   ├── aiCardMemory.ts         # Memory system and tracking
 │   └── aiMemoryOptimization.ts # Performance optimization and caching
-├── Following Strategies (10 modules)
-│   ├── followingStrategy.ts    # Main 4-priority decision chain
-│   ├── multiComboFollowingStrategy.ts # AI following algorithm for multi-combos
-│   ├── opponentBlocking.ts     # Strategic opponent countering
-│   ├── pointContribution.ts    # Memory-enhanced point management
-│   ├── secondPlayerStrategy.ts # Early follower tactical decisions
-│   ├── strategicDisposal.ts    # Hierarchical card disposal
-│   ├── teammateSupport.ts      # Team coordination and support
-│   ├── thirdPlayerRiskAnalysis.ts # Risk assessment for 3rd player
-│   ├── thirdPlayerStrategy.ts  # Enhanced takeover logic with strategic value analysis
-│   └── trickContention.ts      # Optimal winning combo selection
+├── Following Strategies (Enhanced V2 System - 9 modules)
+│   ├── followingStrategy.ts    # Main strategy coordination and routing
+│   ├── routingLogic.ts         # Scenario classification and decision routing
+│   ├── suitAvailabilityAnalysis.ts # Core scenario analysis with strict combo detection
+│   ├── validCombosDecision.ts  # Strategic combo selection and team coordination
+│   ├── sameSuitDecision.ts     # Same-suit disposal and contribution logic
+│   ├── voidDecision.ts         # Trump and cross-suit decision making
+│   ├── crossSuitDecision.ts    # Cross-suit disposal strategies
+│   ├── strategicSelection.ts   # Pair-preserving card selection utilities
+│   └── teammateAnalysis.ts     # Advanced teammate situation analysis
 ├── Leading Strategies (4 modules)
 │   ├── leadingStrategy.ts      # Main leading decision logic
 │   ├── firstPlayerLeadingAnalysis.ts # Strategic leading analysis
@@ -76,88 +75,130 @@ src/ai/
 - **Reduced Complexity**: Large files split into manageable, focused modules
 
 **Strategic Architecture:**
+- **Enhanced V2 Following System**: Scenario-based decision routing with strict rule compliance
 - **Domain Separation**: Following strategies separate from leading strategies
-- **Position-Specific Logic**: Specialized modules for different trick positions
 - **Memory Integration**: Memory system cleanly integrated across all modules
+- **Pair Preservation**: Intelligent card selection that preserves valuable combinations
 - **Trump Management**: Hierarchical trump logic consistently applied
+
+### **Enhanced V2 Following System**
+
+The V2 following system implements a **scenario-based approach** with strict game rule compliance:
+
+**Core V2 Principles:**
+1. **Suit Availability Analysis** → `suitAvailabilityAnalysis.ts` - Classifies scenarios with strict combo detection
+2. **Scenario Routing** → `routingLogic.ts` - Routes to appropriate decision handlers
+3. **Strategic Selection** → `strategicSelection.ts` - Pair-preserving card selection
+4. **Team Analysis** → `teammateAnalysis.ts` - Memory-enhanced teammate evaluation
+
+**V2 Decision Flow:**
+- **valid_combos** → Use strategic combo selection with team coordination
+- **enough_remaining** → Same-suit disposal/contribution logic  
+- **insufficient** → Cross-suit fill with optimal card selection
+- **void** → Trump or cross-suit decision making
 
 ### **Key Architectural Principles**
 
-**4-Priority Decision Chain**: All following modules use unified priority structure:
-1. **Team Coordination** → `teammateSupport.ts`
-2. **Opponent Blocking** → `opponentBlocking.ts`  
-3. **Trick Contention** → `trickContention.ts`
-4. **Strategic Disposal** → `strategicDisposal.ts`
-
-**Position-Based Intelligence**: Specialized logic for each trick position:
-- **2nd Player** → `secondPlayerStrategy.ts` (early influence)
-- **3rd Player** → `thirdPlayerStrategy.ts` + `thirdPlayerRiskAnalysis.ts` (enhanced takeover logic with strategic value analysis)
-- **4th Player** → Unified strategic disposal logic (no specialized module needed)
+**Unified Following Logic**: Consolidated position-aware decision making:
+- **Context-Aware Decisions** → Single followingStrategy.ts handles all positions with context-specific logic
+- **Strategic Routing** → routingLogic.ts routes decisions based on scenario analysis, not position
+- **Team Analysis** → teammateAnalysis.ts provides position-aware teammate evaluation
 
 **Memory-Enhanced Decisions**: Memory system integrated throughout:
-- **Point Management** → `pointContribution.ts` (guaranteed winners)
+- **Point Timing** → `pointCardTiming.ts` (guaranteed winner optimization)
 - **Leading Strategy** → `pointFocusedStrategy.ts` (memory-enhanced leading)
-- **Disposal Logic** → `strategicDisposal.ts` (conservation hierarchy)
+- **Void Analysis** → `voidExploitation.ts` (memory-based void exploitation)
 
 ---
 
 ## Decision Framework
 
-The AI follows a **modular decision framework** with specialized modules handling each strategic component:
+The AI follows a **modular decision framework** with specialized modules handling each strategic component. The decision process is split into two main pathways:
+
+### **Leading Strategy Framework**
+
+When the AI must lead a trick, it follows this strategic decision flow:
 
 ```mermaid
 flowchart TD
-    Start([🎯 AI Turn Begins]) --> Logic[🎮 aiLogic.ts<br/>Public API & Rule Compliance]
-    Logic --> Strategy[🧠 aiStrategy.ts<br/>Core Decision Coordination]
-    Strategy --> Context[📊 aiGameContext.ts<br/>Game State Analysis]
-    Context --> Memory[💾 aiCardMemory.ts<br/>Memory System]
+    StartLead([🎯 AI Leading Turn]) --> LogicLead[🎮 aiLogic.ts<br/>Public API & Rule Compliance]
+    LogicLead --> StrategyLead[🧠 aiStrategy.ts<br/>Core Decision Coordination]
+    StrategyLead --> ContextLead[📊 aiGameContext.ts<br/>Game State Analysis]
+    ContextLead --> MemoryLead[💾 aiCardMemory.ts<br/>Memory System]
     
-    Memory --> Leading{🎲 Leading or<br/>Following?}
+    MemoryLead --> LeadingMods[🎯 Leading Strategy Modules]
     
-    Leading -->|Leading| LeadingMods[🎯 Leading Modules]
-    Leading -->|Following| FollowingMods[🤝 Following Modules]
+    LeadingMods --> MultiComboLead[🔥 PRIORITY 1: Multi-Combo Leading<br/>multiComboLeadingStrategy.ts<br/>Unbeatable Multi-Combos]
+    LeadingMods --> PointFocus[💰 PRIORITY 2: Point Collection<br/>pointFocusedStrategy.ts<br/>Memory-Enhanced Collection]
+    LeadingMods --> FirstAnalysis[🎯 PRIORITY 3: Strategic Analysis<br/>firstPlayerLeadingAnalysis.ts<br/>Game Phase Adaptation]
+    LeadingMods --> LeadStrategy[♠️ PRIORITY 4: General Leading<br/>leadingStrategy.ts<br/>Main Leading Logic]
     
-    LeadingMods --> LeadStrategy[leadingStrategy.ts<br/>Main Leading Logic]
-    LeadingMods --> FirstAnalysis[firstPlayerLeadingAnalysis.ts<br/>Strategic Analysis]
-    LeadingMods --> PointFocus[pointFocusedStrategy.ts<br/>Memory-Enhanced Collection]
-    LeadingMods --> MultiComboLead[multiComboLeadingStrategy.ts<br/>Multi-Combo Leading]
+    MultiComboLead --> ExecuteLead[✅ Execute Leading Move]
+    PointFocus --> ExecuteLead
+    FirstAnalysis --> ExecuteLead
+    LeadStrategy --> ExecuteLead
     
-    FollowingMods --> FollowStrategy[followingStrategy.ts<br/>4-Priority Decision Chain]
-    FollowStrategy --> P1{🤝 PRIORITY 1<br/>Teammate Winning?}
+    MemoryLead --> AnalysisLead[🔍 Analysis Support]
+    AnalysisLead --> ComboAnalysisLead[comboAnalysis.ts<br/>Combo Evaluation]
+    AnalysisLead --> VoidExploitationLead[voidExploitation.ts<br/>Void Analysis]
+    AnalysisLead --> PointTimingLead[pointCardTiming.ts<br/>Point Timing]
+```
+
+### **Following Strategy Framework**
+
+When the AI must follow a trick, it uses the enhanced V2 following system with scenario-based routing:
+
+```mermaid
+flowchart TD
+    StartFollow([🎯 AI Following Turn]) --> LogicFollow[🎮 aiLogic.ts<br/>Public API & Rule Compliance]
+    LogicFollow --> StrategyFollow[🧠 aiStrategy.ts<br/>Core Decision Coordination]
+    StrategyFollow --> ContextFollow[📊 aiGameContext.ts<br/>Game State Analysis]
+    ContextFollow --> MemoryFollow[💾 aiCardMemory.ts<br/>Memory System]
     
-    P1 -->|Yes| TeamSupport[teammateSupport.ts<br/>🎁 Team Coordination]
+    MemoryFollow --> MultiCheck{🔍 Multi-Combo Lead?}
+    MultiCheck -->|Yes| MultiComboFollow[multiComboFollowingStrategy.ts<br/>Multi-Combo Algorithm]
+    MultiCheck -->|No| SuitAnalysis[suitAvailabilityAnalysis.ts<br/>Scenario Classification]
+    
+    SuitAnalysis --> RoutingLogic[routingLogic.ts<br/>Decision Routing]
+    
+    RoutingLogic --> ValidCombos{✅ valid_combos?}
+    RoutingLogic --> EnoughRemaining{📏 enough_remaining?}
+    RoutingLogic --> Insufficient{⚠️ insufficient?}
+    RoutingLogic --> VoidScenario{🚫 void?}
+    
+    ValidCombos --> ValidDecision[validCombosDecision.ts<br/>Strategic Combo Selection]
+    EnoughRemaining --> SameSuitDecision[sameSuitDecision.ts<br/>Disposal/Contribution Logic]
+    Insufficient --> CrossSuitDecision[crossSuitDecision.ts<br/>Cross-Suit Fill]
+    VoidScenario --> VoidDecision[voidDecision.ts<br/>Trump/Cross-Suit Choice]
+    
+    ValidDecision --> PriorityChain[🎯 4-Priority Decision Chain]
+    PriorityChain --> P1{🤝 PRIORITY 1<br/>Teammate Winning?}
+    
+    P1 -->|Yes| TeamSupport[🎁 Team Coordination<br/>Support Teammate]
     P1 -->|No| P2{⚔️ PRIORITY 2<br/>Opponent Winning?}
-    P2 -->|Yes| OpponentBlock[opponentBlocking.ts<br/>🛡️ Strategic Opposition]
+    P2 -->|Yes| OpponentBlock[🛡️ Strategic Opposition<br/>Block Opponent]
     P2 -->|No| P3{💰 PRIORITY 3<br/>Can Win ≥5 Points?}
-    P3 -->|Yes| TrickContest[trickContention.ts<br/>⚡ Contest Trick]
-    P3 -->|No| StrategicDisp[strategicDisposal.ts<br/>🗑️ Hierarchical Disposal]
+    P3 -->|Yes| TrickContest[⚡ Contest Trick<br/>Point Collection]
+    P3 -->|No| StrategicDisp[🗑️ Hierarchical Disposal<br/>Conservation Values]
     
-    FollowingMods --> PositionMods[🎯 Position-Specific Modules]
-    PositionMods --> Second[secondPlayerStrategy.ts<br/>Early Influence]
-    PositionMods --> Third[thirdPlayerStrategy.ts<br/>Tactical Decisions]
-    PositionMods --> ThirdRisk[thirdPlayerRiskAnalysis.ts<br/>Risk Assessment]
-    PositionMods --> Fourth[fourthPlayerStrategy.ts<br/>Perfect Information]
-    FollowingMods --> MultiComboFollow[multiComboFollowingStrategy.ts<br/>Multi-Combo Following]
+    ValidDecision --> PositionSpecific[🎯 Position-Specific Logic]
+    PositionSpecific --> SecondPlayer[2nd Player: Early Influence<br/>Strategic Setup]
+    PositionSpecific --> ThirdPlayer[3rd Player: Takeover Analysis<br/>Risk Assessment]
+    PositionSpecific --> FourthPlayer[4th Player: Perfect Information<br/>Optimal Decisions]
     
-    Memory --> Analysis[🔍 Analysis Modules]
-    Analysis --> ComboAnalysis[comboAnalysis.ts<br/>Combo Evaluation]
-    Analysis --> PointCardTiming[pointCardTiming.ts<br/>Point Card Timing]
-    Analysis --> VoidExploitation[voidExploitation.ts<br/>Void Exploitation]
+    TeamSupport --> ExecuteFollow[✅ Execute Following Move]
+    OpponentBlock --> ExecuteFollow
+    TrickContest --> ExecuteFollow
+    StrategicDisp --> ExecuteFollow
+    ValidDecision --> ExecuteFollow
+    SameSuitDecision --> ExecuteFollow
+    CrossSuitDecision --> ExecuteFollow
+    VoidDecision --> ExecuteFollow
+    MultiComboFollow --> ExecuteFollow
     
-    Strategy --> Specialized[⚙️ Specialized Systems]
-    Specialized --> KittySwap[kittySwapStrategy.ts<br/>Rule-Based Exclusion]
-    Specialized --> TrumpDecl[trumpDeclarationStrategy.ts<br/>Declaration Timing]
-    Specialized --> AIHelpers[aiHelpers.ts<br/>Utility Functions]
-    
-    TeamSupport --> Execute[✅ Execute Move]
-    OpponentBlock --> Execute
-    TrickContest --> Execute
-    StrategicDisp --> Execute
-    LeadStrategy --> Execute
-    FirstAnalysis --> Execute
-    PointFocus --> Execute
-    MultiComboLead --> Execute
-    MultiComboFollow --> Execute
+    MemoryFollow --> AnalysisFollow[🔍 Analysis Support]
+    AnalysisFollow --> TeammateAnalysis[teammateAnalysis.ts<br/>Teammate Evaluation]
+    AnalysisFollow --> StrategicSelection[strategicSelection.ts<br/>Pair-Preserving Selection]
 ```
 
 ### **Priority Levels**
@@ -248,22 +289,21 @@ Big Joker (100) > Small Joker (90) > Trump Rank in Trump Suit (80) >
 Trump Rank in Off-Suits (70) > Trump Suit Cards (A♠:60 → 3♠:5)
 ```
 
-### **Position-Specific Memory Integration**
+### **Unified Memory Integration**
 
-#### 2nd Player (Partial Information)
+The memory system is seamlessly integrated across all AI decision modules:
 
-- **Memory-Enhanced Influence**: Use card tracking to guide early decisions
-- **Pattern Recognition**: Analyze opponent tendencies from memory
+#### Following Decision Integration
 
-#### 3rd Player (Tactical Decisions)
+- **Context-Aware Memory**: All trick positions receive memory-enhanced context through aiGameContext.ts
+- **Scenario Analysis**: suitAvailabilityAnalysis.ts uses memory for void detection and card tracking
+- **Team Coordination**: teammateAnalysis.ts leverages memory for optimal teammate support decisions
 
-- **Risk Assessment**: Memory-based analysis of opponent capabilities
-- **Teammate Coordination**: Enhanced support decisions using card tracking
+#### Strategic Enhancement
 
-#### 4th Player (Perfect Information + Memory)
-
-- **Optimal Point Contribution**: Combine visible cards with memory analysis
-- **Future Round Advantage**: Consider long-term positioning based on memory
+- **Guaranteed Winner Detection**: Memory identifies cards certain to win based on played card tracking
+- **Void Exploitation**: Real-time void analysis using memory-tracked suit exhaustion
+- **Conservation Decisions**: Memory-informed trump and point card conservation strategies
 
 ### **Memory System Benefits**
 
@@ -600,17 +640,18 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 
 **Code Cleanup and Optimization:**
 - **Removed 540+ lines** of unused AI functions from fourth player strategy module
-- **Eliminated `fourthPlayerStrategy.ts`** - fourth player now uses unified strategic disposal
+- **Eliminated position-specific strategy files** - consolidated into unified followingStrategy.ts
+- **Enhanced suit availability analysis** - unified trump and non-trump analysis with optional targetSuit parameter
 - **Simplified strategic disposal API** - removed unused parameters and redundant functions
-- **Enhanced 3rd player takeover logic** - strategic value analysis with trump weakness detection
+- **Comprehensive test cleanup** - removed invalid tests and outdated strategy assumptions
 - **Added shared utility functions** - `isBiggestInSuit()` for consistent trump rank handling
 
 **Technical Benefits:**
-- **Reduced technical debt** - 686+ lines of code removed total
-- **Improved maintainability** - fewer modules to maintain, cleaner call paths
-- **Enhanced strategic intelligence** - 3rd player properly identifies weak trump leads
-- **Consistent analysis** - unified strategic value approach across all AI modules
-- **Better testing** - focused modules enable comprehensive unit testing
+- **Reduced technical debt** - Significant code reduction through consolidation
+- **Improved maintainability** - Unified architecture with cleaner call paths
+- **Enhanced strategic intelligence** - Context-aware decisions across all positions
+- **Consistent analysis** - Single analyzeSuitAvailability function for all scenarios
+- **Better testing** - Focused on important strategic decisions, removed micro-optimization tests
 
 ---
 

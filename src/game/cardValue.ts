@@ -109,7 +109,7 @@ export const calculateCardStrategicValue = (
   } else if (mode === "contribute" && card.points && card.points > 0) {
     value -= card.points * 10; // Contribute points (decrease value)
     // Extra penalty for 10s to make them less disposable than Kings: 5 > K > 10
-    if (card.points === 10) {
+    if (card.rank === Rank.Ten) {
       value -= 5; // extra -5 for 10
     }
   }

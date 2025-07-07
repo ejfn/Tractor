@@ -866,10 +866,10 @@ src/ai/aiCardMemory.ts           // Central memory tracking and analysis
 src/ai/analysis/voidExploitation.ts    // Advanced void analysis and exploitation
 src/ai/analysis/pointCardTiming.ts     // Memory-enhanced point timing optimization
 
-// Position-specific enhancements
-src/ai/following/secondPlayerStrategy.ts    // Partial information analysis
-src/ai/following/thirdPlayerStrategy.ts     // Risk assessment with memory
-src/ai/following/fourthPlayerStrategy.ts    // Perfect information + memory combination
+// Unified following system with memory integration
+src/ai/following/followingStrategy.ts      // Context-aware decisions for all positions
+src/ai/following/suitAvailabilityAnalysis.ts // Memory-enhanced scenario classification
+src/ai/following/teammateAnalysis.ts       // Memory-based teammate evaluation
 ```
 
 #### **Memory-Enhanced Decision Making**

@@ -1,9 +1,8 @@
 import { Card, Combo, GameState, Player, PositionStrategy } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import { analyzeCombo, createGameContext } from "./aiGameContext";
-import { analyzeVoidExploitation } from "./analysis/voidExploitation";
-import { selectOptimalFollowPlay } from "./following/followingStrategy";
-import { selectAdvancedLeadingPlay } from "./leading/leadingStrategy";
+import { selectFollowingPlay } from "./following/followingStrategy";
+import { selectLeadingPlay } from "./leading/leadingStrategy";
 
 /**
  * Main AI strategy function - replaces the class-based approach
@@ -24,33 +23,12 @@ export function makeAIPlay(
     context,
   });
 
-  // Phase 3: Advanced Void Exploitation Analysis
-  let voidExploitationAnalysis = null;
-  if (context.memoryContext?.cardMemory && gameState.tricks.length >= 2) {
-    try {
-      voidExploitationAnalysis = analyzeVoidExploitation(
-        context.memoryContext.cardMemory,
-        gameState,
-        context,
-        trumpInfo,
-        player.id,
-      );
-
-      // Integrate void exploitation insights into context
-      if (context.memoryContext) {
-        context.memoryContext.voidExploitation = voidExploitationAnalysis;
-      }
-    } catch {
-      // Void exploitation analysis is optional - continue without it
-    }
-  }
-
   // Enhanced Point-Focused Strategy (Issue #61) - Used in leading play selection
 
   // Determine if leading or following
   if (!currentTrick || currentTrick.plays.length === 0) {
-    // LEADING: Use unified advanced leading strategy
-    const leadingPlay = selectAdvancedLeadingPlay(
+    // LEADING: Use unified leading strategy
+    const leadingPlay = selectLeadingPlay(
       validCombos,
       trumpInfo,
       context,
@@ -71,11 +49,11 @@ export function makeAIPlay(
       analysis: analyzeCombo(combo, trumpInfo, context),
     }));
 
-    // Use new restructured follow logic
-    const restructuredPlay = selectOptimalFollowPlay(
+    // Use enhanced following algorithm V2
+    const restructuredPlay = selectFollowingPlay(
       comboAnalyses,
       context,
-      {} as PositionStrategy, // Simplified for now
+      {} as PositionStrategy,
       trumpInfo,
       gameState,
       player.id,

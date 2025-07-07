@@ -669,14 +669,14 @@ export const generateMixedCombinations = (
       "no_valid_combinations_fallback",
       {
         playerHandSize: playerHand.length,
-        leadingCards: leadingCards.map((c) => c.getDisplayName()),
+        leadingCards: leadingCards.map((c) => c.toString()),
         leadingSuit,
         isLeadingTrump,
         relevantSuitCards: playerHand
           .filter((c) =>
             isLeadingTrump ? isTrump(c, trumpInfo) : c.suit === leadingSuit,
           )
-          .map((c) => c.getDisplayName()),
+          .map((c) => c.toString()),
       },
       "No valid mixed combinations found, entering fallback logic",
     );
@@ -703,8 +703,8 @@ export const generateMixedCombinations = (
       gameLogger.error(
         "emergency_fallback_critical",
         {
-          playerHand: playerHand.map((c) => c.getDisplayName()),
-          leadingCards: leadingCards.map((c) => c.getDisplayName()),
+          playerHand: playerHand.map((c) => c.toString()),
+          leadingCards: leadingCards.map((c) => c.toString()),
           trumpInfo,
           leadingSuit,
           isLeadingTrump,

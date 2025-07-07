@@ -48,12 +48,10 @@ export const createAIGameContext = (
     currentWinner: PlayerId.Human, // Default to human for test scenarios
     isTeammateWinning: false,
     isOpponentWinning: false,
-    isSelfWinning: false,
     isLeadWinning: false,
     trickPoints: 0,
-    canBeatCurrentWinner: false,
-    shouldTryToBeat: false,
-    shouldPlayConservatively: false,
+    isTrumpLead: false,
+    isCurrentlyTrumped: false,
   },
 });
 

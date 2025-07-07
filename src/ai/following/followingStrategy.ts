@@ -1,7 +1,5 @@
-import { gameLogger } from "../../utils/gameLogger";
 import { getComboType } from "../../game/comboDetection";
 import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
-import { isTrump, calculateCardStrategicValue } from "../../game/cardValue";
 import {
   Card,
   Combo,
@@ -11,61 +9,102 @@ import {
   GameState,
   PlayerId,
   PositionStrategy,
-  TrickPosition,
   TrumpInfo,
 } from "../../types";
+import { gameLogger } from "../../utils/gameLogger";
 import { executeMultiComboFollowingAlgorithm } from "./multiComboFollowingStrategy";
-import { handleOpponentWinning } from "./opponentBlocking";
-import { selectStrategicDisposal } from "./strategicDisposal";
-import { handleTeammateWinning } from "./teammateSupport";
-import { selectOptimalWinningCombo } from "./trickContention";
+import { routeToDecision } from "./routingLogic";
+import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
 
 /**
- * Following Strategy - Main following logic with 4-priority decision chain
+ * Phase 2: Statistics tracking for enhanced following algorithm
+ */
+interface EnhancedFollowingStats {
+  totalInvocations: number;
+  scenarioDistribution: Record<string, number>;
+  memoryUtilization: number;
+  averageProcessingTime: number;
+  processingTimes: number[];
+  validationFailures: number;
+}
+
+// Module-level statistics tracking
+let algorithmStats: EnhancedFollowingStats = {
+  totalInvocations: 0,
+  scenarioDistribution: {
+    valid_combos: 0,
+    enough_remaining: 0,
+    void: 0,
+    insufficient: 0,
+    multi_combo: 0,
+  },
+  memoryUtilization: 0,
+  averageProcessingTime: 0,
+  processingTimes: [],
+  validationFailures: 0,
+};
+
+/**
+ * Enhanced Following Strategy V2 - Main Entry Point
  *
- * Implements the restructured priority chain for optimal following play decisions:
- * 1. Team Coordination - Support teammates when winning
- * 2. Opponent Blocking - Counter opponent point collection
- * 3. Trick Contention - Contest valuable tricks when winnable
- * 4. Strategic Disposal - Play optimally when can't influence trick outcome
+ * Implements a systematic approach to following play decisions through:
+ * 1. Analyze suit availability → Classify scenario
+ * 2. Route to decision path → Based on classification
+ * 3. Apply memory-enhanced logic → Integrate memory context
+ * 4. Return optimal cards → Clean, traceable decisions
+ *
+ * This replaces the scattered position-specific logic with small, targeted
+ * decisions that are easier to understand and maintain.
  */
 
 /**
- * Main following play selection using restructured 4-priority decision chain
+ * Main following play selection using enhanced following algorithm
+ *
+ * This function implements the core enhanced following algorithm that analyzes the
+ * relationship between leading cards and player hand, classifies the scenario,
+ * and routes to the appropriate decision path through small, targeted decisions.
  */
-export function selectOptimalFollowPlay(
+export function selectFollowingPlay(
   comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
   positionStrategy: PositionStrategy,
   trumpInfo: TrumpInfo,
   gameState: GameState,
-  currentPlayerId?: PlayerId,
+  currentPlayerId: PlayerId,
 ): Card[] {
-  // === PRIORITY 0: MULTI-COMBO SPECIALIZED HANDLING ===
-  // Check for multi-combo following scenarios first
-  const leadingCards = gameState.currentTrick?.plays[0].cards;
+  // Phase 2: Performance tracking start
+  const startTime = performance.now();
+  algorithmStats.totalInvocations++;
 
-  if (leadingCards == null) {
-    throw new Error("No leading cards found in current trick");
+  // Get current player from game state first
+  const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
+  if (!currentPlayer) {
+    gameLogger.error("enhanced_following_no_current_player", {
+      currentPlayerId,
+      availablePlayers: gameState.players.map((p) => p.id),
+    });
+    return comboAnalyses.length > 0 ? comboAnalyses[0].combo.cards : [];
   }
 
-  if (currentPlayerId == null) {
-    throw new Error("Current player ID must be provided for following play");
+  // Extract leading cards from game state
+  const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+  if (!leadingCards || leadingCards.length === 0) {
+    gameLogger.warn("enhanced_following_no_leading_cards", {
+      player: currentPlayerId,
+      trickExists: !!gameState.currentTrick,
+    });
+    return comboAnalyses.length > 0 ? comboAnalyses[0].combo.cards : [];
   }
 
+  // Priority 0: Multi-combo handling (reuse existing implementation)
   const leadingComboType = getComboType(leadingCards, trumpInfo);
-
   if (leadingComboType === ComboType.Invalid) {
-    // If leading cards are a multi-combo, handle specialized following logic
     const leadingMultiCombo = detectLeadingMultiCombo(leadingCards, trumpInfo);
 
     if (leadingMultiCombo.isMultiCombo) {
-      const player = gameState.players.find((p) => p.id === currentPlayerId);
-      const playerHand = player?.hand || [];
-
       const multiComboResult = executeMultiComboFollowingAlgorithm(
         leadingCards,
-        playerHand,
+        currentPlayer.hand,
         gameState,
         currentPlayerId,
       );
@@ -74,180 +113,255 @@ export function selectOptimalFollowPlay(
         multiComboResult &&
         multiComboResult.strategy !== "no_valid_response"
       ) {
-        gameLogger.debug("ai_following_decision", {
-          decisionPoint: "follow_multi_combo",
+        gameLogger.debug("enhanced_following_multi_combo", {
           player: currentPlayerId,
-          decision: multiComboResult.cards,
-          context,
+          strategy: multiComboResult.strategy,
+          cardCount: multiComboResult.cards.length,
+          reasoning: multiComboResult.reasoning,
+          canBeat: multiComboResult.canBeat,
         });
+
         return multiComboResult.cards;
       }
     }
   }
 
-  // RESTRUCTURED: Clear priority chain for following play decisions
-  const trickWinner = context.trickWinnerAnalysis;
-
-  // Strategic context tracking for AI learning
-  gameLogger.debug("ai_following_decision", {
-    decisionPoint: "analysis_start",
+  // Log enhanced_following algorithm start
+  gameLogger.debug("enhanced_following_algorithm_start", {
     player: currentPlayerId,
-    trickPosition: context.trickPosition,
-    isTeammateWinning: trickWinner?.isTeammateWinning || false,
-    isOpponentWinning: trickWinner?.isOpponentWinning || false,
-    canBeatCurrentWinner: trickWinner?.canBeatCurrentWinner || false,
-    trickPoints: trickWinner?.trickPoints || 0,
+    position: context.trickPosition,
+    leadingCardCount: leadingCards.length,
+    leadingCards: leadingCards.map((c) => `${c.rank}${c.suit}`),
+    handSize: currentPlayer.hand.length,
+    memoryAvailable: !!context.memoryContext?.cardMemory,
+    trickPoints: context.trickWinnerAnalysis?.trickPoints ?? 0,
   });
 
-  // Clear priority-based decision making
+  // Phase 1: Analyze suit availability and classify scenario
+  const analysis = analyzeSuitAvailability(
+    leadingCards,
+    currentPlayer.hand,
+    trumpInfo,
+  );
 
-  // === PRIORITY 1: TEAM COORDINATION ===
-  if (trickWinner?.isTeammateWinning) {
-    // Teammate is winning - help collect points or play conservatively
-    const decision = handleTeammateWinning(
-      comboAnalyses,
+  // Phase 2: Update scenario statistics
+  algorithmStats.scenarioDistribution[analysis.scenario]++;
+
+  gameLogger.debug("enhanced_following_scenario_classification", {
+    player: currentPlayerId,
+    scenario: analysis.scenario,
+    leadingSuit: analysis.leadingSuit,
+    leadingComboType: analysis.leadingComboType,
+    requiredLength: analysis.requiredLength,
+    availableCount: analysis.availableCount,
+    reasoning: analysis.reasoning,
+  });
+
+  // Phase 2: Route to appropriate decision path
+  let selectedCards: Card[];
+
+  try {
+    selectedCards = routeToDecision(
+      analysis,
+      currentPlayer.hand,
       context,
       trumpInfo,
       gameState,
       currentPlayerId,
     );
-    gameLogger.debug("ai_following_decision", {
-      decisionPoint: "follow_teammate_winning",
+  } catch (error) {
+    gameLogger.error("enhanced_following_routing_error", {
       player: currentPlayerId,
-      decision,
-      context,
+      scenario: analysis.scenario,
+      error: error instanceof Error ? error.message : String(error),
     });
-    return decision;
+
+    // Fallback to first available combo
+    selectedCards =
+      comboAnalyses.length > 0
+        ? comboAnalyses[0].combo.cards
+        : [currentPlayer.hand[0]];
   }
 
-  // === PRIORITY 2: SUIT ESTABLISHMENT ===
-  // NEW: Higher priority for suit establishment even when opponent is winning
-  if (
-    trickWinner?.canBeatCurrentWinner &&
-    shouldTryEstablishSuit(gameState, context, currentPlayerId)
-  ) {
-    const decision = selectOptimalWinningCombo(
-      comboAnalyses,
-      context,
-      positionStrategy,
-      trumpInfo,
-      gameState,
-    );
-    gameLogger.debug("ai_following_decision", {
-      decisionPoint: "follow_suit_establishment",
+  // Phase 2: Card validation before returning
+  if (!selectedCards || selectedCards.length === 0) {
+    gameLogger.warn("enhanced_following_empty_selection", {
       player: currentPlayerId,
-      decision,
-      context,
+      scenario: analysis.scenario,
+      fallbackToFirstCard: true,
     });
-    return decision;
+
+    selectedCards =
+      currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
   }
 
-  // === PRIORITY 3: OPPONENT BLOCKING ===
-  if (trickWinner?.isOpponentWinning) {
-    // Regular opponent blocking logic
-    const opponentResponse = handleOpponentWinning(
-      comboAnalyses,
-      context,
-      trickWinner,
-      trumpInfo,
-      gameState,
-    );
-    if (opponentResponse) {
-      gameLogger.debug("ai_following_decision", {
-        decisionPoint: "follow_opponent_blocking",
-        player: currentPlayerId,
-        decision: opponentResponse,
-        context,
-      });
-      return opponentResponse;
-    }
+  // Validate selected cards for safety
+  const isValid = validateSelectedCards(
+    selectedCards,
+    currentPlayer.hand,
+    analysis.requiredLength,
+    currentPlayerId,
+  );
 
-    // Position-specific disposal when can't beat opponent
-    if (context.trickPosition === TrickPosition.Fourth) {
-      return selectStrategicDisposal(comboAnalyses, context, gameState);
-    }
-  }
-
-  // === PRIORITY 4: TRICK CONTENTION ===
-  if (trickWinner?.canBeatCurrentWinner && trickWinner?.shouldTryToBeat) {
-    // Can win the trick and it's worth winning
-    const decision = selectOptimalWinningCombo(
-      comboAnalyses,
-      context,
-      positionStrategy,
-      trumpInfo,
-      gameState,
-    );
-    gameLogger.debug("ai_following_decision", {
-      decisionPoint: "follow_trick_contention",
+  if (!isValid) {
+    algorithmStats.validationFailures++;
+    gameLogger.error("enhanced_following_validation_failed", {
       player: currentPlayerId,
-      decision,
-      context,
+      scenario: analysis.scenario,
+      fallbackToFirstCard: true,
     });
-    return decision;
+
+    // Ultimate fallback - use first available card
+    selectedCards =
+      currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
   }
 
-  // === PRIORITY 5: STRATEGIC DISPOSAL ===
-  // Can't/shouldn't win - play optimally for future tricks
-  const decision = selectStrategicDisposal(comboAnalyses, context, gameState);
-  gameLogger.debug("ai_following_decision", {
-    decisionPoint: "follow_strategic_disposal",
+  // Final result logging
+  gameLogger.debug("enhanced_following_algorithm_result", {
     player: currentPlayerId,
-    decision,
-    context,
+    position: context.trickPosition,
+    scenario: analysis.scenario,
+    selectedCardCount: selectedCards.length,
+    selectedCards: selectedCards.map((c) => `${c.rank}${c.suit}`),
+    success: selectedCards.length > 0,
   });
-  return decision;
+
+  // Phase 2: Complete performance tracking
+  const endTime = performance.now();
+  const processingTime = endTime - startTime;
+  algorithmStats.processingTimes.push(processingTime);
+
+  // Update average processing time
+  algorithmStats.averageProcessingTime =
+    algorithmStats.processingTimes.reduce((sum, time) => sum + time, 0) /
+    algorithmStats.processingTimes.length;
+
+  // Limit processingTimes array to last 100 entries for memory efficiency
+  if (algorithmStats.processingTimes.length > 100) {
+    algorithmStats.processingTimes = algorithmStats.processingTimes.slice(-100);
+  }
+
+  gameLogger.debug("enhanced_following_algorithm_performance", {
+    player: currentPlayerId,
+    processingSteps: [
+      "suit_availability_analysis",
+      "scenario_classification",
+      "decision_routing",
+      "card_selection",
+      "validation",
+    ],
+    decisionPath: analysis.scenario,
+    processingTime: `${processingTime.toFixed(2)}ms`,
+    totalInvocations: algorithmStats.totalInvocations,
+    validationFailures: algorithmStats.validationFailures,
+  });
+
+  return selectedCards;
 }
 
 /**
- * Enhanced suit establishment check with more aggressive criteria
+ * Validate that selected cards are legal for the current game state
+ *
+ * This is a safety check to ensure the enhanced following algorithm doesn't return
+ * invalid card selections.
+ *
+ * @internal Currently unused but kept for future validation needs
  */
-function shouldTryEstablishSuit(
-  gameState: GameState,
-  context: GameContext,
+function validateSelectedCards(
+  selectedCards: Card[],
+  playerHand: Card[],
+  requiredLength: number,
   currentPlayerId: PlayerId,
 ): boolean {
-  const currentTrick = gameState.currentTrick;
-  if (!currentTrick?.plays[0]?.cards) return false;
-
-  const leadingSuit = currentTrick.plays[0].cards[0]?.suit;
-  if (!leadingSuit) return false;
-
-  // Don't establish trump suits (already strong)
-  if (leadingSuit === gameState.trumpInfo.trumpSuit) return false;
-
-  const player = gameState.players.find((p) => p.id === currentPlayerId);
-  if (!player) return false;
-
-  // Get cards in leading suit (non-trump)
-  // Use the same filtering logic as other parts of the codebase
-  const suitCards = player.hand.filter(
-    (card) => card.suit === leadingSuit && !isTrump(card, gameState.trumpInfo),
+  // Check if cards are in player's hand
+  const allCardsInHand = selectedCards.every((card) =>
+    playerHand.some(
+      (handCard) =>
+        handCard.id === card.id ||
+        (handCard.rank === card.rank && handCard.suit === card.suit),
+    ),
   );
 
-  // More aggressive: Try to establish with 3+ cards (reduced from 4+)
-  if (suitCards.length < 3) return false;
+  if (!allCardsInHand) {
+    gameLogger.error("enhanced_following_invalid_card_selection", {
+      player: currentPlayerId,
+      selectedCards: selectedCards.map((c) => `${c.rank}${c.suit}`),
+      reason: "cards_not_in_hand",
+    });
+    return false;
+  }
 
-  // Check for cards with decent strategic value (more robust than rank-based filtering)
-  const decentCards = suitCards.filter((card) => {
-    const strategicValue = calculateCardStrategicValue(
-      card,
-      gameState.trumpInfo,
-      "basic",
-    );
-    // Consider cards with strategic value >= 10 as "decent" (roughly Queen+ level)
-    return strategicValue >= 10;
+  // Check length requirement (basic validation)
+  if (selectedCards.length !== requiredLength) {
+    gameLogger.warn("enhanced_following_length_mismatch", {
+      player: currentPlayerId,
+      selectedLength: selectedCards.length,
+      requiredLength,
+      reason: "length_mismatch",
+    });
+    // This might be valid in some scenarios (insufficient cards), so just warn
+  }
+
+  return true;
+}
+
+/**
+ * Get enhanced following algorithm statistics for analysis and debugging
+ *
+ * Phase 2: Returns real-time statistics from the algorithm execution.
+ */
+export function getEnhancedFollowingStats(): {
+  totalInvocations: number;
+  scenarioDistribution: Record<string, number>;
+  memoryUtilization: number;
+  averageProcessingTime: number;
+  validationFailures: number;
+  memoryUtilizationRate: number;
+} {
+  const memoryUtilizationRate =
+    algorithmStats.totalInvocations > 0
+      ? algorithmStats.memoryUtilization / algorithmStats.totalInvocations
+      : 0;
+
+  return {
+    totalInvocations: algorithmStats.totalInvocations,
+    scenarioDistribution: { ...algorithmStats.scenarioDistribution },
+    memoryUtilization: algorithmStats.memoryUtilization,
+    averageProcessingTime: algorithmStats.averageProcessingTime,
+    validationFailures: algorithmStats.validationFailures,
+    memoryUtilizationRate,
+  };
+}
+
+/**
+ * Reset enhanced following algorithm statistics
+ *
+ * Phase 2: Actually resets the tracking counters for new game sessions.
+ */
+export function resetEnhancedFollowingStats(): void {
+  const previousStats = { ...algorithmStats };
+
+  algorithmStats = {
+    totalInvocations: 0,
+    scenarioDistribution: {
+      valid_combos: 0,
+      enough_remaining: 0,
+      void: 0,
+      insufficient: 0,
+      multi_combo: 0,
+    },
+    memoryUtilization: 0,
+    averageProcessingTime: 0,
+    processingTimes: [],
+    validationFailures: 0,
+  };
+
+  gameLogger.debug("enhanced_following_algorithm_stats_reset", {
+    timestamp: new Date().toISOString(),
+    previousStats: {
+      totalInvocations: previousStats.totalInvocations,
+      averageProcessingTime: previousStats.averageProcessingTime,
+      validationFailures: previousStats.validationFailures,
+    },
   });
-
-  // More aggressive: Establish with just 1+ decent card (reduced from 2+)
-  if (decentCards.length >= 1) return true;
-
-  // Even establish with many low cards (5+ total cards)
-  if (suitCards.length >= 5) return true;
-
-  // Low-value tricks: Always try to establish if we have the length
-  const trickPoints = context.trickWinnerAnalysis?.trickPoints || 0;
-  if (trickPoints <= 4 && suitCards.length >= 3) return true;
-
-  return false;
 }

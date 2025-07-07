@@ -46,7 +46,7 @@ export const pickupKittyCards = (
   };
 
   if (gameLogger.isPlayerHandsIncluded()) {
-    logData.kittyCards = kittyCards.map((card) => card.getDisplayName());
+    logData.kittyCards = kittyCards.map((card) => card.toString());
   }
 
   gameLogger.debug(
@@ -144,9 +144,7 @@ export const putbackKittyCards = (
   };
 
   if (gameLogger.isPlayerHandsIncluded()) {
-    swapLogData.selectedCards = selectedCards.map((card) =>
-      card.getDisplayName(),
-    );
+    swapLogData.selectedCards = selectedCards.map((card) => card.toString());
   }
 
   gameLogger.debug(

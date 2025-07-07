@@ -186,6 +186,6 @@ describe("Third Player Takeover Logic", () => {
     const aiMove = getAIMove(gameState, PlayerId.Bot2);
 
     expect(aiMove[0].suit).toBe(Suit.Hearts); // Trump
-    expect(aiMove[0].rank).toBe(Rank.Jack);
+    expect(aiMove[0].rank).toBe(Rank.Ace);
   });
 });
