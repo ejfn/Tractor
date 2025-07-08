@@ -1,7 +1,5 @@
 // AI strategy and intelligence types
 
-import type { PointCardTimingAnalysis } from "../ai/analysis/pointCardTiming";
-import type { VoidExploitationAnalysis } from "../ai/analysis/voidExploitation";
 import { Card, Combo, Suit, TrumpInfo } from "./card";
 import { PlayerId } from "./core";
 
@@ -41,8 +39,6 @@ export interface MemoryContext {
   trumpExhaustion: number; // 0.0 (many trumps left) to 1.0 (few trumps)
   opponentHandStrength: Record<string, number>; // Estimated strength per player
   cardMemory?: CardMemory; // Enhanced: Direct access to card memory for biggest remaining detection
-  voidExploitation?: VoidExploitationAnalysis; // Advanced void exploitation analysis
-  pointTiming?: PointCardTimingAnalysis; // Point card timing analysis
   nextPlayerVoidLed?: boolean;
 }
 

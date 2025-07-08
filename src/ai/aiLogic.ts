@@ -173,7 +173,7 @@ export const getAIMove = (gameState: GameState, playerId: PlayerId): Card[] => {
   }
 
   // Delegate all strategic decisions to the AI strategy layer
-  const selectedCards = makeAIPlay(gameState, player, validCombos);
+  const selectedCards = makeAIPlay(gameState, player);
 
   // Sort selected cards for consistent visual presentation
   return sortCards(selectedCards, gameState.trumpInfo);

@@ -42,14 +42,12 @@ src/ai/
 │   ├── strategicSelection.ts   # Pair-preserving card selection utilities
 │   └── teammateAnalysis.ts     # Advanced teammate situation analysis
 ├── Leading Strategies (4 modules)
-│   ├── leadingStrategy.ts      # Main leading decision logic
-│   ├── firstPlayerLeadingAnalysis.ts # Strategic leading analysis
-│   ├── multiComboLeadingStrategy.ts   # AI leading selection for multi-combos
-│   └── pointFocusedStrategy.ts # Memory-enhanced point collection
-├── Analysis Modules (3 modules)
-│   ├── comboAnalysis.ts        # Combo evaluation and ranking
-│   ├── pointCardTiming.ts      # Memory-enhanced point timing optimization
-│   └── voidExploitation.ts     # Advanced void analysis and exploitation
+│   ├── leadingStrategy.ts      # Unified scoring-based leading strategy
+│   ├── candidateLeadDetection.ts # Detection of all possible lead candidates
+│   ├── leadingContext.ts       # Context collection and team analysis
+│   └── leadingScoring.ts       # Comprehensive scoring and reasoning system
+├── Analysis Modules (integrated)
+│   └── (Analysis functions integrated into specialized modules)
 ├── Specialized Systems (3 modules)
 │   ├── kittySwap/
 │   │   └── kittySwapStrategy.ts # Rule-based exclusion and suit elimination
@@ -105,9 +103,9 @@ The V2 following system implements a **scenario-based approach** with strict gam
 - **Team Analysis** → teammateAnalysis.ts provides position-aware teammate evaluation
 
 **Memory-Enhanced Decisions**: Memory system integrated throughout:
-- **Point Timing** → `pointCardTiming.ts` (guaranteed winner optimization)
-- **Leading Strategy** → `pointFocusedStrategy.ts` (memory-enhanced leading)
-- **Void Analysis** → `voidExploitation.ts` (memory-based void exploitation)
+- **Leading Strategy** → Scoring-based system with memory-enhanced candidate detection
+- **Following Strategy** → Memory-integrated scenario analysis and team coordination
+- **Specialized Systems** → Memory-enhanced trump conservation and point timing
 
 ---
 
@@ -126,22 +124,17 @@ flowchart TD
     StrategyLead --> ContextLead[📊 aiGameContext.ts<br/>Game State Analysis]
     ContextLead --> MemoryLead[💾 aiCardMemory.ts<br/>Memory System]
     
-    MemoryLead --> LeadingMods[🎯 Leading Strategy Modules]
+    MemoryLead --> LeadingMods[🎯 Scoring-Based Leading Strategy]
     
-    LeadingMods --> MultiComboLead[🔥 PRIORITY 1: Multi-Combo Leading<br/>multiComboLeadingStrategy.ts<br/>Unbeatable Multi-Combos]
-    LeadingMods --> PointFocus[💰 PRIORITY 2: Point Collection<br/>pointFocusedStrategy.ts<br/>Memory-Enhanced Collection]
-    LeadingMods --> FirstAnalysis[🎯 PRIORITY 3: Strategic Analysis<br/>firstPlayerLeadingAnalysis.ts<br/>Game Phase Adaptation]
-    LeadingMods --> LeadStrategy[♠️ PRIORITY 4: General Leading<br/>leadingStrategy.ts<br/>Main Leading Logic]
+    LeadingMods --> CandidateDetection[🔍 STEP 1: Candidate Detection<br/>candidateLeadDetection.ts<br/>Find ALL possible leads]
+    LeadingMods --> ContextCollection[📊 STEP 2: Context Collection<br/>leadingContext.ts<br/>Team & void analysis]
+    LeadingMods --> ScoringEvaluation[🎯 STEP 3: Scoring Evaluation<br/>leadingScoring.ts<br/>Comprehensive scoring]
+    LeadingMods --> LeadStrategy[✅ STEP 4: Selection & Execution<br/>leadingStrategy.ts<br/>Best score selection]
     
-    MultiComboLead --> ExecuteLead[✅ Execute Leading Move]
-    PointFocus --> ExecuteLead
-    FirstAnalysis --> ExecuteLead
-    LeadStrategy --> ExecuteLead
-    
-    MemoryLead --> AnalysisLead[🔍 Analysis Support]
-    AnalysisLead --> ComboAnalysisLead[comboAnalysis.ts<br/>Combo Evaluation]
-    AnalysisLead --> VoidExploitationLead[voidExploitation.ts<br/>Void Analysis]
-    AnalysisLead --> PointTimingLead[pointCardTiming.ts<br/>Point Timing]
+    CandidateDetection --> ContextCollection
+    ContextCollection --> ScoringEvaluation
+    ScoringEvaluation --> LeadStrategy
+    LeadStrategy --> ExecuteLead[✅ Execute Leading Move]
 ```
 
 ### **Following Strategy Framework**
@@ -213,6 +206,89 @@ flowchart TD
 
 **Priority 4: Strategic Disposal** - Play weakest cards while preserving valuable combinations
 
+## Scoring-Based Leading Strategy
+
+The AI implements a **unified scoring-based leading strategy** that evaluates all possible candidate leads and selects the highest scoring option. This replaces the previous complex priority chain system with a transparent, maintainable scoring approach.
+
+### **Core Architecture**
+
+#### **4-Module System**
+
+1. **Candidate Detection (`candidateLeadDetection.ts`)**: Finds ALL possible leads
+   - **Multi-combo detection**: Unbeatable multi-combos from each non-trump suit
+   - **Straight combo detection**: All tractors, pairs, and singles from hand
+   - **Unbeatable analysis**: Memory-enhanced detection of guaranteed winners
+   - **Deduplication**: Prevents overlap between multi-combo and straight combos
+
+2. **Context Collection (`leadingContext.ts`)**: Gathers strategic information
+   - **Void status analysis**: Checks if all other players are void in each suit
+   - **Team information**: Current attacking/defending team status
+   - **Point pressure**: Calculated based on current team progress
+   - **Game phase**: Early, mid, or endgame strategic context
+
+3. **Scoring Evaluation (`leadingScoring.ts`)**: Comprehensive candidate scoring
+   - **Base card values**: Uses actual card rank values (Ace=14, King=13, etc.)
+   - **Pair bonuses**: +20 for non-trump pairs, +30 for trump pairs
+   - **Unbeatable bonus**: +50 for guaranteed winners
+   - **Trump penalties**: -rankValue per trump card to encourage conservation
+   - **Void suit bonuses**: +10 for weak combos in void suits (strategic opportunities)
+
+4. **Selection & Execution (`leadingStrategy.ts`)**: Chooses best option
+   - **Score ranking**: Sorts all candidates by total score
+   - **Tie breaking**: Uses card strength for equal scores
+   - **Fallback handling**: Graceful degradation when no candidates found
+   - **Comprehensive logging**: Detailed reasoning for analysis
+
+### **Scoring Algorithm**
+
+#### **Base Scoring Components**
+
+```typescript
+// 1. Card rank values (base score)
+const baseScore = candidate.cards.reduce((sum, card) => sum + getCardRankValue(card), 0);
+
+// 2. Pair bonuses
+const pairBonus = candidate.metadata.totalPairs * (candidate.metadata.isTrump ? 30 : 20);
+
+// 3. Unbeatable bonus
+const unbeatableBonus = candidate.metadata.isUnbeatable ? 50 : 0;
+
+// 4. Trump penalties (conservation)
+const trumpPenalty = candidate.metadata.isTrump ? 
+  -candidate.cards.reduce((sum, card) => sum + getTrumpPenalty(card), 0) : 0;
+
+// 5. Void suit bonus (strategic opportunities)
+const voidBonus = (isVoidSuit && isWeakCombo) ? 10 : 0;
+
+const totalScore = baseScore + pairBonus + unbeatableBonus + trumpPenalty + voidBonus;
+```
+
+#### **Strategic Priorities**
+
+1. **Unbeatable leads** (score +50): Guaranteed winners receive highest priority
+2. **High-value pairs** (score +20/+30): Pairs get significant bonuses over singles
+3. **Card strength** (score +2 to +14): Higher ranked cards preferred
+4. **Trump conservation** (negative scores): Trump cards penalized to encourage saving
+5. **Void exploitation** (score +10): Weak combos in void suits get bonus
+
+### **Decision Process**
+
+1. **Comprehensive Detection**: Find every possible lead candidate
+2. **Context Analysis**: Gather void status and team information
+3. **Score Calculation**: Evaluate each candidate with detailed reasoning
+4. **Best Selection**: Choose highest scoring option with tie-breaking
+5. **Execution**: Play selected cards with comprehensive logging
+
+### **Benefits Over Priority Chain**
+
+- **Transparency**: Clear scoring makes decisions easy to understand and debug
+- **Maintainability**: Simple to adjust individual scoring components
+- **Consistency**: All leads evaluated by same criteria, no special cases
+- **Flexibility**: Easy to add new scoring factors or adjust existing ones
+- **Performance**: Single pass evaluation faster than multiple priority checks
+
+---
+
 ## Memory-Enhanced Strategy
 
 The AI implements a **comprehensive memory system** that tracks cards, analyzes patterns, and enables sophisticated strategic decision-making based on accumulated game knowledge.
@@ -226,10 +302,10 @@ The AI implements a **comprehensive memory system** that tracks cards, analyzes 
 - **Suit Void Detection**: Automatic detection when players can no longer follow suit
 - **Trump Exhaustion Analysis**: Tracking trump depletion levels for all players
 
-#### Advanced Analysis Modules
+#### Advanced Analysis Integration
 
-- **Void Exploitation (`voidExploitation.ts`)**: Sophisticated void detection and strategic exploitation
-- **Point Timing (`pointCardTiming.ts`)**: Memory-enhanced point collection optimization
+- **Void Analysis**: Integrated into following strategy modules for strategic exploitation
+- **Point Timing**: Memory-enhanced optimization integrated into scoring system
 
 ### **Guaranteed Winner Detection**
 
@@ -664,17 +740,20 @@ The Tractor AI system delivers **sophisticated strategic gameplay** through comp
 **Strategic Intelligence:**
 - **Perfect Rule Compliance** - Complete adherence to complex Tractor/Shengji rules
 - **Memory-Enhanced Decisions** - Card tracking with guaranteed winner identification
-- **Position-Based Intelligence** - Specialized logic for all 4 trick positions
+- **Scoring-Based Leading** - Transparent, maintainable scoring system for all leading decisions
+- **Position-Based Following** - Specialized logic for all 4 trick positions with scenario-based routing
 - **Historical Adaptation** - Opponent modeling and behavioral counter-strategies
 
 **Modular Architecture:**
-- **22 Specialized Modules** - Organized by functional domain for optimal maintainability
-- **4-Priority Decision Chain** - Conflict-free strategic decision making across all following modules
-- **Domain Separation** - Clean separation between following, leading, analysis, and specialized systems
+- **19 Specialized Modules** - Streamlined architecture with integrated analysis functions
+- **Unified Leading Strategy** - Scoring-based system replaces complex priority chains
+- **4-Priority Following Chain** - Conflict-free strategic decision making for following scenarios
+- **Domain Separation** - Clean separation between following, leading, and specialized systems
 - **Single Responsibility** - Each module has one clear purpose and strategic focus
 
 **Decision Framework:**
-- **5-Level Priority System** - Unified approach across all AI decision points
+- **Scoring-Based Leading** - Comprehensive candidate evaluation with transparent scoring
+- **Scenario-Based Following** - Enhanced V2 system with strict rule compliance
 - **Team Coordination** - Optimal cooperation with human teammates via specialized modules
 - **Advanced Trump Management** - Hierarchical conservation and strategic deployment
 - **Strategic Disposal** - Multi-level card safety prioritization with conservation values

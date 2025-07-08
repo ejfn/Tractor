@@ -1,5 +1,4 @@
 import { isTrump } from "../game/cardValue";
-import { analyzeVoidExploitation } from "./analysis/voidExploitation";
 import {
   AdaptiveBehaviorDetection,
   AdaptiveStrategyRecommendation,
@@ -1627,22 +1626,6 @@ export function enhanceGameContextWithMemory(
     );
   } else {
     memoryContext.nextPlayerVoidLed = false; // No lead card or next player
-  }
-
-  // Advanced Void Exploitation Analysis - part of memory analysis
-  if (gameState.tricks.length >= 2) {
-    try {
-      memoryContext.voidExploitation = analyzeVoidExploitation(
-        memory,
-        gameState,
-        baseContext,
-        gameState.trumpInfo,
-        baseContext.currentPlayer,
-      );
-    } catch {
-      // Void exploitation analysis is optional - continue without it
-      memoryContext.voidExploitation = undefined;
-    }
   }
 
   return {

@@ -2,8 +2,6 @@ import { getComboType } from "../../game/comboDetection";
 import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
 import {
   Card,
-  Combo,
-  ComboAnalysis,
   ComboType,
   GameContext,
   GameState,
@@ -65,7 +63,6 @@ let algorithmStats: EnhancedFollowingStats = {
  * and routes to the appropriate decision path through small, targeted decisions.
  */
 export function selectFollowingPlay(
-  comboAnalyses: { combo: Combo; analysis: ComboAnalysis }[],
   context: GameContext,
   positionStrategy: PositionStrategy,
   trumpInfo: TrumpInfo,
@@ -79,21 +76,21 @@ export function selectFollowingPlay(
   // Get current player from game state first
   const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
   if (!currentPlayer) {
-    gameLogger.error("enhanced_following_no_current_player", {
-      currentPlayerId,
-      availablePlayers: gameState.players.map((p) => p.id),
+    gameLogger.error("enhanced_following_player_not_found", {
+      player: currentPlayerId,
+      gameState: gameState,
     });
-    return comboAnalyses.length > 0 ? comboAnalyses[0].combo.cards : [];
+    throw new Error("Current player not found in game state");
   }
 
   // Extract leading cards from game state
   const leadingCards = gameState.currentTrick?.plays[0]?.cards;
   if (!leadingCards || leadingCards.length === 0) {
-    gameLogger.warn("enhanced_following_no_leading_cards", {
+    gameLogger.error("enhanced_following_no_leading_cards", {
       player: currentPlayerId,
-      trickExists: !!gameState.currentTrick,
+      trickPosition: context.trickPosition,
     });
-    return comboAnalyses.length > 0 ? comboAnalyses[0].combo.cards : [];
+    throw new Error("No leading cards found in current trick");
   }
 
   // Priority 0: Multi-combo handling (reuse existing implementation)
@@ -176,11 +173,9 @@ export function selectFollowingPlay(
       error: error instanceof Error ? error.message : String(error),
     });
 
-    // Fallback to first available combo
-    selectedCards =
-      comboAnalyses.length > 0
-        ? comboAnalyses[0].combo.cards
-        : [currentPlayer.hand[0]];
+    // Fallback: select first x cards from hand (x = leadingCards.length)
+    const requiredLength = leadingCards.length;
+    selectedCards = currentPlayer.hand.slice(0, requiredLength);
   }
 
   // Phase 2: Card validation before returning
