@@ -1,6 +1,6 @@
-import { Card, Combo, GameState, Player, PositionStrategy } from "../types";
+import { Card, GameState, Player, PositionStrategy } from "../types";
 import { gameLogger } from "../utils/gameLogger";
-import { analyzeCombo, createGameContext } from "./aiGameContext";
+import { createGameContext } from "./aiGameContext";
 import { selectFollowingPlay } from "./following/followingStrategy";
 import { selectLeadingPlay } from "./leading/leadingStrategy";
 
@@ -8,11 +8,7 @@ import { selectLeadingPlay } from "./leading/leadingStrategy";
  * Main AI strategy function - replaces the class-based approach
  * Unified entry point for all AI card play decisions
  */
-export function makeAIPlay(
-  gameState: GameState,
-  player: Player,
-  validCombos: Combo[],
-): Card[] {
+export function makeAIPlay(gameState: GameState, player: Player): Card[] {
   const { currentTrick, trumpInfo } = gameState;
 
   // Create strategic context for this AI player
@@ -27,13 +23,8 @@ export function makeAIPlay(
 
   // Determine if leading or following
   if (!currentTrick || currentTrick.plays.length === 0) {
-    // LEADING: Use unified leading strategy
-    const leadingPlay = selectLeadingPlay(
-      validCombos,
-      trumpInfo,
-      context,
-      gameState,
-    );
+    // LEADING: Use new scoring-based leading strategy
+    const leadingPlay = selectLeadingPlay(gameState);
     gameLogger.debug("ai_leading_decision", {
       decisionPoint: "leading_play",
       player: player.id,
@@ -42,16 +33,8 @@ export function makeAIPlay(
     });
     return leadingPlay;
   } else {
-    // Following play with RESTRUCTURED priority chain
-    // Convert validCombos to comboAnalyses format using proper analysis
-    const comboAnalyses = validCombos.map((combo) => ({
-      combo,
-      analysis: analyzeCombo(combo, trumpInfo, context),
-    }));
-
     // Use enhanced following algorithm V2
     const restructuredPlay = selectFollowingPlay(
-      comboAnalyses,
       context,
       {} as PositionStrategy,
       trumpInfo,

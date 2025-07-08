@@ -6,7 +6,6 @@ import { getAIMove } from "../../src/ai/aiLogic";
 import { makeAIPlay } from "../../src/ai/aiStrategy";
 import {
   Card,
-  ComboType,
   GamePhase,
   GameState,
   PlayerId,
@@ -285,28 +284,14 @@ describe("AI Core Functionality", () => {
           Card.createCard(Suit.Spades, Rank.Three, 0),
         ];
 
-        // Create a simple valid combo for testing
-        const validCombos = [
-          {
-            type: ComboType.Single,
-            cards: [Card.createCard(Suit.Hearts, Rank.Six, 0)],
-            value: 6,
-          },
-          {
-            type: ComboType.Single,
-            cards: [Card.createCard(Suit.Hearts, Rank.Seven, 0)],
-            value: 7,
-          },
-        ];
+        // Set current player to AI1
+        gameState.currentPlayerIndex = 1;
 
-        const move = makeAIPlay(gameState, gameState.players[1], validCombos);
+        const move = makeAIPlay(gameState, gameState.players[1]);
 
         // Move should exist and be valid
         expect(move).toBeDefined();
         expect(move.length).toBe(1);
-        expect(
-          validCombos.some((combo) => combo.cards[0].id === move[0].id),
-        ).toBe(true);
       });
 
       it("should make strategic choice when Human teammate leads with Ace", () => {

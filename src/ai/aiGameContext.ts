@@ -24,7 +24,6 @@ import {
   createCardMemory,
   enhanceGameContextWithMemory,
 } from "./aiCardMemory";
-import { isTeammate } from "./utils/aiHelpers";
 
 /**
  * Analyzes the current game state to provide strategic context for AI decision making
@@ -713,4 +712,21 @@ function generateAllCardsForSuitOrTrump(
   }
 
   return allCards;
+}
+
+function isTeammate(
+  gameState: GameState,
+  playerId1: PlayerId,
+  playerId2: PlayerId,
+): boolean {
+  // Get both players from gameState
+  const player1 = gameState.players.find((p) => p.id === playerId1);
+  const player2 = gameState.players.find((p) => p.id === playerId2);
+
+  if (!player1 || !player2) {
+    return false;
+  }
+
+  // Players are teammates if they're on the same team
+  return player1.team === player2.team;
 }
