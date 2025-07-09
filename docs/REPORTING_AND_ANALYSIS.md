@@ -1,15 +1,15 @@
-# AI Learning Strategy: Simulation-Driven Improvement
+# Reporting and Analysis: Game Performance Insights
 
-**A systematic framework for enhancing AI strategy through automated simulation and data analysis.**
+**A comprehensive local analysis pipeline for processing simulation data and generating actionable game performance insights.**
 
 *Related Documentation: [AI System](AI_SYSTEM.md) | [Game Rules](GAME_RULES.md) | [Log Event Schema](LOG_EVENT_SCHEMA.md)*
 
 ## 1. Progress Update (July 4, 2025)
 
-The AI Learning Strategy framework has been successfully implemented and is operational.
+The reporting and analysis framework has been successfully implemented and is operational.
 
 - **Phase 1 (Data Generation)** ✅ **Complete**. Standardized AI decision logging with `ai_leading_decision` and `ai_following_decision` events.
-- **Phase 2 (Analysis Pipeline)** ✅ **Complete**. Full BigQuery pipeline with automated log ingestion, performance-focused KPI analysis, and comprehensive reporting with embedded visualizations.
+- **Phase 2 (Analysis Pipeline)** ✅ **Complete**. Local analysis pipeline with automated log processing, performance-focused KPI analysis, and comprehensive reporting with embedded visualizations.
 - **Phase 3 (Strategy Refinement)** 🔄 **Ready**. Analysis system identifies specific decision patterns and strategic opportunities for improvement.
 - **Phase 4 (A/B Testing)** 📋 **Framework Ready**. Infrastructure supports comparing different AI strategies through simulation.
 
@@ -48,11 +48,11 @@ The foundation of this system is high-quality, structured data. The existing `ga
 
 ### Phase 2: Automated Analysis Pipeline ✅ **COMPLETE**
 
-A comprehensive cloud-based analysis pipeline has been implemented to process simulation data and generate actionable insights.
+A comprehensive local analysis pipeline has been implemented to process simulation data and generate actionable insights.
 
 **Key Achievements:**
 
-1.  **BigQuery Data Warehouse**: ✅ **Completed**. Automated log ingestion pipeline uploads simulation logs to Google Cloud BigQuery for scalable analytics and complex SQL queries.
+1.  **Local Analysis Engine**: ✅ **Completed**. Automated log processing engine analyzes simulation logs locally using DuckDB for fast analytics and SQL-like queries.
 
 2.  **Performance-Focused KPIs**: ✅ **Completed**. The analysis system computes comprehensive performance metrics:
     *   **Position-Based Analysis**: Win rates and point collection by trick position (Leading, 2nd, 3rd, 4th player)
@@ -61,7 +61,7 @@ A comprehensive cloud-based analysis pipeline has been implemented to process si
     *   **AI Strategy Effectiveness**: Usage frequency and context analysis of decision points
     *   **Game Balance Metrics**: Average rounds per game, kitty effectiveness, trump utilization
 
-3.  **Advanced SQL Analytics**: ✅ **Completed**. Sophisticated BigQuery queries extract insights from trick-level data:
+3.  **Advanced Local Analytics**: ✅ **Completed**. Sophisticated Python/DuckDB analysis extracts insights from trick-level data:
     *   **Trick Position Analysis**: Flattens JSON play data to analyze player positions and performance
     *   **Memory System Integration**: Tracks AI card memory usage and strategic decision effectiveness
     *   **Strategic Decision Tracking**: Correlates specific AI decision points with game outcomes
@@ -113,8 +113,8 @@ To ensure that a change is a genuine improvement and not just a random fluctuati
 ## Current Operational Workflow
 
 1.  **Generate Data**: Run `./run_simulations.sh [number_of_games]` to generate comprehensive simulation logs.
-2.  **Upload to BigQuery**: Use `python analysis/setup_bigquery.py` to upload logs to cloud data warehouse.
-3.  **Generate KPI Report**: Execute `python analysis/generate_kpi_report.py` to produce performance analysis with visualizations.
+2.  **Analyse Locally**: Use `npm run analyse` to process logs and generate comprehensive reports.
+3.  **Review Results**: Check generated reports in `analysis/reports/` directory with comprehensive visualizations.
 4.  **Analyze Insights**: Review position-based performance, AI strategy effectiveness, and identify improvement opportunities.
 5.  **Form Hypothesis**: Based on data patterns (e.g., "3rd player position shows suboptimal takeover decisions").
 6.  **Implement Change**: Create feature branch and modify relevant AI modules using data-driven insights.
@@ -137,19 +137,17 @@ The implemented system provides comprehensive insights into:
 The current implementation includes:
 
 **Core Analysis Scripts:**
-- `analysis/setup_bigquery.py` - BigQuery table setup and log upload automation
-- `analysis/kpi_report_query.sql` - Performance-focused SQL query for comprehensive metrics
-- `analysis/generate_kpi_report.py` - Python report generator with embedded visualizations
-- `analysis/upload_logs.sh` - Bash script for automated log uploading to BigQuery
+- `analysis/local_analyzer.py` - Core local analysis engine using DuckDB
+- `analysis/generate_local_report.py` - Local report generator with embedded visualizations
 
 **Documentation:**
 - `docs/LOG_EVENT_SCHEMA.md` - Complete event type documentation with field specifications
-- `docs/AI_LEARNING_STRATEGY.md` - This strategy document (updated)
+- `docs/REPORTING_AND_ANALYSIS.md` - This analysis documentation (updated)
 
 **Generated Outputs:**
-- `analysis_reports/kpi_report_[version].md` - Versioned performance reports with embedded charts
-- `analysis_reports/position_win_rates_[version].png` - Position-based win rate visualizations
-- `analysis_reports/position_points_per_round_[version].png` - Point distribution charts
+- `analysis/reports/kpi_report_[version].md` - Versioned performance reports with embedded charts
+- `analysis/reports/position_win_rates_[version].png` - Position-based win rate visualizations
+- `analysis/reports/position_points_per_round_[version].png` - Point distribution charts
 
 ## Benefits of This Approach
 

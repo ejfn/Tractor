@@ -1,52 +1,26 @@
 #!/usr/bin/env python3
 """
-Simplified KPI report generator for Tractor AI simulation data.
-Rewritten to work with the clean SQL query and standardized logging.
+Local KPI report generator for Tractor AI simulation data.
+Uses the same report generation logic as the BigQuery version but with local data.
 """
 
 import os
 import pandas as pd
-from google.cloud import bigquery
 import matplotlib.pyplot as plt
 import seaborn as sns
-from dotenv import load_dotenv
+from local_analyzer import LocalLogAnalyzer
 
-# Load environment variables
-load_dotenv()
-
-# Configuration
-PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT")
-KPI_QUERY_FILE = "kpi_report_query.sql"
-
-# Always use the project root directory for output
+# Use the reports directory within analysis
 script_dir = os.path.dirname(__file__)
-project_root = os.path.dirname(script_dir)  # Go up one level from analysis/ to project root
-OUTPUT_DIR = os.path.join(project_root, "analysis_reports")
-
-def run_query():
-    """Run the KPI query and return results."""
-    if not PROJECT_ID:
-        raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set.")
-
-    client = bigquery.Client(project=PROJECT_ID)
-    
-    query_path = os.path.join(script_dir, KPI_QUERY_FILE)
-    
-    with open(query_path, "r") as f:
-        query = f.read()
-
-    print(f"Running KPI query...")
-    result = client.query(query).to_dataframe()
-    print(f"Query completed. Found {len(result)} app versions.")
-    return result
+OUTPUT_DIR = os.path.join(script_dir, "reports")
 
 def generate_report(df):
-    """Generate performance-focused markdown report."""
+    """Generate performance-focused markdown report (same as BigQuery version)."""
     if df.empty:
         return "# No data found\n"
     
     lines = []
-    lines.append("# 🎮 Tractor AI Performance Report\n")
+    lines.append("# 🎮 Tractor AI Performance Report (Local Analysis)\n")
     lines.append(f"**Generated:** {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     lines.append(f"**App Versions:** {len(df)}\n")
     lines.append(f"**Total Games:** {df['total_games'].sum()}\n\n")
@@ -57,11 +31,18 @@ def generate_report(df):
         # Game performance overview
         lines.append("### 🏆 Game Performance\n")
         lines.append(f"- **Total Games:** {row['total_games']}\n")
-        lines.append(f"- **Attacking Team Win Rate:** {row['attacking_team_win_rate']:.1%}\n")
-        lines.append(f"- **Defending Team Win Rate:** {row['defending_team_win_rate']:.1%}\n")
-        lines.append(f"- **Total Rounds:** {row['total_rounds']}\n")
-        lines.append(f"- **Avg Rounds per Game:** {row['avg_rounds_per_game']:.1f}\n")
-        lines.append(f"- **Attacking Round Win Rate:** {row['attacking_round_win_rate']:.1%}\n\n")
+        
+        if pd.notna(row.get('attacking_team_win_rate')):
+            lines.append(f"- **Attacking Team Win Rate:** {row['attacking_team_win_rate']:.1%}\n")
+        if pd.notna(row.get('defending_team_win_rate')):
+            lines.append(f"- **Defending Team Win Rate:** {row['defending_team_win_rate']:.1%}\n")
+        if pd.notna(row.get('total_rounds')):
+            lines.append(f"- **Total Rounds:** {row['total_rounds']}\n")
+        if pd.notna(row.get('avg_rounds_per_game')):
+            lines.append(f"- **Avg Rounds per Game:** {row['avg_rounds_per_game']:.1f}\n")
+        if pd.notna(row.get('attacking_round_win_rate')):
+            lines.append(f"- **Attacking Round Win Rate:** {row['attacking_round_win_rate']:.1%}\n")
+        lines.append("\n")
         
         # Position-based performance analysis
         lines.append("### 🎯 Position Performance (Win Rates)\n")
@@ -70,16 +51,15 @@ def generate_report(df):
         pos3_rate = row.get('position_3_win_rate')
         pos4_rate = row.get('position_4_win_rate')
         
-        if pos1_rate is not None:
+        if pd.notna(pos1_rate):
             lines.append(f"- **Leading Player (Pos 1):** {pos1_rate:.1%} win rate\n")
-        if pos2_rate is not None:
+        if pd.notna(pos2_rate):
             lines.append(f"- **2nd Player:** {pos2_rate:.1%} win rate\n")
-        if pos3_rate is not None:
+        if pd.notna(pos3_rate):
             lines.append(f"- **3rd Player:** {pos3_rate:.1%} win rate\n")
-        if pos4_rate is not None:
+        if pd.notna(pos4_rate):
             lines.append(f"- **4th Player:** {pos4_rate:.1%} win rate\n")
         lines.append("\n")
-        
         
         # Total points per round by position
         lines.append("### 🎯 Total Points Collected Per Round (By Position)\n")
@@ -88,65 +68,72 @@ def generate_report(df):
         pos3_round_pts = row.get('position_3_points_per_round')
         pos4_round_pts = row.get('position_4_points_per_round')
         
-        total_round_points = sum(x for x in [pos1_round_pts, pos2_round_pts, pos3_round_pts, pos4_round_pts] if x is not None)
+        valid_points = [x for x in [pos1_round_pts, pos2_round_pts, pos3_round_pts, pos4_round_pts] if pd.notna(x)]
+        total_round_points = sum(valid_points) if valid_points else 0
         
-        if pos1_round_pts is not None:
+        if pd.notna(pos1_round_pts) and total_round_points > 0:
             lines.append(f"- **Leading Player:** {pos1_round_pts:.1f} points per round ({pos1_round_pts/total_round_points:.1%} of total)\n")
-        if pos2_round_pts is not None:
+        if pd.notna(pos2_round_pts) and total_round_points > 0:
             lines.append(f"- **2nd Player:** {pos2_round_pts:.1f} points per round ({pos2_round_pts/total_round_points:.1%} of total)\n")
-        if pos3_round_pts is not None:
+        if pd.notna(pos3_round_pts) and total_round_points > 0:
             lines.append(f"- **3rd Player:** {pos3_round_pts:.1f} points per round ({pos3_round_pts/total_round_points:.1%} of total)\n")
-        if pos4_round_pts is not None:
+        if pd.notna(pos4_round_pts) and total_round_points > 0:
             lines.append(f"- **4th Player:** {pos4_round_pts:.1f} points per round ({pos4_round_pts/total_round_points:.1%} of total)\n")
-        lines.append(f"- **Total Round Points:** {total_round_points:.1f} per round (out of ~200 available)\n")
+        if total_round_points > 0:
+            lines.append(f"- **Total Round Points:** {total_round_points:.1f} per round (out of ~200 available)\n")
         lines.append("\n")
         
         # Add charts to the report
         safe_version = row['appVersion'].replace('/', '_').replace('+', '_')
         lines.append("## 📊 Performance Visualizations\n\n")
         
-        lines.append("### Team Performance: Attacking vs Defending\n")
-        lines.append(f"![Team Win Rates](team_win_rates_{safe_version}.png)\n\n")
+        if pd.notna(row.get('attacking_team_win_rate')) and pd.notna(row.get('defending_team_win_rate')):
+            lines.append("### Team Performance: Attacking vs Defending\n")
+            lines.append(f"![Team Win Rates](team_win_rates_{safe_version}.png)\n\n")
         
-        lines.append("### Position Win Rates\n")
-        lines.append(f"![Position Win Rates](position_win_rates_{safe_version}.png)\n\n")
+        if any(pd.notna(row.get(f'position_{i}_win_rate')) for i in range(1, 5)):
+            lines.append("### Position Win Rates\n")
+            lines.append(f"![Position Win Rates](position_win_rates_{safe_version}.png)\n\n")
         
-        lines.append("### Total Points Per Round by Position\n")
-        lines.append(f"![Points Per Round](position_points_per_round_{safe_version}.png)\n\n")
+        if any(pd.notna(row.get(f'position_{i}_points_per_round')) for i in range(1, 5)):
+            lines.append("### Total Points Per Round by Position\n")
+            lines.append(f"![Points Per Round](position_points_per_round_{safe_version}.png)\n\n")
         
         # Overall player performance 
         lines.append("### 🎮 Player Performance\n")
         avg_wr = row.get('avg_player_win_rate')
         avg_pts = row.get('avg_points_per_trick')
         
-        if avg_wr is not None and avg_pts is not None:
+        if pd.notna(avg_wr):
             lines.append(f"- **Average Player Win Rate:** {avg_wr:.1%}\n")
+        if pd.notna(avg_pts):
             lines.append(f"- **Average Points per Trick:** {avg_pts:.1f}\n")
         lines.append("\n")
         
         # Efficiency metrics
         lines.append("### 📈 Efficiency Metrics\n")
-        lines.append(f"- **Avg Final Points per Round:** {row['avg_final_points']:.1f}\n")
-        if row.get('avg_kitty_points') is not None:
+        if pd.notna(row.get('avg_final_points')):
+            lines.append(f"- **Avg Final Points per Round:** {row['avg_final_points']:.1f}\n")
+        if pd.notna(row.get('avg_kitty_points')):
             lines.append(f"- **Avg Kitty Points:** {row['avg_kitty_points']:.1f}\n")
         lines.append("\n")
         
         # Most used AI strategies (only frequently used ones)
         lines.append("### 🧠 Most Used AI Strategies\n")
-        if row['top_ai_decisions'] is not None and len(row['top_ai_decisions']) > 0:
+        if row.get('top_ai_decisions') is not None and len(row['top_ai_decisions']) > 0:
             # Group and sort, removing duplicates
             leading_decisions = {}
             following_decisions = {}
             
             for decision in row['top_ai_decisions']:
-                if decision['eventType'] == 'ai_leading_decision':
+                if decision['event'] == 'ai_leading_decision':
                     decision_point = decision['decisionPoint']
                     if decision_point not in leading_decisions:
-                        leading_decisions[decision_point] = decision['count']
-                elif decision['eventType'] == 'ai_following_decision':
+                        leading_decisions[decision_point] = decision['usage_count']
+                elif decision['event'] == 'ai_following_decision':
                     decision_point = decision['decisionPoint']
                     if decision_point not in following_decisions:
-                        following_decisions[decision_point] = decision['count']
+                        following_decisions[decision_point] = decision['usage_count']
             
             if leading_decisions:
                 lines.append("**🎯 Leading Strategies:**\n")
@@ -169,7 +156,7 @@ def generate_report(df):
     return "".join(lines)
 
 def create_visualizations(df):
-    """Create performance-focused visualization charts."""
+    """Create performance-focused visualization charts (same as BigQuery version)."""
     if df.empty or len(df) < 1:
         print("Skipping visualizations: insufficient data")
         return
@@ -195,7 +182,7 @@ def create_visualizations(df):
         
         # Filter out None and NaN values
         valid_data = [(pos, rate) for pos, rate in zip(positions, win_rates) 
-                     if rate is not None and not pd.isna(rate)]
+                     if pd.notna(rate)]
         if valid_data:
             pos_labels, rates = zip(*valid_data)
             
@@ -223,7 +210,8 @@ def create_visualizations(df):
             row.get('position_4_points_per_round')
         ]
         
-        valid_round_data = [(pos, pts) for pos, pts in zip(positions, points_per_round) if pts is not None and not pd.isna(pts)]
+        valid_round_data = [(pos, pts) for pos, pts in zip(positions, points_per_round) 
+                           if pd.notna(pts)]
         if valid_round_data:
             pos_labels, round_points = zip(*valid_round_data)
             
@@ -247,7 +235,7 @@ def create_visualizations(df):
         attacking_rate = row.get('attacking_team_win_rate')
         defending_rate = row.get('defending_team_win_rate')
         
-        if attacking_rate is not None and defending_rate is not None and not pd.isna(attacking_rate) and not pd.isna(defending_rate):
+        if pd.notna(attacking_rate) and pd.notna(defending_rate):
             team_types = ['Attacking\nTeam', 'Defending\nTeam']
             win_rates = [attacking_rate, defending_rate]
             
@@ -270,29 +258,33 @@ def create_visualizations(df):
             plt.tight_layout()
             plt.savefig(f"{OUTPUT_DIR}/team_win_rates_{safe_version}.png", dpi=300, bbox_inches='tight')
             plt.close()
-        
-        # Note: Human vs AI comparison removed since all players are AI in simulations
     
     print(f"Performance visualizations saved to {OUTPUT_DIR}/")
 
 def main():
     """Main execution function."""
-    print("🎮 Tractor AI Performance Report Generator")
-    print("=" * 44)
+    print("🎮 Tractor AI Performance Report Generator (Local Analysis)")
+    print("=" * 60)
     
     try:
-        # Run query
-        df = run_query()
+        # Run local analysis
+        script_dir = os.path.dirname(__file__)
+        project_root = os.path.dirname(script_dir)
+        logs_dir = os.path.join(project_root, "logs")
+        
+        analyzer = LocalLogAnalyzer(logs_dir)
+        df = analyzer.generate_final_report()
         
         if df.empty:
-            print("❌ No data found in BigQuery")
+            print("❌ No data found in log files")
             return
         
         # Show basic info
         print(f"📊 Data overview:")
         print(f"   - App versions: {len(df)}")
         print(f"   - Total games: {df['total_games'].sum()}")
-        print(f"   - Total rounds: {df['total_rounds'].sum()}")
+        if 'total_rounds' in df.columns:
+            print(f"   - Total rounds: {df['total_rounds'].sum()}")
         
         # Generate report
         report = generate_report(df)
@@ -300,9 +292,9 @@ def main():
         # Use version string in filename if available
         if len(df) > 0:
             safe_version = df.iloc[0]['appVersion'].replace('/', '_').replace('+', '_')
-            report_filename = f"kpi_report_{safe_version}.md"
+            report_filename = f"kpi_report_local_{safe_version}.md"
         else:
-            report_filename = "kpi_report.md"
+            report_filename = "kpi_report_local.md"
             
         report_path = f"{OUTPUT_DIR}/{report_filename}"
         os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -314,7 +306,7 @@ def main():
         # Create visualizations
         create_visualizations(df)
         
-        print("✅ Performance analysis complete!")
+        print("✅ Local performance analysis complete!")
         
     except Exception as e:
         print(f"❌ Error: {e}")

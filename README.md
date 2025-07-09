@@ -43,6 +43,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **⚡ Progressive Dealing System**: Real-time trump declarations with sophisticated AI strategy
 - **🎯 Advanced Kitty Management**: Strategic suit elimination and endgame bonus multipliers
 - **💾 Automatic Game Persistence**: Seamless save/restore with auto-recovery on app restart
+- **📊 Local Analysis System**: Comprehensive game data analysis with KPI reports and visualizations
 - **🌍 Multilingual Support**: Full English and Chinese localization with automatic language detection
 - **📱 Touch-Optimized UI**: Smooth animations, team color coding, and dark theme support
 - **🏆 Authentic Gameplay**: Complete Shengji/Tractor rules with proper combination following
@@ -62,7 +63,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 **Architectural Highlights:**
 
 - **Modular Game System**: Focused game modules with direct imports (no re-export hub)
-- **Modular AI System**: 22 specialized modules with memory-enhanced intelligence organized by functional domain
+- **Modular AI System**: 20 focused modules with memory-enhanced intelligence organized by functional domain
 - **Unified Trick Structure**: Streamlined game state with plays array for consistent data flow
 - **Consolidated Hook Architecture**: Single-responsibility hooks with minimal interdependencies
 - **Progressive Dealing System**: Unified dealing and trump declaration management
@@ -100,10 +101,31 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 *Complete AI documentation in **[AI System Guide](docs/AI_SYSTEM.md)***
 
+## Reporting & Analysis
+
+**Local Analysis System** for comprehensive game data insights:
+
+- **📊 Local Log Analysis**: Process game logs locally using DuckDB for fast SQL operations
+- **📈 KPI Reports**: Comprehensive reports with AI decision analysis, performance metrics, and gameplay statistics
+- **🎨 Data Visualizations**: Rich charts and graphs showing AI behavior, game patterns, and strategic insights
+- **⚡ Fast Processing**: Analyze thousands of games in seconds without external dependencies
+
+**Quick Commands:**
+```bash
+# Generate simulation data
+./run_simulations.sh 10
+
+# Analyse logs and generate reports
+npm run analyse
+```
+
+*Complete analysis guide in **[Reporting & Analysis](docs/REPORTING_AND_ANALYSIS.md)***
+
 ## Documentation
 
 - **[Game Rules](docs/GAME_RULES.md)** - Complete rules, quick start, and strategy reference
 - **[AI System](docs/AI_SYSTEM.md)** - Comprehensive AI intelligence documentation
+- **[Reporting & Analysis](docs/REPORTING_AND_ANALYSIS.md)** - Local analysis system and KPI reporting
 - **[CLAUDE.md](CLAUDE.md)** - Claude development guidelines and project architecture
 - **[GEMINI.md](GEMINI.md)** - Gemini development guidelines and project architecture
 

@@ -2,7 +2,7 @@
 
 **Comprehensive AI Intelligence & Strategic Decision Making**
 
-*Related Documentation: [Game Rules](GAME_RULES.md) | [Multi-Combo Architecture](MULTI_COMBO_SYSTEM_ARCHITECTURE.md) | [Multi-Combo Algorithms](MULTI_COMBO_ALGORITHMS.md) | [CLAUDE.md](../CLAUDE.md)*
+*Related Documentation: [Game Rules](GAME_RULES.md) | [Multi-Combo System](MULTI_COMBO.md) | [CLAUDE.md](../CLAUDE.md)*
 
 ## Overview
 
@@ -19,19 +19,18 @@ The Tractor AI system implements **sophisticated strategic decision-making** wit
 
 ## Modular AI Architecture
 
-The AI system has been completely **modularized into 22 specialized components** organized by functional domain for optimal maintainability and strategic coherence.
+The AI system has been **modularized into focused components** organized by functional domain for optimal maintainability and strategic coherence.
 
 ### **Architectural Organization**
 
 ```text
 src/ai/
-├── Core System (5 modules)
+├── Core System (4 modules)
 │   ├── aiLogic.ts              # Public API and game rule compliance
 │   ├── aiStrategy.ts           # Core decision-making coordination  
 │   ├── aiGameContext.ts        # Game state analysis and context creation
-│   ├── aiCardMemory.ts         # Memory system and tracking
-│   └── aiMemoryOptimization.ts # Performance optimization and caching
-├── Following Strategies (Enhanced V2 System - 9 modules)
+│   └── aiCardMemory.ts         # Memory system and tracking
+├── Following Strategies (10 modules)
 │   ├── followingStrategy.ts    # Main strategy coordination and routing
 │   ├── routingLogic.ts         # Scenario classification and decision routing
 │   ├── suitAvailabilityAnalysis.ts # Core scenario analysis with strict combo detection
@@ -40,21 +39,18 @@ src/ai/
 │   ├── voidDecision.ts         # Trump and cross-suit decision making
 │   ├── crossSuitDecision.ts    # Cross-suit disposal strategies
 │   ├── strategicSelection.ts   # Pair-preserving card selection utilities
-│   └── teammateAnalysis.ts     # Advanced teammate situation analysis
+│   ├── teammateAnalysis.ts     # Advanced teammate situation analysis
+│   └── multiComboFollowingStrategy.ts # Multi-combo following logic
 ├── Leading Strategies (4 modules)
 │   ├── leadingStrategy.ts      # Unified scoring-based leading strategy
 │   ├── candidateLeadDetection.ts # Detection of all possible lead candidates
 │   ├── leadingContext.ts       # Context collection and team analysis
 │   └── leadingScoring.ts       # Comprehensive scoring and reasoning system
-├── Analysis Modules (integrated)
-│   └── (Analysis functions integrated into specialized modules)
-├── Specialized Systems (3 modules)
+├── Specialized Systems (2 modules)
 │   ├── kittySwap/
 │   │   └── kittySwapStrategy.ts # Rule-based exclusion and suit elimination
-│   ├── trumpDeclaration/
-│   │   └── trumpDeclarationStrategy.ts # Sophisticated declaration timing
-│   └── utils/
-│       └── aiHelpers.ts        # Common AI utility functions
+│   └── trumpDeclaration/
+│       └── trumpDeclarationStrategy.ts # Sophisticated declaration timing
 ```
 
 ### **Modular Benefits**
@@ -62,8 +58,8 @@ src/ai/
 **Functional Coherence:**
 - **Following Module**: 10 specialized modules for position-based following strategies
 - **Leading Module**: 4 modules for strategic leading decisions and analysis
-- **Analysis Module**: 3 modules for combination evaluation and advanced analysis
-- **Core System**: 5 modules for fundamental AI operations, memory, and performance optimization
+- **Core System**: 4 modules for fundamental AI operations and memory
+- **Specialized Systems**: 2 modules for kitty management and trump declaration
 
 **Development Advantages:**
 - **Single Responsibility**: Each module has one clear purpose and domain
@@ -390,98 +386,41 @@ The memory system is seamlessly integrated across all AI decision modules:
 - **Predictive Analysis**: Anticipate opponent capabilities based on memory
 - **Team Coordination**: Smart teammate strategies that maximize point collection
 
-## Phase 4: Performance Optimization & Integration Testing
+## Memory System Implementation
 
-The AI memory system has been enhanced with **performance optimizations** and **comprehensive integration testing** to ensure optimal efficiency without sacrificing strategic intelligence.
+The AI memory system provides **comprehensive card tracking** and **strategic analysis** to enable intelligent decision-making.
 
-### **Performance Optimization System**
+### **Core Memory Functions**
 
-#### **Intelligent Memory Caching**
-
-**Core Optimization Features:**
-- **Game State Hash Validation** - Only recalculates memory when game state actually changes
-- **Incremental Memory Updates** - Efficiently processes only new tricks when possible
-- **Cache Hit Optimization** - Achieves 67-90% cache hit rates in typical gameplay
-- **Memory Cache Statistics** - Real-time performance monitoring and analysis
-
-#### **Optimized Memory Operations**
+#### **Memory Context Creation**
 
 ```typescript
-// New optimized memory creation with caching
-export function createOptimizedCardMemory(gameState: GameState): CardMemory
-export function getMemoryCacheStats(): { cacheHits: number, hitRate: number }
-export function resetMemoryCache(): void
+// Creates comprehensive memory context for AI decisions
+export function createMemoryContext(gameState: GameState): MemoryContext
 ```
 
-**Performance Improvements:**
-- **Response Time Optimization** - Memory operations complete in <50ms average
-- **Cache Efficiency** - 2-10x speedup over standard memory creation
-- **Incremental Updates** - Only recalculate changed portions of memory
-- **Memory Profiling** - Development tools for performance analysis
+**Key Features:**
+- **Card Tracking** - Complete record of all played cards
+- **Void Detection** - Automatic detection of suit exhaustion
+- **Trump Analysis** - Strategic trump usage analysis
+- **Point Collection** - Optimal timing for point card collection
 
-#### **Integration Testing Framework**
+#### **Strategic Memory Usage**
 
-**Comprehensive Test Coverage:**
-- **Cross-Module Integration** - Validates memory consistency across all AI modules
-- **Performance Benchmarking** - Ensures memory system maintains optimal speed
-- **Cache Validation** - Verifies cache correctness and invalidation logic
-- **Load Testing** - Performance validation with realistic game datasets
+**Memory Integration in AI Modules:**
+- **Leading Strategy** - Uses memory for guaranteed winner detection
+- **Following Strategy** - Leverages void analysis for optimal responses
+- **Multi-Combo Logic** - Memory-enhanced unbeatable combo detection
+- **Trump Management** - Conservation decisions based on trump depletion
 
-**Test Categories:**
-- **Basic Integration Tests** - Core memory system functionality
-- **Performance Integration Tests** - Cache efficiency and speed optimization
-- **Memory Persistence Tests** - Long-term memory accumulation and evolution
-- **Stress Tests** - Heavy load scenarios and edge case handling
+**Performance Characteristics:**
+- **Efficient Processing** - Optimized for real-time decision making
+- **Accurate Analysis** - 100% consistency with game state
+- **Memory Efficiency** - Clean data structures without redundancy
 
-### **Performance Benchmarks**
+## Advanced Strategic Features
 
-**Typical Performance Metrics:**
-- **Memory Creation Time**: <50ms average (with cache), <200ms worst case
-- **Cache Hit Rate**: 67-90% depending on gameplay patterns
-- **Memory Accuracy**: 100% consistency with standard implementation
-- **Integration Test Coverage**: 15+ comprehensive test scenarios
-
-**Optimization Benefits:**
-- **Faster AI Decisions** - Reduced memory overhead allows quicker strategic analysis
-- **Scalable Performance** - Maintains speed even with extensive game history
-- **Resource Efficiency** - Lower CPU usage through intelligent caching
-- **Development Velocity** - Comprehensive tests enable rapid feature development
-
-### **Development & Monitoring Tools**
-
-**Memory Profiler:**
-```typescript
-MemoryProfiler.startProfile()
-MemoryProfiler.recordOperation('memory_creation')
-const profile = MemoryProfiler.getProfile()
-```
-
-**Cache Statistics:**
-- **Hit/Miss Ratios** - Real-time cache performance tracking
-- **Performance Trends** - Historical analysis of memory system efficiency
-- **Bottleneck Identification** - Automated detection of performance issues
-
-**Quality Assurance:**
-- **Automated Performance Tests** - Continuous validation of optimization effectiveness
-- **Regression Detection** - Immediate alerts if performance degrades
-- **Memory Leak Prevention** - Proper cache cleanup and resource management
-
-## Historical Intelligence
-
-The AI analyzes opponent behavior patterns and adapts its strategy accordingly:
-
-### **Opponent Modeling**
-
-**Behavioral Analysis:**
-- **Aggressiveness Patterns** - Trump lead frequency and risk-taking behavior
-- **Point Card Management** - How opponents handle valuable cards
-- **Team Coordination Style** - Supportive vs independent play patterns
-- **Suit Preferences** - Strong suits and leading tendencies
-
-**Adaptive Counter-Strategies:**
-- **Against Aggressive Opponents** - Conservative blocking and trump conservation
-- **Against Conservative Opponents** - Aggressive point collection and tactical pressure
-- **Against Adaptive Opponents** - Variable strategies and unpredictable play patterns
+The AI implements sophisticated game strategies through its modular architecture:
 
 ---
 
@@ -672,25 +611,25 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 - **Rule Compliance** - Perfect adherence to complex Tractor/Shengji rules
 - **Strategic Optimization** - 20-30% improvement over basic AI play
 - **Memory Enhancement** - 15-25% improvement through card tracking
-- **Historical Adaptation** - 10-20% improvement via opponent modeling
+- **Position-Based Logic** - Specialized decisions for all 4 trick positions
 
 **Response Times:**
 - **Standard Decisions** - ~300ms for most scenarios
 - **Full Analysis** - <400ms with complete intelligence active
-- **Minimal Overhead** - Historical analysis adds only ~30ms when sufficient data available
-- **Modular Efficiency** - 22 specialized modules eliminate redundant calculations and improve decision speed
+- **Minimal Overhead** - Memory analysis adds only ~30ms when utilized
+- **Modular Efficiency** - Focused modules eliminate redundant calculations and improve decision speed
 
 ### **Strategic Effectiveness**
 
 **Gameplay Impact:**
 - **Challenging Opponent** - Consistent challenge without being unfair
-- **Adaptive Intelligence** - Learns and responds to player behavior patterns
+- **Strategic Intelligence** - Memory-enhanced decision making
 - **Team Coordination** - Effective cooperation with human teammate
 - **Strategic Depth** - Multiple decision layers create engaging gameplay
 
 **User Experience:**
 - **Predictable Framework** - Consistent strategic approach
-- **Tactical Variety** - Unpredictable decisions through adaptive intelligence
+- **Tactical Variety** - Position-based and context-aware decisions
 - **Fair Competition** - Challenging but beatable opponent
 - **Educational Value** - Demonstrates advanced Tractor/Shengji strategy
 - **Maintainable Codebase** - Modular architecture enables rapid feature development and bug fixes
@@ -699,35 +638,34 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 
 ## Future Enhancement Roadmap
 
-### **Multi-Game Learning**
+### **Potential Enhancements**
 
-**Next Evolution:**
-- **Cross-Game Persistence** - Historical analysis extended across multiple games
-- **Long-Term Player Profiling** - Behavioral patterns tracked over weeks/months
+**Future Capabilities:**
+- **Advanced Pattern Recognition** - Enhanced memory analysis across multiple games
 - **Dynamic Difficulty Scaling** - AI intelligence adapts to player skill progression
-- **Meta-Game Strategy** - Long-term strategic evolution and counter-adaptation
+- **Enhanced Team Coordination** - Improved teammate support strategies
+- **Strategic Learning** - Continuous improvement through gameplay analysis
 
 **Foundation Ready:**
-- **Existing Infrastructure** - Current behavioral analysis provides 80% of required foundation
-- **Clean Integration** - Memory system ready for persistence extension
+- **Existing Infrastructure** - Current memory system provides solid foundation
+- **Clean Integration** - Modular architecture ready for extensions
 - **Natural Evolution** - Minimal architectural changes needed
 
 ### **Recent Architecture Improvements (2025)**
 
-**Code Cleanup and Optimization:**
-- **Removed 540+ lines** of unused AI functions from fourth player strategy module
-- **Eliminated position-specific strategy files** - consolidated into unified followingStrategy.ts
-- **Enhanced suit availability analysis** - unified trump and non-trump analysis with optional targetSuit parameter
-- **Simplified strategic disposal API** - removed unused parameters and redundant functions
-- **Comprehensive test cleanup** - removed invalid tests and outdated strategy assumptions
-- **Added shared utility functions** - `isBiggestInSuit()` for consistent trump rank handling
+**Code Modernization and Simplification:**
+- **Type System Consolidation** - Merged `combinations.ts` into `card.ts` for better organization
+- **Function Naming Clarity** - Renamed `createCardMemory` to `createMemoryContext` for accuracy
+- **Documentation Unification** - Merged multi-combo documentation into single comprehensive guide
+- **Analysis System Migration** - Transitioned from BigQuery to local analysis using DuckDB
+- **Module Structure Cleanup** - Focused AI modules with clear separation of concerns
 
 **Technical Benefits:**
-- **Reduced technical debt** - Significant code reduction through consolidation
-- **Improved maintainability** - Unified architecture with cleaner call paths
-- **Enhanced strategic intelligence** - Context-aware decisions across all positions
-- **Consistent analysis** - Single analyzeSuitAvailability function for all scenarios
-- **Better testing** - Focused on important strategic decisions, removed micro-optimization tests
+- **Reduced Complexity** - Simplified type structure and cleaner imports
+- **Improved Maintainability** - Unified architecture with clearer responsibilities
+- **Enhanced Documentation** - Consolidated guides matching current implementation
+- **Local Analysis** - Streamlined reporting without external dependencies
+- **Better Testing** - Focused on core strategic decisions with comprehensive coverage
 
 ---
 
@@ -742,11 +680,11 @@ The Tractor AI system delivers **sophisticated strategic gameplay** through comp
 - **Memory-Enhanced Decisions** - Card tracking with guaranteed winner identification
 - **Scoring-Based Leading** - Transparent, maintainable scoring system for all leading decisions
 - **Position-Based Following** - Specialized logic for all 4 trick positions with scenario-based routing
-- **Historical Adaptation** - Opponent modeling and behavioral counter-strategies
+- **Multi-Combo Integration** - Complete support for complex multi-combo scenarios
 
 **Modular Architecture:**
-- **19 Specialized Modules** - Streamlined architecture with integrated analysis functions
-- **Unified Leading Strategy** - Scoring-based system replaces complex priority chains
+- **20 Focused Modules** - Streamlined architecture with clear separation of concerns (4 core + 10 following + 4 leading + 2 specialized)
+- **Unified Leading Strategy** - Scoring-based system with transparent decision making
 - **4-Priority Following Chain** - Conflict-free strategic decision making for following scenarios
 - **Domain Separation** - Clean separation between following, leading, and specialized systems
 - **Single Responsibility** - Each module has one clear purpose and strategic focus
@@ -771,6 +709,5 @@ The AI system successfully balances **strategic sophistication** with **enjoyabl
 **See Also:**
 
 - **[Game Rules](GAME_RULES.md)** - Complete Tractor/Shengji rules and strategy guide
-- **[Multi-Combo Architecture](MULTI_COMBO_SYSTEM_ARCHITECTURE.md)** - Comprehensive multi-combo system architecture and integration
-- **[Multi-Combo Algorithms](MULTI_COMBO_ALGORITHMS.md)** - Detailed multi-combo leading and following algorithms
+- **[Multi-Combo System](MULTI_COMBO.md)** - Complete multi-combo implementation guide
 - **[CLAUDE.md](../CLAUDE.md)** - Development guidelines and project architecture

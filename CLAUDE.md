@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code when working with this repository.
 
-@README.md | @docs/AI_SYSTEM.md | @docs/GAME_RULES.md | @docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md | @docs/MULTI_COMBO_ALGORITHMS.md | @docs/LOG_EVENT_SCHEMA.md
+@README.md | @docs/AI_SYSTEM.md | @docs/GAME_RULES.md | @docs/MULTI_COMBO.md | @docs/REPORTING_AND_ANALYSIS.md | @docs/LOG_EVENT_SCHEMA.md
 
 ## Project Overview
 
@@ -29,7 +29,7 @@ Tractor is a React Native Expo app implementing the Chinese card game Shengji (�
 - ✅ `A♥A♥-K♥K♥` → Always unbeatable (highest possible 2-pair tractor)
 - ⚠️ `10♥10♥-9♥9♥` → Possibly beatable if `K♥K♥-Q♥Q♥` available to others
 
-*Complete system documentation in [Multi-Combo Architecture](docs/MULTI_COMBO_SYSTEM_ARCHITECTURE.md)*
+*Complete system documentation in [Multi-Combo](docs/MULTI_COMBO.md)*
 
 ## Quick Start
 
@@ -42,6 +42,9 @@ npx expo start
 npm run qualitycheck  # Runs typecheck, lint, and test
 npm run android       # Android platform
 npm run ios          # iOS platform
+
+# Analysis and reporting
+npm run analyse       # Generate comprehensive game analysis reports
 ```
 
 ## Development Guidelines
@@ -70,7 +73,7 @@ npm run qualitycheck  # MUST pass completely
 
 ### File Organization
 **Organized by logical domain:**
-- `src/ai/` - AI strategic decision-making (22 specialized modules)
+- `src/ai/` - AI strategic decision-making (20 focused modules)
 - `src/game/` - Core game logic and rules
 - `src/types/` - Type definitions with clean re-exports
 - `src/utils/` - Domain-agnostic utilities
@@ -81,6 +84,14 @@ npm run qualitycheck  # MUST pass completely
 - **CLAUDE.md** - Development guidelines (this file)
 - **docs/** - Specialized documentation (AI, game rules, multi-combo system)
 - **Single source of truth** - No duplicate content between files
+
+### Complete Documentation Reference
+- **[README.md](README.md)** - Project overview, features, and quick start
+- **[docs/AI_SYSTEM.md](docs/AI_SYSTEM.md)** - Comprehensive AI intelligence documentation
+- **[docs/GAME_RULES.md](docs/GAME_RULES.md)** - Complete game rules and strategy guide
+- **[docs/MULTI_COMBO.md](docs/MULTI_COMBO.md)** - Multi-combo implementation guide
+- **[docs/REPORTING_AND_ANALYSIS.md](docs/REPORTING_AND_ANALYSIS.md)** - Local analysis system and KPI reporting
+- **[docs/LOG_EVENT_SCHEMA.md](docs/LOG_EVENT_SCHEMA.md)** - Log event structure documentation
 
 ### Git Workflow
 🚨 **NEVER COMMIT TO MAIN BRANCH** 🚨
@@ -106,7 +117,7 @@ gh pr create --title "Title" --body "Description"
 ## Architecture Overview
 
 ### Core Principles
-- **Modular Design**: 22 AI modules + focused game modules
+- **Modular Design**: 20 AI modules + focused game modules
 - **Unified Trick Structure**: Single `plays` array eliminates inconsistencies  
 - **Direct Imports**: Clean dependencies without re-export hubs
 - **Pure Computation**: Separation of calculations from state mutations
@@ -239,7 +250,7 @@ rg "export\s+(function|const)\s+(\w+)" -o | sort | uniq -d
 ### Key Insights from Project Evolution
 
 **Architecture Lessons:**
-- **Modular AI Design**: Split 1,844-line monolithic file into 22 specialized modules organized by domain
+- **Modular AI Design**: Split 1,844-line monolithic file into 20 focused modules organized by domain
 - **Unified Data Structures**: Eliminate dual fields (`leadingCombo`/`plays`) that cause inconsistencies
 - **Direct Imports**: Remove re-export hubs for cleaner dependencies and IDE navigation
 - **Pure Computation**: Separate calculations from state mutations for testability
