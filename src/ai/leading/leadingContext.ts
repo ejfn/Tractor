@@ -1,5 +1,5 @@
 import { Card, GameState, PlayerId, Suit, TrumpInfo } from "../../types";
-import { createCardMemory } from "../aiCardMemory";
+import { createMemoryContext } from "../aiCardMemory";
 import { isTrump } from "../../game/cardValue";
 
 /**
@@ -51,7 +51,7 @@ export function collectLeadingContext(
   gameState: GameState,
   playerId: PlayerId,
 ): LeadingContext {
-  const memory = createCardMemory(gameState);
+  const memory = createMemoryContext(gameState);
   const playerMemories = memory.playerMemories;
 
   // Find teammate and opponents from gameState

@@ -1,4 +1,4 @@
-import { Card, GameState, Player, PositionStrategy } from "../types";
+import { Card, GameState, Player } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import { createGameContext } from "./aiGameContext";
 import { selectFollowingPlay } from "./following/followingStrategy";
@@ -36,7 +36,6 @@ export function makeAIPlay(gameState: GameState, player: Player): Card[] {
     // Use enhanced following algorithm V2
     const restructuredPlay = selectFollowingPlay(
       context,
-      {} as PositionStrategy,
       trumpInfo,
       gameState,
       player.id,

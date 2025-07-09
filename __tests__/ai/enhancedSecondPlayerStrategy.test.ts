@@ -21,7 +21,7 @@ jest.mock("../../src/ai/aiCardMemory");
 describe("Enhanced Second Player Strategy", () => {
   let trumpInfo: TrumpInfo;
   let mockCreateCardMemory: jest.MockedFunction<
-    typeof import("../../src/ai/aiCardMemory").createCardMemory
+    typeof import("../../src/ai/aiCardMemory").createMemoryContext
   >;
 
   beforeEach(() => {
@@ -32,7 +32,7 @@ describe("Enhanced Second Player Strategy", () => {
 
     // Set up memory mocking
     const mocks = setupMemoryMocking();
-    mockCreateCardMemory = mocks.createCardMemory;
+    mockCreateCardMemory = mocks.createMemoryContext;
   });
 
   describe("Same-Suit Following - Opponent Led", () => {

@@ -238,7 +238,7 @@ function createAllRemainingAndFillResponse(
   // Sort other cards by strategic value (lowest first for disposal)
   const sortingValue =
     context.trickWinnerAnalysis?.isTeammateWinning &&
-    !context.memoryContext?.nextPlayerVoidLed
+    !context.memoryContext.nextPlayerVoidLed
       ? "contribute"
       : "strategic";
   const sortedOthers = otherCards.sort(
@@ -274,7 +274,7 @@ function selectSameSuitDisposal(
   // Sort combos by priority: tractors first, then pairs, then singles
   const sortingValue =
     context.trickWinnerAnalysis?.isTeammateWinning &&
-    !context.memoryContext?.nextPlayerVoidLed
+    !context.memoryContext.nextPlayerVoidLed
       ? "contribute"
       : "strategic";
   const sortedCombos = availableCombos.sort((a, b) => {
@@ -403,7 +403,7 @@ function makeStrategicTrumpDecision(
   // Early return: Don't trump if teammate is winning, next opponent not void and we have yet full-trump
   if (
     context.trickWinnerAnalysis?.isTeammateWinning &&
-    !context.memoryContext?.nextPlayerVoidLed &&
+    !context.memoryContext.nextPlayerVoidLed &&
     playerHand.some((card) => !isTrump(card, trumpInfo))
   ) {
     return selectCrossSuitDisposal(
@@ -457,7 +457,7 @@ function makeStrategicTrumpDecision(
       leadingCards,
       trumpInfo,
       true,
-      context.memoryContext?.nextPlayerVoidLed ? false : true, // Conservation mode if next player not void led suit
+      context.memoryContext.nextPlayerVoidLed ? false : true, // Conservation mode if next player not void led suit
     );
 
     if (matchingResult.canBeat) {
@@ -481,7 +481,7 @@ function selectCrossSuitDisposal(
 ): MultiComboFollowingResult {
   const sortingValue =
     context.trickWinnerAnalysis?.isTeammateWinning &&
-    (!context.memoryContext?.nextPlayerVoidLed ||
+    (!context.memoryContext.nextPlayerVoidLed ||
       context.trickPosition === TrickPosition.Fourth)
       ? "contribute"
       : "strategic";

@@ -5,7 +5,6 @@ import {
   GameContext,
   GameState,
   PlayerId,
-  PositionStrategy,
   TrumpInfo,
 } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
@@ -63,7 +62,6 @@ let algorithmStats: EnhancedFollowingStats = {
  */
 export function selectFollowingPlay(
   context: GameContext,
-  positionStrategy: PositionStrategy,
   trumpInfo: TrumpInfo,
   gameState: GameState,
   currentPlayerId: PlayerId,
@@ -122,7 +120,7 @@ export function selectFollowingPlay(
     leadingCardCount: leadingCards.length,
     leadingCards: leadingCards.map((c) => `${c.rank}${c.suit}`),
     handSize: currentPlayer.hand.length,
-    memoryAvailable: !!context.memoryContext?.cardMemory,
+    memoryAvailable: !!context.memoryContext.playerMemories,
     trickPoints: context.trickWinnerAnalysis?.trickPoints ?? 0,
   });
 

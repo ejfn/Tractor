@@ -1,4 +1,4 @@
-import { createCardMemory } from "../ai/aiCardMemory";
+import { createMemoryContext } from "../ai/aiCardMemory";
 import {
   Card,
   Combo,
@@ -9,7 +9,7 @@ import {
   Suit,
   TrumpInfo,
 } from "../types";
-import { MultiComboValidation } from "../types/combinations";
+import { MultiComboValidation } from "../types/card";
 import { sortCards } from "../utils/cardSorting";
 import { compareCards } from "./cardComparison";
 import { identifyCombos } from "./comboDetection";
@@ -96,7 +96,7 @@ export function checkOtherPlayersVoidStatus(
   currentPlayerId: PlayerId,
 ): { allOpponentsVoid: boolean; voidPlayers: PlayerId[] } {
   // Get memory system data for void detection
-  const memory = createCardMemory(gameState);
+  const memory = createMemoryContext(gameState);
   const allOtherPlayerIds = getAllOtherPlayerIds(gameState, currentPlayerId);
 
   const voidPlayers: PlayerId[] = [];
@@ -134,7 +134,7 @@ export function validateUnbeatableComponents(
   allUnbeatable: boolean;
   beatableComponents: { combo: Combo; beatenBy: string }[];
 } {
-  const memory = createCardMemory(gameState);
+  const memory = createMemoryContext(gameState);
   const playedCards = memory.playedCards;
   const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
   const ownHand = currentPlayer?.hand || [];

@@ -14,7 +14,7 @@ import {
   Suit,
   TrumpInfo,
 } from "../../types";
-import { createCardMemory } from "../aiCardMemory";
+import { createMemoryContext } from "../aiCardMemory";
 
 /**
  * Candidate lead for scoring evaluation
@@ -229,7 +229,7 @@ function getAllUnbeatableCardsInSuit(
   const visibleKittyCards = isRoundStarter ? gameState.kittyCards : [];
 
   for (const combo of allCombos) {
-    const memory = createCardMemory(gameState);
+    const memory = createMemoryContext(gameState);
     const isUnbeatable = isComboUnbeatable(
       combo,
       suit,

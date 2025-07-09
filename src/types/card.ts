@@ -1,3 +1,5 @@
+import { PlayerId } from "./core";
+
 /**
  * Card suit enumeration
  */
@@ -298,3 +300,20 @@ export type Combo = {
   value: number; // Relative hand strength for comparison
   isBreakingPair?: boolean; // Whether this combo breaks up a valuable pair
 };
+
+// Multi-Combo Detection and Validation Types
+export interface MultiComboValidation {
+  isValid: boolean;
+  invalidReasons: string[];
+  voidStatus: {
+    allOpponentsVoid: boolean;
+    voidPlayers: PlayerId[];
+  };
+  unbeatableStatus: {
+    allUnbeatable: boolean;
+    beatableComponents: {
+      combo: Combo;
+      beatenBy: string; // Description of what can beat it
+    }[];
+  };
+}

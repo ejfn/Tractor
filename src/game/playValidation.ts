@@ -7,7 +7,7 @@ import {
   Suit,
   TrumpInfo,
 } from "../types";
-import { MultiComboValidation } from "../types/combinations";
+import { MultiComboValidation } from "../types/card";
 import { gameLogger } from "../utils/gameLogger";
 import { isTrump } from "./cardValue";
 import {

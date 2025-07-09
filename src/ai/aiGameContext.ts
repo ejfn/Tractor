@@ -1,28 +1,21 @@
-import { calculateCardStrategicValue, isTrump } from "../game/cardValue";
+import { isTrump } from "../game/cardValue";
 import {
   Card,
-  CardMemory,
-  Combo,
-  ComboAnalysis,
-  ComboStrength,
   GameContext,
   GameState,
   JokerType,
   PlayerId,
-  PlayStyle,
   PointPressure,
-  PositionStrategy,
   Rank,
   Suit,
   TrickPosition,
   TrickWinnerAnalysis,
   TrumpInfo,
 } from "../types";
-import { gameLogger } from "../utils/gameLogger";
 import {
-  analyzeTrumpDistribution,
-  createCardMemory,
-  enhanceGameContextWithMemory,
+  createMemoryContext,
+  getNextPlayerId,
+  isNextPlayerVoidInSuit,
 } from "./aiCardMemory";
 
 /**
@@ -33,46 +26,55 @@ export function createGameContext(
   gameState: GameState,
   playerId: PlayerId,
 ): GameContext {
+  // Core game context
   const isAttackingTeam = isPlayerOnAttackingTeam(gameState, playerId);
   const currentPoints = getCurrentAttackingPoints(gameState);
-  const pointsNeeded = 80; // Standard Shengji winning threshold
   const cardsRemaining = calculateCardsRemaining(gameState);
 
-  // NEW: Analyze current trick winner for enhanced strategy (only if trick exists)
+  // Analyze current trick winner for enhanced strategy (only if trick exists)
   const trickWinnerAnalysis = gameState.currentTrick
     ? analyzeTrickWinner(gameState, playerId)
     : undefined;
   const trickPosition = getTrickPosition(gameState, playerId);
-  const pointPressure = calculatePointPressure(
-    currentPoints,
-    pointsNeeded,
-    isAttackingTeam,
-  );
-  const playStyle = determinePlayStyle(
-    isAttackingTeam,
-    pointPressure,
-    cardsRemaining,
-  );
+  const pointPressure = calculatePointPressure(currentPoints, isAttackingTeam);
 
-  // Phase 3: Enhanced context with memory-based intelligence
-  const baseContext: GameContext = {
+  // Create memory context (now returns MemoryContext directly)
+  const memoryContext = createMemoryContext(gameState);
+
+  // Calculate nextPlayerVoidLed (CRITICAL: preserve exact logic)
+  let nextPlayerVoidLed = false;
+  const leadCard = gameState.currentTrick?.plays[0]?.cards[0];
+  const nextPlayerId = getNextPlayerId(gameState, gameState.currentPlayerIndex);
+
+  if (leadCard && nextPlayerId) {
+    const leadSuit = isTrump(leadCard, gameState.trumpInfo)
+      ? Suit.None
+      : leadCard.suit;
+    nextPlayerVoidLed = isNextPlayerVoidInSuit(
+      nextPlayerId,
+      leadSuit,
+      memoryContext,
+    );
+  }
+
+  // Update the nextPlayerVoidLed field
+  memoryContext.nextPlayerVoidLed = nextPlayerVoidLed;
+
+  // Return clean GameContext + MemoryContext structure
+  return {
+    // Core Game Info
     isAttackingTeam,
     currentPoints,
-    pointsNeeded,
     cardsRemaining,
     trickPosition,
     pointPressure,
-    playStyle,
     currentPlayer: playerId,
+    trumpInfo: gameState.trumpInfo,
     trickWinnerAnalysis,
-  };
 
-  // Integrate card memory for enhanced strategic intelligence
-  return enhanceGameContextWithMemory(
-    baseContext,
-    createCardMemory(gameState),
-    gameState,
-  );
+    // Memory System (optional)
+    memoryContext,
+  };
 }
 
 /**
@@ -239,10 +241,9 @@ export function getTrickPosition(
  */
 export function calculatePointPressure(
   currentPoints: number,
-  pointsNeeded: number,
   isAttackingTeam: boolean,
 ): PointPressure {
-  const progressRatio = currentPoints / pointsNeeded;
+  const progressRatio = currentPoints / 80;
 
   if (isAttackingTeam) {
     // Attacking team: pressure increases as they fall behind
@@ -266,330 +267,6 @@ export function calculatePointPressure(
 }
 
 /**
- * Determines the optimal play style based on game context
- */
-export function determinePlayStyle(
-  isAttackingTeam: boolean,
-  pointPressure: PointPressure,
-  cardsRemaining: number,
-): PlayStyle {
-  // End-game urgency
-  if (cardsRemaining <= 3) {
-    return pointPressure === PointPressure.HIGH
-      ? PlayStyle.Desperate
-      : PlayStyle.Aggressive;
-  }
-
-  // Team role and pressure-based strategy
-  if (isAttackingTeam) {
-    switch (pointPressure) {
-      case PointPressure.HIGH:
-        return PlayStyle.Desperate; // Need points urgently
-      case PointPressure.MEDIUM:
-        return PlayStyle.Aggressive; // Push for points
-      case PointPressure.LOW:
-      default:
-        return PlayStyle.Balanced; // Build position
-    }
-  } else {
-    // Defending team
-    switch (pointPressure) {
-      case PointPressure.HIGH:
-        return PlayStyle.Desperate; // Block everything
-      case PointPressure.MEDIUM:
-        return PlayStyle.Aggressive; // Active defense
-      case PointPressure.LOW:
-      default:
-        return PlayStyle.Conservative; // Patient defense
-    }
-  }
-}
-
-/**
- * Calculate trump conservation value based on trump hierarchy
- *
- * @internal This function serves as a fallback for calculateMemoryEnhancedTrumpConservationValue()
- * when memory context is unavailable. It provides the base calculation that memory-enhanced analysis builds upon.
- *
- * Trump Hierarchy (highest to lowest):
- * 1. Big Joker (100)
- * 2. Small Joker (90)
- * 3. Trump rank in trump suit (80)
- * 4. Trump rank in off-suits (70)
- * 5. Trump suit: A(60), K(55), Q(50), J(45), 10(40), 9(35), 8(30), 7(25), 6(20), 5(15), 4(10), 3(5)
- */
-function calculateTrumpConservationValue(
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-): number {
-  let totalValue = 0;
-
-  for (const card of cards) {
-    const cardValue = calculateCardStrategicValue(card, trumpInfo, "basic");
-    totalValue += cardValue;
-  }
-
-  return totalValue;
-}
-
-/**
- * Phase 3: Memory-Enhanced Trump Conservation Value
- *
- * Calculates dynamic trump conservation values based on memory analysis of trump exhaustion.
- * Higher exhaustion in opponents makes our trump more valuable to conserve.
- */
-export function calculateMemoryEnhancedTrumpConservationValue(
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-  cardMemory?: CardMemory,
-): number {
-  // Start with base conservation value
-  const baseValue = calculateTrumpConservationValue(cards, trumpInfo);
-
-  // If no memory context available, use base calculation
-  if (!cardMemory) {
-    return baseValue;
-  }
-
-  // Use imported trump exhaustion analysis functions
-
-  try {
-    // Analyze current trump distribution
-    const trumpAnalysis = analyzeTrumpDistribution(cardMemory, trumpInfo);
-
-    // Calculate memory-based enhancement multiplier
-    let memoryMultiplier = 1.0;
-
-    // Factor 1: Global trump exhaustion - more exhaustion globally makes trump more valuable
-    const globalExhaustion = trumpAnalysis.globalTrumpExhaustion;
-    if (globalExhaustion > 0.6) {
-      memoryMultiplier += 0.5; // +50% value when globally trump-depleted
-    } else if (globalExhaustion > 0.4) {
-      memoryMultiplier += 0.3; // +30% value when moderately trump-depleted
-    } else if (globalExhaustion > 0.2) {
-      memoryMultiplier += 0.1; // +10% value when some trump-depletion
-    }
-
-    // Factor 2: Opponent void status - trump becomes critical when opponents are void
-    const voidPlayerCount = trumpAnalysis.voidPlayers.length;
-    if (voidPlayerCount >= 2) {
-      memoryMultiplier += 0.4; // +40% when multiple opponents void
-    } else if (voidPlayerCount >= 1) {
-      memoryMultiplier += 0.2; // +20% when one opponent void
-    }
-
-    // Factor 3: Trump advantage/disadvantage relative to opponents
-    // This is calculated per player in calculateTrumpDeploymentTiming, but we can estimate
-    const averageOpponentExhaustion =
-      Object.entries(trumpAnalysis.playerExhaustion)
-        .map(([, exhaustion]) => exhaustion)
-        .reduce((sum, exhaustion) => sum + exhaustion, 0) / 4; // All players average
-
-    if (averageOpponentExhaustion > 0.7) {
-      memoryMultiplier += 0.3; // +30% when opponents are heavily depleted
-    } else if (averageOpponentExhaustion > 0.5) {
-      memoryMultiplier += 0.15; // +15% when opponents are moderately depleted
-    }
-
-    // Cap the multiplier to prevent extreme values
-    memoryMultiplier = Math.min(memoryMultiplier, 2.5); // Max 2.5x base value
-
-    return Math.round(baseValue * memoryMultiplier);
-  } catch (error) {
-    // Fallback to base calculation if memory analysis fails
-    gameLogger.warn(
-      "memory_enhanced_trump_conservation_failed",
-      {
-        error: error instanceof Error ? error.message : String(error),
-        baseValue,
-      },
-      "Memory-enhanced trump conservation failed, using base calculation",
-    );
-    return baseValue;
-  }
-}
-
-/**
- * Analyzes a combo's strategic value
- */
-export function analyzeCombo(
-  combo: Combo,
-  trumpInfo: TrumpInfo,
-  context: GameContext,
-): ComboAnalysis {
-  const isTrumpCombo = combo.cards.some((card) => isTrump(card, trumpInfo));
-
-  const pointValue = combo.cards.reduce((sum, card) => sum + card.points, 0);
-  const hasPoints = pointValue > 0;
-
-  // Determine strength based on card values and trump status
-  let strength: ComboStrength;
-  if (isTrumpCombo && combo.value > 80) {
-    strength = ComboStrength.Critical;
-  } else if (combo.value > 60 || (isTrumpCombo && combo.value > 40)) {
-    strength = ComboStrength.Strong;
-  } else if (combo.value > 30) {
-    strength = ComboStrength.Medium;
-  } else {
-    strength = ComboStrength.Weak;
-  }
-
-  // Calculate disruption potential (how much this can mess up opponents)
-  let disruptionPotential = 0;
-  if (isTrumpCombo) disruptionPotential += 30;
-  if (combo.type === "Tractor") disruptionPotential += 20;
-  if (combo.type === "Pair") disruptionPotential += 10;
-
-  // Calculate conservation value (how valuable it is to keep)
-  // For trump cards, ignore base combo.value and use proper trump hierarchy
-  let conservationValue: number;
-
-  if (isTrumpCombo) {
-    // Use memory-enhanced trump hierarchy value when available
-    if (context.memoryContext?.cardMemory) {
-      conservationValue = calculateMemoryEnhancedTrumpConservationValue(
-        combo.cards,
-        trumpInfo,
-        context.memoryContext.cardMemory,
-      );
-    } else {
-      // Fallback to standard trump hierarchy value
-      conservationValue = calculateTrumpConservationValue(
-        combo.cards,
-        trumpInfo,
-      );
-    }
-  } else {
-    // For non-trump cards, use base combo.value
-    conservationValue = combo.value;
-  }
-
-  // Add point value for any point cards
-  if (hasPoints) conservationValue += pointValue;
-  if (context.cardsRemaining <= 5) conservationValue *= 1.5; // More valuable in endgame
-
-  // Incorporate pair breaking penalty into conservation value
-  const isBreakingPair = combo.isBreakingPair ?? false;
-  if (isBreakingPair) {
-    // Add penalty for breaking pairs - makes this combo less desirable for disposal
-    conservationValue += 50; // Penalty makes pair-breaking combos rank higher (less likely to be chosen for disposal)
-  }
-
-  return {
-    strength,
-    isTrump: isTrumpCombo,
-    hasPoints,
-    pointValue,
-    disruptionPotential,
-    conservationValue,
-    isBreakingPair,
-    canBeat: false, // This will be updated by the play validation logic
-    relativeStrength: 0, // This will be updated by the play validation logic
-  };
-}
-
-/**
- * Gets position-based strategy matrix
- */
-export function getPositionStrategy(
-  position: TrickPosition,
-  playStyle: PlayStyle,
-): PositionStrategy {
-  const baseStrategies: Record<TrickPosition, PositionStrategy> = {
-    [TrickPosition.First]: {
-      informationGathering: 0.9, // Enhanced - sophisticated probe strategy with game phase adaptation
-      riskTaking: 0.6, // Enhanced - strategic risk based on phase (probe/aggressive/control/endgame)
-      partnerCoordination: 0.3, // Enhanced - strategic setup for teammate positions
-      disruptionFocus: 0.8, // Enhanced - comprehensive opponent probing and information gathering
-    },
-    [TrickPosition.Second]: {
-      informationGathering: 0.7, // Enhanced - leverages leader analysis for strategic decisions
-      riskTaking: 0.6, // Enhanced - leader relationship-based risk assessment
-      partnerCoordination: 0.6, // Enhanced - strategic response based on leader (teammate vs opponent)
-      disruptionFocus: 0.7, // Enhanced - blocking potential and setup opportunities
-    },
-    [TrickPosition.Third]: {
-      informationGathering: 0.2, // Enhanced - has sufficient info from first two players for tactical decisions
-      riskTaking: 0.8, // Enhanced - can make informed tactical decisions including takeovers
-      partnerCoordination: 0.9, // Enhanced - critical position for teammate optimization and takeover analysis
-      disruptionFocus: 0.6, // Enhanced - tactical opportunities for both teammate support and opponent disruption
-    },
-    [TrickPosition.Fourth]: {
-      informationGathering: 1.0, // Perfect information available
-      riskTaking: 0.9, // High - can make optimal decisions
-      partnerCoordination: 1.0, // Can optimize teammate support
-      disruptionFocus: 0.8, // High - perfect counter opportunities
-    },
-  };
-
-  const baseStrategy = baseStrategies[position];
-
-  // Adjust based on play style
-  const styleMultipliers: Record<
-    PlayStyle,
-    { risk: number; disruption: number; coordination: number }
-  > = {
-    [PlayStyle.Conservative]: { risk: 0.7, disruption: 0.8, coordination: 1.2 },
-    [PlayStyle.Balanced]: { risk: 1.0, disruption: 1.0, coordination: 1.0 },
-    [PlayStyle.Aggressive]: { risk: 1.4, disruption: 1.3, coordination: 0.9 },
-    [PlayStyle.Desperate]: { risk: 1.8, disruption: 1.5, coordination: 0.7 },
-  };
-
-  const multiplier = styleMultipliers[playStyle];
-
-  return {
-    informationGathering: baseStrategy.informationGathering,
-    riskTaking: Math.min(1.0, baseStrategy.riskTaking * multiplier.risk),
-    partnerCoordination: Math.min(
-      1.0,
-      baseStrategy.partnerCoordination * multiplier.coordination,
-    ),
-    disruptionFocus: Math.min(
-      1.0,
-      baseStrategy.disruptionFocus * multiplier.disruption,
-    ),
-  };
-}
-
-/**
- * Determines if a trick has significant points worth fighting for
- */
-export function isTrickWorthFighting(
-  gameState: GameState,
-  context: GameContext,
-): boolean {
-  const { currentTrick } = gameState;
-
-  if (!currentTrick) return false;
-
-  // Calculate points in current trick
-  const trickPoints = currentTrick.plays.reduce(
-    (sum, play) =>
-      sum + play.cards.reduce((cardSum, card) => cardSum + card.points, 0),
-    0,
-  );
-
-  // Add points from leading combo (plays[0])
-  const leadingPoints =
-    currentTrick.plays[0]?.cards?.reduce((sum, card) => sum + card.points, 0) ||
-    0;
-
-  const totalTrickPoints = trickPoints + leadingPoints;
-
-  // Adjust fighting threshold based on point pressure
-  switch (context.pointPressure) {
-    case PointPressure.LOW:
-      return totalTrickPoints >= 15; // Only fight for big point tricks
-    case PointPressure.MEDIUM:
-      return totalTrickPoints >= 10; // Fight for moderate point tricks
-    case PointPressure.HIGH:
-      return totalTrickPoints >= 5; // Fight for any points
-    default:
-      return totalTrickPoints >= 10;
-  }
-}
-
-/**
  * Generate remaining unseen cards for a specific suit or trump group
  *
  * @param suit - The suit to analyze (or Suit.None for all trump cards)
@@ -607,8 +284,8 @@ export function getRemainingUnseenCards(
 
   if (!trumpInfo) return [];
 
-  const cardMemory =
-    context.memoryContext?.cardMemory || createCardMemory(gameState);
+  // Use the memory context directly
+  const cardMemory = context.memoryContext;
   const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
   if (!currentPlayer) return [];
 

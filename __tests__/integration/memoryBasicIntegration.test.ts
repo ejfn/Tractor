@@ -1,4 +1,4 @@
-import { createCardMemory } from "../../src/ai/aiCardMemory";
+import { createMemoryContext } from "../../src/ai/aiCardMemory";
 import { getAIMove } from "../../src/ai/aiLogic";
 import {
   Card,
@@ -61,7 +61,7 @@ describe("Basic Memory System Integration Tests - Phase 4", () => {
       ];
 
       // Test memory creation
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
       expect(cardMemory).toBeDefined();
       expect(cardMemory.playedCards.length).toBeGreaterThan(0);
       expect(Object.keys(cardMemory.playerMemories)).toHaveLength(4);
@@ -126,7 +126,7 @@ describe("Basic Memory System Integration Tests - Phase 4", () => {
         gameState.tricks.push(trick);
 
         // Create memory snapshot
-        const cardMemory = createCardMemory(gameState);
+        const cardMemory = createMemoryContext(gameState);
         memoryEvolution.push({
           trickCount: i + 1,
           playedCards: cardMemory.playedCards.length,
@@ -174,7 +174,7 @@ describe("Basic Memory System Integration Tests - Phase 4", () => {
         },
       ];
 
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
 
       // Verify void detection
       const bot1Memory = cardMemory.playerMemories[PlayerId.Bot1];
@@ -246,7 +246,7 @@ describe("Basic Memory System Integration Tests - Phase 4", () => {
       const startTime = Date.now();
 
       // Memory operations
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
       gameState.currentPlayerIndex = 1;
       const aiDecision = getAIMove(gameState, PlayerId.Bot1);
 
@@ -264,7 +264,7 @@ describe("Basic Memory System Integration Tests - Phase 4", () => {
       gameState.tricks = [];
 
       expect(() => {
-        const cardMemory = createCardMemory(gameState);
+        const cardMemory = createMemoryContext(gameState);
         expect(cardMemory.playedCards.length).toBe(0);
         expect(cardMemory.tricksAnalyzed).toBe(0);
       }).not.toThrow();

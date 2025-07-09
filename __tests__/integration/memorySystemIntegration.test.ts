@@ -1,5 +1,5 @@
 import { getAIMove } from "../../src/ai/aiLogic";
-import { createCardMemory } from "../../src/ai/aiCardMemory";
+import { createMemoryContext } from "../../src/ai/aiCardMemory";
 // Note: Analysis functions require complex parameters, simplified for integration testing
 import {
   Card,
@@ -42,7 +42,7 @@ describe("Memory System Integration Tests - Phase 4", () => {
       setupMultiTrickScenario(gameState);
 
       // Create memory context
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
 
       // Test memory consistency - basic validation
       expect(cardMemory.playedCards.length).toBeGreaterThan(0);
@@ -78,7 +78,7 @@ describe("Memory System Integration Tests - Phase 4", () => {
         points: 10,
       };
 
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
 
       // Verify void detection
       const bot1Memory = cardMemory.playerMemories[PlayerId.Bot1];
@@ -95,13 +95,13 @@ describe("Memory System Integration Tests - Phase 4", () => {
       // Simulate several tricks being played
       simulateMultipleTricks(gameState, 8);
 
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
 
       // Verify card counting accuracy
       const totalPlayedCards = cardMemory.playedCards.length;
       const estimatedRemainingCards = Object.values(
         cardMemory.playerMemories,
-      ).reduce((sum, memory) => sum + memory.estimatedHandSize, 0);
+      ).reduce((sum, memory) => sum + memory.knownCards.length, 0);
 
       // Basic validations for memory system operation
       expect(totalPlayedCards).toBeGreaterThan(0);
@@ -162,7 +162,7 @@ describe("Memory System Integration Tests - Phase 4", () => {
       // Setup scenario with guaranteed winners
       const guaranteedWinnerScenario = setupGuaranteedWinnerScenario(gameState);
 
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
 
       // Basic validation of memory system with guaranteed winners
       expect(cardMemory.playedCards.length).toBeGreaterThan(0);
@@ -186,7 +186,7 @@ describe("Memory System Integration Tests - Phase 4", () => {
       const startTime = Date.now();
 
       // Perform memory-intensive operations
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
       const aiDecision = getAIMove(gameState, PlayerId.Bot1);
 
       const endTime = Date.now();
@@ -214,7 +214,7 @@ describe("Memory System Integration Tests - Phase 4", () => {
       // Baseline: Standard AI decision without complex memory scenario
       const startTime = Date.now();
 
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
       const aiDecision = getAIMove(gameState, PlayerId.Bot1);
 
       const endTime = Date.now();
@@ -235,10 +235,10 @@ describe("Memory System Integration Tests - Phase 4", () => {
   describe("Edge Cases and Robustness", () => {
     it("should handle corrupted or incomplete memory data gracefully", () => {
       // Create memory with missing data
-      const cardMemory = createCardMemory(gameState);
+      const cardMemory = createMemoryContext(gameState);
 
       // Simulate corrupted memory state
-      cardMemory.playerMemories[PlayerId.Bot1].estimatedHandSize = -1;
+      cardMemory.playerMemories[PlayerId.Bot1].knownCards = [];
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete cardMemory.playerMemories[PlayerId.Bot2];
 
@@ -254,7 +254,7 @@ describe("Memory System Integration Tests - Phase 4", () => {
       for (let round = 0; round < 3; round++) {
         simulateCompleteRound(gameState);
 
-        const cardMemory = createCardMemory(gameState);
+        const cardMemory = createMemoryContext(gameState);
 
         // Memory should remain consistent
         expect(cardMemory.playedCards.length).toBeGreaterThanOrEqual(0);
@@ -262,7 +262,7 @@ describe("Memory System Integration Tests - Phase 4", () => {
 
         // Each player memory should be valid
         Object.values(cardMemory.playerMemories).forEach((memory) => {
-          expect(memory.estimatedHandSize).toBeGreaterThanOrEqual(0);
+          expect(memory.knownCards).toEqual(expect.any(Array));
           expect(memory.suitVoids).toBeInstanceOf(Set);
           expect(typeof memory.trumpVoid).toBe("boolean");
         });
