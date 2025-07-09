@@ -34,8 +34,11 @@ yarn-error.*
 .env*.local
 .venv/
 
-# Analysis reports
-analysis/reports/*
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 
 # typescript
 *.tsbuildinfo
