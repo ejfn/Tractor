@@ -417,6 +417,8 @@ export function useGameState() {
     roundResultRef.current = roundResult;
     pendingStateRef.current = JSON.parse(JSON.stringify(state)) as GameState; // Deepcopy current state, for next round preparation
 
+    setShowRoundComplete(true);
+
     if (roundResult.gameOver) {
       // Set game phase to 'gameOver' to prevent AI moves (after storing state)
       const gameOverState = { ...state, gamePhase: GamePhase.GameOver };
@@ -425,9 +427,6 @@ export function useGameState() {
       setGameState(gameOverState);
     }
     // Note: For non-game-over, state already has GamePhase.RoundEnd set
-
-    // Show modal after all state is safely stored
-    setShowRoundComplete(true);
   };
 
   // Handle proceeding to next round
