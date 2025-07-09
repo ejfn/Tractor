@@ -1,5 +1,5 @@
 import { getRankValue } from "../../game/cardValue";
-import { JokerType, Rank, TrumpInfo } from "../../types";
+import { ComboType, JokerType, Rank, TrumpInfo } from "../../types";
 import { CandidateLead } from "./candidateLeadDetection";
 import { LeadingContext } from "./leadingContext";
 
@@ -164,6 +164,15 @@ export function scoreNonTrumpLead(
   if (candidate.metadata.isUnbeatable) {
     score += 50;
     reasoning.push("Unbeatable combo (+50pts)");
+  }
+
+  // -50 penalty for small multi-combos
+  if (
+    candidate.type === ComboType.Invalid &&
+    score < 80 // Small multi-combo threshold ( <30 without unbeatbale bonus)
+  ) {
+    score -= 50;
+    reasoning.push("Small multi-combo penalty (-50pts)");
   }
 
   // Point card penalty
