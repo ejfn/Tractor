@@ -2,7 +2,7 @@ import { isTrump } from "../../game/cardValue";
 import { identifyCombos } from "../../game/comboDetection";
 import { analyzeComboStructure } from "../../game/multiComboAnalysis";
 import {
-  checkOpponentVoidStatus,
+  checkOtherPlayersVoidStatus,
   isComboUnbeatable,
 } from "../../game/multiComboValidation";
 import {
@@ -14,7 +14,7 @@ import {
   Suit,
   TrumpInfo,
 } from "../../types";
-import { createCardMemory } from "../aiCardMemory";
+import { createMemoryContext } from "../aiCardMemory";
 
 /**
  * Candidate lead for scoring evaluation
@@ -118,7 +118,7 @@ function detectMultiComboCandidates(
 
     if (unbeatableCards.length > 0) {
       // Analyze structure of unbeatable cards
-      const structure = analyzeComboStructure(unbeatableCards, trumpInfo, true);
+      const structure = analyzeComboStructure(unbeatableCards, trumpInfo);
 
       if (structure && structure.combos.length >= 2) {
         // Multi-combo (2+ components)
@@ -211,7 +211,7 @@ function getAllUnbeatableCardsInSuit(
   }
 
   // Check if all other players are void - if so, ALL cards are unbeatable
-  const voidStatus = checkOpponentVoidStatus(suit, gameState, playerId);
+  const voidStatus = checkOtherPlayersVoidStatus(suit, gameState, playerId);
   if (voidStatus.allOpponentsVoid) {
     return suitCards; // All cards unbeatable
   }
@@ -229,7 +229,7 @@ function getAllUnbeatableCardsInSuit(
   const visibleKittyCards = isRoundStarter ? gameState.kittyCards : [];
 
   for (const combo of allCombos) {
-    const memory = createCardMemory(gameState);
+    const memory = createMemoryContext(gameState);
     const isUnbeatable = isComboUnbeatable(
       combo,
       suit,

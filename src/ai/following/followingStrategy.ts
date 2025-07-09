@@ -1,12 +1,10 @@
 import { getComboType } from "../../game/comboDetection";
-import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
 import {
   Card,
   ComboType,
   GameContext,
   GameState,
   PlayerId,
-  PositionStrategy,
   TrumpInfo,
 } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
@@ -64,7 +62,6 @@ let algorithmStats: EnhancedFollowingStats = {
  */
 export function selectFollowingPlay(
   context: GameContext,
-  positionStrategy: PositionStrategy,
   trumpInfo: TrumpInfo,
   gameState: GameState,
   currentPlayerId: PlayerId,
@@ -96,30 +93,23 @@ export function selectFollowingPlay(
   // Priority 0: Multi-combo handling (reuse existing implementation)
   const leadingComboType = getComboType(leadingCards, trumpInfo);
   if (leadingComboType === ComboType.Invalid) {
-    const leadingMultiCombo = detectLeadingMultiCombo(leadingCards, trumpInfo);
+    const multiComboResult = executeMultiComboFollowingAlgorithm(
+      leadingCards,
+      currentPlayer.hand,
+      gameState,
+      currentPlayerId,
+    );
 
-    if (leadingMultiCombo.isMultiCombo) {
-      const multiComboResult = executeMultiComboFollowingAlgorithm(
-        leadingCards,
-        currentPlayer.hand,
-        gameState,
-        currentPlayerId,
-      );
+    if (multiComboResult && multiComboResult.strategy !== "no_valid_response") {
+      gameLogger.debug("enhanced_following_multi_combo", {
+        player: currentPlayerId,
+        strategy: multiComboResult.strategy,
+        cardCount: multiComboResult.cards.length,
+        reasoning: multiComboResult.reasoning,
+        canBeat: multiComboResult.canBeat,
+      });
 
-      if (
-        multiComboResult &&
-        multiComboResult.strategy !== "no_valid_response"
-      ) {
-        gameLogger.debug("enhanced_following_multi_combo", {
-          player: currentPlayerId,
-          strategy: multiComboResult.strategy,
-          cardCount: multiComboResult.cards.length,
-          reasoning: multiComboResult.reasoning,
-          canBeat: multiComboResult.canBeat,
-        });
-
-        return multiComboResult.cards;
-      }
+      return multiComboResult.cards;
     }
   }
 
@@ -130,7 +120,7 @@ export function selectFollowingPlay(
     leadingCardCount: leadingCards.length,
     leadingCards: leadingCards.map((c) => `${c.rank}${c.suit}`),
     handSize: currentPlayer.hand.length,
-    memoryAvailable: !!context.memoryContext?.cardMemory,
+    memoryAvailable: !!context.memoryContext.playerMemories,
     trickPoints: context.trickWinnerAnalysis?.trickPoints ?? 0,
   });
 

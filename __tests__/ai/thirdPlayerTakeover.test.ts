@@ -11,7 +11,7 @@ describe("Third Player Takeover Logic", () => {
   let gameState: GameState;
   let trumpInfo: TrumpInfo;
   let mockCreateCardMemory: jest.MockedFunction<
-    typeof import("../../src/ai/aiCardMemory").createCardMemory
+    typeof import("../../src/ai/aiCardMemory").createMemoryContext
   >;
 
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe("Third Player Takeover Logic", () => {
 
     // Set up memory mocking
     const mocks = setupMemoryMocking();
-    mockCreateCardMemory = mocks.createCardMemory;
+    mockCreateCardMemory = mocks.createMemoryContext;
   });
 
   it("should take over a weak lead with a stronger card in the same suit", () => {

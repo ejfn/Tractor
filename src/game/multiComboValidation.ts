@@ -1,4 +1,4 @@
-import { createCardMemory } from "../ai/aiCardMemory";
+import { createMemoryContext } from "../ai/aiCardMemory";
 import {
   Card,
   Combo,
@@ -9,10 +9,10 @@ import {
   Suit,
   TrumpInfo,
 } from "../types";
-import { MultiComboValidation } from "../types/combinations";
-import { identifyCombos } from "./comboDetection";
+import { MultiComboValidation } from "../types/card";
 import { sortCards } from "../utils/cardSorting";
 import { compareCards } from "./cardComparison";
+import { identifyCombos } from "./comboDetection";
 
 /**
  * Multi-Combo Validation Module
@@ -57,7 +57,7 @@ export function validateLeadingMultiCombo(
   }
 
   // Rule 2: Either all other players are void OR each combo is unbeatable
-  const voidStatus = checkOpponentVoidStatus(suit, gameState, playerId);
+  const voidStatus = checkOtherPlayersVoidStatus(suit, gameState, playerId);
   validation.voidStatus = voidStatus;
 
   const unbeatableStatus = validateUnbeatableComponents(
@@ -90,13 +90,13 @@ export function validateLeadingMultiCombo(
  * @param currentPlayerId Player attempting multi-combo
  * @returns Void status information
  */
-export function checkOpponentVoidStatus(
+export function checkOtherPlayersVoidStatus(
   suit: Suit,
   gameState: GameState,
   currentPlayerId: PlayerId,
 ): { allOpponentsVoid: boolean; voidPlayers: PlayerId[] } {
   // Get memory system data for void detection
-  const memory = createCardMemory(gameState);
+  const memory = createMemoryContext(gameState);
   const allOtherPlayerIds = getAllOtherPlayerIds(gameState, currentPlayerId);
 
   const voidPlayers: PlayerId[] = [];
@@ -134,7 +134,7 @@ export function validateUnbeatableComponents(
   allUnbeatable: boolean;
   beatableComponents: { combo: Combo; beatenBy: string }[];
 } {
-  const memory = createCardMemory(gameState);
+  const memory = createMemoryContext(gameState);
   const playedCards = memory.playedCards;
   const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
   const ownHand = currentPlayer?.hand || [];

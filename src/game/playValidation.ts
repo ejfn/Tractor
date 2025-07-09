@@ -1,13 +1,13 @@
 import {
   Card,
+  ComboStructure,
   ComboType,
   GameState,
-  MultiCombo,
   PlayerId,
   Suit,
   TrumpInfo,
 } from "../types";
-import { MultiComboValidation } from "../types/combinations";
+import { MultiComboValidation } from "../types/card";
 import { gameLogger } from "../utils/gameLogger";
 import { isTrump } from "./cardValue";
 import {
@@ -35,7 +35,7 @@ const getLeadingSuit = (combo: Card[]) => {
 
 export const validateMultiComboFollowing = (
   playedCards: Card[],
-  leadingMultiCombo: MultiCombo,
+  leadingMultiCombo: ComboStructure,
   playerHand: Card[],
   trumpInfo: TrumpInfo,
 ): boolean => {
@@ -97,7 +97,7 @@ export const validateMultiComboFollowing = (
 const validateAntiCheatStructure = (
   playedCards: Card[],
   playerHand: Card[],
-  leadingMultiCombo: MultiCombo,
+  leadingMultiCombo: ComboStructure,
   trumpInfo: TrumpInfo,
   leadingSuit: Suit,
 ): boolean => {
@@ -164,7 +164,7 @@ const validateAntiCheatStructure = (
 /**
  * Check if a play is valid following Shengji rules
  * This function is extracted to avoid circular dependencies between
- * playProcessing.ts and combinationGeneration.ts
+ * playProcessing.ts
  */
 export const isValidPlay = (
   playedCards: Card[],
@@ -450,7 +450,7 @@ export const isValidPlay = (
  * @param playerId Player attempting the multi-combo
  * @returns Validation result with detailed reasoning
  */
-export function validateMultiComboLead(
+function validateMultiComboLead(
   selectedCards: Card[],
   gameState: GameState,
   playerId: PlayerId,
@@ -494,8 +494,7 @@ export function validateMultiComboLead(
 
   // Step 4: Analyze component combos
   const components =
-    analyzeComboStructure(selectedCards, gameState.trumpInfo, true)?.combos ||
-    [];
+    analyzeComboStructure(selectedCards, gameState.trumpInfo)?.combos || [];
   if (components.length === 0) {
     validation.invalidReasons.push("No valid component combos found");
     return validation;

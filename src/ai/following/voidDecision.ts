@@ -104,12 +104,12 @@ function evaluateTrumpSelection(
           const nextPlayerIndex = (gameState.currentPlayerIndex + 1) % 4;
           const nextPlayerId = gameState.players[nextPlayerIndex]?.id;
           if (
-            context.memoryContext?.cardMemory &&
+            context.memoryContext.playerMemories &&
             nextPlayerId &&
             analysis.leadingSuit
           ) {
             const nextPlayerMemory =
-              context.memoryContext.cardMemory.playerMemories[nextPlayerId];
+              context.memoryContext.playerMemories[nextPlayerId];
             isNextPlayerVoid =
               nextPlayerMemory?.suitVoids.has(analysis.leadingSuit) ?? false;
           }

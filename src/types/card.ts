@@ -1,3 +1,5 @@
+import { PlayerId } from "./core";
+
 /**
  * Card suit enumeration
  */
@@ -282,7 +284,7 @@ export enum ComboType {
 }
 
 // Multi-combo components breakdown
-export type MultiCombo = {
+export type ComboStructure = {
   combos: Combo[]; // Individual combo components within the multi-combo
   totalLength: number; // Total cards in multi-combo
   totalPairs: number; // Total pairs (includes standalone pairs + pairs within tractors)
@@ -298,3 +300,20 @@ export type Combo = {
   value: number; // Relative hand strength for comparison
   isBreakingPair?: boolean; // Whether this combo breaks up a valuable pair
 };
+
+// Multi-Combo Detection and Validation Types
+export interface MultiComboValidation {
+  isValid: boolean;
+  invalidReasons: string[];
+  voidStatus: {
+    allOpponentsVoid: boolean;
+    voidPlayers: PlayerId[];
+  };
+  unbeatableStatus: {
+    allUnbeatable: boolean;
+    beatableComponents: {
+      combo: Combo;
+      beatenBy: string; // Description of what can beat it
+    }[];
+  };
+}

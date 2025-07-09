@@ -17,7 +17,7 @@ jest.mock("../../src/ai/aiCardMemory");
 describe("Third Player Void Logic", () => {
   let trumpInfo: TrumpInfo;
   let mockCreateCardMemory: jest.MockedFunction<
-    typeof import("../../src/ai/aiCardMemory").createCardMemory
+    typeof import("../../src/ai/aiCardMemory").createMemoryContext
   >;
 
   beforeEach(() => {
@@ -28,7 +28,7 @@ describe("Third Player Void Logic", () => {
 
     // Set up memory mocking
     const mocks = setupMemoryMocking();
-    mockCreateCardMemory = mocks.createCardMemory;
+    mockCreateCardMemory = mocks.createMemoryContext;
   });
 
   describe("Scenario 1: Second Player Already Trumped", () => {

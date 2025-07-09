@@ -321,7 +321,7 @@ describe("3rd Player Strategy Tests", () => {
       // The memory system should be integrated into the tactical analysis
       if (context.memoryContext) {
         expect(typeof context.memoryContext.cardsRemaining).toBe("number");
-        expect(typeof context.memoryContext.uncertaintyLevel).toBe("number");
+        expect(typeof context.memoryContext.knownCards).toBe("number");
       }
     });
   });
@@ -336,7 +336,6 @@ describe("3rd Player Strategy Tests", () => {
       // Should not throw errors even with minimal context
       expect(context.trickPosition).toBeDefined();
       expect(context.pointPressure).toBeDefined();
-      expect(context.playStyle).toBeDefined();
     });
   });
 });

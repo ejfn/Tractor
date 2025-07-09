@@ -61,7 +61,7 @@ export const identifyCombos = (
 };
 
 // Legacy function for backward compatibility
-export const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
+const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
   return calculateCardStrategicValue(card, trumpInfo, "basic");
 };
 

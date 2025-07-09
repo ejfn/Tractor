@@ -1,4 +1,3 @@
-import { getValidCombinations } from "../game/combinationGeneration";
 import { Card, GamePhase, GameState, PlayerId } from "../types";
 import { sortCards } from "../utils/cardSorting";
 import { gameLogger } from "../utils/gameLogger";
@@ -144,32 +143,6 @@ export const getAIMove = (gameState: GameState, playerId: PlayerId): Card[] => {
       "AI asked to play with empty hand - game flow bug",
     );
     return []; // Safety fallback
-  }
-
-  // Get all valid combinations using the centralized game logic
-  const validCombos = getValidCombinations(player.hand, gameState);
-
-  // Handle bug case: player has cards but no valid combinations found
-  if (validCombos.length === 0) {
-    const errorInfo = {
-      message:
-        "Game bug detected: AI cannot make a valid move. Please restart and report this issue.",
-      debugInfo: `Player ${playerId} has ${player.hand.length} cards but no valid combinations found`,
-      playerHand: player.hand.map((c) => `${c.rank}${c.suit}`),
-      leadingCombo: gameState.currentTrick?.plays[0]?.cards?.map(
-        (c) => `${c.rank}${c.suit}`,
-      ),
-      trumpInfo: gameState.trumpInfo,
-      gamePhase: gameState.gamePhase,
-    };
-
-    gameLogger.error(
-      "ai_no_valid_combinations",
-      errorInfo,
-      "GAME BUG: No valid combinations found for AI with cards",
-    );
-
-    throw new Error(errorInfo.message);
   }
 
   // Delegate all strategic decisions to the AI strategy layer
