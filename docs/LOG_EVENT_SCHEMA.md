@@ -1,6 +1,6 @@
 # Log Event Schema Documentation
 
-This document outlines the structure of various event types logged in the AI simulation, detailing the JSON paths and expected data types for key fields within the `data` payload of each event. This schema is derived from `kpi_report_query.sql` and `generate_kpi_report.py` and serves as a reference for accurate data parsing and analysis.
+This document outlines the structure of various event types logged in the AI simulation, detailing the JSON paths and expected data types for key fields within the `data` payload of each event. This schema serves as a reference for accurate data parsing and analysis in the local analysis pipeline.
 
 ## Common Log Entry Fields
 
@@ -29,7 +29,7 @@ All log entries share these top-level fields:
 - `attacking_team` (string): `$.attackingTeam`
 - `round_starting_player` (string): `$.roundStartingPlayer`
 - `trump_rank` (string): `$.trumpRank`
-- `team_ranks` (JSON array): `$.teamRanks` (e.g., `JSON_QUERY(data, '$.teamRanks')`)
+- `team_ranks` (JSON array): `$.teamRanks`
 - `deck_size` (integer): `$.deckSize`
 
 ### 2. `trump_finalized`
@@ -53,10 +53,10 @@ All log entries share these top-level fields:
 **`data` fields**:
 - `winning_player` (string): `$.winningPlayer` (Player ID)
 - `trick_points` (integer): `$.trickPoints`
-- `all_plays` (JSON array): `$.allPlays` (e.g., `JSON_QUERY(data, '$.allPlays')`)
+- `all_plays` (JSON array): `$.allPlays`
   - Each element in `all_plays` is a JSON object representing a player's play, containing:
     - `player_id` (string): `$.playerId`
-    - `cards` (JSON array): `$.cards` (e.g., `JSON_QUERY(play, '$.cards')`)
+    - `cards` (JSON array): `$.cards`
       - Each element in `cards` is a JSON string representing a card (e.g., `"S-A"` for Ace of Spades).
 - `trick_type` (string): `$.trickType` (e.g., "single", "pair", "tractor", "multi-combo")
 
@@ -86,7 +86,7 @@ All log entries share these top-level fields:
 **Purpose**: Marks the beginning of round preparation.
 
 **`data` fields**:
-- `current_team_ranks` (JSON array): `$.currentTeamRanks` (e.g., `JSON_QUERY(data, '$.currentTeamRanks')`)
+- `current_team_ranks` (JSON array): `$.currentTeamRanks`
   - Each element in `current_team_ranks` is a JSON object representing a team's rank, containing:
     - `is_defending` (boolean): `$.isDefending`
     - `team_id` (string): `$.teamId`
@@ -99,7 +99,7 @@ All log entries share these top-level fields:
 - `decision_point` (string): `$.decisionPoint` (specific AI strategy, e.g., "lead_multi_combo", "lead_early_game_ace", "lead_void_exploitation", "lead_point_timing", "lead_guaranteed_winner", "lead_historical_insights")
 - `player` (string): `$.player` (AI Player ID making the decision)
 - `decision` (JSON array): `$.decision` (cards selected for the leading play)
-- `context` (JSON object): `$.context` (strategic context, e.g., `JSON_QUERY(data, '$.context')`)
+- `context` (JSON object): `$.context` (strategic context)
   - `trick_position` (string): `$.trickPosition`
   - `point_pressure` (string): `$.pointPressure`
   - `play_style` (string): `$.playStyle`
@@ -114,7 +114,7 @@ All log entries share these top-level fields:
 - `decision_point` (string): `$.decisionPoint` (specific AI strategy, e.g., "analysis_start", "follow_multi_combo", "follow_teammate_winning", "follow_suit_establishment", "follow_opponent_blocking", "follow_trick_contention", "follow_strategic_disposal", "teammate_winning_second_player", "teammate_winning_third_player", "second_player_same_suit", "second_player_trump", "strategic_disposal_start")
 - `player` (string): `$.player` (AI Player ID making the decision)
 - `decision` (JSON array): `$.decision` (cards selected for the following play)
-- `context` (JSON object): `$.context` (strategic context, e.g., `JSON_QUERY(data, '$.context')`)
+- `context` (JSON object): `$.context` (strategic context)
   - `trick_position` (string): `$.trickPosition`
   - `is_teammate_winning` (boolean): `$.isTeammateWinning`
   - `is_opponent_winning` (boolean): `$.isOpponentWinning`
@@ -135,6 +135,15 @@ All log entries share these top-level fields:
 - `defending_team_points` (integer): `$.defendingTeamPoints`
 
 ---
+
+## Related Files
+
+**Analysis Implementation:**
+- `analysis/local_analyzer.py` - Uses this schema to parse and analyze log events
+- `analysis/generate_local_report.py` - Generates reports from structured event data
+
+**Related Documentation:**
+- `docs/REPORTING_AND_ANALYSIS.md` - Complete analysis pipeline documentation
 
 ## Future Updates
 

@@ -24,8 +24,3 @@ echo "Running $TARGET_GAMES game simulations with DEBUG logging..."
 npm run test:simulation
 
 echo "Simulations complete. Logs are located in the logs/ directory."
-
-# Gzip all generated log files
-echo "Compressing processed log files..."
-gzip logs/*.log
-echo "Log compression complete."
