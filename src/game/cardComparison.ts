@@ -1,42 +1,22 @@
+import { Card, Combo, ComboType, Rank, Trick, TrumpInfo } from "../types";
 import {
-  Card,
-  Combo,
-  ComboType,
-  JokerType,
-  Rank,
-  Trick,
-  TrumpInfo,
-} from "../types";
-import { getRankValue, isTrump } from "./cardValue";
+  getRankValue,
+  isTrump,
+  calculateCardStrategicValue,
+} from "./cardValue";
 import { getComboType } from "./comboDetection";
 import {
   analyzeComboStructure,
   matchesRequiredComponents,
 } from "./multiComboAnalysis";
 
-// Get trump hierarchy level (for comparing trumps)
-export const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
+// Get trump hierarchy level (for comparing trumps) using strategic value
+const getTrumpLevel = (card: Card, trumpInfo: TrumpInfo): number => {
   // Not a trump
   if (!isTrump(card, trumpInfo)) return 0;
 
-  // Red Joker - highest
-  if (card.joker === JokerType.Big) return 5;
-
-  // Black Joker - second highest
-  if (card.joker === JokerType.Small) return 4;
-
-  // Trump rank card in trump suit - third highest
-  if (card.rank === trumpInfo.trumpRank && card.suit === trumpInfo.trumpSuit)
-    return 3;
-
-  // Trump rank cards in other suits - fourth highest
-  if (card.rank === trumpInfo.trumpRank) return 2;
-
-  // Trump suit cards - fifth highest
-  if (trumpInfo.trumpSuit !== undefined && card.suit === trumpInfo.trumpSuit)
-    return 1;
-
-  return 0; // Not a trump (shouldn't reach here)
+  // Use the strategic value system for consistent trump hierarchy
+  return calculateCardStrategicValue(card, trumpInfo, "basic");
 };
 
 // Compare ranks
@@ -238,8 +218,7 @@ export function compareTrumpMultiCombos(
   leadingCards: Card[],
 ): boolean {
   // Analyze the leading combo to find the highest required combo type
-  // Use isLeading=true for leading analysis to properly detect multi-combo structure
-  const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo, true);
+  const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
   const responseAnalysis = analyzeComboStructure(responseCards, trumpInfo);
 
   // For current winning cards: if non-trump, use leading analysis; if trump, analyze normally

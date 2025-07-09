@@ -1,10 +1,15 @@
-import { GameState, PlayerId, Suit } from "../../types";
+import { Card, GameState, PlayerId, Suit, TrumpInfo } from "../../types";
 import { createCardMemory } from "../aiCardMemory";
+import { isTrump } from "../../game/cardValue";
 
 /**
  * Context information for leading strategy scoring
  */
 export interface LeadingContext {
+  handLength: number; // Number of cards in each player's hand (same for all)
+  leadTrumpPairsPlayed: number; // Number of trump pairs played as leads (including tractor pairs)
+  trumpCardsPlayed: number; // Total trump cards played so far
+  playerTrumpPairs: number; // Total trump pairs in current player's hand
   teammate: {
     voidSuits: Set<Suit>; // Which suits teammate is void in
     isTrumpVoid: boolean; // Whether teammate is void in trump
@@ -13,6 +18,30 @@ export interface LeadingContext {
     voidSuits: Set<Suit>; // Which suits ALL opponents are void in
     isTrumpVoid: boolean; // Whether ALL opponents are void in trump
   };
+}
+
+/**
+ * Count trump pairs in a hand
+ */
+function countTrumpPairsInHand(hand: Card[], trumpInfo: TrumpInfo): number {
+  // Get trump cards only
+  const trumpCards = hand.filter((card) => isTrump(card, trumpInfo));
+
+  // Count identical trump cards
+  const cardCounts: { [key: string]: number } = {};
+  trumpCards.forEach((card) => {
+    cardCounts[card.commonId] = (cardCounts[card.commonId] || 0) + 1;
+  });
+
+  // Count pairs (each group of identical cards with count >= 2 contributes 1 pair)
+  let pairCount = 0;
+  Object.values(cardCounts).forEach((count) => {
+    if (count >= 2) {
+      pairCount += 1;
+    }
+  });
+
+  return pairCount;
 }
 
 /**
@@ -62,7 +91,21 @@ export function collectLeadingContext(
     return opponentMemory?.trumpVoid || false;
   });
 
+  // Get hand length (same for all players)
+  const currentPlayer = gameState.players.find((p) => p.id === playerId);
+  const currentPlayerHand = currentPlayer?.hand.length || 0;
+
+  // Count trump pairs in current player's hand
+  const playerTrumpPairs = countTrumpPairsInHand(
+    currentPlayer?.hand || [],
+    gameState.trumpInfo,
+  );
+
   return {
+    handLength: currentPlayerHand,
+    leadTrumpPairsPlayed: memory.leadTrumpPairsPlayed,
+    trumpCardsPlayed: memory.trumpCardsPlayed,
+    playerTrumpPairs,
     teammate: {
       voidSuits: teammateVoids,
       isTrumpVoid: teammateIsTrumpVoid,

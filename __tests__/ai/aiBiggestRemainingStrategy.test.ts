@@ -9,6 +9,7 @@ describe("Memory-Enhanced Biggest Remaining Strategy", () => {
       playedCards: [],
       trumpCardsPlayed: 0,
       pointCardsPlayed: 0,
+      leadTrumpPairsPlayed: 0,
       suitDistribution: {},
       playerMemories: {},
       cardProbabilities: [],

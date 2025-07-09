@@ -1,5 +1,4 @@
 import { getComboType } from "../../game/comboDetection";
-import { detectLeadingMultiCombo } from "../../game/multiComboAnalysis";
 import {
   Card,
   ComboType,
@@ -96,30 +95,23 @@ export function selectFollowingPlay(
   // Priority 0: Multi-combo handling (reuse existing implementation)
   const leadingComboType = getComboType(leadingCards, trumpInfo);
   if (leadingComboType === ComboType.Invalid) {
-    const leadingMultiCombo = detectLeadingMultiCombo(leadingCards, trumpInfo);
+    const multiComboResult = executeMultiComboFollowingAlgorithm(
+      leadingCards,
+      currentPlayer.hand,
+      gameState,
+      currentPlayerId,
+    );
 
-    if (leadingMultiCombo.isMultiCombo) {
-      const multiComboResult = executeMultiComboFollowingAlgorithm(
-        leadingCards,
-        currentPlayer.hand,
-        gameState,
-        currentPlayerId,
-      );
+    if (multiComboResult && multiComboResult.strategy !== "no_valid_response") {
+      gameLogger.debug("enhanced_following_multi_combo", {
+        player: currentPlayerId,
+        strategy: multiComboResult.strategy,
+        cardCount: multiComboResult.cards.length,
+        reasoning: multiComboResult.reasoning,
+        canBeat: multiComboResult.canBeat,
+      });
 
-      if (
-        multiComboResult &&
-        multiComboResult.strategy !== "no_valid_response"
-      ) {
-        gameLogger.debug("enhanced_following_multi_combo", {
-          player: currentPlayerId,
-          strategy: multiComboResult.strategy,
-          cardCount: multiComboResult.cards.length,
-          reasoning: multiComboResult.reasoning,
-          canBeat: multiComboResult.canBeat,
-        });
-
-        return multiComboResult.cards;
-      }
+      return multiComboResult.cards;
     }
   }
 

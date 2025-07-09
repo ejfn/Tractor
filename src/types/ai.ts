@@ -103,6 +103,7 @@ export interface CardMemory {
   playedCards: Card[]; // All cards seen this round
   trumpCardsPlayed: number; // Count of trump cards played
   pointCardsPlayed: number; // Count of point cards played
+  leadTrumpPairsPlayed: number; // Count of trump pairs played as leads (including tractor pairs)
   suitDistribution: Record<string, number>; // Cards played by suit
   playerMemories: Record<string, PlayerMemory>; // Memory for each player
   cardProbabilities: CardProbability[]; // Probability distribution for unseen cards

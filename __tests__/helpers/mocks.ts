@@ -63,6 +63,7 @@ export function createMockCardMemory(): CardMemory {
     playedCards: [],
     trumpCardsPlayed: 0,
     pointCardsPlayed: 0,
+    leadTrumpPairsPlayed: 0,
     suitDistribution: {},
     roundStartCards: 25,
     tricksAnalyzed: 0,

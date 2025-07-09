@@ -10,9 +10,9 @@ import {
   TrumpInfo,
 } from "../types";
 import { MultiComboValidation } from "../types/combinations";
-import { identifyCombos } from "./comboDetection";
 import { sortCards } from "../utils/cardSorting";
 import { compareCards } from "./cardComparison";
+import { identifyCombos } from "./comboDetection";
 
 /**
  * Multi-Combo Validation Module
@@ -57,7 +57,7 @@ export function validateLeadingMultiCombo(
   }
 
   // Rule 2: Either all other players are void OR each combo is unbeatable
-  const voidStatus = checkOpponentVoidStatus(suit, gameState, playerId);
+  const voidStatus = checkOtherPlayersVoidStatus(suit, gameState, playerId);
   validation.voidStatus = voidStatus;
 
   const unbeatableStatus = validateUnbeatableComponents(
@@ -90,7 +90,7 @@ export function validateLeadingMultiCombo(
  * @param currentPlayerId Player attempting multi-combo
  * @returns Void status information
  */
-export function checkOpponentVoidStatus(
+export function checkOtherPlayersVoidStatus(
   suit: Suit,
   gameState: GameState,
   currentPlayerId: PlayerId,

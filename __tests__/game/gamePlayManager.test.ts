@@ -27,9 +27,6 @@ jest.mock("../../src/game/comboDetection", () => ({
 
 jest.mock("../../src/game/cardComparison", () => ({
   evaluateTrickPlay: jest.fn(),
-  compareCardCombos: jest.fn(),
-  compareCards: jest.fn(),
-  compareRanks: jest.fn(),
 }));
 
 jest.mock("../../src/ai/aiLogic", () => ({

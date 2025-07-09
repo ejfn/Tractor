@@ -47,6 +47,7 @@ export function createCardMemory(gameState: GameState): CardMemory {
     playedCards: [],
     trumpCardsPlayed: 0,
     pointCardsPlayed: 0,
+    leadTrumpPairsPlayed: 0,
     suitDistribution: {},
     playerMemories: {},
     cardProbabilities: [],
@@ -114,6 +115,27 @@ function analyzeCompletedTrick(
       });
     },
   );
+
+  // Count trump pairs in leading play (first play only)
+  if (trick.plays.length > 0) {
+    const leadCards = trick.plays[0].cards;
+    const allTrump = leadCards.every((card) => isTrump(card, trumpInfo));
+
+    if (allTrump) {
+      // Count identical trump cards and calculate pairs
+      const cardCounts: { [key: string]: number } = {};
+      leadCards.forEach((card) => {
+        cardCounts[card.commonId] = (cardCounts[card.commonId] || 0) + 1;
+      });
+
+      // Add pairs to memory (each group of identical cards contributes pairs)
+      Object.values(cardCounts).forEach((count) => {
+        if (count >= 2) {
+          memory.leadTrumpPairsPlayed += 1;
+        }
+      });
+    }
+  }
 
   memory.tricksAnalyzed++;
 }

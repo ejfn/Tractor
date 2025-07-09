@@ -1,4 +1,4 @@
-import { compareCardCombos } from "../../src/game/playProcessing";
+import { canBeatCombo } from "../../src/game/cardComparison";
 import { Card, Rank, Suit, TrumpInfo } from "../../src/types";
 
 /**
@@ -34,10 +34,14 @@ describe("Issue #74: Trump Hierarchy Bug Fix", () => {
     const trumpSuitPair = [diamonds9_1, diamonds9_2]; // 9♦-9♦
 
     // This is the exact comparison from the issue description
-    const result = compareCardCombos(trumpRankPair, trumpSuitPair, trumpInfo);
+    const canTrumpRankBeat = canBeatCombo(
+      trumpRankPair,
+      trumpSuitPair,
+      trumpInfo,
+    );
 
-    // Expected behavior: 2♦-2♦ > 9♦-9♦ (should return positive)
-    expect(result).toBeGreaterThan(0);
+    // Expected behavior: 2♦-2♦ should beat 9♦-9♦
+    expect(canTrumpRankBeat).toBe(true);
   });
 
   test("Trump hierarchy is consistent across different trump configurations", () => {
@@ -56,10 +60,14 @@ describe("Issue #74: Trump Hierarchy Bug Fix", () => {
     const trumpRankPair = [hearts5_1, hearts5_2]; // 5♥-5♥
     const trumpSuitPair = [hearts10_1, hearts10_2]; // 10♥-10♥
 
-    const result = compareCardCombos(trumpRankPair, trumpSuitPair, trumpInfo);
+    const canTrumpRankBeat = canBeatCombo(
+      trumpRankPair,
+      trumpSuitPair,
+      trumpInfo,
+    );
 
     // Trump rank pair should always beat trump suit pair
-    expect(result).toBeGreaterThan(0);
+    expect(canTrumpRankBeat).toBe(true);
   });
 
   test("Cross-suit trump pairs still work correctly", () => {
@@ -78,9 +86,13 @@ describe("Issue #74: Trump Hierarchy Bug Fix", () => {
     const trumpSuitPair = [spades2_1, spades2_2]; // 2♠-2♠ (trump suit)
     const trumpRankPair = [heartsA_1, heartsA_2]; // A♥-A♥ (trump rank in other suit)
 
-    const result = compareCardCombos(trumpRankPair, trumpSuitPair, trumpInfo);
+    const canTrumpRankBeat = canBeatCombo(
+      trumpRankPair,
+      trumpSuitPair,
+      trumpInfo,
+    );
 
     // Trump rank in other suits beats trump suit cards
-    expect(result).toBeGreaterThan(0);
+    expect(canTrumpRankBeat).toBe(true);
   });
 });

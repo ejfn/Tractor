@@ -1,7 +1,7 @@
 // Phase 4: Advanced Combination Logic Types
 
 import { ComboStrength } from "./ai";
-import { Card, Combo, ComboType, MultiCombo } from "./card";
+import { Card, Combo, ComboType } from "./card";
 import { PlayerId } from "./core";
 
 export enum CombinationPotential {
@@ -72,12 +72,6 @@ export interface MultiComboValidation {
       beatenBy: string; // Description of what can beat it
     }[];
   };
-}
-
-export interface MultiComboDetection {
-  isMultiCombo: boolean;
-  components?: MultiCombo; // Contains combos field with individual combos
-  validation?: MultiComboValidation;
 }
 
 export interface BeatingCombo {

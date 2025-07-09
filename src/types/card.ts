@@ -282,7 +282,7 @@ export enum ComboType {
 }
 
 // Multi-combo components breakdown
-export type MultiCombo = {
+export type ComboStructure = {
   combos: Combo[]; // Individual combo components within the multi-combo
   totalLength: number; // Total cards in multi-combo
   totalPairs: number; // Total pairs (includes standalone pairs + pairs within tractors)

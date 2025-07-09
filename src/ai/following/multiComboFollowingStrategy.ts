@@ -8,10 +8,10 @@ import {
 import {
   Card,
   Combo,
+  ComboStructure,
   ComboType,
   GameContext,
   GameState,
-  MultiCombo,
   PlayerId,
   Trick,
   TrickPosition,
@@ -542,7 +542,7 @@ function selectBestMatchingCombination(
  */
 function selectStructureMatchingCards(
   availableCombos: Combo[],
-  leadingAnalysis: MultiCombo,
+  leadingAnalysis: ComboStructure,
   trumpInfo: TrumpInfo,
   isTrumpResponse: boolean,
   conservationMode: boolean,

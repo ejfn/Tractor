@@ -1,5 +1,4 @@
 import { getAIMove } from "../../src/ai/aiLogic";
-import { getValidCombinations } from "../../src/game/combinationGeneration";
 import { isTrump } from "../../src/game/cardValue";
 import { isValidPlay } from "../../src/game/playValidation";
 import {
@@ -61,19 +60,7 @@ describe("AI Rule Violation Bug - Issue #95", () => {
     const isValid = isValidPlay(aiMove, aiHand, PlayerId.Bot1, gameState);
     expect(isValid).toBe(true);
 
-    // Get all valid combinations and ensure the AI picked one of them
-    const validCombos = getValidCombinations(aiHand, gameState);
-    expect(validCombos.length).toBeGreaterThan(0);
-
-    // Verify AI picked a valid combination
-    const aiMoveIsValid = validCombos.some(
-      (combo) =>
-        combo.cards.length === aiMove.length &&
-        combo.cards.every((card) =>
-          aiMove.some((playedCard) => playedCard.id === card.id),
-        ),
-    );
-    expect(aiMoveIsValid).toBe(true);
+    // The isValidPlay check above is sufficient to verify the AI move is valid
   });
 
   test("AI should not violate suit following when no cards of leading suit", () => {

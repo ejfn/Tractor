@@ -1,7 +1,6 @@
-import { compareCards } from "../../src/game/cardComparison";
+import { compareCards, canBeatCombo } from "../../src/game/cardComparison";
 import { identifyCombos } from "../../src/game/comboDetection";
 import { isTrump } from "../../src/game/cardValue";
-import { compareCardCombos } from "../../src/game/playProcessing";
 import {
   Card,
   ComboType,
@@ -283,12 +282,8 @@ describe("Trump System", () => {
       // Get combo types
 
       // Trump combo should beat non-trump combo of same type
-      const comparison = compareCardCombos(
-        trumpCards,
-        nonTrumpCards,
-        trumpInfo,
-      );
-      expect(comparison).toBeGreaterThan(0);
+      const canTrumpBeat = canBeatCombo(trumpCards, nonTrumpCards, trumpInfo);
+      expect(canTrumpBeat).toBe(true);
     });
 
     test("should handle joker combinations as strongest trump", () => {
@@ -310,12 +305,12 @@ describe("Trump System", () => {
       // Get combo types
 
       // Big Joker pair should beat trump suit pair
-      const comparison = compareCardCombos(
+      const canJokerBeat = canBeatCombo(
         bigJokerCards,
         trumpSuitCards,
         trumpInfo,
       );
-      expect(comparison).toBeGreaterThan(0);
+      expect(canJokerBeat).toBe(true);
     });
 
     test("should handle mixed trump combinations correctly", () => {
@@ -338,12 +333,12 @@ describe("Trump System", () => {
       // Get combo types
 
       // Small Joker pair should beat trump rank pair
-      const comparison = compareCardCombos(
+      const canSmallJokerBeat = canBeatCombo(
         smallJokerCards,
         trumpRankCards,
         trumpInfo,
       );
-      expect(comparison).toBeGreaterThan(0);
+      expect(canSmallJokerBeat).toBe(true);
     });
   });
 
