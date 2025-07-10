@@ -116,17 +116,25 @@ function evaluateTrumpSelection(
         }
 
         if (isLastPlayer || !isNextPlayerVoid) {
-          if (trickPoints === 0 || isTeammateWinning) {
-            return null; // save trump for last player if no points
-          }
-
           // Safe scenario: trump with lowest combo
-          return selectComboByStrategicValue(
+          const selectedCards = selectComboByStrategicValue(
             beatingCombos,
             trumpInfo,
             "contribute",
             "lowest",
           );
+
+          const value = calculateCardStrategicValue(
+            selectedCards[0],
+            trumpInfo,
+            "contribute",
+          );
+
+          if ((trickPoints === 0 || isTeammateWinning) && value > 150) {
+            // If no points or teammate winning, save high value trumps
+            return null;
+          }
+          return selectedCards;
         }
 
         const highValueCombos = beatingCombos.filter((combo) => {

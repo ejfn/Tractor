@@ -49,7 +49,7 @@ describe("Third Player Takeover Logic", () => {
     expect(aiMove[0].suit).toBe(Suit.Spades);
   });
 
-  it("should trump with low trump if next opponent is not void and points are intermediate", () => {
+  it("should trump with point trump if next opponent is not void and points are intermediate", () => {
     gameState.currentTrick = {
       plays: [
         {
@@ -80,7 +80,7 @@ describe("Third Player Takeover Logic", () => {
     const aiMove = getAIMove(gameState, PlayerId.Bot2);
 
     expect(aiMove[0].suit).toBe(Suit.Hearts); // Trump
-    expect(aiMove[0].rank).toBe(Rank.Three);
+    expect(aiMove[0].rank).toBe(Rank.Ten);
   });
 
   it("should trump with a non-point trump if the next opponent IS void and no points in trick", () => {
