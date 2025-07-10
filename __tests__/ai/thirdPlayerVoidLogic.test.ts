@@ -46,7 +46,7 @@ describe("Third Player Void Logic", () => {
           { playerId: PlayerId.Bot1, cards: [bot1TrumpCard] },
         ],
         points: 10,
-        winningPlayerId: PlayerId.Human, // Human still winning (teammate)
+        winningPlayerId: PlayerId.Bot1,
       };
 
       // Set current player to Bot2 (3rd player)

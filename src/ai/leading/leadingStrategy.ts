@@ -71,7 +71,7 @@ export function selectLeadingPlay(gameState: GameState): Card[] {
 
   if (bestNonTrump != null && bestTrump != null) {
     // Both trump and non-trump options available
-    if (bestNonTrump.result.score >= 20) {
+    if (bestNonTrump.result.score > 15) {
       // Non-trump is good enough
       selectedCandidate = bestNonTrump;
       decisionPath = "non_trump_good";

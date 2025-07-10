@@ -87,7 +87,7 @@ export function scoreTrumpLead(
 
   // Pair bonuses
   if (candidate.metadata.totalPairs > 0) {
-    const pairBonus = candidate.metadata.totalPairs * 30;
+    const pairBonus = candidate.metadata.totalPairs * 40;
     cardScore += pairBonus;
     reasoning.push(
       `${candidate.metadata.totalPairs} trump pairs (+${pairBonus}pts)`,
@@ -102,7 +102,7 @@ export function scoreTrumpLead(
           c.rank === trumpInfo.trumpRank,
       );
       if (hasBigCards) {
-        const bigPairBonus = 15 * candidate.metadata.totalPairs;
+        const bigPairBonus = 20 * candidate.metadata.totalPairs;
         cardScore += bigPairBonus;
         reasoning.push(
           `Big pair promotion: many pairs available (+${bigPairBonus}pts)`,
@@ -189,8 +189,8 @@ export function scoreNonTrumpLead(
     }
 
     if (context.teammate.voidSuits.has(candidate.metadata.suit)) {
-      score += 25;
-      reasoning.push(`Teammate void bonus - (+25pts)`);
+      score += 35;
+      reasoning.push(`Teammate void bonus - (+35pts)`);
     }
   }
 
