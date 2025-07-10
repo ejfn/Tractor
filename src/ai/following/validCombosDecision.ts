@@ -107,7 +107,6 @@ export function handleTrumpLeadValidCombos(
     analysis.validCombos,
     currentWinnerCards,
     trumpInfo,
-    trickPoints >= 10 ? 150 : 100, // High points: 150, Low points: 100
     trickPoints,
     isTeammateWinning,
   );
@@ -116,7 +115,6 @@ export function handleTrumpLeadValidCombos(
     gameLogger.debug("enhanced_following_trump_beat_winner", {
       player: currentPlayerId,
       selectedCards: beatResult.map((c) => c.toString()),
-      threshold: trickPoints >= 10 ? 150 : 100,
       trickPoints,
       reason: "can_beat_with_appropriate_strength",
     });
@@ -267,7 +265,6 @@ function attemptToBeatWithThreshold(
   validCombos: Combo[],
   currentWinnerCards: Card[],
   trumpInfo: TrumpInfo,
-  strengthThreshold: number,
   trickPoints: number,
   isTeammateWinning: boolean,
 ): Card[] | null {
@@ -283,6 +280,8 @@ function attemptToBeatWithThreshold(
   if (beatingCombos.length === 0) {
     return null; // Can't beat current winner
   }
+
+  const strengthThreshold = trickPoints >= 10 ? 150 : 100; // High points: 150, Low points: 100
 
   // If opponent is winning, beat with combo that meets strength threshold
   if (!isTeammateWinning) {
@@ -314,12 +313,7 @@ function attemptToBeatWithThreshold(
     0,
   );
 
-  const shouldBeatWeakTeammate =
-    trickPoints >= 10
-      ? teammateStrength < 150 // High points: beat if teammate <150
-      : teammateStrength < 100; // Low points: beat if teammate <100 AND rank <10
-
-  if (shouldBeatWeakTeammate) {
+  if (teammateStrength < strengthThreshold) {
     // For low points, additional check: only beat if teammate rank < 10
     if (trickPoints < 10) {
       const teammateHasLowRank = currentWinnerCards.some((card) => {

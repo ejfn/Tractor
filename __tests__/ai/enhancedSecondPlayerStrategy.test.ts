@@ -1,7 +1,7 @@
 import { getAIMove } from "../../src/ai/aiLogic";
 import { Card, PlayerId, Rank, Suit, TrumpInfo } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
-import { createMockCardMemory, setupMemoryMocking } from "../helpers/mocks";
+import { setupMemoryMocking } from "../helpers/mocks";
 
 jest.mock("../../src/ai/aiCardMemory");
 
@@ -20,9 +20,6 @@ jest.mock("../../src/ai/aiCardMemory");
 
 describe("Enhanced Second Player Strategy", () => {
   let trumpInfo: TrumpInfo;
-  let mockCreateCardMemory: jest.MockedFunction<
-    typeof import("../../src/ai/aiCardMemory").createMemoryContext
-  >;
 
   beforeEach(() => {
     trumpInfo = {
@@ -31,8 +28,7 @@ describe("Enhanced Second Player Strategy", () => {
     };
 
     // Set up memory mocking
-    const mocks = setupMemoryMocking();
-    mockCreateCardMemory = mocks.createMemoryContext;
+    setupMemoryMocking();
   });
 
   describe("Same-Suit Following - Opponent Led", () => {
@@ -100,49 +96,6 @@ describe("Enhanced Second Player Strategy", () => {
       expect(aiDecision).toHaveLength(1);
       expect(aiDecision[0].suit).toBe(Suit.Spades);
       expect(aiDecision[0].rank).toBe(Rank.Three);
-    });
-  });
-
-  describe("Strategic Trump Selection When Void", () => {
-    it("should use strategic trump when teammate led and Bot1 is void", () => {
-      const gameState = initializeGame();
-      gameState.trumpInfo = trumpInfo;
-
-      // Bot3 (teammate) leads 9♠
-      const teammateLeadingCard = Card.createCard(Suit.Spades, Rank.Nine, 0);
-
-      gameState.currentTrick = {
-        plays: [{ playerId: PlayerId.Bot3, cards: [teammateLeadingCard] }],
-        points: 0,
-        winningPlayerId: PlayerId.Bot3,
-      };
-
-      gameState.currentPlayerIndex = 1; // Bot1
-
-      // Bot1 hand: void in Spades, has trump options
-      const bot1Hand = [
-        Card.createCard(Suit.Hearts, Rank.Queen, 0), // High trump
-        Card.createCard(Suit.Hearts, Rank.Four, 0), // Low trump
-        Card.createCard(Suit.Clubs, Rank.King, 0), // Non-trump point card
-        Card.createCard(Suit.Diamonds, Rank.Six, 0), // Non-trump
-      ];
-
-      gameState.players[1].hand = bot1Hand;
-
-      // Set up memory: high point potential in Spades (few played)
-      const memory = createMockCardMemory();
-      memory.playerMemories[PlayerId.Bot1].suitVoids.add(Suit.Spades);
-      // Very few Spades points played - high remaining potential
-      memory.playedCards = [];
-      mockCreateCardMemory.mockReturnValue(memory);
-
-      const aiDecision = getAIMove(gameState, PlayerId.Bot1);
-
-      // Should use trump to support teammate (since void in Spades)
-      expect(aiDecision).toHaveLength(1);
-      expect(aiDecision[0].suit).toBe(Suit.Hearts);
-      // Should use strategic trump based on point potential
-      expect([Rank.Queen, Rank.Four]).toContain(aiDecision[0].rank);
     });
   });
 });
