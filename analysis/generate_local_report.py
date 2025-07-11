@@ -84,7 +84,9 @@ def generate_report(df):
         lines.append("\n")
         
         # Add charts to the report
-        safe_version = row['appVersion'].replace('/', '_').replace('+', '_')
+        # Remove dev hash from version, only keep base version
+        base_version = row['appVersion'].split('+')[0]  # Remove +dev_hash part
+        safe_version = base_version.replace('/', '_').replace('+', '_')
         lines.append("## 📊 Performance Visualizations\n\n")
         
         if pd.notna(row.get('attacking_team_win_rate')) and pd.notna(row.get('defending_team_win_rate')):
@@ -169,7 +171,9 @@ def create_visualizations(df):
     sns.set_palette("husl")
     
     for _, row in df.iterrows():
-        safe_version = row['appVersion'].replace('/', '_').replace('+', '_')
+        # Remove dev hash from version, only keep base version
+        base_version = row['appVersion'].split('+')[0]  # Remove +dev_hash part
+        safe_version = base_version.replace('/', '_').replace('+', '_')
         
         # 1. Position-based Win Rate Analysis
         positions = ['Position 1\n(Leading)', 'Position 2', 'Position 3', 'Position 4']
@@ -291,7 +295,9 @@ def main():
         
         # Use version string in filename if available
         if len(df) > 0:
-            safe_version = df.iloc[0]['appVersion'].replace('/', '_').replace('+', '_')
+            # Remove dev hash from version, only keep base version
+            base_version = df.iloc[0]['appVersion'].split('+')[0]  # Remove +dev_hash part
+            safe_version = base_version.replace('/', '_').replace('+', '_')
             report_filename = f"kpi_report_local_{safe_version}.md"
         else:
             report_filename = "kpi_report_local.md"
