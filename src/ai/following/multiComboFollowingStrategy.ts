@@ -451,13 +451,14 @@ function makeStrategicTrumpDecision(
       }
     }
   } else {
-    // Opponent is winning with non-trump - trump to beat them with conservation
+    // Opponent is winning with non-trump - trump to beat them
     const matchingResult = playMatchingMultiCombo(
       trumpCards,
       leadingCards,
       trumpInfo,
       true,
-      context.memoryContext.nextPlayerVoidLed ? false : true, // Conservation mode if next player not void led suit
+      // this is either Second player or Fourth player
+      context.trickPosition === TrickPosition.Fourth,
     );
 
     if (matchingResult.canBeat) {
