@@ -122,6 +122,7 @@ function findMatchingMultiCombo(
     leadingCards,
     trumpInfo,
     isTrumpResponse,
+    true,
   );
 }
 
@@ -359,6 +360,7 @@ function playMatchingMultiCombo(
   leadingCards: Card[],
   trumpInfo: TrumpInfo,
   isTrump: boolean,
+  conservationMode: boolean,
 ): MultiComboFollowingResult {
   // Select combinations that best match the leading structure
   const selectedCards = selectBestMatchingCombination(
@@ -366,6 +368,7 @@ function playMatchingMultiCombo(
     leadingCards,
     trumpInfo,
     isTrump,
+    conservationMode,
   );
 
   const canBeat =
@@ -419,6 +422,7 @@ function makeStrategicTrumpDecision(
       leadingCards,
       trumpInfo,
       true,
+      false,
     );
 
     // Two-step check for beating existing trump:
@@ -453,6 +457,7 @@ function makeStrategicTrumpDecision(
       leadingCards,
       trumpInfo,
       true,
+      context.memoryContext.nextPlayerVoidLed ? false : true, // Conservation mode if next player not void led suit
     );
 
     if (matchingResult.canBeat) {
@@ -507,6 +512,7 @@ function selectBestMatchingCombination(
   leadingCards: Card[],
   trumpInfo: TrumpInfo,
   isTrumpResponse: boolean,
+  conservationMode: boolean,
 ): Card[] {
   // Analyze the leading structure to understand what we need to match
   const leadingAnalysis = analyzeComboStructure(leadingCards, trumpInfo);
@@ -526,6 +532,7 @@ function selectBestMatchingCombination(
     leadingAnalysis,
     trumpInfo,
     isTrumpResponse,
+    conservationMode,
   );
 }
 
@@ -538,6 +545,7 @@ function selectStructureMatchingCards(
   leadingAnalysis: ComboStructure,
   trumpInfo: TrumpInfo,
   isTrumpResponse: boolean,
+  conservationMode: boolean,
 ): Card[] {
   const selectedCards: Card[] = [];
   const usedCardIds = new Set<string>();
@@ -575,7 +583,7 @@ function selectStructureMatchingCards(
     .sort(sortByStrategicValue);
 
   // For trump responses, move highest tractor to front (optimal trump usage)
-  if (isTrumpResponse && leadingAnalysis.tractors > 0) {
+  if (isTrumpResponse && !conservationMode && leadingAnalysis.tractors > 0) {
     moveHighestToFront(availableTractors);
   }
 
@@ -586,6 +594,7 @@ function selectStructureMatchingCards(
   // For trump responses to pair leads, move highest pair to front
   if (
     isTrumpResponse &&
+    !conservationMode &&
     leadingAnalysis.tractors === 0 &&
     leadingAnalysis.totalPairs > 0
   ) {
@@ -601,6 +610,7 @@ function selectStructureMatchingCards(
   // For trump responses to single leads, move highest single to front
   if (
     isTrumpResponse &&
+    !conservationMode &&
     leadingAnalysis.tractors === 0 &&
     leadingAnalysis.totalPairs === 0
   ) {
