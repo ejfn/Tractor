@@ -1,6 +1,13 @@
-import { Card, GameState, PlayerId, Suit, TrumpInfo } from "../../types";
-import { createMemoryContext } from "../aiCardMemory";
+import {
+  Card,
+  GameState,
+  PlayerId,
+  PointPressure,
+  Suit,
+  TrumpInfo,
+} from "../../types";
 import { isTrump } from "../../game/cardValue";
+import { createGameContext } from "../aiGameContext";
 
 /**
  * Context information for leading strategy scoring
@@ -10,6 +17,8 @@ export interface LeadingContext {
   leadTrumpPairsPlayed: number; // Number of trump pairs played as leads (including tractor pairs)
   trumpCardsPlayed: number; // Total trump cards played so far
   playerTrumpPairs: number; // Total trump pairs in current player's hand
+  isAttackingTeam: boolean; // Whether current player is on attacking team
+  pointPressure: PointPressure; // Point pressure level for strategic decisions
   teammate: {
     voidSuits: Set<Suit>; // Which suits teammate is void in
     isTrumpVoid: boolean; // Whether teammate is void in trump
@@ -51,7 +60,8 @@ export function collectLeadingContext(
   gameState: GameState,
   playerId: PlayerId,
 ): LeadingContext {
-  const memory = createMemoryContext(gameState);
+  const gameContext = createGameContext(gameState, playerId);
+  const memory = gameContext.memoryContext;
   const playerMemories = memory.playerMemories;
 
   // Find teammate and opponents from gameState
@@ -101,11 +111,17 @@ export function collectLeadingContext(
     gameState.trumpInfo,
   );
 
+  // Get team status and point pressure from GameContext (already created above)
+  const isAttackingTeam = gameContext.isAttackingTeam;
+  const pointPressure = gameContext.pointPressure;
+
   return {
     handLength: currentPlayerHand,
     leadTrumpPairsPlayed: memory.leadTrumpPairsPlayed,
     trumpCardsPlayed: memory.trumpCardsPlayed,
     playerTrumpPairs,
+    isAttackingTeam,
+    pointPressure,
     teammate: {
       voidSuits: teammateVoids,
       isTrumpVoid: teammateIsTrumpVoid,

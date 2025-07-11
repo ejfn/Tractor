@@ -1,5 +1,11 @@
 import { getRankValue } from "../../game/cardValue";
-import { ComboType, JokerType, Rank, TrumpInfo } from "../../types";
+import {
+  ComboType,
+  JokerType,
+  PointPressure,
+  Rank,
+  TrumpInfo,
+} from "../../types";
 import { CandidateLead } from "./candidateLeadDetection";
 import { LeadingContext } from "./leadingContext";
 
@@ -173,6 +179,16 @@ export function scoreNonTrumpLead(
   ) {
     score -= 50;
     reasoning.push("Small multi-combo penalty (-50pts)");
+  }
+
+  // -50 penalty for multi-combo when point pressure is high for defending team
+  if (
+    candidate.type === ComboType.Invalid &&
+    !context.isAttackingTeam &&
+    context.pointPressure === PointPressure.HIGH
+  ) {
+    score -= 50;
+    reasoning.push("Defending team high pressure multi-combo penalty (-50pts)");
   }
 
   // Point card penalty
