@@ -39,7 +39,7 @@ export function handleTrumpLeadValidCombos(
   currentPlayerId: PlayerId,
 ): Card[] {
   if (!analysis.validCombos || analysis.validCombos.length === 0) {
-    gameLogger.error("enhanced_following_no_trump_valid_combos", {
+    gameLogger.error("following_no_trump_valid_combos", {
       player: currentPlayerId,
       scenario: analysis.scenario,
       message:
@@ -50,7 +50,7 @@ export function handleTrumpLeadValidCombos(
 
   const trickAnalysis = context.trickWinnerAnalysis;
   if (!trickAnalysis) {
-    gameLogger.error("enhanced_following_trump_no_trick_analysis", {
+    gameLogger.error("following_trump_no_trick_analysis", {
       player: currentPlayerId,
       message:
         "handleTrumpLeadValidCombos called without trick analysis - context bug",
@@ -60,7 +60,7 @@ export function handleTrumpLeadValidCombos(
 
   const { isTeammateWinning, trickPoints } = trickAnalysis;
 
-  gameLogger.debug("enhanced_following_trump_lead_analysis", {
+  gameLogger.debug("following_trump_lead_analysis", {
     player: currentPlayerId,
     validComboCount: analysis.validCombos.length,
     isTeammateWinning,
@@ -70,7 +70,7 @@ export function handleTrumpLeadValidCombos(
 
   // Step 1: If only one valid combo, just play it
   if (analysis.validCombos.length === 1) {
-    gameLogger.debug("enhanced_following_trump_single_combo_shortcut", {
+    gameLogger.debug("following_trump_single_combo_shortcut", {
       player: currentPlayerId,
       selectedCards: analysis.validCombos[0].cards.map((c) => c.toString()),
       reason: "only_one_valid_combo",
@@ -87,7 +87,7 @@ export function handleTrumpLeadValidCombos(
       "lowest",
     );
     if (contributionCards.length > 0) {
-      gameLogger.debug("enhanced_following_trump_contribute_teammate", {
+      gameLogger.debug("following_trump_contribute_teammate", {
         player: currentPlayerId,
         selectedCards: contributionCards.map((c) => c.toString()),
         reason: "teammate_winning_and_conditions_met",
@@ -112,7 +112,7 @@ export function handleTrumpLeadValidCombos(
   );
 
   if (beatResult) {
-    gameLogger.debug("enhanced_following_trump_beat_winner", {
+    gameLogger.debug("following_trump_beat_winner", {
       player: currentPlayerId,
       selectedCards: beatResult.map((c) => c.toString()),
       trickPoints,
@@ -129,7 +129,7 @@ export function handleTrumpLeadValidCombos(
     "lowest",
   );
 
-  gameLogger.debug("enhanced_following_trump_dispose", {
+  gameLogger.debug("following_trump_dispose", {
     player: currentPlayerId,
     selectedCards: disposalCards.map((c) => c.toString()),
     reason: "fallback_disposal",
@@ -154,7 +154,7 @@ export function handleNonTrumpLeadValidCombos(
   currentPlayerId: PlayerId,
 ): Card[] {
   if (!analysis.validCombos || analysis.validCombos.length === 0) {
-    gameLogger.error("enhanced_following_no_nontrump_valid_combos", {
+    gameLogger.error("following_no_nontrump_valid_combos", {
       player: currentPlayerId,
       scenario: analysis.scenario,
       message:
@@ -165,7 +165,7 @@ export function handleNonTrumpLeadValidCombos(
 
   const trickAnalysis = context.trickWinnerAnalysis;
   if (!trickAnalysis) {
-    gameLogger.error("enhanced_following_no_trick_analysis", {
+    gameLogger.error("following_no_trick_analysis", {
       player: currentPlayerId,
       message:
         "handleNonTrumpLeadValidCombos called without trick analysis - context bug",
@@ -175,7 +175,7 @@ export function handleNonTrumpLeadValidCombos(
 
   const { isTeammateWinning, isCurrentlyTrumped } = trickAnalysis;
 
-  gameLogger.debug("enhanced_following_nontrump_lead_analysis", {
+  gameLogger.debug("following_nontrump_lead_analysis", {
     player: currentPlayerId,
     validComboCount: analysis.validCombos.length,
     isTeammateWinning,
@@ -185,7 +185,7 @@ export function handleNonTrumpLeadValidCombos(
 
   // Shortcut: If only one valid combo, just play it
   if (analysis.validCombos.length === 1) {
-    gameLogger.debug("enhanced_following_single_combo_shortcut", {
+    gameLogger.debug("following_single_combo_shortcut", {
       player: currentPlayerId,
       selectedCards: analysis.validCombos[0].cards.map((c) => c.toString()),
       reason: "only_one_valid_combo",
@@ -202,7 +202,7 @@ export function handleNonTrumpLeadValidCombos(
       "lowest",
     );
     if (contributionCards.length > 0) {
-      gameLogger.debug("enhanced_following_contribute_to_teammate", {
+      gameLogger.debug("following_contribute_to_teammate", {
         player: currentPlayerId,
         selectedCards: contributionCards.map((c) => c.toString()),
         reason: "teammate_secure_and_safe_timing",
@@ -229,7 +229,7 @@ export function handleNonTrumpLeadValidCombos(
     const canBeat = canBeatCombo(highestCombo, currentWinnerCards, trumpInfo);
 
     if (highestCombo.length > 0 && canBeat) {
-      gameLogger.debug("enhanced_following_beat_opponent", {
+      gameLogger.debug("following_beat_opponent", {
         player: currentPlayerId,
         selectedCards: highestCombo.map((c) => c.toString()),
         reason: "can_beat_and_not_trumped",
@@ -246,7 +246,7 @@ export function handleNonTrumpLeadValidCombos(
     "lowest",
   );
 
-  gameLogger.debug("enhanced_following_dispose_nontrump", {
+  gameLogger.debug("following_dispose_nontrump", {
     player: currentPlayerId,
     selectedCards: disposalCards.map((c) => c.toString()),
     reason: "fallback_disposal",

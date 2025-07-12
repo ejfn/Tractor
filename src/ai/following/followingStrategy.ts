@@ -73,7 +73,7 @@ export function selectFollowingPlay(
   // Get current player from game state first
   const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
   if (!currentPlayer) {
-    gameLogger.error("enhanced_following_player_not_found", {
+    gameLogger.error("following_player_not_found", {
       player: currentPlayerId,
       gameState: gameState,
     });
@@ -83,7 +83,7 @@ export function selectFollowingPlay(
   // Extract leading cards from game state
   const leadingCards = gameState.currentTrick?.plays[0]?.cards;
   if (!leadingCards || leadingCards.length === 0) {
-    gameLogger.error("enhanced_following_no_leading_cards", {
+    gameLogger.error("following_no_leading_cards", {
       player: currentPlayerId,
       trickPosition: context.trickPosition,
     });
@@ -101,7 +101,7 @@ export function selectFollowingPlay(
     );
 
     if (multiComboResult && multiComboResult.strategy !== "no_valid_response") {
-      gameLogger.debug("enhanced_following_multi_combo", {
+      gameLogger.debug("following_multi_combo", {
         player: currentPlayerId,
         strategy: multiComboResult.strategy,
         cardCount: multiComboResult.cards.length,
@@ -113,8 +113,8 @@ export function selectFollowingPlay(
     }
   }
 
-  // Log enhanced_following algorithm start
-  gameLogger.debug("enhanced_following_algorithm_start", {
+  // Log following algorithm start
+  gameLogger.debug("following_algorithm_start", {
     player: currentPlayerId,
     position: context.trickPosition,
     leadingCardCount: leadingCards.length,
@@ -134,7 +134,7 @@ export function selectFollowingPlay(
   // Phase 2: Update scenario statistics
   algorithmStats.scenarioDistribution[analysis.scenario]++;
 
-  gameLogger.debug("enhanced_following_scenario_classification", {
+  gameLogger.debug("following_scenario_classification", {
     player: currentPlayerId,
     scenario: analysis.scenario,
     leadingSuit: analysis.leadingSuit,
@@ -157,7 +157,7 @@ export function selectFollowingPlay(
       currentPlayerId,
     );
   } catch (error) {
-    gameLogger.error("enhanced_following_routing_error", {
+    gameLogger.error("following_routing_error", {
       player: currentPlayerId,
       scenario: analysis.scenario,
       error: error instanceof Error ? error.message : String(error),
@@ -170,7 +170,7 @@ export function selectFollowingPlay(
 
   // Phase 2: Card validation before returning
   if (!selectedCards || selectedCards.length === 0) {
-    gameLogger.warn("enhanced_following_empty_selection", {
+    gameLogger.warn("following_empty_selection", {
       player: currentPlayerId,
       scenario: analysis.scenario,
       fallbackToFirstCard: true,
@@ -190,7 +190,7 @@ export function selectFollowingPlay(
 
   if (!isValid) {
     algorithmStats.validationFailures++;
-    gameLogger.error("enhanced_following_validation_failed", {
+    gameLogger.error("following_validation_failed", {
       player: currentPlayerId,
       scenario: analysis.scenario,
       fallbackToFirstCard: true,
@@ -202,7 +202,7 @@ export function selectFollowingPlay(
   }
 
   // Final result logging
-  gameLogger.debug("enhanced_following_algorithm_result", {
+  gameLogger.debug("following_algorithm_result", {
     player: currentPlayerId,
     position: context.trickPosition,
     scenario: analysis.scenario,
@@ -226,7 +226,7 @@ export function selectFollowingPlay(
     algorithmStats.processingTimes = algorithmStats.processingTimes.slice(-100);
   }
 
-  gameLogger.debug("enhanced_following_algorithm_performance", {
+  gameLogger.debug("following_algorithm_performance", {
     player: currentPlayerId,
     processingSteps: [
       "suit_availability_analysis",
@@ -268,7 +268,7 @@ function validateSelectedCards(
   );
 
   if (!allCardsInHand) {
-    gameLogger.error("enhanced_following_invalid_card_selection", {
+    gameLogger.error("following_invalid_card_selection", {
       player: currentPlayerId,
       selectedCards: selectedCards.map((c) => `${c.rank}${c.suit}`),
       reason: "cards_not_in_hand",
@@ -278,7 +278,7 @@ function validateSelectedCards(
 
   // Check length requirement (basic validation)
   if (selectedCards.length !== requiredLength) {
-    gameLogger.warn("enhanced_following_length_mismatch", {
+    gameLogger.warn("following_length_mismatch", {
       player: currentPlayerId,
       selectedLength: selectedCards.length,
       requiredLength,
@@ -341,7 +341,7 @@ export function resetEnhancedFollowingStats(): void {
     validationFailures: 0,
   };
 
-  gameLogger.debug("enhanced_following_algorithm_stats_reset", {
+  gameLogger.debug("following_algorithm_stats_reset", {
     timestamp: new Date().toISOString(),
     previousStats: {
       totalInvocations: previousStats.totalInvocations,

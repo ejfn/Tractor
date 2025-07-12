@@ -148,20 +148,28 @@ class LocalLogAnalyzer:
     
     def analyze_round_efficiency(self, df: pd.DataFrame) -> pd.DataFrame:
         """Equivalent to RoundEfficiency CTE."""
-        rounds = df[df['event'] == 'round_complete'].copy()
-        
-        if rounds.empty:
-            # Fallback: use available data
-            rounds = df[df['event'].isin(['round_end', 'game_over'])].copy()
+        # Use actual round completion events that exist in logs
+        rounds = df[df['event'].isin(['attacking_team_victory', 'defending_team_victory'])].copy()
         
         if rounds.empty:
             return pd.DataFrame()
         
-        # Extract round data
-        rounds['attacking_team_points'] = rounds['data'].apply(lambda x: x.get('attackingTeamPoints', 0))
-        rounds['defending_team_points'] = rounds['data'].apply(lambda x: x.get('defendingTeamPoints', 0))
-        rounds['final_points'] = rounds['attacking_team_points'] + rounds['defending_team_points']
-        rounds['attacking_won'] = rounds['data'].apply(lambda x: x.get('attackingTeamPoints', 0) >= 80)
+        # Extract round data from the correct data structure
+        # For attacking victories: use 'finalPoints'
+        # For defending victories: use 'attackingTeamPoints' (how many points attackers got)
+        rounds['final_points'] = rounds.apply(lambda row: 
+            row['data'].get('finalPoints', 0) if row['event'] == 'attacking_team_victory'
+            else row['data'].get('attackingTeamPoints', 0), axis=1
+        )
+        rounds['attacking_won'] = rounds['event'] == 'attacking_team_victory'
+        
+        # Calculate attacking winning rounds average
+        attacking_wins = rounds[rounds['attacking_won']].copy()
+        avg_attacking_win_points = attacking_wins['final_points'].mean() if not attacking_wins.empty else 0
+        
+        # Calculate defending winning rounds average
+        defending_wins = rounds[~rounds['attacking_won']].copy()
+        avg_defending_win_points = defending_wins['final_points'].mean() if not defending_wins.empty else 0
         
         result = rounds.groupby('appVersion').agg({
             'gameId': 'count',
@@ -169,30 +177,95 @@ class LocalLogAnalyzer:
             'attacking_won': 'mean'
         }).reset_index()
         
-        result.columns = ['appVersion', 'total_rounds', 'avg_final_points', 'attacking_round_win_rate']
+        # Add attacking winning rounds average
+        if not attacking_wins.empty:
+            attacking_win_avg = attacking_wins.groupby('appVersion')['final_points'].mean().reset_index()
+            attacking_win_avg.columns = ['appVersion', 'avg_attacking_win_points']
+            result = result.merge(attacking_win_avg, on='appVersion', how='left')
+        else:
+            result['avg_attacking_win_points'] = 0
+            
+        # Add defending winning rounds average
+        if not defending_wins.empty:
+            defending_win_avg = defending_wins.groupby('appVersion')['final_points'].mean().reset_index()
+            defending_win_avg.columns = ['appVersion', 'avg_defending_win_points']
+            result = result.merge(defending_win_avg, on='appVersion', how='left')
+        else:
+            result['avg_defending_win_points'] = 0
+        
+        result.columns = ['appVersion', 'total_rounds', 'avg_final_points', 'attacking_round_win_rate', 'avg_attacking_win_points', 'avg_defending_win_points']
         result['avg_final_points'] = result['avg_final_points'].round(1)
         result['attacking_round_win_rate'] = result['attacking_round_win_rate'].round(3)
+        result['avg_attacking_win_points'] = result['avg_attacking_win_points'].round(1)
+        result['avg_defending_win_points'] = result['avg_defending_win_points'].round(1)
         
         return result
     
-    def analyze_ai_decisions(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Equivalent to AIDecisionEffectiveness CTE."""
+    def analyze_ai_strategic_effectiveness(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Analyze AI strategic effectiveness and decision quality."""
         ai_events = df[df['event'].isin(['ai_leading_decision', 'ai_following_decision'])].copy()
         
         if ai_events.empty:
             return pd.DataFrame()
         
-        # Extract decision points
-        ai_events['decisionPoint'] = ai_events['data'].apply(lambda x: x.get('decisionPoint'))
-        ai_events = ai_events.dropna(subset=['decisionPoint'])
+        # Extract strategic metrics
+        results = []
+        for _, row in ai_events.iterrows():
+            data = row.get('data', {})
+            context = data.get('context', {})
+            
+            # Basic info
+            app_version = row.get('appVersion')
+            player = data.get('player')
+            decision_point = data.get('decisionPoint')
+            
+            # Strategic context
+            is_attacking = context.get('isAttackingTeam', False)
+            trick_position = context.get('trickPosition', 'unknown')
+            point_pressure = context.get('pointPressure', 'unknown')
+            
+            # Decision quality indicators
+            reasoning = data.get('reasoning', [])
+            score = data.get('score', 0)
+            
+            results.append({
+                'appVersion': app_version,
+                'player': player,
+                'decision_point': decision_point,
+                'is_attacking': is_attacking,
+                'trick_position': trick_position,
+                'point_pressure': point_pressure,
+                'has_reasoning': len(reasoning) > 0,
+                'decision_score': score,
+                'is_leading': row['event'] == 'ai_leading_decision'
+            })
         
-        # Filter out generic events and low frequency
-        ai_events = ai_events[~ai_events['decisionPoint'].isin(['leading_play', 'following_play'])]
+        strategic_df = pd.DataFrame(results)
         
-        result = ai_events.groupby(['appVersion', 'event', 'decisionPoint']).size().reset_index(name='usage_count')
-        result = result[result['usage_count'] >= 10]  # Lower threshold for local analysis
+        # Calculate strategic effectiveness metrics
+        effectiveness = strategic_df.groupby('appVersion').agg({
+            'decision_score': 'mean',
+            'has_reasoning': 'mean',
+            'is_attacking': 'mean',
+            'is_leading': 'mean',
+            'player': 'count'
+        }).round(3).reset_index()
         
-        return result
+        effectiveness.columns = ['appVersion', 'avg_decision_score', 'reasoning_rate', 'attacking_decision_rate', 'leading_decision_rate', 'total_decisions']
+        
+        # Add position effectiveness
+        position_effectiveness = strategic_df.groupby(['appVersion', 'trick_position']).agg({
+            'decision_score': 'mean'
+        }).reset_index()
+        
+        position_pivot = position_effectiveness.pivot(index='appVersion', columns='trick_position', values='decision_score')
+        
+        # Merge position data
+        for pos in ['first', 'second', 'third', 'fourth']:
+            if pos in position_pivot.columns:
+                effectiveness[f'{pos}_position_score'] = effectiveness['appVersion'].map(position_pivot[pos])
+        
+        return effectiveness
     
     def analyze_efficiency_stats(self, df: pd.DataFrame) -> pd.DataFrame:
         """Equivalent to EfficiencyStats CTE."""
@@ -241,7 +314,7 @@ class LocalLogAnalyzer:
         round_efficiency = self.analyze_round_efficiency(df)
         
         print("Analyzing AI decisions...")
-        ai_decisions = self.analyze_ai_decisions(df)
+        ai_strategic = self.analyze_ai_strategic_effectiveness(df)
         
         print("Analyzing efficiency metrics...")
         efficiency_stats = self.analyze_efficiency_stats(df)
@@ -256,7 +329,7 @@ class LocalLogAnalyzer:
         
         # Add round efficiency
         if not round_efficiency.empty:
-            final_report = final_report.merge(round_efficiency[['appVersion', 'total_rounds', 'avg_final_points', 'attacking_round_win_rate']], 
+            final_report = final_report.merge(round_efficiency[['appVersion', 'total_rounds', 'avg_final_points', 'attacking_round_win_rate', 'avg_attacking_win_points', 'avg_defending_win_points']], 
                                             on='appVersion', how='left')
             final_report['avg_rounds_per_game'] = (final_report['total_rounds'] / final_report['total_games']).round(1)
         
@@ -272,35 +345,22 @@ class LocalLogAnalyzer:
                     if (metric, pos) in position_pivot.columns:
                         final_report[col_name] = final_report['appVersion'].map(position_pivot[(metric, pos)])
         
-        # Add player performance averages
-        if not player_performance.empty:
-            player_avg = player_performance.groupby('appVersion').agg({
-                'player_win_rate': 'mean',
-                'avg_points_per_trick': 'mean'
-            }).round(3)
-            final_report = final_report.merge(player_avg, on='appVersion', how='left')
-            final_report.rename(columns={
-                'player_win_rate': 'avg_player_win_rate',
-                'avg_points_per_trick': 'avg_points_per_trick'
-            }, inplace=True)
+        # Player performance averages removed - useless metrics
+        # (avg_player_win_rate is always 25%, avg_points_per_trick provides no insight)
         
         # Add efficiency stats
         if not efficiency_stats.empty:
             final_report = final_report.merge(efficiency_stats[['appVersion', 'avg_kitty_points']], 
                                             on='appVersion', how='left')
         
-        # Add AI decisions as structured data
-        if not ai_decisions.empty:
-            # Suppress the FutureWarning for now
-            import warnings
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", FutureWarning)
-                ai_decisions_grouped = ai_decisions.groupby('appVersion').apply(
-                    lambda x: x[['event', 'decisionPoint', 'usage_count']].to_dict('records')
-                ).reset_index(name='top_ai_decisions')
-            final_report = final_report.merge(ai_decisions_grouped, on='appVersion', how='left')
+        # Add AI strategic effectiveness metrics
+        if not ai_strategic.empty:
+            final_report = final_report.merge(ai_strategic[['appVersion', 'avg_decision_score', 'reasoning_rate', 'attacking_decision_rate']], 
+                                            on='appVersion', how='left')
         else:
-            final_report['top_ai_decisions'] = None
+            final_report['avg_decision_score'] = None
+            final_report['reasoning_rate'] = None
+            final_report['attacking_decision_rate'] = None
         
         print(f"Analysis complete! Generated report for {len(final_report)} app versions.")
         return final_report

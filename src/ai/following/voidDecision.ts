@@ -176,7 +176,7 @@ export function handleVoidScenario(
   gameState: GameState,
   currentPlayerId: PlayerId,
 ): Card[] {
-  gameLogger.debug("enhanced_following_void_analysis", {
+  gameLogger.debug("following_void_analysis", {
     player: currentPlayerId,
     requiredLength: analysis.requiredLength,
     leadingSuit: analysis.leadingSuit,
@@ -200,7 +200,7 @@ export function handleVoidScenario(
       analysis.requiredLength,
     );
 
-    gameLogger.debug("enhanced_following_void_contribute", {
+    gameLogger.debug("following_void_contribute", {
       player: currentPlayerId,
       reason: "shouldContribute_true",
       selectedCards: contributeSelection.map((c) => c.toString()),
@@ -226,7 +226,7 @@ export function handleVoidScenario(
   }
 
   if (trumpSelection && trumpSelection.length === analysis.requiredLength) {
-    gameLogger.debug("enhanced_following_void_trump", {
+    gameLogger.debug("following_void_trump", {
       player: currentPlayerId,
       trickPoints: context.trickWinnerAnalysis?.trickPoints ?? 0,
       isTeammateWinning:
@@ -246,7 +246,7 @@ export function handleVoidScenario(
     analysis.requiredLength,
   );
 
-  gameLogger.debug("enhanced_following_void_dispose", {
+  gameLogger.debug("following_void_dispose", {
     player: currentPlayerId,
     reason: "cross_suit_dispose",
     selectedCards: disposeSelection.map((c) => c.toString()),
