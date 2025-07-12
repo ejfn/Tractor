@@ -32,7 +32,7 @@ export function handleInsufficientScenario(
   currentPlayerId: PlayerId,
 ): Card[] {
   if (!analysis.remainingCards) {
-    gameLogger.warn("enhanced_following_insufficient_no_remaining", {
+    gameLogger.warn("following_insufficient_no_remaining", {
       player: currentPlayerId,
     });
     return [];
@@ -42,7 +42,7 @@ export function handleInsufficientScenario(
   const available = analysis.remainingCards.length;
   const shortfall = needed - available;
 
-  gameLogger.debug("enhanced_following_insufficient_analysis", {
+  gameLogger.debug("following_insufficient_analysis", {
     player: currentPlayerId,
     needed,
     available,
@@ -83,7 +83,7 @@ export function handleInsufficientScenario(
 
   selectedCards.push(...fillCards);
 
-  gameLogger.debug("enhanced_following_insufficient_result", {
+  gameLogger.debug("following_insufficient_result", {
     player: currentPlayerId,
     suitCards: analysis.remainingCards.length,
     fillCards: fillCards.length,

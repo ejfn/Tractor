@@ -101,57 +101,29 @@ def generate_report(df):
             lines.append("### Total Points Per Round by Position\n")
             lines.append(f"![Points Per Round](position_points_per_round_{safe_version}.png)\n\n")
         
-        # Overall player performance 
-        lines.append("### 🎮 Player Performance\n")
-        avg_wr = row.get('avg_player_win_rate')
-        avg_pts = row.get('avg_points_per_trick')
-        
-        if pd.notna(avg_wr):
-            lines.append(f"- **Average Player Win Rate:** {avg_wr:.1%}\n")
-        if pd.notna(avg_pts):
-            lines.append(f"- **Average Points per Trick:** {avg_pts:.1f}\n")
-        lines.append("\n")
+        # Overall player performance section removed - useless metrics
+        # (Average Player Win Rate is always 25%, Average Points per Trick provides no insight)
         
         # Efficiency metrics
         lines.append("### 📈 Efficiency Metrics\n")
         if pd.notna(row.get('avg_final_points')):
             lines.append(f"- **Avg Final Points per Round:** {row['avg_final_points']:.1f}\n")
+        if pd.notna(row.get('avg_attacking_win_points')):
+            lines.append(f"- **Avg Final Points per Attacking Winning Round:** {row['avg_attacking_win_points']:.1f}\n")
+        if pd.notna(row.get('avg_defending_win_points')):
+            lines.append(f"- **Avg Final Points per Defending Winning Round:** {row['avg_defending_win_points']:.1f}\n")
         if pd.notna(row.get('avg_kitty_points')):
             lines.append(f"- **Avg Kitty Points:** {row['avg_kitty_points']:.1f}\n")
         lines.append("\n")
         
-        # Most used AI strategies (only frequently used ones)
-        lines.append("### 🧠 Most Used AI Strategies\n")
-        if row.get('top_ai_decisions') is not None and len(row['top_ai_decisions']) > 0:
-            # Group and sort, removing duplicates
-            leading_decisions = {}
-            following_decisions = {}
-            
-            for decision in row['top_ai_decisions']:
-                if decision['event'] == 'ai_leading_decision':
-                    decision_point = decision['decisionPoint']
-                    if decision_point not in leading_decisions:
-                        leading_decisions[decision_point] = decision['usage_count']
-                elif decision['event'] == 'ai_following_decision':
-                    decision_point = decision['decisionPoint']
-                    if decision_point not in following_decisions:
-                        following_decisions[decision_point] = decision['usage_count']
-            
-            if leading_decisions:
-                lines.append("**🎯 Leading Strategies:**\n")
-                # Sort by count descending
-                sorted_leading = sorted(leading_decisions.items(), key=lambda x: x[1], reverse=True)
-                for decision_point, count in sorted_leading[:5]:  # Top 5
-                    lines.append(f"- `{decision_point}`: {count:,} uses\n")
-            
-            if following_decisions:
-                lines.append("\n**🤝 Following Strategies:**\n") 
-                # Sort by count descending
-                sorted_following = sorted(following_decisions.items(), key=lambda x: x[1], reverse=True)
-                for decision_point, count in sorted_following[:5]:  # Top 5
-                    lines.append(f"- `{decision_point}`: {count:,} uses\n")
-        else:
-            lines.append("- No frequently used strategies identified\n")
+        # Strategic AI effectiveness metrics
+        lines.append("### 🧠 AI Strategic Effectiveness\n")
+        if pd.notna(row.get('avg_decision_score')):
+            lines.append(f"- **Avg Decision Quality Score:** {row['avg_decision_score']:.1f}\n")
+        if pd.notna(row.get('reasoning_rate')):
+            lines.append(f"- **Strategic Reasoning Rate:** {row['reasoning_rate']:.1%}\n")
+        if pd.notna(row.get('attacking_decision_rate')):
+            lines.append(f"- **Attacking Team Decision Rate:** {row['attacking_decision_rate']:.1%}\n")
         
         lines.append("\n---\n\n")
     

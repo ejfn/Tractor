@@ -20,6 +20,10 @@ export TARGET_GAMES=$TARGET_GAMES
 
 echo "Running $TARGET_GAMES game simulations with DEBUG logging..."
 
+# Inject development version before running simulations
+echo "Injecting development version..."
+node scripts/inject-dev-version.js
+
 # Run the simulation test
 npm run test:simulation
 

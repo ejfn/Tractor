@@ -39,13 +39,13 @@ export function handleEnoughRemainingScenario(
   currentPlayerId: PlayerId,
 ): Card[] {
   if (!analysis.remainingCards || analysis.remainingCards.length === 0) {
-    gameLogger.warn("enhanced_following_no_remaining_cards", {
+    gameLogger.warn("following_no_remaining_cards", {
       player: currentPlayerId,
     });
     return [];
   }
 
-  gameLogger.debug("enhanced_following_enough_remaining_analysis", {
+  gameLogger.debug("following_enough_remaining_analysis", {
     player: currentPlayerId,
     remainingCount: analysis.remainingCards.length,
     requiredLength: analysis.requiredLength,
@@ -69,7 +69,7 @@ export function handleEnoughRemainingScenario(
     shouldContribute,
   );
 
-  gameLogger.debug("enhanced_following_enough_remaining_result", {
+  gameLogger.debug("following_enough_remaining_result", {
     player: currentPlayerId,
     shouldContribute,
     reason: shouldContribute

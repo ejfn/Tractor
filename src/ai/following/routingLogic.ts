@@ -34,7 +34,7 @@ export function routeToDecision(
   // Extract trick analysis for use across scenarios
   const { isTrumpLead } = context.trickWinnerAnalysis || {};
 
-  gameLogger.debug("enhanced_following_routing", {
+  gameLogger.debug("following_routing", {
     player: currentPlayerId,
     scenario: analysis.scenario,
     leadingSuit: analysis.leadingSuit,
@@ -97,14 +97,14 @@ export function routeToDecision(
         );
 
       default:
-        gameLogger.warn("unknown_enhanced_following_scenario", {
+        gameLogger.warn("unknown_following_scenario", {
           scenario: analysis.scenario,
           player: currentPlayerId,
         });
         return fallbackSelection(playerHand, context, gameState, trumpInfo);
     }
   } catch (error) {
-    gameLogger.error("enhanced_following_routing_error", {
+    gameLogger.error("following_routing_error", {
       error: error instanceof Error ? error.message : String(error),
       scenario: analysis.scenario,
       player: currentPlayerId,
@@ -125,13 +125,13 @@ function fallbackSelection(
   _gameState: GameState,
   trumpInfo?: TrumpInfo,
 ): Card[] {
-  gameLogger.debug("enhanced_following_fallback_selection", {
+  gameLogger.debug("following_fallback_selection", {
     handSize: playerHand.length,
     reason: "routing_fallback",
   });
 
   if (playerHand.length === 0) {
-    gameLogger.error("enhanced_following_empty_hand", {});
+    gameLogger.error("following_empty_hand", {});
     return [];
   }
 
@@ -144,7 +144,7 @@ function fallbackSelection(
       return [playerHand[0]];
     }
   } catch (error) {
-    gameLogger.error("enhanced_following_fallback_error", {
+    gameLogger.error("following_fallback_error", {
       error: error instanceof Error ? error.message : String(error),
     });
 
