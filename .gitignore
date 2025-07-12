@@ -56,5 +56,5 @@ src/dev-version.json
 logs/*
 
 !**/.gitkeep
-
+debug/
 .env
