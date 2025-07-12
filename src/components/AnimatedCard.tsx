@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Card as CardType, JokerType } from "../types";
-import { getSuitSymbol, getSuitColorStyle } from "../utils/suitHelpers";
+import { getSuitColorStyle, getSuitSymbol } from "../utils/suitHelpers";
 
 interface CardProps {
   card: CardType;
@@ -503,11 +503,11 @@ export const AnimatedCard: React.FC<CardProps> = ({
         {/* Card footer with rank and suit (inverted) */}
         <View style={styles.cardFooter}>
           <View style={styles.rankSuitPairInverted}>
-            <Text style={[styles.suitSymbolSmall, { color: getColor() }]}>
-              {getSuitSymbol(card.suit, card.joker)}
-            </Text>
             <Text style={[styles.cardRank, { color: getColor() }]}>
               {getCardText()}
+            </Text>
+            <Text style={[styles.suitSymbolSmall, { color: getColor() }]}>
+              {getSuitSymbol(card.suit, card.joker)}
             </Text>
           </View>
         </View>
