@@ -67,17 +67,17 @@ const styles = StyleSheet.create({
   // Top player - centered at the top of the table
   topArea: {
     width: "100%",
-    height: 120,
-    marginTop: 10,
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 10,
   },
   // Middle row container
   middleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    height: 200,
+    flex: 2,
     width: "100%",
   },
   // Left player - along the left edge of the table at middle height
@@ -86,6 +86,8 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
+    display: "flex",
+    flexDirection: "column",
   },
   // Center play area - in the middle of the table
   centerArea: {
@@ -93,6 +95,8 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
+    display: "flex",
+    flexDirection: "column",
     zIndex: 10, // Higher than side players
   },
   // Right player - along the right edge of the table at middle height
@@ -101,13 +105,17 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
+    display: "flex",
+    flexDirection: "column",
   },
   // Bottom player - centered at the bottom of the table
   bottomArea: {
     width: "100%",
-    height: 280,
+    flex: 1,
+    minHeight: 120,
     alignItems: "center",
     justifyContent: "center",
+    paddingBottom: 16, // Add padding to prevent button cutoff
   },
 });
 
