@@ -103,14 +103,16 @@ export const calculateCardStrategicValue = (
     value = RANK_VALUES[card.rank] || 0;
   }
 
-  // Strategic adjustments
-  if (mode === "strategic" && card.points && card.points > 0) {
-    value += card.points * 10; // Save points (increase value)
-  } else if (mode === "contribute" && card.points && card.points > 0) {
-    value -= card.points * 10; // Contribute points (decrease value)
-    // Extra penalty for 10s to make them less disposable than Kings: 5 > K > 10
-    if (card.rank === Rank.Ten) {
-      value -= 5; // extra -5 for 10
+  if (card.points > 0 && card.rank !== trumpInfo.trumpRank) {
+    // Strategic adjustments
+    if (mode === "strategic") {
+      value += card.points * 10; // Save points (increase value)
+    } else if (mode === "contribute") {
+      value -= card.points * 10; // Contribute points (decrease value)
+      // Extra penalty for 10s to make them less disposable than Kings: 5 > K > 10
+      if (card.rank === Rank.Ten) {
+        value -= 5; // extra -5 for 10
+      }
     }
   }
 

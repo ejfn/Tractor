@@ -283,66 +283,41 @@ function attemptToBeatWithThreshold(
 
   const strengthThreshold = trickPoints >= 10 ? 150 : 100; // High points: 150, Low points: 100
 
-  // If opponent is winning, beat with combo that meets strength threshold
-  if (!isTeammateWinning) {
-    const strongBeatingCombos = beatingCombos.filter((combo) => {
-      const comboStrength = combo.cards.reduce(
-        (sum: number, card: Card) =>
-          sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
-        0,
-      );
-      return comboStrength > strengthThreshold;
-    });
+  if (isTeammateWinning) {
+    // If teammate is winning, check if teammate is too weak
+    const teammateStrength = currentWinnerCards.reduce(
+      (max: number, card: Card) => {
+        const value = calculateCardStrategicValue(card, trumpInfo, "basic");
+        max = Math.max(max, value);
+        return max;
+      },
+      0,
+    );
 
-    if (strongBeatingCombos.length > 0) {
-      // Use the weakest combo that still meets the threshold
-      return selectComboByStrategicValue(
-        strongBeatingCombos,
-        trumpInfo,
-        "basic",
-        "lowest",
-      );
+    if (teammateStrength > strengthThreshold) {
+      return null;
     }
-    return null; // No combo meets strength threshold
   }
 
-  // If teammate is winning, check if teammate is too weak
-  const teammateStrength = currentWinnerCards.reduce(
-    (sum: number, card: Card) =>
-      sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
-    0,
-  );
-
-  if (teammateStrength < strengthThreshold) {
-    // For low points, additional check: only beat if teammate rank < 10
-    if (trickPoints < 10) {
-      const teammateHasLowRank = currentWinnerCards.some((card) => {
-        const cardValue = calculateCardStrategicValue(card, trumpInfo, "basic");
-        return cardValue < 10; // Roughly equivalent to rank < 10
-      });
-      if (!teammateHasLowRank) {
-        return null; // Don't beat teammate if they don't have low rank cards
-      }
-    }
-
-    // Beat weak teammate with combo that meets strength threshold
-    const strongBeatingCombos = beatingCombos.filter((combo) => {
-      const comboStrength = combo.cards.reduce(
-        (sum: number, card: Card) =>
-          sum + calculateCardStrategicValue(card, trumpInfo, "basic"),
-        0,
-      );
-      return comboStrength > strengthThreshold;
-    });
-
-    if (strongBeatingCombos.length > 0) {
-      return selectComboByStrategicValue(
-        strongBeatingCombos,
+  const strongBeatingCombos = beatingCombos.filter((combo) => {
+    combo.cards.some((card) => {
+      const cardStrength = calculateCardStrategicValue(
+        card,
         trumpInfo,
-        "basic",
-        "lowest",
+        "contribute",
       );
-    }
+      return cardStrength > strengthThreshold;
+    });
+  });
+
+  if (strongBeatingCombos.length > 0) {
+    // Use the weakest combo that still meets the threshold
+    return selectComboByStrategicValue(
+      strongBeatingCombos,
+      trumpInfo,
+      "contribute",
+      "lowest",
+    );
   }
 
   return null; // Don't beat strong teammate

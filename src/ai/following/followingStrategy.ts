@@ -13,34 +13,6 @@ import { routeToDecision } from "./routingLogic";
 import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
 
 /**
- * Phase 2: Statistics tracking for enhanced following algorithm
- */
-interface EnhancedFollowingStats {
-  totalInvocations: number;
-  scenarioDistribution: Record<string, number>;
-  memoryUtilization: number;
-  averageProcessingTime: number;
-  processingTimes: number[];
-  validationFailures: number;
-}
-
-// Module-level statistics tracking
-let algorithmStats: EnhancedFollowingStats = {
-  totalInvocations: 0,
-  scenarioDistribution: {
-    valid_combos: 0,
-    enough_remaining: 0,
-    void: 0,
-    insufficient: 0,
-    multi_combo: 0,
-  },
-  memoryUtilization: 0,
-  averageProcessingTime: 0,
-  processingTimes: [],
-  validationFailures: 0,
-};
-
-/**
  * Enhanced Following Strategy V2 - Main Entry Point
  *
  * Implements a systematic approach to following play decisions through:
@@ -53,13 +25,6 @@ let algorithmStats: EnhancedFollowingStats = {
  * decisions that are easier to understand and maintain.
  */
 
-/**
- * Main following play selection using enhanced following algorithm
- *
- * This function implements the core enhanced following algorithm that analyzes the
- * relationship between leading cards and player hand, classifies the scenario,
- * and routes to the appropriate decision path through small, targeted decisions.
- */
 export function selectFollowingPlay(
   context: GameContext,
   trumpInfo: TrumpInfo,
@@ -68,7 +33,6 @@ export function selectFollowingPlay(
 ): Card[] {
   // Phase 2: Performance tracking start
   const startTime = performance.now();
-  algorithmStats.totalInvocations++;
 
   // Get current player from game state first
   const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
@@ -131,9 +95,6 @@ export function selectFollowingPlay(
     trumpInfo,
   );
 
-  // Phase 2: Update scenario statistics
-  algorithmStats.scenarioDistribution[analysis.scenario]++;
-
   gameLogger.debug("following_scenario_classification", {
     player: currentPlayerId,
     scenario: analysis.scenario,
@@ -189,7 +150,6 @@ export function selectFollowingPlay(
   );
 
   if (!isValid) {
-    algorithmStats.validationFailures++;
     gameLogger.error("following_validation_failed", {
       player: currentPlayerId,
       scenario: analysis.scenario,
@@ -214,17 +174,6 @@ export function selectFollowingPlay(
   // Phase 2: Complete performance tracking
   const endTime = performance.now();
   const processingTime = endTime - startTime;
-  algorithmStats.processingTimes.push(processingTime);
-
-  // Update average processing time
-  algorithmStats.averageProcessingTime =
-    algorithmStats.processingTimes.reduce((sum, time) => sum + time, 0) /
-    algorithmStats.processingTimes.length;
-
-  // Limit processingTimes array to last 100 entries for memory efficiency
-  if (algorithmStats.processingTimes.length > 100) {
-    algorithmStats.processingTimes = algorithmStats.processingTimes.slice(-100);
-  }
 
   gameLogger.debug("following_algorithm_performance", {
     player: currentPlayerId,
@@ -237,8 +186,6 @@ export function selectFollowingPlay(
     ],
     decisionPath: analysis.scenario,
     processingTime: `${processingTime.toFixed(2)}ms`,
-    totalInvocations: algorithmStats.totalInvocations,
-    validationFailures: algorithmStats.validationFailures,
   });
 
   return selectedCards;
@@ -288,65 +235,4 @@ function validateSelectedCards(
   }
 
   return true;
-}
-
-/**
- * Get enhanced following algorithm statistics for analysis and debugging
- *
- * Phase 2: Returns real-time statistics from the algorithm execution.
- */
-export function getEnhancedFollowingStats(): {
-  totalInvocations: number;
-  scenarioDistribution: Record<string, number>;
-  memoryUtilization: number;
-  averageProcessingTime: number;
-  validationFailures: number;
-  memoryUtilizationRate: number;
-} {
-  const memoryUtilizationRate =
-    algorithmStats.totalInvocations > 0
-      ? algorithmStats.memoryUtilization / algorithmStats.totalInvocations
-      : 0;
-
-  return {
-    totalInvocations: algorithmStats.totalInvocations,
-    scenarioDistribution: { ...algorithmStats.scenarioDistribution },
-    memoryUtilization: algorithmStats.memoryUtilization,
-    averageProcessingTime: algorithmStats.averageProcessingTime,
-    validationFailures: algorithmStats.validationFailures,
-    memoryUtilizationRate,
-  };
-}
-
-/**
- * Reset enhanced following algorithm statistics
- *
- * Phase 2: Actually resets the tracking counters for new game sessions.
- */
-export function resetEnhancedFollowingStats(): void {
-  const previousStats = { ...algorithmStats };
-
-  algorithmStats = {
-    totalInvocations: 0,
-    scenarioDistribution: {
-      valid_combos: 0,
-      enough_remaining: 0,
-      void: 0,
-      insufficient: 0,
-      multi_combo: 0,
-    },
-    memoryUtilization: 0,
-    averageProcessingTime: 0,
-    processingTimes: [],
-    validationFailures: 0,
-  };
-
-  gameLogger.debug("following_algorithm_stats_reset", {
-    timestamp: new Date().toISOString(),
-    previousStats: {
-      totalInvocations: previousStats.totalInvocations,
-      averageProcessingTime: previousStats.averageProcessingTime,
-      validationFailures: previousStats.validationFailures,
-    },
-  });
 }
