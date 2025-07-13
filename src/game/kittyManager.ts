@@ -1,13 +1,13 @@
 import {
   Card,
-  ComboType,
   GamePhase,
   GameState,
+  KittyBonusInfo,
   PlayerId,
   Trick,
 } from "../types";
 import { gameLogger } from "../utils/gameLogger";
-import { identifyCombos } from "./comboDetection";
+import { countPairs } from "./comboDetection";
 
 /**
  * Picks up kitty cards for the round starting player
@@ -177,79 +177,51 @@ export const isFinalTrick = (gameState: GameState): boolean => {
 
 /**
  * Analyzes the type of the final trick (singles vs pairs/tractors)
- * Returns the multiplier for kitty scoring: 2x for singles, 4x for pairs/tractors
- * Rule: If leading combo contains pairs or tractors, 4x multiplier. Otherwise (singles only), 2x multiplier.
+ * Returns the multiplier for kitty scoring: 2^(numOfPairs + 1)
+ * Rule: Count all pairs in the leading combo (including multi-combo), then apply 2^(count + 1)
  */
 export const getFinalTrickMultiplier = (
   finalTrick: Trick,
   gameState: GameState,
 ): number => {
   const leadingCards = finalTrick.plays[0]?.cards || [];
+  const numOfPairs = countPairs(leadingCards);
 
-  // Analyze the actual combo structure to determine if it contains pairs or tractors
-  const combos = identifyCombos(leadingCards, gameState.trumpInfo);
-
-  // Check if any combo in the leading play is a pair or tractor
-  const hasPairsOrTractors = combos.some(
-    (combo) =>
-      combo.type === ComboType.Pair || combo.type === ComboType.Tractor,
-  );
-
-  // If contains pairs or tractors: 4x multiplier, otherwise (singles only): 2x multiplier
-  return hasPairsOrTractors ? 4 : 2;
+  // Calculate multiplier: 2^(numOfPairs + 1)
+  return Math.pow(2, numOfPairs + 1);
 };
 
 /**
  * Calculates complete kitty bonus information for the final trick
- * Returns all data needed for both scoring and UI display
+ * Returns KittyBonusInfo if attacking team wins final trick, undefined otherwise
  */
 export const calculateKittyBonusInfo = (
   gameState: GameState,
   finalTrick: Trick,
   finalTrickWinnerId: PlayerId,
-): {
-  kittyPoints: number;
-  multiplier: number;
-  bonusPoints: number;
-  finalTrickType: string;
-} => {
+): KittyBonusInfo | undefined => {
   const kittyPoints = calculateKittyPoints(gameState.kittyCards);
   const multiplier = getFinalTrickMultiplier(finalTrick, gameState);
-  const finalTrickType = multiplier === 4 ? "pairs/tractors" : "singles";
 
   // Find the winning player's team
   const winningPlayer = gameState.players.find(
     (p) => p.id === finalTrickWinnerId,
   );
   if (!winningPlayer) {
-    return { kittyPoints, multiplier, bonusPoints: 0, finalTrickType };
+    return undefined;
   }
 
   const winningTeam = gameState.teams.find((t) => t.id === winningPlayer.team);
   if (!winningTeam) {
-    return { kittyPoints, multiplier, bonusPoints: 0, finalTrickType };
+    return undefined;
   }
 
   // Only attacking team gets kitty bonus
   if (winningTeam.isDefending) {
-    return { kittyPoints, multiplier, bonusPoints: 0, finalTrickType };
+    return undefined;
   }
 
   // Attacking team wins final trick = apply multiplier
   const bonusPoints = kittyPoints * multiplier;
-  return { kittyPoints, multiplier, bonusPoints, finalTrickType };
-};
-
-/**
- * Calculates the kitty bonus points if attacking team wins the final trick
- * Returns 0 if defending team wins, or kitty points × multiplier if attacking team wins
- * @deprecated Use calculateKittyBonusInfo for new code
- */
-export const calculateKittyBonus = (
-  gameState: GameState,
-  finalTrick: Trick,
-  finalTrickWinnerId: PlayerId,
-): number => {
-  return calculateKittyBonusInfo(gameState, finalTrick, finalTrickWinnerId)
-    .bonusPoints;
+  return { kittyPoints, multiplier, bonusPoints };
 };

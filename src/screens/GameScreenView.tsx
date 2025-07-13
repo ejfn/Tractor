@@ -313,11 +313,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           onNewGame={onStartNewGame}
           fadeAnim={fadeAnim}
           scaleAnim={scaleAnim}
-          kittyCards={
-            gameState?.roundEndKittyInfo && gameState.kittyCards
-              ? sortCards(gameState.kittyCards, gameState.trumpInfo)
-              : undefined
-          }
+          kittyCards={sortCards(gameState.kittyCards, gameState.trumpInfo)}
         />
       )}
     </View>

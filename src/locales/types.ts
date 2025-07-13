@@ -108,6 +108,7 @@ export interface ModalsTranslations {
     defendingWonAce: string;
     heldToPoints: string;
     defendedWithPoints: string;
+    kittyBonus: string;
   };
   gameOver: {
     title: string;

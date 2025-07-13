@@ -18,7 +18,8 @@
     "defendingWonAdvance": "{{teamName}}{{pointMessage}}，升{{advancement}}级到{{rank}}！",
     "defendingWonAce": "{{teamName}}{{pointMessage}}，达到A级！现在必须守住A级才能赢得游戏！",
     "heldToPoints": "将攻方限制在0分",
-    "defendedWithPoints": "守住攻方{{points}}分"
+    "defendedWithPoints": "守住攻方{{points}}分",
+    "kittyBonus": "底牌分：{{kittyPoints}} x {{multiplier}}"
   },
   "gameOver": {
     "title": "胜利!",

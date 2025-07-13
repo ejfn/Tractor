@@ -89,7 +89,7 @@ export function prepareNextRound(
   });
 
   // Clear kitty info for next round
-  newState.roundEndKittyInfo = undefined;
+  newState.kittyBonus = undefined;
 
   // Set trump rank to defending team's rank (after potential role switch)
   const newDefendingTeam = newState.teams.find((t) => t.isDefending);
@@ -278,7 +278,6 @@ export function endRound(state: GameState): RoundResult {
   let attackingTeamWon = false;
   const rankChanges: Record<TeamId, Rank> = {} as Record<TeamId, Rank>;
   let finalPoints = 0;
-  let pointsBreakdown = "";
 
   // Calculate scores and determine if a team levels up
   const defendingTeam = state.teams.find((t) => t.isDefending);
@@ -291,7 +290,7 @@ export function endRound(state: GameState): RoundResult {
       defendingTeam: defendingTeam?.id,
       attackingTeam: attackingTeam?.id,
       attackingTeamTrickPoints: attackingTeam?.points || 0,
-      kittyInfo: state.roundEndKittyInfo,
+      kittyInfo: state.kittyBonus,
       teamRanks: state.teams.map((team) => ({
         teamId: team.id,
         currentRank: team.currentRank,
@@ -306,18 +305,12 @@ export function endRound(state: GameState): RoundResult {
     const rankOrder = Object.values(Rank);
 
     // Calculate trick points before adding kitty bonus
-    const kittyInfo = state.roundEndKittyInfo;
-    const kittyBonus = kittyInfo?.kittyBonus?.bonusPoints || 0;
+    const kittyInfo = state.kittyBonus;
+    const kittyBonus = kittyInfo?.bonusPoints || 0;
     const trickPoints = attackingTeam.points; // Get trick points before bonus
 
     // Calculate final points (including kitty bonus)
     finalPoints = attackingTeam.points + kittyBonus;
-
-    if (kittyInfo) {
-      pointsBreakdown = kittyInfo.kittyBonus
-        ? `\n${finalPoints} = ${trickPoints} + ${kittyInfo.kittyPoints} × ${kittyInfo.kittyBonus.multiplier}`
-        : ``;
-    }
 
     // Attacking team needs 80+ points to win
     if (finalPoints >= 80) {
@@ -424,7 +417,7 @@ export function endRound(state: GameState): RoundResult {
   // Game over logging - after round_end when game is complete
   if (gameOver && gameWinner) {
     const trickPoints = attackingTeam?.points || 0;
-    const kittyBonus = state.roundEndKittyInfo?.kittyBonus?.bonusPoints || 0;
+    const kittyBonus = state.kittyBonus?.bonusPoints || 0;
 
     gameLogger.info(
       "game_over",
@@ -456,6 +449,6 @@ export function endRound(state: GameState): RoundResult {
           : 2
         : 1,
     finalPoints,
-    pointsBreakdown,
+    kittyBonus: state.kittyBonus,
   };
 }
