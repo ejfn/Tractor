@@ -2,6 +2,36 @@ import { Card, Combo, ComboType, Suit, TrumpInfo } from "../types";
 import { calculateCardStrategicValue, isTrump } from "./cardValue";
 import { findAllTractors, isValidTractor } from "./tractorLogic";
 
+/**
+ * Counts the number of pairs in a set of cards by grouping by commonId
+ * Returns the count of groups that have exactly 2 cards
+ */
+export const countPairs = (cards: Card[]): number => {
+  // Count pairs by grouping cards with the same commonId
+  const cardGroups = new Map<string, Card[]>();
+
+  cards.forEach((card) => {
+    const commonId = card.commonId;
+    if (!cardGroups.has(commonId)) {
+      cardGroups.set(commonId, []);
+    }
+    const group = cardGroups.get(commonId);
+    if (group) {
+      group.push(card);
+    }
+  });
+
+  // Count how many groups have exactly 2 cards (pairs)
+  let numOfPairs = 0;
+  cardGroups.forEach((cards) => {
+    if (cards.length === 2) {
+      numOfPairs += 1;
+    }
+  });
+
+  return numOfPairs;
+};
+
 // Identify valid combinations in a player's hand
 export const identifyCombos = (
   cards: Card[],
@@ -63,25 +93,6 @@ export const identifyCombos = (
 // Legacy function for backward compatibility
 const getCardValue = (card: Card, trumpInfo: TrumpInfo): number => {
   return calculateCardStrategicValue(card, trumpInfo, "basic");
-};
-
-// Count total pairs in cards (including pairs within tractors) - Algorithm Flow Diagram compliance
-const countTotalPairsInCards = (
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-): number => {
-  const combos = identifyCombos(cards, trumpInfo);
-  let totalPairs = 0;
-
-  combos.forEach((combo) => {
-    if (combo.type === ComboType.Pair) {
-      totalPairs += 1; // Each pair combo contributes 1 pair
-    } else if (combo.type === ComboType.Tractor) {
-      totalPairs += combo.cards.length / 2; // Each tractor contributes multiple pairs
-    }
-  });
-
-  return totalPairs;
 };
 
 // Get the combo type (single, pair, etc.) based on the cards
@@ -211,8 +222,8 @@ export const checkTractorFollowingPriority = (
   }
 
   // Count total pairs including pairs within tractors (following Algorithm Flow Diagram)
-  const totalAvailablePairs = countTotalPairsInCards(relevantCards, trumpInfo);
-  const totalUsedPairs = countTotalPairsInCards(playedCards, trumpInfo);
+  const totalAvailablePairs = countPairs(relevantCards);
+  const totalUsedPairs = countPairs(playedCards);
 
   // If no pairs available, rule doesn't apply
   if (totalAvailablePairs === 0) {

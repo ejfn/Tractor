@@ -255,7 +255,7 @@ describe("Next Round Starting Player Rotation", () => {
         rankChanges: {} as Record<TeamId, Rank>,
         rankAdvancement: 1,
         finalPoints: 0,
-        pointsBreakdown: "",
+        kittyBonus: undefined,
       };
 
       const nextRoundState = prepareNextRound(firstRoundState, mockRoundResult);

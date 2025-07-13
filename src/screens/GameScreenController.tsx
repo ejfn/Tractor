@@ -1,14 +1,15 @@
 import React, { useEffect, useRef } from "react";
 
 // Hooks
-import { useGameState } from "../hooks/useGameState";
-import { useUIAnimations, useThinkingDots } from "../hooks/useAnimations";
-import { useTrickResults } from "../hooks/useTrickResults";
 import { useAITurns } from "../hooks/useAITurns";
+import { useThinkingDots, useUIAnimations } from "../hooks/useAnimations";
+import { useGameState } from "../hooks/useGameState";
 import { useProgressiveDealing } from "../hooks/useProgressiveDealing";
+import { useTrickResults } from "../hooks/useTrickResults";
 
 // Game logic
 import { GamePhase } from "../types";
+import { DEALING_SPEED } from "../utils/gameTimings";
 
 // View component
 import GameScreenView from "./GameScreenView";
@@ -81,7 +82,7 @@ const GameScreenController: React.FC = () => {
   } = useProgressiveDealing({
     gameState,
     setGameState,
-    dealingSpeed: 250,
+    dealingSpeed: DEALING_SPEED,
   });
 
   // Initialize game on first render

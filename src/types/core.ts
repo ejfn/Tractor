@@ -48,6 +48,12 @@ export type Trick = {
   isFinalTrick?: boolean; // Optional flag to track if this is the final trick of the round
 };
 
+export type KittyBonusInfo = {
+  kittyPoints: number;
+  multiplier: number;
+  bonusPoints: number;
+};
+
 export type GameState = {
   players: Player[];
   teams: [Team, Team];
@@ -62,16 +68,7 @@ export type GameState = {
   currentPlayerIndex: number;
   roundStartingPlayerIndex: number; // Index of the player who starts the current round (for crown display)
   gamePhase: GamePhase;
-  roundEndKittyInfo?: {
-    // Track kitty info for round result display (use gameState.kittyCards for the actual cards)
-    kittyPoints: number;
-    finalTrickType: string; // "singles" or "pairs/tractors"
-    kittyBonus?: {
-      // Only present if attacking team won final trick
-      bonusPoints: number;
-      multiplier: number;
-    };
-  };
+  kittyBonus?: KittyBonusInfo;
 };
 
 /**
@@ -90,5 +87,5 @@ export type RoundResult = {
 
   // Point information
   finalPoints: number;
-  pointsBreakdown: string;
+  kittyBonus?: KittyBonusInfo;
 };

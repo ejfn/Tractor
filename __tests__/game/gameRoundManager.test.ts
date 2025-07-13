@@ -44,7 +44,7 @@ describe("gameRoundManager", () => {
         rankChanges: {} as Record<TeamId, Rank>,
         rankAdvancement: 1,
         finalPoints: 0,
-        pointsBreakdown: "",
+        kittyBonus: undefined,
       };
 
       const result = prepareNextRound(mockState, mockRoundResult);

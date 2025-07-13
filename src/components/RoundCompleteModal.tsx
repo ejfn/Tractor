@@ -1,19 +1,19 @@
 import React, { useEffect, useRef } from "react";
 import {
   Animated,
+  Dimensions,
   Modal,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Dimensions,
 } from "react-native";
-import { Card, RoundResult, Rank } from "../types";
-import AnimatedCardComponent from "./AnimatedCard";
 import { useModalsTranslation } from "../hooks/useTranslation";
 import type { ModalsTranslationKey } from "../locales/types";
+import { Card, Rank, RoundResult } from "../types";
 import { getTeamDisplayName } from "../utils/translationHelpers";
+import AnimatedCardComponent from "./AnimatedCard";
 
 // Helper function to generate the round result message in the UI layer
 function generateModalMessage(
@@ -27,6 +27,11 @@ function generateModalMessage(
   const rankText = roundResult.rankAdvancement === 1 ? "rank" : "ranks";
   const newRank = roundResult.rankChanges[roundResult.winningTeam];
 
+  // Build kitty bonus message if present
+  const kittyBonusMessage = roundResult.kittyBonus
+    ? "\n" + tModals("roundResult.kittyBonus", roundResult.kittyBonus)
+    : "";
+
   if (roundResult.attackingTeamWon) {
     // Attacking team won
     if (roundResult.rankAdvancement === 0) {
@@ -35,7 +40,7 @@ function generateModalMessage(
           teamName,
           points: roundResult.finalPoints,
           rank: newRank,
-        }) + roundResult.pointsBreakdown
+        }) + kittyBonusMessage
       );
     } else {
       if (newRank === Rank.Ace) {
@@ -43,7 +48,7 @@ function generateModalMessage(
           tModals("roundResult.attackingWonAce", {
             teamName,
             points: roundResult.finalPoints,
-          }) + roundResult.pointsBreakdown
+          }) + kittyBonusMessage
         );
       } else {
         return (
@@ -53,7 +58,7 @@ function generateModalMessage(
             advancement: roundResult.rankAdvancement,
             rankText,
             rank: newRank,
-          }) + roundResult.pointsBreakdown
+          }) + kittyBonusMessage
         );
       }
     }
@@ -71,14 +76,14 @@ function generateModalMessage(
         tModals("roundResult.defendingWonGame", {
           teamName,
           pointMessage,
-        }) + roundResult.pointsBreakdown
+        }) + kittyBonusMessage
       );
     } else if (newRank === Rank.Ace) {
       return (
         tModals("roundResult.defendingWonAce", {
           teamName,
           pointMessage,
-        }) + roundResult.pointsBreakdown
+        }) + kittyBonusMessage
       );
     } else {
       return (
@@ -88,7 +93,7 @@ function generateModalMessage(
           advancement: roundResult.rankAdvancement,
           rankText,
           rank: newRank,
-        }) + roundResult.pointsBreakdown
+        }) + kittyBonusMessage
       );
     }
   }

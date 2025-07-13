@@ -90,10 +90,8 @@ describe("Kitty Bonus Integration", () => {
     expect(teamA.points).toBe(trickPoints);
 
     // Verify kitty bonus info is properly stored for round completion
-    expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
-    expect(
-      finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints,
-    ).toBe(kittyBonus);
+    expect(finalResult.newState.kittyBonus).toBeDefined();
+    expect(finalResult.newState.kittyBonus?.bonusPoints).toBe(kittyBonus);
   });
 
   test("should apply 4x kitty bonus when attacking team wins final trick with pairs", () => {
@@ -149,10 +147,8 @@ describe("Kitty Bonus Integration", () => {
     expect(teamA.points).toBe(trickPoints);
 
     // Verify kitty bonus info is properly stored for round completion
-    expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
-    expect(
-      finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints,
-    ).toBe(kittyBonus);
+    expect(finalResult.newState.kittyBonus).toBeDefined();
+    expect(finalResult.newState.kittyBonus?.bonusPoints).toBe(kittyBonus);
   });
 
   test("should NOT apply kitty bonus when defending team wins final trick", () => {
@@ -341,19 +337,17 @@ describe("Kitty Bonus Integration", () => {
     const teamA = finalResult.newState.teams[0];
     const trickPoints = 10; // Bot2 Five = 5 points * 2 = 10 points
     const kittyPoints = 25; // Same kitty: 25 points
-    const kittyBonus = kittyPoints * 4; // Tractor final trick = 4x multiplier = 100 points
+    const kittyBonus = kittyPoints * 8; // Tractor final trick = 8x multiplier = 200 points
 
     // After trick completion: team should have ONLY trick points (kitty bonus applied later)
     expect(teamA.points).toBe(trickPoints);
 
     // Verify kitty bonus info is properly stored for round completion
-    expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
-    expect(
-      finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints,
-    ).toBe(kittyBonus);
+    expect(finalResult.newState.kittyBonus).toBeDefined();
+    expect(finalResult.newState.kittyBonus?.bonusPoints).toBe(kittyBonus);
   });
 
-  test("should populate roundEndKittyInfo for display in round result modal", () => {
+  test("should populate kittyBonus for display in round result modal", () => {
     // Set up full 8-card kitty for proper test
     gameState.kittyCards = [
       Card.createCard(Suit.Spades, Rank.King, 0),
@@ -405,23 +399,15 @@ describe("Kitty Bonus Integration", () => {
 
     const finalResult = processPlay(gameState, jackPair); // Bot3 plays Jack pair
 
-    // Verify roundEndKittyInfo is populated
-    expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
+    // Verify kittyBonus is populated
+    expect(finalResult.newState.kittyBonus).toBeDefined();
     expect(finalResult.newState.kittyCards).toHaveLength(8); // Use gameState.kittyCards
-    expect(finalResult.newState.roundEndKittyInfo?.kittyPoints).toBe(25);
-    expect(finalResult.newState.roundEndKittyInfo?.finalTrickType).toBe(
-      "pairs/tractors",
-    );
-    expect(finalResult.newState.roundEndKittyInfo?.kittyBonus).toBeDefined();
-    expect(
-      finalResult.newState.roundEndKittyInfo?.kittyBonus?.bonusPoints,
-    ).toBe(100);
-    expect(finalResult.newState.roundEndKittyInfo?.kittyBonus?.multiplier).toBe(
-      4,
-    );
+    expect(finalResult.newState.kittyBonus?.kittyPoints).toBe(25);
+    expect(finalResult.newState.kittyBonus?.multiplier).toBe(4);
+    expect(finalResult.newState.kittyBonus?.bonusPoints).toBe(100);
   });
 
-  test("should populate roundEndKittyInfo without bonus when defending team wins", () => {
+  test("should not populate kittyBonus when defending team wins", () => {
     // Set up fresh game state for this test with proper kitty
     const testGameState = createGameState();
     testGameState.gamePhase = GamePhase.Playing;
@@ -467,14 +453,8 @@ describe("Kitty Bonus Integration", () => {
     // Verify defending team won (Bot2 from Team A)
     expect(finalResult.trickWinnerId).toBe("bot2");
 
-    // Verify roundEndKittyInfo is populated but without bonus
-    expect(finalResult.newState.roundEndKittyInfo).toBeDefined();
-    expect(finalResult.newState.kittyCards).toHaveLength(8); // Use gameState.kittyCards
-    expect(finalResult.newState.roundEndKittyInfo?.kittyPoints).toBe(25);
-    expect(finalResult.newState.roundEndKittyInfo?.finalTrickType).toBe(
-      "singles",
-    );
-    expect(finalResult.newState.roundEndKittyInfo?.kittyBonus).toBeUndefined(); // No bonus
+    // Verify kittyBonus is not populated
+    expect(finalResult.newState.kittyBonus).toBeUndefined(); // No bonus
   });
 
   test("should transition to KittySwap phase after dealing completes", () => {

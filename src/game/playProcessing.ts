@@ -222,40 +222,31 @@ export function processPlay(
 
         // KITTY BONUS: Check if this is the final trick and calculate kitty bonus
         if (isThisFinalTrick) {
-          const kittyInfo = calculateKittyBonusInfo(
+          const kittyBonusInfo = calculateKittyBonusInfo(
             newState,
             newState.currentTrick,
             winningPlayerId,
           );
 
-          // Populate roundEndKittyInfo for round result display
+          // Populate kittyBonus for round result display
           // Store kitty bonus info but DON'T add to team points yet - save for round completion
-          newState.roundEndKittyInfo = {
-            kittyPoints: kittyInfo.kittyPoints,
-            finalTrickType: kittyInfo.finalTrickType,
-            kittyBonus:
-              kittyInfo.bonusPoints > 0
-                ? {
-                    bonusPoints: kittyInfo.bonusPoints,
-                    multiplier: kittyInfo.multiplier,
-                  }
-                : undefined,
-          };
+          newState.kittyBonus = kittyBonusInfo;
 
-          gameLogger.debug(
-            "final_trick_kitty_bonus",
-            {
-              winningPlayer: winningPlayerId,
-              winningTeam: winningTeam.id,
-              kittyCards: newState.kittyCards.map((card) => card.toString()),
-              kittyPoints: kittyInfo.kittyPoints,
-              finalTrickType: kittyInfo.finalTrickType,
-              multiplier: kittyInfo.multiplier,
-              bonusPoints: kittyInfo.bonusPoints,
-              roundNumber: newState.roundNumber,
-            },
-            `Final trick kitty bonus: ${winningTeam.id} gets ${kittyInfo.bonusPoints} bonus (${kittyInfo.kittyPoints} × ${kittyInfo.multiplier} for ${kittyInfo.finalTrickType})`,
-          );
+          if (kittyBonusInfo) {
+            gameLogger.debug(
+              "final_trick_kitty_bonus",
+              {
+                winningPlayer: winningPlayerId,
+                winningTeam: winningTeam.id,
+                kittyCards: newState.kittyCards.map((card) => card.toString()),
+                kittyPoints: kittyBonusInfo.kittyPoints,
+                multiplier: kittyBonusInfo.multiplier,
+                bonusPoints: kittyBonusInfo.bonusPoints,
+                roundNumber: newState.roundNumber,
+              },
+              `Final trick kitty bonus: ${winningTeam.id} gets ${kittyBonusInfo.bonusPoints} bonus (${kittyBonusInfo.kittyPoints} × ${kittyBonusInfo.multiplier})`,
+            );
+          }
 
           // NOTE: Kitty bonus points are NOT added to team.points here
           // They will be added during round completion (gameRoundManager.endRound)

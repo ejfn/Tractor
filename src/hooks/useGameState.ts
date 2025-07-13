@@ -20,7 +20,6 @@ import { sortCards } from "../utils/cardSorting";
 import { initializeGame } from "../utils/gameInitialization";
 import { gameLogger } from "../utils/gameLogger";
 import {
-  AI_MOVE_DELAY,
   CARD_SELECTION_DELAY,
   ROUND_COMPLETE_BUFFER,
   TRICK_RESULT_DISPLAY_TIME,
@@ -108,7 +107,7 @@ export function useGameState() {
               const gameStateToHandle = result.gameState;
               setTimeout(() => {
                 handleEndRound(gameStateToHandle);
-              }, ROUND_COMPLETE_BUFFER + AI_MOVE_DELAY); // 1100ms total - ensures UI is fully initialized after restoration
+              }, TRICK_RESULT_DISPLAY_TIME + ROUND_COMPLETE_BUFFER); // 1100ms total - ensures UI is fully initialized after restoration
             }
 
             // Check if we have a completed trick that needs to be cleared

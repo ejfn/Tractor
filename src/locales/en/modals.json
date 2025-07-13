@@ -18,7 +18,8 @@
     "defendingWonAdvance": "{{teamName}} {{pointMessage}} and advances {{advancement}} {{rankText}} to {{rank}}!",
     "defendingWonAce": "{{teamName}} {{pointMessage}} and reached Ace! They must now defend Ace to win the game!",
     "heldToPoints": "held attackers to only {{points}} points",
-    "defendedWithPoints": "defended with attackers getting {{points}} points"
+    "defendedWithPoints": "defended with attackers getting {{points}} points",
+    "kittyBonus": "Kitty Bonus: {{kittyPoints}} x {{multiplier}}"
   },
   "gameOver": {
     "title": "Victory!",
