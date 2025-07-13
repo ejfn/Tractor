@@ -1,9 +1,9 @@
 import {
-  getTractorRank,
-  getTractorContext,
   findAllTractors,
-  isValidTractor,
+  getTractorContext,
+  getTractorRank,
   getTractorTypeDescription,
+  isValidTractor,
 } from "../../src/game/tractorLogic";
 import {
   Card,
@@ -35,8 +35,8 @@ describe("Advanced Tractor Rules - Unified Tractor Rank System", () => {
       const bigJoker = Card.createJoker(JokerType.Big, 0);
       const smallJoker = Card.createJoker(JokerType.Small, 0);
 
-      expect(getTractorRank(bigJoker, trumpInfo)).toBe(1020);
-      expect(getTractorRank(smallJoker, trumpInfo)).toBe(1019);
+      expect(getTractorRank(bigJoker, trumpInfo)).toBe(1018);
+      expect(getTractorRank(smallJoker, trumpInfo)).toBe(1017);
     });
 
     test("should assign correct tractor ranks for trump rank cards", () => {
@@ -44,9 +44,9 @@ describe("Advanced Tractor Rules - Unified Tractor Rank System", () => {
       const offSuitRank1 = Card.createCard(Suit.Hearts, Rank.Seven, 0);
       const offSuitRank2 = Card.createCard(Suit.Clubs, Rank.Seven, 0);
 
-      expect(getTractorRank(trumpSuitRank, trumpInfo)).toBe(1017); // Trump suit rank
-      expect(getTractorRank(offSuitRank1, trumpInfo)).toBe(1016); // Off-suit trump rank
-      expect(getTractorRank(offSuitRank2, trumpInfo)).toBe(1016); // Off-suit trump rank
+      expect(getTractorRank(trumpSuitRank, trumpInfo)).toBe(1016); // Trump suit rank
+      expect(getTractorRank(offSuitRank1, trumpInfo)).toBe(1015); // Off-suit trump rank
+      expect(getTractorRank(offSuitRank2, trumpInfo)).toBe(1015); // Off-suit trump rank
     });
 
     test("should assign correct tractor ranks for regular cards with trump rank bridging", () => {
@@ -113,10 +113,10 @@ describe("Advanced Tractor Rules - Unified Tractor Rank System", () => {
       // Trump rank cards
       expect(
         getTractorRank(Card.createCard(Suit.Hearts, Rank.Ace, 0), trumpInfoAce),
-      ).toBe(1017); // Trump suit
+      ).toBe(1016); // Trump suit
       expect(
         getTractorRank(Card.createCard(Suit.Spades, Rank.Ace, 0), trumpInfoAce),
-      ).toBe(1016); // Off-suit
+      ).toBe(1015); // Off-suit
     });
   });
 

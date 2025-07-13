@@ -17,15 +17,15 @@ import { calculateCardStrategicValue, getRankValue } from "./cardValue";
 // Get tractor rank for a card - unified ranking system for tractor detection
 export const getTractorRank = (card: Card, trumpInfo: TrumpInfo): number => {
   // Jokers have highest tractor ranks
-  if (card.joker === JokerType.Big) return 1020; // Above all suits
-  if (card.joker === JokerType.Small) return 1019; // Above all suits
+  if (card.joker === JokerType.Big) return 1018; // Above all suits
+  if (card.joker === JokerType.Small) return 1017; // Above all suits
 
   // Trump rank cards - special handling for cross-suit combinations
   if (card.rank === trumpInfo.trumpRank) {
     if (card.suit === trumpInfo.trumpSuit) {
-      return 1017; // Trump suit rank - can combine with off-suit ranks
+      return 1016; // Trump suit rank - can combine with off-suit ranks
     } else {
-      return 1016; // Off-suit trump rank - all get same rank so they DON'T form tractors with each other
+      return 1015; // Off-suit trump rank - all get same rank so they DON'T form tractors with each other
     }
   }
 

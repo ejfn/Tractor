@@ -197,6 +197,18 @@ Work with your AI teammate to collect 80+ points per round and advance through c
 #### **Example: Rank 2, Spades Trump**
 **BJ** > **SJ** > **2♠** > **2♥=2♣=2♦** > **A♠** > **K♠** > **Q♠** > **J♠** > **10♠** > **9♠** > **8♠** > **7♠** > **6♠** > **5♠** > **4♠** > **3♠**
 
+#### **Special Tractor Formation Rule** 🆕
+For **tractor formation only**, the highest cards follow a **consecutive ranking system**:
+- **A♠** (1014) → **2♥/2♣/2♦** (1015) → **2♠** (1016) → **SJ** (1017) → **BJ** (1018)
+
+This allows **consecutive tractor combinations**:
+- ✅ **A♠-A♠ + 2♥-2♥** (Ace + off-suit trump rank)
+- ✅ **2♥-2♥ + 2♠-2♠** (off-suit + trump suit rank)  
+- ✅ **2♠-2♠ + SJ-SJ** (trump suit rank + Small Joker)
+- ✅ **SJ-SJ + BJ-BJ** (Small Joker + Big Joker)
+
+**Note**: This consecutive system applies **only to tractor detection**, not to general card strength comparisons.
+
 ### **Trump Properties**
 - **All trump cards beat all non-trump cards**
 - **Trump rank cards are trump regardless of suit**
@@ -236,6 +248,7 @@ Work with your AI teammate to collect 80+ points per round and advance through c
   - **Joker Tractors**: Small Joker Pair + Big Joker Pair
   - **Trump Cross-Suit Tractors**: Trump suit rank pair + off-suit rank pair
   - **Rank-Skip Tractors**: Consecutive pairs with trump rank creating gaps
+  - **🆕 Consecutive High-Card Tractors**: Ace + trump ranks + jokers (see Special Tractor Formation Rule above)
 
 #### **Trump Cross-Suit Tractors**
 - **Rule**: Trump suit rank pair can combine with off-suit rank pairs
