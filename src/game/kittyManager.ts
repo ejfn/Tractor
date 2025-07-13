@@ -203,6 +203,10 @@ export const calculateKittyBonusInfo = (
   const kittyPoints = calculateKittyPoints(gameState.kittyCards);
   const multiplier = getFinalTrickMultiplier(finalTrick, gameState);
 
+  if (kittyPoints === 0) {
+    return undefined; // No kitty points to apply
+  }
+
   // Find the winning player's team
   const winningPlayer = gameState.players.find(
     (p) => p.id === finalTrickWinnerId,
