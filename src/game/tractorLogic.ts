@@ -1,5 +1,9 @@
-import { Card, Combo, ComboType, JokerType, TrumpInfo } from "../types";
-import { calculateCardStrategicValue, getRankValue } from "./cardValue";
+import { Card, Combo, ComboType, JokerType, Suit, TrumpInfo } from "../types";
+import {
+  calculateCardStrategicValue,
+  getRankValue,
+  isTrump,
+} from "./cardValue";
 
 /**
  * Tractor Detection Module
@@ -65,18 +69,6 @@ const getSuitOffset = (suit: string, trumpInfo: TrumpInfo): number => {
   }
 };
 
-// Get tractor context for grouping cards that can form tractors together
-export const getTractorContext = (card: Card, trumpInfo: TrumpInfo): string => {
-  if (card.joker) {
-    return "joker"; // Jokers form their own tractor context
-  } else if (card.rank === trumpInfo.trumpRank) {
-    return "trump_rank"; // All trump rank cards can potentially form cross-suit tractors
-  } else if (card.suit) {
-    return card.suit; // Regular cards grouped by suit
-  }
-  return "other";
-};
-
 // Find all tractors using unified tractor rank system
 export const findAllTractors = (
   cards: Card[],
@@ -88,7 +80,7 @@ export const findAllTractors = (
   const cardsByTractorContext: Record<string, Card[]> = {};
 
   cards.forEach((card) => {
-    const contextKey = getTractorContext(card, trumpInfo);
+    const contextKey = isTrump(card, trumpInfo) ? Suit.None : card.suit;
 
     if (!cardsByTractorContext[contextKey]) {
       cardsByTractorContext[contextKey] = [];
@@ -256,28 +248,4 @@ export const isValidTractor = (
         cards.some((card) => card.id === tractorCard.id),
       ),
   );
-};
-
-// Get tractor type description for debugging/logging
-export const getTractorTypeDescription = (
-  cards: Card[],
-  trumpInfo: TrumpInfo,
-): string => {
-  if (cards.length < 4) return "Not a tractor";
-
-  const context = getTractorContext(cards[0], trumpInfo);
-  const ranks = cards.map((card) => getTractorRank(card, trumpInfo));
-  const uniqueRanks = Array.from(new Set(ranks)).sort((a, b) => a - b);
-
-  if (context === "joker") {
-    return "Joker tractor";
-  } else if (context === "trump_rank") {
-    return "Trump cross-suit tractor";
-  } else if (
-    uniqueRanks.some((rank, i) => i > 0 && rank - uniqueRanks[i - 1] > 1)
-  ) {
-    return "Rank-skip tractor";
-  } else {
-    return "Regular same-suit tractor";
-  }
 };

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@jest/globals";
 import { compareCards } from "../../src/game/cardComparison";
-import { getComboType, identifyCombos } from "../../src/game/comboDetection";
 import { isTrump } from "../../src/game/cardValue";
+import { getComboType, identifyCombos } from "../../src/game/comboDetection";
 import {
   Card,
   ComboType,
@@ -363,7 +363,7 @@ describe("Combo Type Identification Tests", () => {
       expect(pairCombos.length).toBeGreaterThan(0);
     });
 
-    test("Joker combinations with trump cards should not form tractors", () => {
+    test("Joker combinations with trump cards should form tractors", () => {
       // Create a mix of jokers and trump cards
       const smallJokerPair = Card.createJokerPair(JokerType.Small);
       const spade2pair = Card.createPair(Suit.Spades, Rank.Two);
@@ -375,14 +375,14 @@ describe("Combo Type Identification Tests", () => {
       expect(isTrump(spade2pair[0], trumpInfo)).toBe(true);
 
       // They should not form a tractor
-      expect(getComboType(hand, trumpInfo)).not.toBe(ComboType.Tractor);
+      expect(getComboType(hand, trumpInfo)).toBe(ComboType.Tractor);
 
-      // When we run identifyCombos, it should not find a tractor
+      // When we run identifyCombos, it should find a tractor
       const combos = identifyCombos(hand, trumpInfo);
       const tractorCombos = combos.filter(
         (combo) => combo.type === ComboType.Tractor,
       );
-      expect(tractorCombos.length).toBe(0);
+      expect(tractorCombos.length).toBe(1);
     });
 
     test("A-A-2-2 combination with 2 as trump rank should not form a tractor", () => {

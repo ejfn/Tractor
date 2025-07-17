@@ -1,8 +1,6 @@
 import {
   findAllTractors,
-  getTractorContext,
   getTractorRank,
-  getTractorTypeDescription,
   isValidTractor,
 } from "../../src/game/tractorLogic";
 import {
@@ -120,37 +118,6 @@ describe("Advanced Tractor Rules - Unified Tractor Rank System", () => {
     });
   });
 
-  describe("Tractor Context Grouping", () => {
-    const trumpInfo: TrumpInfo = {
-      trumpSuit: Suit.Spades,
-      trumpRank: Rank.Seven,
-    };
-
-    test("should group jokers in joker context", () => {
-      const bigJoker = Card.createJoker(JokerType.Big, 0);
-      const smallJoker = Card.createJoker(JokerType.Small, 0);
-
-      expect(getTractorContext(bigJoker, trumpInfo)).toBe("joker");
-      expect(getTractorContext(smallJoker, trumpInfo)).toBe("joker");
-    });
-
-    test("should group trump rank cards in trump_rank context", () => {
-      const trumpSuitRank = Card.createCard(Suit.Spades, Rank.Seven, 0);
-      const offSuitRank = Card.createCard(Suit.Hearts, Rank.Seven, 0);
-
-      expect(getTractorContext(trumpSuitRank, trumpInfo)).toBe("trump_rank");
-      expect(getTractorContext(offSuitRank, trumpInfo)).toBe("trump_rank");
-    });
-
-    test("should group regular cards by suit", () => {
-      const heartCard = Card.createCard(Suit.Hearts, Rank.Six, 0);
-      const spadeCard = Card.createCard(Suit.Spades, Rank.Eight, 0);
-
-      expect(getTractorContext(heartCard, trumpInfo)).toBe(Suit.Hearts);
-      expect(getTractorContext(spadeCard, trumpInfo)).toBe(Suit.Spades);
-    });
-  });
-
   describe("Trump Cross-Suit Tractors", () => {
     test("should form tractor with trump suit rank pair + off-suit rank pair", () => {
       const trumpInfo: TrumpInfo = {
@@ -169,9 +136,6 @@ describe("Advanced Tractor Rules - Unified Tractor Rank System", () => {
       expect(tractors).toHaveLength(1);
       expect(tractors[0].type).toBe(ComboType.Tractor);
       expect(tractors[0].cards).toHaveLength(4);
-
-      const description = getTractorTypeDescription(cards, trumpInfo);
-      expect(description).toBe("Trump cross-suit tractor");
     });
 
     test("should NOT form tractor with only off-suit rank pairs", () => {
@@ -247,9 +211,6 @@ describe("Advanced Tractor Rules - Unified Tractor Rank System", () => {
       expect(tractors[0].cards).toHaveLength(4);
 
       expect(isValidTractor(cards, trumpInfo)).toBe(true);
-
-      const description = getTractorTypeDescription(cards, trumpInfo);
-      expect(description).toBe("Regular same-suit tractor"); // Appears regular due to bridging
     });
 
     test("should form multi-pair rank-skip tractor", () => {
@@ -348,14 +309,11 @@ describe("Advanced Tractor Rules - Unified Tractor Rank System", () => {
       expect(tractors[0].cards).toHaveLength(4);
 
       expect(isValidTractor(cards, trumpInfo)).toBe(true);
-
-      const description = getTractorTypeDescription(cards, trumpInfo);
-      expect(description).toBe("Joker tractor");
     });
   });
 
   describe("Invalid Tractor Combinations", () => {
-    test("should NOT form tractor with trump rank + joker pairs", () => {
+    test("should form tractor with trump rank + joker pairs", () => {
       const trumpInfo: TrumpInfo = {
         trumpSuit: Suit.Spades,
         trumpRank: Rank.Two,
@@ -369,9 +327,9 @@ describe("Advanced Tractor Rules - Unified Tractor Rank System", () => {
       ];
 
       const tractors = findAllTractors(cards, trumpInfo);
-      expect(tractors).toHaveLength(0); // Different contexts, different tractor ranks
+      expect(tractors).toHaveLength(1);
 
-      expect(isValidTractor(cards, trumpInfo)).toBe(false);
+      expect(isValidTractor(cards, trumpInfo)).toBe(true);
     });
 
     test("should NOT form tractor with non-trump cross-suit pairs", () => {
