@@ -13,7 +13,7 @@
     "test:simulation": "jest __tests__/simulation/ --testPathIgnorePatterns=[]",
     "typecheck": "tsc --noEmit",
     "qualitycheck": "npm-run-all typecheck lint test:silent",
-    "analyse": "cd analysis && python generate_local_report.py"
+    "analysis": "uv run analysis/generate_local_report.py"
   },
   "expo": {
     "doctor": {
