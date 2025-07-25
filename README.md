@@ -43,7 +43,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **⚡ Progressive Dealing System**: Real-time trump declarations with sophisticated AI strategy
 - **🎯 Advanced Kitty Management**: Strategic suit elimination and endgame bonus multipliers
 - **💾 Automatic Game Persistence**: Seamless save/restore with auto-recovery on app restart
-- **📊 Local Analysis System**: Comprehensive game data analysis with KPI reports and visualizations
+- **📊 BigQuery Analysis System**: Enterprise-scale game data analysis with Google Cloud BigQuery for massive datasets
 - **🌍 Multilingual Support**: Full English and Chinese localization with automatic language detection
 - **📱 Touch-Optimized UI**: Smooth animations, team color coding, and dark theme support
 - **🏆 Authentic Gameplay**: Complete Shengji/Tractor rules with proper combination following
@@ -103,29 +103,17 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 ## Reporting & Analysis
 
-**Local Analysis System** for comprehensive game data insights:
+**Unified BigQuery Analysis System** for comprehensive game data insights:
 
-- **📊 Local Log Analysis**: Process game logs locally using DuckDB for fast SQL operations
+- **🌐 BigQuery Analysis**: Enterprise-scale processing for datasets from small tests to 50GB+ production data
 - **📈 KPI Reports**: Comprehensive reports with AI decision analysis, performance metrics, and gameplay statistics
 - **🎨 Data Visualizations**: Rich charts and graphs showing AI behavior, game patterns, and strategic insights
-- **⚡ Fast Processing**: Analyze thousands of games in seconds without external dependencies
-
-**Quick Commands:**
-```bash
-# Generate simulation data
-./run_simulations.sh 10
-
-# Analyse logs and generate reports
-npm run analyse
-```
-
-*Complete analysis guide in **[Reporting & Analysis](docs/REPORTING_AND_ANALYSIS.md)***
+- **⚡ Automated Workflows**: Complete BigQuery pipeline with Data Transfer jobs and automated uploads
 
 ## Documentation
 
 - **[Game Rules](docs/GAME_RULES.md)** - Complete rules, quick start, and strategy reference
 - **[AI System](docs/AI_SYSTEM.md)** - Comprehensive AI intelligence documentation
-- **[Reporting & Analysis](docs/REPORTING_AND_ANALYSIS.md)** - Local analysis system and KPI reporting
 - **[CLAUDE.md](CLAUDE.md)** - Claude development guidelines and project architecture
 - **[GEMINI.md](GEMINI.md)** - Gemini development guidelines and project architecture
 

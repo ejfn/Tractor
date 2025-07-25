@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code when working with this repository.
 
-@README.md | @docs/AI_SYSTEM.md | @docs/GAME_RULES.md | @docs/MULTI_COMBO.md | @docs/REPORTING_AND_ANALYSIS.md | @docs/LOG_EVENT_SCHEMA.md
+@README.md | @docs/AI_SYSTEM.md | @docs/GAME_RULES.md | @docs/MULTI_COMBO.md | @docs/LOG_EVENT_SCHEMA.md
 
 ## Project Overview
 
@@ -44,7 +44,9 @@ npm run android       # Android platform
 npm run ios          # iOS platform
 
 # Analysis and reporting
-npm run analyse       # Generate comprehensive game analysis reports
+uv run analysis/bigquery_main.py setup   # Setup BigQuery infrastructure
+uv run analysis/bigquery_main.py upload  # Upload logs to BigQuery
+uv run analysis/bigquery_main.py analyse # BigQuery analysis (for production)
 ```
 
 ## Development Guidelines
@@ -90,7 +92,6 @@ npm run qualitycheck  # MUST pass completely
 - **[docs/AI_SYSTEM.md](docs/AI_SYSTEM.md)** - Comprehensive AI intelligence documentation
 - **[docs/GAME_RULES.md](docs/GAME_RULES.md)** - Complete game rules and strategy guide
 - **[docs/MULTI_COMBO.md](docs/MULTI_COMBO.md)** - Multi-combo implementation guide
-- **[docs/REPORTING_AND_ANALYSIS.md](docs/REPORTING_AND_ANALYSIS.md)** - Local analysis system and KPI reporting
 - **[docs/LOG_EVENT_SCHEMA.md](docs/LOG_EVENT_SCHEMA.md)** - Log event structure documentation
 
 ### Git Workflow
