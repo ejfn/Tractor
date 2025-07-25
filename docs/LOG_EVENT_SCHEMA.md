@@ -136,15 +136,6 @@ All log entries share these top-level fields:
 
 ---
 
-## Related Files
-
-**Analysis Implementation:**
-- `analysis/local_analyzer.py` - Uses this schema to parse and analyze log events
-- `analysis/generate_local_report.py` - Generates reports from structured event data
-
-**Related Documentation:**
-- `docs/REPORTING_AND_ANALYSIS.md` - Complete analysis pipeline documentation
-
 ## Future Updates
 
 This schema will be updated as new event types are introduced or existing event structures evolve.

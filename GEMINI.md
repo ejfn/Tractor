@@ -11,7 +11,6 @@ All detailed documentation is located in the `docs/` folder.
 - **[Game Rules](docs/GAME_RULES.md)**: Complete rules, quick start, and strategy reference.
 - **[AI System](docs/AI_SYSTEM.md)**: Comprehensive AI intelligence documentation.
 - **[Multi-Combo System](docs/MULTI_COMBO.md)**: Complete multi-combo implementation guide.
-- **[Reporting and Analysis](docs/REPORTING_AND_ANALYSIS.md)**: Guide to the project's reporting and analysis tools.
 - **[Log Event Schema](docs/LOG_EVENT_SCHEMA.md)**: Detailed schema for log events.
 - **[Versioning Strategy](docs/VERSIONING_STRATEGY.md)**: Project versioning strategy.
 
