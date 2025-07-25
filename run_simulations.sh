@@ -28,3 +28,16 @@ node scripts/inject-dev-version.js
 npm run test:simulation
 
 echo "Simulations complete. Logs are located in the logs/ directory."
+
+# Compress all .log files to .log.gz for efficient storage and upload
+echo "Compressing log files..."
+if [ -d "logs" ] && [ -n "$(find logs -name "*.log" -type f 2>/dev/null)" ]; then
+    cd logs
+    gzip *.log
+    cd ..
+    echo "✅ All .log files compressed to .log.gz"
+else
+    echo "⚠️  No .log files found to compress"
+fi
+
+echo "Ready for BigQuery upload: uv run analysis/bigquery_main.py upload"
