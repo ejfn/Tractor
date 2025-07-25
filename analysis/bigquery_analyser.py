@@ -277,53 +277,14 @@ class BigQueryAnalyser:
         
         print(f"Performance visualizations saved to {self.output_dir}/")
     
-    def get_data_summary(self):
-        """Get a summary of the data in BigQuery."""
-        print("📊 Data Summary")
-        print("=" * 30)
-        
-        summary_query = f"""
-        SELECT 
-            COUNT(*) as total_records,
-            COUNT(DISTINCT gameId) as unique_games,
-            COUNT(DISTINCT appVersion) as app_versions,
-            COUNT(DISTINCT event) as event_types,
-            MIN(timestamp) as earliest_record,
-            MAX(timestamp) as latest_record
-        FROM `{self.full_table_id}`
-        WHERE gameId IS NOT NULL
-        """
-        
-        try:
-            result = self.client.query(summary_query).to_dataframe()
-            if not result.empty:
-                row = result.iloc[0]
-                print(f"📈 Total Records: {row['total_records']:,}")
-                print(f"🎮 Unique Games: {row['unique_games']:,}")
-                print(f"📱 App Versions: {row['app_versions']}")
-                print(f"📝 Event Types: {row['event_types']}")
-                print(f"📅 Date Range: {row['earliest_record']} to {row['latest_record']}")
-            
-            return result
-            
-        except Exception as e:
-            print(f"❌ Summary query failed: {e}")
-            return pd.DataFrame()
+    
     
     def run_analysis(self) -> pd.DataFrame:
         """Run the complete analysis and return results."""
         print("🚀 BigQuery Analysis for Tractor AI Performance")
         print("=" * 60)
         
-        # Step 1: Get data summary
-        summary = self.get_data_summary()
-        if summary.empty:
-            print("❌ No data found in BigQuery table")
-            return pd.DataFrame()
-
-        print()
-        
-        # Step 2: Run main analysis
+        # Step 1: Run main analysis
         df = self.run_analysis_query()
         
         if not df.empty:

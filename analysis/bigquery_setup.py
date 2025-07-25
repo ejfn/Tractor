@@ -134,13 +134,21 @@ class BigQuerySetup:
             policy = bucket.get_iam_policy(requested_policy_version=3)
             
             role = "roles/storage.objectAdmin"
+            member_to_add = f"serviceAccount:{service_account_email}"
             
-            # Add the service account to the role's members
-            policy.bindings.append({"role": role, "members": {member}})
-            
-            bucket.set_iam_policy(policy)
-            print(f"✅ Granted Storage Object Admin on bucket '{self.bucket_name}'")
-            
+            # Check if the binding already exists to avoid duplicates
+            binding_exists = any(
+                b.get('role') == role and member_to_add in b.get('members', [])
+                for b in policy.bindings
+            )
+
+            if not binding_exists:
+                policy.bindings.append({"role": role, "members": {member_to_add}})
+                bucket.set_iam_policy(policy)
+                print(f"✅ Granted Storage Object Admin on bucket '{self.bucket_name}'")
+            else:
+                print(f"✅ Storage Object Admin role already exists on bucket '{self.bucket_name}'")
+
         except Exception as e:
             print(f"❌ Failed to set bucket-level IAM policy: {e}")
             print(f"   Could not grant Storage Object Admin to {service_account_email} on bucket {self.bucket_name}.")
@@ -417,9 +425,9 @@ class BigQuerySetup:
             print(f"   GCS Bucket: {self.bucket_name}")
             print()
             print("Next steps:")
-            print("1. Run: uv run analysis/bigquery_upload.py")
+            print("1. Run: uv run analysis/bigquery_main.py upload")
             print("2. Data Transfer job will automatically import new files")
-            print("3. Run: uv run analysis/bigquery_analyzer.py")
+            print("3. Run: uv run analysis/bigquery_main.py analyse")
         else:
             print("❌ Setup incomplete. Please check errors above.")
         
