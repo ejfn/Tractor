@@ -68,7 +68,7 @@ class BigQueryUploader:
         print(f"🎯 Successfully uploaded {len(uploaded_files)} files")
         return uploaded_files
     
-    def trigger_bigquery_transfer(self, gcs_files: list = None):
+    def trigger_bigquery_transfer(self):
         """Manually trigger the existing BigQuery Data Transfer job."""
         print("🔄 Manually triggering existing BigQuery Data Transfer job...")
         

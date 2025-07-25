@@ -62,11 +62,11 @@ def main():
         elif command == "full":
             print("\n🔄 Running complete workflow...")
             
-            # Step 1: Upload (skip setup, assume it's done)
-            print("\n📤 Step 1: Uploading data...")
+            # Step 1: Upload and trigger transfer
+            print("\n📤 Step 1: Uploading data and triggering transfer...")
             uploader = BigQueryUploader()
-            if not uploader.run_upload(logs_dir):
-                print("❌ Upload failed")
+            if not uploader.run_upload_and_transfer(logs_dir):
+                print("❌ Upload and transfer failed")
                 return False
             
             # Step 2: Analyze and generate report
