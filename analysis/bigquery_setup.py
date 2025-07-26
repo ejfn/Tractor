@@ -10,16 +10,10 @@ from google.cloud import bigquery_datatransfer
 from google.cloud.bigquery_datatransfer_v1.types import TransferConfig, CreateTransferConfigRequest
 from google.cloud.exceptions import NotFound, Conflict
 from google.protobuf.struct_pb2 import Struct
+from googleapiclient.discovery import build
 import google.auth
 
 from config import PROJECT_ID, DATASET_ID, TABLE_ID, BUCKET_NAME, LOCATION
-
-try:
-    from googleapiclient.discovery import build
-except ImportError:
-    print("Warning: google-api-python-client is not installed. Service account creation will be skipped.")
-    print("Please run: uv pip install google-api-python-client google-auth-httplib2")
-    build = None
 
 class BigQuerySetup:
     def __init__(self):
@@ -35,10 +29,6 @@ class BigQuerySetup:
     def create_or_get_service_account(self, account_id, display_name):
         """Creates a service account if it doesn't exist, or gets it if it does."""
         print(f"👤 Ensuring service account exists: {account_id}")
-        if not build:
-            print("❌ google-api-python-client not found, cannot proceed.")
-            return None
-            
         try:
             # This script needs credentials with permission to create service accounts
             # and set IAM policies.
