@@ -5,6 +5,7 @@ import {
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
@@ -118,40 +119,42 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      {/* Use dark status bar on Android for better visibility */}
-      <StatusBar style={Platform.OS === "android" ? "light" : "auto"} />
-      {/* Render a view under the status bar to change its background on Android */}
-      {Platform.OS === "android" && (
-        <View
-          style={{
-            backgroundColor: "#1B5E4F",
-            height: RNStatusBar.currentHeight || 0,
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
+      <SafeAreaProvider>
+        {/* Use dark status bar on Android for better visibility */}
+        <StatusBar style={Platform.OS === "android" ? "light" : "auto"} />
+        {/* Render a view under the status bar to change its background on Android */}
+        {Platform.OS === "android" && (
+          <View
+            style={{
+              backgroundColor: "#1B5E4F",
+              height: RNStatusBar.currentHeight || 0,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+            }}
+          />
+        )}
+        <Stack
+          screenOptions={{
+            headerShown: true,
+            headerStyle: {
+              backgroundColor: "#1B5E4F", // Deep emerald green background for header
+            },
+            headerTintColor: "#FFFFFF", // White text for header
+            headerTitleAlign: "center", // Center the header title
+            headerTitle: () => <HeaderTitle />,
+            // Balance the header with invisible spacer that exactly matches language button
+            headerLeft: () => <HeaderLeftSpacer />,
+            headerRight: () => <HeaderLanguageButton />,
+            contentStyle: {
+              backgroundColor: "transparent", // Reverted from filled color to transparent
+              flex: 1, // Make content fill available space
+              height: "100%", // Ensure content fills the height
+            },
           }}
         />
-      )}
-      <Stack
-        screenOptions={{
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: "#1B5E4F", // Deep emerald green background for header
-          },
-          headerTintColor: "#FFFFFF", // White text for header
-          headerTitleAlign: "center", // Center the header title
-          headerTitle: () => <HeaderTitle />,
-          // Balance the header with invisible spacer that exactly matches language button
-          headerLeft: () => <HeaderLeftSpacer />,
-          headerRight: () => <HeaderLanguageButton />,
-          contentStyle: {
-            backgroundColor: "transparent", // Reverted from filled color to transparent
-            flex: 1, // Make content fill available space
-            height: "100%", // Ensure content fills the height
-          },
-        }}
-      />
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -48,22 +48,23 @@ export const AnimatedCard: React.FC<CardProps> = ({
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
 
-  // Color based on suit
-  const getColor = () => {
-    return getSuitColorStyle(card.suit).color;
-  };
-
-  // Card text content
-  const getCardText = () => {
+  const suitColor = useMemo(
+    () => getSuitColorStyle(card.suit).color,
+    [card.suit],
+  );
+  const suitSymbol = useMemo(
+    () => getSuitSymbol(card.suit, card.joker),
+    [card.suit, card.joker],
+  );
+  const cardText = useMemo(() => {
     if (card.joker) {
       return card.joker === JokerType.Big ? "BIG JOKER" : "SMALL JOKER";
     }
-
     return card.rank || "";
-  };
+  }, [card.joker, card.rank]);
 
-  // Handle card selection with improved touch response
-  const handlePress = () => {
+  // Handle card selection with improved touch response - memoized for performance
+  const handlePress = useCallback(() => {
     if (onSelect && !disabled) {
       // Ensure opacity is maintained during tap animation
       opacity.value = 1;
@@ -82,7 +83,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
         scale.value = withTiming(cardScale, { duration: 25 });
       }, 50);
     }
-  };
+  }, [onSelect, disabled, opacity, scale, card, cardScale]);
 
   // Selection animation - improved with higher pop-up for better visibility
   useEffect(() => {
@@ -170,50 +171,156 @@ export const AnimatedCard: React.FC<CardProps> = ({
     };
   }, [selected, disabled, style.zIndex]); // Add dependencies to avoid unnecessary recalculations
 
-  // Create shadow styles separately to avoid shadowOffset error
-  const shadowStyle = selected
-    ? {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 6,
-      }
-    : {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        elevation: 3,
-      };
+  // Create shadow styles separately to avoid shadowOffset error - memoized for performance
+  const shadowStyle = useMemo(() => {
+    return selected || isPlayed
+      ? {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.15,
+          shadowRadius: 2,
+          elevation: 2,
+        }
+      : {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
+          elevation: 3,
+        };
+  }, [selected, isPlayed]);
+
+  // Memoized static styles to avoid recreation on every render
+  const faceDownCardBackStyle = useMemo(
+    () => ({
+      flex: 1,
+      backgroundColor: "#1A4B84", // Deep blue background
+      borderRadius: 6,
+      borderWidth: 1.5,
+      borderColor: "white",
+      overflow: "hidden" as const,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      position: "relative" as const,
+    }),
+    [],
+  );
+
+  const gridContainerStyle = useMemo(
+    () => ({
+      width: "90%" as const,
+      height: "90%" as const,
+      position: "relative" as const,
+    }),
+    [],
+  );
+
+  const jokerLetterStyle = useMemo(
+    () => ({
+      fontSize: 10,
+      fontWeight: "bold" as const,
+      lineHeight: 11,
+      textAlign: "center" as const,
+    }),
+    [],
+  );
+
+  const jokerContentStyle = useMemo(
+    () => ({
+      position: "relative" as const,
+      width: "100%" as const,
+      height: "100%" as const,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+    }),
+    [],
+  );
+
+  const jokerTopLeftStyle = useMemo(
+    () => ({
+      position: "absolute" as const,
+      top: 3,
+      left: 3,
+      flexDirection: "column" as const,
+      alignItems: "center" as const,
+      zIndex: 10,
+    }),
+    [],
+  );
+
+  const jokerBottomRightStyle = useMemo(
+    () => ({
+      position: "absolute" as const,
+      bottom: 3,
+      right: 3,
+      flexDirection: "column" as const,
+      alignItems: "center" as const,
+      transform: [{ rotate: "180deg" }],
+      zIndex: 10,
+    }),
+    [],
+  );
+
+  const jokerStarStyle = useMemo(
+    () => ({
+      fontSize: 45,
+      opacity: 1,
+      fontWeight: "bold" as const,
+    }),
+    [],
+  );
+
+  // Memoized joker letters array to avoid recreation on every render
+  const jokerLetters = useMemo(() => ["J", "O", "K", "E", "R"], []);
+
+  // Memoized TouchableOpacity props to avoid recreation
+  const touchableProps = useMemo(
+    () => ({
+      activeOpacity: 1.0,
+      delayPressIn: 0,
+      pressRetentionOffset: { top: 1, bottom: 1, left: 1, right: 1 },
+      hitSlop: { top: 1, bottom: 1, left: 1, right: 1 },
+    }),
+    [],
+  );
+
+  // Memoized card styling to avoid recalculation
+  const cardStyling = useMemo(() => {
+    let bgColor = "white";
+    let borderColor = "#CCCCCC";
+    let borderWidth = 1;
+
+    if (card.joker) {
+      // Standardized styling for jokers as trump cards
+      bgColor = "#FFFCEB"; // Consistent light gold background for all trump cards
+      borderColor = "#D4B82F"; // Gold border for all trump cards
+      borderWidth = 1.5; // Consistent border width for all trump cards
+    } else if (isTrump) {
+      // Consistent styling for all trump cards
+      bgColor = "#FFFCEB"; // Light gold tint for all trump cards
+      borderColor = "#D4B82F"; // Gold border for all trump cards
+      borderWidth = 1.5; // Consistent border width for all trump cards
+    }
+
+    return { bgColor, borderColor, borderWidth };
+  }, [card.joker, isTrump]);
+
+  // Memoized joker color calculation
+  const jokerColor = useMemo(() => {
+    if (card.joker) {
+      return card.joker === "Big" ? "#D32F2F" : "#000000";
+    }
+    return "#000000"; // Default to black for non-joker cards
+  }, [card.joker]);
 
   if (faceDown) {
     return (
       <Animated.View style={[styles.card, shadowStyle, style, animatedStyle]}>
         <View style={styles.cardBack}>
           {/* Card back with simplified 3x3 grid pattern */}
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "#1A4B84", // Deep blue background
-              borderRadius: 6,
-              borderWidth: 1.5,
-              borderColor: "white",
-              overflow: "hidden",
-              justifyContent: "center",
-              alignItems: "center",
-              position: "relative",
-            }}
-          >
+          <View style={faceDownCardBackStyle}>
             {/* Simple grid pattern */}
-            <View
-              style={{
-                width: "90%",
-                height: "90%",
-                position: "relative",
-              }}
-              pointerEvents="none"
-            >
+            <View style={gridContainerStyle} pointerEvents="none">
               {/* Main grid container */}
               <View
                 style={{
@@ -305,28 +412,15 @@ export const AnimatedCard: React.FC<CardProps> = ({
     );
   }
 
-  // Determine background color based on card type
-  let bgColor = "white";
-  let borderColor = "#CCCCCC";
-  let borderWidth = 1;
-
   if (card.joker) {
-    // Standardized styling for jokers as trump cards
-    bgColor = "#FFFCEB"; // Consistent light gold background for all trump cards
-    borderColor = "#D4B82F"; // Gold border for all trump cards
-    borderWidth = 1.5; // Consistent border width for all trump cards
-
-    // Joker colors maintained for readability
-    const jokerColor = card.joker === "Big" ? "#D32F2F" : "#000000";
-
     return (
       <Animated.View style={[shadowStyle, style, animatedStyle]}>
         <TouchableOpacity
           style={[
             styles.card,
             {
-              backgroundColor: bgColor,
-              borderColor: borderColor, // Gold border for jokers
+              backgroundColor: cardStyling.bgColor,
+              borderColor: cardStyling.borderColor,
               borderWidth: 1,
               padding: 0,
               justifyContent: "center",
@@ -336,41 +430,18 @@ export const AnimatedCard: React.FC<CardProps> = ({
           ]}
           onPress={handlePress}
           disabled={!onSelect}
-          activeOpacity={1.0} // Keep full opacity on press
-          delayPressIn={0} // Remove delay for immediate feedback
-          pressRetentionOffset={{ top: 1, bottom: 1, left: 1, right: 1 }} // Minimal touch area expansion
-          hitSlop={{ top: 1, bottom: 1, left: 1, right: 1 }} // Minimal hit area expansion
+          {...touchableProps}
         >
           {/* Card content with vertical JOKER text */}
-          <View
-            style={{
-              position: "relative",
-              width: "100%",
-              height: "100%",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
+          <View style={jokerContentStyle}>
             {/* Top left vertical JOKER text */}
-            <View
-              style={{
-                position: "absolute",
-                top: 3,
-                left: 3,
-                flexDirection: "column",
-                alignItems: "center",
-                zIndex: 10,
-              }}
-            >
-              {["J", "O", "K", "E", "R"].map((letter, idx) => (
+            <View style={jokerTopLeftStyle}>
+              {jokerLetters.map((letter, idx) => (
                 <Text
                   key={idx}
                   style={{
-                    fontSize: 10,
-                    fontWeight: "bold",
+                    ...jokerLetterStyle,
                     color: jokerColor,
-                    lineHeight: 11,
-                    textAlign: "center",
                   }}
                 >
                   {letter}
@@ -379,26 +450,13 @@ export const AnimatedCard: React.FC<CardProps> = ({
             </View>
 
             {/* Bottom right vertical JOKER text (inverted) */}
-            <View
-              style={{
-                position: "absolute",
-                bottom: 3,
-                right: 3,
-                flexDirection: "column",
-                alignItems: "center",
-                transform: [{ rotate: "180deg" }],
-                zIndex: 10,
-              }}
-            >
-              {["J", "O", "K", "E", "R"].map((letter, idx) => (
+            <View style={jokerBottomRightStyle}>
+              {jokerLetters.map((letter, idx) => (
                 <Text
                   key={idx}
                   style={{
-                    fontSize: 10,
-                    fontWeight: "bold",
+                    ...jokerLetterStyle,
                     color: jokerColor,
-                    lineHeight: 11,
-                    textAlign: "center",
                   }}
                 >
                   {letter}
@@ -409,10 +467,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
             {/* Star symbol in center */}
             <Text
               style={{
-                fontSize: 45,
+                ...jokerStarStyle,
                 color: jokerColor,
-                opacity: 1, // Changed from 0.8 to 1 to prevent transparency
-                fontWeight: "bold",
               }}
             >
               ★
@@ -446,14 +502,6 @@ export const AnimatedCard: React.FC<CardProps> = ({
     );
   }
 
-  // Standardized trump card styling - same for all trump cards
-  if (isTrump) {
-    // Consistent styling for all trump cards
-    bgColor = "#FFFCEB"; // Light gold tint for all trump cards
-    borderColor = "#D4B82F"; // Gold border for all trump cards
-    borderWidth = 1.5; // Consistent border width for all trump cards
-  }
-
   // Render normal card with enhanced styling
   return (
     <Animated.View style={[shadowStyle, style, animatedStyle]}>
@@ -461,27 +509,24 @@ export const AnimatedCard: React.FC<CardProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: bgColor,
-            borderColor,
-            borderWidth,
+            backgroundColor: cardStyling.bgColor,
+            borderColor: cardStyling.borderColor,
+            borderWidth: cardStyling.borderWidth,
             opacity: 1, // Ensure opacity is always 1
           },
         ]}
         onPress={handlePress}
         disabled={!onSelect}
-        activeOpacity={1.0} // Keep full opacity on press
-        delayPressIn={0} // Remove delay for immediate feedback
-        pressRetentionOffset={{ top: 1, bottom: 1, left: 1, right: 1 }} // Minimal touch area expansion
-        hitSlop={{ top: 1, bottom: 1, left: 1, right: 1 }} // Minimal hit area expansion
+        {...touchableProps}
       >
         {/* Card header with rank and suit */}
         <View style={styles.cardHeader}>
           <View style={styles.rankSuitPair}>
-            <Text style={[styles.cardRank, { color: getColor() }]}>
-              {getCardText()}
+            <Text style={[styles.cardRank, { color: suitColor }]}>
+              {cardText}
             </Text>
-            <Text style={[styles.suitSymbolSmall, { color: getColor() }]}>
-              {getSuitSymbol(card.suit, card.joker)}
+            <Text style={[styles.suitSymbolSmall, { color: suitColor }]}>
+              {suitSymbol}
             </Text>
           </View>
 
@@ -495,19 +540,17 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
         {/* Card center with large suit symbol */}
         <View style={styles.cardCenter}>
-          <Text style={[styles.suit, { color: getColor() }]}>
-            {getSuitSymbol(card.suit, card.joker)}
-          </Text>
+          <Text style={[styles.suit, { color: suitColor }]}>{suitSymbol}</Text>
         </View>
 
         {/* Card footer with rank and suit (inverted) */}
         <View style={styles.cardFooter}>
           <View style={styles.rankSuitPairInverted}>
-            <Text style={[styles.cardRank, { color: getColor() }]}>
-              {getCardText()}
+            <Text style={[styles.cardRank, { color: suitColor }]}>
+              {cardText}
             </Text>
-            <Text style={[styles.suitSymbolSmall, { color: getColor() }]}>
-              {getSuitSymbol(card.suit, card.joker)}
+            <Text style={[styles.suitSymbolSmall, { color: suitColor }]}>
+              {suitSymbol}
             </Text>
           </View>
         </View>
@@ -613,4 +656,4 @@ const styles = StyleSheet.create({
 });
 
 // Export as both named and default for backward compatibility
-export default AnimatedCard;
+export default React.memo(AnimatedCard);

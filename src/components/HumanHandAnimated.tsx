@@ -1,4 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+  startTransition,
+} from "react";
 import {
   Dimensions,
   ScrollView,
@@ -66,18 +71,23 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
   }, [gamePhase, isCurrentPlayer]);
 
   // Enhanced card selection handler that tracks interaction
-  const handleCardSelect = (card: CardType) => {
-    if (gamePhase === GamePhase.KittySwap && !hasInteractedWithKitty) {
-      setHasInteractedWithKitty(true);
-    }
-    onCardSelect?.(card);
-  };
-  // Sort cards by suit and rank for better display
+  const handleCardSelect = useCallback(
+    (card: CardType) => {
+      if (gamePhase === GamePhase.KittySwap && !hasInteractedWithKitty) {
+        setHasInteractedWithKitty(true);
+      }
+      onCardSelect?.(card);
+    },
+    [gamePhase, hasInteractedWithKitty, onCardSelect],
+  );
   const sortedHand = sortCards(player.hand, trumpInfo);
 
-  const isCardSelected = (card: CardType) => {
-    return selectedCards.some((c) => c.id === card.id);
-  };
+  const selectedSet = React.useMemo(
+    () => new Set(selectedCards.map((c) => c.id)),
+    [selectedCards],
+  );
+
+  const isCardSelected = (card: CardType) => selectedSet.has(card.id);
 
   // Show full hand
   const displayHand = sortedHand;
@@ -157,7 +167,11 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
                 (!hasInteractedWithKitty || selectedCards.length !== 8) &&
                   styles.disabledButton,
               ]}
-              onPress={onKittySwap}
+              onPress={
+                onKittySwap
+                  ? () => startTransition(() => onKittySwap())
+                  : undefined
+              }
               disabled={!hasInteractedWithKitty || selectedCards.length !== 8}
               hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
             >

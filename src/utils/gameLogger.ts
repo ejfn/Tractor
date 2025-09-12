@@ -50,7 +50,8 @@ class GameLogger {
   private logDir: string = "logs";
   private gameLogFile: string = "";
   private enableFileLogging: boolean = false;
-  private enableConsoleLog: boolean = true;
+  private enableConsoleLog: boolean =
+    typeof __DEV__ !== "undefined" ? __DEV__ : true;
   private includePlayerHands: boolean = true;
   private currentGameId: string | null = null;
   private sequenceNumber = 0;
