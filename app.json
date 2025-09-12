@@ -58,6 +58,7 @@
       }
     },
     "owner": "ericvan76",
-    "runtimeVersion": "v1.0.0"
+    "runtimeVersion": "v1.0.0",
+    "platforms": ["ios", "android"]
   }
 }

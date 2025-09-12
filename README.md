@@ -52,9 +52,9 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 **Built with React Native + Expo** for cross-platform mobile development:
 
-- **React Native 0.76+** - Cross-platform mobile framework
-- **Expo SDK 52** - Development tools and native API access
-- **TypeScript 5.7+** - Strict type safety and enhanced developer experience
+- **React Native 0.81+** - Cross-platform mobile framework
+- **Expo SDK 54** - Development tools and native API access
+- **TypeScript 5.9+** - Strict type safety and enhanced developer experience
 - **React i18next** - Type-safe internationalization with automatic language detection
 - **Jest** - Comprehensive tests with React Testing Library
 - **ESLint** - Code quality with React Native specific rules
