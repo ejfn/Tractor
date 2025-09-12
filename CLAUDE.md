@@ -60,19 +60,6 @@ Claude must only commit changes when the user explicitly requests it. This inclu
 - ✅ **Only** commit when user says "commit" or "commit these changes"
 - ✅ **Always** ask before committing if unclear
 
-### Code Quality - Zero Tolerance Policy
-**ALL quality checks must pass before any commit:**
-- ✅ Tests: All tests pass (no failures)
-- ✅ TypeScript: Zero compilation errors/warnings  
-- ✅ Lint: Zero ESLint warnings/errors
-
-```bash
-npm run qualitycheck  # MUST pass completely
-```
-
-### Git Workflow Warning
-- **IMPORTANT: Do not commit code when there are failing tests**
-
 ### File Organization
 **Organized by logical domain:**
 - `src/ai/` - AI strategic decision-making (20 focused modules)

@@ -3,12 +3,12 @@ import {
   Animated,
   Dimensions,
   Modal,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useModalsTranslation } from "../hooks/useTranslation";
 import type { ModalsTranslationKey } from "../locales/types";
 import { Card, Rank, RoundResult } from "../types";

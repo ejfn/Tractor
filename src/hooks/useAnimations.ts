@@ -62,44 +62,29 @@ export function useUIAnimations(showScreen: boolean) {
  * @returns Thinking dots animations and control functions
  */
 export function useThinkingDots() {
-  // Thinking dots animation values
   const dot1 = useRef(new Animated.Value(1)).current;
   const dot2 = useRef(new Animated.Value(1)).current;
   const dot3 = useRef(new Animated.Value(1)).current;
 
-  // Use a ref to store the animation timers so we can clear them on cleanup
-  const timersRef = useRef<{
-    [key: string]: ReturnType<typeof setTimeout>;
-  }>({});
+  const timersRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>(
+    {},
+  );
 
-  // Helper to clear all timers
   const clearAllTimers = () => {
-    Object.values(timersRef.current).forEach((timer) => {
-      clearTimeout(timer);
-    });
+    Object.values(timersRef.current).forEach((t) => clearTimeout(t));
     timersRef.current = {};
   };
 
-  // Animate thinking dots (continuous animation)
   useEffect(() => {
-    // Create recursive animation function for the thinking dots
-    const animateThinkingDots = () => {
-      // Reset any existing animations
+    const animate = () => {
       dot1.stopAnimation();
       dot2.stopAnimation();
       dot3.stopAnimation();
-
-      // Reset values to ensure consistent animation start
       dot1.setValue(1);
       dot2.setValue(1);
       dot3.setValue(1);
-
-      // Clear any existing timers
       clearAllTimers();
 
-      // Start animation sequence
-
-      // Sequence for first dot
       Animated.sequence([
         Animated.timing(dot1, {
           toValue: 0.4,
@@ -113,8 +98,7 @@ export function useThinkingDots() {
         }),
       ]).start();
 
-      // Sequence for second dot with delay
-      timersRef.current.timer1 = setTimeout(() => {
+      timersRef.current.t1 = setTimeout(() => {
         Animated.sequence([
           Animated.timing(dot2, {
             toValue: 0.4,
@@ -129,8 +113,7 @@ export function useThinkingDots() {
         ]).start();
       }, 150);
 
-      // Sequence for third dot with more delay
-      timersRef.current.timer2 = setTimeout(() => {
+      timersRef.current.t2 = setTimeout(() => {
         Animated.sequence([
           Animated.timing(dot3, {
             toValue: 0.4,
@@ -143,21 +126,14 @@ export function useThinkingDots() {
             useNativeDriver: true,
           }),
         ]).start(() => {
-          // After all animations complete, wait briefly and restart
-          timersRef.current.timer3 = setTimeout(
-            animateThinkingDots,
-            THINKING_DOTS_INTERVAL,
-          );
+          timersRef.current.t3 = setTimeout(animate, THINKING_DOTS_INTERVAL);
         });
       }, THINKING_DOTS_INTERVAL);
     };
 
-    // Start the animation loop
-    animateThinkingDots();
+    animate();
 
-    // Clean up on unmount
     return () => {
-      // Cleanup animation resources
       clearAllTimers();
       dot1.stopAnimation();
       dot2.stopAnimation();
@@ -165,7 +141,5 @@ export function useThinkingDots() {
     };
   }, [dot1, dot2, dot3]);
 
-  return {
-    dots: { dot1, dot2, dot3 },
-  };
+  return { dots: { dot1, dot2, dot3 } };
 }
