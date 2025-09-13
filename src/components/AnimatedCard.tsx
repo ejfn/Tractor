@@ -266,6 +266,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
       fontSize: 45,
       opacity: 1,
       fontWeight: "bold" as const,
+      includeFontPadding: false as const,
+      transform: [{ translateY: -3 }] as const,
     }),
     [],
   );
@@ -473,29 +475,6 @@ export const AnimatedCard: React.FC<CardProps> = ({
             >
               ★
             </Text>
-
-            {/* Trump indicator star */}
-            <View
-              style={{
-                position: "absolute",
-                top: 1,
-                right: 1,
-                width: 14,
-                height: 14,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: "#D4B82F",
-                  fontWeight: "bold",
-                }}
-              >
-                ★
-              </Text>
-            </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -522,34 +501,34 @@ export const AnimatedCard: React.FC<CardProps> = ({
         {/* Card header with rank and suit */}
         <View style={styles.cardHeader}>
           <View style={styles.rankSuitPair}>
-            <Text style={[styles.cardRank, { color: suitColor }]}>
+            <Text
+              allowFontScaling={false}
+              style={[styles.cardRank, { color: suitColor }]}
+            >
               {cardText}
             </Text>
-            <Text style={[styles.suitSymbolSmall, { color: suitColor }]}>
+            <Text
+              allowFontScaling={false}
+              style={[styles.suitSymbolSmall, { color: suitColor }]}
+            >
               {suitSymbol}
             </Text>
           </View>
-
-          {/* Subtle trump indicator */}
-          {isTrump && (
-            <View style={styles.trumpIndicator}>
-              <Text style={styles.trumpStar}>★</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Card center with large suit symbol */}
-        <View style={styles.cardCenter}>
-          <Text style={[styles.suit, { color: suitColor }]}>{suitSymbol}</Text>
         </View>
 
         {/* Card footer with rank and suit (inverted) */}
         <View style={styles.cardFooter}>
           <View style={styles.rankSuitPairInverted}>
-            <Text style={[styles.cardRank, { color: suitColor }]}>
+            <Text
+              allowFontScaling={false}
+              style={[styles.cardRank, { color: suitColor, fontSize: 15 }]}
+            >
               {cardText}
             </Text>
-            <Text style={[styles.suitSymbolSmall, { color: suitColor }]}>
+            <Text
+              allowFontScaling={false}
+              style={[styles.suitSymbolSmall, { color: suitColor }]}
+            >
               {suitSymbol}
             </Text>
           </View>
@@ -602,20 +581,20 @@ const styles = StyleSheet.create({
   },
   // Card layout sections
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 2,
-    width: "100%",
+    position: "absolute",
+    top: 4,
+    left: 4,
+    alignItems: "center",
   },
   rankSuitPair: {
     flexDirection: "column",
     alignItems: "center",
+    gap: 2,
   },
   rankSuitPairInverted: {
     flexDirection: "column",
     alignItems: "center",
-    transform: [{ rotate: "180deg" }],
+    gap: 2,
   },
   cardCenter: {
     flex: 1,
@@ -623,35 +602,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cardFooter: {
-    alignItems: "flex-end",
-    marginTop: 2,
+    position: "absolute",
+    bottom: 5,
+    right: 4,
+    alignItems: "center",
+    transform: [{ rotate: "180deg" }],
   },
   // Card text elements
   cardRank: {
     fontSize: 14,
     fontWeight: "bold",
+    includeFontPadding: false,
+    fontFamily: "SpaceMono",
   },
   suitSymbolSmall: {
     fontSize: 14,
     fontWeight: "bold",
+    includeFontPadding: false,
+    fontFamily: "SpaceMono",
   },
   suit: {
     fontSize: 35,
   },
   // Trump indicator styles
   trumpIndicator: {
-    position: "absolute",
-    top: 1,
-    right: 1,
-    width: 14,
-    height: 14,
-    justifyContent: "center",
-    alignItems: "center",
+    display: "none",
   },
   trumpStar: {
-    fontSize: 12,
-    color: "#D4B82F",
-    fontWeight: "bold",
+    display: "none",
   },
 });
 
