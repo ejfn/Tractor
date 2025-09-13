@@ -292,8 +292,11 @@ const styles = StyleSheet.create({
   playButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
+    lineHeight: 16,
     fontWeight: "600",
     textAlign: "center",
+    textAlignVertical: "center",
+    includeFontPadding: false,
     flexShrink: 1,
   },
   disabledButton: {

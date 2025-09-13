@@ -1,10 +1,10 @@
 import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { Card, Player, TrumpInfo, GamePhase, Trick, PlayerId } from "../types";
+import { sharedStyles } from "../styles/sharedStyles";
+import { Card, GamePhase, Player, PlayerId, Trick, TrumpInfo } from "../types";
+import { getPlayerDisplayName } from "../utils/translationHelpers";
 import HumanHandAnimated from "./HumanHandAnimated";
 import ThinkingIndicator from "./ThinkingIndicator";
-import { sharedStyles } from "../styles/sharedStyles";
-import { getPlayerDisplayName } from "../utils/translationHelpers";
 
 interface HumanPlayerViewProps {
   player: Player;
@@ -46,7 +46,6 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   showTrickResult = false,
   lastCompletedTrick = null,
   thinkingDots,
-  currentPlayerIndex,
   currentTrick,
   isRoundStartingPlayer = false,
   gamePhase,
