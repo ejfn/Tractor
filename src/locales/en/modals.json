@@ -22,7 +22,13 @@
     "kittyBonus": "Kitty Bonus: {{kittyPoints}} x {{multiplier}}"
   },
   "gameOver": {
-    "title": "Victory!",
-    "newGame": "NEW GAME"
+    "win": {
+      "title": "Victory!",
+      "newGame": "NEW GAME"
+    },
+    "loss": {
+      "title": "Lost!",
+      "newGame": "NEW GAME"
+    }
   }
 }

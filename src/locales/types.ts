@@ -111,8 +111,14 @@ export interface ModalsTranslations {
     kittyBonus: string;
   };
   gameOver: {
-    title: string;
-    newGame: string;
+    win: {
+      title: string;
+      newGame: string;
+    };
+    loss: {
+      title: string;
+      newGame: string;
+    };
   };
 }
 
