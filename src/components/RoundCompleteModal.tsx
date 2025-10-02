@@ -106,6 +106,7 @@ interface RoundCompleteModalProps {
   scaleAnim?: Animated.Value;
   kittyCards?: Card[]; // Kitty cards to display
   roundResult: RoundResult; // Round result containing message and winning team data
+  humanTeamId?: string; // Team ID of the human player for win/loss detection
 }
 
 /**
@@ -116,8 +117,15 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   onNewGame,
   kittyCards,
   roundResult,
+  humanTeamId,
 }) => {
   const { t: tModals } = useModalsTranslation();
+
+  // Detect if human team lost the game
+  const isHumanLoss =
+    roundResult.gameOver &&
+    humanTeamId &&
+    roundResult.gameWinner !== humanTeamId;
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -374,8 +382,8 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
             <View style={styles.backgroundDeco1} />
             <View style={styles.backgroundDeco2} />
 
-            {/* Game Over Celebration Effects */}
-            {roundResult.gameOver && (
+            {/* Game Over Celebration Effects - only for human win */}
+            {roundResult.gameOver && !isHumanLoss && (
               <>
                 {/* Fireworks */}
                 <Animated.View
@@ -506,16 +514,25 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
 
             {/* Trophy/Crown emoji for winner */}
             <Text style={styles.trophy}>
-              {roundResult.gameOver
+              {roundResult.gameOver && !isHumanLoss
                 ? "🏆"
-                : roundResult.attackingTeamWon
-                  ? "⚔️"
-                  : "🛡️"}
+                : roundResult.gameOver && isHumanLoss
+                  ? "💀"
+                  : roundResult.attackingTeamWon
+                    ? "⚔️"
+                    : "🛡️"}
             </Text>
 
-            <Text style={styles.title}>
+            <Text
+              style={[
+                styles.title,
+                roundResult.gameOver && isHumanLoss && { color: "#808080" },
+              ]}
+            >
               {roundResult.gameOver
-                ? tModals("gameOver.title")
+                ? isHumanLoss
+                  ? tModals("gameOver.loss.title")
+                  : tModals("gameOver.win.title")
                 : tModals("roundComplete.title")}
             </Text>
             <Text style={styles.message}>
@@ -551,6 +568,7 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
               style={[
                 styles.button,
                 roundResult.gameOver && styles.gameOverButton,
+                roundResult.gameOver && isHumanLoss && styles.lossButton,
               ]}
               onPress={roundResult.gameOver ? onNewGame : onNextRound}
               activeOpacity={0.8}
@@ -559,11 +577,21 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
                 style={[
                   styles.buttonGradient,
                   roundResult.gameOver && styles.gameOverButtonGradient,
+                  roundResult.gameOver &&
+                    isHumanLoss &&
+                    styles.lossButtonGradient,
                 ]}
               >
-                <Text style={styles.buttonText}>
+                <Text
+                  style={[
+                    styles.buttonText,
+                    roundResult.gameOver && isHumanLoss && { color: "#A9A9A9" },
+                  ]}
+                >
                   {roundResult.gameOver
-                    ? tModals("gameOver.newGame")
+                    ? isHumanLoss
+                      ? tModals("gameOver.loss.newGame")
+                      : tModals("gameOver.win.newGame")
                     : tModals("roundComplete.nextRound")}
                 </Text>
               </View>
@@ -752,6 +780,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 8,
   },
+  lossButton: {
+    shadowColor: "#808080",
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   gameOverButtonGradient: {
     backgroundColor: "#FF6B35",
     borderColor: "#E55100",
@@ -762,6 +796,17 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 3,
+  },
+  lossButtonGradient: {
+    backgroundColor: "#A9A9A9",
+    borderColor: "#808080",
+    shadowColor: "#696969",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   // Celebration Effects Styles
   firework: {

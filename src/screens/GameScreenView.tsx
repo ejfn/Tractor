@@ -314,6 +314,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           fadeAnim={fadeAnim}
           scaleAnim={scaleAnim}
           kittyCards={sortCards(gameState.kittyCards, gameState.trumpInfo)}
+          humanTeamId={humanPlayer.team}
         />
       )}
     </View>

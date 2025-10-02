@@ -22,7 +22,13 @@
     "kittyBonus": "底牌分：{{kittyPoints}} x {{multiplier}}"
   },
   "gameOver": {
-    "title": "胜利!",
-    "newGame": "新游戏"
+    "win": {
+      "title": "胜利!",
+      "newGame": "新游戏"
+    },
+    "loss": {
+      "title": "输了!",
+      "newGame": "新游戏"
+    }
   }
 }
