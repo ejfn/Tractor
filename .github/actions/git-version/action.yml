@@ -50,11 +50,12 @@ runs:
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
             RUNTIME_VERSION="v${MAJOR}.${MINOR}.0"
+            EAS_BRANCH="production"
           else
             RUNTIME_VERSION="$RAW_VERSION"
+            EAS_BRANCH="preview"
           fi
-          EAS_BRANCH="production"
-          
+
         elif [[ ${{ github.ref }} == refs/tags/v* ]]; then
           # Tag push - use actual version for expo.version, normalized for runtime
           RAW_VERSION="${{ github.ref_name }}"
@@ -64,11 +65,12 @@ runs:
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
             RUNTIME_VERSION="v${MAJOR}.${MINOR}.0"
+            EAS_BRANCH="production"
           else
             RUNTIME_VERSION="$RAW_VERSION"
+            EAS_BRANCH="preview"
           fi
-          EAS_BRANCH="production"
-          
+
         elif [[ ${{ github.ref }} == refs/heads/main ]]; then
           # Main branch push - isolate with git hash in runtime version
           # Increment minor version by 1 and reset patch to 0
