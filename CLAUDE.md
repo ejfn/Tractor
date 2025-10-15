@@ -38,7 +38,7 @@ Tractor is a React Native Expo app implementing the Chinese card game Shengji (å
 npm install
 npx expo start
 
-# Quality checks (REQUIRED before commits)
+# Quality checks
 npm run qualitycheck  # Runs typecheck, lint, and test
 npm run android       # Android platform
 npm run ios          # iOS platform
