@@ -57,8 +57,11 @@
         "projectId": "3256dcee-103a-467b-96c4-97a9f634df51"
       }
     },
-    "owner": "ericvan76",
+    "owner": "ejfn",
     "runtimeVersion": "v1.0.0",
-    "platforms": ["ios", "android"]
+    "platforms": [
+      "ios",
+      "android"
+    ]
   }
 }
