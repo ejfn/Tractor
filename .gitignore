@@ -58,3 +58,4 @@ logs/*
 !**/.gitkeep
 debug/
 .env
+android/
