@@ -2,7 +2,7 @@
 
 **Comprehensive Rules & Strategy Guide for Tractor (升级/Shengji)**
 
-*For AI details, see **[AI System](AI_SYSTEM.md)** | For development, see **[CLAUDE.md](../CLAUDE.md)***
+*For AI details, see **[AI System](AI_SYSTEM.md)** | For development, see **[AGENTS.md](../AGENTS.md)***
 
 ---
 
@@ -607,4 +607,4 @@ Based on attacking team's total points:
 
 **Related Documentation:**
 - **[AI System](AI_SYSTEM.md)** - AI intelligence documentation
-- **[CLAUDE.md](../CLAUDE.md)** - Development guidelines
+- **[AGENTS.md](../AGENTS.md)** - Development guidelines

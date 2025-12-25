@@ -2,7 +2,7 @@
 
 **Complete guide to multi-combo implementation in Tractor**
 
-*Related Documentation: [Game Rules](GAME_RULES.md) | [AI System](AI_SYSTEM.md) | [CLAUDE.md](../CLAUDE.md)*
+*Related Documentation: [Game Rules](GAME_RULES.md) | [AI System](AI_SYSTEM.md) | [AGENTS.md](../AGENTS.md)*
 
 ---
 
@@ -258,4 +258,4 @@ The implementation focuses on **correctness and maintainability** over complex o
 
 - **[Game Rules](GAME_RULES.md)** - Complete game rules including multi-combo regulations
 - **[AI System](AI_SYSTEM.md)** - AI decision-making integration
-- **[CLAUDE.md](../CLAUDE.md)** - Development guidelines and architecture
+- **[AGENTS.md](../AGENTS.md)** - Development guidelines and architecture

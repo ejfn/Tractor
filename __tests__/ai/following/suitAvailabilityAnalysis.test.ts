@@ -549,7 +549,7 @@ describe("Integration Tests", () => {
       expect(hasTenPair).toBe(true); // Should have 10♠10♠ pair
       expect(hasNinePair).toBe(true); // Should have 9♠9♠ pair
 
-      // GAME RULE (CLAUDE.md): "Pairs and tractors are different combo types"
+      // GAME RULE (AGENTS.md): "Pairs and tractors are different combo types"
       // Should NOT find tractors for pair lead - this is fundamental rule!
       const hasTractor = result.validCombos.some(
         (combo) => combo.type === ComboType.Tractor,
@@ -768,7 +768,7 @@ describe("Tractor Length Matching Tests", () => {
 
       expect(result.scenario).toBe("valid_combos");
 
-      // GAME RULE (CLAUDE.md): "Pairs and tractors are different combo types"
+      // GAME RULE (AGENTS.md): "Pairs and tractors are different combo types"
       // Should ONLY find pairs, NOT tractors (since pair was led)
       const pairCombos = result.validCombos.filter(
         (combo) => combo.type === ComboType.Pair,

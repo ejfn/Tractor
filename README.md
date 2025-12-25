@@ -70,7 +70,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **RoundResult System**: Pure computation approach for consistent UI timing
 - **Type-Safe Development**: Enum usage eliminates magic strings throughout codebase
 
-*Mobile-only support for Android and iOS. Architecture details in **[CLAUDE.md](CLAUDE.md)** and **[GEMINI.md](GEMINI.md)***
+*Mobile-only support for Android and iOS. Architecture details in **[AGENTS.md](AGENTS.md)***
 
 ## AI Intelligence
 
@@ -114,7 +114,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 - **[Game Rules](docs/GAME_RULES.md)** - Complete rules, quick start, and strategy reference
 - **[AI System](docs/AI_SYSTEM.md)** - Comprehensive AI intelligence documentation
-- **[CLAUDE.md](CLAUDE.md)** - Claude development guidelines and project architecture
+- **[AGENTS.md](AGENTS.md)** - Agent development guidelines and project architecture
 - **[GEMINI.md](GEMINI.md)** - Gemini development guidelines and project architecture
 
 ## Built with AI
@@ -124,7 +124,7 @@ This project is developed with assistance from AI coding partners.
 - **Claude** ([claude.ai](https://claude.ai/code)) - Initial project scaffolding and early feature development.
 - **Gemini** ([gemini.google.com](https://gemini.google.com)) - Primary development assistant for new features, refactoring, and test generation.
 
-Development guidelines from each assistant are documented in [CLAUDE.md](CLAUDE.md) and [GEMINI.md](GEMINI.md) respectively.
+Development guidelines are documented in [AGENTS.md](AGENTS.md).
 
 ## Future Enhancements
 

@@ -211,17 +211,17 @@ function findStrictValidCombos(
       break;
 
     case ComboType.Pair:
-      // GAME RULE (CLAUDE.md): "Pairs and tractors are different combo types"
+      // GAME RULE (AGENTS.md): "Pairs and tractors are different combo types"
       // Pair lead: MUST have actual pairs (not just 2 singles)
       // CANNOT respond with tractors - they are different combo type
       const pairs = findPairsInCards(availableCards, trumpInfo);
 
-      // Add pairs only - tractors are different combo type per CLAUDE.md
+      // Add pairs only - tractors are different combo type per AGENTS.md
       validCombos.push(...pairs);
       break;
 
     case ComboType.Tractor:
-      // GAME RULE (CLAUDE.md): "Tractor lead → Must have tractors (not just pairs)"
+      // GAME RULE (AGENTS.md): "Tractor lead → Must have tractors (not just pairs)"
       // GAME RULE (GAME_RULES.md): "Tractor Following Rules - Same number of pairs"
       // Tractor lead: MUST have actual tractors (not just pairs)
       const availableTractors = findTractorsInCards(
