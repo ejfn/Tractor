@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "Tractor",
   slug: "Tractor",
-  version: "v1.0.0",
+  version: (process.env.APP_VERSION as string) || "v1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: "tractor",
@@ -67,6 +67,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   owner: "ejfn",
-  runtimeVersion: "v1.0.0",
+  runtimeVersion: (process.env.RUNTIME_VERSION as string) || "v1.0.0",
   platforms: ["ios", "android"],
 });

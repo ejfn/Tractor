@@ -1,5 +1,5 @@
 name: 'Git Version'
-description: 'Detect version from GitHub context and inject into app.json for EAS workflows'
+description: 'Detect version from GitHub context and export as environment variables for EAS workflows'
 
 outputs:
   full-version:
@@ -96,16 +96,10 @@ runs:
         echo "runtime-version=$RUNTIME_VERSION" >> $GITHUB_OUTPUT
         echo "eas-branch=$EAS_BRANCH" >> $GITHUB_OUTPUT
         
-        # Verbose output for debugging
-        echo "Final outputs:"
-        echo "  full-version: $FULL_VERSION"
-        echo "  version: $VERSION"
-        echo "  runtime-version: $RUNTIME_VERSION"
-        echo "  eas-branch: $EAS_BRANCH"
-
-    - name: Inject version into app.json
-      shell: bash
-      run: |
-        jq '.expo.version = "${{ steps.detect.outputs.version }}" | .expo.runtimeVersion = "${{ steps.detect.outputs.runtime-version }}" | .expo.extra.version = "${{ steps.detect.outputs.full-version }}"' app.json > app.json.tmp
-        mv app.json.tmp app.json
-        echo "Injected version ${{ steps.detect.outputs.version }}, runtime version ${{ steps.detect.outputs.runtime-version }}, and full version ${{ steps.detect.outputs.full-version }} into app.json"
+        # Export to environment for app.config.ts to read
+        echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+        echo "RUNTIME_VERSION=$RUNTIME_VERSION" >> $GITHUB_ENV
+        echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+        
+        # Debug output
+        echo "Versions: $VERSION (runtime: $RUNTIME_VERSION, branch: $EAS_BRANCH)"

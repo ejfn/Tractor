@@ -38,7 +38,7 @@ jobs:
         packager: npm
         token: ${{ secrets.EXPO_TOKEN }}
 
-    - name: Detect version and inject into app.json
+    - name: Detect version and export to environment
       id: version
       uses: ./.github/actions/git-version
 
