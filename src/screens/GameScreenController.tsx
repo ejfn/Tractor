@@ -14,6 +14,8 @@ import { DEALING_SPEED } from "../utils/gameTimings";
 // View component
 import GameScreenView from "./GameScreenView";
 
+import { adManager } from "../utils/adManager";
+
 /**
  * Controller component for the game screen
  * Manages game state and logic, using hooks to coordinate functionality
@@ -44,6 +46,21 @@ const GameScreenController: React.FC = () => {
     handleTrickResultComplete, // Make sure this is imported
     setGameState,
   } = useGameState();
+
+  // Ad-wrapped handlers
+  const handleNextRoundWithAd = () => {
+    // Show interstitial ad before proceeding to next round
+    adManager.showInterstitial(() => {
+      handleNextRound();
+    });
+  };
+
+  const handleStartNewGameWithAd = () => {
+    // Show interstitial ad before starting new game
+    adManager.showInterstitial(() => {
+      startNewGame();
+    });
+  };
 
   // Trick results management
   const {
@@ -187,8 +204,8 @@ const GameScreenController: React.FC = () => {
       onCardSelect={handleCardSelect}
       onPlayCards={handlePlay}
       onKittySwap={handleKittySwap}
-      onStartNewGame={startNewGame}
-      onNextRound={handleNextRound}
+      onStartNewGame={handleStartNewGameWithAd}
+      onNextRound={handleNextRoundWithAd}
       onAnimationComplete={onAnimationComplete}
       onHumanDeclaration={handleHumanDeclaration}
       onContinue={handleContinue}
