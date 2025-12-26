@@ -16,6 +16,7 @@ This file provides guidance to coding agents when working with this repository.
 - [docs/GAME_RULES.md](docs/GAME_RULES.md) - Complete game rules and strategy
 - [docs/MULTI_COMBO.md](docs/MULTI_COMBO.md) - Multi-combo implementation guide
 - [docs/LOG_EVENT_SCHEMA.md](docs/LOG_EVENT_SCHEMA.md) - Log event structure
+- [docs/VERSIONING_STRATEGY.md](docs/VERSIONING_STRATEGY.md) - Versioning strategy and OTA compatibility
 
 ## Setup Commands
 

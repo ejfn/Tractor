@@ -115,7 +115,6 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **[Game Rules](docs/GAME_RULES.md)** - Complete rules, quick start, and strategy reference
 - **[AI System](docs/AI_SYSTEM.md)** - Comprehensive AI intelligence documentation
 - **[AGENTS.md](AGENTS.md)** - Agent development guidelines and project architecture
-- **[GEMINI.md](GEMINI.md)** - Gemini development guidelines and project architecture
 
 ## Built with AI
 
