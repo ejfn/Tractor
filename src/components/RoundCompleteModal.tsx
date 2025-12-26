@@ -585,7 +585,7 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
                 <Text
                   style={[
                     styles.buttonText,
-                    roundResult.gameOver && isHumanLoss && { color: "#A9A9A9" },
+                    roundResult.gameOver && isHumanLoss && { color: "#333333" },
                   ]}
                 >
                   {roundResult.gameOver
