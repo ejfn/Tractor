@@ -143,7 +143,11 @@ Development guidelines are documented in [AGENTS.md](AGENTS.md).
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+All rights reserved. No part of this project may be reproduced, distributed, or transmitted in any form or by any means without the prior written permission of the owner.
+
+## Inquiries
+
+For commercial licensing, partnerships, or other inquiries, please contact the repository owner via GitHub.
 
 ---
 
