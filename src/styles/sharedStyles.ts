@@ -3,9 +3,9 @@ import { StyleSheet } from "react-native";
 export const sharedStyles = StyleSheet.create({
   // Player label container - used for both human and AI players
   labelContainer: {
-    height: 26,
+    height: 32,
     minWidth: 75,
-    borderRadius: 13,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 14,
@@ -34,6 +34,7 @@ export const sharedStyles = StyleSheet.create({
     fontWeight: "600",
     color: "white",
     textAlign: "center",
+    lineHeight: 18,
     textShadowColor: "rgba(0,0,0,0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,

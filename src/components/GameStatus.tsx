@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
     elevation: 2,
     minWidth: 65,
-    height: 28, // Reduced height
+    height: 32, // Increased height for better vertical alignment
     justifyContent: "center",
     alignItems: "center",
   },
@@ -400,6 +400,7 @@ const styles = StyleSheet.create({
     color: "#0a7ea4", // Teal text to match border
     fontSize: 13,
     fontWeight: "bold",
+    lineHeight: 16,
   },
   trumpInfo: {
     flexDirection: "row",
@@ -427,20 +428,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minWidth: 65, // Match typical width of phase indicator
-    height: 28, // Reduced height to match phase indicator
+    height: 32, // Increased height to match phase indicator
   },
   trumpText: {
     fontWeight: "bold",
     fontSize: 13,
     marginRight: 1,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   suitSymbol: {
     fontSize: 13,
     fontWeight: "bold",
     marginLeft: 2,
-    lineHeight: 16,
-    marginBottom: 1, // Lift it up slightly
+    lineHeight: 18,
   },
   teamsContainer: {
     flexDirection: "row",
