@@ -182,9 +182,9 @@ describe("AI Trump Following - Position-Aware Strategy", () => {
       gameState.trumpInfo = trumpInfo;
 
       // Human (Team A) leads 3♠
-      // Bot1 (Team B, 2nd player) plays 7♠ — opponent now winning
+      // Bot1 (Team B, 2nd player) plays Queen♠ — opponent now winning with strong card
       const leadingCard = [Card.createCard(Suit.Spades, Rank.Three, 0)];
-      const secondPlayerCard = [Card.createCard(Suit.Spades, Rank.Seven, 0)];
+      const secondPlayerCard = [Card.createCard(Suit.Spades, Rank.Queen, 0)];
 
       gameState.currentTrick = {
         plays: [
@@ -198,8 +198,8 @@ describe("AI Trump Following - Position-Aware Strategy", () => {
       // Bot2 (Team A, 3rd player) needs to block Bot1 (opponent)
       const bot2 = getPlayerById(gameState, PlayerId.Bot2);
       bot2.hand = [
-        Card.createCard(Suit.Spades, Rank.Eight, 0), // Cheapest beat
-        Card.createCard(Suit.Spades, Rank.Queen, 0), // Stronger
+        Card.createCard(Suit.Spades, Rank.King, 0), // Cheapest beat
+        Card.createCard(Suit.Spades, Rank.Ace, 0), // Stronger
         Card.createCard(Suit.Clubs, Rank.Nine, 0), // Non-trump
         Card.createCard(Suit.Diamonds, Rank.Four, 0), // Non-trump
       ];
@@ -208,11 +208,61 @@ describe("AI Trump Following - Position-Aware Strategy", () => {
 
       const aiMove = getAIMove(gameState, PlayerId.Bot2);
 
-      // Should beat opponent's 7♠ with cheapest option
+      // Should beat opponent's Q♠ with cheapest option (A♠, since K♠ is worth 10 points and thus "more valuable" to save in strategic mode)
       expect(aiMove.length).toBe(1);
       expect(aiMove[0].suit).toBe(Suit.Spades);
-      // Should prefer 8♠ (cheapest beat) over Q♠
-      expect(aiMove[0].rank).toBe(Rank.Eight);
+      // Should prefer A♠ (cheaper because 0 points) over K♠ (valuable because 10 points)
+      expect(aiMove[0].rank).toBe(Rank.Ace);
+
+      const isValid = isValidPlay(aiMove, bot2.hand, PlayerId.Bot2, gameState);
+      expect(isValid).toBe(true);
+    });
+
+    it("should enforce a minimum blocking threshold (>10) when trick is weak", () => {
+      const gameState = initializeGame();
+      gameState.gamePhase = GamePhase.Playing;
+
+      const trumpInfo: TrumpInfo = {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Spades,
+      };
+      gameState.trumpInfo = trumpInfo;
+
+      // Human (Team A) leads 5♠ (5 points), Bot1 (Team B, 2nd player) plays 4♠
+      // Both are very weak trumps (strength <= 110), but there ARE points in the trick
+      const leadingCard = [Card.createCard(Suit.Spades, Rank.Five, 0)];
+      const secondPlayerCard = [Card.createCard(Suit.Spades, Rank.Four, 0)];
+
+      gameState.currentTrick = {
+        plays: [
+          { playerId: PlayerId.Human, cards: leadingCard },
+          { playerId: PlayerId.Bot1, cards: secondPlayerCard },
+        ],
+        winningPlayerId: PlayerId.Human, // Human currently winning with 5♠
+        points: 5,
+      };
+
+      // Bot2 (Team A, 3rd player) needs to block Bot1 (opponent) but wait,
+      // if Human is winning, it's a teammate. The >10 block applies universally now.
+      const bot2 = getPlayerById(gameState, PlayerId.Bot2);
+      bot2.hand = [
+        Card.createCard(Suit.Spades, Rank.Seven, 0), // Beats 5♠, but too weak for good block (strength 107)
+        Card.createCard(Suit.Spades, Rank.Eight, 0), // Also too weak (108)
+        Card.createCard(Suit.Spades, Rank.Jack, 0), // Strong beat (> 110)
+        Card.createCard(Suit.Spades, Rank.Queen, 0), // Even stronger
+        Card.createCard(Suit.Hearts, Rank.Four, 0), // Non-trump
+      ];
+
+      gameState.currentPlayerIndex = 2;
+
+      const aiMove = getAIMove(gameState, PlayerId.Bot2);
+
+      // Should beat opponent
+      expect(aiMove.length).toBe(1);
+      expect(aiMove[0].suit).toBe(Suit.Spades);
+
+      // Should prefer Jack (cheapest strong beat > 110) over 7♠ (cheapest beat but weak)
+      expect(aiMove[0].rank).toBe(Rank.Jack);
 
       const isValid = isValidPlay(aiMove, bot2.hand, PlayerId.Bot2, gameState);
       expect(isValid).toBe(true);

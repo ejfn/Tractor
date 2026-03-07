@@ -479,7 +479,7 @@ function handleThirdPlayerTrumpStrategy(
   currentWinnerCards: Card[],
   currentWinnerStrength: number,
   isTeammateWinning: boolean,
-  _trickPoints: number,
+  trickPoints: number,
   trumpInfo: TrumpInfo,
 ): Card[] | null {
   // Check if 4th player is an opponent
@@ -489,15 +489,51 @@ function handleThirdPlayerTrumpStrategy(
     currentPlayerId,
   );
 
-  if (!isTeammateWinning) {
-    // Opponent is winning — block to prevent 4th player from cheaply winning
-    const beatingCombos = validCombos.filter((combo) =>
-      canBeatCombo(combo.cards, currentWinnerCards, trumpInfo),
+  const beatingCombos = validCombos.filter((combo) =>
+    canBeatCombo(combo.cards, currentWinnerCards, trumpInfo),
+  );
+
+  // 1. Unified weak trick enforcement (applies regardless of who is winning)
+  // If the trick is very weak (<= Rank 10), raise it to > Rank 10 to force 4th player to work hard
+  const MIN_BLOCKING_STRENGTH = 110; // Rank 10
+
+  if (
+    trickPoints > 0 &&
+    beatingCombos.length > 0 &&
+    currentWinnerStrength <= MIN_BLOCKING_STRENGTH
+  ) {
+    const strongBeats = beatingCombos.filter(
+      (combo) =>
+        getMaxStrategicValue(combo.cards, trumpInfo) > MIN_BLOCKING_STRENGTH,
     );
 
+    if (strongBeats.length > 0) {
+      const cheapestStrongBeat = selectComboByStrategicValue(
+        strongBeats,
+        trumpInfo,
+        "strategic",
+        "lowest",
+      );
+
+      const raiseStrength = getMaxStrategicValue(cheapestStrongBeat, trumpInfo);
+
+      // Ensure our "strong beat" isn't a massive over-payment (> 150 like a Joker)
+      if (raiseStrength <= 150) {
+        gameLogger.debug("following_trump_3rd_raise_weak_trick", {
+          reason: "forcing_minimum_blocking_threshold",
+          currentWinnerStrength,
+          raiseStrength,
+        });
+        return cheapestStrongBeat;
+      }
+    }
+  }
+
+  // 2. Normal Opponent Blocking
+  // If opponent is winning, and we didn't force a >10 block (e.g. trick is already >10, or we don't have >10 cards)
+  if (!isTeammateWinning) {
     if (beatingCombos.length === 0) return null;
 
-    // Beat with cheapest possible combo
     const cheapestBeat = selectComboByStrategicValue(
       beatingCombos,
       trumpInfo,
@@ -505,32 +541,28 @@ function handleThirdPlayerTrumpStrategy(
       "lowest",
     );
 
-    // Don't waste high-value trumps (> 150) for blocking when no points at stake
-    const cheapestBeatStrength = getMaxStrategicValue(cheapestBeat, trumpInfo);
-    if (cheapestBeatStrength > 150) return null;
+    const finalBeatStrength = getMaxStrategicValue(cheapestBeat, trumpInfo);
+    if (finalBeatStrength > 150) return null;
 
     gameLogger.debug("following_trump_3rd_block_opponent", {
       reason: "blocking_opponent_for_4th_player",
       currentWinnerStrength,
-      blockStrength: cheapestBeatStrength,
+      blockStrength: finalBeatStrength,
     });
 
     return cheapestBeat;
   }
 
-  // Teammate is winning with a weak trump — raise to protect against 4th player overtaking
+  // 3. Normal Teammate Protection (tiny raises)
+  // If teammate is winning with weak trump, and 4th player is opponent, but we couldn't raise to >10 above,
+  // we still might want to do a tiny raise (e.g. 5 over 4) just to protect them slightly.
   if (
     isTeammateWinning &&
     currentWinnerStrength < 110 &&
     fourthPlayerIsOpponent
   ) {
-    const beatingCombos = validCombos.filter((combo) =>
-      canBeatCombo(combo.cards, currentWinnerCards, trumpInfo),
-    );
-
     if (beatingCombos.length === 0) return null;
 
-    // Raise with the cheapest combo that can beat the weak teammate
     const cheapestRaise = selectComboByStrategicValue(
       beatingCombos,
       trumpInfo,
@@ -538,12 +570,11 @@ function handleThirdPlayerTrumpStrategy(
       "lowest",
     );
 
-    // Only raise if our card isn't too expensive
     const raiseStrength = getMaxStrategicValue(cheapestRaise, trumpInfo);
     if (raiseStrength > 150) return null;
 
     gameLogger.debug("following_trump_3rd_protect_teammate", {
-      reason: "raising_to_protect_weak_teammate",
+      reason: "raising_to_protect_weak_teammate_minor",
       teammateStrength: currentWinnerStrength,
       raiseStrength,
     });
