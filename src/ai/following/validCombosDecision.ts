@@ -446,7 +446,7 @@ function handleSecondPlayerTrumpStrategy(
   const cheapestBeat = selectComboByStrategicValue(
     beatingCombos,
     trumpInfo,
-    "contribute",
+    "strategic",
     "lowest",
   );
 
@@ -501,7 +501,7 @@ function handleThirdPlayerTrumpStrategy(
     const cheapestBeat = selectComboByStrategicValue(
       beatingCombos,
       trumpInfo,
-      "contribute",
+      "strategic",
       "lowest",
     );
 
@@ -534,7 +534,7 @@ function handleThirdPlayerTrumpStrategy(
     const cheapestRaise = selectComboByStrategicValue(
       beatingCombos,
       trumpInfo,
-      "contribute",
+      "strategic",
       "lowest",
     );
 
@@ -579,7 +579,7 @@ function handleFourthPlayerTrumpStrategy(
   const cheapestBeat = selectComboByStrategicValue(
     beatingCombos,
     trumpInfo,
-    "contribute",
+    "strategic",
     "lowest",
   );
 
