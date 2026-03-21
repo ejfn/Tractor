@@ -14,6 +14,7 @@ import {
 import {
   useGameTranslation,
   useTrumpDeclarationTranslation,
+  useCommonTranslation,
 } from "../hooks/useTranslation";
 import { TrumpDeclarationTranslationKey } from "../locales/types";
 import {
@@ -50,6 +51,7 @@ export function ExpandableTrumpDeclaration({
 }: ExpandableTrumpDeclarationProps) {
   const { t: tGame } = useGameTranslation();
   const { t: tTrump } = useTrumpDeclarationTranslation();
+  const { t: tCommon } = useCommonTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [animatedHeight] = useState(new Animated.Value(0));
   const [isCollapsing, setIsCollapsing] = useState(false);
@@ -176,6 +178,7 @@ export function ExpandableTrumpDeclaration({
         <Text style={styles.currentPlayerText}>
           ➤{" "}
           {getPlayerDisplayName(
+            tCommon,
             gameState.players[gameState.dealingState.currentDealingPlayerIndex]
               ?.id || "",
           )}
@@ -186,7 +189,10 @@ export function ExpandableTrumpDeclaration({
       {currentDeclaration && !isExpanded && (
         <Text style={styles.declarationText}>
           {tTrump("messages.currentDeclaration", {
-            playerName: getPlayerDisplayName(currentDeclaration.playerId),
+            playerName: getPlayerDisplayName(
+              tCommon,
+              currentDeclaration.playerId,
+            ),
             declaration: getDeclarationButtonDisplay(
               currentDeclaration.type,
               currentDeclaration.suit,
@@ -220,7 +226,10 @@ export function ExpandableTrumpDeclaration({
                     currentDeclaration.type,
                     currentDeclaration.suit,
                   ),
-                  playerName: getPlayerDisplayName(currentDeclaration.playerId),
+                  playerName: getPlayerDisplayName(
+                    tCommon,
+                    currentDeclaration.playerId,
+                  ),
                 })
               : tTrump("messages.noDeclarations")}
           </Text>

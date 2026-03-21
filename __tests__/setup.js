@@ -3,11 +3,14 @@
 // Set DEBUG log level for all tests
 import { gameLogger, LogLevel } from "../src/utils/gameLogger";
 
-jest.mock("@react-native-async-storage/async-storage", () => ({
+global.localStorage = {
   setItem: jest.fn(),
-  getItem: jest.fn().mockResolvedValue(null),
+  getItem: jest.fn().mockReturnValue(null),
   removeItem: jest.fn(),
-}));
+};
+
+// Prevent the actual polyfill from running in Jest to avoid Native Database crash
+jest.mock("expo-sqlite/localStorage/install", () => {});
 
 // Mock expo-localization for tests
 jest.mock("expo-localization", () => ({

@@ -243,7 +243,9 @@ const GameStatus: React.FC<GameStatusProps> = ({
             ]}
           >
             <View style={styles.teamHeader}>
-              <Text style={styles.teamName}>{getTeamDisplayName(team.id)}</Text>
+              <Text style={styles.teamName}>
+                {getTeamDisplayName(tCommon, team.id)}
+              </Text>
               <View
                 style={[
                   styles.statusBadge,

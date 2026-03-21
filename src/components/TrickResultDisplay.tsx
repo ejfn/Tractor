@@ -1,6 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { useGameTranslation } from "../hooks/useTranslation";
+import {
+  useGameTranslation,
+  useCommonTranslation,
+} from "../hooks/useTranslation";
 import { GameState, PlayerId } from "../types";
 import { getPlayerDisplayName } from "../utils/translationHelpers";
 
@@ -21,6 +24,7 @@ const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
   gameState,
 }) => {
   const { t } = useGameTranslation();
+  const { t: tCommon } = useCommonTranslation();
   // Just use the visible prop directly - simpler code
   if (!visible) return null;
 
@@ -31,7 +35,7 @@ const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
   const winningTeam = gameState.teams.find((t) => t.id === winningPlayer.team);
   const isAttackingTeamWin = winningTeam ? !winningTeam.isDefending : false;
 
-  const winnerName = getPlayerDisplayName(winningPlayer.id);
+  const winnerName = getPlayerDisplayName(tCommon, winningPlayer.id);
 
   return (
     <View style={styles.container}>

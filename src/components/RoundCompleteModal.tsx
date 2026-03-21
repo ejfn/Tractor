@@ -9,7 +9,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useModalsTranslation } from "../hooks/useTranslation";
+import {
+  useModalsTranslation,
+  useCommonTranslation,
+} from "../hooks/useTranslation";
 import type { ModalsTranslationKey } from "../locales/types";
 import { Card, Rank, RoundResult } from "../types";
 import { getTeamDisplayName } from "../utils/translationHelpers";
@@ -22,8 +25,10 @@ function generateModalMessage(
     key: ModalsTranslationKey,
     options?: Record<string, unknown>,
   ) => string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tCommon: any,
 ): string {
-  const teamName = getTeamDisplayName(roundResult.winningTeam);
+  const teamName = getTeamDisplayName(tCommon, roundResult.winningTeam);
   const rankText = roundResult.rankAdvancement === 1 ? "rank" : "ranks";
   const newRank = roundResult.rankChanges[roundResult.winningTeam];
 
@@ -120,6 +125,7 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
   humanTeamId,
 }) => {
   const { t: tModals } = useModalsTranslation();
+  const { t: tCommon } = useCommonTranslation();
 
   // Detect if human team lost the game
   const isHumanLoss =
@@ -536,7 +542,7 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
                 : tModals("roundComplete.title")}
             </Text>
             <Text style={styles.message}>
-              {generateModalMessage(roundResult, tModals)}
+              {generateModalMessage(roundResult, tModals, tCommon)}
             </Text>
 
             {/* Kitty Cards Display */}
