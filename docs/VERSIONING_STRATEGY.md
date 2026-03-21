@@ -36,7 +36,7 @@ Tractor uses a triple-version system with explicit runtime version control for p
 
 ### Beta Builds (Main Branch)
 - **App Version**: `v1.1.0-beta.5` (clean version)
-- **Runtime Version**: `v1.1.0-beta.5+def5678` (isolated)
+- **Runtime Version**: `v1.1.0-beta.5` (isolated by commit count)
 - **Full Version**: `v1.1.0-beta.5+def5678` (complete tracking)
 - **OTA**: Isolated per build
 

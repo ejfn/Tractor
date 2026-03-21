@@ -77,7 +77,7 @@ runs:
           BASE_VERSION="${MAJOR}.$((MINOR + 1)).0"
           VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          RUNTIME_VERSION="v${BASE_VERSION}-beta"
+          RUNTIME_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
           EAS_BRANCH="preview"
           
         else
