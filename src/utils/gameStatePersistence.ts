@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import "expo-sqlite/localStorage/install";
 import { GameState, GamePhase, Card } from "../types";
 import { gameLogger } from "./gameLogger";
 
@@ -75,7 +75,7 @@ const StorageManager = {
    */
   async setItem(key: string, value: string, retries = 0): Promise<boolean> {
     try {
-      await AsyncStorage.setItem(key, value);
+      localStorage.setItem(key, value);
       return true;
     } catch (error) {
       gameLogger.warn("storage_set_error", {
@@ -98,7 +98,7 @@ const StorageManager = {
    */
   async getItem(key: string, retries = 0): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem(key);
+      return localStorage.getItem(key);
     } catch (error) {
       gameLogger.warn("storage_get_error", {
         key,
@@ -120,7 +120,7 @@ const StorageManager = {
    */
   async removeItem(key: string): Promise<boolean> {
     try {
-      await AsyncStorage.removeItem(key);
+      localStorage.removeItem(key);
       return true;
     } catch (error) {
       gameLogger.warn("storage_remove_error", {

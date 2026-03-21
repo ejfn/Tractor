@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import "expo-sqlite/localStorage/install";
 import { getLocales } from "expo-localization";
 import i18next, { changeLanguage, use as i18nUse } from "i18next";
 import { initReactI18next } from "react-i18next";
@@ -48,7 +48,7 @@ const LANGUAGE_STORAGE_KEY = "user_language_preference";
 // Get stored language preference or use system default
 const getStoredLanguage = async (): Promise<Language> => {
   try {
-    const stored = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
     if (stored && (stored === "en" || stored === "zh")) {
       return stored as Language;
     }
@@ -110,7 +110,7 @@ export const changeLanguageCustom = async (
 ): Promise<void> => {
   try {
     await changeLanguage(language);
-    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   } catch (error) {
     console.error("Failed to change and store language:", error);
   }

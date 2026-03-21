@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Card, GamePhase, JokerType, Rank, Suit } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import {
@@ -10,21 +9,21 @@ import {
   saveGameState,
 } from "../../src/utils/gameStatePersistence";
 
-// Mock AsyncStorage
-jest.mock("@react-native-async-storage/async-storage", () => ({
+// Mock localStorage
+const mockLocalStorage = {
   setItem: jest.fn(),
   getItem: jest.fn(),
   removeItem: jest.fn(),
-}));
-
-const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+global.localStorage = mockLocalStorage as any;
 
 describe("Game State Persistence", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAsyncStorage.setItem.mockResolvedValue();
-    mockAsyncStorage.getItem.mockResolvedValue(null);
-    mockAsyncStorage.removeItem.mockResolvedValue();
+    mockLocalStorage.setItem.mockReturnValue(undefined);
+    mockLocalStorage.getItem.mockReturnValue(null);
+    mockLocalStorage.removeItem.mockReturnValue(undefined);
   });
 
   describe("saveGameState", () => {
@@ -37,12 +36,14 @@ describe("Game State Persistence", () => {
 
       expect(result.success).toBe(true);
       expect(result.savedAt).toBeDefined();
-      expect(mockAsyncStorage.setItem).toHaveBeenCalledTimes(2); // Game state + last save time
+      expect(mockLocalStorage.setItem).toHaveBeenCalledTimes(2); // Game state + last save time
     });
 
     it("should handle storage errors gracefully", async () => {
       const gameState = initializeGame();
-      mockAsyncStorage.setItem.mockRejectedValue(new Error("Storage full"));
+      mockLocalStorage.setItem.mockImplementation(() => {
+        throw new Error("Storage full");
+      });
 
       const result = await saveGameState(gameState);
 
@@ -55,11 +56,13 @@ describe("Game State Persistence", () => {
       gameState.roundNumber = 2;
 
       let savedData: string | undefined;
-      mockAsyncStorage.setItem.mockImplementation(async (key, value) => {
-        if (key === "tractor_current_game") {
-          savedData = value;
-        }
-      });
+      mockLocalStorage.setItem.mockImplementation(
+        (key: string, value: string) => {
+          if (key === "tractor_current_game") {
+            savedData = value;
+          }
+        },
+      );
 
       await saveGameState(gameState);
 
@@ -97,9 +100,7 @@ describe("Game State Persistence", () => {
         },
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(
-        JSON.stringify(persistedState),
-      );
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       const result = await loadGameState();
 
@@ -111,7 +112,7 @@ describe("Game State Persistence", () => {
     });
 
     it("should return error when no saved game exists", async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
+      mockLocalStorage.getItem.mockReturnValue(null);
 
       const result = await loadGameState();
 
@@ -126,7 +127,7 @@ describe("Game State Persistence", () => {
         timestamp: Date.now(),
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(invalidState));
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(invalidState));
 
       const result = await loadGameState();
 
@@ -135,7 +136,7 @@ describe("Game State Persistence", () => {
     });
 
     it("should reject corrupted JSON data", async () => {
-      mockAsyncStorage.getItem.mockResolvedValue("invalid json data {");
+      mockLocalStorage.getItem.mockReturnValue("invalid json data {");
 
       const result = await loadGameState();
 
@@ -161,9 +162,7 @@ describe("Game State Persistence", () => {
         },
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(
-        JSON.stringify(persistedState),
-      );
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       const result = await loadGameState();
 
@@ -177,13 +176,15 @@ describe("Game State Persistence", () => {
       const result = await clearSavedGameState();
 
       expect(result).toBe(true);
-      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith(
+      expect(mockLocalStorage.removeItem).toHaveBeenCalledWith(
         "tractor_current_game",
       );
     });
 
     it("should handle storage errors when clearing", async () => {
-      mockAsyncStorage.removeItem.mockRejectedValue(new Error("Remove failed"));
+      mockLocalStorage.removeItem.mockImplementation(() => {
+        throw new Error("Remove failed");
+      });
 
       const result = await clearSavedGameState();
 
@@ -193,7 +194,7 @@ describe("Game State Persistence", () => {
 
   describe("hasSavedGame", () => {
     it("should return true when saved game exists", async () => {
-      mockAsyncStorage.getItem.mockResolvedValue("some saved data");
+      mockLocalStorage.getItem.mockReturnValue("some saved data");
 
       const result = await hasSavedGame();
 
@@ -201,7 +202,7 @@ describe("Game State Persistence", () => {
     });
 
     it("should return false when no saved game exists", async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
+      mockLocalStorage.getItem.mockReturnValue(null);
 
       const result = await hasSavedGame();
 
@@ -225,9 +226,7 @@ describe("Game State Persistence", () => {
         },
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(
-        JSON.stringify(persistedState),
-      );
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       const metadata = await getSavedGameMetadata();
 
@@ -238,7 +237,7 @@ describe("Game State Persistence", () => {
     });
 
     it("should return null for invalid saved game", async () => {
-      mockAsyncStorage.getItem.mockResolvedValue("invalid data");
+      mockLocalStorage.getItem.mockReturnValue("invalid data");
 
       const metadata = await getSavedGameMetadata();
 
@@ -251,7 +250,7 @@ describe("Game State Persistence", () => {
       const testData = "test game data";
       const lastSaveTime = Date.now().toString();
 
-      mockAsyncStorage.getItem
+      mockLocalStorage.getItem
         .mockResolvedValueOnce(testData) // For current game
         .mockResolvedValueOnce(lastSaveTime); // For last save time
 
@@ -264,9 +263,13 @@ describe("Game State Persistence", () => {
 
     it("should handle storage errors in stats", async () => {
       // Mock both calls to getItem to reject immediately (no retry delays)
-      mockAsyncStorage.getItem
-        .mockRejectedValueOnce(new Error("Storage error"))
-        .mockRejectedValueOnce(new Error("Storage error"));
+      mockLocalStorage.getItem
+        .mockImplementationOnce(() => {
+          throw new Error("Storage error");
+        })
+        .mockImplementationOnce(() => {
+          throw new Error("Storage error");
+        });
 
       const stats = await getStorageStats();
 
@@ -303,9 +306,7 @@ describe("Game State Persistence", () => {
         },
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(
-        JSON.stringify(persistedState),
-      );
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       const loadResult = await loadGameState();
       expect(loadResult.success).toBe(true);
@@ -332,9 +333,7 @@ describe("Game State Persistence", () => {
         },
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(
-        JSON.stringify(persistedState),
-      );
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       const result = await loadGameState();
       expect(result.success).toBe(false);
@@ -359,7 +358,7 @@ describe("Game State Persistence", () => {
       expect(typeof originalCard.isIdenticalTo).toBe("function");
 
       // Save the game state
-      mockAsyncStorage.setItem.mockResolvedValue();
+      mockLocalStorage.setItem.mockReturnValue(undefined);
       const saveResult = await saveGameState(gameState);
       expect(saveResult.success).toBe(true);
 
@@ -377,9 +376,7 @@ describe("Game State Persistence", () => {
         },
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(
-        JSON.stringify(persistedState),
-      );
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       // Load the game state
       const loadResult = await loadGameState();
@@ -428,9 +425,7 @@ describe("Game State Persistence", () => {
         },
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(
-        JSON.stringify(persistedState),
-      );
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       // Load the game state
       const loadResult = await loadGameState();
@@ -477,9 +472,7 @@ describe("Game State Persistence", () => {
         },
       };
 
-      mockAsyncStorage.getItem.mockResolvedValue(
-        JSON.stringify(persistedState),
-      );
+      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       // Load the game state
       const loadResult = await loadGameState();

@@ -2,6 +2,7 @@ import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { sharedStyles } from "../styles/sharedStyles";
 import { Card, GamePhase, Player, PlayerId, Trick, TrumpInfo } from "../types";
+import { useCommonTranslation } from "../hooks/useTranslation";
 import { getPlayerDisplayName } from "../utils/translationHelpers";
 import HumanHandAnimated from "./HumanHandAnimated";
 import ThinkingIndicator from "./ThinkingIndicator";
@@ -51,6 +52,8 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   gamePhase,
   onKittySwap,
 }) => {
+  const { t: tCommon } = useCommonTranslation();
+
   return (
     <View style={styles.container}>
       <View
@@ -64,7 +67,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
             <Text style={styles.startingPlayerIcon}>👑</Text>
           )}
           <Text style={sharedStyles.playerLabel}>
-            {getPlayerDisplayName(PlayerId.Human)}
+            {getPlayerDisplayName(tCommon, PlayerId.Human)}
           </Text>
         </View>
         {isCurrentPlayer &&

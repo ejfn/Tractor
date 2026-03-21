@@ -2,6 +2,7 @@ import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { sharedStyles } from "../styles/sharedStyles";
 import { Player, Trick } from "../types";
+import { useCommonTranslation } from "../hooks/useTranslation";
 import { getPlayerDisplayName } from "../utils/translationHelpers";
 import CardBack from "./CardBack";
 import ThinkingIndicator from "./ThinkingIndicator";
@@ -36,6 +37,8 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   thinkingDots,
   isRoundStartingPlayer = false,
 }) => {
+  const { t: tCommon } = useCommonTranslation();
+
   // GameTable provides the container sizing/positioning,
   // so we don't need wrapper styles
 
@@ -79,7 +82,7 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   ];
 
   // Get player label using translation
-  const playerLabel = getPlayerDisplayName(player.id);
+  const playerLabel = getPlayerDisplayName(tCommon, player.id);
 
   // Determine whether to show thinking indicator
   // Double-check that we're not showing thinking during trick result display

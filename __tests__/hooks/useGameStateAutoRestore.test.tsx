@@ -1,28 +1,27 @@
 import { renderHook, waitFor } from "@testing-library/react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useGameState } from "../../src/hooks/useGameState";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { GamePhase, Rank } from "../../src/types";
 
-// Mock AsyncStorage
-jest.mock("@react-native-async-storage/async-storage", () => ({
+// Mock localStorage
+const mockLocalStorage = {
   setItem: jest.fn(),
   getItem: jest.fn(),
   removeItem: jest.fn(),
-}));
-
-const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+global.localStorage = mockLocalStorage as any;
 
 describe("useGameState Auto-Restoration", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAsyncStorage.setItem.mockResolvedValue();
-    mockAsyncStorage.getItem.mockResolvedValue(null);
-    mockAsyncStorage.removeItem.mockResolvedValue();
+    mockLocalStorage.setItem.mockReturnValue(undefined);
+    mockLocalStorage.getItem.mockReturnValue(null);
+    mockLocalStorage.removeItem.mockReturnValue(undefined);
   });
 
   it("should initialize new game when no saved game exists", async () => {
-    mockAsyncStorage.getItem.mockResolvedValue(null);
+    mockLocalStorage.getItem.mockReturnValue(null);
 
     const { result } = renderHook(() => useGameState());
 
@@ -61,7 +60,7 @@ describe("useGameState Auto-Restoration", () => {
       },
     };
 
-    mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(persistedState));
+    mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
     const { result } = renderHook(() => useGameState());
 
@@ -83,7 +82,7 @@ describe("useGameState Auto-Restoration", () => {
 
   it("should fallback to new game when restoration fails", async () => {
     // Mock corrupted saved data
-    mockAsyncStorage.getItem.mockResolvedValue("invalid json data");
+    mockLocalStorage.getItem.mockReturnValue("invalid json data");
 
     const { result } = renderHook(() => useGameState());
 
@@ -120,7 +119,7 @@ describe("useGameState Auto-Restoration", () => {
       },
     };
 
-    mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(persistedState));
+    mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
     const { result } = renderHook(() => useGameState());
 
@@ -136,7 +135,7 @@ describe("useGameState Auto-Restoration", () => {
 
     // Should clear saved game
     await waitFor(() => {
-      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith(
+      expect(mockLocalStorage.removeItem).toHaveBeenCalledWith(
         "tractor_current_game",
       );
     });
