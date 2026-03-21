@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "start:dev": "node scripts/inject-dev-version.js && expo start --dev-client",
     "start": "node scripts/inject-dev-version.js && expo start",
     "android": "node scripts/inject-dev-version.js && expo start --android",
     "ios": "node scripts/inject-dev-version.js && expo start --ios",
@@ -26,6 +27,7 @@
     "@react-navigation/native": "^7.1.6",
     "eslint-config-expo": "~55.0.0",
     "expo": "~55.0.0",
+    "expo-dev-client": "~55.0.18",
     "expo-font": "~55.0.4",
     "expo-linking": "~55.0.8",
     "expo-localization": "~55.0.9",
