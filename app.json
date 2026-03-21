@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "tractor",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
@@ -21,8 +20,7 @@
       "permissions": [
         "android.permission.VIBRATE"
       ],
-      "softwareKeyboardLayoutMode": "pan",
-      "edgeToEdgeEnabled": true
+      "softwareKeyboardLayoutMode": "pan"
     },
     "plugins": [
       "expo-router",
@@ -35,12 +33,12 @@
           "backgroundColor": "#0A3A2E"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "jsEngine": "hermes",
     "updates": {
       "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/3256dcee-103a-467b-96c4-97a9f634df51",
