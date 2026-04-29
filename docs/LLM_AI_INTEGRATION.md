@@ -135,12 +135,17 @@ Choose:
 
 Candidates show **only**: card identity, combo type, and point value of the cards. No rationale, no scores, no algorithmic hints — the LLM reasons from the full game context (history, memory, trick state, team score). Pre-sorted best→worst by algorithmic score so candidate 0 is a reasonable default if the LLM is uncertain.
 
-Key design decisions:
-- **System message holds full rules** — LLM understands the game deeply; candidates also marked as pre-validated (belt and suspenders)
-- **Prompt caching on system message**: for Anthropic models via OpenRouter, the system message can be cached with `cache_control: {"type": "ephemeral"}` — near-100% cache hit rate since rules never change. Gracefully degrades (no-op) for models that don’t support it. Controlled by `LLMConfig.usePromptCaching`
-- **Play history** from `gameState.tricks` — last 6 tricks, winner tagged `[ally]`/`[opponent]`
+- **Prompt Structure & Caching Strategy**: To maximize cache hits across all AI bots, the prompt is strictly divided into a shared prefix and a player-specific suffix:
+  - **[CACHED PREFIX - Identical for all bots]**
+    1. `System Rules`: Full game rules.
+    2. `Game Status`: Objective score, trump suit, and declarers.
+    3. `Play History`: All past tricks, strictly objective ("Bot1 played...", "Winner: Bot2") with NO `[ally]` tags.
+  - **[PLAYER SPECIFIC - Breaks the cache]**
+    4. `Player Context`: "You are Bot1. Your ally is Bot3. Your opponents are Bot2 and Human."
+    5. `Current Trick`: The cards played so far in the active trick.
+    6. `Your Hand`: The player's current hand.
+    7. `Candidates`: The pre-validated options.
 - **Player memory** from `MemoryContext.playerMemories`: suit voids, trump void, `trumpUsed` count
-- Cards in human-readable form: "A♠", "K♥ K♥ pair", "3♦ 4♦ tractor", "BJ"/"SJ" for jokers
 - User prompt ~300–600 tokens per turn; system prompt ~500–800 tokens (rules, cached after first call)
 
 
@@ -163,13 +168,14 @@ Flow:
 1. Determine scenario: leading, or following (classify via `suitAvailabilityAnalysis`)
 2. **Build candidates based on scenario:**
    - **Leading** → candidates from `detectCandidateLeads` (always bounded)
-   - **Following / `valid_combos`** → candidates from `validCombosDecision` (player has matching combos)
-   - **Following / dump scenarios** (`void`, `insufficient`, `enough_remaining` with disposal) → present a curated shortlist: top N options already ranked by the algorithmic disposal hierarchy (e.g. "dump: 3♥ — safe, 0pts" vs "dump: 5♣ — gives away 5pts"). The LLM can then make a strategic call on whether sacrificing points is worth it given the game state.
-3. If candidate count > `MAX_LLM_CANDIDATES` (e.g. 10) → trim to top 10 by algorithmic score rather than falling back entirely
-4. Build full-context prompt via `buildGamePrompt(gameState, player.id, candidates, scenario)`
-5. Call `llmAIClient.ts` with prompt + cancellation signal
-6. Parse response integer → return `candidates[N].cards`
-7. On any error → return `makeAIPlay(gameState, player)` (synchronous algorithmic fallback)
+   - **Following / `valid_combos`** → candidates from `validCombosDecision` (STRICT matching combos).
+   - **Following / `insufficient` & `enough_remaining`** → Player has cards in the suit but must break structure or dispose. We generate a curated shortlist of disposal options based on existing algorithmic hierarchies.
+   - **Following / `void` (Trumping vs Dumping)** → When a player is void in the led suit, we generate a curated shortlist of BOTH trumping options and dumping options. The LLM evaluates the game state and decides whether to win the trick or sacrifice points.
+   - **Following / `multi_combo`** → For mixed-suit/complex plays, we generate options using the existing multi-combo disposal logic.
+3. Build full-context prompt via `buildGamePrompt(gameState, player.id, candidates, scenario)`
+4. Call `llmAIClient.ts` with prompt + cancellation signal
+5. Parse response integer → return `candidates[N].cards`
+6. On any error → log the failure and return `makeAIPlay(gameState, player)` (synchronous algorithmic fallback), passing back `source: 'fallback'` to the caller.
 
 ---
 
@@ -214,7 +220,7 @@ Make `getAIMoveWithErrorHandling` async, accepting an optional `AbortSignal`.
 + export async function getAIMoveWithErrorHandling(
 +   gameState: GameState,
 +   signal?: AbortSignal
-+ ): Promise<{ cards: Card[] | null; error: string | null }>
++ ): Promise<{ cards: Card[] | null; error: string | null; source: 'llm' | 'algorithmic' | 'fallback' }>
 ```
 
 Inside: if LLM is enabled for the current player, call `makeLLMAIPlay`; otherwise fall through to existing `getAIMove`.
@@ -259,3 +265,7 @@ export const AI_MOVE_DELAY = llmConfig.enabled ? 0 : 300;
 3. Simulate API failure (bad key) → graceful fallback to algorithmic move, no crash
 4. Verify `waitingForAI` indicator is shown throughout the full LLM round-trip
 
+
+## Future Work (Stage 2)
+
+In Stage 2, we will move away from the 'candidate menu' approach and allow the LLM to output card arrays natively. This will require a validation loop where the LLM's raw output is passed through the game's strict `isValidPlay` guard. If the play is invalid, the engine will bounce the error back to the LLM as a new user message, forcing it to try again until it produces a legal play.
