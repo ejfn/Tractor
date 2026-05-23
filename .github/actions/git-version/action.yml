@@ -72,21 +72,21 @@ runs:
           fi
 
         elif [[ ${{ github.ref }} == refs/heads/main ]]; then
-          # Main branch push - isolate with git hash in runtime version
+          # Main branch push - isolate with stable beta runtime version
           # Increment minor version by 1 and reset patch to 0
           BASE_VERSION="${MAJOR}.$((MINOR + 1)).0"
           VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          RUNTIME_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
+          RUNTIME_VERSION="v${BASE_VERSION}-beta"
           EAS_BRANCH="preview"
           
         else
-          # Other branch (manual trigger) - isolate with git hash in runtime version
+          # Other branch (manual trigger) - isolate with stable alpha runtime version
           # Increment minor version by 1 and reset patch to 0
           BASE_VERSION="${MAJOR}.$((MINOR + 1)).0"
           VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          RUNTIME_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
+          RUNTIME_VERSION="v${BASE_VERSION}-alpha"
           EAS_BRANCH="development"
         fi
         
