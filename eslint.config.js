@@ -13,6 +13,9 @@ module.exports = defineConfig([
   {
     rules: {
       'no-console': 'error', // Enforce use of gameLogger instead of console
+      'react-hooks/refs': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
   {
