@@ -3,6 +3,7 @@ name: EAS Build APK
 on:
   release:
     types: [prereleased, released]
+  workflow_dispatch:
 
 permissions:
   contents: write
