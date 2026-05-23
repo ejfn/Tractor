@@ -38,11 +38,15 @@ jobs:
       id: version
       uses: ./.github/actions/git-version
 
+    - name: Override app name, package ID, and EAS channel for Dev Client
+      run: |
+        jq '.expo.name = .expo.name + " (Dev)" | .expo.android.package = .expo.android.package + ".dev" | .expo.ios.bundleIdentifier = "com.cardgame.tractor.dev" | .expo.updates.requestHeaders["expo-channel-name"] = "preview"' app.json > app.json.tmp
+        mv app.json.tmp app.json
+
     - name: Build Dev Client APK
       run: eas build --platform android --profile development --wait
       env:
         CI: 1
-        APP_ENV: development
 
     - name: Get build artifact URL
       id: build-url

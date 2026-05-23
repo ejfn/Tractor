@@ -56,12 +56,12 @@ Tractor uses a triple-version system with explicit runtime version control for p
 
 ## Dev Client Side-by-Side Installation
 
-To prevent development builds from overwriting your stable production build on your mobile device, Tractor utilizes a dynamic environment configuration in [**`app.config.js`**](file:///home/eric/repos/Tractor/app.config.js):
+To prevent development builds from overwriting your stable production build on your mobile device, Tractor dynamically overrides the package configuration on the GitHub Actions runner before compiling the Development Client APK:
 
 * **Standard / Production builds**: Compiles with the static production details (`name: "Tractor"`, `package: "com.cardgame.tractor"`).
-* **Development Client builds** (`APP_ENV=development`): Dynamically overrides the app name and package ID on the native layer (`name: "Tractor (Dev)"`, `package: "com.cardgame.tractor.dev"`).
+* **Development Client builds**: The [**`eas-build-dev.yml`**](file:///home/eric/repos/Tractor/.github/workflows/eas-build-dev.yml) workflow uses `jq` to statically mutate `app.json` on the runner before uploading (`name: "Tractor (Dev)"`, `package: "com.cardgame.tractor.dev"`, `updates.requestHeaders["expo-channel-name"] = "preview"`).
 
-This allows developers to keep the official app installed while concurrently testing with the custom Development Client shell.
+This allows developers to keep the official production app installed while concurrently running and testing with the custom Development Client shell.
 
 ## Key Benefits
 
