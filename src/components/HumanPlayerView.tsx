@@ -1,6 +1,6 @@
 import React from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { sharedStyles } from "../styles/sharedStyles";
+import { sharedStyles } from "../utils/sharedStyles";
 import { Card, GamePhase, Player, PlayerId, Trick, TrumpInfo } from "../types";
 import { useCommonTranslation } from "../hooks/useTranslation";
 import { getPlayerDisplayName } from "../utils/translationHelpers";

@@ -17,8 +17,7 @@ import {
 } from "react-native";
 import "react-native-reanimated";
 
-// Import the color scheme hook
-import { useColorScheme } from "../hooks/useColorScheme";
+import { useColorScheme } from "react-native";
 
 // Initialize i18n and import language functions
 import { useCommonTranslation } from "../src/hooks/useTranslation";

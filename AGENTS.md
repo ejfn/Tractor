@@ -55,11 +55,22 @@ enum PointPressure { LOW = 'low', MEDIUM = 'medium', HIGH = 'high' }
 ```
 
 ### File Organization
-- `src/ai/` - AI strategic decision-making (20 focused modules)
+- `src/ai/` - AI strategic decision-making (following/, leading/, kittySwap/, trumpDeclaration/ sub-dirs)
 - `src/game/` - Core game logic and rules
 - `src/types/` - Type definitions with clean re-exports
-- `src/utils/` - Domain-agnostic utilities
-- `__tests__/` - Mirrors source code structure
+- `src/utils/` - Shared utilities (game-agnostic helpers, sharedStyles, gameLogger, persistence)
+- `src/components/` - React Native UI components
+- `src/screens/` - Screen-level controller/view split
+- `src/hooks/` - React hooks (game state, AI turns, animations, persistence)
+- `src/locales/` - i18n translation files (en/, zh/)
+
+#### Test directory structure (`__tests__/`)
+Most test directories mirror `src/`, but the following are intentional exceptions:
+- `__tests__/helpers/` - Shared test utilities (not production code)
+- `__tests__/followingRulesValidation/` - Rule-validation suite for following logic
+- `__tests__/integration/` - Cross-layer integration tests
+- `__tests__/simulation/` - Full-game simulation tests (run separately via `npm run test:simulation`)
+
 
 ### Logging
 Use `gameLogger` instead of `console.log()`
