@@ -81,12 +81,12 @@ runs:
           EAS_BRANCH="preview"
           
         else
-          # Other branch (manual trigger) - isolate with stable alpha runtime version
+          # Other branch (manual trigger) - isolate with git hash in runtime version
           # Increment minor version by 1 and reset patch to 0
           BASE_VERSION="${MAJOR}.$((MINOR + 1)).0"
           VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
-          RUNTIME_VERSION="v${BASE_VERSION}-alpha"
+          RUNTIME_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="development"
         fi
         
