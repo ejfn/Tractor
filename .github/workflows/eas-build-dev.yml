@@ -42,6 +42,7 @@ jobs:
       run: eas build --platform android --profile development --wait
       env:
         CI: 1
+        APP_ENV: development
 
     - name: Get build artifact URL
       id: build-url
