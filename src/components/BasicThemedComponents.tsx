@@ -1,5 +1,11 @@
-import { Text, View, TextProps, ViewProps, StyleSheet } from "react-native";
-import { useColorScheme } from "../../hooks/useColorScheme";
+import {
+  Text,
+  View,
+  TextProps,
+  ViewProps,
+  StyleSheet,
+  useColorScheme,
+} from "react-native";
 
 // Simple themed text component for 404 page
 export function ThemedText({

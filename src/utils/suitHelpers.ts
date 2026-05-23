@@ -1,4 +1,4 @@
-import { sharedStyles } from "../styles/sharedStyles";
+import { sharedStyles } from "./sharedStyles";
 import { JokerType, Suit } from "../types";
 
 /**
