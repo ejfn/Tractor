@@ -60,6 +60,9 @@ export function handleEnoughRemainingScenario(
     currentPlayerId,
   );
 
+  const player = gameState.players.find((p) => p.id === currentPlayerId);
+  const playerHand = player ? player.hand : undefined;
+
   // Try to form best combo structure first
   const selectedCards = selectBestComboStructure(
     analysis.remainingCards,
@@ -67,6 +70,7 @@ export function handleEnoughRemainingScenario(
     analysis.requiredLength,
     trumpInfo,
     shouldContribute,
+    playerHand,
   );
 
   gameLogger.debug("following_enough_remaining_result", {
@@ -97,6 +101,7 @@ function selectBestComboStructure(
   requiredLength: number,
   trumpInfo: TrumpInfo,
   shouldContribute: boolean,
+  playerHand?: Card[],
 ): Card[] {
   // Calculate how many pairs we need based on leading combo type and length
   const requiredPairs = getRequiredPairs(leadingComboType, requiredLength);
@@ -115,6 +120,7 @@ function selectBestComboStructure(
         shouldContribute ? "contribute" : "strategic",
         "lowest",
         requiredPairs,
+        playerHand,
       );
 
       selectedCards.push(...bestPairCards);

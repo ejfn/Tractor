@@ -1,5 +1,6 @@
 import { calculateCardStrategicValue } from "../../game/cardValue";
-import { Card, Combo, TrumpInfo } from "../../types";
+import { Card, Combo, ComboType, TrumpInfo } from "../../types";
+import { findAllTractors } from "../../game/tractorLogic";
 
 /**
  * Strategic Selection Functions for Enhanced Following V2
@@ -11,6 +12,20 @@ import { Card, Combo, TrumpInfo } from "../../types";
 // =============== CORE SELECTION UTILITIES ===============
 
 /**
+ * Helper function to determine if a pair combo is part of a tractor in a set of tractors
+ */
+function isPairInTractor(pair: Combo, tractors: Combo[]): boolean {
+  if (pair.cards.length !== 2) return false;
+  const cardA = pair.cards[0];
+  const cardB = pair.cards[1];
+  return tractors.some(
+    (tractor) =>
+      tractor.cards.some((c) => c.id === cardA.id) &&
+      tractor.cards.some((c) => c.id === cardB.id),
+  );
+}
+
+/**
  * Core combo selection function - selects combo(s) based on strategic value
  *
  * @param validCombos - Array of combos to choose from
@@ -18,6 +33,7 @@ import { Card, Combo, TrumpInfo } from "../../types";
  * @param mode - Strategic value calculation mode
  * @param direction - Whether to select highest or lowest value
  * @param requiredComboLength - Number of combos to select (default 1)
+ * @param playerHand - Optional full player hand for tractor preservation
  * @returns Selected combo cards
  */
 export function selectComboByStrategicValue(
@@ -26,6 +42,7 @@ export function selectComboByStrategicValue(
   mode: "contribute" | "strategic" | "basic",
   direction: "highest" | "lowest",
   requiredComboLength: number = 1,
+  playerHand?: Card[],
 ): Card[] {
   if (validCombos.length === 0) {
     throw new Error("selectComboByStrategicValue called with no valid combos");
@@ -45,19 +62,31 @@ export function selectComboByStrategicValue(
   }
 
   // For non-single combos (pairs, tractors), use original combo-based selection
-  // TODO: Also preserve tractors when selecting pairs (similar to pair preservation logic)
-  const comboScores = validCombos.map((combo) => ({
-    combo,
-    score: combo.cards.reduce(
-      (sum, card) => sum + calculateCardStrategicValue(card, trumpInfo, mode),
-      0,
-    ),
-  }));
+  // TRACTOR PRESERVATION: If playerHand is provided, identify tractors to preserve them
+  const tractors = playerHand ? findAllTractors(playerHand, trumpInfo) : [];
 
-  // Sort by score based on direction
-  comboScores.sort((a, b) =>
-    direction === "highest" ? b.score - a.score : a.score - b.score,
-  );
+  const comboScores = validCombos.map((combo) => {
+    const isTractorPart =
+      combo.type === ComboType.Pair && isPairInTractor(combo, tractors);
+    return {
+      combo,
+      score: combo.cards.reduce(
+        (sum, card) => sum + calculateCardStrategicValue(card, trumpInfo, mode),
+        0,
+      ),
+      isTractorPart,
+    };
+  });
+
+  // Sort by score based on direction, while preserving tractors
+  comboScores.sort((a, b) => {
+    // First priority: prefer non-tractor-part combos (preserve tractors)
+    if (a.isTractorPart !== b.isTractorPart) {
+      return a.isTractorPart ? 1 : -1; // non-tractor-part comes first
+    }
+    // Second priority: sort by strategic value based on direction
+    return direction === "highest" ? b.score - a.score : a.score - b.score;
+  });
 
   // Select the required number of combos and return all their cards
   const selectedCombos = comboScores.slice(0, requiredComboLength);

@@ -37,6 +37,7 @@ function evaluateTrumpSelection(
   gameState: GameState,
   _currentPlayerId: PlayerId,
   analysis: SuitAvailabilityResult,
+  fullHand?: Card[],
 ): Card[] | null {
   const currentTrick = gameState.currentTrick;
   const isTeammateWinning =
@@ -91,6 +92,7 @@ function evaluateTrumpSelection(
           "contribute",
           "lowest",
           1,
+          fullHand,
         );
       }
 
@@ -122,6 +124,8 @@ function evaluateTrumpSelection(
             trumpInfo,
             "contribute",
             "lowest",
+            1,
+            fullHand,
           );
 
           const value = calculateCardStrategicValue(
@@ -151,6 +155,8 @@ function evaluateTrumpSelection(
           trumpInfo,
           "strategic",
           highValueCombos.length > 0 ? "lowest" : "highest",
+          1,
+          fullHand,
         );
       }
     }
@@ -222,6 +228,7 @@ export function handleVoidScenario(
       gameState,
       currentPlayerId,
       analysis,
+      playerHand,
     );
   }
 
