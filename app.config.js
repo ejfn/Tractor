@@ -17,5 +17,16 @@ module.exports = ({ config }) => {
       ...config.android,
       package: IS_DEV ? 'com.cardgame.tractor.dev' : 'com.cardgame.tractor',
     },
+    
+    // Dynamically align the EAS Update channel to 'development' for dev clients
+    updates: {
+      ...config.updates,
+      requestHeaders: {
+        ...config.updates?.requestHeaders,
+        'expo-channel-name': IS_DEV 
+          ? 'development' 
+          : (config.updates?.requestHeaders?.['expo-channel-name'] || 'production'),
+      },
+    },
   };
 };
