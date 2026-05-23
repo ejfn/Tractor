@@ -1,5 +1,15 @@
-import { selectCardsByStrategicValue } from "../../../src/ai/following/strategicSelection";
-import { Card, Rank, Suit, TrumpInfo } from "../../../src/types";
+import {
+  selectCardsByStrategicValue,
+  selectComboByStrategicValue,
+} from "../../../src/ai/following/strategicSelection";
+import {
+  Card,
+  Combo,
+  ComboType,
+  Rank,
+  Suit,
+  TrumpInfo,
+} from "../../../src/types";
 
 describe("Strategic Selection - Pair Preservation", () => {
   const trumpInfo: TrumpInfo = {
@@ -130,6 +140,118 @@ describe("Strategic Selection - Pair Preservation", () => {
       expect(result).toHaveLength(1);
       // Should pick Queen (lowest unpaired card), preserve A♠A♠ pair
       expect(result[0].rank).toBe(Rank.Queen);
+    });
+  });
+
+  describe("selectComboByStrategicValue - Tractor Preservation", () => {
+    it("should preserve a tractor when selecting a pair (lowest direction)", () => {
+      // Hand has: K♠K♠, Q♠Q♠ (forms a tractor) and 9♠9♠ (standalone pair)
+      const kPair = Card.createPair(Suit.Spades, Rank.King);
+      const qPair = Card.createPair(Suit.Spades, Rank.Queen);
+      const ninePair = Card.createPair(Suit.Spades, Rank.Nine);
+
+      const hand = [...kPair, ...qPair, ...ninePair];
+
+      const validCombos: Combo[] = [
+        { type: ComboType.Pair, cards: kPair, value: 0 },
+        { type: ComboType.Pair, cards: qPair, value: 0 },
+        { type: ComboType.Pair, cards: ninePair, value: 0 },
+      ];
+
+      // Select 1 pair with "lowest" direction - should pick 9♠9♠ to preserve the K♠-Q♠ tractor
+      const result = selectComboByStrategicValue(
+        validCombos,
+        trumpInfo,
+        "basic",
+        "lowest",
+        1,
+        hand,
+      );
+
+      expect(result).toHaveLength(2);
+      expect(result[0].rank).toBe(Rank.Nine);
+      expect(result[1].rank).toBe(Rank.Nine);
+    });
+
+    it("should preserve a tractor when selecting a pair (highest direction)", () => {
+      // Hand has: K♠K♠, Q♠Q♠ (forms a tractor) and 10♠10♠ (standalone pair)
+      const kPair = Card.createPair(Suit.Spades, Rank.King);
+      const qPair = Card.createPair(Suit.Spades, Rank.Queen);
+      const tenPair = Card.createPair(Suit.Spades, Rank.Ten);
+
+      const hand = [...kPair, ...qPair, ...tenPair];
+
+      const validCombos: Combo[] = [
+        { type: ComboType.Pair, cards: kPair, value: 0 },
+        { type: ComboType.Pair, cards: qPair, value: 0 },
+        { type: ComboType.Pair, cards: tenPair, value: 0 },
+      ];
+
+      // Select 1 pair with "highest" direction - should pick 10♠10♠ to preserve the K♠-Q♠ tractor
+      // (even though King and Queen are individually higher strategic value)
+      const result = selectComboByStrategicValue(
+        validCombos,
+        trumpInfo,
+        "basic",
+        "highest",
+        1,
+        hand,
+      );
+
+      expect(result).toHaveLength(2);
+      expect(result[0].rank).toBe(Rank.Ten);
+      expect(result[1].rank).toBe(Rank.Ten);
+    });
+
+    it("should break a tractor if no other standalone pairs are available", () => {
+      // Hand has only the tractor: K♠K♠, Q♠Q♠
+      const kPair = Card.createPair(Suit.Spades, Rank.King);
+      const qPair = Card.createPair(Suit.Spades, Rank.Queen);
+
+      const hand = [...kPair, ...qPair];
+
+      const validCombos: Combo[] = [
+        { type: ComboType.Pair, cards: kPair, value: 0 },
+        { type: ComboType.Pair, cards: qPair, value: 0 },
+      ];
+
+      // Select 1 pair with "highest" direction - must break tractor, and should pick the higher pair (King)
+      const result = selectComboByStrategicValue(
+        validCombos,
+        trumpInfo,
+        "basic",
+        "highest",
+        1,
+        hand,
+      );
+
+      expect(result).toHaveLength(2);
+      expect(result[0].rank).toBe(Rank.King);
+      expect(result[1].rank).toBe(Rank.King);
+    });
+
+    it("should be backward compatible and work without playerHand passed", () => {
+      // Hand has: K♠K♠, Q♠Q♠
+      const kPair = Card.createPair(Suit.Spades, Rank.King);
+      const qPair = Card.createPair(Suit.Spades, Rank.Queen);
+
+      const validCombos: Combo[] = [
+        { type: ComboType.Pair, cards: kPair, value: 0 },
+        { type: ComboType.Pair, cards: qPair, value: 0 },
+      ];
+
+      // Select 1 pair with "highest" direction without passing hand - should select King purely by strategic value
+      const result = selectComboByStrategicValue(
+        validCombos,
+        trumpInfo,
+        "basic",
+        "highest",
+        1,
+      );
+
+      expect(result).toHaveLength(2);
+      expect(result[0].rank).toBe(Rank.King);
+      expect(result[1].rank).toBe(Rank.King);
     });
   });
 });

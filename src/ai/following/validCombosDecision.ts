@@ -62,6 +62,10 @@ export function handleTrumpLeadValidCombos(
 
   const { isTeammateWinning, trickPoints } = trickAnalysis;
 
+  // Retrieve playerHand for tractor preservation
+  const player = gameState.players.find((p) => p.id === currentPlayerId);
+  const playerHand = player ? player.hand : undefined;
+
   gameLogger.debug("following_trump_lead_analysis", {
     player: currentPlayerId,
     validComboCount: analysis.validCombos.length,
@@ -87,6 +91,8 @@ export function handleTrumpLeadValidCombos(
       trumpInfo,
       "contribute",
       "lowest",
+      1,
+      playerHand,
     );
     if (contributionCards.length > 0) {
       gameLogger.debug("following_trump_contribute_teammate", {
@@ -105,6 +111,7 @@ export function handleTrumpLeadValidCombos(
     trumpInfo,
     gameState,
     currentPlayerId,
+    playerHand,
   );
 
   if (positionResult) {
@@ -130,6 +137,7 @@ export function handleTrumpLeadValidCombos(
     trumpInfo,
     trickPoints,
     isTeammateWinning,
+    playerHand,
   );
 
   if (beatResult) {
@@ -148,6 +156,8 @@ export function handleTrumpLeadValidCombos(
     trumpInfo,
     "strategic",
     "lowest",
+    1,
+    playerHand,
   );
 
   gameLogger.debug("following_trump_dispose", {
@@ -196,6 +206,10 @@ export function handleNonTrumpLeadValidCombos(
 
   const { isTeammateWinning, isCurrentlyTrumped } = trickAnalysis;
 
+  // Retrieve playerHand for tractor preservation
+  const player = gameState.players.find((p) => p.id === currentPlayerId);
+  const playerHand = player ? player.hand : undefined;
+
   gameLogger.debug("following_nontrump_lead_analysis", {
     player: currentPlayerId,
     validComboCount: analysis.validCombos.length,
@@ -221,6 +235,8 @@ export function handleNonTrumpLeadValidCombos(
       trumpInfo,
       "contribute",
       "lowest",
+      1,
+      playerHand,
     );
     if (contributionCards.length > 0) {
       gameLogger.debug("following_contribute_to_teammate", {
@@ -239,6 +255,8 @@ export function handleNonTrumpLeadValidCombos(
       trumpInfo,
       "basic",
       "highest",
+      1,
+      playerHand,
     );
 
     // Check if this combo can actually beat the current winner
@@ -265,6 +283,8 @@ export function handleNonTrumpLeadValidCombos(
     trumpInfo,
     "strategic",
     "lowest",
+    1,
+    playerHand,
   );
 
   gameLogger.debug("following_dispose_nontrump", {
@@ -288,6 +308,7 @@ function attemptToBeatWithThreshold(
   trumpInfo: TrumpInfo,
   trickPoints: number,
   isTeammateWinning: boolean,
+  playerHand?: Card[],
 ): Card[] | null {
   if (currentWinnerCards.length === 0) {
     return null; // Can't beat if no current winner
@@ -338,6 +359,8 @@ function attemptToBeatWithThreshold(
       trumpInfo,
       "contribute",
       "lowest",
+      1,
+      playerHand,
     );
   }
 
@@ -360,6 +383,7 @@ function applyPositionAwareTrumpStrategy(
   trumpInfo: TrumpInfo,
   gameState: GameState,
   currentPlayerId: PlayerId,
+  playerHand?: Card[],
 ): Card[] | null {
   const trickAnalysis = context.trickWinnerAnalysis;
   if (!trickAnalysis) return null;
@@ -389,6 +413,7 @@ function applyPositionAwareTrumpStrategy(
         currentWinnerStrength,
         isTeammateWinning,
         trumpInfo,
+        playerHand,
       );
 
     case TrickPosition.Third:
@@ -402,6 +427,7 @@ function applyPositionAwareTrumpStrategy(
         isTeammateWinning,
         trickPoints,
         trumpInfo,
+        playerHand,
       );
 
     case TrickPosition.Fourth:
@@ -410,6 +436,7 @@ function applyPositionAwareTrumpStrategy(
         currentWinnerCards,
         isTeammateWinning,
         trumpInfo,
+        playerHand,
       );
 
     default:
@@ -429,6 +456,7 @@ function handleSecondPlayerTrumpStrategy(
   currentWinnerStrength: number,
   isTeammateWinning: boolean,
   trumpInfo: TrumpInfo,
+  playerHand?: Card[],
 ): Card[] | null {
   // Only raise against weak leads; strong leads handled by generic beat logic
   if (currentWinnerStrength >= 110) return null;
@@ -448,6 +476,8 @@ function handleSecondPlayerTrumpStrategy(
     trumpInfo,
     "strategic",
     "lowest",
+    1,
+    playerHand,
   );
 
   // Don't raise if our cheapest beat is too expensive (value > 150, e.g. jokers)
@@ -481,6 +511,7 @@ function handleThirdPlayerTrumpStrategy(
   isTeammateWinning: boolean,
   trickPoints: number,
   trumpInfo: TrumpInfo,
+  playerHand?: Card[],
 ): Card[] | null {
   // Check if 4th player is an opponent
   const fourthPlayerIsOpponent = isFourthPlayerOpponent(
@@ -513,6 +544,8 @@ function handleThirdPlayerTrumpStrategy(
         trumpInfo,
         "strategic",
         "lowest",
+        1,
+        playerHand,
       );
 
       const raiseStrength = getMaxStrategicValue(cheapestStrongBeat, trumpInfo);
@@ -539,6 +572,8 @@ function handleThirdPlayerTrumpStrategy(
       trumpInfo,
       "strategic",
       "lowest",
+      1,
+      playerHand,
     );
 
     const finalBeatStrength = getMaxStrategicValue(cheapestBeat, trumpInfo);
@@ -568,6 +603,8 @@ function handleThirdPlayerTrumpStrategy(
       trumpInfo,
       "strategic",
       "lowest",
+      1,
+      playerHand,
     );
 
     const raiseStrength = getMaxStrategicValue(cheapestRaise, trumpInfo);
@@ -596,6 +633,7 @@ function handleFourthPlayerTrumpStrategy(
   currentWinnerCards: Card[],
   isTeammateWinning: boolean,
   trumpInfo: TrumpInfo,
+  playerHand?: Card[],
 ): Card[] | null {
   // When teammate is winning, don't overtake (handled by Step 2)
   if (isTeammateWinning) return null;
@@ -612,6 +650,8 @@ function handleFourthPlayerTrumpStrategy(
     trumpInfo,
     "strategic",
     "lowest",
+    1,
+    playerHand,
   );
 
   gameLogger.debug("following_trump_4th_optimal_beat", {
