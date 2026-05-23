@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import Animated, {
   Easing,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -48,6 +49,13 @@ export const AnimatedCard: React.FC<CardProps> = ({
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
 
+  // Shared values for props that need to be read inside the useAnimatedStyle worklet.
+  // Plain JS props cannot be reliably captured by a worklet (Reanimated 4 strict threading),
+  // so we sync them via useEffect instead of relying on the dependency array workaround.
+  const disabledOpacity = useSharedValue(disabled ? 0.7 : 1);
+  const selectedShared = useSharedValue(selected ?? false);
+  const zIndexShared = useSharedValue(style.zIndex ?? 0);
+
   const suitColor = useMemo(
     () => getSuitColorStyle(card.suit).color,
     [card.suit],
@@ -62,6 +70,19 @@ export const AnimatedCard: React.FC<CardProps> = ({
     }
     return card.rank || "";
   }, [card.joker, card.rank]);
+
+  // Keep shared values in sync with incoming props
+  useEffect(() => {
+    disabledOpacity.value = disabled ? 0.7 : 1;
+  }, [disabled, disabledOpacity]);
+
+  useEffect(() => {
+    selectedShared.value = selected ?? false;
+  }, [selected, selectedShared]);
+
+  useEffect(() => {
+    zIndexShared.value = style.zIndex ?? 0;
+  }, [style.zIndex, zIndexShared]);
 
   // Handle card selection with improved touch response - memoized for performance
   const handlePress = useCallback(() => {
@@ -136,9 +157,10 @@ export const AnimatedCard: React.FC<CardProps> = ({
             easing: Easing.out(Easing.quad), // Quad easing for better performance
           },
           (finished) => {
+            "worklet";
             if (finished && typeof onAnimationComplete === "function") {
-              // Notify parent component that animation is complete
-              onAnimationComplete();
+              // runOnJS marshals the call back to the JS thread from the Reanimated UI thread
+              runOnJS(onAnimationComplete)();
             }
           },
         );
@@ -158,18 +180,14 @@ export const AnimatedCard: React.FC<CardProps> = ({
         { translateY: translateY.value },
         { rotate: rotate.value },
       ],
-      // Apply opacity based on disabled state - use higher opacity for better visibility
-      opacity: disabled ? 0.7 : 1,
-      // Add hardware acceleration hints for smoother animations
+      // Read from shared values so this worklet runs purely on the UI thread
+      opacity: disabledOpacity.value,
       backfaceVisibility: "hidden",
-      // Enhanced zIndex for selected cards to ensure they appear clearly above other cards
-      zIndex: selected
-        ? style.zIndex
-          ? style.zIndex + 10
-          : 20
-        : style.zIndex || 0,
+      zIndex: selectedShared.value
+        ? zIndexShared.value + 10 || 20
+        : zIndexShared.value || 0,
     };
-  }, [selected, disabled, style.zIndex]); // Add dependencies to avoid unnecessary recalculations
+  }); // No dependency array needed — all inputs are shared values
 
   // Create shadow styles separately to avoid shadowOffset error - memoized for performance
   const shadowStyle = useMemo(() => {
@@ -322,7 +340,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
           {/* Card back with simplified 3x3 grid pattern */}
           <View style={faceDownCardBackStyle}>
             {/* Simple grid pattern */}
-            <View style={gridContainerStyle} pointerEvents="none">
+            <View style={[gridContainerStyle, { pointerEvents: "none" }]}>
               {/* Main grid container */}
               <View
                 style={{
@@ -394,8 +412,8 @@ export const AnimatedCard: React.FC<CardProps> = ({
                 alignItems: "center",
                 position: "absolute",
                 zIndex: 5,
+                pointerEvents: "none",
               }}
-              pointerEvents="none"
             >
               <Text
                 style={{
