@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { InteractionManager } from "react-native";
+
 import { getAIMoveWithErrorHandling } from "../game/playProcessing";
 import { getAIKittySwap } from "../ai/aiLogic";
 import { putbackKittyCards } from "../game/kittyManager";
@@ -297,7 +297,7 @@ export function useAITurns(
           ? AI_KITTY_SWAP_DELAY
           : AI_MOVE_DELAY;
       setTimeout(() => {
-        InteractionManager.runAfterInteractions(() => {
+        requestAnimationFrame(() => {
           handleAIMove();
         });
       }, delay);
