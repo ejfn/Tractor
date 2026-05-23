@@ -131,9 +131,9 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
                   {
                     marginLeft: index === 0 ? 0 : -cardOverlap,
                     zIndex: index,
+                    pointerEvents: "box-none",
                   },
                 ]}
-                pointerEvents="box-none"
               >
                 <AnimatedCardComponent
                   card={card}
