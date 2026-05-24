@@ -135,8 +135,7 @@ export const dealNextCard = (state: GameState): GameState => {
     (sum, player) => sum + player.hand.length,
     0,
   );
-  const maxCardsToPlayers =
-    currentDealingState.cardsPerPlayer * players.length;
+  const maxCardsToPlayers = currentDealingState.cardsPerPlayer * players.length;
 
   // Deal next card
   const currentPlayer = players[currentDealingState.currentDealingPlayerIndex];
@@ -282,7 +281,9 @@ export function makeTrumpDeclaration(
   } else {
     newState.trumpDeclarationState = {
       ...newState.trumpDeclarationState,
-      declarationHistory: [...newState.trumpDeclarationState.declarationHistory],
+      declarationHistory: [
+        ...newState.trumpDeclarationState.declarationHistory,
+      ],
     };
   }
 
@@ -348,7 +349,8 @@ export function makeTrumpDeclaration(
   // Update trump info if this is a valid declaration immutably
   newState.trumpInfo = {
     ...newState.trumpInfo,
-    trumpSuit: fullDeclaration.suit === Suit.None ? Suit.None : fullDeclaration.suit,
+    trumpSuit:
+      fullDeclaration.suit === Suit.None ? Suit.None : fullDeclaration.suit,
   };
 
   // Real-time team role changes during dealing (first round only)
