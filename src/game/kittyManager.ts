@@ -17,7 +17,16 @@ export const pickupKittyCards = (
   gameState: GameState,
   roundStartingPlayerId: PlayerId,
 ): { newState: GameState; kittyCards: Card[] } => {
-  const newState = { ...gameState };
+  // Clone players to be fully immutable
+  const players = gameState.players.map((p) => ({
+    ...p,
+    hand: [...p.hand],
+  }));
+
+  const newState = {
+    ...gameState,
+    players,
+  };
 
   // Find the round starting player
   const roundStartingPlayer = newState.players.find(
@@ -95,7 +104,16 @@ export const putbackKittyCards = (
     );
   }
 
-  const newState = { ...gameState };
+  // Clone players to be fully immutable
+  const players = gameState.players.map((p) => ({
+    ...p,
+    hand: [...p.hand],
+  }));
+
+  const newState = {
+    ...gameState,
+    players,
+  };
 
   // Find the player putting back cards
   const player = newState.players.find((p) => p.id === playerId);
