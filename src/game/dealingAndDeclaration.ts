@@ -6,6 +6,7 @@ import {
   GameState,
   PlayerId,
   Suit,
+  Team,
   canOverrideDeclaration,
   detectPossibleDeclarations,
 } from "../types";
@@ -56,8 +57,24 @@ export const dealCards = (state: GameState): GameState => {
 
 // Progressive dealing with trump declaration opportunities
 export const dealNextCard = (state: GameState): GameState => {
-  const newState = { ...state };
-  const { players, deck } = newState;
+  // Deep-ish clone of players to prevent in-place mutation
+  const players = state.players.map((player) => ({
+    ...player,
+    hand: [...player.hand],
+  }));
+
+  // Clone dealingState to prevent in-place mutation
+  const dealingState = state.dealingState
+    ? { ...state.dealingState }
+    : undefined;
+
+  const newState: GameState = {
+    ...state,
+    players,
+    dealingState,
+  };
+
+  const { deck } = newState;
 
   // Initialize dealing state if not present
   if (!newState.dealingState) {
@@ -100,16 +117,16 @@ export const dealNextCard = (state: GameState): GameState => {
     );
   }
 
-  const dealingState = newState.dealingState;
+  const currentDealingState = newState.dealingState;
 
   // Check if dealing is paused
-  if (dealingState.paused) {
+  if (currentDealingState.paused) {
     return newState; // No changes when paused
   }
 
   // Check if dealing is complete
   if (isDealingComplete(newState)) {
-    dealingState.completed = true;
+    currentDealingState.completed = true;
     return newState; // No more cards to deal
   }
 
@@ -119,25 +136,25 @@ export const dealNextCard = (state: GameState): GameState => {
     0,
   );
   const maxCardsToPlayers =
-    Math.floor((deck.length - 8) / players.length) * players.length;
+    currentDealingState.cardsPerPlayer * players.length;
 
   // Deal next card
-  const currentPlayer = players[dealingState.currentDealingPlayerIndex];
+  const currentPlayer = players[currentDealingState.currentDealingPlayerIndex];
   if (currentPlayer && totalCardsInHands < maxCardsToPlayers) {
     const cardToDeal = deck[totalCardsInHands];
     currentPlayer.hand.push(cardToDeal);
 
     // Store reference to last dealt card
-    dealingState.lastDealtCard = cardToDeal;
+    currentDealingState.lastDealtCard = cardToDeal;
 
     // Move to next player for next card
-    dealingState.currentDealingPlayerIndex =
-      (dealingState.currentDealingPlayerIndex + 1) % players.length;
+    currentDealingState.currentDealingPlayerIndex =
+      (currentDealingState.currentDealingPlayerIndex + 1) % players.length;
 
     // Check if we completed a round of dealing to all players
     const newTotalCards = totalCardsInHands + 1;
     if (newTotalCards % players.length === 0) {
-      dealingState.currentRound++;
+      currentDealingState.currentRound++;
     }
   }
 
@@ -213,8 +230,11 @@ export const getLastDealtCard = (state: GameState): Card | undefined => {
 export const pauseDealing = (state: GameState, reason: string): GameState => {
   const newState = { ...state };
   if (newState.dealingState) {
-    newState.dealingState.paused = true;
-    newState.dealingState.pauseReason = reason;
+    newState.dealingState = {
+      ...newState.dealingState,
+      paused: true,
+      pauseReason: reason,
+    };
   }
   return newState;
 };
@@ -223,8 +243,11 @@ export const pauseDealing = (state: GameState, reason: string): GameState => {
 export const resumeDealing = (state: GameState): GameState => {
   const newState = { ...state };
   if (newState.dealingState) {
-    newState.dealingState.paused = false;
-    newState.dealingState.pauseReason = undefined;
+    newState.dealingState = {
+      ...newState.dealingState,
+      paused: false,
+      pauseReason: undefined,
+    };
   }
   return newState;
 };
@@ -253,9 +276,14 @@ export function makeTrumpDeclaration(
 ): GameState {
   const newState = { ...gameState };
 
-  // Ensure trump declaration state exists
+  // Ensure trump declaration state exists and is cloned
   if (!newState.trumpDeclarationState) {
     newState.trumpDeclarationState = initializeTrumpDeclarationState();
+  } else {
+    newState.trumpDeclarationState = {
+      ...newState.trumpDeclarationState,
+      declarationHistory: [...newState.trumpDeclarationState.declarationHistory],
+    };
   }
 
   // Create full declaration with playerId and timestamp
@@ -286,9 +314,15 @@ export function makeTrumpDeclaration(
     throw new Error("Declaration cannot override current declaration");
   }
 
-  // Update the declaration state
-  newState.trumpDeclarationState.currentDeclaration = fullDeclaration;
-  newState.trumpDeclarationState.declarationHistory.push(fullDeclaration);
+  // Update the declaration state immutably
+  newState.trumpDeclarationState = {
+    ...newState.trumpDeclarationState,
+    currentDeclaration: fullDeclaration,
+    declarationHistory: [
+      ...newState.trumpDeclarationState.declarationHistory,
+      fullDeclaration,
+    ],
+  };
 
   // Log the trump declaration with detailed information
   gameLogger.debug(
@@ -311,13 +345,11 @@ export function makeTrumpDeclaration(
     `Trump declared by ${playerId}: ${fullDeclaration.type} with ${fullDeclaration.cards.map((c) => c.toString()).join(", ")}`,
   );
 
-  // Update trump info if this is a valid declaration
-  // For joker pairs (Suit.None), keep trump suit as None (no specific trump suit)
-  if (fullDeclaration.suit === Suit.None) {
-    newState.trumpInfo.trumpSuit = Suit.None; // No trump suit - only jokers + trump rank in all suits
-  } else {
-    newState.trumpInfo.trumpSuit = fullDeclaration.suit; // Regular trump rank declarations use suit
-  }
+  // Update trump info if this is a valid declaration immutably
+  newState.trumpInfo = {
+    ...newState.trumpInfo,
+    trumpSuit: fullDeclaration.suit === Suit.None ? Suit.None : fullDeclaration.suit,
+  };
 
   // Real-time team role changes during dealing (first round only)
   if (newState.roundNumber === 1) {
@@ -326,14 +358,11 @@ export function makeTrumpDeclaration(
     if (declarerPlayer) {
       const declarerTeam = declarerPlayer.team;
 
-      // Set team roles based on current trump declarer
-      newState.teams.forEach((team) => {
-        if (team.id === declarerTeam) {
-          team.isDefending = true; // Declarer's team defends
-        } else {
-          team.isDefending = false; // Other team attacks
-        }
-      });
+      // Set team roles immutably based on current trump declarer
+      newState.teams = newState.teams.map((team) => ({
+        ...team,
+        isDefending: team.id === declarerTeam,
+      })) as [Team, Team];
 
       // Update round starting player to the trump declarer during round 1 dealing
       const declarerIndex = newState.players.findIndex(
