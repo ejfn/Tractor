@@ -87,24 +87,9 @@ export const AnimatedCard: React.FC<CardProps> = ({
   // Handle card selection with improved touch response - memoized for performance
   const handlePress = useCallback(() => {
     if (onSelect && !disabled) {
-      // Ensure opacity is maintained during tap animation
-      opacity.value = 1;
-
-      // Cleaner tap animation - single spring with a small bounce
-      scale.value = withTiming(1.05, {
-        duration: 25, // Extremely quick animation - almost immediate
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Custom easing for a subtle bounce
-      });
-
-      // Call onSelect immediately instead of waiting for animation
       onSelect(card);
-
-      // Reset scale immediately after to prevent jumpy feeling
-      setTimeout(() => {
-        scale.value = withTiming(cardScale, { duration: 25 });
-      }, 50);
     }
-  }, [onSelect, disabled, opacity, scale, card, cardScale]);
+  }, [onSelect, disabled, card]);
 
   // Selection animation - improved with higher pop-up for better visibility
   useEffect(() => {
