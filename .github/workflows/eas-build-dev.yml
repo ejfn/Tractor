@@ -40,7 +40,7 @@ jobs:
 
     - name: Override app name, package ID, and EAS channel for Dev Client
       run: |
-        jq '.expo.name = .expo.name + " (Dev)" | .expo.android.package = .expo.android.package + ".dev" | .expo.ios.bundleIdentifier = "com.cardgame.tractor.dev" | .expo.updates.requestHeaders["expo-channel-name"] = "preview"' app.json > app.json.tmp
+        jq '.expo.name = .expo.name + " (Dev)" | .expo.android.package = .expo.android.package + ".dev" | .expo.ios.bundleIdentifier = "com.cardgame.tractor.dev" | .expo.updates.requestHeaders["expo-channel-name"] = "${{ steps.version.outputs.eas-branch }}"' app.json > app.json.tmp
         mv app.json.tmp app.json
 
     - name: Build Dev Client APK
