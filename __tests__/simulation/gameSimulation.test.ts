@@ -11,8 +11,10 @@ import { putbackKittyCards } from "../../src/game/kittyManager";
 import {
   clearCompletedTrick,
   getAIMoveWithErrorHandling,
+  getAIMoveWithErrorHandlingAsync,
   processPlay,
 } from "../../src/game/playProcessing";
+import { getLLMFallbackStats, resetLLMStats } from "../../src/ai/llm/llmAIStrategy";
 import { Card, GamePhase, GameState, PlayerId, TeamId } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { gameLogger, LogLevel } from "../../src/utils/gameLogger";
@@ -36,17 +38,22 @@ import { GameStats, TestSessionTracker } from "../helpers";
 
 describe("Unattended Game Simulation", () => {
   // Test configuration
-  const TARGET_GAMES = parseInt(process.env.TARGET_GAMES || "3", 10); // Number of games to run for reliability testing
+  const TARGET_GAMES = parseInt(process.env.TARGET_GAMES || (process.env.LLM_ENABLED === "true" ? "4" : "3"), 10); // Number of games to run for reliability testing
   const LOG_LEVEL_STR = (process.env.LOG_LEVEL || "INFO").toUpperCase();
   const LOG_LEVEL: LogLevel =
     (LogLevel[LOG_LEVEL_STR as keyof typeof LogLevel] as LogLevel) ||
     LogLevel.INFO;
-  const GAME_TIMEOUT_SECONDS = TARGET_GAMES * 10; // Dynamic timeout based on number of games
+  const GAME_TIMEOUT_SECONDS = process.env.LLM_ENABLED === "true"
+    ? TARGET_GAMES * 300 // Generous timeout for live API calls (5 minutes per game)
+    : TARGET_GAMES * 10; // Dynamic timeout based on number of games
   const MAX_ROUNDS_PER_GAME = 60; // Safety limit for rounds per game
 
   test(
     "Complete unattended game simulation with AI players",
     async () => {
+      // Reset LLM metrics at the start of simulation
+      resetLLMStats();
+
       const targetGames = TARGET_GAMES;
       const maxRoundsPerGame = MAX_ROUNDS_PER_GAME;
       const timestamp = new Date().toISOString();
@@ -163,7 +170,24 @@ describe("Unattended Game Simulation", () => {
         }
       } finally {
         // ALWAYS generate comprehensive summary report - even on failure
-        const detailedSummary = sessionTracker.generateSummary();
+        let detailedSummary = sessionTracker.generateSummary();
+
+        // Append LLM metrics if any LLM plays were requested
+        const llmStats = getLLMFallbackStats();
+        if (llmStats.totalPlaysRequested > 0) {
+          detailedSummary += `
+🤖 LLM PLAY DECISION TELEMETRY
+------------------------------
+• Total LLM Plays Requested: ${llmStats.totalPlaysRequested}
+• Successful LLM Plays: ${llmStats.successfulPlays} (${llmStats.successRate.toFixed(1)}%)
+• LLM Plays API / Timeout Fallbacks: ${llmStats.apiErrorFallbacks}
+• LLM Invalid Card Rule Violations Retried: ${llmStats.invalidCardRetries}
+• LLM Invalid Card Retries Exhausted Fallbacks: ${llmStats.invalidCardFallbacks}
+• Overall Telemetry Success Rate: ${llmStats.successRate.toFixed(1)}%
+• Overall Telemetry Fallback Rate: ${llmStats.fallbackRate.toFixed(1)}%
+`;
+        }
+
         sessionTracker.writeSummary(detailedSummary);
       }
 
@@ -251,7 +275,7 @@ async function runPlayingPhase(
       const currentPlayer = state.players[state.currentPlayerIndex];
 
       // Get AI move (treating human as AI for unattended test)
-      const cardsToPlay = getPlayerMove(state, currentPlayer.id);
+      const cardsToPlay = await getPlayerMove(state, currentPlayer.id);
 
       // Process the play
       const result = processPlay(state, cardsToPlay);
@@ -268,9 +292,9 @@ async function runPlayingPhase(
   return state;
 }
 
-function getPlayerMove(gameState: GameState, playerId: PlayerId): Card[] {
+async function getPlayerMove(gameState: GameState, playerId: PlayerId): Promise<Card[]> {
   // For unattended testing, all players (including human) use AI logic with error handling
-  const result = getAIMoveWithErrorHandling(gameState);
+  const result = await getAIMoveWithErrorHandlingAsync(gameState);
   if (result.error) {
     throw new Error(`AI move error for ${playerId}: ${result.error}`);
   }

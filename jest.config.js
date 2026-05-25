@@ -10,6 +10,9 @@ module.exports = {
     "!src/**/*.d.ts",
     "!src/types/**/*",
   ],
+  moduleNameMapper: {
+    "\\.md$": "<rootDir>/__tests__/helpers/assetMock.js"
+  },
   testMatch: ["**/__tests__/**/*.ts?(x)", "**/?(*.)+(spec|test).ts?(x)"],
   testPathIgnorePatterns: ["__tests__/helpers/", "__tests__/simulation/"],
 };

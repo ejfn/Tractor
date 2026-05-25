@@ -4,6 +4,8 @@ import { gameLogger } from "../utils/gameLogger";
 import { evaluateTrickPlay } from "./cardComparison";
 import { calculateKittyBonusInfo } from "./kittyManager";
 import { isValidPlay } from "./playValidation";
+import { selectLLMPlayAsync } from "../ai/llm/llmAIStrategy";
+import { isLLMEnabled } from "../ai/llm/llmConfig";
 
 /**
  * Play Processing Module
@@ -445,6 +447,152 @@ export function getAIMoveWithErrorHandling(state: GameState): {
         gamePhase: state.gamePhase,
       },
       "Error in AI move logic",
+    );
+    return {
+      cards: [],
+      error: `Error generating AI move: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+/**
+ * Get the AI's move asynchronously based on the current game state.
+ * If LLM is enabled and configured, it uses OpenRouter LLM card decisions.
+ * Otherwise, it falls back to standard rule-based AI.
+ */
+export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise<{
+  cards: Card[];
+  error?: string;
+}> {
+  try {
+    const currentPlayer = state.players[state.currentPlayerIndex];
+
+    // Safety check to ensure we have a valid current player
+    if (!currentPlayer) {
+      gameLogger.error(
+        "invalid_current_player",
+        {
+          currentPlayerIndex: state.currentPlayerIndex,
+          totalPlayers: state.players.length,
+          gamePhase: state.gamePhase,
+        },
+        `Invalid currentPlayerIndex: ${state.currentPlayerIndex} for ${state.players.length} players`
+      );
+      return {
+        cards: [],
+        error: `Invalid player index: ${state.currentPlayerIndex}`,
+      };
+    }
+
+    let aiMove: Card[];
+
+    if (isLLMEnabled()) {
+      // LLM Card Selection Engine
+      aiMove = await selectLLMPlayAsync(state, currentPlayer.id);
+    } else {
+      // Standard Rule-based AI Engine
+      aiMove = getAIMove(state, currentPlayer.id);
+    }
+
+    // Validate that we received a valid move
+    if (!aiMove || aiMove.length === 0) {
+      gameLogger.warn(
+        "ai_empty_move",
+        {
+          playerId: currentPlayer.id,
+          handSize: currentPlayer.hand.length,
+          trickNumber: state.tricks.length + 1,
+        },
+        `AI player ${currentPlayer.id} returned an empty move`
+      );
+
+      // Emergency fallback: play cards to match the combo length
+      if (currentPlayer.hand.length > 0) {
+        const comboLength = state.currentTrick?.plays[0]?.cards?.length || 1;
+        const cardsToPlay = currentPlayer.hand.slice(
+          0,
+          Math.min(comboLength, currentPlayer.hand.length)
+        );
+        return { cards: cardsToPlay };
+      } else {
+        // If AI hand is somehow empty, return error
+        return {
+          cards: [],
+          error: `AI player ${currentPlayer.id} has no cards to play`,
+        };
+      }
+    }
+
+    // CRITICAL: Validate AI move using isValidPlay() guard
+    const leadingCards = state.currentTrick?.plays[0]?.cards || null;
+    const isValidMove = isValidPlay(
+      aiMove,
+      currentPlayer.hand,
+      currentPlayer.id,
+      state
+    );
+
+    if (!isValidMove) {
+      // Log error for invalid AI move
+      gameLogger.error(
+        "ai_invalid_move",
+        {
+          playerId: currentPlayer.id,
+          aiMove: aiMove.map((card) => card.toString()),
+          trickNumber: state.tricks.length + 1,
+          roundNumber: state.roundNumber,
+        },
+        `AI player ${currentPlayer.id} attempted invalid move: ${aiMove.map((c) => c.toString()).join(", ")}`
+      );
+
+      // Log detailed debug information for investigation
+      gameLogger.info(
+        "ai_invalid_move_details",
+        {
+          playerId: currentPlayer.id,
+          playerHand: currentPlayer.hand.map((card) => card.toString()),
+          playerHandSize: currentPlayer.hand.length,
+          aiMove: aiMove.map((card) => card.toString()),
+          currentTrick: state.currentTrick
+            ? {
+                plays: state.currentTrick.plays.map((play) => ({
+                  playerId: play.playerId,
+                  cards: play.cards.map((card) => card.toString()),
+                })),
+                winningPlayerId: state.currentTrick.winningPlayerId,
+                points: state.currentTrick.points,
+                isFinalTrick: state.currentTrick.isFinalTrick,
+              }
+            : null,
+          leadingCards: leadingCards?.map((card) => card.toString()) || [],
+          trumpInfo: {
+            trumpRank: state.trumpInfo.trumpRank,
+            trumpSuit: state.trumpInfo.trumpSuit,
+          },
+          trickNumber: state.tricks.length + 1,
+          roundNumber: state.roundNumber,
+        },
+        `Invalid AI move details for ${currentPlayer.id}`
+      );
+
+      // Return both cards (to continue game) and error (for test detection)
+      return {
+        cards: aiMove,
+        error: `Invalid AI move: ${aiMove.map((c) => c.toString()).join(", ")}`,
+      };
+    }
+
+    return { cards: aiMove };
+  } catch (error) {
+    gameLogger.error(
+      "ai_move_error",
+      {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        currentPlayerIndex: state.currentPlayerIndex,
+        gamePhase: state.gamePhase,
+      },
+      "Error in AI move logic"
     );
     return {
       cards: [],
