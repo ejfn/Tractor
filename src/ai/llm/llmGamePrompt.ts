@@ -405,7 +405,15 @@ Your hand has ${handCards.length} cards remaining. Select from these choices by 
 
 === TASK ===
 Select the best card(s) from your hand to play. Your selection must contain exactly the required number of cards and obey all Shengji following/preservation rules.
-Respond strictly in JSON format. Do not include markdown code block syntax (like \`\`\`json) in your actual API raw message, or if you do, ensure it is a clean JSON parsable structure.
+
+Respond with a JSON object using EXACTLY these two keys:
+- "reasoning": A brief explanation of your strategic decision (string)
+- "play": An array of card choice IDs to play (e.g. ["c1"] or ["c3", "c4"])
+
+Example response format:
+{"reasoning": "Leading with Ace of Spades to probe opponent voids and secure points.", "play": ["c2"]}
+
+Do not include markdown code block syntax (\`\`\`json) in your raw response. Output the JSON object directly.
 `;
 
   const systemPrompt = buildLLMSystemPrompt(gameState);
