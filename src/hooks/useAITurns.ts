@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { getAIMoveWithErrorHandling, getAIMoveWithErrorHandlingAsync } from "../game/playProcessing";
+import { getAIMoveWithErrorHandlingAsync } from "../game/playProcessing";
 import { getAIKittySwap } from "../ai/aiLogic";
 import { putbackKittyCards } from "../game/kittyManager";
 import { Card, GamePhase, GameState, PlayerId, Trick } from "../types";

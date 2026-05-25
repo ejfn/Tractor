@@ -17,7 +17,7 @@ export async function callOpenRouter(
   model: string,
   apiUrl: string,
   messages: ChatMessage[],
-  timeoutMs = 15000
+  timeoutMs = 15000,
 ): Promise<string> {
   const postData = JSON.stringify({
     model,
@@ -34,11 +34,14 @@ export async function callOpenRouter(
   });
 
   // Cross-platform check: if fetch is not defined globally OR we are in a JEST test environment
-  const isJestEnv = typeof process !== "undefined" && process.env.NODE_ENV === "test";
-  
+  const isJestEnv =
+    typeof process !== "undefined" && process.env.NODE_ENV === "test";
+
   if (typeof fetch === "undefined" || isJestEnv) {
     // Dynamic import of Node's built-in modules to keep it clean in React Native bundler
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const https = require("https");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const url = require("url");
 
     const parsedUrl = url.parse(apiUrl);
@@ -58,6 +61,7 @@ export async function callOpenRouter(
     };
 
     return new Promise<string>((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const req = https.request(options, (res: any) => {
         let body = "";
         res.setEncoding("utf8");
@@ -73,7 +77,11 @@ export async function callOpenRouter(
               statusText: res.statusMessage,
               error: body,
             });
-            reject(new Error(`OpenRouter API error (HTTP ${res.statusCode}): ${res.statusMessage}. Details: ${body}`));
+            reject(
+              new Error(
+                `OpenRouter API error (HTTP ${res.statusCode}): ${res.statusMessage}. Details: ${body}`,
+              ),
+            );
             return;
           }
 
@@ -82,7 +90,11 @@ export async function callOpenRouter(
             const assistantMessage = data?.choices?.[0]?.message?.content;
             if (!assistantMessage) {
               gameLogger.error("llm_api_empty_response", { data });
-              reject(new Error("OpenRouter API returned an empty or invalid chat completion payload."));
+              reject(
+                new Error(
+                  "OpenRouter API returned an empty or invalid chat completion payload.",
+                ),
+              );
               return;
             }
             gameLogger.info("llm_api_call_success", {
@@ -98,7 +110,9 @@ export async function callOpenRouter(
       req.on("timeout", () => {
         req.destroy();
         gameLogger.error("llm_api_timeout", { timeoutMs });
-        reject(new Error(`OpenRouter API request timed out after ${timeoutMs}ms.`));
+        reject(
+          new Error(`OpenRouter API request timed out after ${timeoutMs}ms.`),
+        );
       });
 
       req.on("error", (e: Error) => {
@@ -136,7 +150,9 @@ export async function callOpenRouter(
           statusText: response.statusText,
           error: errorText,
         });
-        throw new Error(`OpenRouter API error (HTTP ${response.status}): ${response.statusText}. Details: ${errorText}`);
+        throw new Error(
+          `OpenRouter API error (HTTP ${response.status}): ${response.statusText}. Details: ${errorText}`,
+        );
       }
 
       const data = await response.json();
@@ -144,7 +160,9 @@ export async function callOpenRouter(
 
       if (!assistantMessage) {
         gameLogger.error("llm_api_empty_response", { data });
-        throw new Error("OpenRouter API returned an empty or invalid chat completion payload.");
+        throw new Error(
+          "OpenRouter API returned an empty or invalid chat completion payload.",
+        );
       }
 
       gameLogger.info("llm_api_call_success", {
@@ -156,7 +174,9 @@ export async function callOpenRouter(
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === "AbortError") {
         gameLogger.error("llm_api_timeout", { timeoutMs });
-        throw new Error(`OpenRouter API request timed out after ${timeoutMs}ms.`);
+        throw new Error(
+          `OpenRouter API request timed out after ${timeoutMs}ms.`,
+        );
       }
       gameLogger.error("llm_api_failed", {
         error: error instanceof Error ? error.message : String(error),
@@ -173,12 +193,15 @@ export async function callOpenRouter(
 export async function testOpenRouterConnection(
   apiKey: string,
   model = "deepseek/deepseek-chat",
-  apiUrl = "https://openrouter.ai/api/v1/chat/completions"
+  apiUrl = "https://openrouter.ai/api/v1/chat/completions",
 ): Promise<{ success: boolean; message: string }> {
   try {
     const messages: ChatMessage[] = [
       { role: "system", content: "You are a test helper." },
-      { role: "user", content: "Respond with JSON key 'status' equal to 'ok'." },
+      {
+        role: "user",
+        content: "Respond with JSON key 'status' equal to 'ok'.",
+      },
     ];
 
     const result = await callOpenRouter(apiKey, model, apiUrl, messages, 6000);

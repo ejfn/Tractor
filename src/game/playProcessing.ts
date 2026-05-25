@@ -460,7 +460,9 @@ export function getAIMoveWithErrorHandling(state: GameState): {
  * If LLM is enabled and configured, it uses OpenRouter LLM card decisions.
  * Otherwise, it falls back to standard rule-based AI.
  */
-export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise<{
+export async function getAIMoveWithErrorHandlingAsync(
+  state: GameState,
+): Promise<{
   cards: Card[];
   error?: string;
 }> {
@@ -476,7 +478,7 @@ export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise
           totalPlayers: state.players.length,
           gamePhase: state.gamePhase,
         },
-        `Invalid currentPlayerIndex: ${state.currentPlayerIndex} for ${state.players.length} players`
+        `Invalid currentPlayerIndex: ${state.currentPlayerIndex} for ${state.players.length} players`,
       );
       return {
         cards: [],
@@ -503,7 +505,7 @@ export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise
           handSize: currentPlayer.hand.length,
           trickNumber: state.tricks.length + 1,
         },
-        `AI player ${currentPlayer.id} returned an empty move`
+        `AI player ${currentPlayer.id} returned an empty move`,
       );
 
       // Emergency fallback: play cards to match the combo length
@@ -511,7 +513,7 @@ export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise
         const comboLength = state.currentTrick?.plays[0]?.cards?.length || 1;
         const cardsToPlay = currentPlayer.hand.slice(
           0,
-          Math.min(comboLength, currentPlayer.hand.length)
+          Math.min(comboLength, currentPlayer.hand.length),
         );
         return { cards: cardsToPlay };
       } else {
@@ -529,7 +531,7 @@ export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise
       aiMove,
       currentPlayer.hand,
       currentPlayer.id,
-      state
+      state,
     );
 
     if (!isValidMove) {
@@ -542,7 +544,7 @@ export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise
           trickNumber: state.tricks.length + 1,
           roundNumber: state.roundNumber,
         },
-        `AI player ${currentPlayer.id} attempted invalid move: ${aiMove.map((c) => c.toString()).join(", ")}`
+        `AI player ${currentPlayer.id} attempted invalid move: ${aiMove.map((c) => c.toString()).join(", ")}`,
       );
 
       // Log detailed debug information for investigation
@@ -572,7 +574,7 @@ export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise
           trickNumber: state.tricks.length + 1,
           roundNumber: state.roundNumber,
         },
-        `Invalid AI move details for ${currentPlayer.id}`
+        `Invalid AI move details for ${currentPlayer.id}`,
       );
 
       // Return both cards (to continue game) and error (for test detection)
@@ -592,7 +594,7 @@ export async function getAIMoveWithErrorHandlingAsync(state: GameState): Promise
         currentPlayerIndex: state.currentPlayerIndex,
         gamePhase: state.gamePhase,
       },
-      "Error in AI move logic"
+      "Error in AI move logic",
     );
     return {
       cards: [],

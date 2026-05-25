@@ -171,7 +171,7 @@ By watching the choices of a player when they lead a trick, you can dynamically 
  */
 export function detectSuitVoidsFromHistory(
   gameState: GameState,
-  trumpInfo: TrumpInfo
+  trumpInfo: TrumpInfo,
 ): Record<PlayerId, string[]> {
   const voids: Record<PlayerId, Set<string>> = {
     human: new Set<string>(),
@@ -195,7 +195,7 @@ export function detectSuitVoidsFromHistory(
       if (!playerCard) return;
 
       const playerPlayedTrump = playerCard.isTrump(trumpInfo);
-      
+
       // Determine if player followed the led suit
       let followedSuit = false;
       if (isTrumpLead) {
@@ -229,10 +229,12 @@ export function buildLLMSystemPrompt(gameState: GameState): string {
   const trumpSuitStr = trumpInfo.trumpSuit || "None (Joker pairs only)";
 
   // Replace dynamic placeholders
-  return STATIC_LLM_GAME_RULES
-    .replace(/\$\{trumpRankStr\}/g, trumpRankStr)
+  return STATIC_LLM_GAME_RULES.replace(/\$\{trumpRankStr\}/g, trumpRankStr)
     .replace(/\$\{trumpSuitStr\}/g, trumpSuitStr)
-    .replace(/\${trumpInfo\.trumpSuit \|\| "None"}/g, trumpInfo.trumpSuit || "None")
+    .replace(
+      /\${trumpInfo\.trumpSuit \|\| "None"}/g,
+      trumpInfo.trumpSuit || "None",
+    )
     .replace(/\${trumpInfo\.trumpRank}/g, trumpInfo.trumpRank);
 }
 
@@ -243,7 +245,7 @@ export function buildLLMUserPrompt(
   gameState: GameState,
   playerId: PlayerId,
   handCards: Card[],
-  engagementContext?: LLMEngagementContext
+  engagementContext?: LLMEngagementContext,
 ): { system: string; user: string } {
   const trumpInfo = gameState.trumpInfo;
   const sortedHand = sortCards(handCards, trumpInfo);
@@ -290,7 +292,7 @@ You must play exactly ${leadPlay.cards.length} card(s). You must follow the led 
     playsInTrickStr = plays
       .map(
         (p) =>
-          `- ${p.playerId} played: ${p.cards.map((c) => c.toString()).join(", ")}`
+          `- ${p.playerId} played: ${p.cards.map((c) => c.toString()).join(", ")}`,
       )
       .join("\n");
 
@@ -300,11 +302,13 @@ You must play exactly ${leadPlay.cards.length} card(s). You must follow the led 
 
     const matchingHandCards = isLeadingTrump
       ? handCards.filter((c) => isTrump(c, trumpInfo))
-      : handCards.filter((c) => c.suit === leadingSuit && !isTrump(c, trumpInfo));
+      : handCards.filter(
+          (c) => c.suit === leadingSuit && !isTrump(c, trumpInfo),
+        );
 
     const matchingChoiceIds = choicesMap
       .filter((c) =>
-        matchingHandCards.some((hc) => hc.id === c.cardInstance.id)
+        matchingHandCards.some((hc) => hc.id === c.cardInstance.id),
       )
       .map((c) => c.id);
 
@@ -333,7 +337,7 @@ ${
             const playsList = t.plays
               .map(
                 (p) =>
-                  `${p.playerId} played ${p.cards.map((c) => c.toString()).join(", ")}`
+                  `${p.playerId} played ${p.cards.map((c) => c.toString()).join(", ")}`,
               )
               .join(", ");
             return `Trick ${idx + 1}: Led by ${t.plays[0].playerId}. plays: [${playsList}]. Won by: ${t.winningPlayerId} (${t.points} points)`;
@@ -343,12 +347,22 @@ ${
   // Detect suit voids per player from round trick history
   const voids = detectSuitVoidsFromHistory(gameState, trumpInfo);
   const voidsStr = Object.entries(voids)
-    .map(([pId, suitsList]) => `- ${pId}: ${suitsList.length > 0 ? suitsList.join(", ") : "None yet"}`)
+    .map(
+      ([pId, suitsList]) =>
+        `- ${pId}: ${suitsList.length > 0 ? suitsList.join(", ") : "None yet"}`,
+    )
     .join("\n");
 
   const currentPlayer = gameState.players.find((p) => p.id === playerId);
   const teamId = currentPlayer?.team || "A";
-  const partnerId = playerId === "bot1" ? "bot3" : playerId === "bot3" ? "bot1" : playerId === "human" ? "bot2" : "human";
+  const partnerId =
+    playerId === "bot1"
+      ? "bot3"
+      : playerId === "bot3"
+        ? "bot1"
+        : playerId === "human"
+          ? "bot2"
+          : "human";
 
   let engagementSection = "";
   if (engagementContext) {

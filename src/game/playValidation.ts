@@ -518,7 +518,7 @@ export function getPlayValidationError(
   playedCards: Card[],
   playerHand: Card[],
   playerId: PlayerId,
-  gameState: GameState
+  gameState: GameState,
 ): string | null {
   const trumpInfo = gameState.trumpInfo;
   const leadingCombo =
@@ -538,7 +538,7 @@ export function getPlayValidationError(
       const validation = validateMultiComboLead(
         playedCards,
         gameState,
-        playerId
+        playerId,
       );
       if (validation.isValid) {
         return null;
@@ -574,11 +574,11 @@ export function getPlayValidationError(
     }
 
     const playerCardsOfLeadingSuit = playerHand.filter(
-      (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo)
+      (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
     );
 
     const playedCardsOfLeadingSuit = playedCards.filter(
-      (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo)
+      (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
     );
 
     if (
@@ -592,7 +592,7 @@ export function getPlayValidationError(
       (card) =>
         !playedCards.some((played) => played.id === card.id) &&
         card.suit === leadingSuit &&
-        !isTrump(card, trumpInfo)
+        !isTrump(card, trumpInfo),
     );
 
     if (remainingRelevantCards.length === 0) {
@@ -604,7 +604,7 @@ export function getPlayValidationError(
       playerHand,
       leadingDetection.components,
       trumpInfo,
-      leadingSuit
+      leadingSuit,
     );
 
     if (!isValidAntiCheat) {
@@ -627,7 +627,7 @@ export function getPlayValidationError(
   const relevantCards = isLeadingTrump
     ? playerHand.filter((card) => isTrump(card, trumpInfo))
     : playerHand.filter(
-        (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo)
+        (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
       );
 
   // Check if player can form matching combo in relevant suit
@@ -638,7 +638,7 @@ export function getPlayValidationError(
     const hasMatchingCombo = relevantCombos.some(
       (combo) =>
         combo.type === leadingType &&
-        combo.cards.length === leadingCombo.length
+        combo.cards.length === leadingCombo.length,
     );
 
     // If player can form matching combo but didn't use it, invalid
@@ -658,7 +658,7 @@ export function getPlayValidationError(
     const allRelevantSuit = playedCards.every((card) =>
       isLeadingTrump
         ? isTrump(card, trumpInfo)
-        : card.suit === leadingSuit && !isTrump(card, trumpInfo)
+        : card.suit === leadingSuit && !isTrump(card, trumpInfo),
     );
 
     if (!allRelevantSuit && relevantCards.length >= leadingCombo.length) {
@@ -668,7 +668,7 @@ export function getPlayValidationError(
 
   const matchingCombos = identifyCombos(relevantCards, trumpInfo).filter(
     (combo) =>
-      combo.type === leadingType && combo.cards.length === leadingCombo.length
+      combo.type === leadingType && combo.cards.length === leadingCombo.length,
   );
 
   if (matchingCombos.length > 0) {
@@ -695,7 +695,7 @@ export function getPlayValidationError(
 
   if (relevantCards.length >= leadingCombo.length) {
     const allRelevantSuit = playedCards.every((card) =>
-      relevantCards.some((handCard) => handCard.id === card.id)
+      relevantCards.some((handCard) => handCard.id === card.id),
     );
 
     if (allRelevantSuit) {
@@ -704,7 +704,7 @@ export function getPlayValidationError(
           playedCards,
           leadingCombo,
           playerHand,
-          trumpInfo
+          trumpInfo,
         )
       ) {
         return "Must follow tractor priority: you must play pairs to match the pairs of the leading tractor.";
@@ -715,7 +715,7 @@ export function getPlayValidationError(
           playedCards,
           leadingCombo,
           playerHand,
-          trumpInfo
+          trumpInfo,
         )
       ) {
         return "Must follow pair preservation: you must play your pairs to match the leading pair/tractor instead of breaking them.";
@@ -729,11 +729,11 @@ export function getPlayValidationError(
     const playedRelevantCards = playedCards.filter((card) =>
       isLeadingTrump
         ? isTrump(card, trumpInfo)
-        : card.suit === leadingSuit && !isTrump(card, trumpInfo)
+        : card.suit === leadingSuit && !isTrump(card, trumpInfo),
     );
 
     const allRelevantCardsPlayed = relevantCards.every((handCard) =>
-      playedRelevantCards.some((playedCard) => playedCard.id === handCard.id)
+      playedRelevantCards.some((playedCard) => playedCard.id === handCard.id),
     );
 
     const playedRightNumberOfRelevantCards =
@@ -752,7 +752,7 @@ export function getPlayValidationError(
     }
 
     const allPlayedFromHand = playedCards.every((card) =>
-      playerHand.some((handCard) => handCard.id === card.id)
+      playerHand.some((handCard) => handCard.id === card.id),
     );
 
     if (allPlayedFromHand) {
@@ -761,7 +761,7 @@ export function getPlayValidationError(
           playedCards,
           leadingCombo,
           playerHand,
-          trumpInfo
+          trumpInfo,
         )
       ) {
         return "Must follow tractor priority: you must play pairs to match the pairs of the leading tractor.";
@@ -772,7 +772,7 @@ export function getPlayValidationError(
           playedCards,
           leadingCombo,
           playerHand,
-          trumpInfo
+          trumpInfo,
         )
       ) {
         return "Must follow pair preservation: you must play your pairs to match the leading play instead of breaking them.";
@@ -783,7 +783,7 @@ export function getPlayValidationError(
   }
 
   const allPlayedFromHand = playedCards.every((card) =>
-    playerHand.some((handCard) => handCard.id === card.id)
+    playerHand.some((handCard) => handCard.id === card.id),
   );
 
   if (!allPlayedFromHand) {
@@ -792,4 +792,3 @@ export function getPlayValidationError(
 
   return null;
 }
-

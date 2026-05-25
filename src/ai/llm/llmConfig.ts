@@ -21,7 +21,8 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
 };
 
 // Check if running in a Jest/Node environment
-const isNodeTestEnv = typeof process !== "undefined" && process.env.NODE_ENV === "test";
+const isNodeTestEnv =
+  typeof process !== "undefined" && process.env.NODE_ENV === "test";
 
 // Manually parse .env file in Node environment to populate process.env
 function loadEnvFile(): void {
@@ -45,9 +46,17 @@ function loadEnvFile(): void {
           let val = match[2] || "";
 
           // Remove wrapping quotes if any
-          if (val.length > 0 && val.charAt(0) === '"' && val.charAt(val.length - 1) === '"') {
+          if (
+            val.length > 0 &&
+            val.charAt(0) === '"' &&
+            val.charAt(val.length - 1) === '"'
+          ) {
             val = val.substring(1, val.length - 1);
-          } else if (val.length > 0 && val.charAt(0) === "'" && val.charAt(val.length - 1) === "'") {
+          } else if (
+            val.length > 0 &&
+            val.charAt(0) === "'" &&
+            val.charAt(val.length - 1) === "'"
+          ) {
             val = val.substring(1, val.length - 1);
           }
 
@@ -57,7 +66,7 @@ function loadEnvFile(): void {
         }
       }
     }
-  } catch (error) {
+  } catch {
     // Fail silently in config initializations
   }
 }
@@ -108,12 +117,16 @@ export function getLLMConfig(): LLMConfig {
 
   // 3. Assemble and merge options
   return {
-    enabled: savedConfig.enabled !== undefined ? savedConfig.enabled : (envEnabled || DEFAULT_LLM_CONFIG.enabled),
+    enabled:
+      savedConfig.enabled !== undefined
+        ? savedConfig.enabled
+        : envEnabled || DEFAULT_LLM_CONFIG.enabled,
     apiKey: savedConfig.apiKey || envApiKey || DEFAULT_LLM_CONFIG.apiKey,
     model: savedConfig.model || envModel || DEFAULT_LLM_CONFIG.model,
     apiUrl: savedConfig.apiUrl || envApiUrl || DEFAULT_LLM_CONFIG.apiUrl,
     timeoutMs: savedConfig.timeoutMs || DEFAULT_LLM_CONFIG.timeoutMs,
-    applyToPlayers: savedConfig.applyToPlayers || DEFAULT_LLM_CONFIG.applyToPlayers,
+    applyToPlayers:
+      savedConfig.applyToPlayers || DEFAULT_LLM_CONFIG.applyToPlayers,
   };
 }
 
@@ -124,7 +137,10 @@ export function saveLLMConfig(config: LLMConfig): void {
   try {
     if (typeof localStorage !== "undefined" && localStorage !== null) {
       localStorage.setItem("tractor_llm_config", JSON.stringify(config));
-      gameLogger.info("llm_config_saved", { enabled: config.enabled, model: config.model });
+      gameLogger.info("llm_config_saved", {
+        enabled: config.enabled,
+        model: config.model,
+      });
     }
   } catch (error) {
     gameLogger.error("llm_config_save_error", { error });

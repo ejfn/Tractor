@@ -10,11 +10,13 @@ import { endRound, prepareNextRound } from "../../src/game/gameRoundManager";
 import { putbackKittyCards } from "../../src/game/kittyManager";
 import {
   clearCompletedTrick,
-  getAIMoveWithErrorHandling,
   getAIMoveWithErrorHandlingAsync,
   processPlay,
 } from "../../src/game/playProcessing";
-import { getLLMFallbackStats, resetLLMStats } from "../../src/ai/llm/llmAIStrategy";
+import {
+  getLLMFallbackStats,
+  resetLLMStats,
+} from "../../src/ai/llm/llmAIStrategy";
 import { Card, GamePhase, GameState, PlayerId, TeamId } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { gameLogger, LogLevel } from "../../src/utils/gameLogger";
@@ -38,14 +40,19 @@ import { GameStats, TestSessionTracker } from "../helpers";
 
 describe("Unattended Game Simulation", () => {
   // Test configuration
-  const TARGET_GAMES = parseInt(process.env.TARGET_GAMES || (process.env.LLM_ENABLED === "true" ? "4" : "3"), 10); // Number of games to run for reliability testing
+  const TARGET_GAMES = parseInt(
+    process.env.TARGET_GAMES ||
+      (process.env.LLM_ENABLED === "true" ? "4" : "3"),
+    10,
+  ); // Number of games to run for reliability testing
   const LOG_LEVEL_STR = (process.env.LOG_LEVEL || "INFO").toUpperCase();
   const LOG_LEVEL: LogLevel =
     (LogLevel[LOG_LEVEL_STR as keyof typeof LogLevel] as LogLevel) ||
     LogLevel.INFO;
-  const GAME_TIMEOUT_SECONDS = process.env.LLM_ENABLED === "true"
-    ? TARGET_GAMES * 300 // Generous timeout for live API calls (5 minutes per game)
-    : TARGET_GAMES * 10; // Dynamic timeout based on number of games
+  const GAME_TIMEOUT_SECONDS =
+    process.env.LLM_ENABLED === "true"
+      ? TARGET_GAMES * 1200 // Extended timeout for live API calls (20 minutes per game)
+      : TARGET_GAMES * 10; // Dynamic timeout based on number of games
   const MAX_ROUNDS_PER_GAME = 60; // Safety limit for rounds per game
 
   test(
@@ -292,7 +299,10 @@ async function runPlayingPhase(
   return state;
 }
 
-async function getPlayerMove(gameState: GameState, playerId: PlayerId): Promise<Card[]> {
+async function getPlayerMove(
+  gameState: GameState,
+  playerId: PlayerId,
+): Promise<Card[]> {
   // For unattended testing, all players (including human) use AI logic with error handling
   const result = await getAIMoveWithErrorHandlingAsync(gameState);
   if (result.error) {
