@@ -8,7 +8,6 @@ export interface LLMConfig {
   model: string;
   apiUrl: string;
   timeoutMs: number;
-  difficulty: "easy" | "medium" | "hard";
   applyToPlayers: string[];
 }
 
@@ -18,7 +17,6 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
   model: "deepseek/deepseek-chat",
   apiUrl: "https://openrouter.ai/api/v1/chat/completions",
   timeoutMs: 15000,
-  difficulty: "medium",
   applyToPlayers: ["bot1", "bot2", "bot3"],
 };
 
@@ -115,7 +113,6 @@ export function getLLMConfig(): LLMConfig {
     model: savedConfig.model || envModel || DEFAULT_LLM_CONFIG.model,
     apiUrl: savedConfig.apiUrl || envApiUrl || DEFAULT_LLM_CONFIG.apiUrl,
     timeoutMs: savedConfig.timeoutMs || DEFAULT_LLM_CONFIG.timeoutMs,
-    difficulty: savedConfig.difficulty || DEFAULT_LLM_CONFIG.difficulty,
     applyToPlayers: savedConfig.applyToPlayers || DEFAULT_LLM_CONFIG.applyToPlayers,
   };
 }

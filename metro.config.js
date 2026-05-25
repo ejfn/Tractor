@@ -7,7 +7,4 @@ const config = getDefaultConfig(__dirname);
 // Disable web platform support
 config.resolver.platforms = ['ios', 'android'];
 
-// Configure .md files as static assets
-config.resolver.assetExts.push('md');
-
 module.exports = config;
