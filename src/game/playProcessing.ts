@@ -1,11 +1,10 @@
 import { getAIMove } from "../ai/aiLogic";
+import { makeAIPlayAsync } from "../ai/aiStrategy";
 import { Card, GameState, PlayerId, Team, Trick } from "../types";
 import { gameLogger } from "../utils/gameLogger";
 import { evaluateTrickPlay } from "./cardComparison";
 import { calculateKittyBonusInfo } from "./kittyManager";
 import { isValidPlay } from "./playValidation";
-import { selectLLMPlayAsync } from "../ai/llm/llmAIStrategy";
-import { isLLMEnabled } from "../ai/llm/llmConfig";
 
 /**
  * Play Processing Module
@@ -486,15 +485,7 @@ export async function getAIMoveWithErrorHandlingAsync(
       };
     }
 
-    let aiMove: Card[];
-
-    if (isLLMEnabled()) {
-      // LLM Card Selection Engine
-      aiMove = await selectLLMPlayAsync(state, currentPlayer.id);
-    } else {
-      // Standard Rule-based AI Engine
-      aiMove = getAIMove(state, currentPlayer.id);
-    }
+    const aiMove: Card[] = await makeAIPlayAsync(state, currentPlayer);
 
     // Validate that we received a valid move
     if (!aiMove || aiMove.length === 0) {

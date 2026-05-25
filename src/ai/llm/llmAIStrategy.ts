@@ -1,17 +1,10 @@
-import { Card, GameState, PlayerId, Rank } from "../../types";
+import { Card, GameState, PlayerId } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
 import { getLLMConfig, isLLMEnabled } from "./llmConfig";
 import { callOpenRouter, ChatMessage } from "./llmAIClient";
 import { buildLLMUserPrompt, LLMEngagementContext } from "./llmGamePrompt";
 import { getPlayValidationError } from "../../game/playValidation";
-import { makeAIPlay } from "../aiStrategy";
 import { sortCards } from "../../utils/cardSorting";
-import { isTrump } from "../../game/cardValue";
-import { createGameContext } from "../aiGameContext";
-import { detectCandidateLeads } from "../leading/candidateLeadDetection";
-import { collectLeadingContext } from "../leading/leadingContext";
-import { scoreNonTrumpLead, scoreTrumpLead } from "../leading/leadingScoring";
-import { analyzeSuitAvailability } from "../following/suitAvailabilityAnalysis";
 
 // Telemetry metrics tracking
 let llmTotalPlaysRequested = 0;
@@ -64,222 +57,42 @@ export function resetLLMStats(): void {
 }
 
 /**
- * Strategic coordinator for asynchronous LLM play.
- * Uses Adaptive Engagement: skips LLM if decisions are obvious/clear,
- * and passes targeted strategic context if decisions are ambiguous.
+ * Core LLM decision helper — called directly from inside strategy functions
+ * at genuine ambiguous decision points.
+ *
+ * Returns the LLM-chosen cards on success, or `fallback` on any failure
+ * (API error, invalid JSON, rule-invalid play after retries, or LLM disabled).
+ *
+ * @param gameState  Current game state (used for prompt building and validation)
+ * @param playerId   The player making the decision
+ * @param hand       The player's current hand
+ * @param engagementContext  Targeted dilemma description for this specific decision point
+ * @param fallback   Cards to return if LLM is skipped or fails (the rule-based pick)
  */
-export async function selectLLMPlayAsync(
+export async function callLLMForDecision(
   gameState: GameState,
   playerId: PlayerId,
+  hand: Card[],
+  engagementContext: LLMEngagementContext,
+  fallback: Card[],
 ): Promise<Card[]> {
-  const player = gameState.players.find((p) => p.id === playerId);
-  if (!player) {
-    throw new Error(`Player with ID ${playerId} not found`);
-  }
-
-  // 1. If LLM is not enabled, immediately bypass and run rule-based AI
+  // If LLM is not enabled, immediately return rule-based fallback
   if (!isLLMEnabled()) {
-    return makeAIPlay(gameState, player);
+    return fallback;
   }
 
-  // Check if LLM is applied to this specific player
+  // Check if LLM applies to this specific player
   const config = getLLMConfig();
   if (config.applyToPlayers && !config.applyToPlayers.includes(playerId)) {
-    return makeAIPlay(gameState, player);
-  }
-
-  // 2. Perform Adaptive Engagement checks to determine if the play is a Clear Decision
-  const { currentTrick, trumpInfo } = gameState;
-  const isLeading = !currentTrick || currentTrick.plays.length === 0;
-
-  let isClearDecision = false;
-  let clearDecisionPlay: Card[] = [];
-  let engagementContext: LLMEngagementContext | undefined = undefined;
-
-  const context = createGameContext(gameState, playerId);
-
-  if (isLeading) {
-    const candidates = detectCandidateLeads(
-      player.hand,
-      gameState,
-      playerId,
-      trumpInfo,
-    );
-    if (candidates.length === 0) {
-      isClearDecision = true;
-      clearDecisionPlay = player.hand.length > 0 ? [player.hand[0]] : [];
-    } else {
-      const leadingContext = collectLeadingContext(gameState, playerId);
-
-      const nonTrumpCandidates = candidates
-        .filter((c) => !c.metadata.isTrump)
-        .map((candidate) => ({
-          candidate,
-          result: scoreNonTrumpLead(candidate, trumpInfo, leadingContext),
-        }))
-        .sort((a, b) => b.result.score - a.result.score);
-
-      const trumpCandidates = candidates
-        .filter((c) => c.metadata.isTrump)
-        .map((candidate) => ({
-          candidate,
-          result: scoreTrumpLead(candidate, trumpInfo, leadingContext),
-        }))
-        .sort((a, b) => b.result.score - a.result.score);
-
-      const bestNonTrump =
-        nonTrumpCandidates.length > 0 ? nonTrumpCandidates[0] : null;
-      const bestTrump = trumpCandidates.length > 0 ? trumpCandidates[0] : null;
-      const bestOverall =
-        bestNonTrump && bestTrump
-          ? bestNonTrump.result.score >= bestTrump.result.score
-            ? bestNonTrump
-            : bestTrump
-          : bestNonTrump || bestTrump;
-
-      if (bestOverall) {
-        const isRoundStart = gameState.tricks.length < 3;
-        const isHighAce = bestOverall.candidate.cards.some(
-          (card) =>
-            (card.rank === Rank.Ace && trumpInfo.trumpRank !== Rank.Ace) ||
-            (card.rank === Rank.King && trumpInfo.trumpRank === Rank.Ace),
-        );
-
-        // Shortcut 1: Aces led at round start
-        if (
-          isRoundStart &&
-          isHighAce &&
-          !bestOverall.candidate.metadata.isTrump
-        ) {
-          isClearDecision = true;
-          clearDecisionPlay = bestOverall.candidate.cards;
-          gameLogger.info("llm_adaptive_shortcut_lead_ace", {
-            playerId,
-            play: clearDecisionPlay.map((c) => c.toString()),
-          });
-        }
-        // Shortcut 2: High confident winning combo (unbeatable)
-        else if (bestOverall.candidate.metadata.isUnbeatable) {
-          isClearDecision = true;
-          clearDecisionPlay = bestOverall.candidate.cards;
-          gameLogger.info("llm_adaptive_shortcut_lead_unbeatable", {
-            playerId,
-            play: clearDecisionPlay.map((c) => c.toString()),
-          });
-        }
-        // Ambiguous Lead: engage LLM with candidates list
-        else {
-          const allOptionsStr = candidates
-            .map((c, idx) => {
-              const score = c.metadata.isTrump
-                ? scoreTrumpLead(c, trumpInfo, leadingContext).score
-                : scoreNonTrumpLead(c, trumpInfo, leadingContext).score;
-              return `Option L${idx + 1}: Play ${c.cards.map((card) => card.toString()).join(", ")} (Score: ${score})`;
-            })
-            .join("\n");
-
-          engagementContext = {
-            dilemma:
-              "We need to choose which suit or combination to lead. We want to secure the lead, pressure opponents, avoid leading under opponents' voids, and avoid wasting point cards prematurely.",
-            specificHelp: `Evaluate our lead candidates. Help us choose the optimal leading play. Recommend the best option and explain your reasoning.\n\nCandidates evaluated by rule-based engine:\n${allOptionsStr}`,
-          };
-        }
-      } else {
-        isClearDecision = true;
-        clearDecisionPlay = player.hand.length > 0 ? [player.hand[0]] : [];
-      }
-    }
-  } else {
-    // Following play
-    const leadingPlay = currentTrick.plays[0];
-    const leadingCards = leadingPlay.cards;
-    const analysis = analyzeSuitAvailability(
-      leadingCards,
-      player.hand,
-      trumpInfo,
-    );
-
-    // Shortcut 1: Hand size <= required
-    if (player.hand.length <= leadingCards.length) {
-      isClearDecision = true;
-      clearDecisionPlay = player.hand;
-      gameLogger.info("llm_adaptive_shortcut_follow_hand_size", {
-        playerId,
-        play: clearDecisionPlay.map((c) => c.toString()),
-      });
-    }
-    // Shortcut 2: Exactly enough same-suit cards to follow (no card choices)
-    else if (
-      analysis.remainingCards &&
-      analysis.remainingCards.length === analysis.requiredLength
-    ) {
-      isClearDecision = true;
-      clearDecisionPlay = analysis.remainingCards;
-      gameLogger.info("llm_adaptive_shortcut_follow_forced_suit", {
-        playerId,
-        play: clearDecisionPlay.map((c) => c.toString()),
-      });
-    }
-    // Shortcut 3: Only 1 valid combo choice
-    else if (
-      analysis.scenario === "valid_combos" &&
-      analysis.validCombos &&
-      analysis.validCombos.length === 1
-    ) {
-      isClearDecision = true;
-      clearDecisionPlay = analysis.validCombos[0].cards;
-      gameLogger.info("llm_adaptive_shortcut_follow_single_combo", {
-        playerId,
-        play: clearDecisionPlay.map((c) => c.toString()),
-      });
-    }
-    // Ambiguous Following: engage LLM based on scenarios
-    else {
-      const trickWinnerAnalysis = context.trickWinnerAnalysis;
-      const isTeammateWinning = trickWinnerAnalysis?.isTeammateWinning ?? false;
-      const currentWinner = trickWinnerAnalysis?.currentWinner ?? "unknown";
-      const trickPoints = trickWinnerAnalysis?.trickPoints ?? 0;
-
-      if (
-        analysis.scenario === "void" &&
-        player.hand.some((c) => isTrump(c, trumpInfo))
-      ) {
-        // Engagement Point 1: Trump vs Discard when Void
-        engagementContext = {
-          dilemma: `We are VOID in the led suit (${leadingCards[0]?.suit || "Trump Group"}). Currently, ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning the trick with points: ${trickPoints}. We hold trump cards in our hand and must decide whether to use a trump card to cut (win the trick) or save our trumps and discard a non-trump card.`,
-          specificHelp: `Help us decide: Should we TRUMP-IN to win the trick, or should we DISCARD a non-trump card to save our trump cards? If you choose to trump, pick the lowest trump combo that can beat the current winner. If you choose to discard, pick the lowest useless card to discard.`,
-        };
-      } else if (
-        analysis.scenario === "insufficient" ||
-        (analysis.scenario === "void" &&
-          !player.hand.some((c) => isTrump(c, trumpInfo)))
-      ) {
-        // Engagement Point 2: Strategic Discard / Feed Points
-        engagementContext = {
-          dilemma: `We need to DISCARD off-suit cards because we do not have enough cards of the led suit. Currently, ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning the trick. There are ${trickPoints} points currently in the trick.`,
-          specificHelp: `If our partner is winning the trick safely, we should feed them point cards (5, 10, King) to secure points. If opponents are winning, we should discard our lowest non-point cards to deny them points. Choose which card(s) to discard from our hand.`,
-        };
-      } else {
-        // Engagement Point 3: Choose How to Follow Suit (Multiple options)
-        engagementContext = {
-          dilemma: `We have multiple cards or combinations of the led suit to follow the trick. Currently, ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning the trick. We need to decide whether to play high cards to try to win/beat opponents, or play low/preserve our pairs or tractors.`,
-          specificHelp: `Decide how to follow suit: Should we play high cards to compete and beat opponents, or play low to preserve our high cards and active combinations? Select the optimal cards from our relevant cards list.`,
-        };
-      }
-    }
-  }
-
-  // 3. If a Clear Decision was identified, play it immediately and skip the LLM call!
-  if (isClearDecision) {
-    return clearDecisionPlay;
+    return fallback;
   }
 
   // Track start of LLM decision
   llmTotalPlaysRequested++;
 
-  const sortedHand = sortCards(player.hand, gameState.trumpInfo);
+  const sortedHand = sortCards(hand, gameState.trumpInfo);
 
-  // Self-Correction Retry Loop (up to 3 tries total: 1 initial attempt + 2 retries)
+  // Self-Correction Retry Loop (up to 3 tries: 1 initial attempt + 2 retries)
   const maxAttempts = 3;
   let attempt = 0;
   let errorHint = "";
@@ -287,11 +100,11 @@ export async function selectLLMPlayAsync(
   while (attempt < maxAttempts) {
     attempt++;
     try {
-      // ALWAYS generate a fresh, flat user prompt from scratch - no message chain accumulation!
+      // Always build a fresh user prompt — no growing message chain accumulation
       const prompt = buildLLMUserPrompt(
         gameState,
         playerId,
-        player.hand,
+        hand,
         engagementContext,
       );
 
@@ -314,7 +127,7 @@ export async function selectLLMPlayAsync(
         config.timeoutMs,
       );
 
-      // Clean response (sometimes LLMs wrapping response in ```json ... ```)
+      // Clean response (LLMs sometimes wrap in ```json ... ```)
       let cleanedJson = responseText.trim();
       const codeBlockMatch = cleanedJson.match(/^```json\s*([\s\S]*?)\s*```$/);
       if (codeBlockMatch) {
@@ -399,7 +212,7 @@ export async function selectLLMPlayAsync(
       // Validate the play against the Shengji rule engine
       const errorMsg = getPlayValidationError(
         selectedCards,
-        player.hand,
+        hand,
         playerId,
         gameState,
       );
@@ -408,7 +221,7 @@ export async function selectLLMPlayAsync(
         // Valid play! Log strategic reasoning and cards
         gameLogger.info("llm_decision_success", {
           playerId,
-          reasoning: parsed.reasoning || "No reasoning provided.",
+          reasoning: parsed.reasoning ?? "No reasoning provided.",
           play: selectedCards.map((c) => c.toString()),
           attempts: attempt,
         });
@@ -416,7 +229,7 @@ export async function selectLLMPlayAsync(
         llmSuccessfulPlays++;
         return selectedCards;
       } else {
-        // Play is invalid! Trigger retry loop
+        // Play is invalid — trigger retry loop
         gameLogger.warn("llm_decision_invalid_rule", {
           playerId,
           attempt,
@@ -433,29 +246,27 @@ export async function selectLLMPlayAsync(
         attempt,
         error: apiError instanceof Error ? apiError.message : String(apiError),
       });
-      // Immediately abort loop on serious network/API key error and run fallback
+      // Immediately abort loop on serious network/API error and use fallback
       break;
     }
   }
 
-  // If we reach here, either the loop exited on API error or we exhausted all retries
+  // Either the loop exited on API error or we exhausted all retries
   const isRetryExhaustion = attempt >= maxAttempts;
   if (isRetryExhaustion) {
     llmInvalidCardFallbacks++;
     gameLogger.error("llm_retries_exhausted", {
       playerId,
       maxAttempts,
-      message:
-        "Exhausted all retries. Falling back to rule-based AI algorithm.",
+      message: "Exhausted all retries. Falling back to rule-based AI play.",
     });
   } else {
     llmAPIErrorFallbacks++;
     gameLogger.error("llm_fallback_triggered", {
       playerId,
-      message: "API error triggered fallback to rule-based AI algorithm.",
+      message: "API error triggered fallback to rule-based AI play.",
     });
   }
 
-  // Gracefully fallback to rule-based AI
-  return makeAIPlay(gameState, player);
+  return fallback;
 }

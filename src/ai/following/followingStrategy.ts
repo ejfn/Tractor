@@ -1,4 +1,5 @@
 import { getComboType } from "../../game/comboDetection";
+import { isTrump } from "../../game/cardValue";
 import {
   Card,
   ComboType,
@@ -11,6 +12,8 @@ import { gameLogger } from "../../utils/gameLogger";
 import { executeMultiComboFollowingAlgorithm } from "./multiComboFollowingStrategy";
 import { routeToDecision } from "./routingLogic";
 import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
+import { callLLMForDecision } from "../llm/llmAIStrategy";
+import { LLMEngagementContext } from "../llm/llmGamePrompt";
 
 /**
  * Enhanced Following Strategy V2 - Main Entry Point
@@ -235,4 +238,158 @@ function validateSelectedCards(
   }
 
   return true;
+}
+
+/**
+ * Async following strategy — same analysis and routing as selectFollowingPlay,
+ * but at genuinely ambiguous decision points it delegates to the LLM.
+ * The rule-based pick from routeToDecision is always computed first and used as fallback.
+ */
+export async function selectFollowingPlayAsync(
+  context: GameContext,
+  trumpInfo: TrumpInfo,
+  gameState: GameState,
+  currentPlayerId: PlayerId,
+): Promise<Card[]> {
+  const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
+  if (!currentPlayer) {
+    throw new Error("Current player not found in game state");
+  }
+
+  const leadingCards = gameState.currentTrick?.plays[0]?.cards;
+  if (!leadingCards || leadingCards.length === 0) {
+    throw new Error("No leading cards found in current trick");
+  }
+
+  // Priority 0: Multi-combo — not ambiguous, delegate to the existing algorithm
+  const leadingComboType = getComboType(leadingCards, trumpInfo);
+  if (leadingComboType === ComboType.Invalid) {
+    const multiComboResult = executeMultiComboFollowingAlgorithm(
+      leadingCards,
+      currentPlayer.hand,
+      gameState,
+      currentPlayerId,
+    );
+    if (multiComboResult && multiComboResult.strategy !== "no_valid_response") {
+      return multiComboResult.cards;
+    }
+  }
+
+  // Analyze suit availability (same as sync version)
+  const analysis = analyzeSuitAvailability(
+    leadingCards,
+    currentPlayer.hand,
+    trumpInfo,
+  );
+
+  // --- Forced shortcuts: play is predetermined, no LLM value ---
+
+  // Shortcut 1: Hand size <= required — must play all remaining cards
+  if (currentPlayer.hand.length <= leadingCards.length) {
+    gameLogger.info("llm_adaptive_shortcut_follow_hand_size", {
+      playerId: currentPlayerId,
+      play: currentPlayer.hand.map((c) => c.toString()),
+    });
+    return currentPlayer.hand;
+  }
+
+  // Shortcut 2: Exactly enough same-suit cards — forced follow
+  if (
+    analysis.remainingCards &&
+    analysis.remainingCards.length === analysis.requiredLength
+  ) {
+    gameLogger.info("llm_adaptive_shortcut_follow_forced_suit", {
+      playerId: currentPlayerId,
+      play: analysis.remainingCards.map((c) => c.toString()),
+    });
+    return analysis.remainingCards;
+  }
+
+  // Shortcut 3: Only one valid combo — nothing to choose from
+  if (
+    analysis.scenario === "valid_combos" &&
+    analysis.validCombos &&
+    analysis.validCombos.length === 1
+  ) {
+    const onlyCombo = analysis.validCombos[0].cards;
+    gameLogger.info("llm_adaptive_shortcut_follow_single_combo", {
+      playerId: currentPlayerId,
+      play: onlyCombo.map((c) => c.toString()),
+    });
+    return onlyCombo;
+  }
+
+  // --- Ambiguous: compute rule-based pick, then engage LLM ---
+
+  // Get rule-based pick as fallback (same routing as sync version)
+  let fallbackCards: Card[];
+  try {
+    fallbackCards = routeToDecision(
+      analysis,
+      currentPlayer.hand,
+      context,
+      trumpInfo,
+      gameState,
+      currentPlayerId,
+    );
+  } catch {
+    fallbackCards =
+      currentPlayer.hand.length > 0
+        ? currentPlayer.hand.slice(0, leadingCards.length)
+        : [];
+  }
+
+  if (!fallbackCards || fallbackCards.length === 0) {
+    fallbackCards =
+      currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
+  }
+
+  // Build targeted engagement context for this specific decision
+  const trickWinnerAnalysis = context.trickWinnerAnalysis;
+  const isTeammateWinning = trickWinnerAnalysis?.isTeammateWinning ?? false;
+  const currentWinner = trickWinnerAnalysis?.currentWinner ?? "unknown";
+  const trickPoints = trickWinnerAnalysis?.trickPoints ?? 0;
+
+  let engagementContext: LLMEngagementContext;
+
+  if (
+    analysis.scenario === "void" &&
+    currentPlayer.hand.some((c) => isTrump(c, trumpInfo))
+  ) {
+    // Engagement Point 1: Void in led suit, holds trumps — trump vs discard
+    engagementContext = {
+      dilemma: `We are VOID in the led suit (${leadingCards[0]?.suit ?? "Trump Group"}). Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning the trick with ${trickPoints} points. We hold trump cards and must decide: trump in to win, or save trumps and discard.`,
+      specificHelp: `Should we TRUMP-IN to win the trick, or DISCARD a non-trump card to save our trumps? If trumping, pick the lowest trump combo that beats the current winner. If discarding, pick the lowest useless card.`,
+    };
+  } else if (
+    analysis.scenario === "insufficient" ||
+    (analysis.scenario === "void" &&
+      !currentPlayer.hand.some((c) => isTrump(c, trumpInfo)))
+  ) {
+    // Engagement Point 2: Must discard off-suit — feed points vs deny points
+    engagementContext = {
+      dilemma: `We must DISCARD off-suit cards (not enough of the led suit). Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning with ${trickPoints} points in the trick.`,
+      specificHelp: `If our partner is winning safely, feed them point cards (5, 10, King) to secure points. If opponents are winning, discard our lowest non-point cards to deny them points. Choose which card(s) to discard.`,
+    };
+  } else {
+    // Engagement Point 3: Multiple same-suit options — how aggressively to play
+    engagementContext = {
+      dilemma: `We have multiple cards or combos of the led suit to play. Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning with ${trickPoints} points. Decide: compete aggressively (high cards) or preserve high cards / combos.`,
+      specificHelp: `Should we play HIGH cards to beat opponents, or play LOW to preserve our pairs/tractors and high cards for later? Select the optimal cards from our hand.`,
+    };
+  }
+
+  gameLogger.debug("llm_following_engagement", {
+    playerId: currentPlayerId,
+    scenario: analysis.scenario,
+    rulesBasedPick: fallbackCards.map((c) => c.toString()),
+  });
+
+  return callLLMForDecision(
+    gameState,
+    currentPlayerId,
+    currentPlayer.hand,
+    engagementContext,
+    fallbackCards,
+  );
 }
