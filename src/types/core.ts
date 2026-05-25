@@ -10,6 +10,23 @@ export enum PlayerId {
   Bot3 = "bot3",
 }
 
+/**
+ * Resolves the partner of a given player based on fixed team pairings.
+ * Human and Bot2 are on Team A, Bot1 and Bot3 are on Team B.
+ */
+export function getPartnerId(playerId: PlayerId): PlayerId {
+  switch (playerId) {
+    case PlayerId.Human:
+      return PlayerId.Bot2;
+    case PlayerId.Bot2:
+      return PlayerId.Human;
+    case PlayerId.Bot1:
+      return PlayerId.Bot3;
+    case PlayerId.Bot3:
+      return PlayerId.Bot1;
+  }
+}
+
 export enum TeamId {
   A = "A",
   B = "B",

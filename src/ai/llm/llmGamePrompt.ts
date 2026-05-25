@@ -1,4 +1,10 @@
-import { Card, GameState, PlayerId, TrumpInfo } from "../../types";
+import {
+  Card,
+  GameState,
+  PlayerId,
+  getPartnerId,
+  TrumpInfo,
+} from "../../types";
 import { sortCards } from "../../utils/cardSorting";
 import { isTrump } from "../../game/cardValue";
 
@@ -355,14 +361,7 @@ ${
 
   const currentPlayer = gameState.players.find((p) => p.id === playerId);
   const teamId = currentPlayer?.team || "A";
-  const partnerId =
-    playerId === "bot1"
-      ? "bot3"
-      : playerId === "bot3"
-        ? "bot1"
-        : playerId === "human"
-          ? "bot2"
-          : "human";
+  const partnerId = getPartnerId(playerId);
 
   let engagementSection = "";
   if (engagementContext) {
