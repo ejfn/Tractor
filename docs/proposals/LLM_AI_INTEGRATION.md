@@ -1,304 +1,141 @@
 # LLM-Driven AI Decisions via OpenRouter
 
-Replace the purely algorithmic AI move selection with LLM API calls (OpenRouter) while keeping the existing rule-based code to generate a **ranked list of candidate options** that the LLM chooses from. Fallback to the existing algorithmic choice if the API call fails or times out.
+Integrate OpenRouter LLM API calls to make card play decisions for AI players during the `Playing` phase, while retaining rule-based fallback mechanisms and preserving the existing synchronous game engine and test suites.
+
+This plan includes a beautiful, premium configuration UI modal accessible via a hidden tap gesture, keeping the interface completely pristine.
 
 ---
 
-## Overview
+## Architecture & Design Decisions
 
-The current flow:
-```
-useAITurns → getAIMove() → makeAIPlay() → selectLeadingPlay / selectFollowingPlay → Card[]
-```
+We have aligned on the following key architectural and user-experience branches:
 
-Proposed flow:
-```
-useAITurns → getAIMove() [async] → makeLLMAIPlay(gameState, player, config, signal)
-                                    ├── Short-circuit: if only 1 legal play, play instantly (no API call)
-                                    ├── getOrCreateSession(playerId, roundNumber)
-                                    ├── build incremental trick update + hand with unique IDs
-                                    └── Validation Loop (max 2 retries):
-                                        ├── call OpenRouter API (sends message thread + reasoning_effort)
-                                        ├── parse JSON array output (e.g., ["c1", "c2"])
-                                        ├── validate cards via engine (isValidPlay)
-                                        ├── [If valid] -> execute play, append success to session, return
-                                        └── [If invalid] -> append error to session, decrement retry, repeat
-                                        └── [On retry exhaustion / API error] -> execute algorithmic fallback
-```
-
-The LLM is given direct agency to select cards natively from its sorted hand using unique IDs (e.g., `c1: A♠`, `c2: K♠`). Its choice is validated in real-time by the game's rule engine. If the play is invalid, the engine sends the error details back to the LLM, giving it up to 2 retries to self-correct before falling back to the standard algorithmic bot play. No visual badges are displayed in the UI to keep it pristine; instead, decision sources are tracked extensively via developer console logs and BigQuery analytics events.
+1. **Test Suite Compatibility**: We will preserve `getAIMoveWithErrorHandling` as a synchronous function to keep all 12+ existing test suites and simulation scripts fully functional and fast. We will introduce a new asynchronous counterpart, `getAIMoveWithErrorHandlingAsync`, for use by the `useAITurns` React hook.
+2. **Card Selection Representation**: The LLM will see its sorted hand with unique IDs (e.g. `c1: A♠`, `c2: 8♠`) and select cards by returning a JSON array of card IDs (e.g. `["c1", "c2"]`). Real-time validation is performed on this selection using the rule engine.
+3. **Reasoning & Output Format**: The LLM will output a JSON object containing both its strategic `"reasoning"` in English and the selected `"play"` card IDs array. The reasoning will be saved in our developer logs and BQ analytics.
+4. **Self-Correction & Feedback Loop**: We will create a detailed `getPlayValidationError` helper in `src/game/playValidation.ts` that identifies the exact Shengji rule violated and returns a highly specific error message. The LLM gets up to 2 retries to correct its selection using this feedback.
+5. **State Recovery & Session History**: Chat sessions will be reconstructed dynamically from the `gameState.tricks` array of the current round. This is 100% self-healing, stateless, and fully compatible with game save/load and app restarts.
+6. **API Credentials & Security**: API credentials will be supplied via standard Expo `EXPO_PUBLIC_` environment variables (`EXPO_PUBLIC_OPENROUTER_API_KEY`) as defaults, and can be overridden by users in the UI settings, stored securely in local SQLite storage via `localStorage`.
 
 ---
 
-## Resolved Decisions
+## Configuration Settings UI Design
 
-> [!NOTE]
-> The architectural proposal has been aligned with the following decisions:
-> - **Session Management**: Uses an **incremental, stateful chat session** per AI player (three active sessions per round, excluding the human). Each trick appends exactly 1 user message (containing the outcome of the last trick and new choices) and 1 assistant message (the selected choice). 
-> - **API Key Security**: Using Expo's native `EXPO_PUBLIC_` environment variable pattern (`EXPO_PUBLIC_OPENROUTER_API_KEY`) to prevent credentials from being stored or committed in `app.json` / version control.
-> - **Prompt Language**: Prompts will be fully written in **English** (using standard Pinyin and English terms in parentheses for game-specific vocab). This achieves 2x–3x higher token efficiency and lower API costs while fully leveraging top model reasoning capabilities.
-> - **Primary Model**: `deepseek/deepseek-chat` (DeepSeek-V3) via OpenRouter, utilizing its native prefix caching to get ~90% cost savings on the static system rules prompt.
-> - **Stage 1 Scope**: Apply LLM decisions only to card play during the `Playing` phase. Kitty swap and trump declaration remain algorithmic in Stage 1 to keep candidate verification clean.
-> - **Turn Cancellation**: Solved via a unique `turnId` tracked in `activeRequestRef` to ensure that stale promise completions during component unmounts or turn advancements are discarded.
+We will build a high-fidelity config modal accessible only through a hidden developer/power-user trigger, keeping the main interface completely pristine and clean.
+
+### 1. Pristine UI Trigger Gesture (`src/components/GameStatus.tsx`)
+Instead of displaying a settings gear icon, we will implement a symmetrical hidden trigger:
+- **5 quick taps on the "Round X" text** in `GameStatus.tsx` will trigger a callback to open the LLM Configuration Modal.
+- This mirrors the existing 5 quick taps on the "Trump" display used to restart the game, creating a clean, logical, and fully hidden gesture pattern for developers/power users.
+
+### 2. Premium Settings Modal (`src/components/LLMConfigModal.tsx`)
+A new high-fidelity Modal overlay styled with clean container card layouts, modern typography, glassmorphism accents, and interactive visual feedback:
+- **Toggle switch**: Instantly enable or disable the LLM AI decision-making engine.
+- **TextInput (API Token)**: Secure text entry for the OpenRouter API Key. Includes a hide/reveal toggle (eye icon) and visual status border.
+- **Model selector (Radio list or dropdown)**: Clean, styled selectors showing the top supported models with brief taglines:
+  - `deepseek/deepseek-chat` (DeepSeek-V3 - default, recommended for lowest latency & cost)
+  - `google/gemini-2.5-flash` (Gemini 2.5 Flash - extremely fast)
+  - `anthropic/claude-3.5-haiku` (Claude 3.5 Haiku - highly analytical)
+  - `meta-llama/llama-3.3-70b-instruct` (Llama 3.3 70B - strong open-weights)
+- **Difficulty selector**: Choose between **Easy**, **Medium**, and **Hard** which dynamically maps to `reasoning_effort` ('low', 'medium', 'high') for supported reasoning-capable models.
+- **Interactive "Test Connection" Button**: Triggers a fast verification call to OpenRouter's API using a 4-second AbortController. Displays a loading indicator, followed by a green success toast or red error explanation.
+- **Save & Cancel Buttons**: Animates and saves configurations, updating active game controllers immediately.
+
+### 3. Local Storage Persistence (`src/ai/llmConfig.ts`)
+LLM configuration will be read from `localStorage` under the key `tractor_llm_config`. On startup:
+- First, check `localStorage` for user-saved configs.
+- Fall back to environment variables (`EXPO_PUBLIC_LLM_ENABLED`, `EXPO_PUBLIC_OPENROUTER_API_KEY`, etc.) if no local config exists.
+- Expose a `saveLLMConfig` utility that serializes the configuration back to `localStorage`.
 
 ---
 
 ## Proposed Changes
 
-### New File: `src/ai/llmAIClient.ts`
+### 1. Persistent Settings (`src/ai/llmConfig.ts`) [NEW]
 
-A thin wrapper around the OpenRouter chat completions API using `messages[]` format.
-
-```typescript
-export type LLMMessage = { role: 'system' | 'user'; content: string };
-
-// Handles:
-// - Building the fetch request to https://openrouter.ai/api/v1/chat/completions
-// - Sending system + user messages (enables prompt caching for Anthropic models)
-// - For Anthropic models: wraps system content with cache_control if config.usePromptCaching
-// - Timeout (AbortController, 8s default)
-// - Returning the raw assistant reply string, or null on any error (triggers fallback)
-export async function callOpenRouter(
-  systemPrompt: string,
-  userPrompt: string,
-  model: string,
-  apiKey: string,
-  signal: AbortSignal,
-  usePromptCaching?: boolean,
-): Promise<string | null>
-```
-
----
-
-### New File: `src/ai/llmGamePrompt.ts`
-
-Builds two separate prompts from `gameState` and `MemoryContext`:
-
-**System prompt** (static per game, sent as the `system` message — cacheable):
-
-The system message contains a **condensed, LLM-optimized rules summary** written specifically for prompting (not the full `docs/GAME_RULES.md` which is 610 lines / ~26KB — far too large). This summary lives as a constant string in `llmGamePrompt.ts`, derived from `GAME_RULES.md` as the source of truth:
-
-```
-You are playing Shengji (升级/Tractor), a Chinese trick-taking card game.
-
-TEAMS: [TeamA: human+bot2] vs [TeamB: bot1+bot3]. Your role: [Bot1/Bot2/Bot3], [attacking/defending].
-GOAL: Attacking team needs 80+ points (5=5pts, 10=10pts, K=10pts). Defending team blocks this.
-TRUMP: One rank is trump in all suits + one trump suit. Hierarchy: BJ > SJ > trump-rank-in-trump-suit > trump-rank-off-suits > trump-suit-cards (A→3).
-COMBINATIONS: Singles (1 card) | Pairs (2 identical) | Tractors (consecutive pairs same suit).
-FOLLOWING: Must follow led suit and match combo structure (pair→pair, tractor→tractor). If void, may trump or discard.
-WINNING: Highest trump wins trump tricks. Highest led-suit card wins non-trump tricks. Trump always beats non-trump.
-KITTY: 8 hidden cards scored if attacking team wins the LAST trick (×2 for single, ×4 for pair/tractor final).
-
-The candidates you receive are already validated as your only legal plays.
-Reply with ONLY the candidate number. No explanation.
-```
-
-
-**User messages** (incremental, stateful chat history):
-
-The LLM is prompted via a series of alternating user/assistant messages. The system prompt contains the static game rules (cached).
-
-**Message 1 (Trick 1 start)**:
-```
-[User]
-Trick 1 started.
-TRUMP: 2 of Heart (♥)
-SCORE: Attacking team (Your opponents) 0/80 pts.
-YOUR ROLE: You are Bot1. Your ally is Bot3. Your opponents are Human and Bot2.
-YOUR HAND (sorted by suit): ♠ A K Q | ♥ 3 3 | trump: BJ, 5♦, 8♠
-
-CURRENT TRICK:
-  Human led: K♦ (current winner)
-  → Your turn (2nd to play)
-
-CANDIDATES:
-  0: 3♥ (single, 0pts)
-  1: A♠ (single, 0pts)
-  2: BJ (single, 0pts)
-  3: 5♦ (single, 5pts)
-Choose:
-```
-*Assistant response*: `0`
-
-**Message 2 (Trick 2 start)**:
-```
-[User]
-Trick 1 ended.
-Cards played: Human K♦ | Bot1 3♥ | Bot2 5♦ | Bot3 10♦.
-Bot2 won the trick and scored 15 points (5♦ + 10♦).
-Attacking team now has 15/80 points.
-
-Trick 2 started.
-YOUR HAND (sorted by suit): ♠ A K Q | ♥ 3 | trump: BJ, 8♠
-
-CURRENT TRICK:
-  Bot2 led: Q♣ (current winner)
-  Bot3 played: 4♣
-  Human played: A♣ (current winner)
-  → Your turn (4th to play)
-
-CANDIDATES:
-  0: A♠ (single, 0pts)
-  1: 8♠ (single, 0pts)
-Choose:
-```
-*Assistant response*: `1`
-
----
-
-- **Prompt Structure & Caching Strategy**: Since we are appending user/assistant messages chronologically, the thread prefix remains **100% identical** from turn to turn. 
-  - The static game rules in the `system` message remain fully cached.
-  - The early chat messages are cached dynamically by DeepSeek's automatic prefix caching.
-  - Only the newest user message added at the end of the thread incurs new input token billing!
-- **Session Lifespan & Recovery**:
-  - Chat sessions live in-memory under a `llmSessionManager` mapped by `PlayerId`.
-  - Sessions automatically reset at the start of each round.
-  - **Self-Healing Recovery**: If a game is saved, reloaded, or recovered, the system gracefully recovers by initiating a **fresh stateless conversation start** (where the first user message includes a summarized transcript of the completed tricks so far, after which the session resumes incrementally).
-
-
----
-
-### New File: `src/ai/llmAIStrategy.ts`
-
-The async counterpart to `aiStrategy.ts`. Fully stateless — no session management.
-
-```typescript
-export async function makeLLMAIPlay(
-  gameState: GameState,
-  player: Player,
-  config: LLMConfig,
-  signal: AbortSignal,
-): Promise<Card[]>
-```
-
-Flow:
-1. **Short-Circuit Check**: Count the number of unique legal plays in the current context. If only 1 play is legal, immediately execute it (no API call required, saving latency and token costs!).
-2. **Session Retrieval**: Fetch the player's dedicated chat session from `llmSessionManager`. If Trick 2+, append a brief system/user update detailing what cards were played in the last trick and who won it.
-3. **Prompt Construction**: Sort the player's Hand and format it with unique string IDs (e.g., `c1: A♠`, `c2: K♠`), instructing the LLM to output a clean JSON array of selected IDs (e.g., `["c1", "c2"]`).
-4. **Validation Loop (Max 2 retries / 3 total attempts)**:
-   - Call `llmAIClient.ts` with the current message history, passing `reasoning_effort` mapped from the game difficulty.
-   - Parse the assistant response to extract the JSON array of card IDs.
-   - Resolve IDs back to real `Card` objects from the player's hand.
-   - Run rule validation: check if play is valid under Shengji suit-following and combo-matching rules.
-   - **If Valid**: Append choice to session history, advance, and return the chosen `Card[]`.
-   - **If Invalid**: Log validation failure, append a clear feedback message to the chat history (e.g., `"Invalid play: Led suit is Hearts. You must follow suit using your Hearts cards."`), and trigger retry.
-5. **Fallback Safety**: On retry exhaustion, API error, or timeout, immediately execute the standard synchronous algorithmic fallback `makeAIPlay(gameState, player)`, logging the fallback decision for testing.
-
----
-
-### New File: `src/ai/llmConfig.ts`
+Provide type definitions and persistence wrappers:
 
 ```typescript
 export interface LLMConfig {
-  enabled: boolean;            // Feature flag
-  apiKey: string;              // OpenRouter API key
-  model: string;               // e.g. "deepseek/deepseek-chat"
-  timeoutMs: number;           // Default: 15000
-  applyToPlayers: PlayerId[];  // Which AI players use LLM
-  reasoningEffort?: 'low' | 'medium' | 'high'; // Dynamic thinking level mapped to game difficulty
+  enabled: boolean;
+  apiKey: string;
+  model: string;
+  timeoutMs: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  applyToPlayers: string[]; // ['bot1', 'bot2', 'bot3']
 }
 
-export function getLLMConfig(difficulty?: 'easy' | 'medium' | 'hard'): LLMConfig
-// Reads dynamically from process.env, mapping game difficulty to OpenRouter's reasoning_effort parameter:
-// - 'easy' -> 'low'
-// - 'medium' -> 'medium'
-// - 'hard' -> 'high'
+export const DEFAULT_LLM_CONFIG: LLMConfig = {
+  enabled: false,
+  apiKey: '',
+  model: 'deepseek/deepseek-chat',
+  timeoutMs: 15000,
+  difficulty: 'medium',
+  applyToPlayers: ['bot1', 'bot2', 'bot3'],
+};
+
+export function getLLMConfig(): LLMConfig;
+export function saveLLMConfig(config: LLMConfig): void;
 ```
 
-### Modify: `src/hooks/useAITurns.ts`
+### 2. Connection Tester (`src/ai/llmAIClient.ts`) [NEW]
 
-Convert `handleAIMove` to async and use a `useRef<string | null>` to track active request IDs (`turnId`) alongside an `AbortController` for cancellation.
-
-```diff
-+ const activeRequestRef = useRef<string | null>(null);
-
-- const handleAIMove = useCallback(() => {
-+ const handleAIMove = useCallback(async () => {
-    ...
-+   const turnId = `${gameState.roundNumber}-${gameState.currentTrick?.plays.length || 0}-${currentPlayer.id}`;
-+   activeRequestRef.current = turnId;
-+   const controller = new AbortController();
-+
--   const { cards, error } = getAIMoveWithErrorHandling(gameState);
-+   const { cards, error, source } = await getAIMoveWithErrorHandling(gameState, controller.signal);
-+
-+   // Ignore stale updates if the game state/turn advanced in the meantime
-+   if (activeRequestRef.current !== turnId) return;
-    ...
-```
-
----
-
-### Modify: `src/game/playProcessing.ts`
-
-Make `getAIMoveWithErrorHandling` async, accepting an optional `AbortSignal`.
-
-```diff
-- export function getAIMoveWithErrorHandling(gameState: GameState)
-+ export async function getAIMoveWithErrorHandling(
-+   gameState: GameState,
-+   signal?: AbortSignal
-+ ): Promise<{ cards: Card[] | null; error: string | null; source: 'llm' | 'llm-bypass' | 'algorithmic' }>
-```
-
-Inside: if LLM is enabled for the current player, call `makeLLMAIPlay`; otherwise fall through to existing `getAIMove`.
-
----
-
-### New File: `.env.example`
-
-Add environment variables for configuring OpenRouter locally:
-
-```bash
-EXPO_PUBLIC_LLM_ENABLED=false
-EXPO_PUBLIC_OPENROUTER_API_KEY=your_key_here
-EXPO_PUBLIC_LLM_MODEL=deepseek/deepseek-chat
-EXPO_PUBLIC_LLM_TIMEOUT=15000
-```
-
----
-
-### Modify: `src/utils/gameTimings.ts`
-
-When LLM is active, the `AI_MOVE_DELAY` should be 0 (the API latency itself provides the natural delay):
+Implement API calls and a connectivity testing utility:
 
 ```typescript
-export const AI_MOVE_DELAY = llmConfig.enabled ? 0 : 300;
+// Calls OpenRouter and returns assistant string response
+export async function callOpenRouter(...);
+
+// Fast check to see if OpenRouter key is active
+export async function testOpenRouterConnection(apiKey: string): Promise<{ success: boolean; message: string }>
 ```
 
----
+### 3. Configuration UI Component (`src/components/LLMConfigModal.tsx`) [NEW]
 
-### Modify: `docs/LOG_EVENT_SCHEMA.md` & Analytics Logging
+Create a beautiful component overlay containing all selectors, text inputs, error tooltips, hide/reveal keys, and save behaviors.
 
-To support tracking LLM performance, latency, and costs via the existing BigQuery analysis script, add the following fields to the play logging schema:
+### 4. Integration into Screen Controller (`src/screens/GameScreenController.tsx`) [MODIFY]
 
-```json
-{
-  "decision_source": "string (llm | llm-bypass | algorithmic)",
-  "llm_latency_ms": "integer (null if algorithmic or llm-bypass)",
-  "llm_model": "string (null if algorithmic or llm-bypass)"
-}
-```
+Manage modal visibility state, load the LLM configuration on startup, pass handlers to trigger settings modals, and update hooks when settings are saved.
+
+### 5. Integration into Header View (`src/screens/GameScreenView.tsx` & `src/components/GameStatus.tsx`) [MODIFY]
+
+- Add an `onOpenSettings` prop to `GameStatus` and wrap the Round Text in a `TouchableWithoutFeedback` to detect the 5-tap gesture.
+- Pass this trigger up through `GameScreenView` to `GameScreenController`.
+- Render `<LLMConfigModal />` inside `GameScreenView`.
+
+### 6. Prompt Builder (`src/ai/llmGamePrompt.ts`) [NEW]
+
+Responsible for generating the static system rules prompt and reconstructing the dynamic user/assistant conversation history from the game state.
+
+### 7. Strategy Coordinator (`src/ai/llmAIStrategy.ts`) [NEW]
+
+Orchestrates the asynchronous AI play selection workflow with bypasses, validation, retries, and fallback strategies.
+
+### 8. Rule Engine Feedback (`src/game/playValidation.ts`) [MODIFY]
+
+Add the `getPlayValidationError` helper to identify exact Shengji rule violations and return descriptive string messages.
+
+### 9. Process Play Async Coordinator (`src/game/playProcessing.ts`) [MODIFY]
+
+Add the async wrapper: `getAIMoveWithErrorHandlingAsync(...)`.
+
+### 10. AI Turn Hook Integration (`src/hooks/useAITurns.ts`) [MODIFY]
+
+Convert `handleAIMove` to be asynchronous, utilizing unique `turnId` controls, `AbortController` cancellation, and zero artificial delays.
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
-- `npm run typecheck` — verify no type errors in new async signatures
-- `npm run test` — existing tests should continue to pass (LLM disabled by default, so fallback path is exercised)
-- New unit test: `__tests__/ai/llmGamePrompt.test.ts` — verify prompt building with known game state
-- New unit test: `__tests__/ai/llmAIClient.test.ts` — mock fetch, verify timeout/error handling
+- Run `npm run typecheck` to verify strict compilation.
+- Run `npm run test` to verify all existing synchronous tests pass (LLM disabled by default).
+- Write `__tests__/ai/llmGamePrompt.test.ts` to test conversation reconstruction.
+- Write `__tests__/ai/llmAIClient.test.ts` to test connection testers and retry validation wrappers.
 
 ### Manual Verification
-1. Run `npx expo start` with `llmAIEnabled: false` → game plays identically to today
-2. Set `llmAIEnabled: true` with a valid OpenRouter key → AI turns show thinking indicator during API call → AI plays a legal card
-3. Simulate API failure (bad key) → graceful fallback to algorithmic move, no crash
-4. Verify `waitingForAI` indicator is shown throughout the full LLM round-trip
-
-
-## Future Work (Stage 2)
-
-In Stage 2, we will look into expanding LLM-driven gameplay beyond active card play into:
-1. **Kitty Swap Phase**: Allowing the LLM to inspect its dealt hand, formulate a long-term suit/point strategy, and decide which 8 cards to discard to the kitty.
-2. **Trump Declaration Phase**: Allowing the LLM to dynamically evaluate risk and declare trumps from its hand during the dealing phase.
+- **Hidden Trigger Gesture**: Open game -> Tap the "Round 1" header text 5 times rapidly -> Verify the LLM Configuration Modal slides into view beautifully.
+- **Connection Testing**: Enter OpenRouter API token -> Press Test Connection -> Verify loader followed by green tick/success notification.
+- **Settings Persistence**: Restart the app -> Tap "Round 1" 5 times -> Verify all token, model, and difficulty choices are perfectly preserved.
+- **Stale Updates / Pacing**: Verify that clicking cards rapidly or pausing the game does not cause double plays or crash states during active API requests.
