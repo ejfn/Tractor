@@ -1,4 +1,7 @@
 // Dynamic imports for Node.js modules (test environment only)
+import * as fs from "fs";
+import * as path from "path";
+
 import { getAIKittySwap, getAITrumpDeclaration } from "../../src/ai/aiLogic";
 import {
   dealNextCard,
@@ -21,6 +24,35 @@ import { Card, GamePhase, GameState, PlayerId, TeamId } from "../../src/types";
 import { initializeGame } from "../../src/utils/gameInitialization";
 import { gameLogger, LogLevel } from "../../src/utils/gameLogger";
 import { GameStats, TestSessionTracker } from "../helpers";
+
+// Load local .env variables specifically for this simulation test run
+try {
+  const envPath = path.resolve(__dirname, "../../.env");
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, "utf-8");
+    const lines = envContent.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        let val = trimmed.slice(eqIdx + 1).trim();
+        if (
+          (val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))
+        ) {
+          val = val.slice(1, -1);
+        }
+        if (process.env[key] === undefined) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+} catch {
+  // Ignore error
+}
 
 // TestSessionTracker class is now imported from helpers
 // Removed inline class definition in favor of shared helper
@@ -53,7 +85,7 @@ describe("Unattended Game Simulation", () => {
     process.env.LLM_ENABLED === "true"
       ? TARGET_GAMES * 1200 // Extended timeout for live API calls (20 minutes per game)
       : TARGET_GAMES * 10; // Dynamic timeout based on number of games
-  const MAX_ROUNDS_PER_GAME = 60; // Safety limit for rounds per game
+  const MAX_ROUNDS_PER_GAME = parseInt(process.env.MAX_ROUNDS || "60", 10); // Safety limit for rounds per game
 
   test(
     "Complete unattended game simulation with AI players",
@@ -68,6 +100,30 @@ describe("Unattended Game Simulation", () => {
 
       // Initialize session tracking with shared timestamp
       const sessionTracker = new TestSessionTracker(timestamp, "logs");
+
+      // Inject configuration into localStorage mock if LLM is enabled
+      const originalGetItem = global.localStorage.getItem;
+      if (process.env.LLM_ENABLED === "true") {
+        const apiKey = process.env.OPENROUTER_API_KEY || "";
+        global.localStorage.getItem = jest.fn().mockImplementation((key) => {
+          if (key === "tractor_llm_config") {
+            return JSON.stringify({
+              enabled: true,
+              apiKey,
+              model:
+                process.env.LLM_MODEL ||
+                process.env.OPENROUTER_MODEL ||
+                "meta-llama/llama-3.3-70b-instruct",
+              apiUrl:
+                process.env.OPENROUTER_API_URL ||
+                "https://openrouter.ai/api/v1/chat/completions",
+              timeoutMs: 25000,
+              applyToPlayers: ["bot1", "bot2", "bot3"],
+            });
+          }
+          return null;
+        });
+      }
 
       try {
         for (let gameNum = 1; gameNum <= targetGames; gameNum++) {
@@ -114,6 +170,28 @@ describe("Unattended Game Simulation", () => {
               // Update round count
               sessionTracker.updateRounds(roundCount);
 
+              // Check for LLM Telemetry failures and stop immediately if thresholds are exceeded
+              if (process.env.LLM_ENABLED === "true") {
+                const llmStats = getLLMFallbackStats();
+
+                // Configurable thresholds
+                const maxApiErrors = parseInt(process.env.MAX_LLM_API_ERRORS || "3", 10);
+                const maxInvalidPlays = parseInt(process.env.MAX_LLM_INVALID_PLAYS || "10", 10);
+
+                if (llmStats.apiErrorFallbacks > maxApiErrors) {
+                  throw new Error(
+                    `Simulation aborted: API error count (${llmStats.apiErrorFallbacks}) exceeded limit of ${maxApiErrors}.`,
+                  );
+                }
+
+                const totalInvalids = llmStats.invalidCardRetries + llmStats.invalidCardFallbacks;
+                if (totalInvalids > maxInvalidPlays) {
+                  throw new Error(
+                    `Simulation aborted: Invalid play count (${totalInvalids}) exceeded limit of ${maxInvalidPlays}.`,
+                  );
+                }
+              }
+
               // Check for victory condition
               if (roundResult.gameOver && roundResult.gameWinner) {
                 gameWinner = roundResult.gameWinner;
@@ -137,25 +215,39 @@ describe("Unattended Game Simulation", () => {
             }
 
             if (!gameWinner) {
-              const defendingTeam = gameState.teams.find((t) => t.isDefending);
-              const attackingTeam = gameState.teams.find((t) => !t.isDefending);
+              const isIntentionallyLimited = !!process.env.MAX_ROUNDS;
 
-              sessionTracker.logError(
-                roundCount,
-                "timeout",
-                `Game exceeded maximum rounds (${maxRoundsPerGame})`,
-                {
-                  defendingTeam: defendingTeam?.id || TeamId.A,
-                  attackingTeam: attackingTeam?.id || TeamId.B,
-                },
-              );
-              sessionTracker.logTimeout();
-              sessionTracker.endGame();
+              if (!isIntentionallyLimited) {
+                const defendingTeam = gameState.teams.find((t) => t.isDefending);
+                const attackingTeam = gameState.teams.find((t) => !t.isDefending);
 
-              // FAIL IMMEDIATELY on timeout
-              throw new Error(
-                `Game ${gameNum} exceeded maximum rounds (${maxRoundsPerGame})`,
-              );
+                sessionTracker.logError(
+                  roundCount,
+                  "timeout",
+                  `Game exceeded maximum rounds (${maxRoundsPerGame})`,
+                  {
+                    defendingTeam: defendingTeam?.id || TeamId.A,
+                    attackingTeam: attackingTeam?.id || TeamId.B,
+                  },
+                );
+                sessionTracker.logTimeout();
+                sessionTracker.endGame();
+
+                // FAIL IMMEDIATELY on timeout
+                throw new Error(
+                  `Game ${gameNum} exceeded maximum rounds (${maxRoundsPerGame})`,
+                );
+              } else {
+                // Intentionally limited to N rounds - treat as clean success
+                sessionTracker.endGame(undefined, {
+                  teamA:
+                    gameState.teams.find((t) => t.id === "A")?.currentRank ||
+                    "2",
+                  teamB:
+                    gameState.teams.find((t) => t.id === "B")?.currentRank ||
+                    "2",
+                });
+              }
             }
           } catch (error) {
             const defendingTeam = gameState?.teams?.find((t) => t.isDefending);
@@ -176,6 +268,9 @@ describe("Unattended Game Simulation", () => {
           }
         }
       } finally {
+        // Restore original localStorage mock
+        global.localStorage.getItem = originalGetItem;
+
         // ALWAYS generate comprehensive summary report - even on failure
         let detailedSummary = sessionTracker.generateSummary();
 
