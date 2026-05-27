@@ -3,7 +3,11 @@ import { gameLogger } from "../../utils/gameLogger";
 import { detectCandidateLeads } from "./candidateLeadDetection";
 import { collectLeadingContext } from "./leadingContext";
 import { scoreNonTrumpLead, scoreTrumpLead } from "./leadingScoring";
-import { callLLMForDecision, simulateLLMLatency } from "../llm/llmAIStrategy";
+import {
+  callLLMForDecision,
+  logLLMShortcut,
+  simulateLLMLatency,
+} from "../llm/llmAIStrategy";
 import { LLMEngagementContext } from "../llm/llmGamePrompt";
 
 /**
@@ -202,31 +206,31 @@ export async function selectLeadingPlayAsync(
       isHighAce &&
       !rulesBasedPick.candidate.metadata.isTrump
     ) {
-      gameLogger.info("llm_adaptive_shortcut_lead_ace", {
+      await logLLMShortcut(
+        "llm_adaptive_shortcut_lead_ace",
         playerId,
-        play: fallbackCards.map((c) => c.toString()),
-      });
-      await simulateLLMLatency();
+        fallbackCards,
+      );
       return fallbackCards;
     }
 
     // Shortcut 2: Unbeatable combo — no value in asking LLM
     if (rulesBasedPick.candidate.metadata.isUnbeatable) {
-      gameLogger.info("llm_adaptive_shortcut_lead_unbeatable", {
+      await logLLMShortcut(
+        "llm_adaptive_shortcut_lead_unbeatable",
         playerId,
-        play: fallbackCards.map((c) => c.toString()),
-      });
-      await simulateLLMLatency();
+        fallbackCards,
+      );
       return fallbackCards;
     }
 
     // Shortcut 3: Only one candidate — nothing to choose
     if (candidates.length === 1) {
-      gameLogger.info("llm_adaptive_shortcut_lead_single_candidate", {
+      await logLLMShortcut(
+        "llm_adaptive_shortcut_lead_single_candidate",
         playerId,
-        play: fallbackCards.map((c) => c.toString()),
-      });
-      await simulateLLMLatency();
+        fallbackCards,
+      );
       return fallbackCards;
     }
   } else {

@@ -12,7 +12,7 @@ import { gameLogger } from "../../utils/gameLogger";
 import { executeMultiComboFollowingAlgorithm } from "./multiComboFollowingStrategy";
 import { routeToDecision } from "./routingLogic";
 import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
-import { callLLMForDecision, simulateLLMLatency } from "../llm/llmAIStrategy";
+import { callLLMForDecision, logLLMShortcut } from "../llm/llmAIStrategy";
 import { LLMEngagementContext } from "../llm/llmGamePrompt";
 
 /**
@@ -195,12 +195,8 @@ export function selectFollowingPlay(
 }
 
 /**
- * Validate that selected cards are legal for the current game state
- *
- * This is a safety check to ensure the enhanced following algorithm doesn't return
- * invalid card selections.
- *
- * @internal Currently unused but kept for future validation needs
+ * Validate that selected cards are legal for the current game state.
+ * Safety check to ensure the following algorithm doesn't return invalid selections.
  */
 function validateSelectedCards(
   selectedCards: Card[],
@@ -271,7 +267,11 @@ export async function selectFollowingPlayAsync(
       currentPlayerId,
     );
     if (multiComboResult && multiComboResult.strategy !== "no_valid_response") {
-      await simulateLLMLatency();
+      await logLLMShortcut(
+        "llm_adaptive_shortcut_follow_multi_combo",
+        currentPlayerId,
+        multiComboResult.cards,
+      );
       return multiComboResult.cards;
     }
   }
@@ -287,11 +287,11 @@ export async function selectFollowingPlayAsync(
 
   // Shortcut 1: Hand size <= required — must play all remaining cards
   if (currentPlayer.hand.length <= leadingCards.length) {
-    gameLogger.info("llm_adaptive_shortcut_follow_hand_size", {
-      playerId: currentPlayerId,
-      play: currentPlayer.hand.map((c) => c.toString()),
-    });
-    await simulateLLMLatency();
+    await logLLMShortcut(
+      "llm_adaptive_shortcut_follow_hand_size",
+      currentPlayerId,
+      currentPlayer.hand,
+    );
     return currentPlayer.hand;
   }
 
@@ -300,11 +300,11 @@ export async function selectFollowingPlayAsync(
     analysis.remainingCards &&
     analysis.remainingCards.length === analysis.requiredLength
   ) {
-    gameLogger.info("llm_adaptive_shortcut_follow_forced_suit", {
-      playerId: currentPlayerId,
-      play: analysis.remainingCards.map((c) => c.toString()),
-    });
-    await simulateLLMLatency();
+    await logLLMShortcut(
+      "llm_adaptive_shortcut_follow_forced_suit",
+      currentPlayerId,
+      analysis.remainingCards,
+    );
     return analysis.remainingCards;
   }
 
@@ -315,11 +315,11 @@ export async function selectFollowingPlayAsync(
     analysis.validCombos.length === 1
   ) {
     const onlyCombo = analysis.validCombos[0].cards;
-    gameLogger.info("llm_adaptive_shortcut_follow_single_combo", {
-      playerId: currentPlayerId,
-      play: onlyCombo.map((c) => c.toString()),
-    });
-    await simulateLLMLatency();
+    await logLLMShortcut(
+      "llm_adaptive_shortcut_follow_single_combo",
+      currentPlayerId,
+      onlyCombo,
+    );
     return onlyCombo;
   }
 

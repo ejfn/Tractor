@@ -6,6 +6,17 @@ import { buildLLMUserPrompt, LLMEngagementContext } from "./llmGamePrompt";
 import { getPlayValidationError } from "../../game/playValidation";
 import { sortCards } from "../../utils/cardSorting";
 
+/** Log a shortcut event and simulate LLM latency. No-op when LLM is disabled. */
+export async function logLLMShortcut(
+  event: string,
+  playerId: PlayerId,
+  cards: Card[],
+): Promise<void> {
+  if (!isLLMEnabled()) return;
+  gameLogger.info(event, { playerId, play: cards.map((c) => c.toString()) });
+  await simulateLLMLatency();
+}
+
 // Telemetry metrics tracking
 let llmTotalPlaysRequested = 0;
 let llmSuccessfulPlays = 0;
