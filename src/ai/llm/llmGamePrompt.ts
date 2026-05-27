@@ -13,162 +13,149 @@ export interface LLMEngagementContext {
   specificHelp: string;
 }
 
-export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Elite AI Rules & Strategy Guide
+export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI Knowledge Base & Strategic Guide
 
-This guide is a comprehensive reference designed specifically for LLM-driven AI players to make elite strategic decisions in the Chinese card game Shengji (升级 / Tractor). It incorporates the exact strategic heuristics used by our advanced rule-based AI bot.
-
----
-
-## 1. Core Game Setup & Role Dynamics
-
-- **The Deck**: Played with 2 full standard decks including 4 Jokers (108 cards total). Identical duplicate cards exist (e.g., two "A♠").
-- **Fixed Partnerships**:
-  * **Team A**: 'human' (sitting South) and 'bot2' (sitting North)
-  * **Team B**: 'bot1' (sitting East) and 'bot3' (sitting West)
-  * Teammates sit opposite each other. Play proceeds counter-clockwise: **human -> bot1 -> bot2 -> bot3**.
-- **Role Alignment**:
-  * **Defending Team**: Wants to win tricks containing points and hold the attacking team under 80 points to defend and advance their rank.
-  * **Attacking Team**: Wants to capture 80+ points in the round to take over the defend role and advance their rank.
+This guide is an exhaustive reference for LLM-driven AI players to make elite strategic decisions in Shengji. It integrates every precise rule, tactical constraint, and strategic heuristic validated across our extensive unit test suites and advanced rule-based engine.
 
 ---
 
-## 2. The Shifting Trump Group & Strength Hierarchy
+## 1. Partnerships, Play Flow & Phase Loops
 
-The entire Trump Group is treated as a single, unified "suit" for following leads and forming combinations. Any trump card beats any non-trump card of any suit.
+- **Fixed Partnerships**: 
+  - **Team A**: 'human' (sitting South) and 'bot2' (sitting North).
+  - **Team B**: 'bot1' (sitting East) and 'bot3' (sitting West).
+  - Teammates sit opposite each other. Play proceeds counter-clockwise: **human -> bot1 -> bot2 -> bot3**.
+- **Role Mechanics**:
+  - **Defending Team**: Must hold the attacking team under 80 points to defend and advance their rank.
+  - **Attacking Team**: Must capture 80+ points in the round to take over the defend role and advance their rank.
+- **Round Starting Player Rotation**:
+  - **Attacking Team Wins**: The starting player for the next round is the next player counter-clockwise from the previous starter (e.g. Human starts -> Bot 1 starts next). Teams swap roles.
+  - **Defending Team Wins**: The partner of the previous starter starts the next round (e.g. Human starts -> Bot 2 starts next). Defending team remains defenders.
+  - **First Round**: The player who successfully declared trump starts the first trick of the first round.
 
-A card is a **Trump** if:
-1. It is a Joker (Big Joker 'BJ' or Small Joker 'SJ').
-2. Its rank matches the **Trump Rank** of the current round.
-3. Its suit matches the **Trump Suit** of the round.
+---
+
+## 2. The Trump Group & Card Strengths
+
+All trump cards are treated as a single, unified "suit" for following leads and matching combinations. Any trump card beats any non-trump card of any suit.
 
 ### Trump Strength Hierarchy (Highest to Lowest)
-1. **Big Joker (BJ)** — The absolute highest card in the game.
-2. **Small Joker (SJ)** — The second highest card.
-3. **Trump-Suit Rank Card** — The card matching both Trump Rank and Trump Suit (e.g. 2♠ when Spades is trump, rank 2).
-4. **Off-Suit Rank Cards** — Cards matching the Trump Rank but of other suits (e.g. 2♥, 2♦, 2♣).
-   - *Note: All equal off-suit trump rank cards have equal strength; among them, the first one played in the trick wins.*
+1. **Big Joker (BJ)** — Absolute highest card.
+2. **Small Joker (SJ)** — Second highest card.
+3. **Trump-Suit Rank Card** — Card matching both current Trump Rank and Trump Suit (e.g. 2♠ when Spades is trump, rank 2).
+4. **Off-Suit Rank Cards** — Cards matching current Trump Rank but of other suits (e.g. 2♥, 2♦, 2♣).
+   - *Equal Strength Rule*: All off-suit trump rank cards have equal strength; among them, the first one played in the trick wins.
 5. **Regular Trump Suit Cards** — Cards of the declared Trump Suit ranked by face value (A > K > Q > J > 10 > 9 > 8 > 7 > 6 > 5 > 4 > 3, excluding the rank card).
 
 ### Regular Non-Trump Suits Hierarchy
 - Within each off-suit (Spades, Hearts, Clubs, Diamonds): **A > K > Q > J > 10 > 9 > 8 > 7 > 6 > 5 > 4 > 3**.
-- Different non-trump suits cannot beat each other (e.g., a high Heart cannot beat a low Diamond unless it is played as a Trump-in).
+- Cross-suit beats are invalid (e.g., a high Heart cannot beat a low Diamond unless it is played as a Trump-in).
+
+### Point Values
+- **5s** = 5 points | **10s** = 10 points | **Kings** = 10 points. All other cards are worth 0 points. Total points in deck = 200.
 
 ---
 
-## 3. Card Combinations
+## 3. Card Combinations & Tractor Formation
 
 - **Single**: Any individual card.
-- **Pair**: Exactly two IDENTICAL cards (same suit AND same rank, e.g. A♠-A♠ or SJ-SJ). Two different suits (e.g. A♠-A♦) or different jokers (SJ-BJ) do **NOT** form a pair.
-- **Tractor**: Two or more consecutive pairs of the exact same suit or trump group (minimum 2 pairs / 4 cards).
-- **Multi-Combo**: Multiple combinations of the same suit (e.g. K♠K♠ + Q♠ + 7♠) led simultaneously. 
-  - Leading Multi-Combos are **ONLY** valid if every individual component combination is unbeatable by any cards held by other players.
-  - **CRITICAL**: A leading Multi-Combo MUST be from a single non-trump suit only. You **CANNOT** lead a trump multi-combo! Trump cards can only be led as straight Single, Pair, or Tractor combos.
+- **Pair**: Exactly two IDENTICAL cards (same suit AND same rank, e.g. A♠-A♠ or SJ-SJ). Big Jokers only pair with Big Jokers; Small Jokers only with Small Jokers. Different suits or different jokers do NOT form a pair.
+- **Tractor**: Two or more consecutive pairs of the same suit or the unified trump group (minimum 2 pairs / 4 cards). Gaps are strictly validated.
+- **Tractor Skip Promoted Rank**: Since the round's active Trump Rank is promoted to the trump suit, off-suit consecutive sequences must skip this rank.
+  - *Example*: In a Rank 7 round, 6♠6♠ and 8♠8♠ skip 7 to form a consecutive tractor (6-8).
+- **Trump Group Tractor Sequences**: Consecutiveness within the trump group follows this sequence:
+  - **A of Trump Suit** -> **Off-Suit Trump Rank Pairs** -> **Trump-Suit Trump Rank Pair** -> **Small Joker Pair** -> **Big Joker Pair**.
+  - *Valid Trump Tractors*:
+    - A of Trump Suit + Off-Suit Trump Rank (e.g. A♣A♣-2♥2♥ when 2 is rank, Clubs is trump).
+    - Off-Suit Trump Rank + Trump-Suit Trump Rank (e.g. 2♥2♥-2♣2♣).
+    - Trump-Suit Trump Rank + Small Joker (e.g. 2♣2♣-SJSJ).
+    - Small Joker + Big Joker (e.g. SJSJ-BJBJ).
+  - *Constraint*: Off-suit rank pairs do NOT form tractors with each other (e.g. 2♥2♥-2♦2♦ is invalid). They must bridge through the trump-suit rank pair.
+- **Tractor Preservation Priority**: If a player holds a tractor (e.g. J♥J♥-Q♥Q♥) and a single pair is led, they must NOT break their tractor to play one of its pairs if they have an independent pair in hand.
 
 ---
 
-## 4. Advanced Tractor Formation Rules
-
-Tractors in Shengji follow strict consecutive ranking:
-1. **Regular Suit Consecutive**: Pairs must be consecutive in face value (A followed by K, K by Q, etc.).
-2. **Rank-Skip**: If the round's Trump Rank bridges a gap in a suit, consecutive pairs skip that rank to form a tractor.
-   - *Example*: If the round's Trump Rank is 7, then 6♠6♠ and 8♠8♠ form consecutive pairs (6-8, skipping 7).
-3. **Trump Group Tractors**: In the trump group, consecutive rank value for tractors is defined as:
-   - **A of Trump Suit** -> **Off-Suit Trump Rank Pairs** -> **Trump-Suit Trump Rank Pair** -> **Small Joker Pair (SJ-SJ)** -> **Big Joker Pair (BJ-BJ)**.
-   - *Valid Trump Tractors*:
-     * **A of Trump Suit + Off-Suit Trump Rank**: A♣A♣-2♥2♥ (when 2 is rank, Clubs is trump).
-     * **Off-Suit Trump Rank + Trump-Suit Trump Rank**: 2♥2♥-2♣2♣ (off-suit + trump-suit rank pair).
-     * **Trump-Suit Trump Rank + Small Joker**: 2♣2♣-SJSJ.
-     * **Small Joker + Big Joker**: SJSJ-BJBJ.
-   - *Constraint*: Off-suit rank pairs do **NOT** form tractors with each other (e.g. 2♥2♥-2♦2♦ is invalid).
-
----
-
-## 5. How to Lead (Scoring-Based Strategic Leads)
-
-Leading is your most powerful tool to control the tempo of the game. Our advanced AI scores candidate leads based on these precise rules:
-
-### A. Non-Trump Leading Strategy (Strongly Preferred Early Game)
-- **High-Value Ace/King Lead (+50 Bonus)**: Always prefer to lead a non-trump Ace (or a King if Ace is the trump rank). These cards have a very high likelihood of winning, allowing you to secure the lead safely and draw out low cards.
-- **Unbeatable Combination Lead (+50 Bonus)**: If a combination (Single, Pair, or Tractor) is mathematically unbeatable, it is a perfect lead.
-- **Teammate Void suit Lead (+35 Bonus)**: If your partner is void in a non-trump suit, leading it is highly strategic because your partner can **trump-in** (cut) to win the trick and capture points.
-- **Avoid Opponent Void suits (-25 Penalty)**: Do **not** lead a non-trump suit if an opponent is void in it, as they will trump-in and steal your high card.
-- **Never Lead Point Cards Prematurely (Point Penalty)**: Point cards (10s and Kings) carry a heavy penalty when led unless they are unbeatable. Leading a 10 or King that is beatable allows opponents to win the trick and steal those points!
-- **Dumping Short Suits**: Leading low cards in suits where you only hold 1 or 2 cards helps clear the suit from your hand, creating a void so you can trump-in later.
-
-### B. Trump Leading Strategy (Highly Restricted)
-- **Single Trump Penalty**: Leading single trump cards is heavily penalized early in the game (Big Joker -20, Small Joker -19, rank cards -15, regular trumps negative rank value). This prevents wasting your ultimate defensive assets on low-value tricks.
-- **Trump Pairs (+40 Bonus)**: Unlike single trumps, leading a trump pair (e.g. 2♥-2♥ or 5♣-5♣) is highly encouraged because it is very difficult to beat and exerts immense pressure on opponents' trump hands.
-- **Trump Stage Promotions**: Leading single trumps becomes acceptable only in the:
-  - **Mid-Stage** (after >12 trumps are played, +5 rank bonus) to bleed remaining low trumps.
-  - **Late-Stage** (after >24 trumps are played, +10 high-card bonus) to draw out opponents' remaining high trumps.
-
----
-
-## 6. How to Follow (Strict Priorities & Resource Preservation)
+## 4. Following Rules & Preservation Priorities
 
 When a trick is led, followers must play the exact same number of cards and obey these strict priorities:
-
-### Following Priority Rules
-1. **Priority 1: Count Match & Suit Following**: If you have cards of the led suit/group in your hand, you MUST play them. Do not play other suits.
-2. **Priority 2: Tractor Matching**: If a Tractor is led and you have a tractor of the same size in that suit, you must play it. If not, you must play as many pairs as possible (up to the required card count).
-3. **Priority 3: Pair Preservation & Priorities (checkSameSuitPairPreservation)**:
-   - If a Pair is led and you have a pair in the led suit/group, you MUST follow with a pair. You cannot break up your pair or play singles instead.
-   - **Preservation**: If you play any card from a pair in the led suit, you must play the other card of that pair to avoid breaking/preservation violations (unless forced by card count).
-4. **Priority 4: Anti-Cheat Validation (validateAntiCheatStructure)**:
-   - You must play your highest available combinations in the led suit. You cannot intentionally play singles to "save" pairs of that suit from being played.
+1. **Priority 1: Count Match & Suit Following**: If you have cards of the led suit/group in hand, you MUST play them. If Trump is led, follow with trump cards (Jokers, rank cards, trump suit cards).
+2. **Priority 2: Tractor Matching**: If a tractor is led and you have a tractor of the same size in that suit, you must play it. If not, play as many pairs as possible to match the leading pairs.
+3. **Priority 3: Pair Preservation**: If a pair is led and you have a pair in the led suit, you must follow with a pair. Do not break up pairs or play singles instead. If you play one card of a pair, you must play the other card to avoid breaking/preservation violations.
+4. **Priority 4: Anti-Cheat (Highest Combos First)**: You must play your highest combinations in the led suit. You cannot play singles to "save" pairs.
 5. **Priority 5: Trump-in / Cutting Rules**:
-   - If you are void in the led suit, you can play trump cards to cut and attempt to win.
-   - **Combination matching is strict for cutting**: To beat a led pair, you must play a trump pair. Playing two single trumps does not count as a pair and cannot beat the led pair.
-
-### Heuristic Card Preservation Strategies
-* **Tractor Preservation**: When playing pairs to follow a led single pair, prioritze standalone pairs first to avoid breaking up active **Tractors** in your hand.
-* **Pair Preservation**: When playing singles to follow a led single card, prioritize playing unpaired cards (singles) first to avoid breaking up active **Pairs** in your hand.
-
-### Discarding Strategy (When Out of Led Suit & Not Cutting)
-* **Teammate Win Guarantee (Feeding)**: Only feed point cards (**5, 10, K**) to your teammate if they are **guaranteed to win the trick** (e.g. you are the last player in the trick, or their played card is mathematically unbeatable based on cards played).
-* **Dumping Useless Cards**: If opponents are winning and you cannot beat them, discard your lowest non-point cards to deny them points, and conserve your high cards for later.
+   - If void in the led suit, you can play trump cards to cut and win.
+   - Combination matching is strict for cutting: to beat a led pair, you must cut with a trump pair. Two single trumps do not count as a pair and cannot beat a pair.
+- **Suit Exhaustion Rule**: If playing cards will leave you with **0 cards** of the led suit remaining in hand, you can play any other cards to make up the trick length. This play is always valid.
 
 ---
 
-## 7. Using Trick History as the Strategic Source of Truth
+## 5. Multi-Combo Leading & Following Rules
 
-An elite player never plays cards in a vacuum. You must analyze the **Trick History** (previous tricks) and **Current Plays** to make optimal strategic decisions:
-
-### A. Card Counting (Tracking Outstanding Cards)
-- Always track which high cards (Aces, Kings) of each suit have already been played.
-- **Why?** If the A♣ and K♣ have been played, your Q♣ is now the absolute highest outstanding card in Clubs! It is a guaranteed winner. If you lead it, no opponent can beat it unless they trump-in.
-- **Trump Tracking**: Monitor the played Jokers (BJ and SJ) and rank cards. If the Big Joker is gone, the Small Joker is now the supreme card. If both Jokers are played, your high trump-suit cards become the ultimate weapons.
-
-### B. Suit Void Analysis (Detecting Voids)
-- Watch the previous plays carefully to see which players failed to follow suit:
-  - If **Bot 1 (opponent)** discarded a Heart on a Spade lead, **Bot 1 is void in Spades**.
-  - **Strategic Adjustment**: If you lead Spades, Bot 1 will likely trump-in and steal your trick. Avoid leading Spades unless you want to force Bot 1 to waste a trump card.
-  - If **Bot 2 (your partner)** is void in Diamonds:
-  - **Strategic Adjustment**: Leading a Diamond is highly strategic because your partner can trump-in to win the trick and capture any points!
-
-### C. Point Tracking & Point Pressure
-- Keep track of the current points collected in the round:
-  - **Attacking Team Point Pressure**: If your team is attacking and points are low (<24 points), pressure is **HIGH**; play aggressively to capture points. If points are high (>56 points), pressure is **LOW**; you can play more conservatively.
-  - **Defending Team Point Pressure**: If your team is defending and attacking team points are low (<24 points), pressure is **LOW**; you are defending successfully. If points are high (>56 points), pressure is **HIGH**; defend aggressively and save your highest cards to deny points.
-
-### D. Leading Patterns & Hand Strength Deduction (Reading Leads)
-By watching the choices of a player when they lead a trick, you can dynamically deduce their remaining hand composition:
-- **Ace then Trump Lead**: If a player leads a non-trump Ace (winning the trick), and immediately leads a Trump card in the very next trick, this strongly signals they **have no more safe non-trump winners (Aces or unbeatable pairs)** left in their off-suits. They are now either forced to lead trumps because they have no other safe entries, or they hold a dominant trump hand and are transitioning to bleed everyone's trumps.
-- **Low Off-Suit Lead**: If a player leads a low off-suit card (e.g. leading a 4♦ or 5♠), it typically implies they are void-depleting (clearing their short suits to gain trump-in capability) or trying to feed/locate their partner's high cards in that suit.
-- **Pair/Tractor Leads**: Leading an off-suit pair or tractor early indicates they hold highly structured combinations in that suit and are driving the tempo.
+- **Multi-Combo**: Multiple combinations of the same suit played simultaneously (e.g. K♠K♠ + Q♠ + 7♠).
+- **Leading Multi-Combos**:
+  - Must strictly be a single non-trump suit. You **cannot** lead a trump multi-combo!
+  - Every component combination must be **unbeatable** against all outstanding cards, OR all other 3 players must be void in that suit.
+  - *Calculation*: The AI computes outstanding cards as: 'Total Cards (108) - playedCards - currentPlayer\\'sHand'.
+  - *Single Unbeatability*: All higher-ranking outstanding cards are accounted for.
+  - *Pair Unbeatability*: At least one card of each higher rank must be accounted for to prevent opponents from forming a higher pair.
+  - *Tractor Unbeatability*: If no bigger tractor exists outside your hand, it is unbeatable. Alternately, accounting for even one card of alternate higher ranks blocks opponents from forming any consecutive pair sequences.
+- **Following Multi-Combos**:
+  - **Structure Matching**: Follower must match the lead structure (number of tractors, pairs, singles) and exact total length as closely as possible.
+  - **Trump-In Structural Beating**: To beat a non-trump multi-combo, a void player must play matching structures of trump cards (e.g. 1 trump single + 1 trump pair to beat a lead of 1 single + 1 pair).
+  - **Trump vs Trump Over-ruffing**: Compare the highest combo type: Tractor > Pair > Single. If types match, compare the strength of the highest cards of that type.
 
 ---
 
-## 8. Multi-Combo Beating & Beating Comparison
+## 6. Defensive vs Offensive Trump Conservation
 
-1. **Trump Multi-Combo Beating**:
-   - A follower completely void in the led suit can beat a leading non-trump multi-combo by playing a trump multi-combo.
-   - **Structure Match**: The trump multi-combo must match or exceed the exact structural components (pairs, tractors, singles) and have the **exact same total card count** as the lead.
-2. **Trump vs Trump Multi-Combo Comparison**:
-   - If multiple players play a trump multi-combo, the winner is determined by comparing their highest combination types:
-     * Compare the biggest **Tractor** component.
-     * If no tractors exist, compare the biggest **Pair** component.
-     * If no pairs exist, compare the biggest **Single** card.
+The AI utilizes exact strategic conservation values to guide trump plays:
+'Big Joker (100) > Small Joker (90) > Trump Rank in Trump Suit (80) > Trump Rank Off-Suit (70) > Ace (60) > King (50) ... Trump Suit 5 (15) ... Weakest Trump Suit (5)'
+
+- Never waste high conservation cards on an opponent's unbeatable trick or when teammate is winning securely.
+- When forced to play trump, play cards with the lowest conservation value.
+- Exhaustion rules override conservation—if trump is led and a player has only high-value trumps, they must be played.
+
+---
+
+## 7. AI Position-Aware Strategic Heuristics
+
+### 1st Player (Leader)
+- **Non-Trump Ace Leading**: Lead non-trump Aces (or Kings if Ace is the trump rank) early to win tricks safely and secure points.
+- **Trump Bleeding (Promotion-Bleed)**: Lead low trumps to bleed out opponents' low trumps, promoting the team's high trumps into guaranteed future winners.
+- **Trump Pair Leads (+40 bonus)**: Highly encouraged early as they exert immense pressure. Avoid leading single trumps early (heavy penalty).
+- **Teammate Void Setup**: Lead a suit where partner is void to let them trump-in and capture points.
+- **Never Lead Point Cards Prematurely**: Point cards (10s and Kings) carry a heavy penalty when led unless they are unbeatable.
+
+### 2nd Player (First Follower)
+- **Partner Winning**: Feed highest point cards ('King', 'Ten', 'Five') to teammate to maximize points captured.
+- **Opponent Strong Lead**: Play lowest possible non-point card (safe disposal) to conserve resources.
+- **Opponent Moderate Lead**: Contest and block by playing a slightly higher card.
+- **Opponent Pair Lead**: Block with a higher pair (e.g. play 'A♠A♠' to beat opponent's 'KK' pair).
+- **Void on Opponent Point Lead**: Ruff with the **weakest available trump** to capture points cheaply.
+
+### 3rd Player (Second Follower)
+- **Teammate Strong Win**: Feed point cards. Priority: **10s before Kings before 5s** (to preserve the higher-ranking King card for future tricks).
+- **Teammate Weak Lead**: Play a stronger card (takeover) to secure the trick.
+- **Void, Next Opponent NOT Void**: Ruff with a **point trump** (e.g. '10♥') since the opponent must follow suit and cannot over-ruff.
+- **Void, Next Opponent ALSO Void**:
+  - *No points on table*: Ruff with a **low non-point trump** (e.g. '3♥') to force the opponent to over-ruff cheaply or let you win cheaply.
+  - *High points on table*: Ruff with a **very high trump card** (e.g. 'Ace♥') to prevent the opponent from over-ruffing easily.
+
+### 4th Player (Last Follower - Perfect Information)
+- **Teammate Secure Win**: Feed points aggressively ('10' > 'King' > '5'). **Avoid teammate competition**—do NOT play high trump rank cards or beat teammate's winning card.
+- **Opponent Win**: Play lowest possible non-point card (safe disposal). Conserve all valuable trump/pairs.
+- **Over-Ruffing**: If void and opponent is winning a high-point trick, use a trump pair/single to secure it for the team.
+
+### Teammate Secure Win Identification (Memory Search)
+To determine if a teammate is winning securely, check the outstanding unseen cards:
+- Query unseen cards in the led suit from memory.
+- If no outstanding unseen combo can beat the teammate's current winning play, the teammate's win is **mathematically guaranteed**. Feed points safely.
+
+### Kitty Swap Phase Heuristics
+- **Point Card Protection**: Point cards ('5', '10', 'King') must be removed from the kitty and kept in the hand to prevent opponents from doubling/multiplying kitty points on the final trick.
+- **Trump Conservation**: Pull all trump cards from the kitty into the hand.
+- **Strategic Voiding**: Discard all cards of a weak non-trump suit (if very few exist) to create a void, enabling future ruffing opportunities. Do not break pairs.
+- **Final Trick Multiplier**: Scored only if the attacking team wins the final trick. Multiplier is **2x** for singles, **4x** for pairs, **8x** for tractors.
 `;
 
 /**
@@ -269,31 +256,39 @@ export function buildLLMUserPrompt(
     .join(",\n  ");
 
   // Determine current trick state
+  const currentTrick = gameState.currentTrick;
+  const isLeading = !currentTrick || currentTrick.plays.length === 0;
+  const requiredCount = !isLeading ? currentTrick.plays[0].cards.length : 0;
+
   let trickStateStr = "";
   let leadingCardsStr = "None (You are the leader)";
   let playsInTrickStr = "None yet";
   let relevantCardsInfoStr = "";
 
-  if (!gameState.currentTrick || gameState.currentTrick.plays.length === 0) {
+  if (isLeading) {
     trickStateStr = `You are leading this trick!
-As the leader, you can play a combination of any size, BUT it must be a valid Shengji combination:
-1. **Single Card**: Select exactly 1 card ID.
-2. **Pair**: Select exactly 2 IDENTICAL card IDs (same suit and rank, e.g. two "10♠" cards or two "SJ" cards).
+As the leader, you must play exactly ONE valid combination from your hand:
+1. **Single Card**: Select exactly 1 choice ID.
+2. **Pair**: Select exactly 2 IDENTICAL choice IDs (same suit and rank, e.g. two "10♠" cards or two "SJ" cards).
 3. **Tractor**: Select consecutive identical pairs (e.g. 10♠-10♠ and J♠-J♠, which is 4 cards total).
-4. **Multi-Combo**: Multiple high cards/combos of the SAME suit (e.g., A♣ and K♣-K♣) only if you are completely sure they are unbeatable.
+4. **Multi-Combo**: Multiple combinations of the SAME non-trump suit (e.g. A♣ and K♣-K♣) only if they are unbeatable.
 
-*CRITICAL WARNING FOR LEADING*:
-- **AVOID leading with trump cards early in the round** unless you have no other choice! Prefer to lead high non-trump cards (like Aces 'A') to win tricks safely and preserve your trumps to cut other suits later.
-- You CANNOT lead a trump multi-combo (multi-combos can only be led in non-trump suits). Trump leads must strictly be a Single, Pair, or Tractor!
-- You CANNOT lead a mix of random single cards (e.g. you cannot play a "5♣" and a "7♣" together, or "SJ" and "2♦" together). If you want to play a single card, select exactly ONE choice ID.
+*LEADER STRATEGY CHECKLIST:*
+- Prefer leading non-trump Aces/Kings early to win tricks safely and secure points.
+- AVOID leading single trump cards early (Jokers, rank cards) as they are wasted.
+- Trump pairs are highly encouraged to lead early as they exert immense pressure.
+- Avoid leading beatable point cards (10s and Kings) as opponents can capture them.
+- Dump short suits to create voids for future trumping-in opportunities.
+- You CANNOT lead a trump multi-combo (only non-trump suits allowed).
+- Mismatched combinations are strictly illegal (e.g., playing a single "3♣" and a single "5♣" together). Select exactly ONE combination type.
 `;
   } else {
-    const plays = gameState.currentTrick.plays;
+    const plays = currentTrick.plays;
     const leadPlay = plays[0];
     leadingCardsStr = leadPlay.cards.map((c) => c.toString()).join(", ");
 
     trickStateStr = `The trick was led by ${leadPlay.playerId} playing: ${leadingCardsStr}.
-You must play exactly ${leadPlay.cards.length} card(s). You must follow the led suit/trump group if you have any.`;
+You must play exactly ${requiredCount} card(s). You must follow the led suit/trump group if you have any.`;
 
     playsInTrickStr = plays
       .map(
@@ -320,16 +315,20 @@ You must play exactly ${leadPlay.cards.length} card(s). You must follow the led 
 
     relevantCardsInfoStr = `
 === YOUR RELEVANT CARDS FOR THIS TRICK ===
-- Led suit/group is: ${isLeadingTrump ? "Trump Group (includes all Jokers, all 2s, and all " + (trumpInfo.trumpSuit || "None") + " cards)" : leadingSuit}
+- Led suit/group is: ${isLeadingTrump ? "Trump Group (includes all Jokers, all " + trumpInfo.trumpRank + "s, and all " + (trumpInfo.trumpSuit || "None") + " cards)" : leadingSuit}
 - Number of cards in your hand belonging to this suit/group: ${matchingHandCards.length}
 - Choice IDs of these matching cards in your hand: ${matchingChoiceIds.length > 0 ? matchingChoiceIds.join(", ") : "None (You are void in this suit/group)"}
 
-*Important rules for this situation:*
+*FOLLOWER PRIORITY CHECKLIST:*
 ${
-  matchingHandCards.length >= leadPlay.cards.length
-    ? `- You have enough cards in this suit/group! You MUST follow suit. You must select exactly ${leadPlay.cards.length} card ID(s) ONLY from your relevant cards list: [${matchingChoiceIds.join(", ")}]. Do NOT play cards from other suits.
-- If the lead is a Pair (2 identical cards) and you hold any pairs within [${matchingChoiceIds.join(", ")}], you MUST play a pair.`
-    : `- You DO NOT have enough cards in this suit/group! You MUST play ALL ${matchingHandCards.length} of your relevant cards: [${matchingChoiceIds.join(", ")}]. For the remaining ${leadPlay.cards.length - matchingHandCards.length} card(s), you must choose non-relevant cards of other suits from your hand to fill the card count. Do NOT select the same choice ID more than once.`
+  matchingHandCards.length >= requiredCount
+    ? `- You have enough matching cards! You MUST follow suit. Select exactly ${requiredCount} card ID(s) ONLY from your relevant cards list: [${matchingChoiceIds.join(", ")}]. Do NOT play cards from other suits.
+- If a Pair is led and you hold pairs, you MUST play a pair (Pair Preservation).
+- If a Tractor is led and you hold a tractor, you MUST play it. If you only hold pairs, play as many pairs as possible.
+- Anti-Cheat: You must play your highest combinations in the led suit first. You cannot break pairs to play singles.`
+    : `- You DO NOT have enough matching cards! You MUST play ALL ${matchingHandCards.length} of your relevant cards: [${matchingChoiceIds.join(", ")}] (Suit Exhaustion Rule).
+- For the remaining ${requiredCount - matchingHandCards.length} card(s), you must choose disposal/cutting cards of other suits from your hand. Do NOT select the same choice ID more than once.
+- If you choose to trump-in to win, your trump play must match or exceed the combination structure of the lead (e.g. trump pair to beat a led pair).`
 }
 `;
   }
@@ -372,6 +371,31 @@ ${
 `;
   }
 
+  const rulesList: string[] = [];
+  if (!isLeading) {
+    rulesList.push(
+      `1. **EXACT CARD COUNT:** You MUST select EXACTLY ${requiredCount} card ID(s) from your hand! No more, no less. (e.g. if the count is ${requiredCount}, select exactly ${requiredCount} choice IDs, like ["c1", "c2"]).`,
+    );
+    rulesList.push(
+      `2. **Follow Led Suit:** You MUST play cards of the led suit/group if you have any. If Trump is led, follow with cards marked as Trump in your hand.`,
+    );
+    rulesList.push(
+      `3. **Pair Preservation & Tractor Priority:** Follow the strict structure-matching priorities (match led pairs/tractors and preserve your own combos as outlined in the system rules).`,
+    );
+    rulesList.push(
+      `4. **Position Heuristic compliance:** Apply position-aware strategies (feed winning teammate point cards, block opponent wins cheaply, conserve high trumps if trick has no points or teammate wins securely).`,
+    );
+  } else {
+    rulesList.push(
+      `1. **Valid Combinations Only:** Your play must form exactly ONE valid combination type (Single, Pair, Tractor, or unbeatable Multi-Combo of a single non-trump suit). Do NOT play a mismatched combination of random cards.`,
+    );
+    rulesList.push(
+      `2. **Leading Strategy:** Prefer non-trump Ace/King leads early. Lead low trumps to bleed opponents' trumps only when appropriate. Never lead point cards prematurely if beatable.`,
+    );
+  }
+
+  const rulesStr = rulesList.map((rule) => `${rule}`).join("\n");
+
   const userPrompt = `${engagementSection}
 === CURRENT STATE ===
 - Your Player ID: ${playerId}
@@ -405,6 +429,9 @@ Your hand has ${handCards.length} cards remaining. Select from these choices by 
 
 === TASK ===
 Select the best card(s) from your hand to play. Your selection must contain exactly the required number of cards and obey all Shengji following/preservation rules.
+
+*** CRITICAL GAMEPLAY RULES (MUST OBEY): ***
+${rulesStr}
 
 Respond with a JSON object using EXACTLY these two keys:
 - "reasoning": A brief explanation of your strategic decision (string)

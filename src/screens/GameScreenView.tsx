@@ -5,6 +5,7 @@ import { Animated, StyleSheet, Text, View } from "react-native";
 import { useCommonTranslation } from "../hooks/useTranslation";
 
 // Components
+import AIConfigModal from "../components/AIConfigModal";
 import AIPlayerView from "../components/AIPlayerView";
 import CardPlayArea from "../components/CardPlayArea";
 import { ExpandableTrumpDeclaration } from "../components/ExpandableTrumpDeclaration";
@@ -24,6 +25,7 @@ import {
   RoundResult,
   Trick,
 } from "../types";
+import { LLMConfig } from "../ai/llm/llmConfig";
 
 // Utils
 import { validatePlay } from "../game/playProcessing";
@@ -54,6 +56,14 @@ interface GameScreenViewProps {
     dot2: Animated.Value;
     dot3: Animated.Value;
   };
+
+  // AI config
+  isLLMActive: boolean;
+  llmConfig: LLMConfig;
+  isSettingsOpen: boolean;
+  onOpenSettings: () => void;
+  onCloseSettings: () => void;
+  onSaveSettings: (config: LLMConfig) => void;
 
   // Handlers
   onCardSelect: (card: Card) => void;
@@ -92,6 +102,14 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   scaleAnim,
   slideAnim,
   thinkingDots,
+
+  // AI config
+  isLLMActive,
+  llmConfig,
+  isSettingsOpen,
+  onOpenSettings,
+  onCloseSettings,
+  onSaveSettings,
 
   // Handlers
   onCardSelect,
@@ -200,6 +218,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
                   isRoundStartingPlayer={isAI2RoundStartingPlayer}
+                  isLLM={isLLMActive}
+                  onDoubleTap={onOpenSettings}
                 />
               ) : null
             }
@@ -220,6 +240,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
                   isRoundStartingPlayer={isAI3RoundStartingPlayer}
+                  isLLM={isLLMActive}
+                  onDoubleTap={onOpenSettings}
                 />
               ) : null
             }
@@ -240,6 +262,8 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   lastCompletedTrick={lastCompletedTrick}
                   thinkingDots={thinkingDots}
                   isRoundStartingPlayer={isAI1RoundStartingPlayer}
+                  isLLM={isLLMActive}
+                  onDoubleTap={onOpenSettings}
                 />
               ) : null
             }
@@ -263,6 +287,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   isRoundStartingPlayer={isHumanRoundStartingPlayer}
                   gamePhase={gameState.gamePhase}
                   onKittySwap={onKittySwap}
+                  isLLM={isLLMActive}
                 />
               ) : null
             }
@@ -317,6 +342,13 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           humanTeamId={humanPlayer.team}
         />
       )}
+      {/* AI Config Modal - rendered outside AnimatedView for proper overlay */}
+      <AIConfigModal
+        visible={isSettingsOpen}
+        currentConfig={llmConfig}
+        onSave={onSaveSettings}
+        onClose={onCloseSettings}
+      />
     </View>
   );
 };

@@ -3,7 +3,7 @@ import { gameLogger } from "../../utils/gameLogger";
 import { detectCandidateLeads } from "./candidateLeadDetection";
 import { collectLeadingContext } from "./leadingContext";
 import { scoreNonTrumpLead, scoreTrumpLead } from "./leadingScoring";
-import { callLLMForDecision } from "../llm/llmAIStrategy";
+import { callLLMForDecision, simulateLLMLatency } from "../llm/llmAIStrategy";
 import { LLMEngagementContext } from "../llm/llmGamePrompt";
 
 /**
@@ -206,6 +206,7 @@ export async function selectLeadingPlayAsync(
         playerId,
         play: fallbackCards.map((c) => c.toString()),
       });
+      await simulateLLMLatency();
       return fallbackCards;
     }
 
@@ -215,6 +216,7 @@ export async function selectLeadingPlayAsync(
         playerId,
         play: fallbackCards.map((c) => c.toString()),
       });
+      await simulateLLMLatency();
       return fallbackCards;
     }
 
@@ -224,9 +226,11 @@ export async function selectLeadingPlayAsync(
         playerId,
         play: fallbackCards.map((c) => c.toString()),
       });
+      await simulateLLMLatency();
       return fallbackCards;
     }
   } else {
+    await simulateLLMLatency();
     return currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
   }
 

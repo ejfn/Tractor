@@ -13,6 +13,47 @@ let llmAPIErrorFallbacks = 0;
 let llmInvalidCardRetries = 0;
 let llmInvalidCardFallbacks = 0;
 
+// Rolling window of recent LLM call durations (ms) for bypass timing
+const ROLLING_WINDOW_SIZE = 10;
+const llmCallDurations: number[] = [];
+
+function recordLLMDuration(ms: number): void {
+  llmCallDurations.push(ms);
+  if (llmCallDurations.length > ROLLING_WINDOW_SIZE) {
+    llmCallDurations.shift();
+  }
+}
+
+function getAverageLLMDuration(): number {
+  if (llmCallDurations.length === 0) return 0;
+  const sum = llmCallDurations.reduce((a, b) => a + b, 0);
+  return sum / llmCallDurations.length;
+}
+
+/**
+ * When LLM is bypassed (disabled, wrong player, or fallback), sleep for a
+ * random duration centered on the rolling average of actual LLM call times.
+ * This prevents timing leaks — e.g. an instant response revealing that the
+ * AI had only one legal play. Only applies when LLM is enabled.
+ */
+export async function simulateLLMLatency(): Promise<void> {
+  if (!isLLMEnabled()) return;
+
+  const avg = getAverageLLMDuration();
+  if (avg === 0) {
+    // No LLM calls recorded yet — use a reasonable default (1–2s)
+    await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
+    return;
+  }
+
+  // Random duration: 70%–130% of the rolling average, clamped to [500ms, 5000ms]
+  const jitter = 0.7 + Math.random() * 0.6;
+  const delay = Math.max(500, Math.min(5000, Math.round(avg * jitter)));
+
+  gameLogger.debug("llm_bypass_simulated_latency", { avg, delay });
+  await new Promise((r) => setTimeout(r, delay));
+}
+
 export interface LLMTelemetryStats {
   totalPlaysRequested: number;
   successfulPlays: number;
@@ -84,16 +125,18 @@ export async function callLLMForDecision(
   // Check if LLM applies to this specific player
   const config = getLLMConfig();
   if (config.applyToPlayers && !config.applyToPlayers.includes(playerId)) {
+    await simulateLLMLatency();
     return fallback;
   }
 
   // Track start of LLM decision
   llmTotalPlaysRequested++;
+  const decisionStartTime = Date.now();
 
   const sortedHand = sortCards(hand, gameState.trumpInfo);
 
-  // Self-Correction Retry Loop (up to 3 tries: 1 initial attempt + 2 retries)
-  const maxAttempts = 3;
+  // Self-Correction Retry Loop (up to 2 tries: 1 initial attempt + 1 retry)
+  const maxAttempts = 2;
   let attempt = 0;
   let errorHint = "";
 
@@ -227,6 +270,7 @@ export async function callLLMForDecision(
         });
 
         llmSuccessfulPlays++;
+        recordLLMDuration(Date.now() - decisionStartTime);
         return selectedCards;
       } else {
         // Play is invalid — trigger retry loop
@@ -268,5 +312,6 @@ export async function callLLMForDecision(
     });
   }
 
+  recordLLMDuration(Date.now() - decisionStartTime);
   return fallback;
 }

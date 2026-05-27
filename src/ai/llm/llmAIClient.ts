@@ -9,8 +9,8 @@ export interface ChatMessage {
 }
 
 /**
- * OpenRouter LLM HTTP client wrapper.
- * Calls OpenRouter API using standard fetch (in Expo) or built-in https (in Node/Jest).
+ * OpenRouter LLM HTTP client wrapper using the global fetch API.
+ * Works in React Native / Expo. Jest tests should mock global fetch.
  */
 export async function callOpenRouter(
   apiKey: string,
@@ -33,156 +33,63 @@ export async function callOpenRouter(
     timeoutMs,
   });
 
-  // Cross-platform check: if fetch is not defined globally OR we are in a JEST test environment
-  const isJestEnv =
-    typeof process !== "undefined" && process.env.NODE_ENV === "test";
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (typeof fetch === "undefined" || isJestEnv) {
-    // Dynamic import of Node's built-in modules to keep it clean in React Native bundler
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const https = require("https");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const url = require("url");
-
-    const parsedUrl = url.parse(apiUrl);
-    const options = {
-      hostname: parsedUrl.hostname,
-      port: parsedUrl.port || 443,
-      path: parsedUrl.path,
+  try {
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
         "HTTP-Referer": "https://github.com/ejfn/Tractor",
         "X-Title": "Tractor Shengji AI",
-        "Content-Length": Buffer.byteLength(postData),
       },
-      timeout: timeoutMs,
-    };
-
-    return new Promise<string>((resolve, reject) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const req = https.request(options, (res: any) => {
-        let body = "";
-        res.setEncoding("utf8");
-
-        res.on("data", (chunk: string) => {
-          body += chunk;
-        });
-
-        res.on("end", () => {
-          if (res.statusCode < 200 || res.statusCode >= 300) {
-            gameLogger.error("llm_api_error_response", {
-              status: res.statusCode,
-              statusText: res.statusMessage,
-              error: body,
-            });
-            reject(
-              new Error(
-                `OpenRouter API error (HTTP ${res.statusCode}): ${res.statusMessage}. Details: ${body}`,
-              ),
-            );
-            return;
-          }
-
-          try {
-            const data = JSON.parse(body);
-            const assistantMessage = data?.choices?.[0]?.message?.content;
-            if (!assistantMessage) {
-              gameLogger.error("llm_api_empty_response", { data });
-              reject(
-                new Error(
-                  "OpenRouter API returned an empty or invalid chat completion payload.",
-                ),
-              );
-              return;
-            }
-            gameLogger.info("llm_api_call_success", {
-              responseLength: assistantMessage.length,
-            });
-            resolve(assistantMessage);
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-
-      req.on("timeout", () => {
-        req.destroy();
-        gameLogger.error("llm_api_timeout", { timeoutMs });
-        reject(
-          new Error(`OpenRouter API request timed out after ${timeoutMs}ms.`),
-        );
-      });
-
-      req.on("error", (e: Error) => {
-        gameLogger.error("llm_api_failed", { error: e.message });
-        reject(e);
-      });
-
-      req.write(postData);
-      req.end();
+      body: postData,
+      signal: controller.signal,
     });
-  } else {
-    // Web / Expo native fetch environment
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    try {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://github.com/ejfn/Tractor",
-          "X-Title": "Tractor Shengji AI",
-        },
-        body: postData,
-        signal: controller.signal,
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      gameLogger.error("llm_api_error_response", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
       });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        gameLogger.error("llm_api_error_response", {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText,
-        });
-        throw new Error(
-          `OpenRouter API error (HTTP ${response.status}): ${response.statusText}. Details: ${errorText}`,
-        );
-      }
-
-      const data = await response.json();
-      const assistantMessage = data?.choices?.[0]?.message?.content;
-
-      if (!assistantMessage) {
-        gameLogger.error("llm_api_empty_response", { data });
-        throw new Error(
-          "OpenRouter API returned an empty or invalid chat completion payload.",
-        );
-      }
-
-      gameLogger.info("llm_api_call_success", {
-        responseLength: assistantMessage.length,
-      });
-
-      return assistantMessage;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === "AbortError") {
-        gameLogger.error("llm_api_timeout", { timeoutMs });
-        throw new Error(
-          `OpenRouter API request timed out after ${timeoutMs}ms.`,
-        );
-      }
-      gameLogger.error("llm_api_failed", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
+      throw new Error(
+        `OpenRouter API error (HTTP ${response.status}): ${response.statusText}. Details: ${errorText}`,
+      );
     }
+
+    const data = await response.json();
+    const assistantMessage = data?.choices?.[0]?.message?.content;
+
+    if (!assistantMessage) {
+      gameLogger.error("llm_api_empty_response", { data });
+      throw new Error(
+        "OpenRouter API returned an empty or invalid chat completion payload.",
+      );
+    }
+
+    gameLogger.info("llm_api_call_success", {
+      responseLength: assistantMessage.length,
+    });
+
+    return assistantMessage;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      gameLogger.error("llm_api_timeout", { timeoutMs });
+      throw new Error(
+        `OpenRouter API request timed out after ${timeoutMs}ms.`,
+      );
+    }
+    gameLogger.error("llm_api_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
   }
 }
 
@@ -192,7 +99,7 @@ export async function callOpenRouter(
  */
 export async function testOpenRouterConnection(
   apiKey: string,
-  model = "deepseek/deepseek-chat",
+  model = "deepseek/deepseek-chat-v3.1",
   apiUrl = "https://openrouter.ai/api/v1/chat/completions",
 ): Promise<{ success: boolean; message: string }> {
   try {

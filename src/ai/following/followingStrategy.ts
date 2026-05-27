@@ -12,7 +12,7 @@ import { gameLogger } from "../../utils/gameLogger";
 import { executeMultiComboFollowingAlgorithm } from "./multiComboFollowingStrategy";
 import { routeToDecision } from "./routingLogic";
 import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
-import { callLLMForDecision } from "../llm/llmAIStrategy";
+import { callLLMForDecision, simulateLLMLatency } from "../llm/llmAIStrategy";
 import { LLMEngagementContext } from "../llm/llmGamePrompt";
 
 /**
@@ -271,6 +271,7 @@ export async function selectFollowingPlayAsync(
       currentPlayerId,
     );
     if (multiComboResult && multiComboResult.strategy !== "no_valid_response") {
+      await simulateLLMLatency();
       return multiComboResult.cards;
     }
   }
@@ -290,6 +291,7 @@ export async function selectFollowingPlayAsync(
       playerId: currentPlayerId,
       play: currentPlayer.hand.map((c) => c.toString()),
     });
+    await simulateLLMLatency();
     return currentPlayer.hand;
   }
 
@@ -302,6 +304,7 @@ export async function selectFollowingPlayAsync(
       playerId: currentPlayerId,
       play: analysis.remainingCards.map((c) => c.toString()),
     });
+    await simulateLLMLatency();
     return analysis.remainingCards;
   }
 
@@ -316,6 +319,7 @@ export async function selectFollowingPlayAsync(
       playerId: currentPlayerId,
       play: onlyCombo.map((c) => c.toString()),
     });
+    await simulateLLMLatency();
     return onlyCombo;
   }
 

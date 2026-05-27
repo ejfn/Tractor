@@ -29,6 +29,8 @@ interface HumanPlayerViewProps {
   isRoundStartingPlayer?: boolean;
   gamePhase?: GamePhase;
   onKittySwap?: () => void;
+  /** When true the thinking dots render in purple LLM mode */
+  isLLM?: boolean;
 }
 
 /**
@@ -51,6 +53,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
   isRoundStartingPlayer = false,
   gamePhase,
   onKittySwap,
+  isLLM = false,
 }) => {
   const { t: tCommon } = useCommonTranslation();
 
@@ -78,6 +81,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
             <ThinkingIndicator
               visible={true}
               dots={thinkingDots}
+              isLLM={isLLM}
               testID="thinking-indicator-visible"
             />
           )}

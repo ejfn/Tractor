@@ -1,5 +1,11 @@
-import React from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import React, { useRef, useCallback } from "react";
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { sharedStyles } from "../utils/sharedStyles";
 import { Player, Trick } from "../types";
 import { useCommonTranslation } from "../hooks/useTranslation";
@@ -21,6 +27,10 @@ interface AIPlayerViewProps {
     dot3: Animated.Value;
   };
   isRoundStartingPlayer?: boolean;
+  /** When true the thinking dots render in purple LLM mode */
+  isLLM?: boolean;
+  /** Called when the player name is double-tapped */
+  onDoubleTap?: () => void;
 }
 
 /**
@@ -36,8 +46,21 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   lastCompletedTrick,
   thinkingDots,
   isRoundStartingPlayer = false,
+  isLLM = false,
+  onDoubleTap,
 }) => {
   const { t: tCommon } = useCommonTranslation();
+
+  const lastTapRef = useRef(0);
+  const handleTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      onDoubleTap?.();
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+    }
+  }, [onDoubleTap]);
 
   // GameTable provides the container sizing/positioning,
   // so we don't need wrapper styles
@@ -91,7 +114,11 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={labelStyle}>
+      <TouchableOpacity
+        style={labelStyle}
+        onPress={handleTap}
+        activeOpacity={0.7}
+      >
         <View style={styles.labelContent}>
           {isRoundStartingPlayer && (
             <Text style={styles.startingPlayerIcon}>👑</Text>
@@ -101,9 +128,10 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
         <ThinkingIndicator
           visible={showThinking}
           dots={thinkingDots}
+          isLLM={isLLM}
           testID={`thinking-indicator-${showThinking ? "visible" : "hidden"}`}
         />
-      </View>
+      </TouchableOpacity>
       <View style={[getCardContainerStyle()]}>
         {[...Array(Math.min(10, player.hand.length))].map((_, i) => (
           <View

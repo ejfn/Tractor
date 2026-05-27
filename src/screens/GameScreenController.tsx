@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 // Hooks
 import { useAITurns } from "../hooks/useAITurns";
@@ -10,6 +10,14 @@ import { useTrickResults } from "../hooks/useTrickResults";
 // Game logic
 import { GamePhase } from "../types";
 import { DEALING_SPEED } from "../utils/gameTimings";
+
+// LLM config
+import {
+  getLLMConfig,
+  isLLMEnabled,
+  LLMConfig,
+  saveLLMConfig,
+} from "../ai/llm/llmConfig";
 
 // View component
 import GameScreenView from "./GameScreenView";
@@ -84,6 +92,29 @@ const GameScreenController: React.FC = () => {
     setGameState,
     dealingSpeed: DEALING_SPEED,
   });
+
+  // ── AI Config Modal ────────────────────────────────────────────────────────
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [llmConfig, setLlmConfig] = useState<LLMConfig>(() => getLLMConfig());
+  const [llmActive, setLlmActive] = useState<boolean>(() => isLLMEnabled());
+
+  const handleOpenSettings = useCallback(() => {
+    // Always re-read current config when opening (handles mid-game changes)
+    setLlmConfig(getLLMConfig());
+    setIsSettingsOpen(true);
+  }, []);
+
+  const handleCloseSettings = useCallback(() => {
+    setIsSettingsOpen(false);
+  }, []);
+
+  const handleSaveSettings = useCallback((newConfig: LLMConfig) => {
+    saveLLMConfig(newConfig);
+    setLlmConfig(newConfig);
+    setLlmActive(newConfig.enabled && !!newConfig.apiKey);
+    setIsSettingsOpen(false);
+  }, []);
 
   // Initialize game on first render
   useEffect(() => {
@@ -183,6 +214,13 @@ const GameScreenController: React.FC = () => {
       scaleAnim={scaleAnim}
       slideAnim={slideAnim}
       thinkingDots={thinkingDots}
+      // AI config
+      isLLMActive={llmActive}
+      llmConfig={llmConfig}
+      isSettingsOpen={isSettingsOpen}
+      onOpenSettings={handleOpenSettings}
+      onCloseSettings={handleCloseSettings}
+      onSaveSettings={handleSaveSettings}
       // Handlers
       onCardSelect={handleCardSelect}
       onPlayCards={handlePlay}
