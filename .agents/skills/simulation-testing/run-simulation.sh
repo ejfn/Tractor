@@ -69,7 +69,7 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         -h|--help)
             echo "Shengji AI Simulation Runner"
-            echo "Usage: ./scripts/run-simulation.sh [options]"
+            echo "Usage: ./.agents/skills/simulation-testing/run-simulation.sh [options]"
             echo ""
             echo "Options:"
             echo "  -l, --llm                Run with live LLM engine enabled (Defaults to 1 game, 1 round limit)"

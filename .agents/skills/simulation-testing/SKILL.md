@@ -59,7 +59,7 @@ LLM_ENABLED=true TARGET_GAMES=1 MAX_ROUNDS=2 LLM_MODEL=google/gemini-2.5-flash n
 
 ## 3. Environment & Local Overrides
 
-Both the simulation test (`__tests__/simulation/gameSimulation.test.ts`) and the runner script (`scripts/run-simulation.sh`) support a robust environment-loading hierarchy to manage API keys and configurations securely:
+Both the simulation test (`__tests__/simulation/gameSimulation.test.ts`) and the runner script (`.agents/skills/simulation-testing/run-simulation.sh`) support a robust environment-loading hierarchy to manage API keys and configurations securely:
 
 ### A. Automatic .env Loading
 - If a `.env` file exists at the project root, the environment variables (such as `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, and `OPENROUTER_API_URL`) are automatically loaded.
