@@ -153,7 +153,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
     const newConfig: LLMConfig = {
       ...DEFAULT_LLM_CONFIG,
       enabled: useLLM,
-      apiKey: useLLM ? apiKey.trim() : "",
+      apiKey: apiKey.trim(),
       model: selectedModel,
     };
     onSave(newConfig);
