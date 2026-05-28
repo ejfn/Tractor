@@ -127,8 +127,9 @@ function callOpenRouterNode(
     try {
       const modName = "https";
 
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const https = typeof require !== "undefined" ? require(modName) : undefined;
+      const https =
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        typeof require !== "undefined" ? require(modName) : undefined;
       if (!https) {
         throw new Error(
           "Node.js https module is not available in this environment.",

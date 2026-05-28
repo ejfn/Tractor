@@ -22,6 +22,7 @@ interface ModelInfo {
   rankColor: string;
   inputPrice: string;
   outputPrice: string;
+  description: string;
 }
 
 const MODELS: ModelInfo[] = [
@@ -29,46 +30,45 @@ const MODELS: ModelInfo[] = [
     id: "deepseek/deepseek-chat-v3.1",
     name: "DeepSeek Chat V3.1",
     icon: "🌊",
-    rank: "Best Overall",
+    rank: "Best Strategy (Recommended)",
     rankColor: "#06B6D4",
     inputPrice: "$0.21",
     outputPrice: "$0.79",
-  },
-  {
-    id: "meta-llama/llama-3.3-70b-instruct",
-    name: "Meta Llama 3.3 70B",
-    icon: "🦙",
-    rank: "Alternative",
-    rankColor: "#F59E0B",
-    inputPrice: "$0.10",
-    outputPrice: "$0.32",
-  },
-  {
-    id: "openai/gpt-4o-mini",
-    name: "GPT-4o Mini",
-    icon: "🟢",
-    rank: "Ultra Stable",
-    rankColor: "#10B981",
-    inputPrice: "$0.15",
-    outputPrice: "$0.60",
+    description:
+      "Recommended. Strategic master. Elite card counting, partner plays, and highly efficient pricing.",
   },
   {
     id: "qwen/qwen3-next-80b-a3b-instruct",
     name: "Qwen3 Next 80B",
     icon: "🔷",
-    rank: "Safe Alternative",
+    rank: "Elite Strategy & Speed",
     rankColor: "#00BCD4",
     inputPrice: "$0.09",
     outputPrice: "$1.10",
+    description:
+      "Elite AI. 100% rules compliance, master position-aware heuristics, and blazing-fast response times.",
+  },
+  {
+    id: "meta-llama/llama-3.3-70b-instruct",
+    name: "Meta Llama 3.3 70B",
+    icon: "🦙",
+    rank: "Budget Value King",
+    rankColor: "#F59E0B",
+    inputPrice: "$0.10",
+    outputPrice: "$0.32",
+    description:
+      "Budget King. High-quality 70B coordination, premium rules alignment, and ultra-cheap output tokens.",
   },
   {
     id: "google/gemini-2.5-flash",
     name: "Gemini 2.5 Flash",
     icon: "✨",
-    rank: "Fastest",
+    rank: "Premium Speed Champion",
     rankColor: "#8B5CF6",
     inputPrice: "$0.30",
     outputPrice: "$2.50",
+    description:
+      "Speed Champion. Extremely snappy responses and smart resource conservation. Premium output pricing.",
   },
 ];
 
@@ -118,14 +118,11 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
 
   // ── Mode toggle ────────────────────────────────────────────────────────────
 
-  const handleModeToggle = useCallback(
-    (llmMode: boolean) => {
-      setUseLLM(llmMode);
-      // Reset connection status on mode switch
-      setConnectionStatus({ kind: "idle" });
-    },
-    [],
-  );
+  const handleModeToggle = useCallback((llmMode: boolean) => {
+    setUseLLM(llmMode);
+    // Reset connection status on mode switch
+    setConnectionStatus({ kind: "idle" });
+  }, []);
 
   // ── Connection test ────────────────────────────────────────────────────────
 
@@ -148,15 +145,17 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
 
     setConnectionStatus(
       result.success
-        ? { kind: "success", message: `✓ Connected — ${MODELS.find((m) => m.id === selectedModel)?.name ?? selectedModel} is ready!` }
+        ? {
+            kind: "success",
+            message: `✓ Connected — ${MODELS.find((m) => m.id === selectedModel)?.name ?? selectedModel} is ready!`,
+          }
         : { kind: "error", message: `✗ ${result.message}` },
     );
   }, [apiKey, selectedModel]);
 
   // ── Save ───────────────────────────────────────────────────────────────────
 
-  const canSave =
-    !useLLM || connectionStatus.kind === "success";
+  const canSave = !useLLM || connectionStatus.kind === "success";
 
   const handleSave = useCallback(() => {
     const newConfig: LLMConfig = {
@@ -244,14 +243,23 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                   <Text style={styles.algoTitle}>Pure Mathematics</Text>
                 </View>
                 <Text style={styles.algoDescription}>
-                  Fast, deterministic, rule-based AI. No API key required.
-                  Zero latency · fully offline.
+                  Fast, deterministic, rule-based AI. No API key required. Zero
+                  latency · fully offline.
                 </Text>
                 <View style={styles.algoFeaturesList}>
                   {[
-                    { label: "Instant Decisions", desc: "0ms latency local calculation" },
-                    { label: "100% Free & Unlimited", desc: "Zero API token costs or request limits" },
-                    { label: "Fully Autonomous", desc: "Runs locally on your device without connection" },
+                    {
+                      label: "Instant Decisions",
+                      desc: "0ms latency local calculation",
+                    },
+                    {
+                      label: "100% Free & Unlimited",
+                      desc: "Zero API token costs or request limits",
+                    },
+                    {
+                      label: "Fully Autonomous",
+                      desc: "Runs locally on your device without connection",
+                    },
                   ].map((f) => (
                     <View key={f.label} style={styles.algoFeatureItem}>
                       <Text style={styles.algoFeatureCheck}>✓</Text>
@@ -338,6 +346,9 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                           </View>
                         )}
                       </View>
+                      <Text style={styles.modelDescription}>
+                        {model.description}
+                      </Text>
                       <View style={styles.pricingRow}>
                         <Text style={styles.pricingLabel}>
                           {model.inputPrice}
@@ -351,7 +362,6 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                         <Text style={styles.pricingUnit}> per 1M tokens</Text>
                       </View>
                     </TouchableOpacity>
-
                   );
                 })}
 

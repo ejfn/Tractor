@@ -175,8 +175,14 @@ describe("Unattended Game Simulation", () => {
                 const llmStats = getLLMFallbackStats();
 
                 // Configurable thresholds
-                const maxApiErrors = parseInt(process.env.MAX_LLM_API_ERRORS || "3", 10);
-                const maxInvalidPlays = parseInt(process.env.MAX_LLM_INVALID_PLAYS || "10", 10);
+                const maxApiErrors = parseInt(
+                  process.env.MAX_LLM_API_ERRORS || "3",
+                  10,
+                );
+                const maxInvalidPlays = parseInt(
+                  process.env.MAX_LLM_INVALID_PLAYS || "10",
+                  10,
+                );
 
                 if (llmStats.apiErrorFallbacks > maxApiErrors) {
                   throw new Error(
@@ -184,7 +190,8 @@ describe("Unattended Game Simulation", () => {
                   );
                 }
 
-                const totalInvalids = llmStats.invalidCardRetries + llmStats.invalidCardFallbacks;
+                const totalInvalids =
+                  llmStats.invalidCardRetries + llmStats.invalidCardFallbacks;
                 if (totalInvalids > maxInvalidPlays) {
                   throw new Error(
                     `Simulation aborted: Invalid play count (${totalInvalids}) exceeded limit of ${maxInvalidPlays}.`,
@@ -218,8 +225,12 @@ describe("Unattended Game Simulation", () => {
               const isIntentionallyLimited = !!process.env.MAX_ROUNDS;
 
               if (!isIntentionallyLimited) {
-                const defendingTeam = gameState.teams.find((t) => t.isDefending);
-                const attackingTeam = gameState.teams.find((t) => !t.isDefending);
+                const defendingTeam = gameState.teams.find(
+                  (t) => t.isDefending,
+                );
+                const attackingTeam = gameState.teams.find(
+                  (t) => !t.isDefending,
+                );
 
                 sessionTracker.logError(
                   roundCount,

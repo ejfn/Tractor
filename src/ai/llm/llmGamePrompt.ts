@@ -128,7 +128,7 @@ The AI utilizes exact strategic conservation values to guide trump plays:
 
 ### 2nd Player (First Follower)
 - **Partner Winning**: Feed highest point cards ('King', 'Ten', 'Five') to teammate to maximize points captured.
-- **Opponent Strong Lead**: Play lowest possible non-point card (safe disposal) to conserve resources.
+- **Opponent Strong Lead**: Play lowest possible non-point card (safe disposal) to conserve resources. If void and discarding (sloughing) from another suit, always choose a low non-point card. Never discard point cards (5s, 10s, Kings) into an opponent's winning trick.
 - **Opponent Moderate Lead**: Contest and block by playing a slightly higher card.
 - **Opponent Pair Lead**: Block with a higher pair (e.g. play 'A♠A♠' to beat opponent's 'KK' pair).
 - **Void on Opponent Point Lead**: Ruff with the **weakest available trump** to capture points cheaply.
@@ -143,7 +143,7 @@ The AI utilizes exact strategic conservation values to guide trump plays:
 
 ### 4th Player (Last Follower - Perfect Information)
 - **Teammate Secure Win**: Feed points aggressively ('10' > 'King' > '5'). **Avoid teammate competition**—do NOT play high trump rank cards or beat teammate's winning card.
-- **Opponent Win**: Play lowest possible non-point card (safe disposal). Conserve all valuable trump/pairs.
+- **Opponent Win**: Play lowest possible non-point card (safe disposal). Conserve all valuable trump/pairs. If void and discarding (sloughing) from another suit, always choose a low non-point card. Never discard point cards (5s, 10s, Kings) into an opponent's winning trick.
 - **Over-Ruffing**: If void and opponent is winning a high-point trick, use a trump pair/single to secure it for the team.
 
 ### Teammate Secure Win Identification (Memory Search)
@@ -328,7 +328,8 @@ ${
 - Anti-Cheat: You must play your highest combinations in the led suit first. You cannot break pairs to play singles.`
     : `- You DO NOT have enough matching cards! You MUST play ALL ${matchingHandCards.length} of your relevant cards: [${matchingChoiceIds.join(", ")}] (Suit Exhaustion Rule).
 - For the remaining ${requiredCount - matchingHandCards.length} card(s), you must choose disposal/cutting cards of other suits from your hand. Do NOT select the same choice ID more than once.
-- If you choose to trump-in to win, your trump play must match or exceed the combination structure of the lead (e.g. trump pair to beat a led pair).`
+- If you choose to trump-in to win, your trump play must match or exceed the combination structure of the lead (e.g. trump pair to beat a led pair).
+- If you choose to discard (dispose/slough) because you cannot or do not want to trump, and opponents are winning the trick, ALWAYS select low non-point cards (worth 0 points). Never discard points (5s, 10s, or Kings) into an opponent's winning trick.`
 }
 `;
   }

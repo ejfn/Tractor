@@ -357,9 +357,9 @@ describe("FRV-3: Tractor Following Rules", () => {
       // VALID: Breaking Hearts pair to follow a single card led
       const validPlay = [playerHand[0]]; // 9♥ (breaking pair)
 
-      expect(
-        isValidPlay(validPlay, playerHand, PlayerId.Bot1, gameState),
-      ).toBe(true);
+      expect(isValidPlay(validPlay, playerHand, PlayerId.Bot1, gameState)).toBe(
+        true,
+      );
     });
   });
 
