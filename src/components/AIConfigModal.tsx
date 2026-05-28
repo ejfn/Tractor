@@ -53,6 +53,15 @@ const MODELS: ModelInfo[] = [
     outputPrice: "$0.60",
   },
   {
+    id: "qwen/qwen3-next-80b-a3b-instruct",
+    name: "Qwen3 Next 80B",
+    icon: "🔷",
+    rank: "Safe Alternative",
+    rankColor: "#00BCD4",
+    inputPrice: "$0.09",
+    outputPrice: "$1.10",
+  },
+  {
     id: "google/gemini-2.5-flash",
     name: "Gemini 2.5 Flash",
     icon: "✨",
