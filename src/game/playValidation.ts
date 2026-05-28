@@ -509,3 +509,286 @@ function validateMultiComboLead(
   );
   return result;
 }
+
+/**
+ * Detailed play validation that mirrors isValidPlay but returns a descriptive error message explaining
+ * exactly which rule was violated, or null if the play is valid.
+ */
+export function getPlayValidationError(
+  playedCards: Card[],
+  playerHand: Card[],
+  playerId: PlayerId,
+  gameState: GameState,
+): string | null {
+  const trumpInfo = gameState.trumpInfo;
+  const leadingCombo =
+    gameState.currentTrick && gameState.currentTrick.plays.length > 0
+      ? gameState.currentTrick.plays[0].cards
+      : null;
+
+  // If no leading combo, any valid combo is acceptable (including multi-combo)
+  if (!leadingCombo) {
+    const comboType = getComboType(playedCards, trumpInfo);
+    if (comboType !== ComboType.Invalid) {
+      return null; // Valid straight combo
+    }
+
+    const multiComboDetection = detectLeadingMultiCombo(playedCards, trumpInfo);
+    if (multiComboDetection.isMultiCombo) {
+      const validation = validateMultiComboLead(
+        playedCards,
+        gameState,
+        playerId,
+      );
+      if (validation.isValid) {
+        return null;
+      }
+      return `Invalid leading multi-combo: ${validation.invalidReasons.join(", ")}`;
+    }
+
+    return "Played cards do not form a valid combination (must be a Single, Pair, Tractor, or a valid unbeatable Multi-Combo).";
+  }
+
+  // Get combo types for following validation
+  const leadingType = getComboType(leadingCombo, trumpInfo);
+
+  // Multi-combo following validation
+  const leadingDetection =
+    leadingType === ComboType.Invalid
+      ? detectLeadingMultiCombo(leadingCombo, trumpInfo)
+      : { isMultiCombo: false };
+
+  if (leadingDetection.isMultiCombo) {
+    if (!leadingDetection.components) {
+      return "Leading play is an invalid multi-combo.";
+    }
+
+    const totalLength = leadingDetection.components.totalLength;
+    if (playedCards.length !== totalLength) {
+      return `Must play exactly ${totalLength} cards to match the leading multi-combo length.`;
+    }
+
+    const leadingSuit = leadingDetection.components.combos[0]?.cards[0]?.suit;
+    if (leadingSuit === undefined) {
+      return "Leading suit not determined.";
+    }
+
+    const playerCardsOfLeadingSuit = playerHand.filter(
+      (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+    );
+
+    const playedCardsOfLeadingSuit = playedCards.filter(
+      (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+    );
+
+    if (
+      playedCardsOfLeadingSuit.length < playerCardsOfLeadingSuit.length &&
+      playedCardsOfLeadingSuit.length < playedCards.length
+    ) {
+      return `Must play all remaining cards of the leading suit (${leadingSuit}) first before playing cards of other suits.`;
+    }
+
+    const remainingRelevantCards = playerHand.filter(
+      (card) =>
+        !playedCards.some((played) => played.id === card.id) &&
+        card.suit === leadingSuit &&
+        !isTrump(card, trumpInfo),
+    );
+
+    if (remainingRelevantCards.length === 0) {
+      return null; // Exhaustion rule
+    }
+
+    const isValidAntiCheat = validateAntiCheatStructure(
+      playedCards,
+      playerHand,
+      leadingDetection.components,
+      trumpInfo,
+      leadingSuit,
+    );
+
+    if (!isValidAntiCheat) {
+      return "Must play the highest available combinations of the leading suit (e.g. matching pairs or tractors before playing singles).";
+    }
+
+    return null;
+  }
+
+  // Shengji rules: Must match the combination length
+  if (playedCards.length !== leadingCombo.length) {
+    return `Must play exactly ${leadingCombo.length} cards to match the leading play.`;
+  }
+
+  // Get the leading combo's suit
+  const leadingSuit = getLeadingSuit(leadingCombo);
+  const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
+
+  // Find available cards in player's hand
+  const relevantCards = isLeadingTrump
+    ? playerHand.filter((card) => isTrump(card, trumpInfo))
+    : playerHand.filter(
+        (card) => card.suit === leadingSuit && !isTrump(card, trumpInfo),
+      );
+
+  // Check if player can form matching combo in relevant suit
+  const canFormMatchingCombo = relevantCards.length >= leadingCombo.length;
+
+  if (canFormMatchingCombo) {
+    const relevantCombos = identifyCombos(relevantCards, trumpInfo);
+    const hasMatchingCombo = relevantCombos.some(
+      (combo) =>
+        combo.type === leadingType &&
+        combo.cards.length === leadingCombo.length,
+    );
+
+    // If player can form matching combo but didn't use it, invalid
+    const playedType = getComboType(playedCards, trumpInfo);
+    if (hasMatchingCombo && playedType !== leadingType) {
+      const comboName =
+        leadingType === ComboType.Pair
+          ? "Pair"
+          : leadingType === ComboType.Tractor
+            ? "Tractor"
+            : "Single";
+      return `Must play a matching ${comboName} in the ${isLeadingTrump ? "Trump" : leadingSuit} suit because you have one in your hand.`;
+    }
+  }
+
+  if (relevantCards.length > 0) {
+    const allRelevantSuit = playedCards.every((card) =>
+      isLeadingTrump
+        ? isTrump(card, trumpInfo)
+        : card.suit === leadingSuit && !isTrump(card, trumpInfo),
+    );
+
+    if (!allRelevantSuit && relevantCards.length >= leadingCombo.length) {
+      return `Must play cards of the matching suit (${isLeadingTrump ? "Trump" : leadingSuit}) because you have enough of them.`;
+    }
+  }
+
+  const matchingCombos = identifyCombos(relevantCards, trumpInfo).filter(
+    (combo) =>
+      combo.type === leadingType && combo.cards.length === leadingCombo.length,
+  );
+
+  if (matchingCombos.length > 0) {
+    const isMatchingCombo = matchingCombos.some((combo) => {
+      if (combo.cards.length !== playedCards.length) return false;
+      const comboCardIds = combo.cards.map((card) => card.id).sort();
+      const playedCardIds = playedCards.map((card) => card.id).sort();
+      return (
+        comboCardIds.length === playedCardIds.length &&
+        comboCardIds.every((id, index) => id === playedCardIds[index])
+      );
+    });
+
+    if (!isMatchingCombo) {
+      const comboName =
+        leadingType === ComboType.Pair
+          ? "Pair"
+          : leadingType === ComboType.Tractor
+            ? "Tractor"
+            : "Single";
+      return `Must play a matching ${comboName} in the ${isLeadingTrump ? "Trump" : leadingSuit} suit.`;
+    }
+  }
+
+  if (relevantCards.length >= leadingCombo.length) {
+    const allRelevantSuit = playedCards.every((card) =>
+      relevantCards.some((handCard) => handCard.id === card.id),
+    );
+
+    if (allRelevantSuit) {
+      if (
+        !checkTractorFollowingPriority(
+          playedCards,
+          leadingCombo,
+          playerHand,
+          trumpInfo,
+        )
+      ) {
+        return "Must follow tractor priority: you must play pairs to match the pairs of the leading tractor.";
+      }
+
+      if (
+        !checkSameSuitPairPreservation(
+          playedCards,
+          leadingCombo,
+          playerHand,
+          trumpInfo,
+        )
+      ) {
+        return "Must follow pair preservation: you must play your pairs to match the leading pair/tractor instead of breaking them.";
+      }
+    } else {
+      return `Must play cards of the matching suit (${isLeadingTrump ? "Trump" : leadingSuit}) because you have enough of them.`;
+    }
+  }
+
+  if (relevantCards.length > 0 && relevantCards.length < leadingCombo.length) {
+    const playedRelevantCards = playedCards.filter((card) =>
+      isLeadingTrump
+        ? isTrump(card, trumpInfo)
+        : card.suit === leadingSuit && !isTrump(card, trumpInfo),
+    );
+
+    const allRelevantCardsPlayed = relevantCards.every((handCard) =>
+      playedRelevantCards.some((playedCard) => playedCard.id === handCard.id),
+    );
+
+    const playedRightNumberOfRelevantCards =
+      playedRelevantCards.length === relevantCards.length;
+
+    if (!allRelevantCardsPlayed || !playedRightNumberOfRelevantCards) {
+      return `Must play ALL of your remaining cards (${relevantCards.length} cards) of the leading suit (${isLeadingTrump ? "Trump" : leadingSuit}) first.`;
+    }
+
+    const playedNonRelevantCount =
+      playedCards.length - playedRelevantCards.length;
+    const requiredNonRelevantCount = leadingCombo.length - relevantCards.length;
+
+    if (playedNonRelevantCount !== requiredNonRelevantCount) {
+      return `Must play exactly ${requiredNonRelevantCount} cards of other suits to complete the play.`;
+    }
+
+    const allPlayedFromHand = playedCards.every((card) =>
+      playerHand.some((handCard) => handCard.id === card.id),
+    );
+
+    if (allPlayedFromHand) {
+      if (
+        !checkTractorFollowingPriority(
+          playedCards,
+          leadingCombo,
+          playerHand,
+          trumpInfo,
+        )
+      ) {
+        return "Must follow tractor priority: you must play pairs to match the pairs of the leading tractor.";
+      }
+
+      if (
+        !checkSameSuitPairPreservation(
+          playedCards,
+          leadingCombo,
+          playerHand,
+          trumpInfo,
+        )
+      ) {
+        return "Must follow pair preservation: you must play your pairs to match the leading play instead of breaking them.";
+      }
+    } else {
+      return "Some cards played are not in your hand.";
+    }
+  }
+
+  const allPlayedFromHand = playedCards.every((card) =>
+    playerHand.some((handCard) => handCard.id === card.id),
+  );
+
+  if (!allPlayedFromHand) {
+    return "Some cards played are not in your hand.";
+  }
+
+  return null;
+}

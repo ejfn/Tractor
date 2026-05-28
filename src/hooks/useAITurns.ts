@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { getAIMoveWithErrorHandling } from "../game/playProcessing";
+import { getAIMoveWithErrorHandlingAsync } from "../game/playProcessing";
 import { getAIKittySwap } from "../ai/aiLogic";
 import { putbackKittyCards } from "../game/kittyManager";
 import { Card, GamePhase, GameState, PlayerId, Trick } from "../types";
@@ -41,7 +41,7 @@ export function useAITurns(
   } | null>(null);
 
   // Handle AI move logic - using useCallback to prevent dependency cycle
-  const handleAIMove = useCallback(() => {
+  const handleAIMove = useCallback(async () => {
     if (!gameState) {
       gameLogger.error(
         "handle_ai_move_null_state",
@@ -173,7 +173,7 @@ export function useAITurns(
       // Handle regular card play during Playing phase
       // Get AI move with error handling - pass the actual game state
       // The AI logic should not mutate the state, just read from it
-      const { cards, error } = getAIMoveWithErrorHandling(gameState);
+      const { cards, error } = await getAIMoveWithErrorHandlingAsync(gameState);
 
       if (error) {
         gameLogger.error(

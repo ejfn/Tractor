@@ -132,6 +132,11 @@ export const checkSameSuitPairPreservation = (
   playerHand: Card[],
   trumpInfo: TrumpInfo,
 ): boolean => {
+  // If the leading combo contains no pairs (and thus no tractors), pair preservation rule does not apply
+  if (countPairs(leadingCombo) === 0) {
+    return true;
+  }
+
   // Local helper function to avoid circular dependency
   const getLeadingSuit = (combo: Card[]): Suit | undefined => {
     for (const card of combo) {
@@ -160,22 +165,32 @@ export const checkSameSuitPairPreservation = (
     return true; // No same-suit pairs to preserve
   }
 
-  // Check each same-suit pair - if any card from a pair is played, the whole pair must be played
+  // Count how many same-suit pairs are broken in playedCards
+  let brokenPairsCount = 0;
   for (const pair of relevantPairs) {
     const cardsFromPairPlayed = pair.filter((pairCard) =>
       playedCards.some((played) => played.id === pairCard.id),
     );
 
-    // If some but not all cards from a pair are played, this violates pair preservation
+    // If some but not all cards from a pair are played, this pair is broken
     if (
       cardsFromPairPlayed.length > 0 &&
       cardsFromPairPlayed.length < pair.length
     ) {
-      return false; // Same-suit pair broken
+      brokenPairsCount++;
     }
   }
 
-  return true; // All same-suit pairs preserved
+  // Calculate how many single slots are led in the trick
+  const leadingPairsCount = countPairs(leadingCombo);
+  const leadingSinglesCount = leadingCombo.length - 2 * leadingPairsCount;
+
+  // We are allowed to break pairs only up to the number of single slots led
+  if (brokenPairsCount > leadingSinglesCount) {
+    return false;
+  }
+
+  return true; // All same-suit pairs preserved appropriately
 };
 
 /**

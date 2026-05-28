@@ -333,6 +333,34 @@ describe("FRV-3: Tractor Following Rules", () => {
         isValidPlay(invalidPlay, playerHand, PlayerId.Bot1, gameState),
       ).toBe(false);
     });
+
+    test("FRV-3.8.5: Breaking same-suit pair to follow a single card led is allowed", () => {
+      const trumpInfo = createTestTrumpInfo(Rank.Two, Suit.Spades);
+
+      // Leading combo: Single Heart 7♥
+      const leadingCombo = [Card.createCard(Suit.Hearts, Rank.Seven, 0)];
+
+      // Player has Hearts pair (leading suit), no other Hearts
+      const playerHand = [
+        ...Card.createPair(Suit.Hearts, Rank.Nine), // 9♥, 9♥
+        ...Card.createPair(Suit.Clubs, Rank.King),
+      ];
+      const gameState = createGameState({
+        trumpInfo,
+        currentTrick: {
+          plays: [{ playerId: PlayerId.Human, cards: leadingCombo }],
+          winningPlayerId: PlayerId.Human,
+          points: 0,
+        },
+      });
+
+      // VALID: Breaking Hearts pair to follow a single card led
+      const validPlay = [playerHand[0]]; // 9♥ (breaking pair)
+
+      expect(
+        isValidPlay(validPlay, playerHand, PlayerId.Bot1, gameState),
+      ).toBe(true);
+    });
   });
 
   describe("Complex tractor scenarios", () => {

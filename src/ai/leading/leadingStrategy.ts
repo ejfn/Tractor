@@ -1,8 +1,14 @@
-import { Card, GameState } from "../../types";
+import { Card, GameState, Rank } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
 import { detectCandidateLeads } from "./candidateLeadDetection";
 import { collectLeadingContext } from "./leadingContext";
 import { scoreNonTrumpLead, scoreTrumpLead } from "./leadingScoring";
+import {
+  callLLMForDecision,
+  logLLMShortcut,
+  simulateLLMLatency,
+} from "../llm/llmAIStrategy";
+import { LLMEngagementContext } from "../llm/llmGamePrompt";
 
 /**
  * Leading Strategy - Scoring-based leading logic
@@ -112,4 +118,154 @@ export function selectLeadingPlay(gameState: GameState): Card[] {
   });
 
   return selectedCandidate?.candidate.cards || [];
+}
+
+/**
+ * Async leading strategy — same scoring as selectLeadingPlay, but at genuinely
+ * ambiguous decision points it delegates to the LLM for a strategic pick.
+ * The rule-based best candidate is always computed first and used as fallback.
+ */
+export async function selectLeadingPlayAsync(
+  gameState: GameState,
+): Promise<Card[]> {
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  if (!currentPlayer) {
+    throw new Error("No current player found");
+  }
+
+  const playerId = currentPlayer.id;
+  const trumpInfo = gameState.trumpInfo;
+
+  // 1. Detect all possible candidate leads
+  const candidates = detectCandidateLeads(
+    currentPlayer.hand,
+    gameState,
+    playerId,
+    trumpInfo,
+  );
+
+  if (candidates.length === 0) {
+    gameLogger.warn("no_candidate_leads_found", {
+      player: playerId,
+      handSize: currentPlayer.hand.length,
+      message: "No candidate leads found, using fallback strategy",
+    });
+    return currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
+  }
+
+  // 2. Collect context and score all candidates
+  const context = collectLeadingContext(gameState, playerId);
+
+  const nonTrumpCandidates = candidates
+    .filter((candidate) => !candidate.metadata.isTrump)
+    .map((candidate) => ({
+      candidate,
+      result: scoreNonTrumpLead(candidate, trumpInfo, context),
+    }))
+    .sort((a, b) => b.result.score - a.result.score);
+
+  const trumpCandidates = candidates
+    .filter((candidate) => candidate.metadata.isTrump)
+    .map((candidate) => ({
+      candidate,
+      result: scoreTrumpLead(candidate, trumpInfo, context),
+    }))
+    .sort((a, b) => b.result.score - a.result.score);
+
+  const bestNonTrump =
+    nonTrumpCandidates.length > 0 ? nonTrumpCandidates[0] : null;
+  const bestTrump = trumpCandidates.length > 0 ? trumpCandidates[0] : null;
+
+  // 3. Pick the rule-based winner (same logic as sync version)
+  let rulesBasedPick = bestNonTrump ?? bestTrump;
+
+  if (bestNonTrump !== null && bestTrump !== null) {
+    if (bestNonTrump.result.score > 15) {
+      rulesBasedPick = bestNonTrump;
+    } else if (bestTrump.result.score > -10) {
+      rulesBasedPick = bestTrump;
+    } else {
+      rulesBasedPick = bestNonTrump;
+    }
+  }
+
+  const fallbackCards = rulesBasedPick?.candidate.cards ?? [];
+
+  // 4. Clear decision shortcuts — skip the LLM
+  if (rulesBasedPick) {
+    const isRoundStart = gameState.tricks.length < 3;
+    const isHighAce = rulesBasedPick.candidate.cards.some(
+      (card) =>
+        (card.rank === Rank.Ace && trumpInfo.trumpRank !== Rank.Ace) ||
+        (card.rank === Rank.King && trumpInfo.trumpRank === Rank.Ace),
+    );
+
+    // Shortcut 1: Ace/King lead at round start — obvious play
+    if (
+      isRoundStart &&
+      isHighAce &&
+      !rulesBasedPick.candidate.metadata.isTrump
+    ) {
+      await logLLMShortcut(
+        "llm_adaptive_shortcut_lead_ace",
+        playerId,
+        fallbackCards,
+      );
+      return fallbackCards;
+    }
+
+    // Shortcut 2: Unbeatable combo — no value in asking LLM
+    if (rulesBasedPick.candidate.metadata.isUnbeatable) {
+      await logLLMShortcut(
+        "llm_adaptive_shortcut_lead_unbeatable",
+        playerId,
+        fallbackCards,
+      );
+      return fallbackCards;
+    }
+
+    // Shortcut 3: Only one candidate — nothing to choose
+    if (candidates.length === 1) {
+      await logLLMShortcut(
+        "llm_adaptive_shortcut_lead_single_candidate",
+        playerId,
+        fallbackCards,
+      );
+      return fallbackCards;
+    }
+  } else {
+    await simulateLLMLatency();
+    return currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
+  }
+
+  // 5. Ambiguous lead — engage LLM with already-scored candidates list
+  const scoredCandidates = [...nonTrumpCandidates, ...trumpCandidates].sort(
+    (a, b) => b.result.score - a.result.score,
+  );
+  const allOptionsStr = scoredCandidates
+    .map(
+      (entry, idx) =>
+        `Option L${idx + 1}: Play ${entry.candidate.cards.map((card) => card.toString()).join(", ")} (Score: ${entry.result.score})`,
+    )
+    .join("\n");
+
+  const engagementContext: LLMEngagementContext = {
+    dilemma:
+      "We need to choose which suit or combination to lead. We want to secure the lead, pressure opponents, avoid leading under opponents' voids, and avoid wasting point cards prematurely.",
+    specificHelp: `Evaluate our lead candidates. Help us choose the optimal leading play. Recommend the best option and explain your reasoning.\n\nCandidates evaluated by rule-based engine:\n${allOptionsStr}`,
+  };
+
+  gameLogger.debug("llm_leading_engagement", {
+    playerId,
+    candidateCount: candidates.length,
+    rulesBasedPick: fallbackCards.map((c) => c.toString()),
+  });
+
+  return callLLMForDecision(
+    gameState,
+    playerId,
+    currentPlayer.hand,
+    engagementContext,
+    fallbackCards,
+  );
 }
