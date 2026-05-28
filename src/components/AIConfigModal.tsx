@@ -22,44 +22,53 @@ interface ModelInfo {
   rankColor: string;
   inputPrice: string;
   outputPrice: string;
+  description: string;
 }
 
 const MODELS: ModelInfo[] = [
   {
-    id: "meta-llama/llama-3.3-70b-instruct",
-    name: "Meta Llama 3.3 70B",
-    icon: "🦙",
-    rank: "Best Overall",
-    rankColor: "#F59E0B",
-    inputPrice: "$0.10",
-    outputPrice: "$0.32",
-  },
-  {
     id: "deepseek/deepseek-chat-v3.1",
     name: "DeepSeek Chat V3.1",
     icon: "🌊",
-    rank: "Best Depth",
+    rank: "Best Strategy (Recommended)",
     rankColor: "#06B6D4",
     inputPrice: "$0.21",
     outputPrice: "$0.79",
+    description:
+      "Recommended. Strategic master. Elite card counting, partner plays, and highly efficient pricing.",
   },
   {
     id: "qwen/qwen3-next-80b-a3b-instruct",
     name: "Qwen3 Next 80B",
     icon: "🔷",
-    rank: "Safe Alternative",
-    rankColor: "#10B981",
+    rank: "Elite Strategy & Speed",
+    rankColor: "#00BCD4",
     inputPrice: "$0.09",
     outputPrice: "$1.10",
+    description:
+      "Elite AI. 100% rules compliance, master position-aware heuristics, and blazing-fast response times.",
+  },
+  {
+    id: "meta-llama/llama-3.3-70b-instruct",
+    name: "Meta Llama 3.3 70B",
+    icon: "🦙",
+    rank: "Budget Value King",
+    rankColor: "#F59E0B",
+    inputPrice: "$0.10",
+    outputPrice: "$0.32",
+    description:
+      "Budget King. High-quality 70B coordination, premium rules alignment, and ultra-cheap output tokens.",
   },
   {
     id: "google/gemini-2.5-flash",
     name: "Gemini 2.5 Flash",
     icon: "✨",
-    rank: "Fastest",
+    rank: "Premium Speed Champion",
     rankColor: "#8B5CF6",
     inputPrice: "$0.30",
     outputPrice: "$2.50",
+    description:
+      "Speed Champion. Extremely snappy responses and smart resource conservation. Premium output pricing.",
   },
 ];
 
@@ -109,14 +118,11 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
 
   // ── Mode toggle ────────────────────────────────────────────────────────────
 
-  const handleModeToggle = useCallback(
-    (llmMode: boolean) => {
-      setUseLLM(llmMode);
-      // Reset connection status on mode switch
-      setConnectionStatus({ kind: "idle" });
-    },
-    [],
-  );
+  const handleModeToggle = useCallback((llmMode: boolean) => {
+    setUseLLM(llmMode);
+    // Reset connection status on mode switch
+    setConnectionStatus({ kind: "idle" });
+  }, []);
 
   // ── Connection test ────────────────────────────────────────────────────────
 
@@ -139,21 +145,23 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
 
     setConnectionStatus(
       result.success
-        ? { kind: "success", message: `✓ Connected — ${MODELS.find((m) => m.id === selectedModel)?.name ?? selectedModel} is ready!` }
+        ? {
+            kind: "success",
+            message: `✓ Connected — ${MODELS.find((m) => m.id === selectedModel)?.name ?? selectedModel} is ready!`,
+          }
         : { kind: "error", message: `✗ ${result.message}` },
     );
   }, [apiKey, selectedModel]);
 
   // ── Save ───────────────────────────────────────────────────────────────────
 
-  const canSave =
-    !useLLM || connectionStatus.kind === "success";
+  const canSave = !useLLM || connectionStatus.kind === "success";
 
   const handleSave = useCallback(() => {
     const newConfig: LLMConfig = {
       ...DEFAULT_LLM_CONFIG,
       enabled: useLLM,
-      apiKey: useLLM ? apiKey.trim() : "",
+      apiKey: apiKey.trim(),
       model: selectedModel,
     };
     onSave(newConfig);
@@ -230,19 +238,37 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
             {/* ── Algorithmic mode description ── */}
             {!useLLM && (
               <View style={styles.algoCard}>
-                <Text style={styles.algoTitle}>Pure Mathematics</Text>
+                <View style={styles.algoHeaderRow}>
+                  <Text style={styles.algoHeaderIcon}>📐</Text>
+                  <Text style={styles.algoTitle}>Pure Mathematics</Text>
+                </View>
                 <Text style={styles.algoDescription}>
-                  Fast, deterministic, rule-based AI. No API key required.
-                  Zero latency · fully offline.
+                  Fast, deterministic, rule-based AI. No API key required. Zero
+                  latency · fully offline.
                 </Text>
-                <View style={styles.algoFeatures}>
-                  {["Instant decisions", "No cost", "Works offline"].map(
-                    (f) => (
-                      <View key={f} style={styles.algoFeaturePill}>
-                        <Text style={styles.algoFeatureText}>✓ {f}</Text>
+                <View style={styles.algoFeaturesList}>
+                  {[
+                    {
+                      label: "Instant Decisions",
+                      desc: "0ms latency local calculation",
+                    },
+                    {
+                      label: "100% Free & Unlimited",
+                      desc: "Zero API token costs or request limits",
+                    },
+                    {
+                      label: "Fully Autonomous",
+                      desc: "Runs locally on your device without connection",
+                    },
+                  ].map((f) => (
+                    <View key={f.label} style={styles.algoFeatureItem}>
+                      <Text style={styles.algoFeatureCheck}>✓</Text>
+                      <View style={styles.algoFeatureTextContainer}>
+                        <Text style={styles.algoFeatureTitle}>{f.label}</Text>
+                        <Text style={styles.algoFeatureDesc}>{f.desc}</Text>
                       </View>
-                    ),
-                  )}
+                    </View>
+                  ))}
                 </View>
               </View>
             )}
@@ -320,6 +346,9 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                           </View>
                         )}
                       </View>
+                      <Text style={styles.modelDescription}>
+                        {model.description}
+                      </Text>
                       <View style={styles.pricingRow}>
                         <Text style={styles.pricingLabel}>
                           {model.inputPrice}
@@ -333,7 +362,6 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                         <Text style={styles.pricingUnit}> per 1M tokens</Text>
                       </View>
                     </TouchableOpacity>
-
                   );
                 })}
 
@@ -506,34 +534,72 @@ const styles = StyleSheet.create({
 
   // Algorithmic mode card
   algoCard: {
-    backgroundColor: "#1E1E30",
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: "rgba(30, 30, 48, 0.45)",
+    borderRadius: 18,
+    padding: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,193,7,0.25)",
+    borderColor: "rgba(255, 193, 7, 0.22)",
+    marginTop: 4,
+    shadowColor: "#FFC107",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  algoHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 8,
+  },
+  algoHeaderIcon: {
+    fontSize: 20,
   },
   algoTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    color: "#FFC107",
-    marginBottom: 6,
+    fontWeight: "800",
+    color: "#FFD54F",
+    letterSpacing: 0.5,
   },
-  algoDescription: { fontSize: 13, color: "#94A3B8", lineHeight: 18 },
-  algoFeatures: {
+  algoDescription: {
+    fontSize: 13,
+    color: "#94A3B8",
+    lineHeight: 19,
+    marginBottom: 16,
+  },
+  algoFeaturesList: {
+    gap: 10,
+  },
+  algoFeatureItem: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 10,
-  },
-  algoFeaturePill: {
-    backgroundColor: "rgba(255,193,7,0.12)",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    alignItems: "center",
+    backgroundColor: "rgba(255, 193, 7, 0.03)",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,193,7,0.3)",
+    borderColor: "rgba(255, 193, 7, 0.08)",
+    gap: 12,
   },
-  algoFeatureText: { fontSize: 11, color: "#FFC107", fontWeight: "600" },
+  algoFeatureCheck: {
+    color: "#FFC107",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  algoFeatureTextContainer: {
+    flex: 1,
+  },
+  algoFeatureTitle: {
+    fontSize: 12,
+    color: "#F1F5F9",
+    fontWeight: "700",
+    marginBottom: 1,
+  },
+  algoFeatureDesc: {
+    fontSize: 11,
+    color: "#64748B",
+    fontWeight: "500",
+  },
 
   // LLM panel
   llmPanel: {},
