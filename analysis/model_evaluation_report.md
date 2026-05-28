@@ -8,8 +8,8 @@ This document records the empirical performance, rules compliance, latency, and 
 
 | Model ID | Enabled | Games Run | Successful Plays | API/Timeout Fallbacks | Invalid Retries | Success Rate (%) | Latency / Play | Connection / Provider Issues | Key Notes & Rules Compliance |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `deepseek/deepseek-chat-v3.1` | **Yes** | 1 | 39 | 0 | 0 | 100.0% | ~6-8s | None | **Outstanding:** 100% rules compliance on the first try. High strategic depth (trump bleeding, partner feeding). Adaptive shortcuts successfully bypassed 36 simple plays. |
-| `meta-llama/llama-3.3-70b-instruct` | **Yes** | 1 | 30 | 3 | 0 | 90.9% | ~4-6s | Minor (3 fallbacks) | **Very High:** 100% rules compliance on successful responses (0 retries). Outstanding game strategy. Bypassed 42 plays using adaptive shortcuts. Seamlessly tolerated 3 provider-side API errors. |
+| `deepseek/deepseek-chat-v3.1` | **Yes** | 1 | 44 | 0 | 0 | 100.0% | ~10-13s | None | **Outstanding:** 100% rules compliance on the first try. High strategic depth. Bypassed 36 plays. Survives zero failures after ignoring Parasail! |
+| `meta-llama/llama-3.3-70b-instruct` | **Yes** | 1 | 35 | 0 | 2 | 100.0% | ~8-9s | None | **Outstanding:** Perfect 100.0% success rate with zero fallbacks after ignoring Parasail! Outstanding strategy. Bypassed 42 plays. |
 | `openai/gpt-4o-mini` | **Yes** | 1 | 29 | 0 | 7 | 90.6% | ~5-6s | None | **Ultra Stable:** 100% API connection reliability. High strategic depth. Struggled slightly with duplicate choice ID constraints (7 retries, 3 fallbacks to algorithmic AI), but completed the game cleanly. |
 | `qwen/qwen3-next-80b-a3b-instruct` | **Yes** | 1 | 48 | 0 | 0 | 100.0% | ~5-6s | None | **Outstanding:** 100% rules compliance and 100% success rate on the first try. Perfect strategic reasoning (trump conservation, teammate feeding, void analysis). |
 | `google/gemini-2.5-flash` | **Yes** | 1 | 31 | 0 | 0 | 100.0% | ~7-8s | None | **Outstanding:** 100% rules compliance and 100% success rate on the first try. Perfect strategic reasoning (trump conservation, teammate feeding, void analysis). |
@@ -18,7 +18,7 @@ This document records the empirical performance, rules compliance, latency, and 
 
 ## 2. Detailed Execution Log
 
-### Run #1: DeepSeek Chat V3.1
+### Run #1: DeepSeek Chat V3.1 (Clean Re-run)
 * **Date**: 2026-05-28
 * **Target Games**: 1
 * **Max Rounds**: 1 (Intentionally limited)
@@ -30,20 +30,20 @@ This document records the empirical performance, rules compliance, latency, and 
   - **Flawless Rules Compliance**: Demonstrated perfect alignment with Shengji's complex position-aware constraints (following suit, void discards, and cutting).
   - **Teammate & Partner Awareness**: Correctly fed point cards (Trick 8) to maximize scores when partner was winning securely.
   - **Advanced Trump Unification**: Mastered trump group unification by executing a brilliant trump-suit rank pair (`2♣, 2♦`) over-ruff to win the trick against `bot1`'s off-suit rank pair (`2♠, 2♠`) on Trick 15.
-  - **Clear Reasoning Blocks**: Highly logical and strategic decision logs.
+  - **Uptime Stability**: Survived zero provider failures or stubs after Parasail was globally excluded in OpenRouter settings. Highly strategic reasoning.
 
-### Run #2: Meta Llama 3.3 70B Instruct
+### Run #2: Meta Llama 3.3 70B Instruct (Clean Re-run)
 * **Date**: 2026-05-28
 * **Target Games**: 1
 * **Max Rounds**: 1 (Intentionally limited)
-* **API / Timeout Fallbacks**: 3
-* **Invalid Play Retries**: 0
-* **Overall Telemetry Success Rate**: 90.9%
+* **API / Timeout Fallbacks**: 0
+* **Invalid Play Retries**: 2
+* **Overall Telemetry Success Rate**: 100.0% (Zero fallbacks to local AI)
 * **Adaptive Shortcuts Bypassed**: 42 plays (Extremely efficient)
 * **Strategic Observations**:
   - **High Strategic Play**: Highlighted by smart trick contesting, partner coordination, and excellent card dumping choices.
-  - **Zero Retries for Rules**: Every single successful API response was immediately 100% valid under the game rules, requiring zero invalid play retries.
-  - **Connection Tolerance**: Seamlessly survived 3 provider-side API glitches or empty payloads, falling back to local rule-based AI to keep the game flow going.
+  - **Flawless Connection Stability**: survied 100% of the API calls without a single network timeout or error since Parasail was globally bypassed.
+  - **Robust Error Correction**: Encountered and successfully corrected 2 minor card choices on retries, maintaining a 100% round success rate without falling back to local AI once.
 
 ### Run #3: GPT-4o Mini
 * **Date**: 2026-05-28
