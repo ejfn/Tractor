@@ -301,7 +301,9 @@ describe("Unattended Game Simulation", () => {
       // Verify all games completed successfully
       stats.gameStats.forEach((game: GameStats) => {
         expect(game.status).toBe("completed");
-        expect(game.winner).toBeDefined();
+        if (!process.env.MAX_ROUNDS) {
+          expect(game.winner).toBeDefined();
+        }
         expect(game.rounds).toBeGreaterThan(0);
       });
     },

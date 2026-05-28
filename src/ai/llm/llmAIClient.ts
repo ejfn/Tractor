@@ -24,7 +24,14 @@ export async function callOpenRouter(
     typeof process !== "undefined" && process.env && process.env.JEST_WORKER_ID;
 
   if (isJest) {
-    return callOpenRouterNode(apiKey, model, apiUrl, messages, timeoutMs, useJsonFormat);
+    return callOpenRouterNode(
+      apiKey,
+      model,
+      apiUrl,
+      messages,
+      timeoutMs,
+      useJsonFormat,
+    );
   }
 
   const payload: any = {
@@ -95,9 +102,7 @@ export async function callOpenRouter(
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === "AbortError") {
       gameLogger.error("llm_api_timeout", { timeoutMs });
-      throw new Error(
-        `OpenRouter API request timed out after ${timeoutMs}ms.`,
-      );
+      throw new Error(`OpenRouter API request timed out after ${timeoutMs}ms.`);
     }
     gameLogger.error("llm_api_failed", {
       error: error instanceof Error ? error.message : String(error),
@@ -121,10 +126,13 @@ function callOpenRouterNode(
   return new Promise((resolve, reject) => {
     try {
       const modName = "https";
+
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const https = typeof require !== "undefined" ? require(modName) : undefined;
       if (!https) {
-        throw new Error("Node.js https module is not available in this environment.");
+        throw new Error(
+          "Node.js https module is not available in this environment.",
+        );
       }
 
       const payload: any = {
@@ -206,7 +214,9 @@ function callOpenRouterNode(
             });
             resolve(assistantMessage);
           } catch (error) {
-            reject(new Error(`Failed to parse OpenRouter response JSON: ${error}`));
+            reject(
+              new Error(`Failed to parse OpenRouter response JSON: ${error}`),
+            );
           }
         });
       });
@@ -221,7 +231,9 @@ function callOpenRouterNode(
       req.on("timeout", () => {
         req.destroy();
         gameLogger.error("llm_api_timeout", { timeoutMs });
-        reject(new Error(`OpenRouter API request timed out after ${timeoutMs}ms.`));
+        reject(
+          new Error(`OpenRouter API request timed out after ${timeoutMs}ms.`),
+        );
       });
 
       req.write(postData);
@@ -231,7 +243,6 @@ function callOpenRouterNode(
     }
   });
 }
-
 
 /**
  * Fast check to test if an API Key can connect to OpenRouter successfully.
@@ -247,11 +258,18 @@ export async function testOpenRouterConnection(
       { role: "system", content: "You are a test helper." },
       {
         role: "user",
-        content: "Respond with the single word \"ok\".",
+        content: 'Respond with the single word "ok".',
       },
     ];
 
-    const result = await callOpenRouter(apiKey, model, apiUrl, messages, 12000, false);
+    const result = await callOpenRouter(
+      apiKey,
+      model,
+      apiUrl,
+      messages,
+      12000,
+      false,
+    );
     const cleaned = result.trim().toLowerCase();
 
     if (cleaned.includes("ok")) {
