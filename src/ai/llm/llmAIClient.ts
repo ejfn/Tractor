@@ -18,20 +18,26 @@ export async function callOpenRouter(
   apiUrl: string,
   messages: ChatMessage[],
   timeoutMs = 15000,
+  useJsonFormat = true,
 ): Promise<string> {
   const isJest =
     typeof process !== "undefined" && process.env && process.env.JEST_WORKER_ID;
 
   if (isJest) {
-    return callOpenRouterNode(apiKey, model, apiUrl, messages, timeoutMs);
+    return callOpenRouterNode(apiKey, model, apiUrl, messages, timeoutMs, useJsonFormat);
   }
 
-  const postData = JSON.stringify({
+  const payload: any = {
     model,
     messages,
-    response_format: { type: "json_object" },
     temperature: 0.1, // Low temperature for deterministic card selection and formatting
-  });
+  };
+
+  if (useJsonFormat) {
+    payload.response_format = { type: "json_object" };
+  }
+
+  const postData = JSON.stringify(payload);
 
   gameLogger.info("llm_api_call_start", {
     model,
@@ -110,6 +116,7 @@ function callOpenRouterNode(
   apiUrl: string,
   messages: ChatMessage[],
   timeoutMs: number,
+  useJsonFormat = true,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     try {
@@ -120,12 +127,17 @@ function callOpenRouterNode(
         throw new Error("Node.js https module is not available in this environment.");
       }
 
-      const postData = JSON.stringify({
+      const payload: any = {
         model,
         messages,
-        response_format: { type: "json_object" },
         temperature: 0.1,
-      });
+      };
+
+      if (useJsonFormat) {
+        payload.response_format = { type: "json_object" };
+      }
+
+      const postData = JSON.stringify(payload);
 
       const url = new URL(apiUrl);
       const options = {
@@ -235,14 +247,14 @@ export async function testOpenRouterConnection(
       { role: "system", content: "You are a test helper." },
       {
         role: "user",
-        content: "Respond with JSON key 'status' equal to 'ok'.",
+        content: "Respond with the single word \"ok\".",
       },
     ];
 
-    const result = await callOpenRouter(apiKey, model, apiUrl, messages, 12000);
-    const parsed = JSON.parse(result);
+    const result = await callOpenRouter(apiKey, model, apiUrl, messages, 12000, false);
+    const cleaned = result.trim().toLowerCase();
 
-    if (parsed && parsed.status === "ok") {
+    if (cleaned.includes("ok")) {
       return { success: true, message: "Connection successful!" };
     }
     return { success: false, message: `Unexpected payload: ${result}` };
