@@ -230,19 +230,28 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
             {/* ── Algorithmic mode description ── */}
             {!useLLM && (
               <View style={styles.algoCard}>
-                <Text style={styles.algoTitle}>Pure Mathematics</Text>
+                <View style={styles.algoHeaderRow}>
+                  <Text style={styles.algoHeaderIcon}>📐</Text>
+                  <Text style={styles.algoTitle}>Pure Mathematics</Text>
+                </View>
                 <Text style={styles.algoDescription}>
                   Fast, deterministic, rule-based AI. No API key required.
                   Zero latency · fully offline.
                 </Text>
-                <View style={styles.algoFeatures}>
-                  {["Instant decisions", "No cost", "Works offline"].map(
-                    (f) => (
-                      <View key={f} style={styles.algoFeaturePill}>
-                        <Text style={styles.algoFeatureText}>✓ {f}</Text>
+                <View style={styles.algoFeaturesList}>
+                  {[
+                    { label: "Instant Decisions", desc: "0ms latency local calculation" },
+                    { label: "100% Free & Unlimited", desc: "Zero API token costs or request limits" },
+                    { label: "Fully Autonomous", desc: "Runs locally on your device without connection" },
+                  ].map((f) => (
+                    <View key={f.label} style={styles.algoFeatureItem}>
+                      <Text style={styles.algoFeatureCheck}>✓</Text>
+                      <View style={styles.algoFeatureTextContainer}>
+                        <Text style={styles.algoFeatureTitle}>{f.label}</Text>
+                        <Text style={styles.algoFeatureDesc}>{f.desc}</Text>
                       </View>
-                    ),
-                  )}
+                    </View>
+                  ))}
                 </View>
               </View>
             )}
@@ -506,34 +515,72 @@ const styles = StyleSheet.create({
 
   // Algorithmic mode card
   algoCard: {
-    backgroundColor: "#1E1E30",
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: "rgba(30, 30, 48, 0.45)",
+    borderRadius: 18,
+    padding: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,193,7,0.25)",
+    borderColor: "rgba(255, 193, 7, 0.22)",
+    marginTop: 4,
+    shadowColor: "#FFC107",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  algoHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 8,
+  },
+  algoHeaderIcon: {
+    fontSize: 20,
   },
   algoTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    color: "#FFC107",
-    marginBottom: 6,
+    fontWeight: "800",
+    color: "#FFD54F",
+    letterSpacing: 0.5,
   },
-  algoDescription: { fontSize: 13, color: "#94A3B8", lineHeight: 18 },
-  algoFeatures: {
+  algoDescription: {
+    fontSize: 13,
+    color: "#94A3B8",
+    lineHeight: 19,
+    marginBottom: 16,
+  },
+  algoFeaturesList: {
+    gap: 10,
+  },
+  algoFeatureItem: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 10,
-  },
-  algoFeaturePill: {
-    backgroundColor: "rgba(255,193,7,0.12)",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    alignItems: "center",
+    backgroundColor: "rgba(255, 193, 7, 0.03)",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,193,7,0.3)",
+    borderColor: "rgba(255, 193, 7, 0.08)",
+    gap: 12,
   },
-  algoFeatureText: { fontSize: 11, color: "#FFC107", fontWeight: "600" },
+  algoFeatureCheck: {
+    color: "#FFC107",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  algoFeatureTextContainer: {
+    flex: 1,
+  },
+  algoFeatureTitle: {
+    fontSize: 12,
+    color: "#F1F5F9",
+    fontWeight: "700",
+    marginBottom: 1,
+  },
+  algoFeatureDesc: {
+    fontSize: 11,
+    color: "#64748B",
+    fontWeight: "500",
+  },
 
   // LLM panel
   llmPanel: {},
