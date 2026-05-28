@@ -239,7 +239,7 @@ export async function testOpenRouterConnection(
       },
     ];
 
-    const result = await callOpenRouter(apiKey, model, apiUrl, messages, 6000);
+    const result = await callOpenRouter(apiKey, model, apiUrl, messages, 12000);
     const parsed = JSON.parse(result);
 
     if (parsed && parsed.status === "ok") {
