@@ -361,26 +361,17 @@ export async function selectFollowingPlayAsync(
     currentPlayer.hand.some((c) => isTrump(c, trumpInfo))
   ) {
     // Engagement Point 1: Void in led suit, holds trumps — trump vs discard
-    engagementContext = {
-      dilemma: `We are VOID in the led suit (${leadingCards[0]?.suit ?? "Trump Group"}). Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning the trick with ${trickPoints} points. We hold trump cards and must decide: trump in to win, or save trumps and discard.`,
-      specificHelp: `Should we TRUMP-IN to win the trick, or DISCARD a non-trump card to save our trumps? If trumping, pick the lowest trump combo that beats the current winner. If discarding, pick the lowest useless card.`,
-    };
+    engagementContext = `We are VOID in the led suit (${leadingCards[0]?.suit ?? "Trump Group"}). Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning the trick with ${trickPoints} points. Decide whether to TRUMP-IN with the lowest trump combination to win, or DISCARD a low non-trump card to save trumps.`;
   } else if (
     analysis.scenario === "insufficient" ||
     (analysis.scenario === "void" &&
       !currentPlayer.hand.some((c) => isTrump(c, trumpInfo)))
   ) {
     // Engagement Point 2: Must discard off-suit — feed points vs deny points
-    engagementContext = {
-      dilemma: `We must DISCARD off-suit cards (not enough of the led suit). Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning with ${trickPoints} points in the trick.`,
-      specificHelp: `If our partner is winning safely, feed them point cards (5, 10, King) to secure points. If opponents are winning, discard our lowest non-point cards to deny them points. Choose which card(s) to discard.`,
-    };
+    engagementContext = `We must DISCARD off-suit cards. Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning with ${trickPoints} points in the trick. If our partner is winning safely, feed them point cards (5, 10, King) to secure points. If opponents are winning, play our lowest non-point card to deny points.`;
   } else {
     // Engagement Point 3: Multiple same-suit options — how aggressively to play
-    engagementContext = {
-      dilemma: `We have multiple cards or combos of the led suit to play. Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning with ${trickPoints} points. Decide: compete aggressively (high cards) or preserve high cards / combos.`,
-      specificHelp: `Should we play HIGH cards to beat opponents, or play LOW to preserve our pairs/tractors and high cards for later? Select the optimal cards from our hand.`,
-    };
+    engagementContext = `We have multiple cards of the led suit to play. Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning with ${trickPoints} points. Decide whether to play HIGH to beat opponents and win the trick, or play LOW to preserve our pairs/tractors and high cards for later.`;
   }
 
   gameLogger.debug("llm_following_engagement", {
