@@ -52,14 +52,14 @@ export async function simulateLLMLatency(): Promise<void> {
 
   const avg = getAverageLLMDuration();
   if (avg === 0) {
-    // No LLM calls recorded yet — use a reasonable default (1–2s)
-    await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
+    // No LLM calls recorded yet — use a reasonable default centered on the 50%–75% of standard 1–2s (500–1500ms)
+    await new Promise((r) => setTimeout(r, 500 + Math.random() * 1000));
     return;
   }
 
-  // Random duration: 70%–130% of the rolling average, clamped to [500ms, 5000ms]
-  const jitter = 0.7 + Math.random() * 0.6;
-  const delay = Math.max(500, Math.min(5000, Math.round(avg * jitter)));
+  // Random duration: 50%–75% of the rolling average, clamped to [250ms, 3750ms]
+  const jitter = 0.50 + Math.random() * 0.25;
+  const delay = Math.max(250, Math.min(3750, Math.round(avg * jitter)));
 
   gameLogger.debug("llm_bypass_simulated_latency", { avg, delay });
   await new Promise((r) => setTimeout(r, delay));

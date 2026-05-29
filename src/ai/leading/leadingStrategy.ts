@@ -249,11 +249,7 @@ export async function selectLeadingPlayAsync(
     )
     .join("\n");
 
-  const engagementContext: LLMEngagementContext = {
-    dilemma:
-      "We need to choose which suit or combination to lead. We want to secure the lead, pressure opponents, avoid leading under opponents' voids, and avoid wasting point cards prematurely.",
-    specificHelp: `Evaluate our lead candidates. Help us choose the optimal leading play. Recommend the best option and explain your reasoning.\n\nCandidates evaluated by rule-based engine:\n${allOptionsStr}`,
-  };
+  const engagementContext: LLMEngagementContext = `Choose the optimal leading play from our candidates. Recommend the best option (considering non-trump Aces, bleeding trumps, void setups, and protecting point cards) and explain your reasoning. Candidates evaluated by rule-based engine:\n${allOptionsStr}`;
 
   gameLogger.debug("llm_leading_engagement", {
     playerId,
