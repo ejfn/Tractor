@@ -21,8 +21,8 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 
 ## 2. Card Values & Trump Hierarchy
 - **Points**: 5 = 5pts, 10 = 10pts, King = 10pts (200 total).
-- **Trump Group**: Single unified suit. BJ > SJ > Trump-Suit Rank > Off-Suit Ranks (equal, first played wins) > Trump Suit Regulars (A > K > Q > ... > 3).
-- **Off-Suits**: A > K > Q > ... > 3. Cross-suit plays cannot beat each other.
+- **Trump Group**: Single unified suit. BJ > SJ > Trump-Suit Rank > Off-Suit Ranks (equal, first played wins) > Trump Suit Regulars (A > K > Q > ... > 3). Off-Suit Ranks and Jokers are irreplaceable — when forced to discard trumps, sacrifice the weakest Trump Suit Regulars first.
+- **Off-Suits**: Cards of the trump rank leave their off-suit and join the Trump Group. Remaining cards rank A > K > Q > ... > 3; an Ace is the highest card left in its suit — unbeatable unless cut by trump. Cross-suit plays cannot beat each other.
 
 ## 3. Combinations & Tractors
 - **Combos**: Single; Pair (2 identical cards); Tractor (2+ consecutive pairs in same suit/trump group).
@@ -41,7 +41,7 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 - **Trump vs Trump**: Compare highest component combo type (Tractor > Pair > Single), then compare highest card.
 
 ## 6. Strategic Heuristics
-- **Conservation**: BJ (100) > SJ (90) > Trump Ranks > Aces > Kings ... Weakest Trump (5). Play lowest when forced or partner wins.
+- **Conservation**: BJ > SJ > Trump Ranks > Aces > Kings ... Weakest Trump Regulars. Play lowest when forced or partner wins.
 - **Leader (1st)**: Lead off-suit Aces/Kings early; lead trump pairs (avoid single trumps). Setup void partner by playing point cards (5, 10, K) to trump securely. Play high non-points to force opponent trumps.
 - **2nd Player**: Partner winning -> feed points (K > 10 > 5). Opponent winning -> lowest non-point, or slightly higher to pressure next players. Void -> ruff to win/block (slightly overplay winning card to force opponents to over-ruff expensively).
 - **3rd Player**: Partner winning -> feed points (10 > K > 5). Take over or block next player if partner's play is weak (slightly overplay to pressure 4th player). Void -> ruff to secure points/block: ruff point-trumps if last opponent must follow; ruff slightly higher if last opponent is void to force expensive over-ruff.
