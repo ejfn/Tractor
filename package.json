@@ -25,7 +25,6 @@
     "eslint-config-expo": "~56.0.4",
     "expo": "~56.0.4",
     "expo-asset": "~56.0.14",
-    "expo-av": "^16.0.8",
     "expo-constants": "~56.0.14",
     "expo-dev-client": "~56.0.15",
     "expo-font": "~56.0.5",
