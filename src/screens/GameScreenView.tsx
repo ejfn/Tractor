@@ -219,7 +219,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   thinkingDots={thinkingDots}
                   isRoundStartingPlayer={isAI2RoundStartingPlayer}
                   isLLM={isLLMActive}
-                  onDoubleTap={onOpenSettings}
+                  onPress={onOpenSettings}
                 />
               ) : null
             }
@@ -241,7 +241,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   thinkingDots={thinkingDots}
                   isRoundStartingPlayer={isAI3RoundStartingPlayer}
                   isLLM={isLLMActive}
-                  onDoubleTap={onOpenSettings}
+                  onPress={onOpenSettings}
                 />
               ) : null
             }
@@ -263,7 +263,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   thinkingDots={thinkingDots}
                   isRoundStartingPlayer={isAI1RoundStartingPlayer}
                   isLLM={isLLMActive}
-                  onDoubleTap={onOpenSettings}
+                  onPress={onOpenSettings}
                 />
               ) : null
             }

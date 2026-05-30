@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React from "react";
 import {
   Animated,
   StyleSheet,
@@ -29,8 +29,8 @@ interface AIPlayerViewProps {
   isRoundStartingPlayer?: boolean;
   /** When true the thinking dots render in purple LLM mode */
   isLLM?: boolean;
-  /** Called when the player name is double-tapped */
-  onDoubleTap?: () => void;
+  /** Called when the player name is pressed */
+  onPress?: () => void;
 }
 
 /**
@@ -47,20 +47,9 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   thinkingDots,
   isRoundStartingPlayer = false,
   isLLM = false,
-  onDoubleTap,
+  onPress,
 }) => {
   const { t: tCommon } = useCommonTranslation();
-
-  const lastTapRef = useRef(0);
-  const handleTap = useCallback(() => {
-    const now = Date.now();
-    if (now - lastTapRef.current < 300) {
-      onDoubleTap?.();
-      lastTapRef.current = 0;
-    } else {
-      lastTapRef.current = now;
-    }
-  }, [onDoubleTap]);
 
   // GameTable provides the container sizing/positioning,
   // so we don't need wrapper styles
@@ -116,7 +105,7 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
     <View style={styles.container}>
       <TouchableOpacity
         style={labelStyle}
-        onPress={handleTap}
+        onPress={onPress}
         activeOpacity={0.7}
       >
         <View style={styles.labelContent}>
