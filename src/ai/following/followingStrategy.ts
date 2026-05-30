@@ -13,7 +13,6 @@ import { executeMultiComboFollowingAlgorithm } from "./multiComboFollowingStrate
 import { routeToDecision } from "./routingLogic";
 import { analyzeSuitAvailability } from "./suitAvailabilityAnalysis";
 import { callLLMForDecision, logLLMShortcut } from "../llm/llmAIStrategy";
-import { LLMEngagementContext } from "../llm/llmGamePrompt";
 
 /**
  * Enhanced Following Strategy V2 - Main Entry Point
@@ -348,33 +347,7 @@ export async function selectFollowingPlayAsync(
       currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
   }
 
-  // Build targeted engagement context for this specific decision
-  const trickWinnerAnalysis = context.trickWinnerAnalysis;
-  const isTeammateWinning = trickWinnerAnalysis?.isTeammateWinning ?? false;
-  const currentWinner = trickWinnerAnalysis?.currentWinner ?? "unknown";
-  const trickPoints = trickWinnerAnalysis?.trickPoints ?? 0;
-
-  let engagementContext: LLMEngagementContext;
-
-  if (
-    analysis.scenario === "void" &&
-    currentPlayer.hand.some((c) => isTrump(c, trumpInfo))
-  ) {
-    // Engagement Point 1: Void in led suit, holds trumps — trump vs discard
-    engagementContext = `We are VOID in the led suit (look at your hand's "Off-Suit ${leadingCards[0]?.suit ?? "Trump Group"}" section — it shows void). ${currentWinner} is currently winning (Teammate Winning: ${isTeammateWinning}) with ${trickPoints} points. Decide whether to TRUMP-IN from your "Trump Group" section with the lowest sufficient trump combination to win, or DISCARD a low non-point card from another off-suit section to save trumps.`;
-  } else if (
-    analysis.scenario === "insufficient" ||
-    (analysis.scenario === "void" &&
-      !currentPlayer.hand.some((c) => isTrump(c, trumpInfo)))
-  ) {
-    // Engagement Point 2: Must discard off-suit — feed points vs deny points
-    engagementContext = `We must DISCARD off-suit cards (we are void or have insufficient cards of the led suit). ${currentWinner} is currently winning (Teammate Winning: ${isTeammateWinning}) with ${trickPoints} points. If teammate is winning safely, feed point cards (10 > King > 5) to secure points. If opponents are winning, NEVER discard points — play our lowest non-point card from another off-suit section to deny free points.`;
-  } else {
-    // Engagement Point 3: Multiple same-suit options — how aggressively to play
-    engagementContext = `We have multiple cards of the led suit to play (see the relevant hand section). ${currentWinner} is currently winning (Teammate Winning: ${isTeammateWinning}) with ${trickPoints} points. Decide whether to play HIGH to beat opponents and win the trick, or play LOW (preserving Active Ranks, pairs/tractors, and high cards) for future control.`;
-  }
-
-  gameLogger.debug("llm_following_engagement", {
+  gameLogger.debug("llm_following_decision", {
     playerId: currentPlayerId,
     scenario: analysis.scenario,
     rulesBasedPick: fallbackCards.map((c) => c.toString()),
@@ -384,7 +357,6 @@ export async function selectFollowingPlayAsync(
     gameState,
     currentPlayerId,
     currentPlayer.hand,
-    engagementContext,
     fallbackCards,
   );
 }

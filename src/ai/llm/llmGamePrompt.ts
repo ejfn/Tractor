@@ -4,11 +4,16 @@ import {
   PlayerId,
   getPartnerId,
   TrumpInfo,
+  Suit,
 } from "../../types";
 import { sortCards } from "../../utils/cardSorting";
 import { isTrump } from "../../game/cardValue";
+import { analyzeSuitAvailability } from "../following/suitAvailabilityAnalysis";
+import { detectCandidateLeads } from "../leading/candidateLeadDetection";
+import { collectLeadingContext } from "../leading/leadingContext";
+import { scoreNonTrumpLead, scoreTrumpLead } from "../leading/leadingScoring";
 
-export type LLMEngagementContext = string;
+
 
 export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI Strategic Rules
 
@@ -131,7 +136,6 @@ export function buildLLMUserPrompt(
   gameState: GameState,
   playerId: PlayerId,
   handCards: Card[],
-  engagementContext?: LLMEngagementContext,
 ): { system: string; user: string } {
   const trumpInfo = gameState.trumpInfo;
   const sortedHand = sortCards(handCards, trumpInfo);
@@ -171,7 +175,7 @@ export function buildLLMUserPrompt(
     }
   });
 
-  const choicesStr = allCategories
+  const handChoicesStr = allCategories
     .map((cat) => {
       const catCards = categories[cat] || [];
       if (catCards.length === 0) {
@@ -189,47 +193,130 @@ export function buildLLMUserPrompt(
   const isLeading = !currentTrick || currentTrick.plays.length === 0;
   const requiredCount = !isLeading ? currentTrick.plays[0].cards.length : 0;
 
-  let trickStateStr = "";
+  // Helper to map game Card to prompt choice ID
+  const cardToChoiceId = (card: Card): string => {
+    const match = choicesMap.find((c) => c.cardId === card.id);
+    return match ? `${match.id}(${card.toString()})` : card.toString();
+  };
+
+  let activeTrickStatusStr = "";
   let leadingCardsStr = "None (You are the leader)";
-  let playsInTrickStr = "None yet";
-  let relevantCardsInfoStr = "";
+  let suitAnalysisStr = "";
+  let candidateOptionsStr = "";
+  let taskInstructionStr = "";
 
   if (isLeading) {
-    trickStateStr = `You are leading this trick!
-As the leader, you must play exactly ONE valid combination from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo). Mismatched combination types are strictly illegal.`;
+    activeTrickStatusStr = `- Status: You are leading this trick!
+- Requirement: You must play exactly ONE valid combination from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo). Mismatched combination types are strictly illegal.`;
+    taskInstructionStr = "Select exactly ONE valid combination of cards from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo) to lead the trick.";
+
+    const candidates = detectCandidateLeads(
+      handCards,
+      gameState,
+      playerId,
+      trumpInfo,
+    );
+    const context = collectLeadingContext(gameState, playerId);
+    const nonTrumpCandidates = candidates
+      .filter((candidate) => !candidate.metadata.isTrump)
+      .map((candidate) => ({
+        candidate,
+        result: scoreNonTrumpLead(candidate, trumpInfo, context),
+      }))
+      .sort((a, b) => b.result.score - a.result.score);
+
+    const trumpCandidates = candidates
+      .filter((candidate) => candidate.metadata.isTrump)
+      .map((candidate) => ({
+        candidate,
+        result: scoreTrumpLead(candidate, trumpInfo, context),
+      }))
+      .sort((a, b) => b.result.score - a.result.score);
+
+    const scoredCandidates = [...nonTrumpCandidates, ...trumpCandidates].sort(
+      (a, b) => b.result.score - a.result.score,
+    );
+
+    const allOptions = scoredCandidates
+      .map((entry, idx) => {
+        const cardsStr = entry.candidate.cards.map(cardToChoiceId).join(", ");
+        return `- Option L${idx + 1}: Play [${cardsStr}] (Rule Score: ${entry.result.score})`;
+      })
+      .join("\n");
+
+    candidateOptionsStr = `Here are the candidate combinations you can lead, along with a strategic rating from the rule-based engine:
+${allOptions || "- No candidates found (using fallback)"}
+`;
   } else {
     const plays = currentTrick.plays;
     const leadPlay = plays[0];
+    const winningPlayerId = currentTrick.winningPlayerId || leadPlay.playerId;
+    const isTeammateWinning = winningPlayerId === getPartnerId(playerId);
+    const trickPoints = currentTrick.points || 0;
+
     leadingCardsStr = leadPlay.cards.map((c) => c.toString()).join(", ");
 
-    trickStateStr = `The trick was led by ${leadPlay.playerId} playing: ${leadingCardsStr}.
-You must play exactly ${requiredCount} card(s). You must follow the led suit/trump group if you have any.`;
-
-    playsInTrickStr = plays
+    const playsStr = plays
       .map(
         (p) =>
-          `- ${p.playerId} played: ${p.cards.map((c) => c.toString()).join(", ")}`,
+          `- ${p.playerId} played: ${p.cards.map((c) => c.toString()).join(", ")}${p.playerId === winningPlayerId ? " ⭐ (CURRENT LEADING PLAY)" : ""}`,
       )
       .join("\n");
 
-    const isLeadingTrump = leadPlay.cards.some((c) => isTrump(c, trumpInfo));
-    const leadingSuit = leadPlay.cards[0].suit;
-    const ledSuitDisplay = isLeadingTrump ? "Trump Group" : `Off-Suit ${leadingSuit}`;
+    const statusLines = [
+      `- Led by: ${leadPlay.playerId} playing [${leadingCardsStr}]`,
+      `- Requirement: You must play exactly ${requiredCount} card(s). You must follow the led suit/trump group if you have any.`,
+      `\nPlays in this trick so far:`,
+      playsStr,
+      `\n- Current Trick Winner: ${winningPlayerId} (Teammate: ${isTeammateWinning ? "YES" : "NO"})`,
+      `- Current Points in Trick: ${trickPoints} pts`,
+    ];
+    activeTrickStatusStr = statusLines.join("\n");
+    taskInstructionStr = `Select exactly ${requiredCount} card(s) from your hand following the trick requirement and suit following rules.`;
 
-    const matchingHandCards = isLeadingTrump
-      ? handCards.filter((c) => isTrump(c, trumpInfo))
-      : handCards.filter(
-        (c) => c.suit === leadingSuit && !isTrump(c, trumpInfo),
-      );
+    // Analyze suit following using the same engine as algorithmic AI
+    const analysis = analyzeSuitAvailability(
+      leadPlay.cards,
+      handCards,
+      trumpInfo,
+    );
 
-    relevantCardsInfoStr = `
-=== YOUR RELEVANT CARDS FOR THIS TRICK ===
-- Led suit/group is: ${ledSuitDisplay}
-${matchingHandCards.length >= requiredCount
-        ? `- You hold ${matchingHandCards.length} matching card(s) in your hand's corresponding section and MUST follow suit. Select exactly ${requiredCount} card ID(s) ONLY from that section.`
-        : `- You only hold ${matchingHandCards.length} matching card(s) in that section! You MUST play ALL of them. For the remaining ${requiredCount - matchingHandCards.length} card(s), you can either discard (sluff) cards from other off-suit sections, or play TRUMP cards from your "Trump Group" section to trump (ruff) and try to win the trick!`
+    const ledSuitDisplay = analysis.evaluateSuit === Suit.None ? "Trump Group" : analysis.evaluateSuit;
+    const lines: string[] = [
+      `- Led combo type: ${analysis.leadingComboType} (${analysis.requiredLength} cards)`,
+      `- Led suit/group: ${ledSuitDisplay}`,
+      `- Your cards in that suit: ${analysis.availableCount}`,
+      `- Scenario: ${analysis.scenario}`,
+    ];
+
+    switch (analysis.scenario) {
+      case "valid_combos": {
+        lines.push(`- You have matching ${analysis.leadingComboType} combos to choose from:`);
+        for (const combo of analysis.validCombos) {
+          const ids = combo.cards.map(cardToChoiceId).join(", ");
+          lines.push(`    • ${combo.type}: [${ids}]`);
+        }
+        break;
       }
-`;
+      case "enough_remaining": {
+        lines.push(`- You have enough cards in the led suit but NO matching ${analysis.leadingComboType} combos.`);
+        lines.push(`- You must still play ${analysis.requiredLength} card(s) from this suit. Available cards:`);
+        lines.push(`    ${analysis.remainingCards.map(cardToChoiceId).join(", ")}`);
+        break;
+      }
+      case "insufficient": {
+        lines.push(`- You only have ${analysis.availableCount} card(s) but ${analysis.requiredLength} are required.`);
+        lines.push(`- You MUST play ALL your cards in that suit: ${analysis.remainingCards.map(cardToChoiceId).join(", ")}`);
+        lines.push(`- Fill the remaining ${analysis.requiredLength - analysis.availableCount} slot(s) from other suits (discard or trump).`);
+        break;
+      }
+      case "void": {
+        lines.push(`- You are VOID in the led suit. You may trump (ruff) with trump cards or discard (sluff) from any suit.`);
+        break;
+      }
+    }
+
+    suitAnalysisStr = lines.join("\n") + "\n";
   }
 
   // Reconstruct round tricks history (limit to last 3 tricks to keep prompt light)
@@ -264,41 +351,33 @@ ${matchingHandCards.length >= requiredCount
   const teamId = currentPlayer?.team || "A";
   const partnerId = getPartnerId(playerId);
 
-  let engagementSection = "";
-  if (engagementContext) {
-    engagementSection = `
-=== STRATEGIC DECISION POINT: CONTEXT & SPECIFIC HELP ===
-- ${engagementContext}
-`;
-  }
-
-  const userPrompt = `${engagementSection}
-=== CURRENT STATE ===
+  const userPrompt = `=== CURRENT STATE ===
 - Your Player ID: ${playerId}
 - Your Team: Team ${teamId} (Teammate: ${partnerId})
 - Current Round Trump Rank: ${trumpInfo.trumpRank}
 - Current Round Trump Suit: ${trumpInfo.trumpSuit || "None"}
-${relevantCardsInfoStr}
-=== TRICK STATE ===
-${trickStateStr}
 
-=== CURRENT PLAYS IN THIS TRICK ===
-${playsInTrickStr}
+=== ROUND HISTORY (PREVIOUS TRICKS) ===
+${historyStr}
 
 === CONFIRMED PLAYER SUIT VOIDS (WHO HAS FAILED TO FOLLOW SUIT) ===
 These players are 100% confirmed void because they failed to follow suit in a previous trick. Note: Other players may also be void if they recently played their last card of a suit, but they are not yet confirmed:
 ${voidsStr}
 
-=== ROUND HISTORY (PREVIOUS TRICKS) ===
-${historyStr}
+=== ACTIVE TRICK STATUS ===
+${activeTrickStatusStr}
 
 === YOUR HAND (GROUPED BY SUIT & SORTED FROM STRONGEST TO WEAKEST) ===
-Your hand has ${handCards.length} cards remaining. Select from these choices by their IDs:
+Your hand has ${handCards.length} cards remaining:
 
-${choicesStr}
+${handChoicesStr}
+
+${isLeading ? "=== CANDIDATE LEAD OPTIONS ===" : "=== SUIT FOLLOWING ANALYSIS ==="}
+${isLeading ? candidateOptionsStr : suitAnalysisStr}
 
 === TASK ===
-Select exactly the required number of cards following Shengji rules. Output ONLY a raw JSON object (no markdown \`\`\`json wrappers) matching this format:
+${taskInstructionStr}
+Output ONLY a raw JSON object (no markdown \`\`\`json wrappers) matching this format:
 {"reasoning": "brief strategic explanation here", "play": ["c1", "c2"]}
 `;
 

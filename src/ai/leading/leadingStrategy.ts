@@ -8,7 +8,6 @@ import {
   logLLMShortcut,
   simulateLLMLatency,
 } from "../llm/llmAIStrategy";
-import { LLMEngagementContext } from "../llm/llmGamePrompt";
 
 /**
  * Leading Strategy - Scoring-based leading logic
@@ -238,20 +237,8 @@ export async function selectLeadingPlayAsync(
     return currentPlayer.hand.length > 0 ? [currentPlayer.hand[0]] : [];
   }
 
-  // 5. Ambiguous lead — engage LLM with already-scored candidates list
-  const scoredCandidates = [...nonTrumpCandidates, ...trumpCandidates].sort(
-    (a, b) => b.result.score - a.result.score,
-  );
-  const allOptionsStr = scoredCandidates
-    .map(
-      (entry, idx) =>
-        `Option L${idx + 1}: Play ${entry.candidate.cards.map((card) => card.toString()).join(", ")} (Score: ${entry.result.score})`,
-    )
-    .join("\n");
-
-  const engagementContext: LLMEngagementContext = `Choose the optimal leading play from the candidates below. Your hand is grouped into \"Trump Group\" and off-suit sections (strongest to weakest). Consider: leading off-suit Aces/Kings early for control; leading trump pairs to bleed opponents; conserving Active Ranks and Jokers; setting up void suits. Explain your reasoning. Candidates scored by rule-based engine:\n${allOptionsStr}`;
-
-  gameLogger.debug("llm_leading_engagement", {
+  // 5. Ambiguous lead — engage LLM
+  gameLogger.debug("llm_leading_decision", {
     playerId,
     candidateCount: candidates.length,
     rulesBasedPick: fallbackCards.map((c) => c.toString()),
@@ -261,7 +248,6 @@ export async function selectLeadingPlayAsync(
     gameState,
     playerId,
     currentPlayer.hand,
-    engagementContext,
     fallbackCards,
   );
 }
