@@ -88,9 +88,10 @@ git add . && git commit -m "Description"
 
 # 3. Push and create PR
 git push origin ejfn/feature-name -u
-gh pr create --title "Title" --body "Description"
+GITHUB_TOKEN= gh pr create --title "Title" --body "Description"
 ```
 
+- **GitHub CLI Note**: In some agent environments, `GITHUB_TOKEN` is set to an invalid placeholder which causes the `gh` command to fail. Prepend `gh` commands with `GITHUB_TOKEN= ` (e.g., `GITHUB_TOKEN= gh pr create ...`) or run `unset GITHUB_TOKEN` before using `gh`.
 - Main branch is protected - requires PR approval
 - Use descriptive branch names: `ejfn/fix-scoring`, `ejfn/add-tests`
 - Always use `npx eas` for EAS CLI commands
