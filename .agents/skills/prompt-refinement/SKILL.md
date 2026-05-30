@@ -33,7 +33,7 @@ When you find a game scenario where the LLM makes a suboptimal tactical choice, 
 
 ### 3. Build Knowledge Context, Not Constraints
 * **Rule**: The LLM is a reasoning strategic agent, not a state-machine parser. We build **context and domain heuristics** so the model makes intelligent trade-offs, rather than hard-coded constraints that limit strategic flexibility.
-* **Tactic**: Use strategic and motivation-oriented language (e.g., *“conserve resources,” “feed partner,” “apply pressure,” “bleeding opponent trump”*) rather than mechanical commands (*“must play,” “never select”*).
+* **Tactic**: Use strategic and motivation-oriented language (e.g., *“conserve resources,” “feed teammate,” “apply pressure,” “bleeding opponent trump”*) rather than mechanical commands (*“must play,” “never select”*).
 
 ---
 
@@ -62,7 +62,7 @@ Open [llmGamePrompt.ts](file:///home/eric/repos/Tractor/src/ai/llm/llmGamePrompt
 ### Step 3: Draft the Contextual Heuristic
 Formulate the lesson as a clear, context-aware principle that explains **why** and **when** a player should make this choice.
 * *Poor: "If you have a 10 and King, play King."*
-* *Better: "Prioritize feeding high-value point cards (King, 10) to secure the trick when your partner is winning, or conserve them when opponents have won the trick."*
+* *Better: "Prioritize feeding high-value point cards (King, 10) to secure the trick when your teammate is winning, or conserve them when opponents have won the trick."*
 
 ### Step 4: Compress and Merge
 * Locate the exact lines in `STATIC_LLM_GAME_RULES` where this fits (usually `## 6. Strategic Heuristics`).
@@ -93,7 +93,7 @@ An AI bot led a low trump card on trick 1 when it had high non-trump Aces.
 ### Professional Merge (DO this)
 ```diff
  ## 6. Strategic Heuristics
-- - Leader (1st): Lead non-trump Aces/Kings early; lead trump pairs early (avoid single trumps). Setup void partner...
-+ - Leader (1st): Lead off-suit Aces/Kings to establish control early; avoid leading single trumps which bleeds partner's strength. Setup void partner...
+- - Leader (1st): Lead non-trump Aces/Kings early; lead trump pairs early (avoid single trumps). Setup void teammate...
++ - Leader (1st): Lead off-suit Aces/Kings to establish control early; avoid leading single trumps which bleeds teammate's strength. Setup void teammate...
 ```
 *Why this is good*: It beautifully integrates the concept into the existing Leader heuristic, explains the *why* (bleeding partner's strength), and uses zero additional lines!

@@ -58,7 +58,7 @@ When benchmarking a new model, evaluate it across the following four key pillars
 
 ### 3. Positional Strategic Play
 Review individual game logs in `logs/` to verify:
-* **Partner Points Protection**: Does the player play low non-points when the partner is winning?
+* **Teammate Points Protection**: Does the player play low non-points when the teammate is winning?
 * **Trump Bleeding**: Does the leader force opponents' trumps out early?
 * **Void Setup**: Does the AI actively dump high non-points to exhaust a suit and set up truffs?
 
