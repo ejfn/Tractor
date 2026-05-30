@@ -2,7 +2,7 @@ import { Card, GameState, PlayerId } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
 import { getLLMConfig, isLLMEnabled } from "./llmConfig";
 import { callOpenRouter, ChatMessage } from "./llmAIClient";
-import { buildLLMUserPrompt, LLMEngagementContext } from "./llmGamePrompt";
+import { buildLLMUserPrompt } from "./llmGamePrompt";
 import { getPlayValidationError } from "../../game/playValidation";
 import { sortCards } from "../../utils/cardSorting";
 
@@ -118,14 +118,12 @@ export function resetLLMStats(): void {
  * @param gameState  Current game state (used for prompt building and validation)
  * @param playerId   The player making the decision
  * @param hand       The player's current hand
- * @param engagementContext  Targeted dilemma description for this specific decision point
  * @param fallback   Cards to return if LLM is skipped or fails (the rule-based pick)
  */
 export async function callLLMForDecision(
   gameState: GameState,
   playerId: PlayerId,
   hand: Card[],
-  engagementContext: LLMEngagementContext,
   fallback: Card[],
 ): Promise<Card[]> {
   // If LLM is not enabled, immediately return rule-based fallback
@@ -159,7 +157,6 @@ export async function callLLMForDecision(
         gameState,
         playerId,
         hand,
-        engagementContext,
       );
 
       let userPromptContent = prompt.user;
