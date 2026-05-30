@@ -30,9 +30,9 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 - **Preservation**: Do not break a tractor to follow a pair if you have a standalone pair.
 
 ## 4. Following & Ruffing Priorities
-- **Priority**: 1. Follow suit/trump. 2. Match combo structure (tractor/pair) if possible. 3. Preserve pairs/tractors (do not break unnecessarily). 4. If you cannot fully match the combo structure, play your highest available combination types (e.g. play pairs if tractor led).
-- **Ruff/Discard**: If void, you can discard or cut with trump. To cut a combo, you must match its structure (e.g. trump pair cuts a pair; 2 single trumps cannot).
-- **Exhaustion**: If play leaves you with 0 cards of the led suit, any cards are valid.
+- **Priority**: 1. Follow suit. 2. Match combo structure (pair/tractor) if possible. 3. Do not break pairs/tractors unnecessarily. 4. If unable to match structure, play highest available component types (e.g., pairs for led tractor).
+- **Ruff/Discard**: If void, you can discard or trump (ruff). To trump a combo, you must match its structure (e.g. trump pair trumps a pair; 2 singles cannot). Deciding whether to trump depends on points on the table and potential points remaining players may add: trump to secure high points or block opponents; conserve trumps on low-point tricks.
+- **Exhaustion**: If out of the led suit, any cards are valid.
 
 ## 5. Multi-Combo Rules (Same-suit combos led together)
 - **Lead**: Non-trump only. Allowed if every component is unbeatable against unseen cards (\`108 - played - hand\`), or all other 3 players are void.
@@ -41,10 +41,10 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 
 ## 6. Strategic Heuristics
 - **Conservation**: Retain highest trumps (BJ > SJ > Trump Ranks > Trump Regulars: A > K > ... > 3) and off-suit boss cards (Aces > Kings); play lowest (non-point/low trump regulars) when forced or teammate wins.
-- **Leader (1st)**: Controls the trick start and tempo. Lead off-suit Aces/Kings early; lead trump pairs (avoid single trumps). High trumps (Jokers, Active Ranks, and High Trump Regulars like Aces/Kings) are precious control assets; leading them early (especially as singletons) is inefficient unless holding sufficient trumps to exhaust opponents' trumps and run long off-suits. Feed point cards (5, 10, K) if teammate is void. Play high non-points to force out opponent trumps.
-- **2nd Player**: Decide whether to win or conserve, evaluating that your teammate (4th Player) plays last and can cover the trick. If opponents lead points and you hold the boss card (e.g. Ace), it is a prime opportunity to win immediately, unless conserving it. Otherwise, play lowest non-point to conserve resources and allow the 4th Player to win or contest. Void -> ruff with modest trump to win or block.
-- **3rd Player**: Vital blocking role because the last player is an opponent (4th) playing with perfect info. If teammate is winning and their card is strong, prioritize feeding point cards (10 > K > 5) and conserving non-point boss cards; only play high or ruff to secure a vulnerable trick. If void, ruff or over-ruff to secure points or block and pressure the opponent, but avoid ruffing teammate's dominant winning cards.
-- **4th Player (Perfect Info)**: Final play with perfect info. If teammate is winning, feed points safely; however, you can strategically beat a winning teammate or opponent (even on point-free tricks) to secure the lead if needed to run a powerful combination (unbeatable tractor/long suit) next. If opponent is winning and you cannot or choose not to win, play lowest non-point to conserve.
+- **Leader (1st)**: Controls tempo. Lead off-suit Aces/Kings early; lead trump pairs (avoid single trumps). High trumps (Jokers, Ranks, Aces/Kings) are precious; leading them early (especially singletons) is inefficient unless holding enough to exhaust opponents and run off-suits. Feed points (5, 10, K) if teammate is void. Play high non-points to force out opponent trumps.
+- **2nd Player**: Decide to win or conserve, knowing teammate (4th) plays last and can cover. If opponents lead points and you hold the boss (e.g., Ace), it is a prime opportunity to win immediately. Otherwise, play lowest non-point to conserve and let 4th player contest. Void -> trump to win/block based on table points and potential remaining plays.
+- **3rd Player**: Vital blocking role. If teammate is winning and strong, prioritize feeding points (10 > K > 5) and conserving boss cards; play high or trump only to secure vulnerable tricks. If void, trump/over-trump to secure points or pressure opponents (based on table and potential points), but avoid trumping teammate's winning cards.
+- **4th Player (Perfect Info)**: Last to act. If teammate is winning, feed points safely (10 > K > 5). If opponent is winning: if void, trump/over-trump (ruff/over-ruff) to win the trick and capture points (especially when high points are on the table); if you cannot win or choose not to, discard lowest non-point to conserve and NEVER feed points to opponents. You can also strategically beat a winning teammate/opponent to secure the lead if you hold powerful combos (e.g., unbeatable tractors) to lead next.
 `;
 
 /**
