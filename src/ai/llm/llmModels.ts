@@ -19,7 +19,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
     inputPrice: "$0.10",
     outputPrice: "$0.40",
     description:
-      "Recommended. Speed Champion (~1-2s latency). Flawless rules compliance and sub-second responses. Outstanding resource conservation (discarding lone cards when void rather than overruffing needlessly) and partner feeding.",
+      "Recommended. Speed Champion (~1-2s latency). Flawless rules compliance and sub-second responses. Outstanding resource conservation, combo awareness and teammate feeding.",
   },
   {
     id: "deepseek/deepseek-chat",
@@ -30,7 +30,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
     inputPrice: "$0.2288",
     outputPrice: "$0.9144",
     description:
-      "Strategic master (~2-3s latency). Unparalleled strategic depth, teammate feeding, and trump unification. Excels at card counting, positional defense, and over-ruffing contested tricks.",
+      "Strategic master (~2-3s latency). Unparalleled strategic depth, superior teammate communication and trump unification.",
   },
   {
     id: "qwen/qwen3-next-80b-a3b-instruct",
@@ -41,7 +41,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
     inputPrice: "$0.09",
     outputPrice: "$1.10",
     description:
-      "Elite AI (~3-4s latency). 100% rules compliance. Outstanding position heuristics, pair preservation (e.g. leading 9♦ pair while keeping higher pairs), and void cuts with perfect precision.",
+      "Elite tactical engine (~3-4s latency). Flawless rules compliance, superb combo recognition, and great point preservation.",
   },
   {
     id: "meta-llama/llama-3.3-70b-instruct",
@@ -52,7 +52,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
     inputPrice: "$0.10",
     outputPrice: "$0.32",
     description:
-      "Value King (~2-3s latency). Premium instructions follower and excellent rules alignment. Exhibits robust error correction, smart trick contesting, card dumping, and partner coordination.",
+      "Value King (~2-3s latency). Excellent instructions follower and reliable rules alignment.",
   },
 ];
 
