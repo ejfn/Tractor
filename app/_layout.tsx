@@ -7,7 +7,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Platform,
   StatusBar as RNStatusBar,
@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import "react-native-reanimated";
+import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
 
 import { useColorScheme } from "react-native";
 
@@ -110,6 +111,26 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+
+  useEffect(() => {
+    async function configureAudio() {
+      try {
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+          interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.warn("Failed to configure audio mode:", error);
+      }
+    }
+    configureAudio();
+  }, []);
 
   if (!loaded) {
     // Async font loading only occurs in development.
