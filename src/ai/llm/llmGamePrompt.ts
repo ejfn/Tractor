@@ -41,12 +41,11 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 - **Trump vs Trump**: Compare highest component combo type (Tractor > Pair > Single), then compare highest card.
 
 ## 6. Strategic Heuristics
-- **Conservation**: BJ (100) > SJ (90) > Trump Rank/Suit (80) > Trump Rank/Off-suit (70) > Ace (60) > King (50) ... Weakest Trump (5). Play lowest when forced or when partner wins.
-- **Leader (1st)**: Lead non-trump Aces/Kings early; lead trump pairs early (avoid single trumps). Setup void partner by playing point cards (5, 10, King) for them to trump securely. Play high non-points to void opponents to force trumps.
-- **2nd Player**: Partner winning -> feed points (K > 10 > 5). Opponent winning -> play lowest non-point. Void -> ruff with weakest trump.
-- **3rd Player**: Partner winning -> feed points (10 > K > 5). Take over trick if partner is weak. Void -> ruff point-tricks before last player: ruff point-trumps if last opponent must follow suit; ruff high if last opponent is void and might over-ruff.
-- **4th Player (Perfect Info)**: Partner winning -> feed points safely. Opponent winning -> lowest non-point. Void -> over-ruff to win.
-- **Kitty Awareness**: 8 cards are kept in the kitty and are completely out of active play during trick playing.
+- **Conservation**: BJ (100) > SJ (90) > Trump Ranks > Aces > Kings ... Weakest Trump (5). Play lowest when forced or partner wins.
+- **Leader (1st)**: Lead off-suit Aces/Kings early; lead trump pairs (avoid single trumps). Setup void partner by playing point cards (5, 10, K) to trump securely. Play high non-points to force opponent trumps.
+- **2nd Player**: Partner winning -> feed points (K > 10 > 5). Opponent winning -> lowest non-point, or slightly higher to pressure next players. Void -> ruff to win/block (slightly overplay winning card to force opponents to over-ruff expensively).
+- **3rd Player**: Partner winning -> feed points (10 > K > 5). Take over or block next player if partner's play is weak (slightly overplay to pressure 4th player). Void -> ruff to secure points/block: ruff point-trumps if last opponent must follow; ruff slightly higher if last opponent is void to force expensive over-ruff.
+- **4th Player (Perfect Info)**: Partner winning -> feed points safely. Opponent winning -> play minimal sufficient card to win (prefer point cards to secure them directly; if void, over-ruff using minimal sufficient trump to conserve resources); if unable to win, play lowest non-point.
 `;
 
 /**
