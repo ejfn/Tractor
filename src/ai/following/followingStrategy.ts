@@ -361,17 +361,17 @@ export async function selectFollowingPlayAsync(
     currentPlayer.hand.some((c) => isTrump(c, trumpInfo))
   ) {
     // Engagement Point 1: Void in led suit, holds trumps — trump vs discard
-    engagementContext = `We are VOID in the led suit (${leadingCards[0]?.suit ?? "Trump Group"}). Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning the trick with ${trickPoints} points. Decide whether to TRUMP-IN with the lowest trump combination to win, or DISCARD a low non-trump card to save trumps.`;
+    engagementContext = `We are VOID in the led suit (look at your hand's "Off-Suit ${leadingCards[0]?.suit ?? "Trump Group"}" section — it shows void). ${currentWinner} is currently winning (Teammate Winning: ${isTeammateWinning}) with ${trickPoints} points. Decide whether to TRUMP-IN from your "Trump Group" section with the lowest sufficient trump combination to win, or DISCARD a low non-point card from another off-suit section to save trumps.`;
   } else if (
     analysis.scenario === "insufficient" ||
     (analysis.scenario === "void" &&
       !currentPlayer.hand.some((c) => isTrump(c, trumpInfo)))
   ) {
     // Engagement Point 2: Must discard off-suit — feed points vs deny points
-    engagementContext = `We must DISCARD off-suit cards. Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning with ${trickPoints} points in the trick. If our partner is winning safely, feed them point cards (5, 10, King) to secure points. If opponents are winning, play our lowest non-point card to deny points.`;
+    engagementContext = `We must DISCARD off-suit cards (we are void or have insufficient cards of the led suit). ${currentWinner} is currently winning (Teammate Winning: ${isTeammateWinning}) with ${trickPoints} points. If teammate is winning safely, feed point cards (10 > King > 5) to secure points. If opponents are winning, NEVER discard points — play our lowest non-point card from another off-suit section to deny free points.`;
   } else {
     // Engagement Point 3: Multiple same-suit options — how aggressively to play
-    engagementContext = `We have multiple cards of the led suit to play. Currently ${currentWinner} (Teammate Winning: ${isTeammateWinning}) is winning with ${trickPoints} points. Decide whether to play HIGH to beat opponents and win the trick, or play LOW to preserve our pairs/tractors and high cards for later.`;
+    engagementContext = `We have multiple cards of the led suit to play (see the relevant hand section). ${currentWinner} is currently winning (Teammate Winning: ${isTeammateWinning}) with ${trickPoints} points. Decide whether to play HIGH to beat opponents and win the trick, or play LOW (preserving Active Ranks, pairs/tractors, and high cards) for future control.`;
   }
 
   gameLogger.debug("llm_following_engagement", {

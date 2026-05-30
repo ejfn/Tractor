@@ -71,6 +71,7 @@ Formulate the lesson as a clear, context-aware strategic principle that explains
 Update `llmGamePrompt.ts` to integrate the new heuristic:
 * Locate the appropriate section (usually `## 6. Strategic Heuristics` or the relevant following priorities).
 * Do not just append a new bullet point (to avoid prompt bloat). Instead, compress, rewrite, or tighten the adjacent rules to maintain a strict token budget.
+* **Also check `engagementContext` strings** (see below) — if the new heuristic affects a scenario they cover, update those strings too.
 
 ### Step 5: Stop & Wait for User Review
 Once the changes are applied:
@@ -78,6 +79,26 @@ Once the changes are applied:
 - **DO NOT build** the project.
 - **DO NOT run qualitycheck** (`npm run qualitycheck` or similar).
 - **DO NOT commit** any changes.
+
+---
+
+## 🎯 Engagement Context (`engagementContext`)
+
+The `engagementContext` is a **per-decision-point supplement** that augments the static system prompt with live situational awareness at the moment of each LLM call. It is defined in two files:
+
+- **[followingStrategy.ts](file:///home/eric/repos/Tractor/src/ai/following/followingStrategy.ts)** — Three scenarios triggered at decision time:
+  1. **Void with trumps**: Player is void in led suit and holds trumps — trump vs. discard dilemma.
+  2. **Must discard**: Player is void with no trumps, or card count is insufficient — point feeding vs. denial.
+  3. **Multiple same-suit options**: Player can follow suit with multiple cards — play high vs. preserve strength.
+
+- **[leadingStrategy.ts](file:///home/eric/repos/Tractor/src/ai/leading/leadingStrategy.ts)** — One scenario:
+  1. **Ambiguous lead**: Multiple candidates scored by the rule engine — LLM picks the best option with reasoning.
+
+### Consistency Rules
+When refining `STATIC_LLM_GAME_RULES`, **always check `engagementContext` strings** for consistency:
+* Use the same terminology (e.g., `Trump Group`, `Active Ranks`, `Off-Suit <Suit>`) that matches the hand sections shown in the user prompt.
+* Maintain consistent point priority order (e.g., `10 > King > 5`).
+* If you introduce a new concept (e.g., a new discard rule), ensure the relevant `engagementContext` string references or reinforces it, not contradicts it.
 
 ---
 
