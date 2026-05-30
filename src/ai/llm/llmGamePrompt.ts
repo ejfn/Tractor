@@ -209,7 +209,8 @@ ${
       ? "No tricks completed yet in this round."
       : recentTricks
           .map((t, idx) => {
-            const absoluteIdx = gameState.tricks.length - recentTricks.length + idx;
+            const absoluteIdx =
+              gameState.tricks.length - recentTricks.length + idx;
             const playsList = t.plays
               .map(
                 (p) =>

@@ -1,4 +1,5 @@
 import { gameLogger } from "../../utils/gameLogger";
+import { DEFAULT_API_URL, DEFAULT_MODEL_ID } from "./llmModels";
 
 /**
  * Interface representing the structure of OpenRouter chat completion request messages.
@@ -6,6 +7,13 @@ import { gameLogger } from "../../utils/gameLogger";
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
+}
+
+export interface OpenRouterPayload {
+  model: string;
+  messages: ChatMessage[];
+  temperature: number;
+  response_format?: { type: "json_object" };
 }
 
 /**
@@ -34,7 +42,7 @@ export async function callOpenRouter(
     );
   }
 
-  const payload: any = {
+  const payload: OpenRouterPayload = {
     model,
     messages,
     temperature: 0.1, // Low temperature for deterministic card selection and formatting
@@ -136,7 +144,7 @@ function callOpenRouterNode(
         );
       }
 
-      const payload: any = {
+      const payload: OpenRouterPayload = {
         model,
         messages,
         temperature: 0.1,
@@ -172,6 +180,7 @@ function callOpenRouterNode(
         transport: "node-https",
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const req = https.request(options, (res: any) => {
         const statusCode = res.statusCode || 0;
         res.setEncoding("utf8");
@@ -222,6 +231,7 @@ function callOpenRouterNode(
         });
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       req.on("error", (error: any) => {
         gameLogger.error("llm_api_failed", {
           error: error instanceof Error ? error.message : String(error),
@@ -251,8 +261,8 @@ function callOpenRouterNode(
  */
 export async function testOpenRouterConnection(
   apiKey: string,
-  model = "deepseek/deepseek-chat-v3.1",
-  apiUrl = "https://openrouter.ai/api/v1/chat/completions",
+  model = DEFAULT_MODEL_ID,
+  apiUrl = DEFAULT_API_URL,
 ): Promise<{ success: boolean; message: string }> {
   try {
     const messages: ChatMessage[] = [

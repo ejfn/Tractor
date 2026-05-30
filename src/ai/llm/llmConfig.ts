@@ -1,4 +1,5 @@
 import { gameLogger } from "../../utils/gameLogger";
+import { DEFAULT_API_URL, DEFAULT_MODEL_ID } from "./llmModels";
 
 export interface LLMConfig {
   enabled: boolean;
@@ -12,8 +13,8 @@ export interface LLMConfig {
 export const DEFAULT_LLM_CONFIG: LLMConfig = {
   enabled: false,
   apiKey: "",
-  model: "deepseek/deepseek-chat-v3.1",
-  apiUrl: "https://openrouter.ai/api/v1/chat/completions",
+  model: DEFAULT_MODEL_ID,
+  apiUrl: DEFAULT_API_URL,
   timeoutMs: 15000,
   applyToPlayers: ["bot1", "bot2", "bot3"],
 };

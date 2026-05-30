@@ -58,7 +58,7 @@ export async function simulateLLMLatency(): Promise<void> {
   }
 
   // Random duration: 50%–75% of the rolling average, clamped to [250ms, 3750ms]
-  const jitter = 0.50 + Math.random() * 0.25;
+  const jitter = 0.5 + Math.random() * 0.25;
   const delay = Math.max(250, Math.min(3750, Math.round(avg * jitter)));
 
   gameLogger.debug("llm_bypass_simulated_latency", { avg, delay });

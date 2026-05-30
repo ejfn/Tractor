@@ -12,65 +12,7 @@ import {
 import { testOpenRouterConnection } from "../ai/llm/llmAIClient";
 import { DEFAULT_LLM_CONFIG, LLMConfig } from "../ai/llm/llmConfig";
 
-// ─── Model catalogue ────────────────────────────────────────────────────────
-
-interface ModelInfo {
-  id: string;
-  name: string;
-  icon: string;
-  rank: string;
-  rankColor: string;
-  inputPrice: string;
-  outputPrice: string;
-  description: string;
-}
-
-const MODELS: ModelInfo[] = [
-  {
-    id: "deepseek/deepseek-chat-v3.1",
-    name: "DeepSeek Chat V3.1",
-    icon: "🌊",
-    rank: "Best Strategy (Recommended)",
-    rankColor: "#06B6D4",
-    inputPrice: "$0.21",
-    outputPrice: "$0.79",
-    description:
-      "Recommended. Strategic master. Elite card counting, partner plays, and highly efficient pricing.",
-  },
-  {
-    id: "qwen/qwen3-next-80b-a3b-instruct",
-    name: "Qwen3 Next 80B",
-    icon: "🔷",
-    rank: "Elite Strategy & Speed",
-    rankColor: "#00BCD4",
-    inputPrice: "$0.09",
-    outputPrice: "$1.10",
-    description:
-      "Elite AI. 100% rules compliance, master position-aware heuristics, and blazing-fast response times.",
-  },
-  {
-    id: "meta-llama/llama-3.3-70b-instruct",
-    name: "Meta Llama 3.3 70B",
-    icon: "🦙",
-    rank: "Budget Value King",
-    rankColor: "#F59E0B",
-    inputPrice: "$0.10",
-    outputPrice: "$0.32",
-    description:
-      "Budget King. High-quality 70B coordination, premium rules alignment, and ultra-cheap output tokens.",
-  },
-  {
-    id: "google/gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
-    icon: "✨",
-    rank: "Premium Speed Champion",
-    rankColor: "#8B5CF6",
-    inputPrice: "$0.30",
-    outputPrice: "$2.50",
-    description:
-      "Speed Champion. Extremely snappy responses and smart resource conservation. Premium output pricing.",
-  },
-];
+import { AVAILABLE_MODELS as MODELS } from "../ai/llm/llmModels";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
