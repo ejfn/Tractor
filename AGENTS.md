@@ -77,7 +77,7 @@ Use `gameLogger` instead of `console.log()`
 
 ## Git Workflow
 
-> **IMPORTANT**: Never commit to main branch. Never commit automatically.
+> **IMPORTANT**: Never commit to main branch. Never commit automatically, and never commit code until the user explicitly asks.
 
 ```bash
 # 1. Create feature branch

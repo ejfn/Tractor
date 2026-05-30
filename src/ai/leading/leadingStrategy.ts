@@ -249,7 +249,7 @@ export async function selectLeadingPlayAsync(
     )
     .join("\n");
 
-  const engagementContext: LLMEngagementContext = `Choose the optimal leading play from our candidates. Recommend the best option (considering non-trump Aces, bleeding trumps, void setups, and protecting point cards) and explain your reasoning. Candidates evaluated by rule-based engine:\n${allOptionsStr}`;
+  const engagementContext: LLMEngagementContext = `Choose the optimal leading play from the candidates below. Your hand is grouped into \"Trump Group\" and off-suit sections (strongest to weakest). Consider: leading off-suit Aces/Kings early for control; leading trump pairs to bleed opponents; conserving Active Ranks and Jokers; setting up void suits. Explain your reasoning. Candidates scored by rule-based engine:\n${allOptionsStr}`;
 
   gameLogger.debug("llm_leading_engagement", {
     playerId,
