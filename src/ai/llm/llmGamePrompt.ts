@@ -12,11 +12,10 @@ export type LLMEngagementContext = string;
 
 export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI Strategic Rules
 
-## 1. Partnerships & Roles
+## 1. Teammates & Roles
 - **Teams**: Counter-clockwise: South (\`human\`) & North (\`bot2\`) [Team A] vs East (\`bot1\`) & West (\`bot3\`) [Team B].
-- **Goal**: Cooperate with partner to advance ranks from **2 to Ace** by winning rounds. The first team to reach rank **Ace** and successfully defend (hold attackers < 80 pts) wins the game.
+- **Goal**: Cooperate with teammate to advance ranks from **2 to Ace** by winning rounds. The first team to reach rank **Ace** and successfully defend (hold attackers < 80 pts) wins the game.
 - **Scoring**: Defenders hold Attackers < 80 pts to advance. Attackers win by capturing 80+ pts.
-- **Rotation**: Attackers win -> next player counter-clockwise starts next round. Defenders win -> partner of previous starter starts.
 - **Kitty**: 8 cards are kept in the kitty and are completely out of active play during trick playing.
 
 ## 2. Card Values & Trump Hierarchy
@@ -26,12 +25,12 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 
 ## 3. Combinations & Tractors
 - **Combos**: Single; Pair (2 identical cards); Tractor (2+ consecutive pairs in same suit/trump group).
-- **Trump Tractor Order**: A-Trump-Suit -> Off-Suit Ranks -> Trump-Suit Rank -> SJ -> BJ. Off-suit ranks must bridge through the trump-suit rank (e.g. 2♥2♥-2♣2♣ is invalid, 2♥2♥-2♠2♠ is valid).
+- **Trump Tractor Order**: A-Trump-Suit -> Off-Suit Ranks -> Trump-Suit Rank -> SJ -> BJ. Two off-suit rank pairs are NOT consecutive (they are equal); only an off-suit rank pair + trump-suit rank pair forms a valid tractor.
 - **Skip Rule**: Off-suit tractor sequences skip the active Trump Rank (e.g., 6-8 is consecutive if 7 is active rank).
 - **Preservation**: Do not break a tractor to follow a pair if you have a standalone pair.
 
 ## 4. Following & Ruffing Priorities
-- **Priority**: 1. Follow suit/trump. 2. Match combo structure (tractor/pair) if possible. 3. Preserve pairs/tractors (do not break unnecessarily). 4. Play highest combos first (Anti-Cheat).
+- **Priority**: 1. Follow suit/trump. 2. Match combo structure (tractor/pair) if possible. 3. Preserve pairs/tractors (do not break unnecessarily). 4. When you cannot fully match the combo structure, play your highest available cards of that type.
 - **Ruff/Discard**: If void, you can discard or cut with trump. To cut a combo, you must match its structure (e.g. trump pair cuts a pair; 2 single trumps cannot).
 - **Exhaustion**: If play leaves you with 0 cards of the led suit, any cards are valid.
 
@@ -41,11 +40,11 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 - **Trump vs Trump**: Compare highest component combo type (Tractor > Pair > Single), then compare highest card.
 
 ## 6. Strategic Heuristics
-- **Conservation**: BJ > SJ > Trump Ranks > Aces > Kings ... Weakest Trump Regulars. Play lowest when forced or partner wins.
-- **Leader (1st)**: Lead off-suit Aces/Kings early; lead trump pairs (avoid single trumps). Setup void partner by playing point cards (5, 10, K) to trump securely. Play high non-points to force opponent trumps.
-- **2nd Player**: Partner winning -> feed points (K > 10 > 5). Opponent winning -> lowest non-point, or slightly higher to pressure next players. Void -> ruff to win/block (slightly overplay winning card to force opponents to over-ruff expensively).
-- **3rd Player**: Partner winning -> feed points (10 > K > 5). Take over or block next player if partner's play is weak (slightly overplay to pressure 4th player). Void -> ruff to secure points/block: ruff point-trumps if last opponent must follow; ruff slightly higher if last opponent is void to force expensive over-ruff.
-- **4th Player (Perfect Info)**: Partner winning -> feed points safely. Opponent winning -> play minimal sufficient card to win (prefer point cards to secure them directly; if void, over-ruff using minimal sufficient trump to conserve resources); if unable to win, play lowest non-point.
+- **Conservation**: BJ > SJ > Trump Ranks > Aces > Kings ... Weakest Trump Regulars. Play lowest when forced or teammate wins.
+- **Leader (1st)**: Lead off-suit Aces/Kings early; lead trump pairs (avoid single trumps). Feed point cards (5, 10, K) into suits where teammate is void — they can trump and secure the points. Play high non-points to force opponent trumps.
+- **2nd Player**: Opponent is always the leader. Play lowest non-point to conserve resources, or just enough to contest if the trick is worth winning. Void -> ruff with a modest trump to win or block; don't waste top trumps when a lower one suffices.
+- **3rd Player**: Teammate winning -> feed points (10 > K > 5) if lead is dominant. If teammate's card is vulnerable, take over to secure points/trick if 4th player is likely to beat it. Void -> ruff to secure points/block: ruff point-trumps if last opponent must follow; ruff higher if last opponent is void to force over-ruff.
+- **4th Player (Perfect Info)**: Teammate winning -> feed points safely. Opponent winning -> play minimal sufficient card to win (prefer point cards to secure them directly; if void, over-ruff using minimal sufficient trump to conserve resources); if unable to win, play lowest non-point.
 `;
 
 /**
@@ -244,7 +243,7 @@ ${
   const userPrompt = `${engagementSection}
 === CURRENT STATE ===
 - Your Player ID: ${playerId}
-- Your Team: Team ${teamId} (Partner: ${partnerId})
+- Your Team: Team ${teamId} (Teammate: ${partnerId})
 - Current Round Trump Rank: ${trumpInfo.trumpRank}
 - Current Round Trump Suit: ${trumpInfo.trumpSuit || "None"}
 - Led Suit of this trick: ${gameState.currentTrick && gameState.currentTrick.plays[0] ? (isTrump(gameState.currentTrick.plays[0].cards[0], trumpInfo) ? "Trump Group" : gameState.currentTrick.plays[0].cards[0].suit) : "N/A (You are leading)"}
