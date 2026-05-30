@@ -21,16 +21,16 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 ## 2. Card Values & Trump Hierarchy
 - **Points**: 5 = 5pts, 10 = 10pts, King = 10pts (200 total).
 - **Trump Group**: Single unified suit. BJ > SJ > Trump-Suit Rank > Off-Suit Ranks (equal, first played wins) > Trump Suit Regulars (A > K > Q > ... > 3). Off-Suit Ranks and Jokers are irreplaceable — when forced to discard trumps, sacrifice the weakest Trump Suit Regulars first.
-- **Off-Suits**: Cards of the trump rank leave their off-suit and join the Trump Group. Remaining cards rank A > K > Q > ... > 3; an Ace is the highest card left in its suit — unbeatable unless cut by trump. Cross-suit plays cannot beat each other.
+- **Off-Suits**: Cards of the trump rank leave their off-suit and join the Trump Group. Remaining cards rank A > K > Q > ... > 3 (or K > Q > ... > 3 if Ace is active rank); the highest card left in its suit is unbeatable unless cut by trump. Cross-suit plays cannot beat each other.
 
 ## 3. Combinations & Tractors
 - **Combos**: Single; Pair (2 identical cards); Tractor (2+ consecutive pairs in same suit/trump group).
-- **Trump Tractor Order**: A-Trump-Suit -> Off-Suit Ranks -> Trump-Suit Rank -> SJ -> BJ. Two off-suit rank pairs are NOT consecutive (they are equal); only an off-suit rank pair + trump-suit rank pair forms a valid tractor.
+- **Trump Tractor Order (Consecutive Sequence)**: A-Trump-Suit -> Off-Suit Ranks -> Trump-Suit Rank -> SJ -> BJ. Two off-suit rank pairs are NOT consecutive (they are equal); only an off-suit rank pair + trump-suit rank pair forms a valid tractor.
 - **Skip Rule**: Off-suit tractor sequences skip the active Trump Rank (e.g., 6-8 is consecutive if 7 is active rank).
 - **Preservation**: Do not break a tractor to follow a pair if you have a standalone pair.
 
 ## 4. Following & Ruffing Priorities
-- **Priority**: 1. Follow suit/trump. 2. Match combo structure (tractor/pair) if possible. 3. Preserve pairs/tractors (do not break unnecessarily). 4. When you cannot fully match the combo structure, play your highest available cards of that type.
+- **Priority**: 1. Follow suit/trump. 2. Match combo structure (tractor/pair) if possible. 3. Preserve pairs/tractors (do not break unnecessarily). 4. If you cannot fully match the combo structure, play your highest available combination types (e.g. play pairs if tractor led).
 - **Ruff/Discard**: If void, you can discard or cut with trump. To cut a combo, you must match its structure (e.g. trump pair cuts a pair; 2 single trumps cannot).
 - **Exhaustion**: If play leaves you with 0 cards of the led suit, any cards are valid.
 
@@ -40,11 +40,11 @@ export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI S
 - **Trump vs Trump**: Compare highest component combo type (Tractor > Pair > Single), then compare highest card.
 
 ## 6. Strategic Heuristics
-- **Conservation**: BJ > SJ > Trump Ranks > Aces > Kings ... Weakest Trump Regulars. Play lowest when forced or teammate wins.
-- **Leader (1st)**: Lead off-suit Aces/Kings early; lead trump pairs (avoid single trumps). Feed point cards (5, 10, K) into suits where teammate is void — they can trump and secure the points. Play high non-points to force opponent trumps.
-- **2nd Player**: Opponent is always the leader. Play lowest non-point to conserve resources, or just enough to contest if the trick is worth winning. Void -> ruff with a modest trump to win or block; don't waste top trumps when a lower one suffices.
-- **3rd Player**: Teammate winning -> feed points (10 > K > 5) if lead is dominant. If teammate's card is vulnerable, take over to secure points/trick if 4th player is likely to beat it. Void -> ruff to secure points/block: ruff point-trumps if last opponent must follow; ruff higher if last opponent is void to force over-ruff.
-- **4th Player (Perfect Info)**: Teammate winning -> feed points safely. Opponent winning -> play minimal sufficient card to win (prefer point cards to secure them directly; if void, over-ruff using minimal sufficient trump to conserve resources); if unable to win, play lowest non-point.
+- **Conservation**: Retain highest trumps (BJ > SJ > Trump Ranks > Trump Regulars: A > K > ... > 3) and off-suit boss cards (Aces > Kings); play lowest (non-point/low trump regulars) when forced or teammate wins.
+- **Leader (1st)**: Controls the trick start and tempo. Lead off-suit Aces/Kings early; lead trump pairs (avoid single trumps). High trumps (Jokers, Active Ranks, and High Trump Regulars like Aces/Kings) are precious control assets; leading them early (especially as singletons) is inefficient unless holding sufficient trumps to exhaust opponents' trumps and run long off-suits. Feed point cards (5, 10, K) if teammate is void. Play high non-points to force out opponent trumps.
+- **2nd Player**: Decide whether to win or conserve, evaluating that your teammate (4th Player) plays last and can cover the trick. If opponents lead points and you hold the boss card (e.g. Ace), it is a prime opportunity to win immediately, unless conserving it. Otherwise, play lowest non-point to conserve resources and allow the 4th Player to win or contest. Void -> ruff with modest trump to win or block.
+- **3rd Player**: Vital blocking role because the last player is an opponent (4th) playing with perfect info. If teammate is winning and their card is strong, prioritize feeding point cards (10 > K > 5) and conserving non-point boss cards; only play high or ruff to secure a vulnerable trick. If void, ruff or over-ruff to secure points or block and pressure the opponent, but avoid ruffing teammate's dominant winning cards.
+- **4th Player (Perfect Info)**: Final play with perfect info. If teammate is winning, feed points safely; however, you can strategically beat a winning teammate or opponent (even on point-free tricks) to secure the lead if needed to run a powerful combination (unbeatable tractor/long suit) next. If opponent is winning and you cannot or choose not to win, play lowest non-point to conserve.
 `;
 
 /**
@@ -179,8 +179,8 @@ You must play exactly ${requiredCount} card(s). You must follow the led suit/tru
     const matchingHandCards = isLeadingTrump
       ? handCards.filter((c) => isTrump(c, trumpInfo))
       : handCards.filter(
-          (c) => c.suit === leadingSuit && !isTrump(c, trumpInfo),
-        );
+        (c) => c.suit === leadingSuit && !isTrump(c, trumpInfo),
+      );
 
     const matchingChoiceIds = choicesMap
       .filter((c) =>
@@ -192,11 +192,10 @@ You must play exactly ${requiredCount} card(s). You must follow the led suit/tru
 === YOUR RELEVANT CARDS FOR THIS TRICK ===
 - Led suit/group is: ${isLeadingTrump ? "Trump Group (includes Jokers, " + trumpInfo.trumpRank + "s, and " + (trumpInfo.trumpSuit || "None") + " cards)" : leadingSuit}
 - Choice IDs of matching cards in hand: ${matchingChoiceIds.length > 0 ? matchingChoiceIds.join(", ") : "None (You are void)"}
-${
-  matchingHandCards.length >= requiredCount
-    ? `- You have enough matching cards and MUST follow suit. Select exactly ${requiredCount} card ID(s) ONLY from: [${matchingChoiceIds.join(", ")}].`
-    : `- You DO NOT have enough matching cards! You MUST play ALL ${matchingHandCards.length} matching card(s): [${matchingChoiceIds.join(", ")}]. Select any other ${requiredCount - matchingHandCards.length} card(s) of other suits to discard.`
-}
+${matchingHandCards.length >= requiredCount
+        ? `- You have enough matching cards and MUST follow suit. Select exactly ${requiredCount} card ID(s) ONLY from: [${matchingChoiceIds.join(", ")}].`
+        : `- You DO NOT have enough matching cards! You MUST play ALL ${matchingHandCards.length} matching card(s): [${matchingChoiceIds.join(", ")}]. Select any other ${requiredCount - matchingHandCards.length} card(s) of other suits to discard.`
+      }
 `;
   }
 
@@ -206,18 +205,18 @@ ${
     gameState.tricks.length === 0
       ? "No tricks completed yet in this round."
       : recentTricks
-          .map((t, idx) => {
-            const absoluteIdx =
-              gameState.tricks.length - recentTricks.length + idx;
-            const playsList = t.plays
-              .map(
-                (p) =>
-                  `${p.playerId} played ${p.cards.map((c) => c.toString()).join(", ")}`,
-              )
-              .join(", ");
-            return `Trick ${absoluteIdx + 1}: Led by ${t.plays[0].playerId}. plays: [${playsList}]. Won by: ${t.winningPlayerId} (${t.points} points)`;
-          })
-          .join("\n");
+        .map((t, idx) => {
+          const absoluteIdx =
+            gameState.tricks.length - recentTricks.length + idx;
+          const playsList = t.plays
+            .map(
+              (p) =>
+                `${p.playerId} played ${p.cards.map((c) => c.toString()).join(", ")}`,
+            )
+            .join(", ");
+          return `Trick ${absoluteIdx + 1}: Led by ${t.plays[0].playerId}. plays: [${playsList}]. Won by: ${t.winningPlayerId} (${t.points} points)`;
+        })
+        .join("\n");
 
   // Detect suit voids per player from round trick history
   const voids = detectSuitVoidsFromHistory(gameState, trumpInfo);

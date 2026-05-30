@@ -44,7 +44,7 @@ graph TD
     A[Identify Suboptimal Play in Logs] --> B[Pinpoint Prompt Gap in llmGamePrompt.ts]
     B --> C[Draft Heuristic with Motivation & Intent]
     C --> D[Refactor & Merge into Existing Sections]
-    D --> E[Run Simulation & Verify Rules/Strategy]
+    D --> E[Stop & Wait for User Review]
 ```
 
 ### Step 1: Diagnose the Log
@@ -68,12 +68,13 @@ Formulate the lesson as a clear, context-aware principle that explains **why** a
 * Locate the exact lines in `STATIC_LLM_GAME_RULES` where this fits (usually `## 6. Strategic Heuristics`).
 * Merge it into the existing bullet points. If needed, re-write or tighten the adjacent rules to save space.
 
-### Step 5: Test and Validate
-Verify your changes by running typechecks and simulations to make sure the AI still functions perfectly and exhibits the improved strategic capability:
-```bash
-# Run simulation to check strategy change
-npm run test:simulation
-```
+### Step 5: Stop & Wait for User Review
+
+Once prompt refinements are merged:
+- **Always stop and wait for the user to review the changes.**
+- **DO NOT build** the project.
+- **DO NOT run qualitycheck** (`npm run qualitycheck` or similar).
+- **DO NOT commit** any changes.
 
 ---
 
