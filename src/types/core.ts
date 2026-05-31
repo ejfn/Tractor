@@ -46,6 +46,7 @@ export type Player = {
   isHuman: boolean;
   hand: Card[];
   team: TeamId; // Team identifier
+  displayNameIndex?: number; // Predefined name pool index for bot players
 };
 
 export type Team = {

@@ -94,7 +94,7 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
   ];
 
   // Get player label using translation
-  const playerLabel = getPlayerDisplayName(tCommon, player.id);
+  const playerLabel = getPlayerDisplayName(tCommon, player);
 
   // Determine whether to show thinking indicator
   // Double-check that we're not showing thinking during trick result display

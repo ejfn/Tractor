@@ -179,8 +179,7 @@ export function ExpandableTrumpDeclaration({
           ➤{" "}
           {getPlayerDisplayName(
             tCommon,
-            gameState.players[gameState.dealingState.currentDealingPlayerIndex]
-              ?.id || "",
+            gameState.players[gameState.dealingState.currentDealingPlayerIndex],
           )}
         </Text>
       )}
@@ -192,6 +191,7 @@ export function ExpandableTrumpDeclaration({
             playerName: getPlayerDisplayName(
               tCommon,
               currentDeclaration.playerId,
+              gameState.players,
             ),
             declaration: getDeclarationButtonDisplay(
               currentDeclaration.type,
@@ -229,6 +229,7 @@ export function ExpandableTrumpDeclaration({
                   playerName: getPlayerDisplayName(
                     tCommon,
                     currentDeclaration.playerId,
+                    gameState.players,
                   ),
                 })
               : tTrump("messages.noDeclarations")}

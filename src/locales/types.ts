@@ -31,6 +31,7 @@ export interface CommonTranslations {
   language: {
     shortCode: string;
   };
+  botNames: string[];
 }
 
 export interface GameTranslations {
