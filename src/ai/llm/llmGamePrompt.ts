@@ -7,13 +7,10 @@ import {
   Suit,
 } from "../../types";
 import { sortCards } from "../../utils/cardSorting";
-import { isTrump } from "../../game/cardValue";
 import { analyzeSuitAvailability } from "../following/suitAvailabilityAnalysis";
 import { detectCandidateLeads } from "../leading/candidateLeadDetection";
 import { collectLeadingContext } from "../leading/leadingContext";
 import { scoreNonTrumpLead, scoreTrumpLead } from "../leading/leadingScoring";
-
-
 
 export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI Strategic Rules
 
@@ -208,7 +205,8 @@ export function buildLLMUserPrompt(
   if (isLeading) {
     activeTrickStatusStr = `- Status: You are leading this trick!
 - Requirement: You must play exactly ONE valid combination from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo). Mismatched combination types are strictly illegal.`;
-    taskInstructionStr = "Select exactly ONE valid combination of cards from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo) to lead the trick.";
+    taskInstructionStr =
+      "Select exactly ONE valid combination of cards from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo) to lead the trick.";
 
     const candidates = detectCandidateLeads(
       handCards,
@@ -281,7 +279,10 @@ ${allOptions || "- No candidates found (using fallback)"}
       trumpInfo,
     );
 
-    const ledSuitDisplay = analysis.evaluateSuit === Suit.None ? "Trump Group" : analysis.evaluateSuit;
+    const ledSuitDisplay =
+      analysis.evaluateSuit === Suit.None
+        ? "Trump Group"
+        : analysis.evaluateSuit;
     const lines: string[] = [
       `- Led combo type: ${analysis.leadingComboType} (${analysis.requiredLength} cards)`,
       `- Led suit/group: ${ledSuitDisplay}`,
@@ -291,7 +292,9 @@ ${allOptions || "- No candidates found (using fallback)"}
 
     switch (analysis.scenario) {
       case "valid_combos": {
-        lines.push(`- You have matching ${analysis.leadingComboType} combos to choose from:`);
+        lines.push(
+          `- You have matching ${analysis.leadingComboType} combos to choose from:`,
+        );
         for (const combo of analysis.validCombos) {
           const ids = combo.cards.map(cardToChoiceId).join(", ");
           lines.push(`    • ${combo.type}: [${ids}]`);
@@ -299,19 +302,33 @@ ${allOptions || "- No candidates found (using fallback)"}
         break;
       }
       case "enough_remaining": {
-        lines.push(`- You have enough cards in the led suit but NO matching ${analysis.leadingComboType} combos.`);
-        lines.push(`- You must still play ${analysis.requiredLength} card(s) from this suit. Available cards:`);
-        lines.push(`    ${analysis.remainingCards.map(cardToChoiceId).join(", ")}`);
+        lines.push(
+          `- You have enough cards in the led suit but NO matching ${analysis.leadingComboType} combos.`,
+        );
+        lines.push(
+          `- You must still play ${analysis.requiredLength} card(s) from this suit. Available cards:`,
+        );
+        lines.push(
+          `    ${analysis.remainingCards.map(cardToChoiceId).join(", ")}`,
+        );
         break;
       }
       case "insufficient": {
-        lines.push(`- You only have ${analysis.availableCount} card(s) but ${analysis.requiredLength} are required.`);
-        lines.push(`- You MUST play ALL your cards in that suit: ${analysis.remainingCards.map(cardToChoiceId).join(", ")}`);
-        lines.push(`- Fill the remaining ${analysis.requiredLength - analysis.availableCount} slot(s) from other suits (discard or trump).`);
+        lines.push(
+          `- You only have ${analysis.availableCount} card(s) but ${analysis.requiredLength} are required.`,
+        );
+        lines.push(
+          `- You MUST play ALL your cards in that suit: ${analysis.remainingCards.map(cardToChoiceId).join(", ")}`,
+        );
+        lines.push(
+          `- Fill the remaining ${analysis.requiredLength - analysis.availableCount} slot(s) from other suits (discard or trump).`,
+        );
         break;
       }
       case "void": {
-        lines.push(`- You are VOID in the led suit. You may trump (ruff) with trump cards or discard (sluff) from any suit.`);
+        lines.push(
+          `- You are VOID in the led suit. You may trump (ruff) with trump cards or discard (sluff) from any suit.`,
+        );
         break;
       }
     }
@@ -325,18 +342,18 @@ ${allOptions || "- No candidates found (using fallback)"}
     gameState.tricks.length === 0
       ? "No tricks completed yet in this round."
       : recentTricks
-        .map((t, idx) => {
-          const absoluteIdx =
-            gameState.tricks.length - recentTricks.length + idx;
-          const playsList = t.plays
-            .map(
-              (p) =>
-                `${p.playerId} played ${p.cards.map((c) => c.toString()).join(", ")}`,
-            )
-            .join(", ");
-          return `Trick ${absoluteIdx + 1}: Led by ${t.plays[0].playerId}. plays: [${playsList}]. Won by: ${t.winningPlayerId} (${t.points} points)`;
-        })
-        .join("\n");
+          .map((t, idx) => {
+            const absoluteIdx =
+              gameState.tricks.length - recentTricks.length + idx;
+            const playsList = t.plays
+              .map(
+                (p) =>
+                  `${p.playerId} played ${p.cards.map((c) => c.toString()).join(", ")}`,
+              )
+              .join(", ");
+            return `Trick ${absoluteIdx + 1}: Led by ${t.plays[0].playerId}. plays: [${playsList}]. Won by: ${t.winningPlayerId} (${t.points} points)`;
+          })
+          .join("\n");
 
   // Detect suit voids per player from round trick history
   const voids = detectSuitVoidsFromHistory(gameState, trumpInfo);

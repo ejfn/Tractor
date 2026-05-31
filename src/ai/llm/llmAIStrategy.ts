@@ -153,11 +153,7 @@ export async function callLLMForDecision(
     attempt++;
     try {
       // Always build a fresh user prompt — no growing message chain accumulation
-      const prompt = buildLLMUserPrompt(
-        gameState,
-        playerId,
-        hand,
-      );
+      const prompt = buildLLMUserPrompt(gameState, playerId, hand);
 
       let userPromptContent = prompt.user;
       if (errorHint) {

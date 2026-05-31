@@ -1,5 +1,4 @@
 import { getComboType } from "../../game/comboDetection";
-import { isTrump } from "../../game/cardValue";
 import {
   Card,
   ComboType,

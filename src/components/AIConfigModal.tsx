@@ -97,8 +97,6 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
 
   // ── Save ───────────────────────────────────────────────────────────────────
 
-  const canSave = !useLLM || connectionStatus.kind === "success";
-
   const handleSave = useCallback(() => {
     const newConfig: LLMConfig = {
       ...DEFAULT_LLM_CONFIG,
@@ -322,7 +320,6 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                     </TouchableOpacity>
                   );
                 })}
-
               </View>
             )}
           </ScrollView>
@@ -330,16 +327,12 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
           {/* ── Connection status banner (outside scroll) ── */}
           {useLLM && connectionStatus.kind === "success" && (
             <View style={styles.bannerSuccess}>
-              <Text style={styles.bannerText}>
-                {connectionStatus.message}
-              </Text>
+              <Text style={styles.bannerText}>{connectionStatus.message}</Text>
             </View>
           )}
           {useLLM && connectionStatus.kind === "error" && (
             <View style={styles.bannerError}>
-              <Text style={styles.bannerText}>
-                {connectionStatus.message}
-              </Text>
+              <Text style={styles.bannerText}>{connectionStatus.message}</Text>
             </View>
           )}
 

@@ -32,11 +32,16 @@ export function getPlayerDisplayName(
     }
     if (playerOrId.displayNameIndex !== undefined) {
       const names = t("botNames", { ns: "common", returnObjects: true });
-      if (Array.isArray(names) && names[playerOrId.displayNameIndex] !== undefined) {
+      if (
+        Array.isArray(names) &&
+        names[playerOrId.displayNameIndex] !== undefined
+      ) {
         return names[playerOrId.displayNameIndex];
       }
     }
-    return t(`players.${playerOrId.id}` as CommonTranslationKey, { ns: "common" }) as string;
+    return t(`players.${playerOrId.id}` as CommonTranslationKey, {
+      ns: "common",
+    }) as string;
   }
 
   // If a string or PlayerId is passed
@@ -50,7 +55,10 @@ export function getPlayerDisplayName(
     const playerObj = players.find((p) => p.id === idStr);
     if (playerObj && playerObj.displayNameIndex !== undefined) {
       const names = t("botNames", { ns: "common", returnObjects: true });
-      if (Array.isArray(names) && names[playerObj.displayNameIndex] !== undefined) {
+      if (
+        Array.isArray(names) &&
+        names[playerObj.displayNameIndex] !== undefined
+      ) {
         return names[playerObj.displayNameIndex];
       }
     }
