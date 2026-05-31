@@ -245,13 +245,13 @@ function localBuildFollowingPromptContext(
   const yetToPlay = gameState.players
     .map((p) => p.id)
     .filter((id) => id !== playerId && !playedPlayerIds.includes(id));
-  
+
   const remainingOpponents = yetToPlay.filter((id) => id !== partnerId);
 
   // Analyze suit voids from history
   const leadCard = leadPlay.cards[0];
   const isTrumpLead = leadCard?.isTrump(trumpInfo) || false;
-  const ledSuit = isTrumpLead ? "Trump Group" : (leadCard?.suit || "");
+  const ledSuit = isTrumpLead ? "Trump Group" : leadCard?.suit || "";
   const voids = detectSuitVoidsFromHistory(gameState, trumpInfo);
   const isAnyOpponentVoid = remainingOpponents.some((oppId) => {
     const oppVoids = voids[oppId] || [];
@@ -272,7 +272,9 @@ function localBuildFollowingPromptContext(
       if (winningCard) {
         winningCardStr = winningCard.toString();
         if (winningCard.isTrump(trumpInfo)) {
-          isBossCard = winningCard.joker !== undefined || winningCard.rank === trumpInfo.trumpRank;
+          isBossCard =
+            winningCard.joker !== undefined ||
+            winningCard.rank === trumpInfo.trumpRank;
         } else {
           const offSuitBossRank = trumpInfo.trumpRank === "A" ? "K" : "A";
           isBossCard = winningCard.rank === offSuitBossRank;
