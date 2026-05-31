@@ -227,7 +227,8 @@ function localBuildFollowingPromptContext(
   const leadPlay = plays[0];
   const requiredCount = leadPlay.cards.length;
   const winningPlayerId = currentTrick.winningPlayerId || leadPlay.playerId;
-  const isTeammateWinning = winningPlayerId === getPartnerId(playerId);
+  const partnerId = getPartnerId(playerId);
+  const isTeammateWinning = winningPlayerId === partnerId;
   const trickPoints = currentTrick.points || 0;
 
   const leadingCardsStr = leadPlay.cards.map((c) => c.toString()).join(", ");
@@ -239,13 +240,64 @@ function localBuildFollowingPromptContext(
     )
     .join("\n");
 
+  // Determine who is left to act in this trick
+  const playedPlayerIds = plays.map((p) => p.playerId);
+  const yetToPlay = gameState.players
+    .map((p) => p.id)
+    .filter((id) => id !== playerId && !playedPlayerIds.includes(id));
+  
+  const remainingOpponents = yetToPlay.filter((id) => id !== partnerId);
+
+  // Analyze suit voids from history
+  const leadCard = leadPlay.cards[0];
+  const isTrumpLead = leadCard?.isTrump(trumpInfo) || false;
+  const ledSuit = isTrumpLead ? "Trump Group" : (leadCard?.suit || "");
+  const voids = detectSuitVoidsFromHistory(gameState, trumpInfo);
+  const isAnyOpponentVoid = remainingOpponents.some((oppId) => {
+    const oppVoids = voids[oppId] || [];
+    return oppVoids.includes(ledSuit);
+  });
+
+  const winningPlay = plays.find((p) => p.playerId === winningPlayerId);
+  const winningCard = winningPlay?.cards[0] || null;
+
+  let winSecurityStr = "";
+  if (isTeammateWinning) {
+    if (remainingOpponents.length === 0) {
+      winSecurityStr = `SECURED WIN: Your teammate (${winningPlayerId}) is winning, and there are NO opponents left to act. Your team is guaranteed to win this trick.`;
+    } else {
+      // Check if teammate's winning card is a dominant boss card and opponents cannot trump it
+      let isBossCard = false;
+      let winningCardStr = "";
+      if (winningCard) {
+        winningCardStr = winningCard.toString();
+        if (winningCard.isTrump(trumpInfo)) {
+          isBossCard = winningCard.joker !== undefined || winningCard.rank === trumpInfo.trumpRank;
+        } else {
+          const offSuitBossRank = trumpInfo.trumpRank === "A" ? "K" : "A";
+          isBossCard = winningCard.rank === offSuitBossRank;
+        }
+      }
+
+      if (isBossCard && !isAnyOpponentVoid) {
+        winSecurityStr = `LIKELY WIN: Your teammate (${winningPlayerId}) is winning with a dominant card (${winningCardStr}) and remaining opponents must follow suit (none are void). They are extremely likely to win this trick.`;
+      } else {
+        const oppList = remainingOpponents.join(" and ");
+        winSecurityStr = `UNCERTAIN: Your teammate (${winningPlayerId}) is winning, but opponent(s) [${oppList}] have yet to play. Since the lead is not a guaranteed boss card or opponents might be void/hold higher cards, the outcome is uncertain.`;
+      }
+    }
+  } else {
+    winSecurityStr = `UNCERTAIN: Opponent (${winningPlayerId}) is currently winning the trick.`;
+  }
+
   const statusLines = [
     `- Led by: ${leadPlay.playerId} playing [${leadingCardsStr}]`,
     `- Requirement: You must play exactly ${requiredCount} card(s). You must follow the led suit/trump group if you have any.`,
     `\nPlays in this trick so far:`,
     playsStr,
-    `\n- Current Trick Winner: ${winningPlayerId} (Teammate: ${isTeammateWinning ? "YES" : "NO"})`,
+    `\n- Current Leading Player: ${winningPlayerId} (Teammate: ${isTeammateWinning ? "YES" : "NO"})`,
     `- Current Points in Trick: ${trickPoints} pts`,
+    `- Trick Win Security: ${winSecurityStr}`,
   ];
   const activeTrickStatusStr = statusLines.join("\n");
   const taskInstructionStr = `Select exactly ${requiredCount} card(s) from your hand following the trick requirement and suit following rules.`;

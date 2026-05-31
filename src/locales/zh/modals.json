@@ -68,7 +68,7 @@
       },
       "deepseek/deepseek-chat": {
         "rank": "策略之王",
-        "description": "战略大师（~2-3秒延迟）。无可比拟的策略深度、卓越的队友沟通 and 主牌整合能力。"
+        "description": "战略大师（~2-3秒延迟）。无可比拟的策略深度、卓越的队友沟通及主牌整合能力。"
       },
       "qwen/qwen3-next-80b-a3b-instruct": {
         "rank": "精英策略",
