@@ -87,10 +87,18 @@ export function initializeTrumpDeclarationState(): TrumpDeclarationState {
   };
 }
 
+export function getRandomBotIndices(): number[] {
+  const pool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const shuffled = [...pool].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 3);
+}
+
 /**
  * Initialize a new game with default settings
  */
 export const initializeGame = (): GameState => {
+  const randomIndices = getRandomBotIndices();
+
   // Create players (1 human, 3 AI)
   const players: Player[] = [
     {
@@ -104,18 +112,21 @@ export const initializeGame = (): GameState => {
       isHuman: false,
       hand: [],
       team: TeamId.B,
+      displayNameIndex: randomIndices[0],
     },
     {
       id: PlayerId.Bot2,
       isHuman: false,
       hand: [],
       team: TeamId.A,
+      displayNameIndex: randomIndices[1],
     },
     {
       id: PlayerId.Bot3,
       isHuman: false,
       hand: [],
       team: TeamId.B,
+      displayNameIndex: randomIndices[2],
     },
   ];
 

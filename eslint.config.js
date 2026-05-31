@@ -13,9 +13,9 @@ module.exports = defineConfig([
   {
     rules: {
       'no-console': 'error', // Enforce use of gameLogger instead of console
-      'prettier/prettier': 'warn', // Downgrade formatting to soft warnings
-      '@typescript-eslint/no-explicit-any': 'warn', // Keep 'any' as warning for fast prototyping
-      '@typescript-eslint/no-unused-vars': 'warn', // Keep unused variables as warning during development
+      'prettier/prettier': 'error', // Enforce strict formatting
+      '@typescript-eslint/no-explicit-any': 'error', // Enforce type safety
+      '@typescript-eslint/no-unused-vars': 'error', // Enforce no unused variables
       'react-hooks/refs': 'off',
       'react-hooks/immutability': 'off',
       'react-hooks/set-state-in-effect': 'off',

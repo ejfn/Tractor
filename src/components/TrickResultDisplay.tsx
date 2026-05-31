@@ -35,7 +35,7 @@ const TrickResultDisplay: React.FC<TrickResultDisplayProps> = ({
   const winningTeam = gameState.teams.find((t) => t.id === winningPlayer.team);
   const isAttackingTeamWin = winningTeam ? !winningTeam.isDefending : false;
 
-  const winnerName = getPlayerDisplayName(tCommon, winningPlayer.id);
+  const winnerName = getPlayerDisplayName(tCommon, winningPlayer);
 
   return (
     <View style={styles.container}>
