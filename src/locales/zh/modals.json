@@ -30,5 +30,54 @@
       "title": "输了!",
       "newGame": "新游戏"
     }
+  },
+  "aiConfig": {
+    "title": "AI 玩家设置",
+    "subtitle": "更改将立即生效，即使在游戏进行中",
+    "modes": {
+      "algorithmic": "算法 AI",
+      "llm": "大模型 AI"
+    },
+    "algorithmic": {
+      "title": "纯数学算法",
+      "description": "基于经典博弈规则的高速、确定性 AI。无需 API 密钥，完全离线运行且无延迟。",
+      "instantTitle": "瞬时决策",
+      "instantDesc": "本地运算，0ms 延迟",
+      "freeTitle": "100% 免费且无限使用",
+      "freeDesc": "无 API 额度消耗或请求频率限制",
+      "offlineTitle": "完全自主运行",
+      "offlineDesc": "完全在设备本地运行，无需任何网络连接"
+    },
+    "llm": {
+      "apiKeyLabel": "OpenRouter API 密钥",
+      "apiKeyHint": "在 openrouter.ai 免费获取 API 密钥",
+      "selectModelLabel": "选择模型",
+      "enterKeyError": "请先输入您的 OpenRouter API 密钥。",
+      "connectedMsg": "✓ 已连接 — {{modelName}} 已准备就绪！",
+      "connectionError": "✗ {{error}}"
+    },
+    "buttons": {
+      "cancel": "取消",
+      "verify": "验证",
+      "save": "保存"
+    },
+    "models": {
+      "google/gemini-2.5-flash-lite": {
+        "rank": "综合最佳 (推荐)",
+        "description": "首选推荐。速度极快（~1-2秒延迟）。完美的规则遵循和秒级响应。出色的资源保护、牌组组合意识及队友喂牌配合。"
+      },
+      "deepseek/deepseek-chat": {
+        "rank": "策略之王",
+        "description": "战略大师（~2-3秒延迟）。无可比拟的策略深度、卓越的队友沟通 and 主牌整合能力。"
+      },
+      "qwen/qwen3-next-80b-a3b-instruct": {
+        "rank": "精英策略",
+        "description": "精英战术引擎（~3-4秒延迟）。完美的规则遵循，出色的牌组识别，以及绝佳的分数防守策略。"
+      },
+      "meta-llama/llama-3.3-70b-instruct": {
+        "rank": "性价比首选",
+        "description": "超值首选（~2-3秒延迟）。卓越的指令遵循能力以及稳定可靠的规则对齐。"
+      }
+    }
   }
 }

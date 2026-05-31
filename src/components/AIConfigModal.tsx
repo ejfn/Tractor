@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import { testOpenRouterConnection } from "../ai/llm/llmAIClient";
 import { DEFAULT_LLM_CONFIG, LLMConfig } from "../ai/llm/llmConfig";
-
 import { AVAILABLE_MODELS as MODELS } from "../ai/llm/llmModels";
+import { useModalsTranslation } from "../hooks/useTranslation";
+import { ModalsTranslationKey } from "../locales/types";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
   onSave,
   onClose,
 }) => {
+  const { t } = useModalsTranslation();
   const [useLLM, setUseLLM] = useState(currentConfig.enabled);
   const [selectedModel, setSelectedModel] = useState(
     currentConfig.model || DEFAULT_LLM_CONFIG.model,
@@ -72,7 +74,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
     if (!apiKey.trim()) {
       setConnectionStatus({
         kind: "error",
-        message: "Please enter your OpenRouter API key first.",
+        message: t("aiConfig.llm.enterKeyError"),
       });
       return;
     }
@@ -89,11 +91,20 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
       result.success
         ? {
             kind: "success",
-            message: `✓ Connected — ${MODELS.find((m) => m.id === selectedModel)?.name ?? selectedModel} is ready!`,
+            message: t("aiConfig.llm.connectedMsg", {
+              modelName:
+                MODELS.find((m) => m.id === selectedModel)?.name ??
+                selectedModel,
+            }),
           }
-        : { kind: "error", message: `✗ ${result.message}` },
+        : {
+            kind: "error",
+            message: t("aiConfig.llm.connectionError", {
+              error: result.message,
+            }),
+          },
     );
-  }, [apiKey, selectedModel]);
+  }, [apiKey, selectedModel, t]);
 
   // ── Save ───────────────────────────────────────────────────────────────────
 
@@ -137,10 +148,8 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
           {/* ── Header ── */}
           <View style={styles.header}>
             <Text style={styles.headerEmoji}>🤖</Text>
-            <Text style={styles.headerTitle}>AI Player Settings</Text>
-            <Text style={styles.headerSubtitle}>
-              Changes take effect immediately, even mid-game
-            </Text>
+            <Text style={styles.headerTitle}>{t("aiConfig.title")}</Text>
+            <Text style={styles.headerSubtitle}>{t("aiConfig.subtitle")}</Text>
           </View>
 
           <ScrollView
@@ -166,7 +175,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                     !useLLM && styles.segmentTextActive,
                   ]}
                 >
-                  Algorithmic
+                  {t("aiConfig.modes.algorithmic")}
                 </Text>
               </TouchableOpacity>
 
@@ -186,7 +195,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                     useLLM && styles.segmentTextActive,
                   ]}
                 >
-                  LLM AI
+                  {t("aiConfig.modes.llm")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -196,25 +205,26 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
               <View style={styles.algoCard}>
                 <View style={styles.algoHeaderRow}>
                   <Text style={styles.algoHeaderIcon}>📐</Text>
-                  <Text style={styles.algoTitle}>Pure Mathematics</Text>
+                  <Text style={styles.algoTitle}>
+                    {t("aiConfig.algorithmic.title")}
+                  </Text>
                 </View>
                 <Text style={styles.algoDescription}>
-                  Fast, deterministic, rule-based AI. No API key required. Zero
-                  latency · fully offline.
+                  {t("aiConfig.algorithmic.description")}
                 </Text>
                 <View style={styles.algoFeaturesList}>
                   {[
                     {
-                      label: "Instant Decisions",
-                      desc: "0ms latency local calculation",
+                      label: t("aiConfig.algorithmic.instantTitle"),
+                      desc: t("aiConfig.algorithmic.instantDesc"),
                     },
                     {
-                      label: "100% Free & Unlimited",
-                      desc: "Zero API token costs or request limits",
+                      label: t("aiConfig.algorithmic.freeTitle"),
+                      desc: t("aiConfig.algorithmic.freeDesc"),
                     },
                     {
-                      label: "Fully Autonomous",
-                      desc: "Runs locally on your device without connection",
+                      label: t("aiConfig.algorithmic.offlineTitle"),
+                      desc: t("aiConfig.algorithmic.offlineDesc"),
                     },
                   ].map((f) => (
                     <View key={f.label} style={styles.algoFeatureItem}>
@@ -233,7 +243,9 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
             {useLLM && (
               <View style={styles.llmPanel}>
                 {/* API Key */}
-                <Text style={styles.sectionLabel}>OpenRouter API Key</Text>
+                <Text style={styles.sectionLabel}>
+                  {t("aiConfig.llm.apiKeyLabel")}
+                </Text>
                 <View style={styles.apiKeyRow}>
                   <TextInput
                     style={styles.apiKeyInput}
@@ -255,71 +267,90 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                 </View>
 
                 <Text style={styles.apiKeyHint}>
-                  Get a free key at{" "}
+                  {t("aiConfig.llm.apiKeyHint").split("openrouter.ai")[0]}
                   <Text style={styles.apiKeyHintLink}>openrouter.ai</Text>
+                  {t("aiConfig.llm.apiKeyHint").split("openrouter.ai")[1] || ""}
                 </Text>
 
                 {/* Model cards */}
-                <Text style={styles.sectionLabel}>Select Model</Text>
-                {MODELS.map((model) => {
-                  const isSelected = selectedModel === model.id;
-                  return (
-                    <TouchableOpacity
-                      key={model.id}
-                      style={[
-                        styles.modelCard,
-                        isSelected && styles.modelCardSelected,
-                      ]}
-                      onPress={() => {
-                        setSelectedModel(model.id);
-                        setConnectionStatus({ kind: "idle" });
-                      }}
-                      activeOpacity={0.75}
-                    >
-                      <View style={styles.modelCardHeader}>
-                        <Text style={styles.modelIcon}>{model.icon}</Text>
-                        <View style={styles.modelNameBlock}>
-                          <Text style={styles.modelName}>{model.name}</Text>
-                          <View
-                            style={[
-                              styles.rankBadge,
-                              { borderColor: model.rankColor },
-                            ]}
-                          >
-                            <Text
+                <Text style={styles.sectionLabel}>
+                  {t("aiConfig.llm.selectModelLabel")}
+                </Text>
+                {(() => {
+                  const modelsTranslations = t(
+                    "aiConfig.models" as unknown as ModalsTranslationKey,
+                    {
+                      returnObjects: true,
+                    },
+                  ) as unknown as Record<
+                    string,
+                    { rank?: string; description?: string }
+                  >;
+                  return MODELS.map((model) => {
+                    const isSelected = selectedModel === model.id;
+                    const translatedRank =
+                      modelsTranslations?.[model.id]?.rank || model.rank;
+                    const translatedDesc =
+                      modelsTranslations?.[model.id]?.description ||
+                      model.description;
+                    return (
+                      <TouchableOpacity
+                        key={model.id}
+                        style={[
+                          styles.modelCard,
+                          isSelected && styles.modelCardSelected,
+                        ]}
+                        onPress={() => {
+                          setSelectedModel(model.id);
+                          setConnectionStatus({ kind: "idle" });
+                        }}
+                        activeOpacity={0.75}
+                      >
+                        <View style={styles.modelCardHeader}>
+                          <Text style={styles.modelIcon}>{model.icon}</Text>
+                          <View style={styles.modelNameBlock}>
+                            <Text style={styles.modelName}>{model.name}</Text>
+                            <View
                               style={[
-                                styles.rankBadgeText,
-                                { color: model.rankColor },
+                                styles.rankBadge,
+                                { borderColor: model.rankColor },
                               ]}
                             >
-                              {model.rank}
-                            </Text>
+                              <Text
+                                style={[
+                                  styles.rankBadgeText,
+                                  { color: model.rankColor },
+                                ]}
+                              >
+                                {translatedRank}
+                              </Text>
+                            </View>
                           </View>
+                          {isSelected && (
+                            <View style={styles.selectedCheck}>
+                              <Text style={styles.selectedCheckText}>✓</Text>
+                            </View>
+                          )}
                         </View>
-                        {isSelected && (
-                          <View style={styles.selectedCheck}>
-                            <Text style={styles.selectedCheckText}>✓</Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.modelDescription}>
-                        {model.description}
-                      </Text>
-                      <View style={styles.pricingRow}>
-                        <Text style={styles.pricingLabel}>
-                          {model.inputPrice}
-                          <Text style={styles.pricingUnit}> in</Text>
+                        <Text style={styles.modelDescription}>
+                          {translatedDesc}
                         </Text>
-                        <Text style={styles.pricingDivider}>/</Text>
-                        <Text style={styles.pricingLabel}>
-                          {model.outputPrice}
-                          <Text style={styles.pricingUnit}> out</Text>
-                        </Text>
-                        <Text style={styles.pricingUnit}> per 1M tokens</Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+                        <View style={styles.pricingRow}>
+                          <Text style={styles.pricingLabel}>
+                            {model.inputPrice}
+                            <Text style={styles.pricingUnit}> in</Text>
+                          </Text>
+                          <Text style={styles.pricingDivider}>/</Text>
+                          <Text style={styles.pricingLabel}>
+                            {model.outputPrice}
+                            <Text style={styles.pricingUnit}> out</Text>
+                          </Text>
+                          <Text style={styles.pricingUnit}> per 1M tokens</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  });
+                })()}
               </View>
             )}
           </ScrollView>
@@ -343,7 +374,9 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
               onPress={onClose}
               activeOpacity={0.8}
             >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={styles.cancelBtnText}>
+                {t("aiConfig.buttons.cancel")}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -361,8 +394,8 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
               ) : (
                 <Text style={styles.saveBtnText}>
                   {useLLM && connectionStatus.kind !== "success"
-                    ? "Verify"
-                    : "Save"}
+                    ? t("aiConfig.buttons.verify")
+                    : t("aiConfig.buttons.save")}
                 </Text>
               )}
             </TouchableOpacity>
