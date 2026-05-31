@@ -1,79 +1,83 @@
 ---
 name: prompt-refinement
-description: Instructions, heuristics, and strategies for integrating new game strategic knowledge into LLM prompts without bloating.
-version: 1.0.0
-license: MIT
+description: This skill should be used when the user wants to improve how the Shengji (Tractor) LLM bots play by editing their prompt — e.g. "the bot made a bad play", "fix the LLM strategy prompt", "add a heuristic to the prompt", "the AI keeps mis-playing X", "rewrite the LLM rules". Covers BOTH the static system prompt (STATIC_LLM_GAME_RULES) and the dynamic user prompt, both in src/ai/llm/llmPromptTemplates.ts.
+version: 1.1.0
+license: UNLICENSED
 ---
 
 ## Overview
 
-The **Prompt Refinement** skill provides a rigorous, highly disciplined workflow for improving the strategic decision-making context of Shengji (Tractor) AI bots. 
+The **Prompt Refinement** skill provides a rigorous, disciplined workflow for improving the strategic decision-making of Shengji (Tractor) AI bots by editing their LLM prompt. Use it when an LLM bot makes a suboptimal play and the cause is the prompt rather than the game engine.
 
-When you find a game scenario where the LLM makes a suboptimal tactical choice, use this skill to diagnose, draft, and cleanly integrate strategic context into the system prompt (`STATIC_LLM_GAME_RULES` in [llmGamePrompt.ts](file:///home/eric/repos/Tractor/src/ai/llm/llmGamePrompt.ts)).
+### The LLM prompt has TWO parts
+
+Both live in [src/ai/llm/llmPromptTemplates.ts](file:src/ai/llm/llmPromptTemplates.ts):
+
+1. **System prompt — `STATIC_LLM_GAME_RULES`**: the static, game-wide strategic rules (card hierarchy, combos, following/ruffing, leading, position play). This is the bot's standing "how to play" knowledge.
+2. **User prompt — `buildUserPromptTemplate`**: the per-decision template. It is filled in by `buildLLMUserPrompt` and its helpers in [src/ai/llm/llmGamePrompt.ts](file:src/ai/llm/llmGamePrompt.ts) with the dynamic context for THIS decision: the hand grouped by suit (strongest→weakest, with `[pts]`/`(Trump)` tags), recent trick history, confirmed player voids, the active trick status, the **Trick Win Security** verdict (SECURED / LIKELY WIN / UNCERTAIN), and either **candidate lead options each with a Rule Score** (when leading) or a **suit-following analysis** (when following).
+
+A prompt fix may belong in EITHER part. Before editing, decide which:
+- **Static gap** (the bot doesn't understand a general principle) → refine `STATIC_LLM_GAME_RULES`.
+- **Dynamic gap** (the bot lacks, or misreads, a per-decision signal) → improve what `buildUserPromptTemplate` / `llmGamePrompt.ts` surface, or how the static rules tell the bot to interpret those signals.
+
+### Key context
+
+The LLM is consulted ONLY at genuinely ambiguous lead/follow decisions — forced and obvious plays (single legal combo, forced follow, unbeatable lead, round-start boss lead) are short-circuited in code before the LLM is called, and the engine validates the result with one corrective retry. So refine for **judgement among viable options**, not basic legality. The target model is small and fast (e.g. `gemini-2.5-flash-lite`), so keep the prompt dense.
 
 ---
 
 ## 🛠️ Three Golden Rules of Prompt Refinement
 
 ### 1. Maintain a Strict Token Budget (Anti-Bloat)
-* **Rule**: Keep system instructions dense, concise, and lightweight. Never bloat the prompt with wordy descriptions or long single-case card examples.
-* **Tactic**: When adding a new heuristic, actively search the existing rules for wordy sentences and compress/refactor them to offset any size increase.
+- Keep instructions dense, concise, and lightweight; never bloat with wordy descriptions or long single-case card examples.
+- When adding a heuristic, search the existing rules for wordy or redundant text and compress it to offset the increase. Aim for net-neutral length.
 
 ### 2. Harmonious Integration & Structured Refactoring
-* **Rule**: Do not append arbitrary, isolated rules (e.g., *"Rule 7: Never play 5♣ on trick 2"*). Instead, integrate the logic seamlessly. You can:
-  1. **Incorporate** it into an existing section (Hierarchy, Ruffing, or Heuristics).
-  2. **Create a new dedicated section** if the topic introduces a completely new strategic dimension (e.g., `## 7. Kitty Discarding Strategy`).
-  3. **Rewrite or refactor** existing sections entirely if the current phrasing is too limiting or confusing.
-* **Tactic**: Align additions with the core structural sections:
-  * `## 2. Card Values & Trump Hierarchy`
-  * `## 3. Combinations & Tractors`
-  * `## 4. Following & Ruffing Priorities`
-  * `## 5. Multi-Combo Rules`
-  * `## 6. Strategic Heuristics`
+- Do not append arbitrary isolated rules (e.g. *"Rule 7: Never play 5♣ on trick 2"*). Instead, integrate the logic by one of:
+  1. **Incorporate** it into an existing section.
+  2. **Create a new dedicated section** only when introducing a genuinely new strategic dimension.
+  3. **Rewrite or refactor** a section when its current phrasing is limiting or confusing.
+- Align additions with the existing section structure of `STATIC_LLM_GAME_RULES`. The current sections are: Setup; Card strength; Combos & tractors; Following — fixed rules; Following — decision order; Ruffing when void; Multi-combo; Leading — decision order; Position cues; plus a closing Conservation through-line. Read the file first — this structure evolves.
 
 ### 3. Build Knowledge Context, Not Constraints
-* **Rule**: The LLM is a reasoning strategic agent, not a state-machine parser. We build **context and domain heuristics** so the model makes intelligent trade-offs, rather than hard-coded constraints that limit strategic flexibility.
-* **Tactic**: Use strategic and motivation-oriented language (e.g., *“conserve resources,” “feed teammate,” “apply pressure,” “bleeding opponent trump”*) rather than mechanical commands (*“must play,” “never select”*).
+- The LLM is a reasoning agent, not a state-machine parser. Build **context and domain heuristics** so the model makes intelligent trade-offs, rather than hard-coded constraints that limit flexibility.
+- Use strategic, motivation-oriented language (*"conserve resources", "feed teammate", "apply pressure", "bleed opponent trump"*) rather than mechanical commands (*"must play", "never select"*) — except where a hard rule is genuinely correct.
 
 ---
 
 ## 🔄 The Prompt Refinement Workflow
 
 > [!IMPORTANT]
-> **Non-Blocking Execution**: Prompt refinement only alters system prompt strings. Do NOT create pre-execution implementation plans or block on approval loops. Instead, apply the prompt edits directly to `llmGamePrompt.ts` first, and then stop to wait for the user to review the file changes.
+> **Non-Blocking Execution**: Prompt refinement only alters prompt strings. Do NOT create pre-execution implementation plans or block on approval loops. Apply the edits directly to the relevant file (`llmPromptTemplates.ts`, and `llmGamePrompt.ts` if the dynamic context is involved), then stop and wait for the user to review the diff.
 
 ```mermaid
 graph TD
-    A[Identify Suboptimal Play from User or Logs] --> B[Pinpoint Prompt Gap in llmGamePrompt.ts]
-    B --> C[Draft Heuristic with Motivation & Intent]
-    C --> D[Refactor & Integrate into Prompt]
-    D --> E[Stop & Wait for User Review]
+    A[Identify suboptimal play from user or logs] --> B[Pinpoint the gap: static rules vs dynamic context]
+    B --> C[Draft heuristic / context change with motivation & intent]
+    C --> D[Refactor & integrate, holding the token budget]
+    D --> E[Stop & wait for user review]
 ```
 
 ### Step 1: Identify and Diagnose the Suboptimal Play
-Determine the details of the suboptimal play based on the user's report or game logs:
-* Which player had the turn? What were the team roles and the current trick state (e.g., points on the table, winning player)?
-* What cards did the bot have, and what suboptimal card choice did it make?
-* What was the strategic intent that the bot failed to understand?
+- Which player had the turn? Team roles, trick state (points on table, current winner)?
+- What cards did the bot hold, and what suboptimal choice did it make?
+- What strategic intent did it fail to grasp?
 
-### Step 2: Pinpoint the Prompt Gap
-Locate the relevant section of `STATIC_LLM_GAME_RULES` in `llmGamePrompt.ts`. Diagnose why the prompt allowed or caused the bad play:
-* Was the strategic heuristic completely missing?
-* Was an existing rule confusing, ambiguous, or too generic?
-* Were there conflicting rules?
+### Step 2: Pinpoint the Gap
+Decide whether the gap is in the **static rules** (`STATIC_LLM_GAME_RULES`) or the **dynamic user prompt** (`buildUserPromptTemplate` / `llmGamePrompt.ts`):
+- Was a strategic heuristic missing, confusing, ambiguous, or conflicting? → static.
+- Did the model lack a signal, or was a provided signal (Rule Score, Win Security, voids, suit analysis) unclear or unused? → dynamic, or a static instruction on how to read it.
 
 ### Step 3: Draft the Contextual Heuristic
-Formulate the lesson as a clear, context-aware strategic principle that explains **why** and **when** a player should make the correct choice (using motivational language, not hard state-machine rules).
-* *Poor*: "If you have a 10 and King, play King."
-* *Better*: "Prioritize feeding high-value point cards (King, 10) to secure the trick when your teammate is winning, or conserve them when opponents have won the trick."
+Formulate the lesson as a clear, context-aware principle explaining **why** and **when**, in motivational language.
+- *Poor*: "If you have a 10 and King, play King."
+- *Better*: "When your teammate's win is secured, feed your highest sparable point card but keep the stronger one — give the 10, keep the King."
 
 ### Step 4: Compress and Integrate
-Update `llmGamePrompt.ts` to integrate the new heuristic:
-* Locate the appropriate section (usually `## 6. Strategic Heuristics` or the relevant following priorities).
-* Do not just append a new bullet point (to avoid prompt bloat). Instead, compress, rewrite, or tighten the adjacent rules to maintain a strict token budget.
+Edit the correct file. Do not just append a bullet — compress, rewrite, or tighten adjacent text to hold the token budget. Keep the system prompt and user prompt consistent (e.g. if the static rules reference a "Rule Score" or "Trick Win Security" verdict, ensure the user prompt still emits those exact labels).
 
 ### Step 5: Stop & Wait for User Review
-Once the changes are applied:
+Once changes are applied:
 - **Stop and wait for the user to review the file changes directly.**
 - **DO NOT build** the project.
 - **DO NOT run qualitycheck** (`npm run qualitycheck` or similar).
@@ -81,23 +85,22 @@ Once the changes are applied:
 
 ---
 
-## 💡 Example: Integrating Heuristics Harmoniously
+## 💡 Example: Integrating a Heuristic Harmoniously
 
 ### Scenario
-An AI bot led a low trump card on trick 1 when it had high non-trump Aces. 
+An AI bot led a single low trump on trick 1 when it held off-suit Aces.
 
 ### Suboptimal Addition (Do NOT do this)
 ```diff
- ## 6. Strategic Heuristics
- - - Leader (1st): Lead non-trump Aces/Kings early; lead trump pairs early (avoid single trumps).
-+ - Leader (1st) Rule: Do not lead single low trumps on the very first trick if you have off-suit Aces.
+ ## 8. Leading — decision order
++ - Rule: Do not lead a single low trump on the first trick if you hold off-suit Aces.
 ```
-*Why this is bad*: It creates a redundant, overly specific hard rule that doesn't build understanding.
+*Why this is bad*: a redundant, overly specific hard rule that doesn't build understanding.
 
 ### Professional Integration (DO this)
 ```diff
- ## 6. Strategic Heuristics
-- - Leader (1st): Lead non-trump Aces/Kings early; lead trump pairs early (avoid single trumps). Setup void teammate...
-+ - Leader (1st): Lead off-suit Aces/Kings to establish control early; avoid leading single trumps which bleeds teammate's strength. Setup void teammate...
+ ## 8. Leading — decision order
+- 1. Lead off-suit boss A/K to seize control safely.
++ 1. Lead off-suit boss A/K to seize control safely; avoid leading single trumps, which bleeds your own trump strength for no control.
 ```
-*Why this is good*: It beautifully integrates the concept into the existing Leader heuristic, explains the *why* (bleeding partner's strength), and uses zero additional lines!
+*Why this is good*: it folds the lesson into the existing leading heuristic, explains the *why*, and adds zero lines.

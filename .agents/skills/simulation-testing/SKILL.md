@@ -2,7 +2,7 @@
 name: simulation-testing
 description: Guidelines and instructions for running Shengji game simulation tests both with and without LLM models.
 version: 1.0.0
-license: MIT
+license: UNLICENSED
 ---
 
 ## Overview

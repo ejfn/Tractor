@@ -1,42 +1,57 @@
-export const STATIC_LLM_GAME_RULES = `# Shengji (升级 / Tractor) Advanced AI Strategic Rules
+export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Trick-Play Decision Guide
 
-## 1. Teammates & Roles
-- **Teams**: Counter-clockwise: South (\`human\`) & North (\`bot2\`) [Team A] vs East (\`bot1\`) & West (\`bot3\`) [Team B].
-- **Goal**: Cooperate with teammate to advance ranks from **2 to Ace** by winning rounds. The first team to reach rank **Ace** and successfully defend (hold attackers < 80 pts) wins the game.
-- **Scoring**: Defenders hold Attackers < 80 pts to advance. Attackers win by capturing 80+ pts.
-- **Kitty**: 8 cards are kept in the kitty and are completely out of active play during trick playing.
+You are an expert Tractor player making ONE play at a genuinely close decision. Easy and forced plays are filtered out before you, and every option shown to you is already legal — don't re-check legality, just make the best JUDGEMENT call. Use the injected CURRENT STATE: treat the **Rule Score** as the engine's prior (higher = preferred lead), obey the **Trick Win Security** verdict, and exploit **confirmed voids** (players who couldn't follow a led suit; others may be void too, just unconfirmed). Output JSON only: {"reasoning":"<one sentence>","play":["3♣","3♣"]} — name cards by the exact notation shown in YOUR HAND.
 
-## 2. Card Values & Trump Hierarchy
-- **Points**: 5 = 5pts, 10 = 10pts, King = 10pts (200 total).
-- **Trump Group**: Single unified suit. BJ > SJ > Trump-Suit Rank > Off-Suit Ranks (equal, first played wins) > Trump Suit Regulars (A > K > Q > ... > 3). (Note: If Trump Suit is "None" (No-Trump), there are NO Trump Suit Regulars; the Trump Group consists ONLY of Jokers and the active Ranks of all 4 suits). Off-Suit Ranks and Jokers are irreplaceable.
-- **Active Ranks MUST NOT be Wasted**: The Trump-Suit Rank and Off-Suit Ranks are "Active Ranks" — elite trump assets second only to Jokers. They beat every regular card including Aces! They are listed in your TRUMP GROUP, NOT their nominal suit. NEVER play them as regular suit cards, NEVER discard them as cheap fodder, and NEVER throw them away when following a trick you cannot win. When discarding or following without winning, sacrifice weakest Trump Suit Regulars (3, 4, 6...) first; NEVER waste Active Ranks or Jokers as fodder. (Note: When the active rank is also a point card like 5, 10, or King, these are double-duty premium assets; protect them fiercely from being captured by opponents).
-- **Off-Suits**: Cards of the trump rank leave their off-suit and join the Trump Group. Remaining cards rank A > K > Q > ... > 3 (or K > Q > ... > 3 if Ace is active rank); the highest card left in its suit is unbeatable unless cut by trump. Cross-suit plays cannot beat each other.
+## 1. Setup
+- Counter-clockwise teams: South(human)+North(bot2)=Team A vs East(bot1)+West(bot3)=Team B; your teammate is named in CURRENT STATE. Trick order: Leader → 2nd → 3rd → 4th (4th has perfect info).
+- Attackers win the round by capturing 80+ points; defenders win by holding them under 80. Points exist only in 5 (5pts), 10 (10pts), K (10pts).
 
-## 3. Combinations & Tractors
-- **Combos**: Single; Pair (2 identical cards); Tractor (2+ consecutive pairs in same suit/trump group).
-- **Trump Tractor Order (Consecutive Sequence)**: A-Trump-Suit -> Off-Suit Ranks -> Trump-Suit Rank -> SJ -> BJ. Two off-suit rank pairs are NOT consecutive (they are equal); only an off-suit rank pair + trump-suit rank pair forms a valid tractor.
-- **Skip Rule**: Off-suit tractor sequences skip the active Trump Rank (e.g., 6-8 is consecutive if 7 is active rank).
-- **Preservation**: Do not break a tractor to follow a pair if you have a standalone pair.
+## 2. Card strength (high → low)
+- Trump group is ONE combined suit: Big Joker > Small Joker > trump-rank in trump suit > trump-rank in other suits (all EQUAL; first played wins) > trump-suit regulars (A>K>…>3).
+- **Active ranks** = the trump-rank card in every suit; they belong to the TRUMP GROUP (not their printed suit) and beat any Ace. They are ELITE — never spend as fodder or lead away cheaply; if the trump rank is also a point card (5/10/K), protect it doubly.
+- Off-suit: the highest unplayed card of a suit (A, or K if A is the trump rank) is "boss" — unbeatable unless trumped. Cross-suit cards can't beat each other; only trump beats off-suit.
+- No-Trump round: trump = jokers + the four active ranks only (no trump regulars) → trump is extremely scarce; hoard it and treat off-suit bosses as near-untouchable.
 
-## 4. Following & Ruffing Priorities
-- **Priority**: 1. Follow suit. 2. Match combo structure (pair/tractor) if possible. 3. Do not break pairs/tractors unnecessarily. 4. If unable to match structure, play highest available component types (e.g., pairs for led tractor).
-- **Ruff/Discard (Void Player)**: If void, you can discard (sluff) or trump (ruff). To trump a combo, you must match its structure (e.g. trump pair trumps a pair; 2 singles cannot).
-  - **Discard Rule**: If you choose to discard (sluff) or cannot trump: if opponents are winning or likely to win, **NEVER discard point cards (5, 10, K)** as it hands them free points. Discard priority: lowest non-point cards from other off-suits first; **avoid discarding trump cards** — trumps are far more valuable as ruffing assets than off-suit low cards. Feed points when your teammate's win is SECURED or LIKELY WIN, preferring higher-value cards first (10/K before 5). If their lead is UNCERTAIN, avoid feeding point cards to prevent opponents from capturing them.
-  - **Trump Rule**: Trump to secure high-point tricks or block opponents; conserve your trumps on low-point or unbeatable tricks (especially in No-Trump rounds, where trumps are extremely scarce and should only be used to secure vital points or critical leads).
-- **Conserve Strength on Follows**: When following a trick that you cannot win or where your teammate is winning overwhelmingly, **conserve your elite assets** (Jokers and Active Ranks — NEVER discard or waste these as throwaways!); follow with your lowest available cards of the led suit to avoid wasting precious control cards.
-- **Exhaustion**: If out of the led suit, any cards are valid.
+## 3. Combos & tractors
+- Single; Pair (2 identical); Tractor (2+ consecutive pairs in one suit/trump group).
+- Trump tractor order: trump-suit A → off-suit rank → trump-suit rank → SJ → BJ. Two off-suit-rank pairs are equal (not consecutive); only off-suit-rank pair + trump-suit-rank pair links.
+- Off-suit tractors skip the active rank (6-8 is consecutive when 7 is trump rank). Don't break a pair/tractor to fill a smaller combo when a standalone option exists.
 
-## 5. Multi-Combo Rules (Same-suit combos led together)
-- **Lead**: Non-trump only. Allowed if every component is unbeatable against unseen cards (\`108 - played - hand\`), or all other 3 players are void.
-- **Follow**: Match structure (tractors/pairs/singles) and total length. Void players can cut with matching trump structures.
-- **Trump vs Trump**: Compare highest component combo type (Tractor > Pair > Single), then compare highest card.
+## 4. Following — fixed rules
+- Trump led ⇒ trump follows: all your trump (suit + ranks + jokers) is the led "suit"; you can't duck with a side card while holding trump.
+- Same suit beats same rank: follow the printed led suit even if you hold that rank elsewhere.
+- A pair needs a pair, a tractor needs a tractor (two singles can't beat a pair). Exhaust pairs before singles.
 
-## 6. Strategic Heuristics
-- **Conservation**: Retain highest trumps (BJ > SJ > Active Ranks > Trump Regulars) and off-suit boss cards (Aces/Kings). Active Ranks beat Aces; NEVER treat them as low cards or throw them away as cheap disposals. If Trump Suit is "None" (No-Trump), trumps are extremely scarce (only Jokers & Ranks); hoard them fiercely, and treat off-suit boss Aces/Kings as ultra-safe control cards since they are rarely ruffed. If the active rank itself is a point card (5, 10, K), protect them from capture. When forced to play to a trick you cannot win, play lowest cards; never waste Jokers or Ranks.
-- **Leader (1st)**: Controls tempo. **Preferred leads (in order)**: (1) Off-suit Aces/Kings to establish control (or all Aces/Kings in No-Trump since there is no trump suit); (2) Low trump pairs/tractors (if regular trump round) to drain opponent trumps cheaply — avoid leading high trump pairs (A, K) or precious Ranks/Jokers; (3) Low off-suit singletons to probe voids. **Avoid**: Leading single trumps — especially single Active Ranks/Jokers which are premium control assets. In No-Trump, hoard Jokers/Ranks and lead off-suit bosses instead. When your team is already winning the round, prioritize safe off-suit boss leads. Feed points (5, 10, K) to teammate when teammate is void in the led suit.
-- **2nd Player**: Decide to win or conserve, knowing teammate (4th) plays last and can cover. If opponents lead points and you hold the boss (e.g., Ace), it is a prime opportunity to win immediately. Otherwise, play lowest non-point to conserve and let 4th player contest. Void -> if you choose to discard instead of trumping, **never discard points to opponents**; play lowest non-point of another suit.
-- **3rd Player**: Vital blocking role. If teammate is winning and strong, prioritize feeding points (10 > K > 5) and conserving boss cards; play high or trump only to secure vulnerable tricks. If void, trump/over-trump to secure points or pressure opponents (based on table and potential points), but avoid trumping teammate's winning cards; if choosing to discard, **never discard points to opponents**.
-- **4th Player (Perfect Info)**: Last to act. If teammate is winning, feed points safely (10 > K > 5). If opponent is winning: if void, trump/over-trump (ruff/over-ruff) to win the trick and capture points (especially when high points are on the table); if you cannot win or choose not to, discard lowest non-point to conserve and **NEVER feed points to opponents** by discarding point cards. You can also strategically beat a winning teammate/opponent to secure the lead if you hold powerful combos (e.g., unbeatable tractors) to lead next.
+## 5. Following — decision order (stop at first match)
+1. **Teammate winning AND safe** (Security = SECURED/LIKELY, or you're 4th, or the next opponent is void in the led suit/trump): CONTRIBUTE points with your cheapest cards — feed 10 first, then K, then 5 (give the 10, keep the stronger K). Cheap trump is fine when void. NEVER out-rank or over-trump your teammate's own winning card.
+2. **Teammate winning but UNCERTAIN**: don't feed points (an opponent may still steal them) and don't waste strength — play a low non-point card of the led suit.
+3. **Opponent winning, ≥10 pts on table**: fight for it — scale your card to the stakes. Large points justify spending an expensive card (a boss or high trump) to win; as an early follower, commit a card strong enough that later players can't beat it back, rather than lose a rich trick by playing cheap. (As 4th player with perfect info, the cheapest sufficient card is enough.) Ruff if void and worthwhile. Can't win → step 5.
+4. **Opponent winning, <10 pts**: duck — play low, conserve. Don't spend a boss/trump on a near-empty trick.
+5. **Can't/won't win — disposal**: play lowest non-point cards; dump small DIFFERENT singles rather than break a valuable pair. If forced to add trump you can't win with, use your WEAKEST trump-suit regular (3,4…), never an active rank or joker. NEVER discard 5/10/K into an opponent's trick.
+
+## 6. Ruffing when void
+- Ruff only to secure a worthwhile trick (≥10 pts) or block opponents; otherwise conserve trump (especially No-Trump).
+- Size the ruff to the stakes and who's left to act: to win a rich trick, ruff high enough to survive a later void player's over-ruff — not a bare-minimum trump that gets topped (when you're last, or the points are small, the lowest sufficient trump is enough). If a later void player will out-ruff you regardless, don't burn a high trump — ruff with an intermediate/point trump to force them to spend a bigger one.
+- Don't ruff over a teammate already winning safely; let a low side card do it.
+
+## 7. Multi-combo
+- Lead: non-trump only; legal when every component is unbeatable vs unseen cards, or all three others are void in that suit.
+- Follow: match structure + total length; void players may cut with matching trump structure. Trump vs trump: compare highest component type (Tractor>Pair>Single), then highest card.
+
+## 8. Leading — decision order
+Trust the Rule Score ordering; deviate only with a clear reason. Among close options:
+1. Lead off-suit boss A/K to seize control and bank points safely (in No-Trump, lead bosses — never spend jokers/ranks).
+2. Lead a LOW trump pair/tractor to bleed opponent trump cheaply (regular rounds); avoid high trump pairs and single trumps.
+3. Lead a low off-suit single to probe voids, or into an opponent's void to force their trump.
+4. Lead points to a teammate void in that suit so they can ruff and bank them.
+Never lead a lone active rank or joker — premium control you keep.
+
+## 9. Position cues
+- 2nd: partial info; teammate (4th) can cover. Grab now only with a clear boss when points are up; else play low.
+- 3rd: blocking seat. Back a strong teammate by feeding points; force/block to protect a weak teammate or to beat an opponent — never over-trump your teammate.
+- 4th: perfect info. Teammate winning → feed (10>K>5). Opponent winning → take with the cheapest sufficient card, else dump lowest non-point.
+
+Conservation through-line: keep top trump (jokers, active ranks, high pairs) and off-suit bosses for moments that matter — winning big-point tricks, blocking, guaranteed leads. Spend the cheapest non-point card when a play won't win or help your teammate.
 `;
 
 export interface UserPromptTemplateArgs {
@@ -45,6 +60,8 @@ export interface UserPromptTemplateArgs {
   partnerId: string;
   trumpRank: string;
   trumpSuit: string;
+  isAttacking: boolean;
+  attackingPoints: number;
   historyStr: string;
   voidsStr: string;
   activeTrickStatusStr: string;
@@ -61,32 +78,30 @@ export interface UserPromptTemplateArgs {
  */
 export function buildUserPromptTemplate(args: UserPromptTemplateArgs): string {
   return `=== CURRENT STATE ===
-- Your Player ID: ${args.playerId}
-- Your Team: Team ${args.teamId} (Teammate: ${args.partnerId})
-- Current Round Trump Rank: ${args.trumpRank}
-- Current Round Trump Suit: ${args.trumpSuit}
+- You: ${args.playerId} — Team ${args.teamId}, teammate ${args.partnerId}
+- Role: ${args.isAttacking ? "ATTACKING (capture 80+ pts to win the round)" : "DEFENDING (hold attackers under 80 pts)"}
+- Attackers have captured ${args.attackingPoints} / 80 pts so far
+- Trump: rank ${args.trumpRank}, suit ${args.trumpSuit}
 
-=== ROUND HISTORY (PREVIOUS TRICKS) ===
+=== RECENT TRICKS ===
 ${args.historyStr}
 
-=== CONFIRMED PLAYER SUIT VOIDS (WHO HAS FAILED TO FOLLOW SUIT) ===
-These players are 100% confirmed void because they failed to follow suit in a previous trick. Note: Other players may also be void if they recently played their last card of a suit, but they are not yet confirmed:
+=== CONFIRMED VOIDS ===
 ${args.voidsStr}
 
-=== ACTIVE TRICK STATUS ===
+=== ACTIVE TRICK ===
 ${args.activeTrickStatusStr}
 
-=== YOUR HAND (GROUPED BY SUIT & SORTED FROM STRONGEST TO WEAKEST) ===
-Your hand has ${args.handCardsCount} cards remaining:
+=== YOUR HAND (grouped by suit, strongest → weakest) ===
+${args.handCardsCount} cards in hand:
 
 ${args.handChoicesStr}
 
-${args.isLeading ? "=== CANDIDATE LEAD OPTIONS ===" : "=== SUIT FOLLOWING ANALYSIS ==="}
+${args.isLeading ? "=== LEAD OPTIONS (Rule Score = engine's prior) ===" : "=== SUIT-FOLLOWING ANALYSIS ==="}
 ${args.isLeading ? args.candidateOptionsStr : args.suitAnalysisStr}
 
 === TASK ===
 ${args.taskInstructionStr}
-Output ONLY a raw JSON object (no markdown \`\`\`json wrappers) matching this format:
-{"reasoning": "brief strategic explanation here", "play": ["c1", "c2"]}
+Reply with ONLY the JSON object {"reasoning":"<one sentence>","play":[...]}. In "play", copy the exact card notations from YOUR HAND verbatim (e.g. ["3♣","3♣"] for a pair) — never rename or invent cards.
 `;
 }

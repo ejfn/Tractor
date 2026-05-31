@@ -4,7 +4,6 @@ import { getLLMConfig, isLLMEnabled } from "./llmConfig";
 import { callOpenRouter, ChatMessage } from "./llmAIClient";
 import { buildLLMUserPrompt } from "./llmGamePrompt";
 import { getPlayValidationError } from "../../game/playValidation";
-import { sortCards } from "../../utils/cardSorting";
 
 /** Log a shortcut event and simulate LLM latency. No-op when LLM is disabled. */
 export async function logLLMShortcut(
@@ -142,8 +141,6 @@ export async function callLLMForDecision(
   llmTotalPlaysRequested++;
   const decisionStartTime = Date.now();
 
-  const sortedHand = sortCards(hand, gameState.trumpInfo);
-
   // Self-Correction Retry Loop (up to 2 tries: 1 initial attempt + 1 retry)
   const maxAttempts = 2;
   let attempt = 0;
@@ -196,7 +193,7 @@ export async function callLLMForDecision(
         });
 
         errorHint =
-          'Failed to parse your response as JSON. Please ensure your play selection strictly follows JSON formatting. Example: { "reasoning": "explanation", "play": ["c1"] }';
+          'Failed to parse your response as JSON. Please ensure your play selection strictly follows JSON formatting. Example: { "reasoning": "explanation", "play": ["3♣"] }';
         llmInvalidCardRetries++;
         continue;
       }
@@ -205,53 +202,37 @@ export async function callLLMForDecision(
       if (!Array.isArray(parsedPlay) || parsedPlay.length === 0) {
         gameLogger.warn("llm_invalid_format_keys", { playerId, parsed });
         errorHint =
-          "Your response did not contain a valid 'play' array of card IDs (e.g. ['c1', 'c2']). Please select valid card IDs from your hand.";
+          'Your response did not contain a valid \'play\' array of cards (e.g. ["3♣","3♣"]). Please select cards from your hand using their exact notation.';
         llmInvalidCardRetries++;
         continue;
       }
 
-      // Check for duplicate card choice IDs in parsedPlay
-      const uniquePlayIds = new Set(
-        parsedPlay.map((id) => id.trim().toLowerCase()),
-      );
-      if (uniquePlayIds.size !== parsedPlay.length) {
-        gameLogger.warn("llm_duplicate_choice_ids", {
-          playerId,
-          parsedPlay,
-        });
-
-        errorHint =
-          "Your selection contains duplicate card choice IDs (e.g. selecting the same ID 'c1' twice). Each card ID in your play selection must be unique. Please try again with unique card IDs.";
-        llmInvalidCardRetries++;
-        continue;
-      }
-
-      // Map card IDs (e.g., 'c1', 'c2') back to actual Card objects in the hand
+      // Map the returned card notations (e.g. "3♣", "BJ") back to Card objects,
+      // consuming each hand card at most once so a pair like ["8♦","8♦"] maps to both copies.
+      const remainingHand = [...hand];
       const selectedCards: Card[] = [];
       let mappingFailed = false;
 
-      for (const cardIdSymbol of parsedPlay) {
-        const match = cardIdSymbol.trim().match(/^c(\d+)$/);
-        if (match) {
-          const cardIdx = parseInt(match[1], 10) - 1;
-          if (cardIdx >= 0 && cardIdx < sortedHand.length) {
-            selectedCards.push(sortedHand[cardIdx]);
-          } else {
-            mappingFailed = true;
-          }
-        } else {
+      for (const token of parsedPlay) {
+        const target = token.trim();
+        const idx = remainingHand.findIndex((c) => c.toString() === target);
+        if (idx === -1) {
           mappingFailed = true;
+          break;
         }
+        selectedCards.push(remainingHand[idx]);
+        remainingHand.splice(idx, 1);
       }
 
       if (mappingFailed || selectedCards.length !== parsedPlay.length) {
         gameLogger.warn("llm_card_mapping_failed", {
           playerId,
           parsedPlay,
-          handSize: sortedHand.length,
+          handSize: hand.length,
         });
 
-        errorHint = `Some card IDs you selected are invalid or not in your hand. Please select only from the provided list ('c1' to 'c${sortedHand.length}').`;
+        errorHint =
+          'Some cards you selected are not in your hand. Select only cards shown in YOUR HAND, using their exact notation (e.g. "3♣", "10♥", "BJ").';
         llmInvalidCardRetries++;
         continue;
       }
