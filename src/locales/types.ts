@@ -121,6 +121,43 @@ export interface ModalsTranslations {
       newGame: string;
     };
   };
+  aiConfig: {
+    title: string;
+    subtitle: string;
+    modes: {
+      algorithmic: string;
+      llm: string;
+    };
+    algorithmic: {
+      title: string;
+      description: string;
+      instantTitle: string;
+      instantDesc: string;
+      freeTitle: string;
+      freeDesc: string;
+      offlineTitle: string;
+      offlineDesc: string;
+    };
+    llm: {
+      apiKeyLabel: string;
+      apiKeyHint: string;
+      selectModelLabel: string;
+      enterKeyError: string;
+      connectedMsg: string;
+      connectionError: string;
+    };
+    buttons: {
+      cancel: string;
+      verify: string;
+      save: string;
+    };
+    models: {
+      [modelId: string]: {
+        rank: string;
+        description: string;
+      };
+    };
+  };
 }
 
 // Union type for all translation keys

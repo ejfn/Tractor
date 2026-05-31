@@ -30,5 +30,54 @@
       "title": "Lost!",
       "newGame": "NEW GAME"
     }
+  },
+  "aiConfig": {
+    "title": "AI Player Settings",
+    "subtitle": "Changes take effect immediately, even mid-game",
+    "modes": {
+      "algorithmic": "Algorithmic",
+      "llm": "LLM AI"
+    },
+    "algorithmic": {
+      "title": "Pure Mathematics",
+      "description": "Fast, deterministic, rule-based AI. No API key required. Zero latency · fully offline.",
+      "instantTitle": "Instant Decisions",
+      "instantDesc": "0ms latency local calculation",
+      "freeTitle": "100% Free & Unlimited",
+      "freeDesc": "Zero API token costs or request limits",
+      "offlineTitle": "Fully Autonomous",
+      "offlineDesc": "Runs locally on your device without connection"
+    },
+    "llm": {
+      "apiKeyLabel": "OpenRouter API Key",
+      "apiKeyHint": "Get a free key at openrouter.ai",
+      "selectModelLabel": "Select Model",
+      "enterKeyError": "Please enter your OpenRouter API key first.",
+      "connectedMsg": "✓ Connected — {{modelName}} is ready!",
+      "connectionError": "✗ {{error}}"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "verify": "Verify",
+      "save": "Save"
+    },
+    "models": {
+      "google/gemini-2.5-flash-lite": {
+        "rank": "Best Overall (Recommended)",
+        "description": "Recommended. Speed Champion (~1-2s latency). Flawless rules compliance and sub-second responses. Outstanding resource conservation, combo awareness and teammate feeding."
+      },
+      "deepseek/deepseek-chat": {
+        "rank": "Peak Strategic Master",
+        "description": "Strategic master (~2-3s latency). Unparalleled strategic depth, superior teammate communication and trump unification."
+      },
+      "qwen/qwen3-next-80b-a3b-instruct": {
+        "rank": "Elite Strategy",
+        "description": "Elite tactical engine (~3-4s latency). Flawless rules compliance, superb combo recognition, and great point preservation."
+      },
+      "meta-llama/llama-3.3-70b-instruct": {
+        "rank": "Strategic Value",
+        "description": "Value King (~2-3s latency). Excellent instructions follower and reliable rules alignment."
+      }
+    }
   }
 }
