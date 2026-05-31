@@ -109,6 +109,22 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
     onSave(newConfig);
   }, [useLLM, apiKey, selectedModel, onSave]);
 
+  // ── Test & Save (merged action) ────────────────────────────────────────────
+
+  const handleTestAndSave = useCallback(async () => {
+    if (!useLLM) {
+      handleSave();
+      return;
+    }
+    if (connectionStatus.kind === "success") {
+      // Already tested — save directly
+      handleSave();
+      return;
+    }
+    // First press: run the test; button will become "Save" on success
+    await handleTestConnection();
+  }, [useLLM, connectionStatus.kind, handleTestConnection, handleSave]);
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -307,44 +323,25 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                   );
                 })}
 
-                {/* Test connection */}
-                <TouchableOpacity
-                  style={[
-                    styles.testButton,
-                    connectionStatus.kind === "testing" &&
-                      styles.testButtonDisabled,
-                  ]}
-                  onPress={handleTestConnection}
-                  disabled={connectionStatus.kind === "testing"}
-                  activeOpacity={0.8}
-                >
-                  {connectionStatus.kind === "testing" ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.testButtonText}>
-                      🔌 Test Connection
-                    </Text>
-                  )}
-                </TouchableOpacity>
-
-                {/* Connection status banner */}
-                {connectionStatus.kind === "success" && (
-                  <View style={styles.bannerSuccess}>
-                    <Text style={styles.bannerText}>
-                      {connectionStatus.message}
-                    </Text>
-                  </View>
-                )}
-                {connectionStatus.kind === "error" && (
-                  <View style={styles.bannerError}>
-                    <Text style={styles.bannerText}>
-                      {connectionStatus.message}
-                    </Text>
-                  </View>
-                )}
               </View>
             )}
           </ScrollView>
+
+          {/* ── Connection status banner (outside scroll) ── */}
+          {useLLM && connectionStatus.kind === "success" && (
+            <View style={styles.bannerSuccess}>
+              <Text style={styles.bannerText}>
+                {connectionStatus.message}
+              </Text>
+            </View>
+          )}
+          {useLLM && connectionStatus.kind === "error" && (
+            <View style={styles.bannerError}>
+              <Text style={styles.bannerText}>
+                {connectionStatus.message}
+              </Text>
+            </View>
+          )}
 
           {/* ── Footer buttons ── */}
           <View style={styles.footer}>
@@ -360,17 +357,21 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
               style={[
                 styles.footerBtn,
                 styles.saveBtn,
-                !canSave && styles.saveBtnDisabled,
+                connectionStatus.kind === "testing" && styles.saveBtnDisabled,
               ]}
-              onPress={handleSave}
-              disabled={!canSave}
+              onPress={handleTestAndSave}
+              disabled={connectionStatus.kind === "testing"}
               activeOpacity={0.8}
             >
-              <Text style={styles.saveBtnText}>
-                {useLLM && connectionStatus.kind !== "success"
-                  ? "Test First"
-                  : "Save"}
-              </Text>
+              {connectionStatus.kind === "testing" ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.saveBtnText}>
+                  {useLLM && connectionStatus.kind !== "success"
+                    ? "Verify"
+                    : "Save"}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -629,34 +630,22 @@ const styles = StyleSheet.create({
   pricingDivider: { fontSize: 12, color: "#475569" },
   pricingUnit: { fontSize: 11, color: "#64748B", fontWeight: "400" },
 
-  // Test button
-  testButton: {
-    backgroundColor: "#1D4ED8",
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  testButtonDisabled: { backgroundColor: "#1E3A7A", opacity: 0.7 },
-  testButtonText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  // (test button removed — merged into footer)
 
-  // Status banners
+  // Status banners (rendered outside scroll, above footer)
   bannerSuccess: {
     backgroundColor: "rgba(16,185,129,0.15)",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "rgba(16,185,129,0.4)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(16,185,129,0.4)",
   },
   bannerError: {
     backgroundColor: "rgba(239,68,68,0.12)",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.35)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(239,68,68,0.35)",
   },
   bannerText: { fontSize: 13, color: "#F1F5F9", lineHeight: 18 },
 
