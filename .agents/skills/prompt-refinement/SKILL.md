@@ -1,7 +1,7 @@
 ---
 name: prompt-refinement
 description: This skill should be used when the user wants to improve how the Shengji (Tractor) LLM bots play by editing their prompt — e.g. "the bot made a bad play", "fix the LLM strategy prompt", "add a heuristic to the prompt", "the AI keeps mis-playing X", "rewrite the LLM rules". Covers BOTH the static system prompt (STATIC_LLM_GAME_RULES) and the dynamic user prompt, both in src/ai/llm/llmPromptTemplates.ts.
-version: 1.1.0
+version: 1.2.0
 license: UNLICENSED
 ---
 
@@ -42,6 +42,9 @@ The LLM is consulted ONLY at genuinely ambiguous lead/follow decisions — force
 ### 3. Build Knowledge Context, Not Constraints
 - The LLM is a reasoning agent, not a state-machine parser. Build **context and domain heuristics** so the model makes intelligent trade-offs, rather than hard-coded constraints that limit flexibility.
 - Use strategic, motivation-oriented language (*"conserve resources", "feed teammate", "apply pressure", "bleed opponent trump"*) rather than mechanical commands (*"must play", "never select"*) — except where a hard rule is genuinely correct.
+- Default to softening: a "Never X / Always Y" phrasing is usually a heuristic in disguise. Lead with the *reason*, then frame the action as a preference the model weighs (*"lean toward", "prefer", "usually the better trade"*). Reserve all-caps imperatives (NEVER/ALWAYS) for true invariants — a play that is literally illegal or that always loses (e.g. over-trumping your own winning card). Edge cases almost always exist (a low trump can be spent to save an off-suit pair or a live boss A), so phrasing that admits trade-offs plays better than an absolute.
+  - *Hard rule (avoid)*: `Never match a boss already winning — your A onto a led A wins nothing.`
+  - *Heuristic (prefer)*: `Your A onto a led A wins nothing, so prefer to duck low and save your boss for a trick you can actually take.`
 
 ---
 

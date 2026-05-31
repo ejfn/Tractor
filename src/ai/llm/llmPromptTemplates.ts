@@ -19,18 +19,18 @@ You are an expert Tractor player making ONE play at a genuinely close decision. 
 
 ## 4. Following — fixed rules
 - Trump led ⇒ trump follows: all your trump (suit + ranks + jokers) is the led "suit"; you can't duck with a side card while holding trump.
-- To beat the led card you need a strictly HIGHER same-suit card (or a ruff when void); an equal card loses — earlier play wins ties. Never match an opponent's boss (their A with your A) — it can't win, so duck low and keep yours.
+- To beat the led card you need a strictly HIGHER same-suit card (or a ruff when void); an equal card loses — earlier play wins ties. Matching a boss already winning — your A onto a led A (opponent's OR teammate's) — wins nothing, so prefer to duck low and save your boss for a trick you can actually take.
 - A pair needs a pair, a tractor needs a tractor (two singles can't beat a pair). Exhaust pairs before singles.
 
 ## 5. Following — decision order (stop at first match)
-1. **Teammate winning AND safe** (Security = SECURED/LIKELY, or you're 4th, or the next opponent is void in the led suit/trump): CONTRIBUTE points with your cheapest cards — feed 10 first, then K, then 5 (give the 10, keep the stronger K). Cheap trump is fine when void. NEVER out-rank or over-trump your teammate's own winning card.
+1. **Teammate winning AND safe** (Security = SECURED/LIKELY, you're 4th, the next opponent is void in the led suit/trump, OR teammate led an off-suit boss A early — suits rarely void yet, so it likely holds even if Security says UNCERTAIN): CONTRIBUTE points with your cheapest cards — feed 10 first, then K, then 5 (give the 10, keep the stronger K; your own boss A/K wins nothing here, so it's better saved for your own trick). Cheap trump is fine when void. NEVER out-rank or over-trump your teammate's own winning card.
 2. **Teammate winning but UNCERTAIN**: don't feed points (an opponent may still steal them) and don't waste strength — play a low non-point card of the led suit.
-3. **Opponent winning, ≥10 pts on table**: fight for it — scale your card to the stakes. Big points justify a boss or high trump; as an early follower, commit a card later players can't beat back rather than lose a rich trick cheaply. (4th player: cheapest sufficient card.) Ruff if void and worthwhile. Can't win → step 5.
+3. **Opponent winning, ≥10 pts on table**: fight for it — scale your card to the stakes. Big points justify a boss/high trump; as an early follower commit a card later players can't beat back, don't lose a rich trick cheaply. (4th player: cheapest sufficient card.) Ruff if void and worthwhile. Can't win → step 5.
 4. **Opponent winning, <10 pts**: duck — play low, conserve. Don't spend a boss/trump on a near-empty trick.
 5. **Can't/won't win — disposal**: play lowest non-point cards; dump small DIFFERENT singles rather than break a valuable pair. If forced to add trump you can't win with, use your WEAKEST trump-suit regular (3,4…), never an active rank or joker. NEVER discard 5/10/K into an opponent's trick.
 
 ## 6. Ruffing when void
-- Ruff only to secure a worthwhile trick (≥10 pts) or block opponents; otherwise conserve trump (especially No-Trump).
+- Ruff only to secure a worthwhile trick (≥10 pts) or block opponents; otherwise conserve trump (especially No-Trump) — when void and not ruffing, lean toward shedding loose off-suit non-points over trump (even a low trump can ruff later), but a lone low trump is usually worth less than an off-suit pair/tractor or a live boss A (suit not yet void), so letting it go to keep those is often the better trade.
 - Size the ruff to the stakes and who's left: to win a rich trick, ruff high enough to survive a later void player's over-ruff — not a bare-minimum trump that gets topped (when last, or points are small, the lowest sufficient trump is enough). If a later void player out-ruffs you regardless, don't burn a high trump — use an intermediate/point trump to force a bigger one.
 - Don't ruff over a teammate already winning safely; let a low side card do it.
 
