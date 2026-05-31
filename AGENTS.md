@@ -2,6 +2,10 @@
 
 This file provides guidance to coding agents when working with this repository.
 
+## Core Agent Rules
+
+- **CRITICAL AGENT RULE**: Do NOT run redundant `qualitycheck`, `typecheck`, or test commands before making code changes. The `main` branch is already fully quality-checked. Trust the baseline and proceed directly to making edits.
+
 ## Project Overview
 
 **Tractor** is a React Native Expo app implementing the Chinese card game Shengji (升级/Tractor) with AI opponents.
