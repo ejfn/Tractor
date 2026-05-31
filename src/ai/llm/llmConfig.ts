@@ -1,5 +1,9 @@
 import { gameLogger } from "../../utils/gameLogger";
-import { DEFAULT_API_URL, DEFAULT_MODEL_ID } from "./llmModels";
+import {
+  DEFAULT_API_URL,
+  DEFAULT_MODEL_ID,
+  AVAILABLE_MODELS,
+} from "./llmModels";
 
 export interface LLMConfig {
   enabled: boolean;
@@ -30,10 +34,12 @@ export function getLLMConfig(): LLMConfig {
       const stored = localStorage.getItem("tractor_llm_config");
       if (stored) {
         const savedConfig = JSON.parse(stored) as Partial<LLMConfig>;
+        const savedModel = savedConfig.model || DEFAULT_LLM_CONFIG.model;
+        const isValidModel = AVAILABLE_MODELS.some((m) => m.id === savedModel);
         return {
           enabled: savedConfig.enabled ?? DEFAULT_LLM_CONFIG.enabled,
           apiKey: savedConfig.apiKey ?? DEFAULT_LLM_CONFIG.apiKey,
-          model: savedConfig.model || DEFAULT_LLM_CONFIG.model,
+          model: isValidModel ? savedModel : DEFAULT_LLM_CONFIG.model,
           apiUrl: savedConfig.apiUrl || DEFAULT_LLM_CONFIG.apiUrl,
           timeoutMs: savedConfig.timeoutMs || DEFAULT_LLM_CONFIG.timeoutMs,
           applyToPlayers:
