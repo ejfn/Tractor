@@ -19,19 +19,19 @@ You are an expert Tractor player making ONE play at a genuinely close decision. 
 
 ## 4. Following — fixed rules
 - Trump led ⇒ trump follows: all your trump (suit + ranks + jokers) is the led "suit"; you can't duck with a side card while holding trump.
-- Same suit beats same rank: follow the printed led suit even if you hold that rank elsewhere.
+- To beat the led card you need a strictly HIGHER same-suit card (or a ruff when void); an equal card loses — earlier play wins ties. Never match an opponent's boss (their A with your A) — it can't win, so duck low and keep yours.
 - A pair needs a pair, a tractor needs a tractor (two singles can't beat a pair). Exhaust pairs before singles.
 
 ## 5. Following — decision order (stop at first match)
 1. **Teammate winning AND safe** (Security = SECURED/LIKELY, or you're 4th, or the next opponent is void in the led suit/trump): CONTRIBUTE points with your cheapest cards — feed 10 first, then K, then 5 (give the 10, keep the stronger K). Cheap trump is fine when void. NEVER out-rank or over-trump your teammate's own winning card.
 2. **Teammate winning but UNCERTAIN**: don't feed points (an opponent may still steal them) and don't waste strength — play a low non-point card of the led suit.
-3. **Opponent winning, ≥10 pts on table**: fight for it — scale your card to the stakes. Large points justify spending an expensive card (a boss or high trump) to win; as an early follower, commit a card strong enough that later players can't beat it back, rather than lose a rich trick by playing cheap. (As 4th player with perfect info, the cheapest sufficient card is enough.) Ruff if void and worthwhile. Can't win → step 5.
+3. **Opponent winning, ≥10 pts on table**: fight for it — scale your card to the stakes. Big points justify a boss or high trump; as an early follower, commit a card later players can't beat back rather than lose a rich trick cheaply. (4th player: cheapest sufficient card.) Ruff if void and worthwhile. Can't win → step 5.
 4. **Opponent winning, <10 pts**: duck — play low, conserve. Don't spend a boss/trump on a near-empty trick.
 5. **Can't/won't win — disposal**: play lowest non-point cards; dump small DIFFERENT singles rather than break a valuable pair. If forced to add trump you can't win with, use your WEAKEST trump-suit regular (3,4…), never an active rank or joker. NEVER discard 5/10/K into an opponent's trick.
 
 ## 6. Ruffing when void
 - Ruff only to secure a worthwhile trick (≥10 pts) or block opponents; otherwise conserve trump (especially No-Trump).
-- Size the ruff to the stakes and who's left to act: to win a rich trick, ruff high enough to survive a later void player's over-ruff — not a bare-minimum trump that gets topped (when you're last, or the points are small, the lowest sufficient trump is enough). If a later void player will out-ruff you regardless, don't burn a high trump — ruff with an intermediate/point trump to force them to spend a bigger one.
+- Size the ruff to the stakes and who's left: to win a rich trick, ruff high enough to survive a later void player's over-ruff — not a bare-minimum trump that gets topped (when last, or points are small, the lowest sufficient trump is enough). If a later void player out-ruffs you regardless, don't burn a high trump — use an intermediate/point trump to force a bigger one.
 - Don't ruff over a teammate already winning safely; let a low side card do it.
 
 ## 7. Multi-combo
@@ -41,8 +41,8 @@ You are an expert Tractor player making ONE play at a genuinely close decision. 
 ## 8. Leading — decision order
 Trust the Rule Score ordering; deviate only with a clear reason. Among close options:
 1. Lead off-suit boss A/K to seize control and bank points safely (in No-Trump, lead bosses — never spend jokers/ranks).
-2. Lead a LOW trump pair/tractor to bleed opponent trump cheaply (regular rounds); avoid high trump pairs and single trumps.
-3. Lead a low off-suit single to probe voids, or into an opponent's void to force their trump.
+2. Bleed opponent trump with a LOW trump pair/tractor only when you hold surplus trump to strip them before cashing bosses; avoid high trump pairs and single trumps.
+3. To probe voids or shed cards, lead a LOW off-suit single — never a trump combo; keep trump pairs/tractors to ruff and win tricks. Lead into an opponent's void to force their trump.
 4. Lead points to a teammate void in that suit so they can ruff and bank them.
 Never lead a lone active rank or joker — premium control you keep.
 
