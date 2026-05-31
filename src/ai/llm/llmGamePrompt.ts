@@ -20,13 +20,6 @@ import {
   buildUserPromptTemplate,
 } from "./llmPromptTemplates";
 
-export interface CardChoice {
-  id: string;
-  cardId: string;
-  display: string;
-  cardInstance: Card;
-}
-
 /**
  * Analyzes the completed tricks in the round to detect which players have emptied (are void in) which suits.
  * A player has emptied a suit if they failed to follow the led suit of a trick.
@@ -83,31 +76,23 @@ export function detectSuitVoidsFromHistory(
 }
 
 /**
- * Helper to build unique card choices and map them to categories.
+ * Helper to build the hand display, grouped by suit/trump category.
+ * Cards are shown by their plain notation (the same form the LLM replies with).
  */
-function localBuildHandChoicesAndMap(
+function localBuildHandDisplay(
   sortedHand: Card[],
   trumpInfo: TrumpInfo,
-): { choicesMap: CardChoice[]; handChoicesStr: string } {
-  // Generate unique IDs for hand cards
-  const choicesMap = sortedHand.map((card, index) => ({
-    id: `c${index + 1}`,
-    cardId: card.id,
-    display: `${card.toString()}${card.isTrump(trumpInfo) ? " (Trump)" : ""}${card.points > 0 ? ` [${card.points}pts]` : ""}`,
-    cardInstance: card,
-  }));
-
-  // Group choices by category
-  const categories: Record<string, CardChoice[]> = {};
-  choicesMap.forEach((choice) => {
-    let cat = "Off-Suit " + choice.cardInstance.suit;
-    if (choice.cardInstance.isTrump(trumpInfo)) {
-      cat = "Trump Group";
-    }
+): string {
+  // Group cards by category
+  const categories: Record<string, Card[]> = {};
+  sortedHand.forEach((card) => {
+    const cat = card.isTrump(trumpInfo)
+      ? "Trump Group"
+      : "Off-Suit " + card.suit;
     if (!categories[cat]) {
       categories[cat] = [];
     }
-    categories[cat].push(choice);
+    categories[cat].push(card);
   });
 
   const categoryOrder = [
@@ -124,20 +109,21 @@ function localBuildHandChoicesAndMap(
     }
   });
 
-  const handChoicesStr = allCategories
+  return allCategories
     .map((cat) => {
       const catCards = categories[cat] || [];
       if (catCards.length === 0) {
         return `--- ${cat.toUpperCase()} (void) ---`;
       }
       const catChoices = catCards
-        .map((c) => `  ${c.id}: ${c.display}`)
+        .map(
+          (c) =>
+            `  ${c.toString()}${c.isTrump(trumpInfo) ? " (Trump)" : ""}${c.points > 0 ? ` [${c.points}pts]` : ""}`,
+        )
         .join("\n");
       return `--- ${cat.toUpperCase()} (${catCards.length} cards) ---\n${catChoices}`;
     })
     .join("\n\n");
-
-  return { choicesMap, handChoicesStr };
 }
 
 /**
@@ -148,7 +134,7 @@ function localBuildLeadingPromptContext(
   gameState: GameState,
   playerId: PlayerId,
   trumpInfo: TrumpInfo,
-  cardToChoiceId: (card: Card) => string,
+  cardToDisplay: (card: Card) => string,
 ): {
   activeTrickStatusStr: string;
   taskInstructionStr: string;
@@ -188,7 +174,7 @@ function localBuildLeadingPromptContext(
 
   const allOptions = scoredCandidates
     .map((entry, idx) => {
-      const cardsStr = entry.candidate.cards.map(cardToChoiceId).join(", ");
+      const cardsStr = entry.candidate.cards.map(cardToDisplay).join(", ");
       return `- Option L${idx + 1}: Play [${cardsStr}] (Rule Score: ${entry.result.score})`;
     })
     .join("\n");
@@ -212,7 +198,7 @@ function localBuildFollowingPromptContext(
   gameState: GameState,
   playerId: PlayerId,
   trumpInfo: TrumpInfo,
-  cardToChoiceId: (card: Card) => string,
+  cardToDisplay: (card: Card) => string,
 ): {
   activeTrickStatusStr: string;
   taskInstructionStr: string;
@@ -341,7 +327,7 @@ function localBuildFollowingPromptContext(
         `- You have matching ${analysis.leadingComboType} combos to choose from:`,
       );
       for (const combo of analysis.validCombos) {
-        const ids = combo.cards.map(cardToChoiceId).join(", ");
+        const ids = combo.cards.map(cardToDisplay).join(", ");
         lines.push(`    • ${combo.type}: [${ids}]`);
       }
       break;
@@ -354,7 +340,7 @@ function localBuildFollowingPromptContext(
         `- You must still play ${analysis.requiredLength} card(s) from this suit. Available cards:`,
       );
       lines.push(
-        `    ${analysis.remainingCards.map(cardToChoiceId).join(", ")}`,
+        `    ${analysis.remainingCards.map(cardToDisplay).join(", ")}`,
       );
       break;
     }
@@ -363,7 +349,7 @@ function localBuildFollowingPromptContext(
         `- You only have ${analysis.availableCount} card(s) but ${analysis.requiredLength} are required.`,
       );
       lines.push(
-        `- You MUST play ALL your cards in that suit: ${analysis.remainingCards.map(cardToChoiceId).join(", ")}`,
+        `- You MUST play ALL your cards in that suit: ${analysis.remainingCards.map(cardToDisplay).join(", ")}`,
       );
       lines.push(
         `- Fill the remaining ${analysis.requiredLength - analysis.availableCount} slot(s) from other suits (discard or trump).`,
@@ -454,17 +440,11 @@ export function buildLLMUserPrompt(
   const trumpInfo = gameState.trumpInfo;
   const sortedHand = sortCards(handCards, trumpInfo);
 
-  // Build the unique card choices and display format
-  const { choicesMap, handChoicesStr } = localBuildHandChoicesAndMap(
-    sortedHand,
-    trumpInfo,
-  );
+  // Build the hand display
+  const handChoicesStr = localBuildHandDisplay(sortedHand, trumpInfo);
 
-  // Helper to map game Card to prompt choice ID
-  const cardToChoiceId = (card: Card): string => {
-    const match = choicesMap.find((c) => c.cardId === card.id);
-    return match ? `${match.id}(${card.toString()})` : card.toString();
-  };
+  // Render a card as the plain notation the LLM also replies with
+  const cardToDisplay = (card: Card): string => card.toString();
 
   // Determine current trick state
   const currentTrick = gameState.currentTrick;
@@ -481,7 +461,7 @@ export function buildLLMUserPrompt(
       gameState,
       playerId,
       trumpInfo,
-      cardToChoiceId,
+      cardToDisplay,
     );
     activeTrickStatusStr = context.activeTrickStatusStr;
     taskInstructionStr = context.taskInstructionStr;
@@ -492,7 +472,7 @@ export function buildLLMUserPrompt(
       gameState,
       playerId,
       trumpInfo,
-      cardToChoiceId,
+      cardToDisplay,
     );
     activeTrickStatusStr = context.activeTrickStatusStr;
     taskInstructionStr = context.taskInstructionStr;

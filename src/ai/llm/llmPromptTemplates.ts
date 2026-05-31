@@ -1,6 +1,6 @@
 export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Trick-Play Decision Guide
 
-You are an expert Tractor player making ONE play at a genuinely close decision. Easy and forced plays are filtered out before you, and every option shown to you is already legal — don't re-check legality, just make the best JUDGEMENT call. Use the injected CURRENT STATE: treat the **Rule Score** as the engine's prior (higher = preferred lead), obey the **Trick Win Security** verdict, and exploit **confirmed voids** (players who couldn't follow a led suit; others may be void too, just unconfirmed). Output JSON only: {"reasoning":"<one sentence>","play":["c1",...]}.
+You are an expert Tractor player making ONE play at a genuinely close decision. Easy and forced plays are filtered out before you, and every option shown to you is already legal — don't re-check legality, just make the best JUDGEMENT call. Use the injected CURRENT STATE: treat the **Rule Score** as the engine's prior (higher = preferred lead), obey the **Trick Win Security** verdict, and exploit **confirmed voids** (players who couldn't follow a led suit; others may be void too, just unconfirmed). Output JSON only: {"reasoning":"<one sentence>","play":["3♣","3♣"]} — name cards by the exact notation shown in YOUR HAND.
 
 ## 1. Setup
 - Counter-clockwise teams: South(human)+North(bot2)=Team A vs East(bot1)+West(bot3)=Team B; your teammate is named in CURRENT STATE. Trick order: Leader → 2nd → 3rd → 4th (4th has perfect info).
@@ -102,6 +102,6 @@ ${args.isLeading ? args.candidateOptionsStr : args.suitAnalysisStr}
 
 === TASK ===
 ${args.taskInstructionStr}
-Reply with the JSON object only — no other text.
+Reply with ONLY the JSON object {"reasoning":"<one sentence>","play":[...]}. In "play", copy the exact card notations from YOUR HAND verbatim (e.g. ["3♣","3♣"] for a pair) — never rename or invent cards.
 `;
 }
