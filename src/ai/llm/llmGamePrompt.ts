@@ -12,6 +12,10 @@ import { detectCandidateLeads } from "../leading/candidateLeadDetection";
 import { collectLeadingContext } from "../leading/leadingContext";
 import { scoreNonTrumpLead, scoreTrumpLead } from "../leading/leadingScoring";
 import {
+  isPlayerOnAttackingTeam,
+  getCurrentAttackingPoints,
+} from "../aiGameContext";
+import {
   STATIC_LLM_GAME_RULES,
   buildUserPromptTemplate,
 } from "./llmPromptTemplates";
@@ -292,12 +296,23 @@ function localBuildFollowingPromptContext(
     winSecurityStr = `UNCERTAIN: Opponent (${winningPlayerId}) is currently winning the trick.`;
   }
 
+  const seatLabel =
+    ["1st (leader)", "2nd", "3rd", "4th"][plays.length] ||
+    `${plays.length + 1}th`;
+  const yetToPlayStr =
+    yetToPlay.length > 0
+      ? yetToPlay
+          .map((id) => `${id} (${id === partnerId ? "teammate" : "opponent"})`)
+          .join(", ")
+      : "none — you play last";
+
   const statusLines = [
     `- Led by: ${leadPlay.playerId} playing [${leadingCardsStr}]`,
     `- Requirement: You must play exactly ${requiredCount} card(s). You must follow the led suit/trump group if you have any.`,
     `\nPlays in this trick so far:`,
     playsStr,
-    `\n- Current Leading Player: ${winningPlayerId} (Teammate: ${isTeammateWinning ? "YES" : "NO"})`,
+    `\n- Your seat: ${seatLabel} of 4; still to act after you: ${yetToPlayStr}`,
+    `- Current Leading Player: ${winningPlayerId} (Teammate: ${isTeammateWinning ? "YES" : "NO"})`,
     `- Current Points in Trick: ${trickPoints} pts`,
     `- Trick Win Security: ${winSecurityStr}`,
   ];
@@ -493,6 +508,8 @@ export function buildLLMUserPrompt(
   const currentPlayer = gameState.players.find((p) => p.id === playerId);
   const teamId = currentPlayer?.team || "A";
   const partnerId = getPartnerId(playerId);
+  const isAttacking = isPlayerOnAttackingTeam(gameState, playerId);
+  const attackingPoints = getCurrentAttackingPoints(gameState);
 
   const userPrompt = buildUserPromptTemplate({
     playerId,
@@ -500,6 +517,8 @@ export function buildLLMUserPrompt(
     partnerId,
     trumpRank: trumpInfo.trumpRank,
     trumpSuit: trumpInfo.trumpSuit || "None",
+    isAttacking,
+    attackingPoints,
     historyStr,
     voidsStr,
     activeTrickStatusStr,

@@ -2,12 +2,12 @@
 name: model-evaluation
 description: Instructions, templates, and scripts for evaluating and benchmarking different LLM models for Shengji strategic AI decision-making.
 version: 1.0.0
-license: MIT
+license: UNLICENSED
 ---
 
 ## Overview
 
-The Model Evaluation skill provides structured tools, instructions, and scripts to benchmark different Large Language Models (LLMs) against the Tractor (Shengji) AI decision engine. 
+The Model Evaluation skill provides structured tools, instructions, and scripts to benchmark different Large Language Models (LLMs) against the Tractor (Shengji) AI decision engine.
 
 Evaluating models helps ensure:
 1. **Rule Compliance**: Selecting models that consistently generate valid plays (0% rule violations).
