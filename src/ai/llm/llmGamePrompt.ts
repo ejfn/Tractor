@@ -1,6 +1,8 @@
 import {
   Card,
   GameState,
+  GameContext,
+  MemoryContext,
   PlayerId,
   getPartnerId,
   TrumpInfo,
@@ -16,68 +18,30 @@ import { analyzeSuitAvailability } from "../following/suitAvailabilityAnalysis";
 import { detectCandidateLeads } from "../leading/candidateLeadDetection";
 import { collectLeadingContext } from "../leading/leadingContext";
 import { scoreNonTrumpLead, scoreTrumpLead } from "../leading/leadingScoring";
-import {
-  isPlayerOnAttackingTeam,
-  getCurrentAttackingPoints,
-} from "../aiGameContext";
+import { createGameContext } from "../aiGameContext";
 import {
   STATIC_LLM_GAME_RULES,
   buildUserPromptTemplate,
 } from "./llmPromptTemplates";
 
 /**
- * Analyzes the completed tricks in the round to detect which players have emptied (are void in) which suits.
- * A player has emptied a suit if they failed to follow the led suit of a trick.
+ * Projects the engine's per-player void memory into the string shape the prompt
+ * consumes: off-suit voids by name plus "Trump Group" when a player is out of
+ * trump. Reusing MemoryContext keeps the LLM path on the same void detection as
+ * the rule-based AI (which also accounts for the in-progress trick).
  */
-export function detectSuitVoidsFromHistory(
-  gameState: GameState,
-  trumpInfo: TrumpInfo,
-): Record<PlayerId, string[]> {
-  const voids: Record<PlayerId, Set<string>> = {
-    human: new Set<string>(),
-    bot1: new Set<string>(),
-    bot2: new Set<string>(),
-    bot3: new Set<string>(),
-  };
-
-  gameState.tricks.forEach((trick) => {
-    if (trick.plays.length === 0) return;
-
-    const leadPlay = trick.plays[0];
-    const leadCard = leadPlay.cards[0];
-    if (!leadCard) return;
-
-    const isTrumpLead = leadCard.isTrump(trumpInfo);
-    const ledSuit = isTrumpLead ? "Trump Group" : leadCard.suit;
-
-    trick.plays.forEach((play) => {
-      const playerCard = play.cards[0];
-      if (!playerCard) return;
-
-      const playerPlayedTrump = playerCard.isTrump(trumpInfo);
-
-      // Determine if player followed the led suit
-      let followedSuit = false;
-      if (isTrumpLead) {
-        followedSuit = playerPlayedTrump;
-      } else {
-        followedSuit = !playerPlayedTrump && playerCard.suit === ledSuit;
-      }
-
-      if (!followedSuit) {
-        // Player did not follow suit, so they are void (empty) in the led suit!
-        voids[play.playerId].add(ledSuit);
-      }
-    });
+function localVoidsFromMemory(
+  memoryContext: MemoryContext,
+): Record<string, string[]> {
+  const voids: Record<string, string[]> = {};
+  Object.values(memoryContext.playerMemories).forEach((pm) => {
+    const suits = Array.from(pm.suitVoids).map((s) => `${s}`);
+    voids[pm.playerId] = [
+      ...suits,
+      ...(pm.trumpVoid ? ["Trump Group"] : []),
+    ].sort();
   });
-
-  // Convert sets to sorted arrays for deterministic output
-  return {
-    human: Array.from(voids.human).sort(),
-    bot1: Array.from(voids.bot1).sort(),
-    bot2: Array.from(voids.bot2).sort(),
-    bot3: Array.from(voids.bot3).sort(),
-  };
+  return voids;
 }
 
 /**
@@ -266,6 +230,8 @@ function localBuildFollowingPromptContext(
   playerId: PlayerId,
   trumpInfo: TrumpInfo,
   cardToDisplay: (card: Card) => string,
+  gameContext: GameContext,
+  voids: Record<string, string[]>,
 ): {
   activeTrickStatusStr: string;
   taskInstructionStr: string;
@@ -273,7 +239,8 @@ function localBuildFollowingPromptContext(
   seatGuidanceStr: string;
 } {
   const currentTrick = gameState.currentTrick;
-  if (!currentTrick || currentTrick.plays.length === 0) {
+  const trickWinner = gameContext.trickWinnerAnalysis;
+  if (!currentTrick || currentTrick.plays.length === 0 || !trickWinner) {
     return {
       activeTrickStatusStr: "",
       taskInstructionStr: "",
@@ -285,10 +252,10 @@ function localBuildFollowingPromptContext(
   const plays = currentTrick.plays;
   const leadPlay = plays[0];
   const requiredCount = leadPlay.cards.length;
-  const winningPlayerId = currentTrick.winningPlayerId || leadPlay.playerId;
+  const winningPlayerId = trickWinner.currentWinner;
   const partnerId = getPartnerId(playerId);
-  const isTeammateWinning = winningPlayerId === partnerId;
-  const trickPoints = currentTrick.points || 0;
+  const isTeammateWinning = trickWinner.isTeammateWinning;
+  const trickPoints = trickWinner.trickPoints;
 
   const leadingCardsStr = leadPlay.cards.map((c) => c.toString()).join(", ");
 
@@ -307,11 +274,10 @@ function localBuildFollowingPromptContext(
 
   const remainingOpponents = yetToPlay.filter((id) => id !== partnerId);
 
-  // Analyze suit voids from history
+  // Confirmed voids come from the engine's MemoryContext (passed in).
   const leadCard = leadPlay.cards[0];
-  const isTrumpLead = leadCard?.isTrump(trumpInfo) || false;
+  const isTrumpLead = trickWinner.isTrumpLead;
   const ledSuit = isTrumpLead ? "Trump Group" : leadCard?.suit || "";
-  const voids = detectSuitVoidsFromHistory(gameState, trumpInfo);
   const isAnyOpponentVoid = remainingOpponents.some((oppId) => {
     const oppVoids = voids[oppId] || [];
     return oppVoids.includes(ledSuit);
@@ -321,24 +287,18 @@ function localBuildFollowingPromptContext(
   const winningCard = winningPlay?.cards[0] || null;
   const winningCardStr = winningCard ? winningCard.toString() : "their card";
 
-  // Cards already played this round plus those on the table — the memory used
-  // for unbeatable detection. The current player's own hand is passed separately.
-  const playedAndTable: Card[] = [
-    ...gameState.tricks.flatMap((t) => t.plays.flatMap((pl) => pl.cards)),
-    ...plays.flatMap((pl) => pl.cards),
-  ];
-
   // "Boss" is an OFF-SUIT notion only: the highest card still live in a side
-  // suit, beatable only by a ruff. Memory-aware via isComboUnbeatable — a K
-  // becomes boss once both Aces are gone. (isComboUnbeatable returns false for
-  // trump, so this is naturally off-suit only.)
+  // suit, beatable only by a ruff. Memory-aware via isComboUnbeatable (fed the
+  // engine's played-card memory) — a K becomes boss once both Aces are gone.
+  // Only meaningful for teammate-win safety below, so skip it otherwise.
   const winnerOffSuitBoss =
+    isTeammateWinning &&
     !!winningCard &&
     !winningCard.isTrump(trumpInfo) &&
     isComboUnbeatable(
       { type: ComboType.Single, cards: [winningCard], value: 0 },
       winningCard.suit,
-      playedAndTable,
+      gameContext.memoryContext.playedCards,
       handCards,
       trumpInfo,
       [],
@@ -526,11 +486,7 @@ function localFormatRecentTricksHistory(gameState: GameState): string {
 /**
  * Helper to format confirmed player suit voids.
  */
-function localFormatPlayerVoids(
-  gameState: GameState,
-  trumpInfo: TrumpInfo,
-): string {
-  const voids = detectSuitVoidsFromHistory(gameState, trumpInfo);
+function localFormatPlayerVoids(voids: Record<string, string[]>): string {
   return Object.entries(voids)
     .map(
       ([pId, suitsList]) =>
@@ -610,6 +566,11 @@ export function buildLLMUserPrompt(
   // Render a card as the plain notation the LLM also replies with
   const cardToDisplay = (card: Card): string => card.toString();
 
+  // Build the engine's game context once — single source for trick-winner
+  // analysis and per-player void memory (shared with the rule-based AI).
+  const gameContext = createGameContext(gameState, playerId);
+  const voids = localVoidsFromMemory(gameContext.memoryContext);
+
   // Determine current trick state
   const currentTrick = gameState.currentTrick;
   const isLeading = !currentTrick || currentTrick.plays.length === 0;
@@ -638,6 +599,8 @@ export function buildLLMUserPrompt(
       playerId,
       trumpInfo,
       cardToDisplay,
+      gameContext,
+      voids,
     );
     activeTrickStatusStr = context.activeTrickStatusStr;
     taskInstructionStr = context.taskInstructionStr;
@@ -648,8 +611,8 @@ export function buildLLMUserPrompt(
   // Reconstruct round tricks history (limit to last 3 tricks to keep prompt light)
   const historyStr = localFormatRecentTricksHistory(gameState);
 
-  // Detect suit voids per player from round trick history
-  const voidsStr = localFormatPlayerVoids(gameState, trumpInfo);
+  // Confirmed per-player voids from the engine's memory context
+  const voidsStr = localFormatPlayerVoids(voids);
 
   // Point cards still unseen in each off-suit (others' hands or hidden kitty)
   const liveSuitPointsStr = localFormatLiveOffSuitPoints(gameState, handCards);
@@ -657,8 +620,6 @@ export function buildLLMUserPrompt(
   const currentPlayer = gameState.players.find((p) => p.id === playerId);
   const teamId = currentPlayer?.team || "A";
   const partnerId = getPartnerId(playerId);
-  const isAttacking = isPlayerOnAttackingTeam(gameState, playerId);
-  const attackingPoints = getCurrentAttackingPoints(gameState);
 
   const userPrompt = buildUserPromptTemplate({
     playerId,
@@ -666,8 +627,8 @@ export function buildLLMUserPrompt(
     partnerId,
     trumpRank: trumpInfo.trumpRank,
     trumpSuit: trumpInfo.trumpSuit || "None",
-    isAttacking,
-    attackingPoints,
+    isAttacking: gameContext.isAttackingTeam,
+    attackingPoints: gameContext.currentPoints,
     historyStr,
     voidsStr,
     liveSuitPointsStr,
