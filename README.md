@@ -34,7 +34,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 - **Kitty Management**: The round starter picks up and swaps 8 hidden cards at the deal; winning the final trick turns the kitty into a bonus point swing
 - **Complex Trump Hierarchy**: Big Joker > Small Joker > Trump rank cards > Trump suit cards
 
-*Complete rules and quick start guide in **[Game Rules](docs/GAME_RULES.md)***
+*Complete rules and quick start guide in **[Game Rules](docs/game_rules.md)***
 
 ## Key Features
 
@@ -87,7 +87,7 @@ The AI runs on an always-on **algorithm-based engine** — modular, memory-enhan
 
 Beyond the always-on engine, an optional LLM layer (via OpenRouter, disabled by default) can make the trick-play decision at genuinely ambiguous lead/follow moments. It does not replace the engine: the rule-based AI still generates the candidate plays, scores, seat guidance, and win-security signals fed into the prompt, short-circuits forced or obvious plays before any API call, and serves as the fallback whenever the model's output is invalid or the API is unavailable. Configure it in-app with your own API key.
 
-*Complete AI documentation in **[AI System Guide](docs/AI_SYSTEM.md)***
+*Complete AI documentation in **[AI System Guide](docs/ai_system.md)***
 
 ## Reporting & Analysis
 
@@ -100,8 +100,8 @@ Beyond the always-on engine, an optional LLM layer (via OpenRouter, disabled by 
 
 ## Documentation
 
-- **[Game Rules](docs/GAME_RULES.md)** - Complete rules, quick start, and strategy reference
-- **[AI System](docs/AI_SYSTEM.md)** - Comprehensive AI intelligence documentation
+- **[Game Rules](docs/game_rules.md)** - Complete rules, quick start, and strategy reference
+- **[AI System](docs/ai_system.md)** - Comprehensive AI intelligence documentation
 - **[AGENTS.md](AGENTS.md)** - Agent development guidelines and project architecture
 
 ## Built with AI
