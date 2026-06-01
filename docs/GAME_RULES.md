@@ -171,15 +171,17 @@ Work with your AI teammate to collect 80+ points per round and advance through c
 #### **3. Scoring Rules**
 - **Hidden during play**: Kitty cards not revealed
 - **Critical endgame rule**: Only scored if attacking team wins FINAL trick
-- **Multiplier system**:
-  - **Singles final trick**: Kitty points × 2
-  - **Pairs/Tractors final trick**: Kitty points × 4
+- **Multiplier system**: the final trick multiplies the kitty points by **2^(pairs + 1)**, where *pairs* is the number of pairs in that trick's leading combo:
+  - **Singles (0 pairs)**: × 2
+  - **One pair**: × 4
+  - **Two pairs**: × 8
+  - **Tractor of N pairs**: × 2^(N + 1)
 
 #### **Kitty Bonus Examples**
 - **Scenario**: Kitty contains 2 Kings + 1 Five = 25 points
 - **Singles final win**: 25 × 2 = **+50 bonus points**
-- **Pair final win**: 25 × 4 = **+100 bonus points**
-- **Can change 80 points → 180 points** (massive swing!)
+- **One-pair final win**: 25 × 4 = **+100 bonus points**
+- **Two-pair final win**: 25 × 8 = **+200 bonus points** — a large swing
 
 ---
 
@@ -493,13 +495,13 @@ Teams collect points from tricks they win:
 ### **Round Advancement**
 Based on attacking team's total points:
 
-| **Points Collected** | **Result** |
+| **Points Collected (attacking team)** | **Result** |
 |---------------------|------------|
-| **160+ points** | Attacking team advances 2 ranks |
-| **120-159 points** | Attacking team advances 1 rank |
-| **80-119 points** | No advancement, teams switch roles |
+| **120+ points** | Attacking team advances `floor((points − 80) / 40)` ranks and becomes defending (120–159 → +1, 160–199 → +2, 200 → +3) |
+| **80-119 points** | No rank change; attacking team becomes defending |
 | **40-79 points** | Defending team advances 1 rank |
-| **0-39 points** | Defending team advances 2 ranks |
+| **1-39 points** | Defending team advances 2 ranks |
+| **0 points (shutout)** | Defending team advances 3 ranks |
 
 ### **Team Role Changes**
 - **80+ points**: Attacking team becomes defending team next round

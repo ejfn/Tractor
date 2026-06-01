@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Tractor AI system implements **sophisticated strategic decision-making** with memory-enhanced analysis, opponent modeling, and adaptive learning capabilities. The AI delivers challenging yet fair gameplay through intelligent card play, team coordination, and predictive strategy.
+The Tractor AI system implements **memory-enhanced strategic decision-making** with card tracking and opponent modelling. It delivers challenging yet fair gameplay through strong card play, team coordination, and predictive analysis.
 
 **Core Intelligence Features:**
 - **Memory-Enhanced Strategy** - Card tracking with guaranteed winner identification
@@ -14,6 +14,8 @@ The Tractor AI system implements **sophisticated strategic decision-making** wit
 - **Position-Based Intelligence** - Specialized logic for all 4 trick positions
 - **Strategic Team Coordination** - Optimal cooperation with human teammates
 - **Advanced Trump Management** - Hierarchical conservation and strategic deployment
+
+> **Optional LLM layer:** beyond the always-on rule-based engine documented here, an optional language-model layer (`src/ai/llm/`, disabled by default) can make trick-play decisions at genuinely ambiguous moments — see **[LLM Trick-Play Layer](#llm-trick-play-layer-optional)**. The rule-based engine remains the foundation and the fallback.
 
 ---
 
@@ -51,7 +53,18 @@ src/ai/
 │   │   └── kittySwapStrategy.ts # Rule-based exclusion and suit elimination
 │   └── trumpDeclaration/
 │       └── trumpDeclarationStrategy.ts # Sophisticated declaration timing
+└── LLM Layer (6 modules, OPTIONAL — off by default)
+    └── llm/
+        ├── llmAIStrategy.ts        # Decision orchestration: prompt → validate → retry → fallback
+        ├── llmGamePrompt.ts        # Builds the dynamic user prompt from engine analysis
+        ├── llmPromptTemplates.ts   # Static rules system prompt + user-prompt template
+        ├── llmAIClient.ts          # OpenRouter HTTP transport (fetch / node-https)
+        ├── llmConfig.ts            # Config load/persist + enable check
+        └── llmModels.ts            # Available models + default
 ```
+
+The 20 rule-based modules are always active; the LLM layer is a separate, optional
+addition described in its own section below.
 
 ### **Modular Benefits**
 
@@ -105,90 +118,99 @@ The V2 following system implements a **scenario-based approach** with strict gam
 
 ---
 
+## LLM Trick-Play Layer (Optional)
+
+Everything above describes the **rule-based engine**, which is always on. Layered on top
+is an **optional LLM layer** (`src/ai/llm/`) that, when enabled, makes the trick-play
+*judgement* at genuinely ambiguous lead/follow decisions for its **LLM players**. It is
+**disabled by default** and requires an OpenRouter API key; the rule-based engine remains
+the foundation and the fallback.
+
+### What the LLM decides — and what it doesn't
+
+- **In scope**: lead and follow choices during the **Playing** phase, for the configured
+  **LLM players** (default `bot1`, `bot2`, `bot3` — note `bot2` is your teammate).
+- **Out of scope**: kitty swap and trump declaration stay fully rule-based.
+- **Forced or obvious plays are short-circuited before any API call** (see Adaptive
+  Shortcuts below) — the LLM is consulted only where there is a real choice to make.
+
+### The engine feeds the prompt
+
+The LLM does not reason from raw state. The same rule-based modules that drive autonomous
+play compute the signals injected into the prompt:
+
+- **Leading** → candidate leads from `candidateLeadDetection.ts`, each carrying a **Rule
+  Score** from `leadingScoring.ts`.
+- **Following** → the suit-availability scenario (`valid_combos` / `enough_remaining` /
+  `insufficient` / `void`), a **Trick Win Security** verdict (SECURED / LIKELY /
+  UNCERTAIN), confirmed voids from the memory context, unseen off-suit points, and a
+  per-seat **GUIDANCE FOR THIS SEAT** bullet that applies the following rules to the exact
+  situation.
+
+The model's job is judgement among already-legal options, not legality or arithmetic.
+
+### Prompt structure
+
+- **System prompt** = `STATIC_LLM_GAME_RULES` (`llmPromptTemplates.ts`): the standing
+  trick-play strategy guide (card strength, combos, following/ruffing/leading order,
+  position cues, conservation).
+- **User prompt** = `buildUserPromptTemplate`, filled by `buildLLMUserPrompt` in
+  `llmGamePrompt.ts` with the per-decision state above.
+- **Card notation**: cards are named exactly as displayed — `10♦`, `K♥`, `A♠`, plus
+  `BJ` / `SJ` for the jokers; the hand groups duplicates with a `×N` count tag. The model
+  replies with JSON: `{"reasoning":"…","play":["…"]}`.
+
+### Validation, retry, and fallback
+
+`llmAIStrategy.ts` orchestrates each decision:
+
+1. Call the model (`llmAIClient.ts` → OpenRouter, `temperature: 0.1`, default 15s timeout).
+2. Parse JSON → map each notation to a held card → validate against the rules
+   (`getPlayValidationError`).
+3. On any failure, append a specific corrective hint and retry. **Max 2 attempts** (one
+   retry).
+4. If still invalid, or on API error/timeout, **fall back to the rule-based pick** for
+   that turn.
+
+### Adaptive shortcuts (skip the LLM)
+
+When the play is forced or strategically obvious the engine plays it directly and logs an
+`llm_adaptive_shortcut_*` event instead of calling the API:
+
+- **Leading**: round-start ace/king lead (`lead_ace`), unbeatable combo
+  (`lead_unbeatable`), only one legal candidate (`lead_single_candidate`).
+- **Following**: multi-combo follow (`follow_multi_combo`, delegated to the deterministic
+  algorithm), must play the whole hand (`follow_hand_size`), forced to play all remaining
+  cards of the led suit (`follow_forced_suit`), only one valid combo
+  (`follow_single_combo`).
+
+### Execution path & configuration
+
+- **Async path**: `getAIMoveWithErrorHandlingAsync` → `makeAIPlayAsync` →
+  `selectLeadingPlayAsync` / `selectFollowingPlayAsync`, awaited by the `useAITurns` hook.
+  The synchronous `getAIMove` stays rule-based (used by tests and simulation).
+- **Config** (`llmConfig.ts`): persisted in `localStorage` under `tractor_llm_config` (no
+  env vars). Fields: `enabled`, `apiKey`, `model`, `apiUrl`, `timeoutMs`,
+  `applyToPlayers`. `isLLMEnabled()` requires `enabled && apiKey`.
+- **Models** (`llmModels.ts`): default `google/gemini-2.5-flash-lite`; DeepSeek V3,
+  Qwen3 Next 80B, and Llama 3.3 70B also selectable.
+
+> Future work on enriching the signals fed to this layer is captured in
+> **[proposals/LLM_GAME_STATE_SIGNALS.md](proposals/LLM_GAME_STATE_SIGNALS.md)**.
+
+---
+
 ## Decision Framework
 
 The AI follows a **modular decision framework** with specialized modules handling each strategic component. The decision process is split into two main pathways:
 
 ### **Leading Strategy Framework**
 
-When the AI must lead a trick, it follows this strategic decision flow:
-
-```mermaid
-flowchart TD
-    StartLead([🎯 AI Leading Turn]) --> LogicLead[🎮 aiLogic.ts<br/>Public API & Rule Compliance]
-    LogicLead --> StrategyLead[🧠 aiStrategy.ts<br/>Core Decision Coordination]
-    StrategyLead --> ContextLead[📊 aiGameContext.ts<br/>Game State Analysis]
-    ContextLead --> MemoryLead[💾 aiCardMemory.ts<br/>Memory System]
-    
-    MemoryLead --> LeadingMods[🎯 Scoring-Based Leading Strategy]
-    
-    LeadingMods --> CandidateDetection[🔍 STEP 1: Candidate Detection<br/>candidateLeadDetection.ts<br/>Find ALL possible leads]
-    LeadingMods --> ContextCollection[📊 STEP 2: Context Collection<br/>leadingContext.ts<br/>Team & void analysis]
-    LeadingMods --> ScoringEvaluation[🎯 STEP 3: Scoring Evaluation<br/>leadingScoring.ts<br/>Comprehensive scoring]
-    LeadingMods --> LeadStrategy[✅ STEP 4: Selection & Execution<br/>leadingStrategy.ts<br/>Best score selection]
-    
-    CandidateDetection --> ContextCollection
-    ContextCollection --> ScoringEvaluation
-    ScoringEvaluation --> LeadStrategy
-    LeadStrategy --> ExecuteLead[✅ Execute Leading Move]
-```
+Leading flows through the core pipeline (`aiLogic` → `aiStrategy` → `aiGameContext` → `aiCardMemory`) into the scoring-based leading modules: candidate detection (`candidateLeadDetection.ts`) → context collection (`leadingContext.ts`) → scoring (`leadingScoring.ts`) → selection (`leadingStrategy.ts`).
 
 ### **Following Strategy Framework**
 
-When the AI must follow a trick, it uses the enhanced V2 following system with scenario-based routing:
-
-```mermaid
-flowchart TD
-    StartFollow([🎯 AI Following Turn]) --> LogicFollow[🎮 aiLogic.ts<br/>Public API & Rule Compliance]
-    LogicFollow --> StrategyFollow[🧠 aiStrategy.ts<br/>Core Decision Coordination]
-    StrategyFollow --> ContextFollow[📊 aiGameContext.ts<br/>Game State Analysis]
-    ContextFollow --> MemoryFollow[💾 aiCardMemory.ts<br/>Memory System]
-    
-    MemoryFollow --> MultiCheck{🔍 Multi-Combo Lead?}
-    MultiCheck -->|Yes| MultiComboFollow[multiComboFollowingStrategy.ts<br/>Multi-Combo Algorithm]
-    MultiCheck -->|No| SuitAnalysis[suitAvailabilityAnalysis.ts<br/>Scenario Classification]
-    
-    SuitAnalysis --> RoutingLogic[routingLogic.ts<br/>Decision Routing]
-    
-    RoutingLogic --> ValidCombos{✅ valid_combos?}
-    RoutingLogic --> EnoughRemaining{📏 enough_remaining?}
-    RoutingLogic --> Insufficient{⚠️ insufficient?}
-    RoutingLogic --> VoidScenario{🚫 void?}
-    
-    ValidCombos --> ValidDecision[validCombosDecision.ts<br/>Strategic Combo Selection]
-    EnoughRemaining --> SameSuitDecision[sameSuitDecision.ts<br/>Disposal/Contribution Logic]
-    Insufficient --> CrossSuitDecision[crossSuitDecision.ts<br/>Cross-Suit Fill]
-    VoidScenario --> VoidDecision[voidDecision.ts<br/>Trump/Cross-Suit Choice]
-    
-    ValidDecision --> PriorityChain[🎯 4-Priority Decision Chain]
-    PriorityChain --> P1{🤝 PRIORITY 1<br/>Teammate Winning?}
-    
-    P1 -->|Yes| TeamSupport[🎁 Team Coordination<br/>Support Teammate]
-    P1 -->|No| P2{⚔️ PRIORITY 2<br/>Opponent Winning?}
-    P2 -->|Yes| OpponentBlock[🛡️ Strategic Opposition<br/>Block Opponent]
-    P2 -->|No| P3{💰 PRIORITY 3<br/>Can Win ≥5 Points?}
-    P3 -->|Yes| TrickContest[⚡ Contest Trick<br/>Point Collection]
-    P3 -->|No| StrategicDisp[🗑️ Hierarchical Disposal<br/>Conservation Values]
-    
-    ValidDecision --> PositionSpecific[🎯 Position-Specific Logic]
-    PositionSpecific --> SecondPlayer[2nd Player: Early Influence<br/>Strategic Setup]
-    PositionSpecific --> ThirdPlayer[3rd Player: Takeover Analysis<br/>Risk Assessment]
-    PositionSpecific --> FourthPlayer[4th Player: Perfect Information<br/>Optimal Decisions]
-    
-    TeamSupport --> ExecuteFollow[✅ Execute Following Move]
-    OpponentBlock --> ExecuteFollow
-    TrickContest --> ExecuteFollow
-    StrategicDisp --> ExecuteFollow
-    ValidDecision --> ExecuteFollow
-    SameSuitDecision --> ExecuteFollow
-    CrossSuitDecision --> ExecuteFollow
-    VoidDecision --> ExecuteFollow
-    MultiComboFollow --> ExecuteFollow
-    
-    MemoryFollow --> AnalysisFollow[🔍 Analysis Support]
-    AnalysisFollow --> TeammateAnalysis[teammateAnalysis.ts<br/>Teammate Evaluation]
-    AnalysisFollow --> StrategicSelection[strategicSelection.ts<br/>Pair-Preserving Selection]
-```
+Following runs the same core pipeline, then checks for a multi-combo lead (handled by `multiComboFollowingStrategy.ts`). Otherwise `suitAvailabilityAnalysis.ts` classifies the scenario (`valid_combos` / `enough_remaining` / `insufficient` / `void`) and `routingLogic.ts` routes to the matching decision module (`validCombosDecision` / `sameSuitDecision` / `crossSuitDecision` / `voidDecision`); the priority chain (teammate support → opponent blocking → trick contention → disposal) and position-specific logic then choose the card.
 
 ### **Priority Levels**
 
@@ -204,7 +226,7 @@ flowchart TD
 
 ## Scoring-Based Leading Strategy
 
-The AI implements a **unified scoring-based leading strategy** that evaluates all possible candidate leads and selects the highest scoring option. This replaces the previous complex priority chain system with a transparent, maintainable scoring approach.
+The AI implements a **unified scoring-based leading strategy**: it evaluates every candidate lead with a single scoring function and plays the highest-scoring option, keeping leading decisions transparent and debuggable.
 
 ### **Core Architecture**
 
@@ -222,12 +244,13 @@ The AI implements a **unified scoring-based leading strategy** that evaluates al
    - **Point pressure**: Calculated based on current team progress
    - **Game phase**: Early, mid, or endgame strategic context
 
-3. **Scoring Evaluation (`leadingScoring.ts`)**: Comprehensive candidate scoring
-   - **Base card values**: Uses actual card rank values (Ace=14, King=13, etc.)
-   - **Pair bonuses**: +20 for non-trump pairs, +30 for trump pairs
-   - **Unbeatable bonus**: +50 for guaranteed winners
-   - **Trump penalties**: -rankValue per trump card to encourage conservation
-   - **Void suit bonuses**: +10 for weak combos in void suits (strategic opportunities)
+3. **Scoring Evaluation (`leadingScoring.ts`)**: scores each candidate by combining
+   - **Base card values** — higher ranks score higher
+   - **Pair bonuses** — pairs beat singles; trump pairs weighted above non-trump
+   - **Unbeatable bonus** — guaranteed winners score highest
+   - **Trump penalty** — trump cards are penalised to encourage conservation
+   - **Void-suit adjustment** — bonus for leading a teammate-void suit, penalty for an opponent-void suit
+   - *(exact weights live in `leadingScoring.ts`)*
 
 4. **Selection & Execution (`leadingStrategy.ts`)**: Chooses best option
    - **Score ranking**: Sorts all candidates by total score
@@ -235,37 +258,9 @@ The AI implements a **unified scoring-based leading strategy** that evaluates al
    - **Fallback handling**: Graceful degradation when no candidates found
    - **Comprehensive logging**: Detailed reasoning for analysis
 
-### **Scoring Algorithm**
+### **Strategic Priorities**
 
-#### **Base Scoring Components**
-
-```typescript
-// 1. Card rank values (base score)
-const baseScore = candidate.cards.reduce((sum, card) => sum + getCardRankValue(card), 0);
-
-// 2. Pair bonuses
-const pairBonus = candidate.metadata.totalPairs * (candidate.metadata.isTrump ? 30 : 20);
-
-// 3. Unbeatable bonus
-const unbeatableBonus = candidate.metadata.isUnbeatable ? 50 : 0;
-
-// 4. Trump penalties (conservation)
-const trumpPenalty = candidate.metadata.isTrump ? 
-  -candidate.cards.reduce((sum, card) => sum + getTrumpPenalty(card), 0) : 0;
-
-// 5. Void suit bonus (strategic opportunities)
-const voidBonus = (isVoidSuit && isWeakCombo) ? 10 : 0;
-
-const totalScore = baseScore + pairBonus + unbeatableBonus + trumpPenalty + voidBonus;
-```
-
-#### **Strategic Priorities**
-
-1. **Unbeatable leads** (score +50): Guaranteed winners receive highest priority
-2. **High-value pairs** (score +20/+30): Pairs get significant bonuses over singles
-3. **Card strength** (score +2 to +14): Higher ranked cards preferred
-4. **Trump conservation** (negative scores): Trump cards penalized to encourage saving
-5. **Void exploitation** (score +10): Weak combos in void suits get bonus
+In effect the scoring ranks leads roughly as: guaranteed-unbeatable leads first, then high-value pairs over singles, then stronger cards over weaker — while penalising trump (to conserve it) and rewarding a lead into a teammate's void. See `leadingScoring.ts` for the exact formula and weights.
 
 ### **Decision Process**
 
@@ -331,14 +326,7 @@ The AI identifies cards that are certain to win based on comprehensive memory an
 
 #### Teammate Void Strategy (Smart Point Collection)
 
-```typescript
-// NEW: Smart teammate void analysis
-if (opponentPoints >= 15 && teammateCanTrump) {
-  strategy = "lead_for_points"  // 🎯 Lead to collect points for team
-} else {
-  strategy = "avoid_leading"    // 🛡️ Protect teammate from forced trump
-}
-```
+When a teammate is void in a suit, lead it **for points** if the teammate can ruff and there are meaningful points to win; otherwise **avoid leading it** so the teammate isn't forced to spend trump on a low-value trick.
 
 #### Opponent Void Strategy (Aggressive Exploitation)
 
@@ -356,10 +344,7 @@ if (opponentPoints >= 15 && teammateCanTrump) {
 
 #### Conservation Hierarchy
 
-```text
-Big Joker (100) > Small Joker (90) > Trump Rank in Trump Suit (80) > 
-Trump Rank in Off-Suits (70) > Trump Suit Cards (A♠:60 → 3♠:5)
-```
+Trump is conserved by a fixed value ordering (jokers > trump-rank cards > trump-suit regulars) — see [Trump Management](#trump-management) for the full hierarchy.
 
 ### **Unified Memory Integration**
 
@@ -381,7 +366,7 @@ The memory system is seamlessly integrated across all AI decision modules:
 
 #### Intelligence Enhancement
 
-- **15-25% Decision Quality Improvement** through comprehensive card tracking
+- **Improved decision quality** through comprehensive card tracking
 - **Strategic Depth**: Complex void exploitation and point timing optimization
 - **Predictive Analysis**: Anticipate opponent capabilities based on memory
 - **Team Coordination**: Smart teammate strategies that maximize point collection
@@ -414,13 +399,8 @@ export function createMemoryContext(gameState: GameState): MemoryContext
 - **Trump Management** - Conservation decisions based on trump depletion
 
 **Performance Characteristics:**
-- **Efficient Processing** - Optimized for real-time decision making
-- **Accurate Analysis** - 100% consistency with game state
-- **Memory Efficiency** - Clean data structures without redundancy
-
-## Advanced Strategic Features
-
-The AI implements sophisticated game strategies through its modular architecture:
+- **Efficient Processing** - designed for real-time decision making
+- **Memory Efficiency** - clean data structures without redundancy
 
 ---
 
@@ -463,7 +443,7 @@ All following positions use the same priority framework but with position-specif
 
 #### **Enhanced 3rd Player Takeover System**
 
-The AI now uses sophisticated strategic value analysis to determine when to take over from a teammate:
+The AI uses strategic value analysis to determine when to take over from a teammate:
 
 **Strategic Value Thresholds:**
 - **Strong** (≥170): Jokers, trump rank cards → Support teammate
@@ -605,19 +585,12 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 
 ## Performance & User Experience
 
-### **Intelligence Benchmarks**
+### **Decision Quality**
 
-**Decision Quality:**
-- **Rule Compliance** - Perfect adherence to complex Tractor/Shengji rules
-- **Strategic Optimization** - 20-30% improvement over basic AI play
-- **Memory Enhancement** - 15-25% improvement through card tracking
-- **Position-Based Logic** - Specialized decisions for all 4 trick positions
-
-**Response Times:**
-- **Standard Decisions** - ~300ms for most scenarios
-- **Full Analysis** - <400ms with complete intelligence active
-- **Minimal Overhead** - Memory analysis adds only ~30ms when utilized
-- **Modular Efficiency** - Focused modules eliminate redundant calculations and improve decision speed
+- **Rule Compliance** - complete adherence to complex Tractor/Shengji rules
+- **Strategic Optimisation** - card-tracking and memory inform stronger play than naive heuristics
+- **Position-Based Logic** - specialised decisions for all 4 trick positions
+- **Modular Efficiency** - focused modules avoid redundant calculation
 
 ### **Strategic Effectiveness**
 
@@ -636,42 +609,9 @@ When the AI cannot win a trick, it follows a sophisticated disposal system:
 
 ---
 
-## Future Enhancement Roadmap
-
-### **Potential Enhancements**
-
-**Future Capabilities:**
-- **Advanced Pattern Recognition** - Enhanced memory analysis across multiple games
-- **Dynamic Difficulty Scaling** - AI intelligence adapts to player skill progression
-- **Enhanced Team Coordination** - Improved teammate support strategies
-- **Strategic Learning** - Continuous improvement through gameplay analysis
-
-**Foundation Ready:**
-- **Existing Infrastructure** - Current memory system provides solid foundation
-- **Clean Integration** - Modular architecture ready for extensions
-- **Natural Evolution** - Minimal architectural changes needed
-
-### **Recent Architecture Improvements (2025)**
-
-**Code Modernization and Simplification:**
-- **Type System Consolidation** - Merged `combinations.ts` into `card.ts` for better organization
-- **Function Naming Clarity** - Renamed `createCardMemory` to `createMemoryContext` for accuracy
-- **Documentation Unification** - Merged multi-combo documentation into single comprehensive guide
-- **Analysis System Migration** - Transitioned from BigQuery to local analysis using DuckDB
-- **Module Structure Cleanup** - Focused AI modules with clear separation of concerns
-
-**Technical Benefits:**
-- **Reduced Complexity** - Simplified type structure and cleaner imports
-- **Improved Maintainability** - Unified architecture with clearer responsibilities
-- **Enhanced Documentation** - Consolidated guides matching current implementation
-- **Local Analysis** - Streamlined reporting without external dependencies
-- **Better Testing** - Focused on core strategic decisions with comprehensive coverage
-
----
-
 ## Summary
 
-The Tractor AI system delivers **sophisticated strategic gameplay** through comprehensive intelligence, modular architecture, and adaptive learning:
+The Tractor AI system delivers strong strategic gameplay through memory-enhanced intelligence and a modular architecture:
 
 ### **Core Capabilities**
 
@@ -683,7 +623,7 @@ The Tractor AI system delivers **sophisticated strategic gameplay** through comp
 - **Multi-Combo Integration** - Complete support for complex multi-combo scenarios
 
 **Modular Architecture:**
-- **20 Focused Modules** - Streamlined architecture with clear separation of concerns (4 core + 10 following + 4 leading + 2 specialized)
+- **Modular Architecture** - 20 rule-based modules (4 core + 10 following + 4 leading + 2 specialised) plus an optional 6-module LLM layer
 - **Unified Leading Strategy** - Scoring-based system with transparent decision making
 - **4-Priority Following Chain** - Conflict-free strategic decision making for following scenarios
 - **Domain Separation** - Clean separation between following, leading, and specialized systems
@@ -697,7 +637,7 @@ The Tractor AI system delivers **sophisticated strategic gameplay** through comp
 - **Strategic Disposal** - Multi-level card safety prioritization with conservation values
 
 **Performance & Maintainability:**
-- **Fast Response Times** - <400ms decision time with full analysis
+- **Responsive** - synchronous rule-based decisions suitable for real-time play
 - **Modular Efficiency** - Specialized modules eliminate redundant calculations
 - **Easy Testing** - Modular structure enables comprehensive unit testing
 - **Rapid Development** - Clean architecture supports quick feature additions and bug fixes

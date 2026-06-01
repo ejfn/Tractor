@@ -1,6 +1,6 @@
 # Tractor (升级)
 
-A React Native implementation of the classic Chinese card game **Tractor** (also known as Shengji/升级), featuring intelligent AI opponents and authentic gameplay mechanics.
+A React Native implementation of the classic Chinese card game **Tractor** (also known as Shengji/升级), featuring algorithm-based AI players (with an optional LLM mode) and authentic gameplay mechanics.
 
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-blue)
@@ -23,7 +23,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 **Core Gameplay:**
 
 - **Team-based**: You + Bot 2 vs Bot 1 + Bot 3 in strategic cooperation
-- **Rank Progression**: Start at rank 2, advance through ranks by collecting 80+ points per round
+- **Rank Progression**: Start at rank 2; the attacking team advances by capturing 80+ points, the defenders by holding them under 80
 - **Trump Declaration**: Players can declare trump during progressive dealing using pairs or jokers
 - **Card Combinations**: Play singles, pairs, or tractors (consecutive pairs) with complex following rules
 - **Victory Condition**: First team to advance to Ace rank wins the game
@@ -31,19 +31,18 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 **Unique Features:**
 
 - **Progressive Dealing**: Cards dealt one-by-one with real-time trump declaration opportunities
-- **Kitty Management**: Winner receives 8 hidden cards that can provide massive endgame bonuses
+- **Kitty Management**: The round starter picks up and swaps 8 hidden cards at the deal; winning the final trick turns the kitty into a bonus point swing
 - **Complex Trump Hierarchy**: Big Joker > Small Joker > Trump rank cards > Trump suit cards
 
 *Complete rules and quick start guide in **[Game Rules](docs/GAME_RULES.md)***
 
 ## Key Features
 
-- **🧠 4-Phase AI Intelligence**: Memory-enhanced decision trees with strategic point management and trump conservation
-- **🃏 Smart Card Auto-Selection**: Intelligent pair/tractor detection with tap-to-toggle controls
-- **⚡ Progressive Dealing System**: Real-time trump declarations with sophisticated AI strategy
-- **🎯 Advanced Kitty Management**: Strategic suit elimination and endgame bonus multipliers
-- **💾 Automatic Game Persistence**: Seamless save/restore with auto-recovery on app restart
-- **📊 BigQuery Analysis System**: Enterprise-scale game data analysis with Google Cloud BigQuery for massive datasets
+- **🧠 Algorithm-Based AI Engine**: Memory-enhanced decision modules — scoring-based leading, scenario-based following, strategic point management and trump conservation
+- **🤖 Optional LLM Players**: OpenRouter-backed language-model play — for your AI teammate and opponents alike — layered on the rule-based engine for ambiguous trick decisions (off by default; bring your own API key)
+- **🃏 Card Auto-Selection**: Pair/tractor detection with tap-to-toggle controls
+- **💾 Automatic Game Persistence**: Save/restore with auto-recovery on app restart
+- **📊 BigQuery Analysis Pipeline**: Game-log analysis on Google Cloud BigQuery for large simulation datasets
 - **🌍 Multilingual Support**: Full English and Chinese localization with automatic language detection
 - **📱 Touch-Optimized UI**: Smooth animations, team color coding, and dark theme support
 - **🏆 Authentic Gameplay**: Complete Shengji/Tractor rules with proper combination following
@@ -52,9 +51,9 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 **Built with React Native + Expo** for cross-platform mobile development:
 
-- **React Native 0.81+** - Cross-platform mobile framework
-- **Expo SDK 55** - Development tools and native API access
-- **TypeScript 5.9+** - Strict type safety and enhanced developer experience
+- **React Native** - Cross-platform mobile framework
+- **Expo** - Development tooling and native API access
+- **TypeScript** (strict) - Type safety and enhanced developer experience
 - **React i18next** - Type-safe internationalization with automatic language detection
 - **Jest** - Comprehensive tests with React Testing Library
 - **ESLint** - Code quality with React Native specific rules
@@ -63,7 +62,7 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 **Architectural Highlights:**
 
 - **Modular Game System**: Focused game modules with direct imports (no re-export hub)
-- **Modular AI System**: 20 focused modules with memory-enhanced intelligence organized by functional domain
+- **Modular AI System**: Memory-enhanced decision modules organized by functional domain, plus an optional LLM layer
 - **Unified Trick Structure**: Streamlined game state with plays array for consistent data flow
 - **Consolidated Hook Architecture**: Single-responsibility hooks with minimal interdependencies
 - **Progressive Dealing System**: Unified dealing and trump declaration management
@@ -74,39 +73,28 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 ## AI Intelligence
 
-**Sophisticated Memory-Enhanced AI system** with comprehensive card tracking, strategic point management, and intelligent trump conservation.
+The AI runs on an always-on **algorithm-based engine** — modular, memory-enhanced decision logic — with an **optional LLM layer** on top.
 
-**Core AI Capabilities:**
+**Algorithm-based engine:**
 
-- **🧠 Memory-Enhanced Strategy**: Card tracking with guaranteed winner identification
-- **🎯 4-Priority Decision Chain**: Team coordination → Opponent blocking → Trick contention → Strategic disposal
-- **🃏 Streamlined Kitty Management**: Rule-based exclusion strategy with intelligent suit elimination
-- **⚡ Real-Time Trump Declarations**: Hand quality analysis with timing optimization
-- **🛡️ Strategic Conservation**: Trump hierarchy preservation and point card management
+- **Memory & card tracking** — played-card memory identifies guaranteed winners and confirmed voids, and drives void exploitation (teammate vs opponent)
+- **Scoring-based leading** — every candidate lead scored for control, points, and trump conservation
+- **Scenario-based following** — a priority chain (team coordination → opponent blocking → trick contention → disposal), position-aware for all four seats
+- **Trump conservation** — hierarchical values protect jokers, trump-rank cards, and high pairs
+- **Declaration & kitty strategy** — hand-quality-driven trump declaration timing and rule-based kitty swaps
 
-**Complete Memory-Enhanced Intelligence:**
+**Optional LLM trick-play layer:**
 
-- **Foundation Layer** - Perfect rule compliance and basic strategic logic
-- **Strategy Layer** - Point optimization, team coordination, position-based play
-- **Memory Layer** - Card tracking, probability analysis, guaranteed winner detection
-- **Advanced Features** - Void exploitation, point timing optimization, trump conservation
-
-**Memory System Highlights:**
-
-- **Guaranteed Winner Detection**: Uses card tracking to identify cards certain to win
-- **Smart Void Exploitation**: Differentiates teammate vs opponent void strategies for optimal point collection
-- **Trump Exhaustion Tracking**: Dynamic trump conservation based on opponent depletion analysis
-- **Context-Aware Memory**: Unified memory analysis integrated across all trick positions
-- **Point Timing Optimization**: Memory-enhanced analysis for optimal point card collection timing
+Beyond the always-on engine, an optional LLM layer (via OpenRouter, disabled by default) can make the trick-play decision at genuinely ambiguous lead/follow moments. It does not replace the engine: the rule-based AI still generates the candidate plays, scores, seat guidance, and win-security signals fed into the prompt, short-circuits forced or obvious plays before any API call, and serves as the fallback whenever the model's output is invalid or the API is unavailable. Configure it in-app with your own API key.
 
 *Complete AI documentation in **[AI System Guide](docs/AI_SYSTEM.md)***
 
 ## Reporting & Analysis
 
-**Unified BigQuery Analysis System** for comprehensive game data insights:
+**BigQuery analysis pipeline** for game-log insights:
 
-- **🌐 BigQuery Analysis**: Enterprise-scale processing for datasets from small tests to 50GB+ production data
-- **📈 KPI Reports**: Comprehensive reports with AI decision analysis, performance metrics, and gameplay statistics
+- **🌐 BigQuery Analysis**: Scales from small test runs to large simulation datasets
+- **📈 KPI Reports**: AI decision analysis, performance metrics, and gameplay statistics
 - **🎨 Data Visualizations**: Rich charts and graphs showing AI behavior, game patterns, and strategic insights
 - **⚡ Automated Workflows**: Complete BigQuery pipeline with Data Transfer jobs and automated uploads
 
@@ -118,19 +106,9 @@ A React Native implementation of the classic Chinese card game **Tractor** (also
 
 ## Built with AI
 
-This project is developed with assistance from AI coding partners.
-
-- **Claude** ([claude.ai](https://claude.ai/code)) - Initial project scaffolding and early feature development.
-- **Gemini** ([gemini.google.com](https://gemini.google.com)) - Primary development assistant for new features, refactoring, and test generation.
+This project is developed with the assistance of various AI coding tools and models.
 
 Development guidelines are documented in [AGENTS.md](AGENTS.md).
-
-## Future Enhancements
-
-- **Multi-game Learning** - Cross-game strategy improvement
-- **Difficulty Scaling** - Adaptive challenge based on player skill
-- **Advanced Psychology** - Deep behavioral modeling
-- **iOS Testing** - Comprehensive iOS platform validation
 
 ## More Screenshots
 

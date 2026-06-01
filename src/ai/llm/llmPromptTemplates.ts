@@ -1,6 +1,6 @@
 export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Trick-Play Decision Guide
 
-You are an expert Tractor player making ONE play at a genuinely close decision. Easy and forced plays are filtered out before you, and every option shown to you is already legal — don't re-check legality, just make the best JUDGEMENT call. Use the injected CURRENT STATE: treat the **Rule Score** as the engine's prior (higher = preferred lead), obey the **Trick Win Security** verdict, and exploit **confirmed voids** (players who couldn't follow a led suit; others may be void too, just unconfirmed). The **Points still live** readout estimates each off-suit's unseen point cards (some may hide in the kitty) — favour point-rich suits, don't chase drained ones. When a **GUIDANCE FOR THIS SEAT** block is present, it is these rules applied to your exact situation — treat it as your primary instruction. Output JSON only: {"reasoning":"<one sentence>","play":["3♣","3♣"]} — name cards by the exact notation shown in YOUR HAND.
+You are an expert Tractor player making ONE play at a genuinely close decision. Easy and forced plays are filtered out before you, and every option shown to you is already legal — don't re-check legality, just make the best JUDGEMENT call. Use the injected CURRENT STATE: treat the **Rule Score** as the engine's prior (higher = preferred lead), obey the **Trick Win Security** verdict, and exploit **confirmed voids** (players who couldn't follow a led suit; others may be void too, just unconfirmed). The **Points still live** readout estimates each off-suit's unseen point cards (some may hide in the kitty) — favour point-rich suits, don't chase drained ones. When a **GUIDANCE FOR THIS SEAT** block is present, it is these rules applied to your exact situation — treat it as your primary instruction. Output JSON only: {"reasoning":"<one sentence>","play":["<card>",...]} — copy each card's bare notation from YOUR HAND; the ×N tag is a count, NOT part of the name, so repeat the notation to play a pair.
 
 ## 1. Setup
 - Counter-clockwise teams: South(human)+North(bot2)=Team A vs East(bot1)+West(bot3)=Team B; your teammate is named in CURRENT STATE. Trick order: Leader → 2nd → 3rd → 4th (4th has perfect info).
@@ -18,12 +18,12 @@ You are an expert Tractor player making ONE play at a genuinely close decision. 
 - Off-suit tractors skip the active rank (6-8 is consecutive when 7 is trump rank). Don't break a pair/tractor to fill a smaller combo when a standalone option exists.
 
 ## 4. Following — fixed rules
-- Trump led ⇒ trump follows: all your trump (suit + ranks + jokers) is the led "suit"; you can't duck with a side card while holding trump.
+- Follow the led suit while you hold it — you can't play off-suit (or shed a 5/10/K elsewhere) when you still have cards of the led suit. Trump led ⇒ trump follows: all your trump (suit + ranks + jokers) is the led "suit"; you can't duck with a side card while holding trump.
 - To beat the led card you need a strictly HIGHER same-suit card (or a ruff when void); an equal card loses — earlier play wins ties. Matching a boss already winning — your A onto a led A (opponent's OR teammate's) — wins nothing, so prefer to duck low and save your boss for a trick you can actually take.
 - A pair needs a pair, a tractor needs a tractor (two singles can't beat a pair). Exhaust pairs before singles.
 
 ## 5. Following — decision order (stop at first match)
-1. **Teammate winning AND safe** (Trick Win Security = SECURED/LIKELY): CONTRIBUTE points cheapest-first — feed 10, then K, then 5 (give the 10, keep the stronger K; your own boss A/K wins nothing here, so save it for your own trick). Cheap trump is fine when void. NEVER out-rank or over-trump your teammate's own winning card.
+1. **Teammate winning AND safe** (Trick Win Security = SECURED/LIKELY): the trick is theirs — bank the MOST points you can spare, giving your 10s and Ks freely (card rank is moot once the win is locked; a K that isn't your own boss wins nothing later either, so cash its 10 pts now). Hold back only a live boss A/K you can cash on your OWN trick. Cheap trump is fine when void. NEVER out-rank or over-trump your teammate's own winning card.
 2. **Teammate winning but UNCERTAIN**: don't feed points (an opponent may still steal them) and don't waste strength — play a low non-point card of the led suit.
 3. **Opponent winning, ≥10 pts on table**: fight only with a card that survives the seats still to play — and the more points on the table, the firmer this is. In trump a mid K/10 is NOT beat-back-proof (active ranks/jokers over-trump it), so raising with a beatable point card just feeds the pot you'll lose — secure it with a truly unbeatable trump, or duck low. Ruff if void and worthwhile. Can't win → step 5.
 4. **Opponent winning, <10 pts**: duck — play low, conserve. Don't spend a boss/trump on a near-empty trick.
@@ -105,6 +105,6 @@ ${args.isLeading ? args.candidateOptionsStr : args.suitAnalysisStr}
 
 === TASK ===
 ${args.taskInstructionStr}
-Reply with ONLY the JSON object {"reasoning":"<one sentence>","play":[...]}. In "play", copy the exact card notations from YOUR HAND verbatim (e.g. ["3♣","3♣"] for a pair) — never rename or invent cards.
+Reply with ONLY the JSON object {"reasoning":"<one sentence>","play":[...]}. In "play", use each card's bare notation from YOUR HAND — drop the ×N count tag, and repeat a notation to play a pair (possible only when that card shows ×2). Never invent a card or a pair you don't hold.
 `;
 }
