@@ -2,7 +2,7 @@
 
 **Comprehensive AI Intelligence & Strategic Decision Making**
 
-*Related Documentation: [Game Rules](GAME_RULES.md) | [Multi-Combo System](MULTI_COMBO.md) | [AGENTS.md](../AGENTS.md)*
+*Related Documentation: [Game Rules](game_rules.md) | [AGENTS.md](../AGENTS.md)*
 
 ## Overview
 
@@ -194,10 +194,6 @@ When the play is forced or strategically obvious the engine plays it directly an
   `applyToPlayers`. `isLLMEnabled()` requires `enabled && apiKey`.
 - **Models** (`llmModels.ts`): default `google/gemini-2.5-flash-lite`; DeepSeek V3,
   Qwen3 Next 80B, and Llama 3.3 70B also selectable.
-
-> Future work on enriching the signals fed to this layer is captured in
-> **[proposals/LLM_GAME_STATE_SIGNALS.md](proposals/LLM_GAME_STATE_SIGNALS.md)**.
-
 ---
 
 ## Decision Framework
@@ -648,6 +644,5 @@ The AI system successfully balances **strategic sophistication** with **enjoyabl
 
 **See Also:**
 
-- **[Game Rules](GAME_RULES.md)** - Complete Tractor/Shengji rules and strategy guide
-- **[Multi-Combo System](MULTI_COMBO.md)** - Complete multi-combo implementation guide
+- **[Game Rules](game_rules.md)** - Complete Tractor/Shengji rules and strategy guide
 - **[AGENTS.md](../AGENTS.md)** - Development guidelines and project architecture

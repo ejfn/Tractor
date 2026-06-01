@@ -386,6 +386,13 @@ Trump Responses:
 ❌ 3♥3♥ + 2♦ (only 3 cards, wrong total length)
 ❌ A♥ + K♥ + Q♥ + J♥ (4 singles, wrong combination types)
 ```
+#### **Multi-Combo Implementation & AI Integration**
+
+* **Structure & Analysis** (`multiComboAnalysis.ts`): A play is a multi-combo when it contains more than one combo from a single suit. Analysis summarizes the structure (total length, pair count, and tractors) that following plays must match.
+* **Leading Validation**: Checked in `playValidation.ts` (human plays) and proposed by `candidateLeadDetection.ts` (AI). A multi-combo lead is legal only when every component is unbeatable by the three other players' unseen cards, or all three other players are void in the suit.
+* **Unbeatable Logic** (`isComboUnbeatable` in `multiComboValidation.ts`): A component is unbeatable when no stronger same-suit combo can exist in the unseen cards, derived from played-card memory, the player's own hand, and the kitty.
+* **Following Strategy** (`multiComboFollowingStrategy.ts`): Routes to `executeMultiComboFollowingAlgorithm` to match the led structure.
+* **LLM Bypass**: On the optional LLM path, multi-combo following is short-circuited to `executeMultiComboFollowingAlgorithm` (logged as `llm_adaptive_shortcut_follow_multi_combo`) because the response is deterministic.
 
 ---
 

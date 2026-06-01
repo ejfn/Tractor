@@ -16,10 +16,9 @@ This file provides guidance to coding agents when working with this repository.
 ## Documentation
 
 - [README.md](README.md) - Project overview, features, and quick start
-- [docs/AI_SYSTEM.md](docs/AI_SYSTEM.md) - AI intelligence system documentation
-- [docs/GAME_RULES.md](docs/GAME_RULES.md) - Complete game rules and strategy
-- [docs/MULTI_COMBO.md](docs/MULTI_COMBO.md) - Multi-combo implementation guide
-- [docs/VERSIONING_STRATEGY.md](docs/VERSIONING_STRATEGY.md) - Versioning strategy and OTA compatibility
+- [docs/ai_system.md](docs/ai_system.md) - AI intelligence system documentation
+- [docs/game_rules.md](docs/game_rules.md) - Complete game rules and strategy
+- [docs/versioning.md](docs/versioning.md) - Versioning strategy and OTA compatibility
 
 ## Setup Commands
 
@@ -116,7 +115,7 @@ Multi-combo validation involves **ALL OTHER THREE PLAYERS** (teammates + opponen
 - Available cards = Total cards (108) - playedCards - currentPlayer'sHand
 - Exhaustion Rule: Mixed-suit plays valid when player exhausts relevant suit
 
-See [docs/MULTI_COMBO.md](docs/MULTI_COMBO.md) for complete documentation.
+See [docs/game_rules.md#multi-combos](docs/game_rules.md#multi-combos) for complete documentation.
 
 ### Game Rules
 - Unified Trick Structure: Access leading cards via `trick.plays[0].cards`
