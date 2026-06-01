@@ -84,11 +84,22 @@ function localBuildHandDisplay(
       if (catCards.length === 0) {
         return `--- ${cat.toUpperCase()} (void) ---`;
       }
+      // Collapse identical cards to one line tagged with ×N so a small model
+      // can read counts directly instead of inferring pairs from repeats.
+      const seen = new Set<string>();
       const catChoices = catCards
-        .map(
-          (c) =>
-            `  ${c.toString()}${c.isTrump(trumpInfo) ? " (Trump)" : ""}${c.points > 0 ? ` [${c.points}pts]` : ""}`,
-        )
+        .filter((c) => {
+          const key = c.toString();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .map((c) => {
+          const count = catCards.filter(
+            (x) => x.toString() === c.toString(),
+          ).length;
+          return `  ${c.toString()}${count > 1 ? ` ×${count}` : ""}${c.isTrump(trumpInfo) ? " (Trump)" : ""}${c.points > 0 ? ` [${c.points}pts]` : ""}`;
+        })
         .join("\n");
       return `--- ${cat.toUpperCase()} (${catCards.length} cards) ---\n${catChoices}`;
     })
@@ -189,14 +200,14 @@ function localBuildSeatGuidance(g: {
     } else if (g.isTeammateWinning) {
       bullet = `${g.winningPlayerId} (teammate) leads but it isn't safe — sluff a low off-suit non-point; don't ruff over your own teammate.`;
     } else if (g.trickPoints >= 10) {
-      bullet = `${g.winningPlayerId} (opponent) holds ${g.trickPoints} pts — ruff to win only if you can survive ${g.isLast ? "the rest (you're last)" : g.oppListStr}, sizing it to top a later void player; can't secure it → sluff low and keep your trump.`;
+      bullet = `${g.winningPlayerId} (opponent) holds ${g.trickPoints} pts — their card is only takeable by ruffing, so ruff to capture if you can survive ${g.isLast ? "the rest (you're last)" : g.oppListStr} (size it to top a later void player); can't secure it → sluff your lowest off-suit NON-point, never a 5/10/K into their trick.`;
     } else {
       bullet = `Only ${g.trickPoints} pts and ${g.winningPlayerId} (opponent) leads — sluff your lowest off-suit non-point and conserve trump.`;
     }
   } else if (g.isTeammateWinning) {
     // Following the led suit, teammate currently winning (§5.1 / §5.2).
     bullet = g.teammateWinSafe
-      ? `${g.winningPlayerId} (teammate)'s win is safe — contribute points cheapest-first (10 > K > 5); don't play your own boss A/K (it wins nothing here) and never out-rank your teammate.`
+      ? `${g.winningPlayerId} (teammate)'s win is safe — bank your biggest spare points, giving 10s and Ks freely (card rank is moot once the win is locked); hold back only a live boss A/K you can cash on your own trick, and never out-rank your teammate.`
       : `${g.winningPlayerId} (teammate) leads but ${g.oppListStr} can still steal it — play a low non-point card of the led suit; don't commit points yet.`;
   } else if (g.isLast) {
     // Opponent winning, you act last with full info (§5.3 / §9 4th).

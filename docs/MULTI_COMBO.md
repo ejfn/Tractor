@@ -21,164 +21,31 @@ In Tractor/Shengji, a **multi-combo** is multiple combos from the same suit play
 
 ---
 
-## Core Implementation
+## Implementation
 
-### Leading Multi-Combos
+Multi-combo handling spans a few modules. This is the conceptual map — see the named source files for the exact signatures and logic.
 
-**Human Validation** (`playValidation.ts`):
-```typescript
-// Simple validation: same suit + unbeatable check
-if (isMultiCombo(cards)) {
-  return validateMultiComboLead(cards, gameState, playerId);
-}
-```
+**Detection & structure** (`multiComboAnalysis.ts`): a play is a multi-combo when it contains more than one combo from a single suit (it has no single overall combo type). Detection summarises the play's *structure* — total length, number of pairs, and the tractors and their sizes — which is what a following play must match.
 
-**AI Selection** (`candidateLeadDetection.ts`):
-```typescript
-// AI finds unbeatable combos and bundles them
-const unbeatableCombos = findUnbeatableCombos(suit, gameState);
-if (unbeatableCombos.length >= 2) {
-  return createMultiComboLead(unbeatableCombos);
-}
-```
+**Leading** — validity is checked in `playValidation.ts` (human plays) and proposed by `candidateLeadDetection.ts` (AI). A multi-combo lead is legal only when **every component is unbeatable** by the three other players' unseen cards, **or** all three other players are **void** in the suit. The AI proposes such a lead only when it can find two or more unbeatable components in one suit.
 
-### Following Multi-Combos
+**Unbeatable check** (`isComboUnbeatable` in `multiComboValidation.ts`): a component is unbeatable when no stronger same-suit combo can still exist in the unseen cards — derived from the memory of played cards, the player's own hand, and (for the round starter) the visible kitty.
 
-**Current AI Algorithm** (`multiComboFollowingStrategy.ts`):
-```typescript
-// Simplified 3-step algorithm
-1. Same-suit following: Match structure if possible
-2. Trump following: Use trump with matching structure  
-3. Cross-suit disposal: Play any cards when exhausted
-```
+**Following** (`multiComboFollowingStrategy.ts`): match the led structure in the same suit if possible; otherwise beat it with a matching trump structure; otherwise dispose. If the player runs out of the led suit mid-play, the **exhaustion rule** makes any remaining cards legal.
 
-**Validation** (`playValidation.ts`):
-```typescript
-// Exhaustion rule: If void after play → always valid
-if (isVoidAfterPlay(cards, hand, leadingSuit)) {
-  return true;
-}
-// Otherwise: structure matching validation
-```
-
----
-
-## Data Structures
-
-### Core Types
-
-```typescript
-// Multi-combo structure analysis
-interface MultiComboStructure {
-  suit: Suit;
-  components: MultiComboComponents;
-  isLeading: boolean;
-}
-
-interface MultiComboComponents {
-  totalLength: number;    // Total cards
-  totalPairs: number;     // All pairs (including tractor pairs)
-  tractors: number;       // Number of tractors
-  tractorSizes: number[]; // Length of each tractor
-}
-```
-
-### Detection Results
-
-```typescript
-interface MultiComboDetection {
-  isMultiCombo: boolean;
-  structure?: MultiComboStructure;
-  components?: Combo[];
-  validation?: MultiComboValidation;
-}
-```
-
----
-
-## Key Algorithms
-
-### 1. Unbeatable Detection
-
-**Core Logic** (`multiComboValidation.ts`):
-```typescript
-function isComboUnbeatable(combo: Combo, suit: Suit, gameState: GameState): boolean {
-  const availableToOthers = getTotalCards(108) 
-    - getPlayedCards(gameState) 
-    - getCurrentPlayerHand(gameState);
-  
-  // Check if any stronger combo exists in availableToOthers
-  return !canBeBeaten(combo, availableToOthers, suit);
-}
-```
-
-### 2. Structure Matching
-
-**Following Validation** (`multiComboAnalysis.ts`):
-```typescript
-function matchesRequiredStructure(
-  playedCards: Card[],
-  requiredStructure: MultiComboComponents
-): boolean {
-  const playedStructure = analyzeComboStructure(playedCards);
-  
-  return playedStructure.totalLength === requiredStructure.totalLength &&
-         playedStructure.totalPairs >= requiredStructure.totalPairs &&
-         playedStructure.tractors >= requiredStructure.tractors;
-}
-```
-
-### 3. Trump Multi-Combo Comparison
-
-**Strength Evaluation** (`cardComparison.ts`):
-```typescript
-function compareTrumpMultiCombos(
-  combo1: Card[], 
-  combo2: Card[], 
-  trumpInfo: TrumpInfo
-): number {
-  // Compare by highest combo type: tractors > pairs > singles
-  const highestType1 = getHighestComboType(combo1);
-  const highestType2 = getHighestComboType(combo2);
-  
-  if (highestType1 !== highestType2) {
-    return compareComboTypes(highestType1, highestType2);
-  }
-  
-  // Same type: compare strength within that type
-  return compareCardStrength(
-    getHighestCardOfType(combo1, highestType1),
-    getHighestCardOfType(combo2, highestType2),
-    trumpInfo
-  );
-}
-```
+**Trump-vs-trump** (`cardComparison.ts`): when two trump responses compete, the higher *highest-component type* wins (tractor > pair > single), with ties broken on card strength.
 
 ---
 
 ## AI Integration
 
-### Leading Strategy
+**Leading**: the leading strategy treats an unbeatable multi-combo as a top-priority lead (`leadingStrategy.ts` / `candidateLeadDetection.ts`).
 
-**Priority 1**: Multi-combo detection in `leadingStrategy.ts`
-```typescript
-// Find unbeatable multi-combos as highest priority
-const multiComboLead = detectUnbeatableMultiCombos(hand, gameState);
-if (multiComboLead) {
-  return multiComboLead;
-}
-```
+**Following**: when the led play is a multi-combo, `followingStrategy.ts` routes to `executeMultiComboFollowingAlgorithm` instead of the regular following logic.
 
-### Following Strategy
-
-**Routing Logic** in `followingStrategy.ts`:
-```typescript
-// Check if leading is multi-combo
-if (getComboType(leadingCards) === ComboType.Invalid) {
-  return executeMultiComboFollowingAlgorithm(/* params */);
-}
-// Otherwise use regular following logic
-```
+> On the optional LLM path, multi-combo following is short-circuited to this same
+> `executeMultiComboFollowingAlgorithm` (logged as `llm_adaptive_shortcut_follow_multi_combo`)
+> — the model is not consulted, since the response is deterministic.
 
 ---
 
@@ -241,16 +108,9 @@ Result: ✅ Valid by exhaustion rule
 
 ---
 
-## Performance Notes
+## Design Notes
 
-The multi-combo system has been **optimized for simplicity**:
-
-✅ **Unified detection**: Single `analyzeComboStructure()` function  
-✅ **Simplified AI**: Clear priority-based routing  
-✅ **Efficient validation**: Early exhaustion rule check  
-✅ **Memory integration**: Uses existing card tracking  
-
-The implementation focuses on **correctness and maintainability** over complex optimizations, making it easier to debug and extend.
+The implementation favours correctness and maintainability: one structure analysis drives detection, following is priority-based routing, and the exhaustion rule is checked early.
 
 ---
 

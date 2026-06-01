@@ -19,7 +19,6 @@ This file provides guidance to coding agents when working with this repository.
 - [docs/AI_SYSTEM.md](docs/AI_SYSTEM.md) - AI intelligence system documentation
 - [docs/GAME_RULES.md](docs/GAME_RULES.md) - Complete game rules and strategy
 - [docs/MULTI_COMBO.md](docs/MULTI_COMBO.md) - Multi-combo implementation guide
-- [docs/LOG_EVENT_SCHEMA.md](docs/LOG_EVENT_SCHEMA.md) - Log event structure
 - [docs/VERSIONING_STRATEGY.md](docs/VERSIONING_STRATEGY.md) - Versioning strategy and OTA compatibility
 
 ## Setup Commands
@@ -53,13 +52,13 @@ uv run analysis/bigquery_main.py analyse # Run analysis
 ### Key Enums
 ```typescript
 enum PlayerId { Human = 'human', Bot1 = 'bot1', Bot2 = 'bot2', Bot3 = 'bot3' }
-enum GamePhase { Dealing = 'dealing', Playing = 'playing', Scoring = 'scoring' }
+enum GamePhase { Dealing = 'dealing', KittySwap = 'kittySwap', Playing = 'playing', Scoring = 'scoring', RoundEnd = 'roundEnd', GameOver = 'gameOver' }
 enum TrickPosition { First = 'first', Second = 'second', Third = 'third', Fourth = 'fourth' }
 enum PointPressure { LOW = 'low', MEDIUM = 'medium', HIGH = 'high' }
 ```
 
 ### File Organization
-- `src/ai/` - AI strategic decision-making (following/, leading/, kittySwap/, trumpDeclaration/ sub-dirs)
+- `src/ai/` - AI strategic decision-making (following/, leading/, kittySwap/, trumpDeclaration/, llm/ sub-dirs)
 - `src/game/` - Core game logic and rules
 - `src/types/` - Type definitions with clean re-exports
 - `src/utils/` - Shared utilities (game-agnostic helpers, sharedStyles, gameLogger, persistence)
