@@ -1,7 +1,7 @@
 ---
 name: prompt-refinement
 description: This skill should be used when the user wants to improve how the Shengji (Tractor) LLM bots play by editing their prompt — e.g. "the bot made a bad play", "fix the LLM strategy prompt", "add a heuristic to the prompt", "the AI keeps mis-playing X", "rewrite the LLM rules". Covers BOTH the static system prompt (STATIC_LLM_GAME_RULES) and the dynamic user prompt, both in src/ai/llm/llmPromptTemplates.ts.
-version: 1.2.0
+version: 1.3.0
 license: UNLICENSED
 ---
 
@@ -14,11 +14,19 @@ The **Prompt Refinement** skill provides a rigorous, disciplined workflow for im
 Both live in [src/ai/llm/llmPromptTemplates.ts](file:src/ai/llm/llmPromptTemplates.ts):
 
 1. **System prompt — `STATIC_LLM_GAME_RULES`**: the static, game-wide strategic rules (card hierarchy, combos, following/ruffing, leading, position play). This is the bot's standing "how to play" knowledge.
-2. **User prompt — `buildUserPromptTemplate`**: the per-decision template. It is filled in by `buildLLMUserPrompt` and its helpers in [src/ai/llm/llmGamePrompt.ts](file:src/ai/llm/llmGamePrompt.ts) with the dynamic context for THIS decision: the hand grouped by suit (strongest→weakest, with `[pts]`/`(Trump)` tags), recent trick history, confirmed player voids, the active trick status, the **Trick Win Security** verdict (SECURED / LIKELY WIN / UNCERTAIN), and either **candidate lead options each with a Rule Score** (when leading) or a **suit-following analysis** (when following).
+2. **User prompt — `buildUserPromptTemplate`**: the per-decision template, filled in by `buildLLMUserPrompt` and its helpers in [src/ai/llm/llmGamePrompt.ts](file:src/ai/llm/llmGamePrompt.ts) with the dynamic context for THIS decision: the hand grouped by suit (strongest→weakest, with `[pts]`/`(Trump)` tags), recent trick history, confirmed player voids, a **Points still live** readout (unseen point cards per off-suit, via `localFormatLiveOffSuitPoints`), the active trick status, the **Trick Win Security** verdict (SECURED / LIKELY WIN / UNCERTAIN), and either **candidate lead options each with a Rule Score** (when leading) or a **suit-following analysis** plus a **Guidance for this seat** bullet (when following — see below).
 
 A prompt fix may belong in EITHER part. Before editing, decide which:
 - **Static gap** (the bot doesn't understand a general principle) → refine `STATIC_LLM_GAME_RULES`.
-- **Dynamic gap** (the bot lacks, or misreads, a per-decision signal) → improve what `buildUserPromptTemplate` / `llmGamePrompt.ts` surface, or how the static rules tell the bot to interpret those signals.
+- **Dynamic gap** (the bot lacks, or misreads, a per-decision signal) → improve what `buildUserPromptTemplate` / `llmGamePrompt.ts` surface (including the seat-guidance decision table, below), or how the static rules tell the bot to interpret those signals.
+
+### The dynamic seat-guidance layer
+
+When following, `localBuildSeatGuidance` (in `llmGamePrompt.ts`) injects a single **GUIDANCE FOR THIS SEAT** bullet — the engine's situation-specific *application* of the static following rules. It branches on facts the engine has already computed (seat, who's still to act, teammate-winning + whether safe, points on table, trump-vs-off-suit lead, void scenario) and spells out the inference a small model otherwise has to derive itself (e.g. *"a regular trump K/10 loses to active ranks/jokers, so don't pour a point card in"*). The system prompt tells the model to treat this block as its primary instruction.
+
+This is a deliberate split: the static rules (§5 following order, §6 ruffing, §9 position cues) are the **general framework and reference**; the seat-guidance bullet is the **focused, named-player application** for THIS decision. The point is to move the rule-selection-and-application step out of the small model and into code — so prefer fixing the decision table when a following misplay is really "the right rule existed but the model didn't apply it here".
+
+**Consistency requirement:** the seat-guidance branches mirror static §5/§6/§9, and `localFormatLiveOffSuitPoints` must match how the static rules talk about points. When you change one side, check the other — they must not diverge or contradict, and the guidance must stay *scaffolding for the LLM's judgement among legal options*, never a re-implementation of the rule-based AI's card choice.
 
 ### Key context
 
@@ -69,7 +77,7 @@ graph TD
 ### Step 2: Pinpoint the Gap
 Decide whether the gap is in the **static rules** (`STATIC_LLM_GAME_RULES`) or the **dynamic user prompt** (`buildUserPromptTemplate` / `llmGamePrompt.ts`):
 - Was a strategic heuristic missing, confusing, ambiguous, or conflicting? → static.
-- Did the model lack a signal, or was a provided signal (Rule Score, Win Security, voids, suit analysis) unclear or unused? → dynamic, or a static instruction on how to read it.
+- Did the model lack a signal, or was a provided signal (Rule Score, Win Security, voids, suit analysis, Points-still-live, the seat-guidance bullet) unclear, unused, or wrong? → dynamic: fix what the helpers surface or the `localBuildSeatGuidance` table (keeping it aligned with static §5/§6/§9), or add a static instruction on how to read the signal.
 
 ### Step 3: Draft the Contextual Heuristic
 Formulate the lesson as a clear, context-aware principle explaining **why** and **when**, in motivational language.
@@ -77,7 +85,7 @@ Formulate the lesson as a clear, context-aware principle explaining **why** and 
 - *Better*: "When your teammate's win is secured, feed your highest sparable point card but keep the stronger one — give the 10, keep the King."
 
 ### Step 4: Compress and Integrate
-Edit the correct file. Do not just append a bullet — compress, rewrite, or tighten adjacent text to hold the token budget. Keep the system prompt and user prompt consistent (e.g. if the static rules reference a "Rule Score" or "Trick Win Security" verdict, ensure the user prompt still emits those exact labels).
+Edit the correct file. Do not just append a bullet — compress, rewrite, or tighten adjacent text to hold the token budget. Keep the system prompt and user prompt consistent (e.g. if the static rules reference a "Rule Score" or "Trick Win Security" verdict, ensure the user prompt still emits those exact labels). If you touch the `localBuildSeatGuidance` decision table, keep its branches aligned with static §5/§6/§9 — a divergence here reads to the model as a contradiction.
 
 ### Step 5: Stop & Wait for User Review
 Once changes are applied:
