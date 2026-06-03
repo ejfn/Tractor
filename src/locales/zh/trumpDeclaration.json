@@ -12,7 +12,7 @@
   },
   "messages": {
     "currentDeclaration": "{{playerName}} 亮主：{{declaration}}",
-    "trumpDeclarationLabel": "已亮主牌：{{declaration}}（{{playerName}}）",
+    "trumpDeclarationLabel": "已亮主牌：{{declaration}}，{{playerName}}",
     "noDeclarations": "无人亮主",
     "noValidDeclarations": "当前手牌无有效亮主选项",
     "needMatchingCards": "需要级牌或双王来亮主/反主",

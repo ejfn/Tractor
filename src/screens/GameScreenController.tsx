@@ -28,7 +28,7 @@ import GameScreenView from "./GameScreenView";
  */
 const GameScreenController: React.FC = () => {
   // Animations
-  const { fadeAnim, scaleAnim, slideAnim } = useUIAnimations(true);
+  const { fadeAnim, slideAnim } = useUIAnimations(true);
 
   // Get thinking dots for AI thinking animation
   const { dots: thinkingDots } = useThinkingDots();
@@ -39,7 +39,7 @@ const GameScreenController: React.FC = () => {
     selectedCards,
     showRoundComplete,
     isProcessingPlay,
-    trickCompletionDataRef,
+    trickCompletionData,
     roundResultRef,
 
     initGame,
@@ -49,7 +49,7 @@ const GameScreenController: React.FC = () => {
     handleProcessPlay,
     handleNextRound,
     startNewGame,
-    handleTrickResultComplete, // Make sure this is imported
+    handleTrickResultComplete,
     setGameState,
   } = useGameState();
 
@@ -120,8 +120,6 @@ const GameScreenController: React.FC = () => {
   useEffect(() => {
     initGame();
 
-    // Set up the trick result completion callback
-    // This will be called when it's safe to clear currentTrick from the game state
     // Set up callback for when trick result display is complete
     setTrickResultCompleteCallback(() => {
       handleTrickResultComplete();
@@ -135,64 +133,38 @@ const GameScreenController: React.FC = () => {
     }
   }, [gameState?.gamePhase, startDealing, isDealingInProgress]);
 
-  // Note: Trump declaration finalization is now handled by the progressive dealing hook
-  // when the user clicks "Continue" or "Start Playing" in the ExpandableTrumpDeclaration component
-
-  // We've removed the player change detector - keeping it simple
-
   // Find human player index
   const humanPlayerIndex = gameState?.players.findIndex((p) => p.isHuman) ?? -1;
 
   // Use a ref to track the last processed trick completion timestamp
   const lastProcessedTrickTimestampRef = useRef<number>(0);
 
-  // Monitor the trick completion data ref for changes
+  // Process trick completion reactively when trickCompletionData changes
   useEffect(() => {
-    if (!trickCompletionDataRef.current) return;
+    if (!trickCompletionData) return;
 
     // Only process if this is a new trick completion (check timestamp)
     if (
-      trickCompletionDataRef.current.timestamp >
-      lastProcessedTrickTimestampRef.current
+      trickCompletionData.timestamp > lastProcessedTrickTimestampRef.current
     ) {
       const { winnerId, points, completedTrick, timestamp } =
-        trickCompletionDataRef.current;
-      // Detected completed trick
+        trickCompletionData;
 
       // Update the last processed timestamp
       lastProcessedTrickTimestampRef.current = timestamp;
 
-      // FUNDAMENTALLY IMPORTANT: Process completed trick immediately and synchronously
-      // No delays or state transitions that could cause flickering
-      if (completedTrick && handleTrickCompletion && setLastCompletedTrick) {
-        // 1. First save the completed trick at the CardPlayArea level - absolutely critical
-        // IMPORTANT: In a 4-player game, a completed trick has:
-        // - One leading play stored in leadingCombo
-        // - Three follow plays stored in the plays array
-        // So we expect exactly 3 plays for a 4-player game (not 4, not 5)
-        // 1. First save the completed trick
+      // Save the completed trick and show the trick result
+      if (completedTrick) {
         setLastCompletedTrick(completedTrick);
-
-        // 2. Now show the trick result
         handleTrickCompletion(winnerId, points, completedTrick);
-
-        // No extra defensive timers needed anymore - keeping it simple
       }
     }
-  }, [
-    gameState?.currentPlayerIndex,
-    trickCompletionDataRef,
-    handleTrickCompletion,
-    setLastCompletedTrick,
-    gameState?.currentTrick,
-    handleTrickResultComplete,
-  ]);
+  }, [trickCompletionData, handleTrickCompletion, setLastCompletedTrick]);
 
   // When card animations in play area are complete
-  const onAnimationComplete = () => {
-    // Handle completed card animations
+  const onAnimationComplete = useCallback(() => {
     handleTrickAnimationComplete();
-  };
+  }, [handleTrickAnimationComplete]);
 
   return (
     <GameScreenView
@@ -211,7 +183,6 @@ const GameScreenController: React.FC = () => {
       isProcessingPlay={isProcessingPlay}
       // Animations
       fadeAnim={fadeAnim}
-      scaleAnim={scaleAnim}
       slideAnim={slideAnim}
       thinkingDots={thinkingDots}
       // AI config

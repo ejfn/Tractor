@@ -49,7 +49,6 @@ interface GameScreenViewProps {
 
   // Animations
   fadeAnim: Animated.Value;
-  scaleAnim: Animated.Value;
   slideAnim: Animated.Value;
   thinkingDots: {
     dot1: Animated.Value;
@@ -99,7 +98,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
 
   // Animations
   fadeAnim,
-  scaleAnim,
   slideAnim,
   thinkingDots,
 
@@ -124,6 +122,18 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   shouldShowOpportunities,
 }) => {
   const { t: tCommon } = useCommonTranslation();
+
+  // Team ID for each player - memoized to prevent recreation on every render
+  // Defined at the top to satisfy Rules of Hooks (runs before early returns)
+  const getPlayerTeam = React.useCallback(
+    (playerId: PlayerId) => {
+      if (!gameState) return undefined;
+      const player = gameState.players.find((p) => p.id === playerId);
+      if (!player) return undefined;
+      return gameState.teams.find((t) => t.id === player.team);
+    },
+    [gameState],
+  );
 
   // Loading state
   if (!gameState) {
@@ -151,13 +161,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   // Check if selected cards are valid to play
   const isValidPlay =
     selectedCards.length > 0 && validatePlay(gameState, selectedCards);
-
-  // Team ID for each player
-  const getPlayerTeam = (playerId: PlayerId) => {
-    const player = gameState.players.find((p) => p.id === playerId);
-    if (!player) return undefined;
-    return gameState.teams.find((t) => t.id === player.team);
-  };
 
   const ai1Team = getPlayerTeam(PlayerId.Bot1);
   const ai2Team = getPlayerTeam(PlayerId.Bot2);
@@ -207,10 +210,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   position="top"
                   player={ai2}
                   isDefending={ai2Team.isDefending}
-                  isCurrentPlayer={
-                    gameState.currentPlayerIndex ===
-                    gameState.players.findIndex((p) => p.id === PlayerId.Bot2)
-                  }
+                  isCurrentPlayer={gameState.currentPlayerIndex === ai2Index}
                   waitingForAI={
                     waitingForAI && waitingPlayerId === PlayerId.Bot2
                   }
@@ -229,10 +229,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   position="left"
                   player={ai3}
                   isDefending={ai3Team.isDefending}
-                  isCurrentPlayer={
-                    gameState.currentPlayerIndex ===
-                    gameState.players.findIndex((p) => p.id === PlayerId.Bot3)
-                  }
+                  isCurrentPlayer={gameState.currentPlayerIndex === ai3Index}
                   waitingForAI={
                     waitingForAI && waitingPlayerId === PlayerId.Bot3
                   }
@@ -251,10 +248,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   position="right"
                   player={ai1}
                   isDefending={ai1Team.isDefending}
-                  isCurrentPlayer={
-                    gameState.currentPlayerIndex ===
-                    gameState.players.findIndex((p) => p.id === PlayerId.Bot1)
-                  }
+                  isCurrentPlayer={gameState.currentPlayerIndex === ai1Index}
                   waitingForAI={
                     waitingForAI && waitingPlayerId === PlayerId.Bot1
                   }
@@ -336,8 +330,6 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
           roundResult={roundResultRef.current}
           onNextRound={onNextRound}
           onNewGame={onStartNewGame}
-          fadeAnim={fadeAnim}
-          scaleAnim={scaleAnim}
           kittyCards={sortCards(gameState.kittyCards, gameState.trumpInfo)}
           humanTeamId={humanPlayer.team}
         />

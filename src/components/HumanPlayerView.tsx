@@ -77,7 +77,7 @@ const HumanPlayerView: React.FC<HumanPlayerViewProps> = ({
           gamePhase === GamePhase.Playing &&
           !showTrickResult &&
           !lastCompletedTrick &&
-          !(currentTrick?.winningPlayerId === player.id && currentTrick) && (
+          currentTrick?.winningPlayerId !== player.id && (
             <ThinkingIndicator
               visible={true}
               dots={thinkingDots}

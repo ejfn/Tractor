@@ -111,8 +111,6 @@ function generateModalMessage(
 interface RoundCompleteModalProps {
   onNextRound: () => void;
   onNewGame?: () => void; // For game over scenarios
-  fadeAnim?: Animated.Value;
-  scaleAnim?: Animated.Value;
   kittyCards?: Card[]; // Kitty cards to display
   roundResult: RoundResult; // Round result containing message and winning team data
   humanTeamId?: string; // Team ID of the human player for win/loss detection
@@ -272,9 +270,16 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
         ),
       ];
 
-      Animated.parallel([...basicAnimations, ...celebrationAnimations]).start();
+      const compositeAnimation = Animated.parallel([
+        ...basicAnimations,
+        ...celebrationAnimations,
+      ]);
+      compositeAnimation.start();
+      return () => compositeAnimation.stop();
     } else {
-      Animated.parallel(basicAnimations).start();
+      const compositeAnimation = Animated.parallel(basicAnimations);
+      compositeAnimation.start();
+      return () => compositeAnimation.stop();
     }
   }, [
     bounceAnim,
@@ -558,7 +563,8 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
                       key={card.id}
                       style={[
                         styles.kittyCardWrapper,
-                        index === 0 ? { marginLeft: 0 } : {},
+                        { marginLeft: index === 0 ? 0 : -14 },
+                        index === kittyCards.length - 1 && { width: 72 },
                       ]}
                     >
                       <AnimatedCardComponent
@@ -698,8 +704,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   kittySection: {
-    marginBottom: 20,
-    paddingRight: 20,
     width: "100%",
     alignItems: "center",
   },
@@ -707,13 +711,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
-    height: 100,
+    height: 120,
   },
   kittyCardWrapper: {
     width: 40,
     height: 100,
-    marginLeft: -16,
   },
   kittyCard: {
     // Scale handled by AnimatedCard scale prop
