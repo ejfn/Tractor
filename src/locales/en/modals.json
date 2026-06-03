@@ -14,11 +14,11 @@
     "attackingWonDefend": "{{teamName}} won with {{points}} points and will defend next round at rank {{rank}}!",
     "attackingWonAdvance": "{{teamName}} won with {{points}} points and advanced {{advancement}} {{rankText}} to {{rank}}!",
     "attackingWonAce": "{{teamName}} won with {{points}} points and reached Ace! They must now defend Ace to win the game!",
-    "defendingWonGame": "{{teamName}} {{pointMessage}} and wins the game by successfully defending Ace!",
-    "defendingWonAdvance": "{{teamName}} {{pointMessage}} and advances {{advancement}} {{rankText}} to {{rank}}!",
+    "defendingWonGame": "{{teamName}} {{pointMessage}} and win the game by successfully defending Ace!",
+    "defendingWonAdvance": "{{teamName}} {{pointMessage}} and advance {{advancement}} {{rankText}} to {{rank}}!",
     "defendingWonAce": "{{teamName}} {{pointMessage}} and reached Ace! They must now defend Ace to win the game!",
-    "heldToPoints": "held attackers to only {{points}} points",
-    "defendedWithPoints": "defended with attackers getting {{points}} points",
+    "heldToPoints": "held {{otherTeamName}} to only {{points}} points",
+    "defendedWithPoints": "defended with {{otherTeamName}} getting {{points}} points",
     "kittyBonus": "Kitty Bonus: {{kittyPoints}} x {{multiplier}}"
   },
   "gameOver": {

@@ -10,8 +10,8 @@
   "round": "Round {{number}}",
   "trump": "Trump",
   "teams": {
-    "A": "Team A",
-    "B": "Team B"
+    "A": "Allies",
+    "B": "Rivals"
   },
   "players": {
     "human": "My Lord",

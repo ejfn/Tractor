@@ -14,7 +14,7 @@ import {
   useCommonTranslation,
 } from "../hooks/useTranslation";
 import type { ModalsTranslationKey } from "../locales/types";
-import { Card, Rank, RoundResult } from "../types";
+import { Card, Rank, RoundResult, TeamId } from "../types";
 import { getTeamDisplayName } from "../utils/translationHelpers";
 import AnimatedCardComponent from "./AnimatedCard";
 
@@ -69,11 +69,15 @@ function generateModalMessage(
     }
   } else {
     // Defending team won
+    const otherTeamId =
+      roundResult.winningTeam === TeamId.A ? TeamId.B : TeamId.A;
+    const otherTeamName = getTeamDisplayName(tCommon, otherTeamId);
     const pointMessage =
       roundResult.finalPoints === 0
-        ? tModals("roundResult.heldToPoints", { points: 0 })
+        ? tModals("roundResult.heldToPoints", { points: 0, otherTeamName })
         : tModals("roundResult.defendedWithPoints", {
             points: roundResult.finalPoints,
+            otherTeamName,
           });
 
     if (roundResult.gameOver) {
@@ -560,7 +564,7 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
                       <AnimatedCardComponent
                         card={card}
                         selected={false}
-                        scale={0.75}
+                        scale={1.0}
                         disabled={false}
                         style={styles.kittyCard}
                       />
@@ -704,11 +708,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
-    height: 70,
+    height: 100,
   },
   kittyCardWrapper: {
     width: 40,
-    height: 70,
+    height: 100,
     marginLeft: -16,
   },
   kittyCard: {
