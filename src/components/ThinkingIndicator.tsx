@@ -23,8 +23,6 @@ const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
   testID,
   isLLM = false,
 }) => {
-
-
   if (!visible) return null;
 
   const containerStyle = isLLM

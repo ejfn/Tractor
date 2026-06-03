@@ -144,7 +144,9 @@ const GameScreenController: React.FC = () => {
     if (!trickCompletionData) return;
 
     // Only process if this is a new trick completion (check timestamp)
-    if (trickCompletionData.timestamp > lastProcessedTrickTimestampRef.current) {
+    if (
+      trickCompletionData.timestamp > lastProcessedTrickTimestampRef.current
+    ) {
       const { winnerId, points, completedTrick, timestamp } =
         trickCompletionData;
 

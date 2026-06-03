@@ -30,8 +30,6 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   const [totalAnimationsNeeded, setTotalAnimationsNeeded] = useState<number>(0);
   const [animationCompleted, setAnimationCompleted] = useState<boolean>(false);
 
-
-
   // Handler for individual card animations completing - explicitly typed as a function
   const handleCardAnimationComplete = (): void => {
     // Increment the animation counter
@@ -82,7 +80,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       setTotalAnimationsNeeded(0);
       setAnimationCompleted(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTrick]);
 
   // Add sequence information to cards

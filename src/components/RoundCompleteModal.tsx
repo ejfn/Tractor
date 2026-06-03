@@ -76,9 +76,9 @@ function generateModalMessage(
       roundResult.finalPoints === 0
         ? tModals("roundResult.heldToPoints", { points: 0, otherTeamName })
         : tModals("roundResult.defendedWithPoints", {
-          points: roundResult.finalPoints,
-          otherTeamName,
-        });
+            points: roundResult.finalPoints,
+            otherTeamName,
+          });
 
     if (roundResult.gameOver) {
       return (
@@ -594,8 +594,8 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
                   styles.buttonGradient,
                   roundResult.gameOver && styles.gameOverButtonGradient,
                   roundResult.gameOver &&
-                  isHumanLoss &&
-                  styles.lossButtonGradient,
+                    isHumanLoss &&
+                    styles.lossButtonGradient,
                 ]}
               >
                 <Text

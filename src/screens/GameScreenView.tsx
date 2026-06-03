@@ -132,7 +132,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
       if (!player) return undefined;
       return gameState.teams.find((t) => t.id === player.team);
     },
-    [gameState?.players, gameState?.teams],
+    [gameState],
   );
 
   // Loading state
@@ -210,9 +210,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   position="top"
                   player={ai2}
                   isDefending={ai2Team.isDefending}
-                  isCurrentPlayer={
-                    gameState.currentPlayerIndex === ai2Index
-                  }
+                  isCurrentPlayer={gameState.currentPlayerIndex === ai2Index}
                   waitingForAI={
                     waitingForAI && waitingPlayerId === PlayerId.Bot2
                   }
@@ -231,9 +229,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   position="left"
                   player={ai3}
                   isDefending={ai3Team.isDefending}
-                  isCurrentPlayer={
-                    gameState.currentPlayerIndex === ai3Index
-                  }
+                  isCurrentPlayer={gameState.currentPlayerIndex === ai3Index}
                   waitingForAI={
                     waitingForAI && waitingPlayerId === PlayerId.Bot3
                   }
@@ -252,9 +248,7 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
                   position="right"
                   player={ai1}
                   isDefending={ai1Team.isDefending}
-                  isCurrentPlayer={
-                    gameState.currentPlayerIndex === ai1Index
-                  }
+                  isCurrentPlayer={gameState.currentPlayerIndex === ai1Index}
                   waitingForAI={
                     waitingForAI && waitingPlayerId === PlayerId.Bot1
                   }
