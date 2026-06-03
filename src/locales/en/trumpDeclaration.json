@@ -11,7 +11,7 @@
     "bigJokers": "Big Jokers"
   },
   "messages": {
-    "currentDeclaration": "{{playerName}} leads: {{declaration}}",
+    "currentDeclaration": "{{playerName}} declared: {{declaration}}",
     "trumpDeclarationLabel": "Trump Declaration: {{declaration}} by {{playerName}}",
     "noDeclarations": "No trump declarations made",
     "noValidDeclarations": "No valid declarations available with current hand.",

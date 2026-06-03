@@ -1,21 +1,21 @@
 {
   "actions": {
-    "finalDeclaration": "最后叫主机会",
-    "finalDeclarationInfo": "最终叫主信息",
-    "trumpDeclaration": "叫主机会"
+    "finalDeclaration": "最后亮主机会",
+    "finalDeclarationInfo": "最终亮主信息",
+    "trumpDeclaration": "亮主机会"
   },
   "declarations": {
     "single": "单张",
-    "pair": "一对",
-    "smallJokers": "小王对",
-    "bigJokers": "大王对"
+    "pair": "对子",
+    "smallJokers": "双小王",
+    "bigJokers": "双大王"
   },
   "messages": {
-    "currentDeclaration": "{{playerName}} 叫主：{{declaration}}",
-    "trumpDeclarationLabel": "主牌叫定：{{declaration}}，叫主者：{{playerName}}",
-    "noDeclarations": "暂无叫主",
-    "noValidDeclarations": "当前手牌无有效叫主选项",
-    "needMatchingCards": "需要匹配的主牌级别或大小王对",
+    "currentDeclaration": "{{playerName}} 亮主：{{declaration}}",
+    "trumpDeclarationLabel": "已亮主牌：{{declaration}}（{{playerName}}）",
+    "noDeclarations": "无人亮主",
+    "noValidDeclarations": "当前手牌无有效亮主选项",
+    "needMatchingCards": "需要级牌或双王来亮主/反主",
     "playWillBegin": "游戏将以当前主牌设置开始",
     "startPlaying": "开始游戏",
     "continue": "继续"
