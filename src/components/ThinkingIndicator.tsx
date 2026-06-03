@@ -23,10 +23,7 @@ const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
   testID,
   isLLM = false,
 }) => {
-  // Track indicator visibility changes
-  React.useEffect(() => {
-    // Monitor when thinking indicator visibility changes
-  }, [visible]);
+
 
   if (!visible) return null;
 

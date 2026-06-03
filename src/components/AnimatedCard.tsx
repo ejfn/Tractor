@@ -93,10 +93,11 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
   // Selection animation - improved with higher pop-up for better visibility
   useEffect(() => {
+    let timerId: ReturnType<typeof setTimeout>;
     if (selected) {
       // Use a tiny delay to ensure all cards start animating at the same time
       // This helps when multiple cards are selected simultaneously via auto-selection
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         translateY.value = withTiming(-20 * cardScale, {
           duration: 120, // Slightly longer duration for smoother animation
           easing: Easing.out(Easing.cubic),
@@ -109,7 +110,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
       }, 0); // Use setTimeout with 0ms to synchronize animations
     } else {
       // Quick deselection with consistent timing
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         translateY.value = withTiming(0, {
           duration: 120,
           easing: Easing.inOut(Easing.cubic),
@@ -121,13 +122,14 @@ export const AnimatedCard: React.FC<CardProps> = ({
         opacity.value = 1;
       }, 0);
     }
+    return () => clearTimeout(timerId);
   }, [selected, translateY, scale, opacity, cardScale]);
 
   // Play animation - improved for cleaner, more refined appearance with better Bot3 support
   useEffect(() => {
     if (isPlayed) {
       // Delay animations for sequential effect
-      setTimeout(() => {
+      const timerId = setTimeout(() => {
         // Set rotation to 0 for a neat stack with improved easing
         rotate.value = withTiming("0deg", {
           duration: 200, // Reduced duration for smoother Bot3 animations
@@ -153,6 +155,7 @@ export const AnimatedCard: React.FC<CardProps> = ({
         // Always set opacity to 1 immediately to prevent any transparency
         opacity.value = 1;
       }, delay);
+      return () => clearTimeout(timerId);
     }
   }, [isPlayed, delay, rotate, opacity, scale, onAnimationComplete]);
 
@@ -320,7 +323,11 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
   if (faceDown) {
     return (
-      <Animated.View style={[styles.card, shadowStyle, style, animatedStyle]}>
+      <Animated.View
+        style={[styles.card, shadowStyle, style, animatedStyle]}
+        shouldRasterizeIOS={true}
+        renderToHardwareTextureAndroid={true}
+      >
         <View style={styles.cardBack}>
           {/* Card back with simplified 3x3 grid pattern */}
           <View style={faceDownCardBackStyle}>
@@ -419,7 +426,11 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
   if (card.joker) {
     return (
-      <Animated.View style={[shadowStyle, style, animatedStyle]}>
+      <Animated.View
+        style={[shadowStyle, style, animatedStyle]}
+        shouldRasterizeIOS={true}
+        renderToHardwareTextureAndroid={true}
+      >
         <TouchableOpacity
           style={[
             styles.card,
@@ -486,7 +497,11 @@ export const AnimatedCard: React.FC<CardProps> = ({
 
   // Render normal card with enhanced styling
   return (
-    <Animated.View style={[shadowStyle, style, animatedStyle]}>
+    <Animated.View
+      style={[shadowStyle, style, animatedStyle]}
+      shouldRasterizeIOS={true}
+      renderToHardwareTextureAndroid={true}
+    >
       <TouchableOpacity
         style={[
           styles.card,
@@ -561,9 +576,6 @@ const styles = StyleSheet.create({
     elevation: 3,
     // Performance optimizations
     backfaceVisibility: "hidden",
-    // @ts-expect-error - These are valid React Native style properties
-    shouldRasterizeIOS: true, // iOS performance optimization
-    renderToHardwareTextureAndroid: true, // Android performance optimization
     overflow: "hidden",
   },
   cardBack: {
@@ -575,8 +587,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     // Performance optimizations for card back too
     backfaceVisibility: "hidden",
-    shouldRasterizeIOS: true,
-    renderToHardwareTextureAndroid: true,
   },
   // Using state-based styling controlled by animated values instead of this static style
   selectedCard: {

@@ -5,6 +5,7 @@ import {
   Text,
   View,
   TextStyle,
+  StyleProp,
   TouchableWithoutFeedback,
   Modal,
   TouchableOpacity,
@@ -70,43 +71,45 @@ const AnimatedProgressBar: React.FC<{
 // Rolling number animation component
 const RollingNumber: React.FC<{
   value: number;
-  isAttackingTeam: boolean;
-  style?: TextStyle;
-}> = ({ value, isAttackingTeam, style }) => {
+  style?: StyleProp<TextStyle>;
+}> = ({ value, style }) => {
   const [displayValue, setDisplayValue] = useState(value);
-  const [previousValue, setPreviousValue] = useState(value);
+  const previousValue = useRef(value);
 
   useEffect(() => {
-    if (!isAttackingTeam || value === previousValue) {
-      setDisplayValue(value);
-      return;
-    }
+    // Animate when points increase, otherwise snap
+    if (value > previousValue.current) {
+      let currentValue = previousValue.current;
+      const diff = value - previousValue.current;
+      const increment = diff > 10 ? Math.ceil(diff / 20) : 1;
+      const duration = Math.min(1000, diff * 50); // Max 1 second
+      const steps = Math.ceil(diff / increment);
+      const stepTime = duration / steps;
 
-    // Only animate when attacking team gains points
-    if (value > previousValue) {
-      let currentValue = previousValue;
-      const increment =
-        value > previousValue + 10
-          ? Math.ceil((value - previousValue) / 20)
-          : 1;
-      const duration = Math.min(1000, (value - previousValue) * 50); // Max 1 second
-      const stepTime = duration / (value - previousValue);
+      const timerId: { current: ReturnType<typeof setTimeout> | null } = {
+        current: null,
+      };
 
       const animateValue = () => {
         if (currentValue < value) {
           currentValue = Math.min(currentValue + increment, value);
           setDisplayValue(currentValue);
-          setTimeout(animateValue, stepTime);
+          timerId.current = setTimeout(animateValue, stepTime);
         }
       };
 
       animateValue();
-    } else {
-      setDisplayValue(value);
+      previousValue.current = value;
+
+      // Cleanup: cancel pending timeout on unmount or re-run
+      return () => {
+        if (timerId.current) clearTimeout(timerId.current);
+      };
     }
 
-    setPreviousValue(value);
-  }, [value, isAttackingTeam, previousValue]);
+    setDisplayValue(value);
+    previousValue.current = value;
+  }, [value]);
 
   return <Text style={style}>{displayValue}/80</Text>;
 };
@@ -127,6 +130,13 @@ const GameStatus: React.FC<GameStatusProps> = ({
   const [tapCount, setTapCount] = useState(0);
   const [showNewGameModal, setShowNewGameModal] = useState(false);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup tap timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+    };
+  }, []);
 
   const handleTrumpTap = () => {
     const newCount = tapCount + 1;
@@ -152,7 +162,7 @@ const GameStatus: React.FC<GameStatusProps> = ({
   const phaseAnimation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.sequence([
+    const animation = Animated.sequence([
       Animated.timing(phaseAnimation, {
         toValue: 1,
         duration: 500,
@@ -164,7 +174,9 @@ const GameStatus: React.FC<GameStatusProps> = ({
         useNativeDriver: true,
         delay: 1500,
       }),
-    ]).start();
+    ]);
+    animation.start();
+    return () => animation.stop();
   }, [gamePhase, phaseAnimation]);
 
   // Shared scale animation for both phase and trump
@@ -273,16 +285,11 @@ const GameStatus: React.FC<GameStatusProps> = ({
                   <Text style={styles.statLabel}>{tGame("status.points")}</Text>
                   <RollingNumber
                     value={team.points}
-                    isAttackingTeam={!team.isDefending}
-                    style={
-                      team.points >= 80
-                        ? {
-                            ...styles.statValue,
-                            ...styles.pointsValue,
-                            ...styles.winningPoints,
-                          }
-                        : { ...styles.statValue, ...styles.pointsValue }
-                    }
+                    style={[
+                      styles.statValue,
+                      styles.pointsValue,
+                      team.points >= 80 && styles.winningPoints,
+                    ]}
                   />
                 </View>
               )}

@@ -125,9 +125,9 @@ const AIPlayerView: React.FC<AIPlayerViewProps> = ({
         {[...Array(Math.min(10, player.hand.length))].map((_, i) => (
           <View
             key={`${position}-card-${i}`}
-            style={[styles.botCardSmall, getCardStyle(i)]}
+            style={[styles.botCardWrapper, getCardStyle(i)]}
           >
-            <CardBack />
+            <CardBack width={36} height={50} />
           </View>
         ))}
       </View>
@@ -170,16 +170,10 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
   },
-  botCardSmall: {
+  botCardWrapper: {
     width: 36,
     height: 50,
-    backgroundColor: "#4169E1",
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: "white",
     zIndex: 5,
-    justifyContent: "center",
-    alignItems: "center",
     position: "absolute",
   },
 });

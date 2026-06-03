@@ -95,6 +95,11 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
   // Determine if player can interact with cards and buttons
   const canInteract = canPlay && isValidPlay;
 
+  const canSelect =
+    isCurrentPlayer &&
+    ((!showTrickResult && !lastCompletedTrick) ||
+      gamePhase === GamePhase.KittySwap);
+
   // Constants for card layout
   const cardWidth = 65;
   const cardOverlap = 40;
@@ -137,14 +142,7 @@ const HumanHandAnimated: React.FC<HumanHandAnimatedProps> = ({
               >
                 <AnimatedCardComponent
                   card={card}
-                  onSelect={
-                    (isCurrentPlayer &&
-                      !showTrickResult &&
-                      !lastCompletedTrick) ||
-                    (gamePhase === GamePhase.KittySwap && isCurrentPlayer)
-                      ? handleCardSelect
-                      : undefined
-                  }
+                  onSelect={canSelect ? handleCardSelect : undefined}
                   selected={isCardSelected(card)}
                   faceDown={false}
                   isTrump={isTrump(card, trumpInfo)}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   StyleSheet,
@@ -55,6 +55,14 @@ export function ExpandableTrumpDeclaration({
   const [isExpanded, setIsExpanded] = useState(false);
   const [animatedHeight] = useState(new Animated.Value(0));
   const [isCollapsing, setIsCollapsing] = useState(false);
+  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup collapse timer on unmount
+  useEffect(() => {
+    return () => {
+      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+    };
+  }, []);
 
   // Get all the data we need
   const dealingProgress = getDealingProgress(gameState);
@@ -115,7 +123,7 @@ export function ExpandableTrumpDeclaration({
     }).start(() => {
       onContinue();
       // Keep collapsing flag longer to prevent re-expansion
-      setTimeout(() => {
+      collapseTimerRef.current = setTimeout(() => {
         setIsCollapsing(false);
       }, 500);
     });
@@ -135,7 +143,7 @@ export function ExpandableTrumpDeclaration({
     }).start(() => {
       onDeclaration(declaration);
       // Keep collapsing flag longer to prevent re-expansion
-      setTimeout(() => {
+      collapseTimerRef.current = setTimeout(() => {
         setIsCollapsing(false);
       }, 500);
     });

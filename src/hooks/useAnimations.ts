@@ -12,7 +12,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 export function useUIAnimations(showScreen: boolean) {
   // Initialize with visible values for first render
   const fadeAnim = useRef(new Animated.Value(showScreen ? 1 : 0)).current;
-  const scaleAnim = useRef(new Animated.Value(showScreen ? 1 : 0.95)).current;
   const slideAnim = useRef(
     new Animated.Value(showScreen ? 0 : SCREEN_WIDTH),
   ).current;
@@ -23,7 +22,6 @@ export function useUIAnimations(showScreen: boolean) {
     if (!showScreen) {
       // Reset animations for next show
       fadeAnim.setValue(0);
-      scaleAnim.setValue(0.95);
       slideAnim.setValue(SCREEN_WIDTH);
     } else {
       // Game screen animations with a slight delay to ensure component is mounted
@@ -34,12 +32,6 @@ export function useUIAnimations(showScreen: boolean) {
             duration: 800,
             useNativeDriver: true,
           }),
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
           Animated.timing(slideAnim, {
             toValue: 0,
             duration: 500,
@@ -48,11 +40,10 @@ export function useUIAnimations(showScreen: boolean) {
         ]).start();
       }, 100);
     }
-  }, [showScreen, fadeAnim, scaleAnim, slideAnim]);
+  }, [showScreen, fadeAnim, slideAnim]);
 
   return {
     fadeAnim,
-    scaleAnim,
     slideAnim,
   };
 }

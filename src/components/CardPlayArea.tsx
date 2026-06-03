@@ -30,10 +30,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
   const [totalAnimationsNeeded, setTotalAnimationsNeeded] = useState<number>(0);
   const [animationCompleted, setAnimationCompleted] = useState<boolean>(false);
 
-  // Track changes to lastCompletedTrick
-  useEffect(() => {
-    // Removed debug logging
-  }, [lastCompletedTrick]);
+
 
   // Handler for individual card animations completing - explicitly typed as a function
   const handleCardAnimationComplete = (): void => {
@@ -85,7 +82,8 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       setTotalAnimationsNeeded(0);
       setAnimationCompleted(false);
     }
-  }, [currentTrick, animationCompleted]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTrick]);
 
   // Add sequence information to cards
   type CardWithSequence = CardType & {
@@ -132,11 +130,13 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       // All animations complete - trigger callback
 
       // Add a small delay to ensure all visual animations are complete
-      setTimeout(() => {
+      const timerId = setTimeout(() => {
         if (typeof onAnimationComplete === "function") {
           onAnimationComplete();
         }
       }, ANIMATION_COMPLETION_DELAY); // Delay to ensure cards are rendered properly
+
+      return () => clearTimeout(timerId);
     }
   }, [
     completedAnimations,
@@ -200,7 +200,11 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
       playerSequenceMap[play.playerId] = sequence;
 
       play.cards.forEach((card, idx) => {
-        const cardWithSequence = Object.assign(card, {
+        const cardCopy = Object.create(
+          Object.getPrototypeOf(card),
+          Object.getOwnPropertyDescriptors(card),
+        );
+        const cardWithSequence: CardWithSequence = Object.assign(cardCopy, {
           playSequence: sequence,
           cardIndex: idx, // Index within this player's combo
         });
@@ -248,9 +252,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       marginLeft: 15, // Smaller shift for tighter centering
                     }),
                   // Enhanced winner highlighting with card-matching radius
-                  ...(isWinning(
-                    players.find((p) => p.id === PlayerId.Bot2)?.id as PlayerId,
-                  ) && styles.winningCard),
+                  ...(isWinning(PlayerId.Bot2) && styles.winningCard),
                 }}
               />
             ))}
@@ -287,10 +289,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                         marginLeft: 15, // Smaller shift for tighter centering
                       }),
                     // Enhanced winner highlighting with card-matching radius
-                    ...(isWinning(
-                      players.find((p) => p.id === PlayerId.Bot3)
-                        ?.id as PlayerId,
-                    ) && styles.winningCard),
+                    ...(isWinning(PlayerId.Bot3) && styles.winningCard),
                   }}
                 />
               ))}
@@ -330,10 +329,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                         marginLeft: 15, // Smaller shift for tighter centering
                       }),
                     // Enhanced winner highlighting with card-matching radius
-                    ...(isWinning(
-                      players.find((p) => p.id === PlayerId.Bot1)
-                        ?.id as PlayerId,
-                    ) && styles.winningCard),
+                    ...(isWinning(PlayerId.Bot1) && styles.winningCard),
                   }}
                 />
               ))}
@@ -369,9 +365,7 @@ const CardPlayArea: React.FC<CardPlayAreaProps> = ({
                       marginLeft: 15, // Smaller shift for tighter centering
                     }),
                   // Enhanced winner highlighting with card-matching radius
-                  ...(isWinning(
-                    players.find((p) => p.isHuman)?.id as PlayerId,
-                  ) && styles.winningCard),
+                  ...(isWinning(PlayerId.Human) && styles.winningCard),
                 }}
               />
             ))}

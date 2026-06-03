@@ -27,7 +27,7 @@ import {
 import { useGameStatePersistence } from "./useGameStatePersistence";
 
 // Interface for trick completion data
-interface TrickCompletionData {
+export interface TrickCompletionData {
   winnerId: PlayerId;
   points: number;
   completedTrick: Trick;
@@ -57,8 +57,9 @@ export function useGameState() {
   const [showRoundComplete, setShowRoundComplete] = useState(false);
   const pendingStateRef = useRef<GameState | null>(null);
 
-  // Ref for trick completion data (used for communication with other hooks)
-  const trickCompletionDataRef = useRef<TrickCompletionData | null>(null);
+  // State for trick completion data (triggers reactive updates in controller)
+  const [trickCompletionData, setTrickCompletionData] =
+    useState<TrickCompletionData | null>(null);
 
   // Ref to store kitty cards for pre-selection
   const kittyCardsRef = useRef<Card[]>([]);
@@ -117,12 +118,12 @@ export function useGameState() {
             ) {
               // We have a completed trick - set up trick completion data and clear it
               const completedTrick = result.gameState.currentTrick;
-              trickCompletionDataRef.current = {
+              setTrickCompletionData({
                 winnerId: completedTrick.winningPlayerId,
                 points: completedTrick.points,
                 completedTrick: completedTrick,
                 timestamp: Date.now(),
-              };
+              });
 
               // Clear the completed trick after a short delay
               setTimeout(() => {
@@ -357,13 +358,10 @@ export function useGameState() {
     if (result.trickComplete && result.trickWinnerId && result.completedTrick) {
       // Trick completed - winner and points recorded
 
-      // IMPORTANT: Store trick data in ref BEFORE updating state
+      // IMPORTANT: Store trick data BEFORE updating state
       // This ensures the trick result handler can access it immediately
       if (result.completedTrick) {
-        // Store trick completion data in a ref
-        // IMPORTANT: A completed trick has leadingCombo (first play) + plays (follow plays)
-        // For a 4-player game, the plays array should have exactly 3 entries when complete
-        trickCompletionDataRef.current = {
+        setTrickCompletionData({
           winnerId: result.trickWinnerId,
           points: result.trickPoints || 0,
           completedTrick: {
@@ -372,10 +370,7 @@ export function useGameState() {
             plays: [...result.completedTrick.plays],
           },
           timestamp: Date.now(),
-        };
-
-        // Completed trick should have plays from all players except the leader
-        // This ensures the trick structure is correct for display
+        });
       }
 
       // Check for end of round (no cards left) BEFORE updating state
@@ -492,8 +487,8 @@ export function useGameState() {
     isProcessingPlay,
     isInitializing,
 
-    // Trick completion data ref (for communication with other hooks)
-    trickCompletionDataRef,
+    // Trick completion data (reactive state for controller)
+    trickCompletionData,
 
     // Round result ref (for round complete modal)
     roundResultRef,
