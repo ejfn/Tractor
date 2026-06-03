@@ -563,7 +563,8 @@ const RoundCompleteModal: React.FC<RoundCompleteModalProps> = ({
                       key={card.id}
                       style={[
                         styles.kittyCardWrapper,
-                        { marginLeft: index === 0 ? 0 : -14 }
+                        { marginLeft: index === 0 ? 0 : -14 },
+                        index === kittyCards.length - 1 && { width: 72 },
                       ]}
                     >
                       <AnimatedCardComponent
@@ -703,7 +704,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   kittySection: {
-    paddingRight: 20,
     width: "100%",
     alignItems: "center",
   },
@@ -711,11 +711,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    height: 120
+    height: 120,
   },
   kittyCardWrapper: {
     width: 40,
-    height: 100
+    height: 100,
   },
   kittyCard: {
     // Scale handled by AnimatedCard scale prop
