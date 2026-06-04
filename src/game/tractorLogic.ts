@@ -50,22 +50,22 @@ export const getTractorRank = (card: Card, trumpInfo: TrumpInfo): number => {
 };
 
 // Get suit-based offset to ensure suit separation
-const getSuitOffset = (suit: string, trumpInfo: TrumpInfo): number => {
+const getSuitOffset = (suit: Suit, trumpInfo: TrumpInfo): number => {
   if (suit === trumpInfo.trumpSuit) {
     return 1000; // Trump suit cards get special trump offset
   }
 
   switch (suit) {
-    case "Spades":
+    case Suit.Spades:
       return 0;
-    case "Hearts":
+    case Suit.Hearts:
       return 100;
-    case "Clubs":
+    case Suit.Clubs:
       return 200;
-    case "Diamonds":
+    case Suit.Diamonds:
       return 300;
     default:
-      return 400; // Fallback
+      return 400; // Fallback for Suit.None (joker context)
   }
 };
 

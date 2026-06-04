@@ -45,11 +45,8 @@ function groupCardsBySuitOrTrump(
 
     if (isTrump(card, trumpInfo)) {
       groupSuit = Suit.None; // Use Suit.None for trump cards
-    } else if (card.suit) {
-      groupSuit = card.suit;
     } else {
-      // Should not happen for valid cards, fallback to None
-      groupSuit = Suit.None;
+      groupSuit = card.suit;
     }
 
     if (!groups[groupSuit]) {

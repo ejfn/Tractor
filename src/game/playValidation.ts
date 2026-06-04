@@ -14,6 +14,7 @@ import {
   checkSameSuitPairPreservation,
   checkTractorFollowingPriority,
   getComboType,
+  getLeadingSuit,
   identifyCombos,
 } from "./comboDetection";
 import {
@@ -21,17 +22,6 @@ import {
   detectLeadingMultiCombo,
 } from "./multiComboAnalysis";
 import { validateLeadingMultiCombo } from "./multiComboValidation";
-
-// Local helper function to avoid circular dependencies
-const getLeadingSuit = (combo: Card[]) => {
-  // Find the first card that has a suit
-  for (const card of combo) {
-    if (card.suit) {
-      return card.suit;
-    }
-  }
-  return undefined;
-};
 
 export const validateMultiComboFollowing = (
   playedCards: Card[],
