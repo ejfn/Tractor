@@ -3,6 +3,7 @@ import {
   Card,
   GameState,
   MemoryContext,
+  PlayableSuit,
   PlayerId,
   Suit,
   Trick,
@@ -172,9 +173,11 @@ function processPlayedCard(
   memory.playedCards.push(card);
 
   // Update suit distribution
-  const suitKey = card.suit || "joker";
-  memory.suitDistribution[suitKey] =
-    (memory.suitDistribution[suitKey] || 0) + 1;
+  const suitKey = card.suit;
+  if (suitKey !== undefined) {
+    memory.suitDistribution[suitKey] =
+      (memory.suitDistribution[suitKey] ?? 0) + 1;
+  }
 
   // Update trump/point counters
   if (isTrump(card, trumpInfo)) {
@@ -201,8 +204,8 @@ function processPlayedCard(
       leadSuit &&
       (card.suit !== leadSuit || isTrump(card, trumpInfo))
     ) {
-      if (!playerMemory.suitVoids.has(leadSuit)) {
-        playerMemory.suitVoids.add(leadSuit);
+      if (!playerMemory.suitVoids.has(leadSuit as PlayableSuit)) {
+        playerMemory.suitVoids.add(leadSuit as PlayableSuit);
         // Note: Player is now known to be void in the led non-trump suit
       }
     }

@@ -3,8 +3,11 @@ import {
   MemoryContext,
   PlayerId,
   PointPressure,
+  Rank,
+  Suit,
   TrickPosition,
   TrickWinnerAnalysis,
+  TrumpInfo,
 } from "../../src/types";
 
 // ============================================================================
@@ -22,6 +25,7 @@ export const createAIGameContext = (
   pointPressure: PointPressure = PointPressure.LOW,
   currentPlayer: PlayerId = PlayerId.Human, // Add currentPlayer with a default value
   trickWinnerAnalysis?: TrickWinnerAnalysis,
+  trumpInfo: TrumpInfo = { trumpRank: Rank.Two, trumpSuit: Suit.None },
 ): GameContext => ({
   // Core Game Info
   isAttackingTeam,
@@ -30,6 +34,7 @@ export const createAIGameContext = (
   trickPosition,
   pointPressure,
   currentPlayer,
+  trumpInfo,
   trickWinnerAnalysis: trickWinnerAnalysis ?? {
     currentWinner: PlayerId.Human, // Default to human for test scenarios
     isTeammateWinning: false,

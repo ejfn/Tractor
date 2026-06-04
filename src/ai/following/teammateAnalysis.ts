@@ -4,6 +4,7 @@ import {
   Card,
   GameContext,
   GameState,
+  PlayableSuit,
   PlayerId,
   Suit,
   Trick,
@@ -43,8 +44,7 @@ export function shouldContributeToTeammate(
   const isLastPlayer = context.trickPosition === TrickPosition.Fourth;
 
   // Determine if this is a trump lead
-  const trumpInfo = context.trumpInfo || gameState.trumpInfo;
-  if (!trumpInfo) return false;
+  const trumpInfo = context.trumpInfo;
 
   const isTrumpLead = currentTrick.plays[0]?.cards.some((card) =>
     isTrump(card, trumpInfo),
@@ -95,7 +95,7 @@ export function shouldContributeToTeammate(
         const nextPlayerMemory =
           context.memoryContext.playerMemories[nextPlayerId];
         isNextPlayerVoid =
-          nextPlayerMemory?.suitVoids.has(leadingSuit) ?? false;
+          nextPlayerMemory?.suitVoids.has(leadingSuit as PlayableSuit) ?? false;
       }
     }
 
@@ -143,7 +143,7 @@ function checkComboIsBiggestInSuit(
   currentTrick: Trick,
 ): boolean {
   const leadingSuit = currentTrick.plays[0]?.cards[0]?.suit;
-  const trumpInfo = context.trumpInfo || gameState.trumpInfo;
+  const trumpInfo = context.trumpInfo;
 
   if (!leadingSuit || !trumpInfo) {
     return true; // Assume combo is biggest if we can't analyze
@@ -206,11 +206,7 @@ function checkComboIsBiggestInTrump(
   gameState: GameState,
   currentTrick: Trick,
 ): boolean {
-  const trumpInfo = context.trumpInfo || gameState.trumpInfo;
-
-  if (!trumpInfo) {
-    return true; // Assume combo is biggest if we can't analyze
-  }
+  const trumpInfo = context.trumpInfo;
 
   // Skip analysis if this is not a trump lead
   if (!currentTrick.plays[0]?.cards.some((card) => isTrump(card, trumpInfo))) {

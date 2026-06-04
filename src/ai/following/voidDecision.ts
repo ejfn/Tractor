@@ -4,6 +4,7 @@ import {
   Card,
   GameContext,
   GameState,
+  PlayableSuit,
   PlayerId,
   Suit,
   TrickPosition,
@@ -113,7 +114,9 @@ function evaluateTrumpSelection(
             const nextPlayerMemory =
               context.memoryContext.playerMemories[nextPlayerId];
             isNextPlayerVoid =
-              nextPlayerMemory?.suitVoids.has(analysis.leadingSuit) ?? false;
+              nextPlayerMemory?.suitVoids.has(
+                analysis.leadingSuit as PlayableSuit,
+              ) ?? false;
           }
         }
 

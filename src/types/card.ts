@@ -136,6 +136,11 @@ export class Card {
    * This is crucial because JSON.parse creates plain objects, losing Card methods
    */
   static deserializeCard(cardData: unknown): Card {
+    if (!Card.isCardLike(cardData)) {
+      throw new Error(
+        `deserializeCard: invalid card data: ${JSON.stringify(cardData)}`,
+      );
+    }
     const data = cardData as Record<string, unknown>;
     if (data.joker) {
       // This is a joker card
@@ -249,7 +254,10 @@ export class Card {
     return (
       this.joker !== undefined ||
       this.rank === trumpInfo.trumpRank ||
-      this.suit === trumpInfo.trumpSuit
+      // Suit.None means joker-pair declaration (no suit trump) — never matches a regular card's suit
+      (trumpInfo.trumpSuit !== undefined &&
+        trumpInfo.trumpSuit !== Suit.None &&
+        this.suit === trumpInfo.trumpSuit)
     );
   }
 
@@ -269,7 +277,7 @@ export class Card {
               ? "♣"
               : this.suit === Suit.Spades
                 ? "♠"
-                : "?";
+                : "?"; // Unreachable for valid cards (Suit.None only appears on jokers, handled above)
       return `${this.rank}${suitSymbol}`;
     }
   }

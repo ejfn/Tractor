@@ -1,6 +1,7 @@
 import {
   Card,
   GameState,
+  PlayableSuit,
   PlayerId,
   PointPressure,
   Suit,
@@ -87,7 +88,7 @@ export function collectLeadingContext(
   for (const suit of [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades]) {
     const allOpponentsVoidInSuit = opponentIds.every((opponentId) => {
       const opponentMemory = playerMemories[opponentId];
-      return opponentMemory?.suitVoids.has(suit) || false;
+      return opponentMemory?.suitVoids.has(suit as PlayableSuit) || false;
     });
 
     if (allOpponentsVoidInSuit) {
