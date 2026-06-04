@@ -11,12 +11,12 @@
     "nextRound": "下一轮 ➤"
   },
   "roundResult": {
-    "attackingWonDefend": "{{teamName}}得{{points}}分上台，下轮由该队当庄打{{rank}}！",
-    "attackingWonAdvance": "{{teamName}}得{{points}}分上台，升{{advancement}}级，下轮当庄打{{rank}}！",
-    "attackingWonAce": "{{teamName}}得{{points}}分上台，达到A级！下轮必须守庄成功才能赢得游戏！",
-    "defendingWonGame": "{{teamName}}{{pointMessage}}，成功守庄并赢得整个游戏！",
-    "defendingWonAdvance": "{{teamName}}{{pointMessage}}，守庄成功，升{{advancement}}级，下轮打{{rank}}！",
-    "defendingWonAce": "{{teamName}}{{pointMessage}}，守庄成功，达到A级！下轮必须守庄成功才能赢得整个游戏！",
+    "attackingWonDefend": "{{teamName}}得{{points}}分上台，下轮打{{rank}}！",
+    "attackingWonAdvance": "{{teamName}}得{{points}}分上台，升{{advancement}}级打{{rank}}！",
+    "attackingWonAce": "{{teamName}}得{{points}}分上台，下轮打Ace，必须守住Ace才能赢得游戏！",
+    "defendingWonGame": "{{teamName}}{{pointMessage}}，成功守庄并赢得游戏！",
+    "defendingWonAdvance": "{{teamName}}{{pointMessage}}，升{{advancement}}级打{{rank}}！",
+    "defendingWonAce": "{{teamName}}{{pointMessage}}，下轮打Ace，必须守住Ace才能赢得游戏！",
     "heldToPoints": "将{{otherTeamName}}压制在0分（大光）",
     "defendedWithPoints": "将{{otherTeamName}}控制在{{points}}分",
     "kittyBonus": "抠底得分：{{kittyPoints}} x {{multiplier}}"
