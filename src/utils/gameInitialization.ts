@@ -89,8 +89,12 @@ export function initializeTrumpDeclarationState(): TrumpDeclarationState {
 
 export function getRandomBotIndices(): number[] {
   const pool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  const shuffled = [...pool].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 3);
+  // Fisher-Yates shuffle for uniform distribution
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 3);
 }
 
 /**
