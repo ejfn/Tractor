@@ -24,20 +24,20 @@ We provide a specialized, high-performance runner script (`evaluate-models.sh`) 
 ### A. Run Command (Default Models)
 To benchmark the standard model list (`deepseek/deepseek-chat`, `meta-llama/llama-3.3-70b-instruct`, `google/gemini-2.5-flash`), run:
 ```bash
-./.agents/skills/model-evaluation/evaluate-models.sh
+./.agents/skills/model-evaluation/scripts/evaluate-models.sh
 ```
 
 ### B. Run Command (Custom Models)
 To evaluate specific models (e.g. Gemini 2.5 Pro and Llama 3.3):
 ```bash
-./.agents/skills/model-evaluation/evaluate-models.sh "google/gemini-2.5-pro" "meta-llama/llama-3.3-70b-instruct"
+./.agents/skills/model-evaluation/scripts/evaluate-models.sh "google/gemini-2.5-pro" "meta-llama/llama-3.3-70b-instruct"
 ```
 
 ### C. Options and Customization
 You can customize the evaluation length and tolerances:
 ```bash
 # Run 1 game of 2 rounds per model with a high API error tolerance
-./.agents/skills/model-evaluation/evaluate-models.sh -g 1 -r 2 --max-api-errors 30 "deepseek/deepseek-chat"
+./.agents/skills/model-evaluation/scripts/evaluate-models.sh -g 1 -r 2 --max-api-errors 30 "deepseek/deepseek-chat"
 ```
 
 ---

@@ -66,7 +66,7 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         -h|--help)
             echo "Shengji AI Multi-Model Evaluation Runner"
-            echo "Usage: ./.agents/skills/model-evaluation/evaluate-models.sh [options] [model1 model2 ...]"
+            echo "Usage: ./.agents/skills/model-evaluation/scripts/evaluate-models.sh [options] [model1 model2 ...]"
             echo ""
             echo "Options:"
             echo "  -g, --games <number>     Set number of target games per model (default 1)"

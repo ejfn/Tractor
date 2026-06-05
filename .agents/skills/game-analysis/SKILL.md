@@ -26,4 +26,4 @@ uv run analysis/bigquery_main.py analyse  # Run analysis and generate the perfor
 
 ## Log event reference
 
-The analysis reads newline-delimited JSON log events. See [reference/log-events.md](reference/log-events.md) for the common envelope and the key event shapes. The authoritative field set for any event is always its `gameLogger` call site in `src/`.
+The analysis reads newline-delimited JSON log events. See [references/log-events.md](references/log-events.md) for the common envelope and the key event shapes. The authoritative field set for any event is always its `gameLogger` call site in `src/`.
