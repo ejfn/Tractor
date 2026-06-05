@@ -3,13 +3,17 @@
 # Simulation Runner Script
 #
 # Usage:
-# ./run_simulations.sh [number_of_games]
+# ./scripts/run_simulations.sh [number_of_games]
 #
 # Example:
-# ./run_simulations.sh 100
+# ./scripts/run_simulations.sh 100
 #
 # This script runs the game simulation test with a specified number of games
 # and sets the log level to DEBUG to capture detailed AI decision-making data.
+
+# Resolve the absolute path to the repository root and navigate there
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT" || exit 1
 
 # Default to 10 games if no argument is provided
 TARGET_GAMES=${1:-10}
@@ -32,9 +36,7 @@ echo "Simulations complete. Logs are located in the logs/ directory."
 # Compress all .log files to .log.gz for efficient storage and upload
 echo "Compressing log files..."
 if [ -d "logs" ] && [ -n "$(find logs -name "*.log" -type f 2>/dev/null)" ]; then
-    cd logs
-    gzip *.log
-    cd ..
+    gzip logs/*.log
     echo "✅ All .log files compressed to .log.gz"
 else
     echo "⚠️  No .log files found to compress"
