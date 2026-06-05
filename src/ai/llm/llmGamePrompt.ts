@@ -207,11 +207,11 @@ function localBuildSeatGuidance(g: {
   } else if (g.isTeammateWinning) {
     // Following the led suit, teammate currently winning (§5.1 / §5.2).
     bullet = g.teammateWinSafe
-      ? `${g.winningPlayerId} (teammate)'s win is safe — bank your biggest spare points, giving 10s and Ks freely (card rank is moot once the win is locked); hold back only a live boss A/K you can cash on your own trick, and never out-rank your teammate.`
+      ? `${g.winningPlayerId} (teammate)'s win is safe — bank your biggest spare points, giving 10s and Ks freely (do not worry if playing points out-ranks your teammate's card, as your team still takes the trick); hold back only a live boss A/K you can cash on your own trick.`
       : `${g.winningPlayerId} (teammate) leads but ${g.oppListStr} can still steal it — play a low non-point card of the led suit; don't commit points yet.`;
   } else if (g.isLast) {
     // Opponent winning, you act last with full info (§5.3 / §9 4th).
-    bullet = `You play last with full info — beat ${g.winningPlayerId}'s ${g.winningCardStr} with your cheapest sufficient card if you can; otherwise dump your lowest non-point (never a 5/10/K into an opponent's trick).`;
+    bullet = `You play last with full info — beat ${g.winningPlayerId}'s ${g.winningCardStr} with your cheapest sufficient card if you can (prefer winning if you hold points that can win or the trick contains points; never conserve off-suit cards); otherwise dump your lowest non-point (never a 5/10/K into an opponent's trick).`;
   } else if (g.trickPoints >= 10) {
     // Opponent winning, rich trick, players still behind you (§5.3).
     if (!g.canBeatWinnerInSuit) {
@@ -226,7 +226,7 @@ function localBuildSeatGuidance(g: {
     }
   } else {
     // Opponent winning, thin trick (§5.4).
-    bullet = `Only ${g.trickPoints} pts and ${g.oppListStr} still to act — duck low and conserve; don't spend a boss or trump on a thin trick.`;
+    bullet = `Only ${g.trickPoints} pts and ${g.oppListStr} still to act — if off-suit, play your boss/highest to win the trick and secure the lead; if trump, duck low and conserve.`;
   }
 
   return `- ${bullet}`;
