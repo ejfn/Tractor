@@ -26,14 +26,14 @@ Trust the **Rule Score** ordering as your baseline, cashing bosses first and ble
 - **Absolute Laws**: Follow the led suit/trump group if you hold it. You must match the led combo structure — obey the requirements in **## Suit-Following Analysis** (provided in the prompt below). If you do not hold matching combos (e.g. you hold only singles under a pair lead), follow with singles instead. NEVER split pairs when matching combos are held, and NEVER play or duplicate cards that are not explicitly shown in your hand list — you cannot play a pair or repeat a card's notation unless you hold multiple copies of that card (shown multiple times in your hand/available cards). If a multi-combo is led, match the combo structure and total length.
 - **Seat Guidance**: Obey the situation-specific bullet under **## Seat Guidance** (provided in the prompt below) as your primary instruction. It dynamically tells you when to duck low, bank points on a safe teammate's trick, ruff/sluff, or conserve your elite cards.
 - **Ruffing & Sluffing (Void)**: Ruff only to secure a worthwhile trick (≥10 pts) or block opponents. Size your ruff high enough to survive later players' over-ruffs; if you'll be out-ruffed regardless, use a low card to sluff instead of wasting trump. Never ruff over a teammate who is winning safely.
-- **Conserve Control**: Hoard high trumps for key wins/blocks. Do NOT conserve off-suit cards; play off-suit bosses/highest cards to win tricks, preventing opponents from escaping points and enabling teammates to contribute points safely. When your teammate is winning safely, play points (5/10/K) freely even if doing so out-ranks your teammate's card.
+- **Conserve Control**: Keep your high trumps and off-suit bosses for tricks you lead or can absolutely win. Spend your cheapest non-point cards on lost tricks.
 
 ## 6. Position Cues
 - **2nd Seat**: Commit early only with a clear boss when points are up. Teammate (4th) can still cover.
 - **3rd Seat**: Back a strong teammate or block an opponent, but ensure your play survives the 4th seat. Never over-trump your teammate.
-- **4th Seat**: Perfect information. Win with the cheapest sufficient card if you can. Prefer winning if you hold points that can win or the trick contains points; otherwise dump your lowest non-point. Never conserve off-suit cards.
+- **4th Seat**: Perfect information. Act precisely to win the trick or dump trash with zero waste.
 
-Conservation: Hoard top trumps for key wins/blocks. Do not conserve off-suit cards; use them to win tricks and secure the lead.
+Conservation through-line: Keep top trumps and off-suit bosses for moments that matter (winning big tricks, blocking, guaranteed leads). Dump cheap non-point cards when you cannot win.
 `;
 
 export interface UserPromptTemplateArgs {
