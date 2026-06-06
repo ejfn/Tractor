@@ -68,9 +68,19 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
     setConnectionStatus({ kind: "idle" });
   }, []);
 
-  // ── Connection test ────────────────────────────────────────────────────────
+  // ── Save & Verify ──────────────────────────────────────────────────────────
 
-  const handleTestConnection = useCallback(async () => {
+  const handleSave = useCallback(async () => {
+    if (!useLLM) {
+      onSave({
+        ...DEFAULT_LLM_CONFIG,
+        enabled: false,
+        apiKey: apiKey.trim(),
+        model: selectedModel,
+      });
+      return;
+    }
+
     if (!apiKey.trim()) {
       setConnectionStatus({
         kind: "error",
@@ -87,52 +97,29 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
       DEFAULT_LLM_CONFIG.apiUrl,
     );
 
-    setConnectionStatus(
-      result.success
-        ? {
-            kind: "success",
-            message: t("aiConfig.llm.connectedMsg", {
-              modelName:
-                MODELS.find((m) => m.id === selectedModel)?.name ??
-                selectedModel,
-            }),
-          }
-        : {
-            kind: "error",
-            message: t("aiConfig.llm.connectionError", {
-              error: result.message,
-            }),
-          },
-    );
-  }, [apiKey, selectedModel, t]);
-
-  // ── Save ───────────────────────────────────────────────────────────────────
-
-  const handleSave = useCallback(() => {
-    const newConfig: LLMConfig = {
-      ...DEFAULT_LLM_CONFIG,
-      enabled: useLLM,
-      apiKey: apiKey.trim(),
-      model: selectedModel,
-    };
-    onSave(newConfig);
-  }, [useLLM, apiKey, selectedModel, onSave]);
-
-  // ── Test & Save (merged action) ────────────────────────────────────────────
-
-  const handleTestAndSave = useCallback(async () => {
-    if (!useLLM) {
-      handleSave();
-      return;
+    if (result.success) {
+      setConnectionStatus({
+        kind: "success",
+        message: t("aiConfig.llm.connectedMsg", {
+          modelName:
+            MODELS.find((m) => m.id === selectedModel)?.name ?? selectedModel,
+        }),
+      });
+      onSave({
+        ...DEFAULT_LLM_CONFIG,
+        enabled: true,
+        apiKey: apiKey.trim(),
+        model: selectedModel,
+      });
+    } else {
+      setConnectionStatus({
+        kind: "error",
+        message: t("aiConfig.llm.connectionError", {
+          error: result.message,
+        }),
+      });
     }
-    if (connectionStatus.kind === "success") {
-      // Already tested — save directly
-      handleSave();
-      return;
-    }
-    // First press: run the test; button will become "Save" on success
-    await handleTestConnection();
-  }, [useLLM, connectionStatus.kind, handleTestConnection, handleSave]);
+  }, [useLLM, apiKey, selectedModel, onSave, t]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -385,7 +372,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                 styles.saveBtn,
                 connectionStatus.kind === "testing" && styles.saveBtnDisabled,
               ]}
-              onPress={handleTestAndSave}
+              onPress={handleSave}
               disabled={connectionStatus.kind === "testing"}
               activeOpacity={0.8}
             >
@@ -393,8 +380,8 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Text style={styles.saveBtnText}>
-                  {useLLM && connectionStatus.kind !== "success"
-                    ? t("aiConfig.buttons.verify")
+                  {useLLM
+                    ? t("aiConfig.buttons.verifyAndSave")
                     : t("aiConfig.buttons.save")}
                 </Text>
               )}
