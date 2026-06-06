@@ -226,7 +226,7 @@ function localBuildSeatGuidance(g: {
     }
   } else {
     // Opponent winning, thin trick (§5.4).
-    bullet = `Only ${g.trickPoints} pts and ${g.oppListStr} still to act — if off-suit and you can beat the winner, play your boss/highest to win the trick and secure the lead; if trump or you cannot beat the winner, duck low and conserve.`;
+    bullet = `Only ${g.trickPoints} pts and ${g.oppListStr} still to act — if off-suit, play your boss/highest to win the trick and secure the lead; if trump, duck low and conserve.`;
   }
 
   return `- ${bullet}`;
