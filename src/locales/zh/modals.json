@@ -58,7 +58,6 @@
     },
     "buttons": {
       "cancel": "取消",
-      "verify": "验证",
       "verifyAndSave": "验证并保存",
       "save": "保存"
     },

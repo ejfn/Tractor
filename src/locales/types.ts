@@ -148,7 +148,6 @@ export interface ModalsTranslations {
     };
     buttons: {
       cancel: string;
-      verify: string;
       verifyAndSave: string;
       save: string;
     };
