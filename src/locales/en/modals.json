@@ -59,6 +59,7 @@
     "buttons": {
       "cancel": "Cancel",
       "verify": "Verify",
+      "verifyAndSave": "Verify & Save",
       "save": "Save"
     },
     "models": {
