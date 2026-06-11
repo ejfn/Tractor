@@ -38,8 +38,6 @@ export const createAIGameContext = (
   trickWinnerAnalysis: trickWinnerAnalysis ?? {
     currentWinner: PlayerId.Human, // Default to human for test scenarios
     isTeammateWinning: false,
-    isOpponentWinning: false,
-    isLeadWinning: false,
     trickPoints: 0,
     isTrumpLead: false,
     isCurrentlyTrumped: false,

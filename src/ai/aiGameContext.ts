@@ -100,9 +100,7 @@ export function analyzeTrickWinner(
   }
 
   // Determine team relationships
-  const isLeadWinning = currentWinner === currentTrick.plays[0]?.playerId;
   const isTeammateWinning = isTeammate(gameState, playerId, currentWinner);
-  const isOpponentWinning = !isTeammateWinning;
   const trickPoints = currentTrick.points;
 
   // Determine trump situation
@@ -121,8 +119,6 @@ export function analyzeTrickWinner(
   return {
     currentWinner,
     isTeammateWinning,
-    isOpponentWinning,
-    isLeadWinning,
     isTrumpLead,
     isCurrentlyTrumped,
     trickPoints,
@@ -134,7 +130,7 @@ export function analyzeTrickWinner(
  * Team A (Human + Bot2) vs Team B (Bot1 + Bot3)
  * The attacking team is determined by which team is NOT defending in the current round
  */
-export function isPlayerOnAttackingTeam(
+function isPlayerOnAttackingTeam(
   gameState: GameState,
   playerId: PlayerId,
 ): boolean {
@@ -157,7 +153,7 @@ export function isPlayerOnAttackingTeam(
 /**
  * Calculates total points collected by the attacking team so far
  */
-export function getCurrentAttackingPoints(gameState: GameState): number {
+function getCurrentAttackingPoints(gameState: GameState): number {
   // Find the attacking team (the team that is NOT defending)
   const attackingTeam = gameState.teams.find((team) => !team.isDefending);
 
@@ -173,7 +169,7 @@ export function getCurrentAttackingPoints(gameState: GameState): number {
 /**
  * Calculates how many cards are left in the current round
  */
-export function calculateCardsRemaining(gameState: GameState): number {
+function calculateCardsRemaining(gameState: GameState): number {
   // Get average cards remaining from all players
   const totalCardsRemaining = gameState.players.reduce(
     (sum, player) => sum + player.hand.length,
@@ -227,9 +223,9 @@ export function getTrickPosition(
       return TrickPosition.Third; // Third player (second follower)
     case 3:
       return TrickPosition.Fourth; // Fourth player (third follower)
-    default:
-      return TrickPosition.First; // Fallback
   }
+  // Unreachable for a valid 4-player trick (plays.length is always 0-3)
+  return TrickPosition.First;
 }
 
 /**
@@ -239,7 +235,7 @@ export function getTrickPosition(
  * - Attacking team: Low points = HIGH pressure (need to catch up)
  * - Defending team: Low attacking points = LOW pressure (they're winning)
  */
-export function calculatePointPressure(
+function calculatePointPressure(
   currentPoints: number,
   isAttackingTeam: boolean,
 ): PointPressure {
@@ -280,9 +276,7 @@ export function getRemainingUnseenCards(
   gameState: GameState,
 ): Card[] {
   const currentPlayerId = context.currentPlayer;
-  const trumpInfo = context.trumpInfo || gameState.trumpInfo;
-
-  if (!trumpInfo) return [];
+  const trumpInfo = context.trumpInfo;
 
   // Use the memory context directly
   const cardMemory = context.memoryContext;

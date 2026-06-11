@@ -173,11 +173,8 @@ function processPlayedCard(
   memory.playedCards.push(card);
 
   // Update suit distribution
-  const suitKey = card.suit;
-  if (suitKey !== undefined) {
-    memory.suitDistribution[suitKey] =
-      (memory.suitDistribution[suitKey] ?? 0) + 1;
-  }
+  memory.suitDistribution[card.suit] =
+    (memory.suitDistribution[card.suit] ?? 0) + 1;
 
   // Update trump/point counters
   if (isTrump(card, trumpInfo)) {

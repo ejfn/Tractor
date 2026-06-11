@@ -63,8 +63,6 @@ export interface PlayerMemory {
 export interface TrickWinnerAnalysis {
   currentWinner: PlayerId; // Player ID of current trick winner
   isTeammateWinning: boolean; // Is AI's teammate currently winning
-  isOpponentWinning: boolean; // Is an opponent currently winning
-  isLeadWinning: boolean; // Is the leading player currently winning
   isTrumpLead: boolean; // Leading combo was trump
   isCurrentlyTrumped: boolean; // Non-trump lead got trumped by someone
   trickPoints: number; // Total points in current trick
