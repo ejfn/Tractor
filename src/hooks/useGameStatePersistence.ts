@@ -3,11 +3,8 @@ import {
   saveGameState,
   loadGameState,
   clearSavedGameState,
-  hasSavedGame,
-  getSavedGameMetadata,
   GameSaveResult,
   GameLoadResult,
-  PersistedGameState,
 } from "../utils/gameStatePersistence";
 import { GameState, GamePhase } from "../types";
 import { gameLogger } from "../utils/gameLogger";
@@ -35,12 +32,6 @@ export interface PersistenceStatus {
   error?: string;
 }
 
-export interface RestorationData {
-  hasRestoredGame: boolean;
-  metadata?: PersistedGameState["metadata"];
-  timestamp?: number;
-}
-
 // Default persistence settings
 const DEFAULT_SETTINGS: PersistenceSettings = {
   autoSaveEnabled: true,
@@ -49,6 +40,9 @@ const DEFAULT_SETTINGS: PersistenceSettings = {
   saveOnPhaseChange: true,
 };
 
+// Minimum time between auto-saves (prevent excessive saving)
+const MIN_SAVE_INTERVAL = 2000; // 2 seconds
+
 /**
  * Hook for game state persistence management
  */
@@ -56,9 +50,26 @@ export function useGameStatePersistence(
   gameState: GameState | null,
   settings: Partial<PersistenceSettings> = {},
 ) {
+  const {
+    autoSaveEnabled = DEFAULT_SETTINGS.autoSaveEnabled,
+    saveOnTrickComplete = DEFAULT_SETTINGS.saveOnTrickComplete,
+    saveOnRoundTransition = DEFAULT_SETTINGS.saveOnRoundTransition,
+    saveOnPhaseChange = DEFAULT_SETTINGS.saveOnPhaseChange,
+  } = settings;
+
   const persistenceSettings = useMemo(
-    () => ({ ...DEFAULT_SETTINGS, ...settings }),
-    [settings],
+    () => ({
+      autoSaveEnabled,
+      saveOnTrickComplete,
+      saveOnRoundTransition,
+      saveOnPhaseChange,
+    }),
+    [
+      autoSaveEnabled,
+      saveOnTrickComplete,
+      saveOnRoundTransition,
+      saveOnPhaseChange,
+    ],
   );
 
   // State tracking
@@ -70,9 +81,6 @@ export function useGameStatePersistence(
   // Track previous game state for change detection
   const previousGameStateRef = useRef<GameState | null>(null);
   const lastAutoSaveRef = useRef<number>(0);
-
-  // Minimum time between auto-saves (prevent excessive saving)
-  const MIN_SAVE_INTERVAL = 2000; // 2 seconds
 
   /**
    * Manual save function with status tracking
@@ -184,33 +192,6 @@ export function useGameStatePersistence(
       statusRef.current.error = errorMessage;
       gameLogger.warn("clear_saved_game_failed", { error: errorMessage });
       return false;
-    }
-  }, []);
-
-  /**
-   * Check for existing saved game
-   */
-  const checkForSavedGame = useCallback(async (): Promise<RestorationData> => {
-    try {
-      const hasGame = await hasSavedGame();
-
-      if (hasGame) {
-        const metadata = await getSavedGameMetadata();
-        const loadResult = await loadGameState();
-
-        return {
-          hasRestoredGame: true,
-          metadata: metadata || undefined,
-          timestamp: loadResult.timestamp,
-        };
-      }
-
-      return { hasRestoredGame: false };
-    } catch (error) {
-      gameLogger.warn("check_saved_game_failed", {
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-      return { hasRestoredGame: false };
     }
   }, []);
 
@@ -335,7 +316,6 @@ export function useGameStatePersistence(
     saveGame,
     loadGame,
     clearSavedGame,
-    checkForSavedGame,
 
     // Manual auto-save trigger
     triggerAutoSave,
@@ -347,50 +327,5 @@ export function useGameStatePersistence(
     // Current status (snapshot)
     status: statusRef.current,
     settings: persistenceSettings,
-  };
-}
-
-/**
- * Utility hook for restoration flow
- */
-export function useGameRestoration() {
-  /**
-   * Check if there's a saved game and return restoration options
-   */
-  const checkRestoration = useCallback(async (): Promise<{
-    shouldRestore: boolean;
-    metadata?: PersistedGameState["metadata"];
-    timestamp?: number;
-  }> => {
-    try {
-      const hasGame = await hasSavedGame();
-
-      if (!hasGame) {
-        return { shouldRestore: false };
-      }
-
-      const metadata = await getSavedGameMetadata();
-      const loadResult = await loadGameState();
-
-      // Only suggest restoration for valid, recent saves
-      if (loadResult.success && metadata) {
-        return {
-          shouldRestore: true,
-          metadata,
-          timestamp: loadResult.timestamp,
-        };
-      }
-
-      return { shouldRestore: false };
-    } catch (error) {
-      gameLogger.warn("restoration_check_failed", {
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-      return { shouldRestore: false };
-    }
-  }, []);
-
-  return {
-    checkRestoration,
   };
 }

@@ -111,13 +111,16 @@ export function useGameState() {
               }, TRICK_RESULT_DISPLAY_TIME + ROUND_COMPLETE_BUFFER); // 1100ms total - ensures UI is fully initialized after restoration
             }
 
+            // Validate restored state to prevent AI crashes
+            const restoredState = result.gameState;
+
             // Check if we have a completed trick that needs to be cleared
             if (
-              result.gameState.currentTrick &&
-              result.gameState.currentTrick.plays.length === 4
+              restoredState.currentTrick &&
+              restoredState.currentTrick.plays.length === 4
             ) {
               // We have a completed trick - set up trick completion data and clear it
-              const completedTrick = result.gameState.currentTrick;
+              const completedTrick = restoredState.currentTrick;
               setTrickCompletionData({
                 winnerId: completedTrick.winningPlayerId,
                 points: completedTrick.points,
@@ -125,14 +128,11 @@ export function useGameState() {
                 timestamp: Date.now(),
               });
 
-              // Clear the completed trick after a short delay
-              setTimeout(() => {
-                handleTrickResultComplete();
-              }, 100);
+              // Clear the completed trick inline to avoid stale-closure issues.
+              // (handleTrickResultComplete would capture null gameState at this point.)
+              restoredState.currentTrick = null;
             }
 
-            // Validate restored state to prevent AI crashes
-            const restoredState = result.gameState;
             const allPlayersEmpty = restoredState.players.every(
               (p) => p.hand.length === 0,
             );
@@ -177,7 +177,7 @@ export function useGameState() {
           setIsInitializing(false);
         });
     }
-  }, [gameState, isInitializing, persistence, handleTrickResultComplete]);
+  }, [gameState, isInitializing, persistence]);
 
   // Extract relevant values for kitty swap detection
   const gamePhase = gameState?.gamePhase;
@@ -211,14 +211,6 @@ export function useGameState() {
     // Update previous phase
     setPreviousGamePhase(gamePhase || null);
   }, [gamePhase, currentPlayer, previousGamePhase, gameState]);
-
-  // Initialize game (for manual initialization)
-  const initGame = useCallback(() => {
-    if (!gameState && !isInitializing) {
-      // This will trigger the auto-restoration logic in useEffect
-      // No need to do anything here, just ensure we're not already initializing
-    }
-  }, [gameState, isInitializing]);
 
   // Handle card selection
   const handleCardSelect = (card: Card) => {
@@ -360,18 +352,16 @@ export function useGameState() {
 
       // IMPORTANT: Store trick data BEFORE updating state
       // This ensures the trick result handler can access it immediately
-      if (result.completedTrick) {
-        setTrickCompletionData({
-          winnerId: result.trickWinnerId,
-          points: result.trickPoints || 0,
-          completedTrick: {
-            ...result.completedTrick,
-            // Make sure we deep copy all data to prevent reference issues
-            plays: [...result.completedTrick.plays],
-          },
-          timestamp: Date.now(),
-        });
-      }
+      setTrickCompletionData({
+        winnerId: result.trickWinnerId,
+        points: result.trickPoints || 0,
+        completedTrick: {
+          ...result.completedTrick,
+          // Make sure we deep copy all data to prevent reference issues
+          plays: [...result.completedTrick.plays],
+        },
+        timestamp: Date.now(),
+      });
 
       // Check for end of round (no cards left) BEFORE updating state
       const allCardsPlayed = result.newState.players.every(
@@ -495,9 +485,6 @@ export function useGameState() {
 
     // Persistence
     persistence,
-
-    // Initializers
-    initGame,
 
     // Actions
     handleCardSelect,
