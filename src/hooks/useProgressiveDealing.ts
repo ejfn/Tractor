@@ -157,7 +157,10 @@ export function useProgressiveDealing({
 
           if (decision.shouldDeclare && decision.declaration) {
             // Double-check that we're still in dealing phase and not paused
-            if (currentState.gamePhase !== "dealing" || isPausedRef.current) {
+            if (
+              currentState.gamePhase !== GamePhase.Dealing ||
+              isPausedRef.current
+            ) {
               continue; // Skip this AI if game state changed
             }
 
@@ -243,7 +246,7 @@ export function useProgressiveDealing({
     (stateOverride?: GameState) => {
       if (isPausedRef.current) {
         const stateToUse = stateOverride || currentStateRef.current;
-        if (stateToUse && stateToUse.gamePhase === "dealing") {
+        if (stateToUse && stateToUse.gamePhase === GamePhase.Dealing) {
           // Clear the pause state in game state
           const resumedState = {
             ...stateToUse,
@@ -338,7 +341,7 @@ export function useProgressiveDealing({
 
   // Handle manual pause (when user taps the progress bar)
   const handleManualPause = useCallback(() => {
-    if (!gameState || gameState.gamePhase !== "dealing") return;
+    if (!gameState || gameState.gamePhase !== GamePhase.Dealing) return;
     if (pauseDealingRef.current) {
       pauseDealingRef.current();
     }

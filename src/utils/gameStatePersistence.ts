@@ -108,7 +108,7 @@ const StorageManager = {
 
       if (retries < this.MAX_RETRIES) {
         await this.delay(this.RETRY_DELAY * (retries + 1));
-        return this.getItem(key, retries);
+        return this.getItem(key, retries + 1);
       }
 
       return null;

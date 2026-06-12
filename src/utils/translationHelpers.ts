@@ -1,8 +1,11 @@
 import { PlayerId, TeamId, Suit, Player } from "../types";
 import type { CommonTranslationKey } from "../locales/types";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TranslationFunction = any;
+// i18next TFunction has complex generics; this captures the minimal interface we use
+type TranslationFunction = (
+  key: string,
+  options?: Record<string, unknown>,
+) => string;
 
 /**
  * Get translated team name
@@ -45,7 +48,7 @@ export function getPlayerDisplayName(
   }
 
   // If a string or PlayerId is passed
-  const idStr = typeof playerOrId === "string" ? playerOrId : playerOrId;
+  const idStr = playerOrId as string;
   if (idStr === PlayerId.Human) {
     return t("players.human", { ns: "common" });
   }

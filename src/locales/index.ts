@@ -2,6 +2,7 @@ import "expo-sqlite/localStorage/install";
 import { getLocales } from "expo-localization";
 import i18next, { changeLanguage, use as i18nUse } from "i18next";
 import { initReactI18next } from "react-i18next";
+import { gameLogger } from "../utils/gameLogger";
 
 // Import translation files
 import commonEn from "./en/common.json";
@@ -50,10 +51,10 @@ const getStoredLanguage = async (): Promise<Language> => {
   try {
     const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
     if (stored && (stored === "en" || stored === "zh")) {
-      return stored as Language;
+      return stored;
     }
   } catch (error) {
-    console.warn("Failed to load language preference:", error);
+    gameLogger.warn("locale_load_preference_failed", { error });
   }
   return getSystemLanguage();
 };
@@ -112,7 +113,7 @@ export const changeLanguageCustom = async (
     await changeLanguage(language);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   } catch (error) {
-    console.error("Failed to change and store language:", error);
+    gameLogger.error("locale_change_language_failed", { error });
   }
 };
 

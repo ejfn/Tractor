@@ -341,7 +341,7 @@ function attemptToBeatWithThreshold(
     }
   }
 
-  const strongBeatingCombos = beatingCombos.filter((combo) => {
+  const strongBeatingCombos = beatingCombos.filter((combo) =>
     combo.cards.some((card) => {
       const cardStrength = calculateCardStrategicValue(
         card,
@@ -349,8 +349,8 @@ function attemptToBeatWithThreshold(
         "contribute",
       );
       return cardStrength > strengthThreshold;
-    });
-  });
+    }),
+  );
 
   if (strongBeatingCombos.length > 0) {
     // Use the weakest combo that still meets the threshold

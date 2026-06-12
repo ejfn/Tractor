@@ -21,7 +21,7 @@ export function useTrickResults() {
   // Create a callback ref that will be set by the parent component
   // This will be called when it's safe to clear the currentTrick in the game state
   const onTrickResultCompleteRef = useRef<() => void>(() => {});
-  // onTrickResultComplete is not currently being used, but keeping for potential future use
+  // Called when it's time to clear the currentTrick in game state (invoked inside the auto-hide timer).
 
   // We'll use a ref to track if we've ever shown the result for this trick
   const hasShownResultRef = useRef(false);
@@ -81,7 +81,7 @@ export function useTrickResults() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [showTrickResult, lastTrickWinnerId, lastTrickPoints]);
+  }, [showTrickResult]);
 
   // Safety timers have been removed as they might hide underlying issues
   // instead of fixing the root causes

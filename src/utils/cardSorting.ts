@@ -1,5 +1,5 @@
 import { isTrump } from "../game/cardValue";
-import { Card, TrumpInfo } from "../types";
+import { Card, Rank, Suit, TrumpInfo } from "../types";
 
 /**
  * Sort cards by suit and rank for consistent display
@@ -28,46 +28,32 @@ export const sortCards = (cards: Card[], trumpInfo: TrumpInfo): Card[] => {
 
       // If both are trump rank, sort by suit
       if (aIsTrumpRank && bIsTrumpRank) {
-        if (a.suit && b.suit) {
-          if (trumpInfo.trumpSuit !== undefined) {
-            if (
-              a.suit === trumpInfo.trumpSuit &&
-              b.suit !== trumpInfo.trumpSuit
-            )
-              return -1;
-            if (
-              a.suit !== trumpInfo.trumpSuit &&
-              b.suit === trumpInfo.trumpSuit
-            )
-              return 1;
-          }
-
-          // Sort by rotated suit order
-          const suitOrderValue = getSuitOrderValue(a.suit, b.suit, trumpInfo);
-          if (suitOrderValue !== 0) return suitOrderValue;
+        if (trumpInfo.trumpSuit !== undefined) {
+          if (a.suit === trumpInfo.trumpSuit && b.suit !== trumpInfo.trumpSuit)
+            return -1;
+          if (a.suit !== trumpInfo.trumpSuit && b.suit === trumpInfo.trumpSuit)
+            return 1;
         }
+
+        // Sort by rotated suit order
+        const suitOrderValue = getSuitOrderValue(a.suit, b.suit, trumpInfo);
+        if (suitOrderValue !== 0) return suitOrderValue;
       }
 
       // Sort by rank (descending - Ace high)
-      if (a.rank && b.rank) {
-        return getRankOrderValue(b.rank) - getRankOrderValue(a.rank);
-      }
+      return getRankOrderValue(b.rank) - getRankOrderValue(a.rank);
     }
 
     if (aIsTrump && !bIsTrump) return -1;
     if (!aIsTrump && bIsTrump) return 1;
 
     // Neither is trump - sort by suit with rotation
-    if (a.suit && b.suit && a.suit !== b.suit) {
+    if (a.suit !== b.suit) {
       return getSuitOrderValue(a.suit, b.suit, trumpInfo);
     }
 
     // Same suit - sort by rank (descending - Ace high)
-    if (a.rank && b.rank) {
-      return getRankOrderValue(b.rank) - getRankOrderValue(a.rank);
-    }
-
-    return 0;
+    return getRankOrderValue(b.rank) - getRankOrderValue(a.rank);
   });
 };
 
@@ -76,11 +62,16 @@ export const sortCards = (cards: Card[], trumpInfo: TrumpInfo): Card[] => {
  * Trump suit comes first, then rotated order maintains black-red alternation
  */
 const getSuitOrderValue = (
-  suitA: string,
-  suitB: string,
+  suitA: Suit,
+  suitB: Suit,
   trumpInfo: TrumpInfo,
 ): number => {
-  const standardSuitOrder = ["Spades", "Hearts", "Clubs", "Diamonds"];
+  const standardSuitOrder: Suit[] = [
+    Suit.Spades,
+    Suit.Hearts,
+    Suit.Clubs,
+    Suit.Diamonds,
+  ];
   let trumpIndex = -1;
   if (trumpInfo.trumpSuit !== undefined) {
     trumpIndex = standardSuitOrder.indexOf(trumpInfo.trumpSuit);
@@ -94,33 +85,33 @@ const getSuitOrderValue = (
     ];
   }
 
-  const suitOrder: Record<string, number> = {};
+  const suitOrder: Partial<Record<Suit, number>> = {};
   rotatedOrder.forEach((suit, index) => {
     suitOrder[suit] = index;
   });
 
-  return suitOrder[suitA] - suitOrder[suitB];
+  return (suitOrder[suitA] ?? 0) - (suitOrder[suitB] ?? 0);
 };
 
 /**
  * Get rank order value (higher number = higher rank)
  * Ace is highest (12), 2 is lowest (0)
  */
-const getRankOrderValue = (rank: string): number => {
-  const rankOrder: Record<string, number> = {
-    "2": 0,
-    "3": 1,
-    "4": 2,
-    "5": 3,
-    "6": 4,
-    "7": 5,
-    "8": 6,
-    "9": 7,
-    "10": 8,
-    J: 9,
-    Q: 10,
-    K: 11,
-    A: 12,
+const getRankOrderValue = (rank: Rank): number => {
+  const rankOrder: Partial<Record<Rank, number>> = {
+    [Rank.Two]: 0,
+    [Rank.Three]: 1,
+    [Rank.Four]: 2,
+    [Rank.Five]: 3,
+    [Rank.Six]: 4,
+    [Rank.Seven]: 5,
+    [Rank.Eight]: 6,
+    [Rank.Nine]: 7,
+    [Rank.Ten]: 8,
+    [Rank.Jack]: 9,
+    [Rank.Queen]: 10,
+    [Rank.King]: 11,
+    [Rank.Ace]: 12,
   };
   return rankOrder[rank] ?? 0;
 };

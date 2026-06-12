@@ -4,6 +4,7 @@ import {
   Combo,
   ComboType,
   GameState,
+  PlayableSuit,
   PlayerId,
   Rank,
   Suit,
@@ -104,7 +105,7 @@ export function checkOtherPlayersVoidStatus(
   // Check confirmed voids from memory system using playerMemories
   allOtherPlayerIds.forEach((playerId) => {
     const playerMemory = memory.playerMemories[playerId];
-    if (playerMemory && playerMemory.suitVoids.has(suit)) {
+    if (playerMemory && playerMemory.suitVoids.has(suit as PlayableSuit)) {
       voidPlayers.push(playerId);
     }
   });

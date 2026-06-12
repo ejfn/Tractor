@@ -1,6 +1,7 @@
 import {
   Card,
   GameState,
+  PlayableSuit,
   PlayerId,
   PointPressure,
   Suit,
@@ -20,11 +21,11 @@ export interface LeadingContext {
   isAttackingTeam: boolean; // Whether current player is on attacking team
   pointPressure: PointPressure; // Point pressure level for strategic decisions
   teammate: {
-    voidSuits: Set<Suit>; // Which suits teammate is void in
+    voidSuits: Set<PlayableSuit>; // Which suits teammate is void in
     isTrumpVoid: boolean; // Whether teammate is void in trump
   };
   opponents: {
-    voidSuits: Set<Suit>; // Which suits ALL opponents are void in
+    voidSuits: Set<PlayableSuit>; // Which suits ALL opponents are void in
     isTrumpVoid: boolean; // Whether ALL opponents are void in trump
   };
 }
@@ -68,7 +69,7 @@ export function collectLeadingContext(
   const { teammateId, opponentIds } = getTeammates(playerId, gameState);
 
   // Collect teammate void status
-  const teammateVoids = new Set<Suit>();
+  const teammateVoids = new Set<PlayableSuit>();
   let teammateIsTrumpVoid = false;
 
   const teammateMemory = playerMemories[teammateId];
@@ -80,18 +81,18 @@ export function collectLeadingContext(
   }
 
   // Collect opponent void status (ALL opponents must be void)
-  const opponentVoids = new Set<Suit>();
+  const opponentVoids = new Set<PlayableSuit>();
   let allOpponentsTrumpVoid = true;
 
   // Check each suit to see if ALL opponents are void
   for (const suit of [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades]) {
     const allOpponentsVoidInSuit = opponentIds.every((opponentId) => {
       const opponentMemory = playerMemories[opponentId];
-      return opponentMemory?.suitVoids.has(suit) || false;
+      return opponentMemory?.suitVoids.has(suit as PlayableSuit) || false;
     });
 
     if (allOpponentsVoidInSuit) {
-      opponentVoids.add(suit);
+      opponentVoids.add(suit as PlayableSuit);
     }
   }
 

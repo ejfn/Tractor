@@ -42,7 +42,6 @@ const GameScreenController: React.FC = () => {
     trickCompletionData,
     roundResultRef,
 
-    initGame,
     handleCardSelect,
     handlePlay,
     handleKittySwap,
@@ -116,15 +115,12 @@ const GameScreenController: React.FC = () => {
     setIsSettingsOpen(false);
   }, []);
 
-  // Initialize game on first render
+  // Set up callback for when trick result display is complete
   useEffect(() => {
-    initGame();
-
-    // Set up callback for when trick result display is complete
     setTrickResultCompleteCallback(() => {
       handleTrickResultComplete();
     });
-  }, [initGame, setTrickResultCompleteCallback, handleTrickResultComplete]);
+  }, [setTrickResultCompleteCallback, handleTrickResultComplete]);
 
   // Start dealing when game phase is dealing
   useEffect(() => {

@@ -132,7 +132,7 @@ export async function callLLMForDecision(
 
   // Check if LLM applies to this specific player
   const config = getLLMConfig();
-  if (config.applyToPlayers && !config.applyToPlayers.includes(playerId)) {
+  if (!config.applyToPlayers.includes(playerId)) {
     await simulateLLMLatency();
     return fallback;
   }

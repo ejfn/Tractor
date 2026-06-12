@@ -210,7 +210,7 @@ function findStrictValidCombos(
       }
       break;
 
-    case ComboType.Pair:
+    case ComboType.Pair: {
       // GAME RULE (AGENTS.md): "Pairs and tractors are different combo types"
       // Pair lead: MUST have actual pairs (not just 2 singles)
       // CANNOT respond with tractors - they are different combo type
@@ -219,8 +219,9 @@ function findStrictValidCombos(
       // Add pairs only - tractors are different combo type per AGENTS.md
       validCombos.push(...pairs);
       break;
+    }
 
-    case ComboType.Tractor:
+    case ComboType.Tractor: {
       // GAME RULE (AGENTS.md): "Tractor lead → Must have tractors (not just pairs)"
       // GAME RULE (GAME_RULES.md): "Tractor Following Rules - Same number of pairs"
       // Tractor lead: MUST have actual tractors (not just pairs)
@@ -231,6 +232,7 @@ function findStrictValidCombos(
       );
       validCombos.push(...availableTractors);
       break;
+    }
 
     default:
       // Invalid or multi-combo - treat as singles

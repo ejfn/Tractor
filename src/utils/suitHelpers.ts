@@ -15,7 +15,8 @@ export const getSuitColorStyle = (suit: Suit) => {
  */
 export const getSuitSymbol = (suit: Suit, joker?: JokerType): string => {
   if (joker) {
-    return joker === JokerType.Big ? "🃏" : "🃏";
+    // No distinct Unicode emoji exists for big vs small joker; both show the joker card symbol
+    return "🃏";
   }
 
   switch (suit) {

@@ -3,6 +3,14 @@ import { calculateCardStrategicValue, isTrump } from "./cardValue";
 import { findAllTractors, isValidTractor } from "./tractorLogic";
 
 /**
+ * Returns the suit of the first card in a combo, or undefined if the combo is empty.
+ * card.suit is always set on valid cards, so this is a safe direct access.
+ */
+export const getLeadingSuit = (combo: Card[]): Suit | undefined => {
+  return combo[0]?.suit;
+};
+
+/**
  * Counts the number of pairs in a set of cards by grouping by commonId
  * Returns the count of groups that have exactly 2 cards
  */
@@ -137,15 +145,6 @@ export const checkSameSuitPairPreservation = (
     return true;
   }
 
-  // Local helper function to avoid circular dependency
-  const getLeadingSuit = (combo: Card[]): Suit | undefined => {
-    for (const card of combo) {
-      if (card.suit) {
-        return card.suit;
-      }
-    }
-    return undefined;
-  };
   const leadingSuit = getLeadingSuit(leadingCombo);
   const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));
 
@@ -210,16 +209,6 @@ export const checkTractorFollowingPriority = (
   if (leadingType !== ComboType.Pair && leadingType !== ComboType.Tractor) {
     return true; // Rule doesn't apply to single cards
   }
-
-  // Local helper function
-  const getLeadingSuit = (combo: Card[]): Suit | undefined => {
-    for (const card of combo) {
-      if (card.suit) {
-        return card.suit;
-      }
-    }
-    return undefined;
-  };
 
   const leadingSuit = getLeadingSuit(leadingCombo);
   const isLeadingTrump = leadingCombo.some((card) => isTrump(card, trumpInfo));

@@ -21,8 +21,7 @@ export function useTranslation(namespace?: Namespace) {
     t,
     i18n,
     language: i18n.language,
-    changeLanguage:
-      i18n.changeLanguage?.bind(i18n) || (() => Promise.resolve()),
+    changeLanguage: i18n.changeLanguage.bind(i18n),
   };
 }
 
@@ -37,8 +36,7 @@ export function useCommonTranslation() {
       t(key, options) as string,
     i18n,
     language: i18n.language,
-    changeLanguage:
-      i18n.changeLanguage?.bind(i18n) || (() => Promise.resolve()),
+    changeLanguage: i18n.changeLanguage.bind(i18n),
   };
 }
 
@@ -53,8 +51,7 @@ export function useGameTranslation() {
       t(key, options) as string,
     i18n,
     language: i18n.language,
-    changeLanguage:
-      i18n.changeLanguage?.bind(i18n) || (() => Promise.resolve()),
+    changeLanguage: i18n.changeLanguage.bind(i18n),
   };
 }
 
@@ -69,8 +66,7 @@ export function useTrumpDeclarationTranslation() {
       t(key, options) as string,
     i18n,
     language: i18n.language,
-    changeLanguage:
-      i18n.changeLanguage?.bind(i18n) || (() => Promise.resolve()),
+    changeLanguage: i18n.changeLanguage.bind(i18n),
   };
 }
 
@@ -85,8 +81,7 @@ export function useModalsTranslation() {
       t(key, options) as string,
     i18n,
     language: i18n.language,
-    changeLanguage:
-      i18n.changeLanguage?.bind(i18n) || (() => Promise.resolve()),
+    changeLanguage: i18n.changeLanguage.bind(i18n),
   };
 }
 

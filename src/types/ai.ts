@@ -1,6 +1,6 @@
 // AI strategy and intelligence types
 
-import { Card, Suit, TrumpInfo } from "./card";
+import { Card, Suit, PlayableSuit, TrumpInfo } from "./card";
 import { PlayerId } from "./core";
 
 // AI Strategy Enhancement Types
@@ -26,7 +26,7 @@ export interface GameContext {
   trickPosition: TrickPosition; // Position in current trick
   pointPressure: PointPressure; // Urgency level based on point progress
   currentPlayer: PlayerId;
-  trumpInfo?: TrumpInfo; // Trump information for card analysis
+  trumpInfo: TrumpInfo; // Trump information for card analysis (always present when AI is invoked)
   trickWinnerAnalysis?: TrickWinnerAnalysis; // Real-time trick winner analysis
 
   // Memory System (always present to avoid nullable complexity)
@@ -40,7 +40,7 @@ export interface MemoryContext {
   trumpCardsPlayed: number; // Count of trump cards played
   pointCardsPlayed: number; // Count of point cards played
   leadTrumpPairsPlayed: number; // Count of trump pairs played as leads
-  suitDistribution: Record<string, number>; // Cards played by suit
+  suitDistribution: Partial<Record<Suit, number>>; // Cards played by suit
   playerMemories: Record<string, PlayerMemory>; // Memory for each player
   tricksAnalyzed: number; // Number of tricks processed for memory
 
@@ -54,7 +54,7 @@ export interface MemoryContext {
 export interface PlayerMemory {
   playerId: PlayerId;
   knownCards: Card[]; // Cards we've seen this player play
-  suitVoids: Set<Suit>; // Suits this player has shown to be out of
+  suitVoids: Set<PlayableSuit>; // Suits this player has shown to be out of
   trumpVoid: boolean; // Whether this player has shown to be out of trump cards
   trumpUsed: number; // The count of trump cards have been played by this player
 }
@@ -63,8 +63,6 @@ export interface PlayerMemory {
 export interface TrickWinnerAnalysis {
   currentWinner: PlayerId; // Player ID of current trick winner
   isTeammateWinning: boolean; // Is AI's teammate currently winning
-  isOpponentWinning: boolean; // Is an opponent currently winning
-  isLeadWinning: boolean; // Is the leading player currently winning
   isTrumpLead: boolean; // Leading combo was trump
   isCurrentlyTrumped: boolean; // Non-trump lead got trumped by someone
   trickPoints: number; // Total points in current trick

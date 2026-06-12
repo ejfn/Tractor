@@ -63,7 +63,7 @@ export const isBiggestInSuit = (card: Card, trumpInfo: TrumpInfo): boolean => {
  * Get the numeric value of a rank for comparison purposes
  */
 export const getRankValue = (rank: Rank): number => {
-  return RANK_VALUES[rank] || 0;
+  return RANK_VALUES[rank];
 };
 
 /**

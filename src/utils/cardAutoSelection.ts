@@ -105,8 +105,7 @@ export const getAutoSelectedCards = (
     if (
       leadingComboType === ComboType.Tractor &&
       leadingCombo.length >= 4 &&
-      leadingCombo.length % 2 === 0 &&
-      trumpInfo
+      leadingCombo.length % 2 === 0
     ) {
       const tractorCards = findTractorCards(clickedCard, hand, trumpInfo);
       if (

@@ -372,7 +372,6 @@ describe("AI Core Functionality", () => {
 
         expect(analysis.currentWinner).toBe(PlayerId.Bot2);
         expect(analysis.isTeammateWinning).toBe(true);
-        expect(analysis.isOpponentWinning).toBe(false);
         // Note: isSelfWinning property removed - test needs update
         expect(analysis.trickPoints).toBe(10);
       });
@@ -405,7 +404,6 @@ describe("AI Core Functionality", () => {
 
         expect(analysis.currentWinner).toBe(PlayerId.Bot1);
         expect(analysis.isTeammateWinning).toBe(false);
-        expect(analysis.isOpponentWinning).toBe(true);
         // Note: isSelfWinning property removed - test needs update
         expect(analysis.trickPoints).toBe(10);
       });
@@ -427,7 +425,7 @@ describe("AI Core Functionality", () => {
 
         expect(context.trickWinnerAnalysis).toBeDefined();
         expect(context.trickWinnerAnalysis?.currentWinner).toBe(PlayerId.Bot1);
-        expect(context.trickWinnerAnalysis?.isOpponentWinning).toBe(true);
+        expect(context.trickWinnerAnalysis?.isTeammateWinning).toBe(false); // Bot1 is opponent of Human
         expect(context.trickWinnerAnalysis?.trickPoints).toBe(10);
       });
     });
@@ -564,7 +562,6 @@ describe("AI Core Functionality", () => {
         const analysis = analyzeTrickWinner(gameState, PlayerId.Bot3);
 
         expect(analysis.currentWinner).toBe(PlayerId.Bot1);
-        expect(analysis.isOpponentWinning).toBe(false); // Bot1 is teammate to Bot3 (both Team B)
         expect(analysis.isTeammateWinning).toBe(true); // Bot1 is teammate to Bot3
         expect(analysis.trickPoints).toBe(15);
       });

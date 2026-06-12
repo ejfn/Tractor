@@ -31,9 +31,7 @@ export function useAITurns(
 ) {
   const [waitingForAI, setWaitingForAI] = useState(false);
   // Track which AI we're waiting for
-  const [waitingPlayerId, setWaitingPlayerId] = useState<PlayerId>(
-    "" as PlayerId,
-  );
+  const [waitingPlayerId, setWaitingPlayerId] = useState<PlayerId | null>(null);
 
   const lastProcessedTurnRef = useRef<{
     playerIndex: number;
@@ -49,7 +47,7 @@ export function useAITurns(
         "handleAIMove: gameState is null",
       );
       setWaitingForAI(false);
-      setWaitingPlayerId("" as PlayerId);
+      setWaitingPlayerId(null);
       return;
     }
 
@@ -68,7 +66,6 @@ export function useAITurns(
       return;
     }
 
-    // Check if current trick is complete but not cleared
     const currentTrickComplete =
       gameState.currentTrick &&
       gameState.currentTrick.plays.length === gameState.players.length;
@@ -100,18 +97,12 @@ export function useAITurns(
       return;
     }
 
-    // Additional safety checks for ALL bots - double-check game state
-    // Also check if currentTrick is complete (but not cleared yet)
-    const trickComplete =
-      gameState.currentTrick &&
-      gameState.currentTrick.plays.length === gameState.players.length;
-
     const botReady =
       (gameState.gamePhase === GamePhase.Playing ||
         gameState.gamePhase === GamePhase.KittySwap) &&
       !showTrickResult &&
       !showRoundComplete &&
-      !trickComplete; // Don't let AI play if trick is complete but not cleared
+      !currentTrickComplete; // Don't let AI play if trick is complete but not cleared
 
     if (!botReady) {
       gameLogger.warn(
@@ -121,9 +112,9 @@ export function useAITurns(
           gamePhase: gameState.gamePhase,
           showTrickResult: showTrickResult,
           showRoundComplete: showRoundComplete,
-          trickComplete: trickComplete,
+          trickComplete: currentTrickComplete,
         },
-        `${currentPlayer.id} move attempted during invalid game state: phase=${gameState.gamePhase}, showResult=${showTrickResult}, roundComplete=${showRoundComplete}, trickComplete=${trickComplete}`,
+        `${currentPlayer.id} move attempted during invalid game state: phase=${gameState.gamePhase}, showResult=${showTrickResult}, roundComplete=${showRoundComplete}, trickComplete=${currentTrickComplete}`,
       );
 
       setWaitingForAI(false);
@@ -303,15 +294,13 @@ export function useAITurns(
       }, delay);
     }
   }, [
-    gameState?.currentPlayerIndex,
-    gameState?.gamePhase,
+    gameState,
     showTrickResult,
     lastCompletedTrick,
     showRoundComplete,
     waitingForAI,
     waitingPlayerId,
     handleAIMove,
-    gameState,
   ]);
 
   // Clear thinking indicator when game phase changes

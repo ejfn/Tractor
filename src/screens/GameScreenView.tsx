@@ -39,7 +39,7 @@ interface GameScreenViewProps {
 
   // UI state
   waitingForAI: boolean;
-  waitingPlayerId: PlayerId;
+  waitingPlayerId: PlayerId | null;
   showTrickResult: boolean;
   lastTrickWinnerId: PlayerId;
   lastTrickPoints: number;

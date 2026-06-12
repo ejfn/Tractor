@@ -168,9 +168,8 @@ export function detectPossibleDeclarations(
   trumpRank: Rank,
   currentDeclaration?: TrumpDeclaration,
   playerId?: PlayerId,
-): { type: DeclarationType; cards: Card[]; suit: Suit }[] {
-  const declarations: { type: DeclarationType; cards: Card[]; suit: Suit }[] =
-    [];
+): DeclarationOpportunity[] {
+  const declarations: DeclarationOpportunity[] = [];
 
   // Check for strengthening opportunities if this player is the current declarer
   if (
@@ -218,7 +217,7 @@ export function detectPossibleDeclarations(
   const trumpBySuit: Record<string, Card[]> = {};
 
   trumpCards.forEach((card) => {
-    if (card.suit) {
+    if (card.suit !== Suit.None) {
       if (!trumpBySuit[card.suit]) {
         trumpBySuit[card.suit] = [];
       }

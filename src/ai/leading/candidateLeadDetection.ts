@@ -228,8 +228,8 @@ function getAllUnbeatableCardsInSuit(
     currentPlayerIndex === gameState.roundStartingPlayerIndex;
   const visibleKittyCards = isRoundStarter ? gameState.kittyCards : [];
 
+  const memory = createMemoryContext(gameState);
   for (const combo of allCombos) {
-    const memory = createMemoryContext(gameState);
     const isUnbeatable = isComboUnbeatable(
       combo,
       suit,
@@ -271,14 +271,14 @@ function createMetadata(
   isUnbeatable: boolean,
   totalPairs: number,
 ): CandidateLead["metadata"] {
-  const isTrump = suit === Suit.None;
+  const isTrumpSuit = suit === Suit.None;
   return {
     suit,
     length: cards.length,
     points: cards.reduce((sum, card) => sum + card.points, 0),
     isUnbeatable,
     totalPairs,
-    isTrump,
+    isTrump: isTrumpSuit,
   };
 }
 

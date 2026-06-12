@@ -71,12 +71,10 @@ function localBuildHandDisplay(
     "Off-Suit Clubs",
     "Off-Suit Diamonds",
   ];
-  const allCategories = [...categoryOrder];
-  Object.keys(categories).forEach((cat) => {
-    if (!allCategories.includes(cat)) {
-      allCategories.push(cat);
-    }
-  });
+  const extraCategories = Object.keys(categories).filter(
+    (cat) => !categoryOrder.includes(cat),
+  );
+  const allCategories = [...categoryOrder, ...extraCategories];
 
   return allCategories
     .map((cat) => {
@@ -545,19 +543,8 @@ function localFormatLiveOffSuitPoints(
 /**
  * Builds the static system instructions prompt detailing rules and strategic guidelines.
  */
-export function buildLLMSystemPrompt(gameState: GameState): string {
-  const { trumpInfo } = gameState;
-  const trumpRankStr = trumpInfo.trumpRank;
-  const trumpSuitStr = trumpInfo.trumpSuit || "None (Joker pairs only)";
-
-  // Replace dynamic placeholders
-  return STATIC_LLM_GAME_RULES.replace(/\$\{trumpRankStr\}/g, trumpRankStr)
-    .replace(/\$\{trumpSuitStr\}/g, trumpSuitStr)
-    .replace(
-      /\${trumpInfo\.trumpSuit \|\| "None"}/g,
-      trumpInfo.trumpSuit || "None",
-    )
-    .replace(/\${trumpInfo\.trumpRank}/g, trumpInfo.trumpRank);
+export function buildLLMSystemPrompt(_gameState: GameState): string {
+  return STATIC_LLM_GAME_RULES;
 }
 
 /**
@@ -644,7 +631,6 @@ export function buildLLMUserPrompt(
     voidsStr,
     liveSuitPointsStr,
     activeTrickStatusStr,
-    handCardsCount: handCards.length,
     handChoicesStr,
     isLeading,
     candidateOptionsStr,

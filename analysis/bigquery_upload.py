@@ -38,7 +38,7 @@ class BigQueryUploader:
             return self._upload_files_directly(bucket, logs_dir, compressed_files)
         elif uncompressed_files:
             print(f"📄 Found {len(uncompressed_files)} uncompressed .log files")
-            print("⚠️  Consider running ./run_simulations.sh to auto-compress files")
+            print("⚠️  Consider running ./scripts/run_simulations.sh to auto-compress files")
             return self._upload_files_directly(bucket, logs_dir, uncompressed_files)
         else:
             print("❌ No .log or .log.gz files found")
