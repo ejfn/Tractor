@@ -16,7 +16,7 @@ import {
  * 1. No trump cards
  * 2. No biggest cards (Aces and Kings)
  * 3. No tractors
- * 4. No big pairs (rank > 7)
+ * 4. No big pairs (rank >= 5)
  *
  * Elimination Strategy (when remaining >= 8):
  * - Prefer short suits without high points (10s) or Kings
@@ -120,7 +120,7 @@ function applyBasicExclusions(
     Rank.Ace,
   ];
   pairs.forEach((pair) => {
-    if (pair.cards[0].rank && bigRanks.includes(pair.cards[0].rank)) {
+    if (bigRanks.includes(pair.cards[0].rank)) {
       pair.cards.forEach((card) => {
         bigPairCards.add(card.id);
       });
@@ -159,10 +159,8 @@ function selectFromDisposableCards(
   // Group by suit for elimination strategy
   const suitGroups: { [suit: string]: Card[] } = {};
   disposable.forEach((card) => {
-    if (card.suit) {
-      if (!suitGroups[card.suit]) suitGroups[card.suit] = [];
-      suitGroups[card.suit].push(card);
-    }
+    if (!suitGroups[card.suit]) suitGroups[card.suit] = [];
+    suitGroups[card.suit].push(card);
   });
 
   // Evaluate trump strength in ENTIRE hand to determine elimination strategy

@@ -64,11 +64,9 @@ export function getAITrumpDeclarationDecision(
     };
   }
 
-  const shouldDeclare = true; // Already passed threshold evaluation
-
   return {
-    shouldDeclare,
-    declaration: shouldDeclare ? bestSuitEvaluation.declaration : undefined,
+    shouldDeclare: true,
+    declaration: bestSuitEvaluation.declaration,
     reasoning: bestSuitEvaluation.reasoning,
   };
 }
@@ -128,7 +126,7 @@ function evaluateAllPossibleTrumpSuits(
     }
 
     // Find best declaration type for this suit
-    const bestDeclaration = options.sort(
+    const bestDeclaration = [...options].sort(
       (a, b) => getDeclarationStrength(b.type) - getDeclarationStrength(a.type),
     )[0];
 
@@ -236,9 +234,7 @@ function calculateSuitStrength(
   // Count pairs for strategic value
   const rankCounts = new Map<Rank, number>();
   suitCards.forEach((card) => {
-    if (card.rank) {
-      rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1);
-    }
+    rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1);
   });
 
   // Pair bonuses (strategic value for combinations)
