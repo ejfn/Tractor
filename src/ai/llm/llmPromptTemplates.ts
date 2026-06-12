@@ -48,7 +48,6 @@ export interface UserPromptTemplateArgs {
   voidsStr: string;
   liveSuitPointsStr: string;
   activeTrickStatusStr: string;
-  handCardsCount: number;
   handChoicesStr: string;
   isLeading: boolean;
   candidateOptionsStr: string;
