@@ -2,6 +2,7 @@ import { getRankValue } from "../../game/cardValue";
 import {
   ComboType,
   JokerType,
+  PlayableSuit,
   PointPressure,
   Rank,
   TrumpInfo,
@@ -199,12 +200,16 @@ export function scoreNonTrumpLead(
 
   // Teammate/Opponent void suit bonus/penalty for small combos
   if (candidate.metadata.totalPairs < 2) {
-    if (context.opponents.voidSuits.has(candidate.metadata.suit)) {
+    if (
+      context.opponents.voidSuits.has(candidate.metadata.suit as PlayableSuit)
+    ) {
       score -= 25;
       reasoning.push(`Opponents void penalty - (-25pts)`);
     }
 
-    if (context.teammate.voidSuits.has(candidate.metadata.suit)) {
+    if (
+      context.teammate.voidSuits.has(candidate.metadata.suit as PlayableSuit)
+    ) {
       score += 35;
       reasoning.push(`Teammate void bonus - (+35pts)`);
     }
