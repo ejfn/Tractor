@@ -488,7 +488,7 @@ function selectCrossSuitDisposal(
       : "strategic";
 
   // Sort all cards by strategic value (lowest first for disposal)
-  const sortedCards = playerHand.sort(
+  const sortedCards = [...playerHand].sort(
     (a, b) =>
       calculateCardStrategicValue(a, trumpInfo, sortingValue) -
       calculateCardStrategicValue(b, trumpInfo, sortingValue),

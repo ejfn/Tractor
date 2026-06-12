@@ -123,7 +123,7 @@ function fallbackSelection(
   playerHand: Card[],
   _context: GameContext,
   _gameState: GameState,
-  trumpInfo?: TrumpInfo,
+  trumpInfo: TrumpInfo,
 ): Card[] {
   gameLogger.debug("following_fallback_selection", {
     handSize: playerHand.length,
@@ -137,12 +137,7 @@ function fallbackSelection(
 
   // Use V2 strategic disposal as fallback
   try {
-    if (trumpInfo) {
-      return selectStrategicDisposal(playerHand, trumpInfo, 1);
-    } else {
-      // Ultimate fallback without trump info - just return first card
-      return [playerHand[0]];
-    }
+    return selectStrategicDisposal(playerHand, trumpInfo, 1);
   } catch (error) {
     gameLogger.error("following_fallback_error", {
       error: error instanceof Error ? error.message : String(error),

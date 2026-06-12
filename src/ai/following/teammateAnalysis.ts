@@ -56,7 +56,7 @@ export function shouldContributeToTeammate(
     let isNextPlayerTrumpVoid = false;
     if (!isLastPlayer) {
       const nextPlayerIndex = (gameState.currentPlayerIndex + 1) % 4;
-      const nextPlayerId = gameState.players[nextPlayerIndex]?.id as PlayerId;
+      const nextPlayerId = gameState.players[nextPlayerIndex]?.id;
 
       if (context.memoryContext.playerMemories && nextPlayerId) {
         const nextPlayerMemory =
@@ -88,7 +88,7 @@ export function shouldContributeToTeammate(
     let isNextPlayerVoid = false;
     if (!isLastPlayer) {
       const nextPlayerIndex = (gameState.currentPlayerIndex + 1) % 4;
-      const nextPlayerId = gameState.players[nextPlayerIndex]?.id as PlayerId;
+      const nextPlayerId = gameState.players[nextPlayerIndex]?.id;
       const leadingSuit = currentTrick.plays[0]?.cards[0]?.suit;
 
       if (context.memoryContext.playerMemories && nextPlayerId && leadingSuit) {
