@@ -8,17 +8,13 @@ import {
   TrumpInfo,
   Suit,
   Rank,
-  ComboType,
-  JokerType,
 } from "../../types";
-import { isComboUnbeatable } from "../../game/multiComboValidation";
-import { compareCards } from "../../game/cardComparison";
 import { sortCards } from "../../utils/cardSorting";
-import { analyzeSuitAvailability } from "../following/suitAvailabilityAnalysis";
-import { detectCandidateLeads } from "../leading/candidateLeadDetection";
-import { collectLeadingContext } from "../leading/leadingContext";
-import { scoreNonTrumpLead, scoreTrumpLead } from "../leading/leadingScoring";
 import { createGameContext } from "../aiGameContext";
+import {
+  buildFollowingOptions,
+  buildLeadingOptions,
+} from "./llmPositionDiagnosis";
 import {
   STATIC_LLM_GAME_RULES,
   buildUserPromptTemplate,
@@ -105,265 +101,39 @@ function localBuildHandDisplay(
 }
 
 /**
- * Helper to build trick context and scoring candidates when leading.
+ * Builds the raw trick-state facts for the following path: who led, the plays so
+ * far, your seat, who is still to act, who currently holds it, and the points at
+ * stake. Consequences of each legal play live in the `## Your Options` block.
  */
-function localBuildLeadingPromptContext(
-  handCards: Card[],
+function localBuildActiveTrickStatus(
   gameState: GameState,
   playerId: PlayerId,
-  trumpInfo: TrumpInfo,
-  cardToDisplay: (card: Card) => string,
-): {
-  activeTrickStatusStr: string;
-  taskInstructionStr: string;
-  candidateOptionsStr: string;
-} {
-  const activeTrickStatusStr = `- Status: You are leading this trick!
-- Requirement: You must play exactly ONE valid combination from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo). Mismatched combination types are strictly illegal.`;
-  const taskInstructionStr =
-    "Select exactly ONE valid combination of cards from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo) to lead the trick.";
-
-  const candidates = detectCandidateLeads(
-    handCards,
-    gameState,
-    playerId,
-    trumpInfo,
-  );
-  const context = collectLeadingContext(gameState, playerId);
-  const nonTrumpCandidates = candidates
-    .filter((candidate) => !candidate.metadata.isTrump)
-    .map((candidate) => ({
-      candidate,
-      result: scoreNonTrumpLead(candidate, trumpInfo, context),
-    }))
-    .sort((a, b) => b.result.score - a.result.score);
-
-  const trumpCandidates = candidates
-    .filter((candidate) => candidate.metadata.isTrump)
-    .map((candidate) => ({
-      candidate,
-      result: scoreTrumpLead(candidate, trumpInfo, context),
-    }))
-    .sort((a, b) => b.result.score - a.result.score);
-
-  const scoredCandidates = [...nonTrumpCandidates, ...trumpCandidates].sort(
-    (a, b) => b.result.score - a.result.score,
-  );
-
-  const allOptions = scoredCandidates
-    .map((entry, idx) => {
-      const cardsStr = entry.candidate.cards.map(cardToDisplay).join(", ");
-      return `- Option L${idx + 1}: Play [${cardsStr}] (Rule Score: ${entry.result.score})`;
-    })
-    .join("\n");
-
-  const candidateOptionsStr = `Here are the candidate combinations you can lead, along with a strategic rating from the rule-based engine:
-${allOptions || "- No candidates found (using fallback)"}
-`;
-
-  return {
-    activeTrickStatusStr,
-    taskInstructionStr,
-    candidateOptionsStr,
-  };
-}
-
-/**
- * Renders a short, situation-specific "how to play this seat" bullet for the
- * following path. STATIC_LLM_GAME_RULES §5/§6 state the general principles;
- * this picks the one that actually applies to THIS seat, names the concrete
- * players, and spells out the beat-back inference a small model would otherwise
- * have to derive on its own. It scaffolds the LLM's judgement among the legal
- * options — it does not choose the card.
- */
-function localBuildSeatGuidance(g: {
-  isLast: boolean;
-  isTeammateWinning: boolean;
-  teammateWinSafe: boolean;
-  canBeatWinnerInSuit: boolean;
-  winningPlayerId: string;
-  winningCardStr: string;
-  oppListStr: string;
-  trickPoints: number;
-  isTrumpLead: boolean;
-  isAnyOpponentVoid: boolean;
-  isVoidScenario: boolean;
-}): string {
-  let bullet: string;
-
-  if (g.isVoidScenario) {
-    // Void in the led suit → ruff or sluff (§6).
-    if (g.isTeammateWinning && g.teammateWinSafe) {
-      bullet = `${g.winningPlayerId} (teammate) is winning safely — don't ruff over them; sluff a spare point card (10/K) to bank points for your team, else your lowest off-suit non-point.`;
-    } else if (g.isTeammateWinning) {
-      bullet = `${g.winningPlayerId} (teammate) leads but it isn't safe — sluff a low off-suit non-point; don't ruff over your own teammate.`;
-    } else if (g.trickPoints >= 10) {
-      bullet = `${g.winningPlayerId} (opponent) holds ${g.trickPoints} pts — their card is only takeable by ruffing, so ruff to capture if you can survive ${g.isLast ? "the rest (you're last)" : g.oppListStr} (size it to top a later void player); can't secure it → sluff your lowest off-suit NON-point, never a 5/10/K into their trick.`;
-    } else {
-      bullet = `Only ${g.trickPoints} pts and ${g.winningPlayerId} (opponent) leads — sluff your lowest off-suit non-point and conserve trump.`;
-    }
-  } else if (g.isTeammateWinning) {
-    // Following the led suit, teammate currently winning (§5.1 / §5.2).
-    bullet = g.teammateWinSafe
-      ? `${g.winningPlayerId} (teammate)'s win is safe — bank your biggest spare points, giving 10s and Ks freely (card rank is moot once the win is locked); hold back only a live boss A/K you can cash on your own trick, and never out-rank your teammate.`
-      : `${g.winningPlayerId} (teammate) leads but ${g.oppListStr} can still steal it — play a low non-point card of the led suit; don't commit points yet.`;
-  } else if (g.isLast) {
-    // Opponent winning, you act last with full info (§5.3 / §9 4th).
-    bullet = `You play last with full info — beat ${g.winningPlayerId}'s ${g.winningCardStr} with your cheapest sufficient card if you can; otherwise dump your lowest non-point (never a 5/10/K into an opponent's trick).`;
-  } else if (g.trickPoints >= 10) {
-    // Opponent winning, rich trick, players still behind you (§5.3).
-    if (!g.canBeatWinnerInSuit) {
-      bullet = `${g.trickPoints} pts at stake but you hold nothing that beats ${g.winningPlayerId}'s ${g.winningCardStr} here — duck low and keep your points/high cards for a trick you can win.`;
-    } else {
-      const caveat = g.isTrumpLead
-        ? "a regular trump K/10 loses to active ranks/jokers, so commit only a truly unbeatable trump — else duck low"
-        : g.isAnyOpponentVoid
-          ? "a void opponent can ruff, so even the suit boss may be cut — weigh ducking"
-          : "only the suit boss survives the players behind you; a mid card can be over-taken — else duck";
-      bullet = `${g.trickPoints} pts at stake and ${g.oppListStr} act after you — fight only with a card they can't beat back: ${caveat}.`;
-    }
-  } else {
-    // Opponent winning, thin trick (§5.4).
-    bullet = `Only ${g.trickPoints} pts and ${g.oppListStr} still to act — duck low and conserve; don't spend a boss or trump on a thin trick.`;
-  }
-
-  return `- ${bullet}`;
-}
-
-/**
- * Helper to build trick context and scenario analysis when following.
- */
-function localBuildFollowingPromptContext(
-  handCards: Card[],
-  gameState: GameState,
-  playerId: PlayerId,
-  trumpInfo: TrumpInfo,
-  cardToDisplay: (card: Card) => string,
   gameContext: GameContext,
-  voids: Record<string, string[]>,
-): {
-  activeTrickStatusStr: string;
-  taskInstructionStr: string;
-  suitAnalysisStr: string;
-  seatGuidanceStr: string;
-} {
+): { activeTrickStatusStr: string; taskInstructionStr: string } {
   const currentTrick = gameState.currentTrick;
-  const trickWinner = gameContext.trickWinnerAnalysis;
-  if (!currentTrick || currentTrick.plays.length === 0 || !trickWinner) {
-    return {
-      activeTrickStatusStr: "",
-      taskInstructionStr: "",
-      suitAnalysisStr: "",
-      seatGuidanceStr: "",
-    };
+  const winnerAnalysis = gameContext.trickWinnerAnalysis;
+  if (!currentTrick || currentTrick.plays.length === 0 || !winnerAnalysis) {
+    return { activeTrickStatusStr: "", taskInstructionStr: "" };
   }
 
   const plays = currentTrick.plays;
   const leadPlay = plays[0];
   const requiredCount = leadPlay.cards.length;
-  const winningPlayerId = trickWinner.currentWinner;
+  const winnerId = winnerAnalysis.currentWinner;
   const partnerId = getPartnerId(playerId);
-  const isTeammateWinning = trickWinner.isTeammateWinning;
-  const trickPoints = trickWinner.trickPoints;
-
   const leadingCardsStr = leadPlay.cards.map((c) => c.toString()).join(", ");
 
   const playsStr = plays
     .map(
       (p) =>
-        `- ${p.playerId} played: ${p.cards.map((c) => c.toString()).join(", ")}${p.playerId === winningPlayerId ? " ⭐ (CURRENT LEADING PLAY)" : ""}`,
+        `- ${p.playerId} played: ${p.cards.map((c) => c.toString()).join(", ")}${p.playerId === winnerId ? " ⭐ (currently winning)" : ""}`,
     )
     .join("\n");
 
-  // Determine who is left to act in this trick
-  const playedPlayerIds = plays.map((p) => p.playerId);
+  const playedIds = plays.map((p) => p.playerId);
   const yetToPlay = gameState.players
     .map((p) => p.id)
-    .filter((id) => id !== playerId && !playedPlayerIds.includes(id));
-
-  const remainingOpponents = yetToPlay.filter((id) => id !== partnerId);
-
-  // Confirmed voids come from the engine's MemoryContext (passed in).
-  const leadCard = leadPlay.cards[0];
-  const isTrumpLead = trickWinner.isTrumpLead;
-  const ledSuit = isTrumpLead ? "Trump Group" : leadCard?.suit || "";
-  const isAnyOpponentVoid = remainingOpponents.some((oppId) => {
-    const oppVoids = voids[oppId] || [];
-    return oppVoids.includes(ledSuit);
-  });
-
-  const winningPlay = plays.find((p) => p.playerId === winningPlayerId);
-  const winningCard = winningPlay?.cards[0] || null;
-  const winningCardStr = winningCard ? winningCard.toString() : "their card";
-
-  // "Boss" is an OFF-SUIT notion only: the highest card still live in a side
-  // suit, beatable only by a ruff. Memory-aware via isComboUnbeatable (fed the
-  // engine's played-card memory) — a K becomes boss once both Aces are gone.
-  // Only meaningful for teammate-win safety below, so skip it otherwise.
-  const winnerOffSuitBoss =
-    isTeammateWinning &&
-    !!winningCard &&
-    !winningCard.isTrump(trumpInfo) &&
-    isComboUnbeatable(
-      { type: ComboType.Single, cards: [winningCard], value: 0 },
-      winningCard.suit,
-      gameContext.memoryContext.playedCards,
-      handCards,
-      trumpInfo,
-      [],
-    );
-
-  // The trump group has no "boss"; only the Big Joker is guaranteed unbeatable
-  // (conservative — other high trumps are covered by the all-void check below).
-  const winnerTopTrump = !!winningCard && winningCard.joker === JokerType.Big;
-
-  // Can THIS player beat the current winner with a same-group card in hand?
-  const canBeatWinnerInSuit =
-    !!winningCard &&
-    handCards.some((c) => {
-      const sameGroup = winningCard.isTrump(trumpInfo)
-        ? c.isTrump(trumpInfo)
-        : !c.isTrump(trumpInfo) && c.suit === winningCard.suit;
-      return sameGroup && compareCards(c, winningCard, trumpInfo) > 0;
-    });
-
-  // All remaining opponents are confirmed void in the led suit/trump group.
-  const allRemainingOpponentsVoidLed =
-    remainingOpponents.length > 0 &&
-    remainingOpponents.every((oppId) => (voids[oppId] || []).includes(ledSuit));
-
-  // Teammate's win is "safe" when no opponents remain; their card is an off-suit
-  // boss the remaining (non-void) opponents can't top; they hold the top trump;
-  // or it is a trump trick and every remaining opponent is out of trump. An
-  // opponent void in an OFF-suit lead is NOT safe — they can ruff.
-  const teammateWinSafe =
-    isTeammateWinning &&
-    (remainingOpponents.length === 0 ||
-      (winnerOffSuitBoss && !isAnyOpponentVoid) ||
-      winnerTopTrump ||
-      (isTrumpLead && allRemainingOpponentsVoidLed));
-
-  const oppListStr = remainingOpponents.join(" and ");
-  let winSecurityStr = "";
-  if (isTeammateWinning) {
-    if (remainingOpponents.length === 0) {
-      winSecurityStr = `SECURED WIN: Your teammate (${winningPlayerId}) is winning, and there are NO opponents left to act. Your team is guaranteed to win this trick.`;
-    } else if (teammateWinSafe) {
-      const why =
-        winnerOffSuitBoss && !isAnyOpponentVoid
-          ? `with a card (${winningCardStr}) no remaining opponent can beat`
-          : winnerTopTrump
-            ? `with the top trump (${winningCardStr})`
-            : `a trump trick while the remaining opponents are out of trump`;
-      winSecurityStr = `LIKELY WIN: Your teammate (${winningPlayerId}) is winning ${why}. They are extremely likely to win this trick.`;
-    } else {
-      winSecurityStr = `UNCERTAIN: Your teammate (${winningPlayerId}) is winning, but opponent(s) [${oppListStr}] have yet to play — the card is beatable or an opponent may be void / hold higher, so the outcome is uncertain.`;
-    }
-  } else {
-    winSecurityStr = `UNCERTAIN: Opponent (${winningPlayerId}) is currently winning the trick.`;
-  }
-
-  const isLast = yetToPlay.length === 0;
+    .filter((id) => id !== playerId && !playedIds.includes(id));
   const seatLabel =
     ["1st (leader)", "2nd", "3rd", "4th"][plays.length] ||
     `${plays.length + 1}th`;
@@ -374,100 +144,19 @@ function localBuildFollowingPromptContext(
           .join(", ")
       : "none — you play last";
 
-  const statusLines = [
+  const activeTrickStatusStr = [
     `- Led by: ${leadPlay.playerId} playing [${leadingCardsStr}]`,
-    `- Requirement: You must play exactly ${requiredCount} card(s). You must follow the led suit/trump group if you have any.`,
+    `- Requirement: play exactly ${requiredCount} card(s); follow the led suit/trump group if you hold any.`,
     `\nPlays in this trick so far:`,
     playsStr,
     `\n- Your seat: ${seatLabel} of 4; still to act after you: ${yetToPlayStr}`,
-    `- Current Leading Player: ${winningPlayerId} (Teammate: ${isTeammateWinning ? "YES" : "NO"})`,
-    `- Current Points in Trick: ${trickPoints} pts`,
-    `- Trick Win Security: ${winSecurityStr}`,
-  ];
-  const activeTrickStatusStr = statusLines.join("\n");
-  const taskInstructionStr = `Select exactly ${requiredCount} card(s) from your hand following the trick requirement and suit following rules.`;
+    `- Currently winning: ${winnerId} (${winnerAnalysis.isTeammateWinning ? "your teammate" : "opponent"})`,
+    `- Points in this trick: ${winnerAnalysis.trickPoints} pts`,
+  ].join("\n");
 
-  // Analyze suit following using the same engine as algorithmic AI
-  const analysis = analyzeSuitAvailability(
-    leadPlay.cards,
-    handCards,
-    trumpInfo,
-  );
+  const taskInstructionStr = `Select exactly ${requiredCount} card(s) from your hand following the trick requirement and suit-following rules.`;
 
-  const ledSuitDisplay =
-    analysis.evaluateSuit === Suit.None ? "Trump Group" : analysis.evaluateSuit;
-  const lines: string[] = [
-    `- Led combo type: ${analysis.leadingComboType} (${analysis.requiredLength} cards)`,
-    `- Led suit/group: ${ledSuitDisplay}`,
-    `- Your cards in that suit: ${analysis.availableCount}`,
-    `- Scenario: ${analysis.scenario}`,
-  ];
-
-  switch (analysis.scenario) {
-    case "valid_combos": {
-      lines.push(
-        `- You have matching ${analysis.leadingComboType} combos to choose from:`,
-      );
-      for (const combo of analysis.validCombos) {
-        const ids = combo.cards.map(cardToDisplay).join(", ");
-        lines.push(`    • ${combo.type}: [${ids}]`);
-      }
-      break;
-    }
-    case "enough_remaining": {
-      lines.push(
-        `- You have enough cards in the led suit but NO matching ${analysis.leadingComboType} combos.`,
-      );
-      lines.push(
-        `- You must still play ${analysis.requiredLength} card(s) from this suit. Available cards:`,
-      );
-      lines.push(
-        `    ${analysis.remainingCards.map(cardToDisplay).join(", ")}`,
-      );
-      break;
-    }
-    case "insufficient": {
-      lines.push(
-        `- You only have ${analysis.availableCount} card(s) but ${analysis.requiredLength} are required.`,
-      );
-      lines.push(
-        `- You MUST play ALL your cards in that suit: ${analysis.remainingCards.map(cardToDisplay).join(", ")}`,
-      );
-      lines.push(
-        `- Fill the remaining ${analysis.requiredLength - analysis.availableCount} slot(s) from other suits (discard or trump).`,
-      );
-      break;
-    }
-    case "void": {
-      lines.push(
-        `- You are VOID in the led suit. You may trump (ruff) with trump cards or discard (sluff) from any suit.`,
-      );
-      break;
-    }
-  }
-
-  const suitAnalysisStr = lines.join("\n") + "\n";
-
-  const seatGuidanceStr = localBuildSeatGuidance({
-    isLast,
-    isTeammateWinning,
-    teammateWinSafe,
-    canBeatWinnerInSuit,
-    winningPlayerId,
-    winningCardStr,
-    oppListStr,
-    trickPoints,
-    isTrumpLead,
-    isAnyOpponentVoid,
-    isVoidScenario: analysis.scenario === "void",
-  });
-
-  return {
-    activeTrickStatusStr,
-    taskInstructionStr,
-    suitAnalysisStr,
-    seatGuidanceStr,
-  };
+  return { activeTrickStatusStr, taskInstructionStr };
 }
 
 /**
@@ -561,9 +250,6 @@ export function buildLLMUserPrompt(
   // Build the hand display
   const handChoicesStr = localBuildHandDisplay(sortedHand, trumpInfo);
 
-  // Render a card as the plain notation the LLM also replies with
-  const cardToDisplay = (card: Card): string => card.toString();
-
   // Build the engine's game context once — single source for trick-winner
   // analysis and per-player void memory (shared with the rule-based AI).
   const gameContext = createGameContext(gameState, playerId);
@@ -575,35 +261,27 @@ export function buildLLMUserPrompt(
 
   let activeTrickStatusStr = "";
   let taskInstructionStr = "";
-  let candidateOptionsStr = "";
-  let suitAnalysisStr = "";
-  let seatGuidanceStr = "";
+  let optionsStr = "";
 
   if (isLeading) {
-    const context = localBuildLeadingPromptContext(
-      handCards,
-      gameState,
-      playerId,
-      trumpInfo,
-      cardToDisplay,
-    );
-    activeTrickStatusStr = context.activeTrickStatusStr;
-    taskInstructionStr = context.taskInstructionStr;
-    candidateOptionsStr = context.candidateOptionsStr;
+    optionsStr = buildLeadingOptions(gameState, playerId, handCards, trumpInfo);
+    taskInstructionStr =
+      "Select exactly ONE valid combination of cards from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo) to lead the trick.";
   } else {
-    const context = localBuildFollowingPromptContext(
-      handCards,
+    const status = localBuildActiveTrickStatus(
       gameState,
       playerId,
-      trumpInfo,
-      cardToDisplay,
+      gameContext,
+    );
+    activeTrickStatusStr = status.activeTrickStatusStr;
+    taskInstructionStr = status.taskInstructionStr;
+    optionsStr = buildFollowingOptions(
+      gameState,
+      playerId,
+      handCards,
       gameContext,
       voids,
     );
-    activeTrickStatusStr = context.activeTrickStatusStr;
-    taskInstructionStr = context.taskInstructionStr;
-    suitAnalysisStr = context.suitAnalysisStr;
-    seatGuidanceStr = context.seatGuidanceStr;
   }
 
   // Reconstruct round tricks history (limit to last 3 tricks to keep prompt light)
@@ -633,9 +311,7 @@ export function buildLLMUserPrompt(
     activeTrickStatusStr,
     handChoicesStr,
     isLeading,
-    candidateOptionsStr,
-    suitAnalysisStr,
-    seatGuidanceStr,
+    optionsStr,
     taskInstructionStr,
   });
 
