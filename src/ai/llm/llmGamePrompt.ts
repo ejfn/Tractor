@@ -183,14 +183,20 @@ function localFormatRecentTricksHistory(gameState: GameState): string {
 
 /**
  * Helper to format confirmed player suit voids.
+ *
+ * A void is only confirmed when a player discards off-suit, so this list is a
+ * floor, not the full picture — a player who just played their last card of a
+ * suit is void without it showing here. The caveat is stated so the LLM treats
+ * "no void shown" as "not proven to hold it", not "definitely holds it".
  */
 function localFormatPlayerVoids(voids: Record<string, string[]>): string {
-  return Object.entries(voids)
+  const rows = Object.entries(voids)
     .map(
       ([pId, suitsList]) =>
         `- ${pId}: ${suitsList.length > 0 ? suitsList.join(", ") : "None yet"}`,
     )
     .join("\n");
+  return `${rows}\n(Confirmed only when a player discards off-suit — a player may be void in a suit not listed here if they just played their last card of it.)`;
 }
 
 /**

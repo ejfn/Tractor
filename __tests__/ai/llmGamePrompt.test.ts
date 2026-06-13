@@ -165,6 +165,41 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     expect(user).toContain("4♣ → loses; concedes nothing of yours");
   });
 
+  test("following a led Ace with your own Ace: the Ace is kept apart from the trash, not collapsed", () => {
+    // Human leads A♠ (boss). Bot1 holds the other A♠ plus low spades — its A♠
+    // ties and cannot win, but it is the suit's future boss, so it must NOT be
+    // lumped into the low-card collapse (which is how an Ace gets dumped).
+    const trick = createTrick(
+      PlayerId.Human,
+      [single(Suit.Spades, Rank.Ace, 0)],
+      [],
+      0,
+      PlayerId.Human,
+    );
+    let state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: trick,
+      currentPlayerIndex: 1,
+    });
+    const hand = [
+      single(Suit.Spades, Rank.Ace, 1),
+      single(Suit.Spades, Rank.Four),
+      single(Suit.Spades, Rank.Seven),
+      single(Suit.Hearts, Rank.Six),
+    ];
+    state = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(state, PlayerId.Bot1, hand);
+
+    // The Ace's future value is stated; the trash collapses separately.
+    expect(user).toContain(
+      "A♠ → loses here; it is the highest live Spades (would win a later Spades lead)",
+    );
+    expect(user).toContain("4♠ · 7♠ → loses; concedes nothing of yours");
+    // The Ace is not folded into the low-card class.
+    expect(user).not.toMatch(/low cards \([^)]*A♠/);
+  });
+
   test("leading an unbeatable pair: framed as a guaranteed win, no score", () => {
     const state = createGameState({
       trumpInfo: TRUMP,
@@ -205,15 +240,19 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
 
     const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
 
-    // No tactical nudge to lead trump early.
+    // No tactical "force them to lead trump early" nudge.
     expect(user).not.toMatch(/bleeds|forces opponents/);
-    // Low trump pair: stated as a cost.
-    expect(user).toContain(
-      "[7♥ 7♥] (trump pair) → takes the trick + the next lead unless a higher trump pair is out; cost: spends trump — your ruff/control resource",
+    // Dominance context so the LLM can judge whether draining is viable.
+    expect(user).toMatch(
+      /Trump leads — you hold \d+ trump pair\(s\); ~\d+ trump still out/,
     );
-    // Trump-rank pair: flagged as scarce so it is not burned early.
+    // Low trump pair: drain framing + cost (no "wins the lead" reward-word).
     expect(user).toContain(
-      "[2♠ 2♠] (trump pair) → takes the trick + the next lead unless a higher trump pair is out; cost: spends scarce high trump (jokers/trump-rank)",
+      "[7♥ 7♥] (trump pair) → opponents must follow with a trump pair; repeated trump-pair leads drain their trump and force out trump point cards you capture, but a higher trump pair beats this one; spends a trump pair",
+    );
+    // Trump-rank pair: flagged as scarce.
+    expect(user).toContain(
+      "[2♠ 2♠] (trump pair) → opponents must follow with a trump pair; repeated trump-pair leads drain their trump and force out trump point cards you capture, but a higher trump pair beats this one; spends scarce high trump (jokers/trump-rank)",
     );
   });
 
@@ -259,10 +298,126 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
 
     expect(user).toContain(
-      "BJ (trump) → no trump still out beats it: leading it takes the trick + the next lead",
+      "BJ (trump) → no trump still out beats it, but opponents follow low so you win ≈no points",
     );
     expect(user).toContain(
-      "trump singles (A♥) → a higher trump is still out, so these can be beaten",
+      "trump singles (A♥) → a higher trump is still out, so leading one likely loses — it passes the lead and gives up no points; spends a trump",
+    );
+  });
+
+  test("leading a beatable point card warns it feeds points (a non-point high card does not)", () => {
+    const state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: null,
+      currentPlayerIndex: 1,
+    });
+    const hand = [
+      single(Suit.Spades, Rank.King), // 10 pts, beatable — an Ace is still out
+      single(Suit.Clubs, Rank.Queen), // high, no points
+      single(Suit.Diamonds, Rank.Four),
+    ];
+    const withHand = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
+
+    expect(user).toContain(
+      "K♠ (Spades, 10 pts) → a higher Spades is still out — if an opponent takes it you feed them 10 pts",
+    );
+  });
+
+  test("3rd/last seat over a SAFE teammate win: overtaking is framed as no gain", () => {
+    // Bot1 (Team B) wins with K♠; Bot3 (teammate) is last, so the win is locked.
+    // Bot3's A♠ beats it, but overtaking your own safe win gains nothing.
+    const trick = createTrick(
+      PlayerId.Human,
+      [single(Suit.Spades, Rank.Three)],
+      [
+        { playerId: PlayerId.Bot1, cards: [single(Suit.Spades, Rank.King)] },
+        { playerId: PlayerId.Bot2, cards: [single(Suit.Spades, Rank.Five)] },
+      ],
+      15,
+      PlayerId.Bot1,
+    );
+    let state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: trick,
+      currentPlayerIndex: 3,
+    });
+    const hand = [
+      single(Suit.Spades, Rank.Ace),
+      single(Suit.Spades, Rank.Six),
+      single(Suit.Hearts, Rank.Seven),
+    ];
+    state = givePlayerCards(state, 3, hand);
+
+    const { user } = buildLLMUserPrompt(state, PlayerId.Bot3, hand);
+
+    expect(user).toContain(
+      "A♠ → overtakes your teammate's already-safe win — spends A♠ for no gain",
+    );
+  });
+
+  test("3rd seat over an UNSAFE teammate win: overtaking is framed as shielding points", () => {
+    // Human (Team A) leads K♠ and is winning; Bot1 (opp) follows low; Bot2 (3rd,
+    // Human's teammate) holds A♠ and Bot3 (opp, 4th) can still beat K♠ — not safe.
+    const trick = createTrick(
+      PlayerId.Human,
+      [single(Suit.Spades, Rank.King)],
+      [{ playerId: PlayerId.Bot1, cards: [single(Suit.Spades, Rank.Four)] }],
+      10,
+      PlayerId.Human,
+    );
+    let state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: trick,
+      currentPlayerIndex: 2,
+    });
+    const hand = [
+      single(Suit.Spades, Rank.Ace, 1),
+      single(Suit.Spades, Rank.Seven),
+      single(Suit.Hearts, Rank.Six),
+    ];
+    state = givePlayerCards(state, 2, hand);
+
+    const { user } = buildLLMUserPrompt(state, PlayerId.Bot2, hand);
+
+    expect(user).toContain(
+      "A♠ → overtakes your teammate to shield the 10 pts from bot3; costs A♠",
+    );
+  });
+
+  test("a 5 is a point card when disposing — split from higher non-point cards", () => {
+    // Bot1 (attacker) wins with K♦; Bot2 (defender) must follow with a diamond it
+    // can't win. 5♦ (5 pts) must be flagged separately from 7♦/8♦/9♦, even though
+    // those are higher rank — dumping the 5 feeds points, the others don't.
+    const trick = createTrick(
+      PlayerId.Bot1,
+      [single(Suit.Diamonds, Rank.King)],
+      [],
+      10,
+      PlayerId.Bot1,
+    );
+    let state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: trick,
+      currentPlayerIndex: 2,
+    });
+    const hand = [
+      single(Suit.Diamonds, Rank.Five),
+      single(Suit.Diamonds, Rank.Seven),
+      single(Suit.Diamonds, Rank.Eight),
+      single(Suit.Diamonds, Rank.Nine),
+      single(Suit.Spades, Rank.Six),
+    ];
+    state = givePlayerCards(state, 2, hand);
+
+    const { user } = buildLLMUserPrompt(state, PlayerId.Bot2, hand);
+
+    expect(user).toContain(
+      "7♦ · 8♦ · 9♦ → loses; concedes nothing of yours",
+    );
+    expect(user).toContain(
+      "5♦ → loses; adds 5 pts to the attackers' total (toward their 80)",
     );
   });
 });
