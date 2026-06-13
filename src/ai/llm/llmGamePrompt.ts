@@ -264,7 +264,13 @@ export function buildLLMUserPrompt(
   let optionsStr = "";
 
   if (isLeading) {
-    optionsStr = buildLeadingOptions(gameState, playerId, handCards, trumpInfo);
+    optionsStr = buildLeadingOptions(
+      gameState,
+      playerId,
+      handCards,
+      trumpInfo,
+      gameContext,
+    );
     taskInstructionStr =
       "Select exactly ONE valid combination of cards from your hand (Single, Pair, Tractor, or unbeatable same-suit Multi-Combo) to lead the trick.";
   } else {

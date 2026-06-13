@@ -50,7 +50,7 @@ export interface UserPromptTemplateArgs {
 function buildCurrentStateBlock(args: UserPromptTemplateArgs): string {
   return `## Current State
 - Player: ${args.playerId} (Team ${args.teamId}, partner: ${args.partnerId})
-- Role: ${args.isAttacking ? "Attacking (capture 80+ pts)" : "Defending (limit to <80 pts)"}
+- Role: ${args.isAttacking ? "Attacking — your team must capture 80+ pts this round; points the opponents take are lost from that total" : "Defending — you win by keeping the attackers under 80; every point the attackers capture counts against you"}
 - Attacking team points: ${args.attackingPoints} / 80
 - Trump: rank ${args.trumpRank}, suit ${args.trumpSuit}
 - Live off-suit points (unseen): ${args.liveSuitPointsStr}`;

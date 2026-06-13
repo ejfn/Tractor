@@ -16,9 +16,11 @@ import {
 } from "../../game/cardValue";
 import {
   canBeatCombo,
+  compareCards,
   getCurrentWinningCombo,
 } from "../../game/cardComparison";
 import { isComboUnbeatable } from "../../game/multiComboValidation";
+import { getRemainingUnseenCards } from "../aiGameContext";
 import { analyzeSuitAvailability } from "../following/suitAvailabilityAnalysis";
 import {
   CandidateLead,
@@ -65,11 +67,12 @@ function countHeldPairs(cards: Card[]): number {
   return pairs;
 }
 
-/** Phrase the value of taking the trick now, framed in points + lead control. */
+/** State the outcome of taking the trick now in points — winning an empty trick
+ * is worth only tempo, so it is not dressed up as a gain. */
 function winYield(trickPoints: number): string {
   return trickPoints > 0
-    ? `WINS the trick → captures ${trickPoints} pts for your team`
-    : `WINS the trick (0 pts) → you gain the lead next (cash bosses / set up points)`;
+    ? `wins the trick → captures ${trickPoints} pts for your team`
+    : `takes the trick, but it holds 0 pts → gains only the next lead`;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +129,11 @@ export function buildFollowingOptions(
     trumpInfo,
   });
 
-  // How a non-winning play moves points, given who currently holds the trick.
+  // How a non-winning play moves points, anchored to the 80 threshold so the
+  // direction of a concession is unambiguous for either role: only the attacking
+  // team's total counts toward 80, so points an opponent wins either build the
+  // attackers' total (if you defend) or are lost from yours (if you attack).
+  const isAttacking = gameContext.isAttackingTeam;
   const concedeNote = (points: number): string => {
     if (points === 0) {
       return isTeammateWinning && teammateWinSafe
@@ -134,12 +141,16 @@ export function buildFollowingOptions(
         : `loses; concedes nothing of yours`;
     }
     if (isTeammateWinning && teammateWinSafe) {
-      return `banks ${points} pts onto your team's secured trick`;
+      return isAttacking
+        ? `banks ${points} pts toward your team's 80`
+        : `banks ${points} pts for your team — denied from the attackers`;
     }
     if (isTeammateWinning) {
       return `adds ${points} pts, but ${remainingOpponents.join("/")} can still take the trick`;
     }
-    return `adds ${points} pts to the opponents' trick`;
+    return isAttacking
+      ? `gives the defenders ${points} pts — lost from your 80`
+      : `adds ${points} pts to the attackers' total (toward their 80)`;
   };
 
   const analysis = analyzeSuitAvailability(leadCards, hand, trumpInfo);
@@ -336,7 +347,7 @@ function renderVoidOptions(a: VoidArgs): string[] {
   if (offSuit.length > 0) {
     if (a.isTeammateWinning && a.teammateWinSafe) {
       lines.push(
-        `- ${a.winnerId} (teammate) is winning safely — sluff to bank points:`,
+        `- ${a.winnerId} (teammate) is winning safely — points you sluff are banked for your team:`,
       );
     } else if (a.isTeammateWinning) {
       lines.push(
@@ -426,6 +437,7 @@ export function buildLeadingOptions(
   playerId: PlayerId,
   hand: Card[],
   trumpInfo: TrumpInfo,
+  gameContext: GameContext,
 ): string {
   const candidates = detectCandidateLeads(hand, gameState, playerId, trumpInfo);
   const lines: string[] = [];
@@ -440,7 +452,7 @@ export function buildLeadingOptions(
       c.type === ComboType.Invalid ? "multi-combo" : c.type.toLowerCase();
     const pts = c.metadata.points > 0 ? `, ${c.metadata.points} pts` : "";
     const fate = c.metadata.isUnbeatable
-      ? `unbeatable → guaranteed to win + keep the lead`
+      ? `unbeatable in-suit → wins unless an opponent ruffs; keeps the lead (spends a boss, not trump)`
       : `a higher ${c.metadata.suit} combo or a ruff can beat it`;
     lines.push(`- ${playLabel(c.cards)} (${kind}${pts}) → ${fate}`);
   }
@@ -458,7 +470,7 @@ export function buildLeadingOptions(
     const card = c.cards[0];
     const pts = card.points > 0 ? `, ${card.points} pts` : "";
     const fate = c.metadata.isUnbeatable
-      ? `unbeatable → wins the trick + keeps the lead`
+      ? `unbeatable in-suit → wins unless an opponent ruffs; keeps the lead (spends a boss, not trump)`
       : isBiggestInSuit(card, trumpInfo)
         ? `suit boss → wins unless ruffed`
         : `a higher ${suitName(card.suit)} is still out — may be beaten or ruffed`;
@@ -485,21 +497,41 @@ export function buildLeadingOptions(
       ? "spends scarce high trump (jokers/trump-rank)"
       : "spends trump — your ruff/control resource";
     lines.push(
-      `- ${playLabel(c.cards)} (trump ${kind}) → wins the lead unless a higher trump ${kind} remains; ${cost}`,
+      `- ${playLabel(c.cards)} (trump ${kind}) → takes the trick + the next lead unless a higher trump ${kind} is out; cost: ${cost}`,
     );
   }
   const trumpSingles = trump.filter((c) => c.cards.length === 1);
   if (trumpSingles.length > 0) {
-    const cards = trumpSingles
-      .map((c) => c.cards[0])
-      .sort(
-        (x, y) =>
-          calculateCardStrategicValue(x, trumpInfo, "basic") -
-          calculateCardStrategicValue(y, trumpInfo, "basic"),
-      );
-    lines.push(
-      `- trump singles (${listLabel(cards)}) → spends trump — your ruff/control resource; jokers and trump-rank cards are your scarcest`,
+    // A trump single wins the lead only if no higher trump is still unseen in
+    // another hand — code does that accounting so the model does not have to
+    // (and does not mistake a high-but-beatable trump like SJ for "the strongest").
+    const unseenTrump = getRemainingUnseenCards(
+      Suit.None,
+      gameContext,
+      gameState,
     );
+    const isBeaten = (card: Card): boolean =>
+      unseenTrump.some((u) => compareCards(u, card, trumpInfo) > 0);
+    const winners = trumpSingles.filter((c) => !isBeaten(c.cards[0]));
+    const beaten = trumpSingles.filter((c) => isBeaten(c.cards[0]));
+
+    for (const c of sortCandidatesDesc(winners, trumpInfo)) {
+      lines.push(
+        `- ${c.cards[0].toString()} (trump) → no trump still out beats it: leading it takes the trick + the next lead; cost: you spend the trump (cannot keep it to ruff or block the final trick)`,
+      );
+    }
+    if (beaten.length > 0) {
+      const cards = beaten
+        .map((c) => c.cards[0])
+        .sort(
+          (x, y) =>
+            calculateCardStrategicValue(x, trumpInfo, "basic") -
+            calculateCardStrategicValue(y, trumpInfo, "basic"),
+        );
+      lines.push(
+        `- trump singles (${listLabel(cards)}) → a higher trump is still out, so these can be beaten; spend trump (ruff/control)`,
+      );
+    }
   }
 
   return lines.join("\n");

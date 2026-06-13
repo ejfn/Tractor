@@ -1,5 +1,12 @@
 import { buildLLMUserPrompt } from "../../src/ai/llm/llmGamePrompt";
-import { Card, PlayerId, Rank, Suit, TrumpInfo } from "../../src/types";
+import {
+  Card,
+  JokerType,
+  PlayerId,
+  Rank,
+  Suit,
+  TrumpInfo,
+} from "../../src/types";
 import { createGameState, givePlayerCards } from "../helpers/gameStates";
 import { createTrick } from "../helpers/tricks";
 
@@ -46,7 +53,7 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
 
     // The winning play is described by what it yields in POINTS, not "wins trick".
     expect(user).toContain(
-      "A♠ → WINS the trick → captures 20 pts for your team",
+      "A♠ → wins the trick → captures 20 pts for your team",
     );
     // The two low spades are collapsed into one equivalent losing class.
     expect(user).toContain("4♠ · 9♠ → loses; concedes nothing of yours");
@@ -90,9 +97,9 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     expect(user).not.toMatch(/recommend/i);
   });
 
-  test("teammate winning safely: contributing point cards is framed as banking points", () => {
+  test("teammate winning safely: contributing point cards is framed as banking toward 80", () => {
     // Bot1 (Bot3's teammate) is winning with A♣; Bot3 is last to act, so the win is
-    // locked. Bot3's K♣/5♣ cannot win — they are framed as banking points.
+    // locked. Bot3 is on the attacking team, so banked points count toward 80.
     const trick = createTrick(
       PlayerId.Human,
       [single(Suit.Clubs, Rank.Three)],
@@ -118,12 +125,44 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
 
     const { user } = buildLLMUserPrompt(state, PlayerId.Bot3, hand);
 
-    expect(user).toContain(
-      "K♣ → loses; banks 10 pts onto your team's secured trick",
+    expect(user).toContain("K♣ → loses; banks 10 pts toward your team's 80");
+    expect(user).toContain("5♣ → loses; banks 5 pts toward your team's 80");
+  });
+
+  test("defender conceding to an attacker: point card is framed as feeding the attackers' 80", () => {
+    // Bot1 (attacker, Team B) leads the boss A♣ and is winning. Bot2 (defender,
+    // Team A) must follow clubs with K♣ or 4♣ — neither wins. The point card must
+    // read as feeding the attackers' total, so dumping it is an obvious loss.
+    const trick = createTrick(
+      PlayerId.Bot1,
+      [single(Suit.Clubs, Rank.Ace)],
+      [],
+      0,
+      PlayerId.Bot1,
     );
+    let state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: trick,
+      currentPlayerIndex: 2,
+    });
+    const hand = [
+      single(Suit.Clubs, Rank.King),
+      single(Suit.Clubs, Rank.Four),
+      single(Suit.Hearts, Rank.Six),
+    ];
+    state = givePlayerCards(state, 2, hand);
+
+    const { user } = buildLLMUserPrompt(state, PlayerId.Bot2, hand);
+
+    // Defender role stated so the goal cannot be read backwards.
     expect(user).toContain(
-      "5♣ → loses; banks 5 pts onto your team's secured trick",
+      "Defending — you win by keeping the attackers under 80",
     );
+    // The King's cost is tied to the threshold; the low club concedes nothing.
+    expect(user).toContain(
+      "K♣ → loses; adds 10 pts to the attackers' total (toward their 80)",
+    );
+    expect(user).toContain("4♣ → loses; concedes nothing of yours");
   });
 
   test("leading an unbeatable pair: framed as a guaranteed win, no score", () => {
@@ -143,7 +182,7 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
 
     expect(user).toContain("## Lead Options");
     expect(user).toContain(
-      "[A♠ A♠] (pair) → unbeatable → guaranteed to win + keep the lead",
+      "[A♠ A♠] (pair) → unbeatable in-suit → wins unless an opponent ruffs; keeps the lead (spends a boss, not trump)",
     );
     expect(user).not.toMatch(/Rule Score/);
     // System prompt keeps objective mechanics, drops prescriptive strategy.
@@ -170,11 +209,11 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     expect(user).not.toMatch(/bleeds|forces opponents/);
     // Low trump pair: stated as a cost.
     expect(user).toContain(
-      "[7♥ 7♥] (trump pair) → wins the lead unless a higher trump pair remains; spends trump — your ruff/control resource",
+      "[7♥ 7♥] (trump pair) → takes the trick + the next lead unless a higher trump pair is out; cost: spends trump — your ruff/control resource",
     );
     // Trump-rank pair: flagged as scarce so it is not burned early.
     expect(user).toContain(
-      "[2♠ 2♠] (trump pair) → wins the lead unless a higher trump pair remains; spends scarce high trump (jokers/trump-rank)",
+      "[2♠ 2♠] (trump pair) → takes the trick + the next lead unless a higher trump pair is out; cost: spends scarce high trump (jokers/trump-rank)",
     );
   });
 
@@ -201,6 +240,29 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
 
     expect(user).toContain(
       "Play exactly 2 card(s). Copy cards verbatim from YOUR HAND — to repeat a card (a pair) you must hold two copies of it (shown ×2).",
+    );
+  });
+
+  test("trump single leads: top live trump wins; a beatable high trump is flagged", () => {
+    const state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: null,
+      currentPlayerIndex: 1,
+    });
+    const hand = [
+      Card.createJoker(JokerType.Big, 0), // top trump → wins the lead
+      single(Suit.Hearts, Rank.Ace), // high trump, but jokers/2s still out → beatable
+      single(Suit.Diamonds, Rank.Five),
+    ];
+    const withHand = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
+
+    expect(user).toContain(
+      "BJ (trump) → no trump still out beats it: leading it takes the trick + the next lead",
+    );
+    expect(user).toContain(
+      "trump singles (A♥) → a higher trump is still out, so these can be beaten",
     );
   });
 });
