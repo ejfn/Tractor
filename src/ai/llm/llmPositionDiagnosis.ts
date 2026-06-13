@@ -143,7 +143,9 @@ export function buildFollowingOptions(
   };
 
   const analysis = analyzeSuitAvailability(leadCards, hand, trumpInfo);
-  const lines: string[] = [];
+  const lines: string[] = [
+    `Play exactly ${analysis.requiredLength} card(s). Copy cards verbatim from YOUR HAND — to repeat a card (a pair) you must hold two copies of it (shown ×2).`,
+  ];
 
   switch (analysis.scenario) {
     case "valid_combos": {
@@ -439,12 +441,12 @@ export function buildLeadingOptions(
     const pts = c.metadata.points > 0 ? `, ${c.metadata.points} pts` : "";
     const fate = c.metadata.isUnbeatable
       ? `unbeatable → guaranteed to win + keep the lead`
-      : `can be beaten/ruffed — uncertain`;
+      : `a higher ${c.metadata.suit} combo or a ruff can beat it`;
     lines.push(`- ${playLabel(c.cards)} (${kind}${pts}) → ${fate}`);
   }
 
   // Off-suit singles: bosses (likely win) and point cards stand alone; collapse
-  // the low rubbish per suit into one "probe" class.
+  // the low rubbish per suit into one class.
   const offSingles = offSuit.filter((c) => c.cards.length === 1);
   const notableSingles = offSingles.filter(
     (c) =>
@@ -456,27 +458,34 @@ export function buildLeadingOptions(
     const card = c.cards[0];
     const pts = card.points > 0 ? `, ${card.points} pts` : "";
     const fate = c.metadata.isUnbeatable
-      ? `unbeatable → safely banks points + keeps the lead`
+      ? `unbeatable → wins the trick + keeps the lead`
       : isBiggestInSuit(card, trumpInfo)
-        ? `suit boss → likely wins unless ruffed`
-        : `beatable — likely drawn back`;
+        ? `suit boss → wins unless ruffed`
+        : `a higher ${suitName(card.suit)} is still out — may be beaten or ruffed`;
     lines.push(`- ${card.toString()} (${suitName(card.suit)}${pts}) → ${fate}`);
   }
   const rubbishSingles = offSingles.filter((c) => !notableSingles.includes(c));
   if (rubbishSingles.length > 0) {
     const cards = rubbishSingles.map((c) => c.cards[0]);
     lines.push(
-      `- low singles (${listLabel(cards)}) → cheap probes: bleed a card / test who is void, win little`,
+      `- low singles (${listLabel(cards)}) → low cards; give up the lead, carry no points`,
     );
   }
 
-  // Trump leads: pairs/tractors pressure opponents' trump; singles spend scarce control.
+  // Trump leads stated as facts (cost + what beats them), not as a tactic — a
+  // trump lead spends control you cannot then ruff with, and a trump-rank/joker
+  // combo is your scarcest resource.
   const trumpStructured = trump.filter((c) => c.cards.length > 1);
   for (const c of trumpStructured) {
     const kind =
       c.type === ComboType.Invalid ? "multi-combo" : c.type.toLowerCase();
+    const scarce =
+      calculateCardStrategicValue(c.cards[0], trumpInfo, "basic") >= 170;
+    const cost = scarce
+      ? "spends scarce high trump (jokers/trump-rank)"
+      : "spends trump — your ruff/control resource";
     lines.push(
-      `- ${playLabel(c.cards)} (trump ${kind}) → forces opponents to follow trump / bleeds their trump`,
+      `- ${playLabel(c.cards)} (trump ${kind}) → wins the lead unless a higher trump ${kind} remains; ${cost}`,
     );
   }
   const trumpSingles = trump.filter((c) => c.cards.length === 1);
@@ -489,7 +498,7 @@ export function buildLeadingOptions(
           calculateCardStrategicValue(y, trumpInfo, "basic"),
       );
     lines.push(
-      `- trump singles (${listLabel(cards)}) → spends trump control; high trumps (jokers, trump rank) are scarce`,
+      `- trump singles (${listLabel(cards)}) → spends trump — your ruff/control resource; jokers and trump-rank cards are your scarcest`,
     );
   }
 

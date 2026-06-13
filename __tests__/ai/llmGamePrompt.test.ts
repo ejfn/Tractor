@@ -150,4 +150,57 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     expect(system).toContain("## 5. Reading the Options");
     expect(system).not.toMatch(/Leading Strategy|Seat Guidance/);
   });
+
+  test("trump leads are stated as cost facts, not as a 'bleed trump' tactic", () => {
+    const state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: null,
+      currentPlayerIndex: 1,
+    });
+    const hand = [
+      ...Card.createPair(Suit.Hearts, Rank.Seven), // low trump pair (trump suit)
+      ...Card.createPair(Suit.Spades, Rank.Two), // scarce trump-rank pair
+      single(Suit.Diamonds, Rank.Five),
+    ];
+    const withHand = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
+
+    // No tactical nudge to lead trump early.
+    expect(user).not.toMatch(/bleeds|forces opponents/);
+    // Low trump pair: stated as a cost.
+    expect(user).toContain(
+      "[7♥ 7♥] (trump pair) → wins the lead unless a higher trump pair remains; spends trump — your ruff/control resource",
+    );
+    // Trump-rank pair: flagged as scarce so it is not burned early.
+    expect(user).toContain(
+      "[2♠ 2♠] (trump pair) → wins the lead unless a higher trump pair remains; spends scarce high trump (jokers/trump-rank)",
+    );
+  });
+
+  test("following options state the exact count and the two-copies rule for pairs", () => {
+    const trick = createTrick(
+      PlayerId.Human,
+      Card.createPair(Suit.Diamonds, Rank.King),
+      [],
+      20,
+      PlayerId.Human,
+    );
+    let state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: trick,
+      currentPlayerIndex: 1,
+    });
+    const hand = [
+      ...Card.createPair(Suit.Diamonds, Rank.Three),
+      single(Suit.Clubs, Rank.Six),
+    ];
+    state = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(state, PlayerId.Bot1, hand);
+
+    expect(user).toContain(
+      "Play exactly 2 card(s). Copy cards verbatim from YOUR HAND — to repeat a card (a pair) you must hold two copies of it (shown ×2).",
+    );
+  });
 });
