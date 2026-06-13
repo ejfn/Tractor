@@ -232,7 +232,7 @@ export async function callLLMForDecision(
         });
 
         errorHint =
-          'Some cards you selected are not in your hand. Select only cards shown in YOUR HAND, using their exact notation (e.g. "3♣", "10♥", "BJ").';
+          'Some cards you selected are not in your hand. Select only cards shown in YOUR HAND, using their exact notation (e.g. "3♣", "10♥", "BJ"). To play a pair you must hold two copies of that card (shown ×2) — do not repeat a card you hold only once.';
         llmInvalidCardRetries++;
         continue;
       }
