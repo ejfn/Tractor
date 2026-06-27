@@ -23,9 +23,10 @@ export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Game Reference
 - NEVER split a pair you hold while a matching combo is required, and NEVER play a card you do not hold — copy notations from YOUR HAND, repeating a notation only if you hold two copies.
 - If you cannot match the structure, follow with whatever cards of that suit you have. Only when void in the led suit may you trump (ruff) or discard another suit.
 
-## 5. Reading the Options
+## 5. Reading the Options & Strategy
 - **## Lead Options** (when leading) and **## Your Options** (when following) list EVERY legal play and what it does in points — which plays win, what they capture or concede, and what they cost you. These are facts, not advice.
 - Choose the play that is best for your team's point total this round. The engine has done the counting and the lookahead; the strategic judgement is yours.
+- **Resource Conservation**: High cards (Jokers, trump ranks, and off-suit bosses) are scarce winning assets. Wasting them on a trick you cannot win, or that your teammate has already secured, cedes future control. When playing a losing card, lean toward conserving your highest cards.
 `;
 
 export interface UserPromptTemplateArgs {
