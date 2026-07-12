@@ -42,8 +42,7 @@ MAX_LLM_INVALID_PLAYS=""
 MODELS=()
 DEFAULT_MODELS=(
     "deepseek/deepseek-chat"
-    "meta-llama/llama-3.3-70b-instruct"
-    "google/gemini-2.5-flash"
+    "google/gemini-3.1-flash-lite"
 )
 
 # Parse CLI arguments
@@ -248,7 +247,7 @@ else
         elif [ -n "$OPENROUTER_MODEL" ]; then
             echo "• LLM Model:         $OPENROUTER_MODEL (from env/.env)"
         else
-            echo "• LLM Model:         meta-llama/llama-3.3-70b-instruct (default)"
+            echo "• LLM Model:         google/gemini-3.1-flash-lite (default)"
         fi
         
         if [ -n "$OPENROUTER_API_KEY" ]; then

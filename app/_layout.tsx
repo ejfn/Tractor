@@ -14,11 +14,10 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from "react-native";
 import "react-native-reanimated";
 import { setAudioModeAsync } from "expo-audio";
-
-import { useColorScheme } from "react-native";
 
 // Initialize i18n and import language functions
 import { useCommonTranslation } from "../src/hooks/useTranslation";
@@ -118,7 +117,10 @@ export default function RootLayout() {
       playsInSilentMode: true,
       shouldPlayInBackground: false,
       interruptionMode: "mixWithOthers",
-    }).catch(console.error);
+    }).catch(
+      // eslint-disable-next-line no-console
+      console.error,
+    );
   }, []);
 
   if (!loaded) {

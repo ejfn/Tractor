@@ -122,6 +122,23 @@ function localBuildActiveTrickStatus(
   const winnerId = winnerAnalysis.currentWinner;
   const partnerId = getPartnerId(playerId);
   const leadingCardsStr = leadPlay.cards.map((c) => c.toString()).join(", ");
+  // Name the follow group explicitly. Trump-rank leads print as off-suit (e.g. 2♥
+  // when rank is 2) but the led group is always Trump Group — models otherwise
+  // follow the ink color and play illegal Hearts.
+  const isTrumpLead = winnerAnalysis.isTrumpLead;
+  const ledGroupLabel = isTrumpLead
+    ? "Trump Group"
+    : `${leadPlay.cards[0]?.suit ?? "unknown"}`;
+  const trumpRankNote =
+    isTrumpLead &&
+    leadPlay.cards.some(
+      (c) =>
+        !c.joker &&
+        c.rank === gameState.trumpInfo.trumpRank &&
+        c.suit !== gameState.trumpInfo.trumpSuit,
+    )
+      ? ` (trump-rank ${gameState.trumpInfo.trumpRank} — printed suit is NOT the led suit)`
+      : "";
 
   const playsStr = plays
     .map(
@@ -146,7 +163,8 @@ function localBuildActiveTrickStatus(
 
   const activeTrickStatusStr = [
     `- Led by: ${leadPlay.playerId} playing [${leadingCardsStr}]`,
-    `- Requirement: play exactly ${requiredCount} card(s); follow the led suit/trump group if you hold any.`,
+    `- Led group: ${ledGroupLabel}${trumpRankNote}`,
+    `- Requirement: play exactly ${requiredCount} card(s) from ${ledGroupLabel} if you hold any (see ## Your Options for legal plays).`,
     `\nPlays in this trick so far:`,
     playsStr,
     `\n- Your seat: ${seatLabel} of 4; still to act after you: ${yetToPlayStr}`,
@@ -154,7 +172,7 @@ function localBuildActiveTrickStatus(
     `- Points in this trick: ${winnerAnalysis.trickPoints} pts`,
   ].join("\n");
 
-  const taskInstructionStr = `Select exactly ${requiredCount} card(s) from your hand following the trick requirement and suit-following rules.`;
+  const taskInstructionStr = `Select exactly ${requiredCount} card(s) from the led group (${ledGroupLabel}) using a play listed under ## Your Options.`;
 
   return { activeTrickStatusStr, taskInstructionStr };
 }

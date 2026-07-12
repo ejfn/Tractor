@@ -62,21 +62,21 @@
       "save": "保存"
     },
     "models": {
-      "google/gemini-2.5-flash-lite": {
+      "google/gemini-3.1-flash-lite": {
         "rank": "综合最佳 (推荐)",
-        "description": "首选推荐。速度极快（~1-2秒延迟）。完美的规则遵循和秒级响应。出色的资源保护、牌组组合意识及队友喂牌配合。"
+        "description": "首选推荐。速度极快（~1-2秒延迟）。针对低延迟、高吞吐工作负载进行了优化，且提升了战略推理与规则遵循能力。"
       },
-      "deepseek/deepseek-chat": {
+      "x-ai/grok-4.5": {
+        "rank": "精英策略与推理",
+        "description": "来自 xAI 的顶尖策略与推理模型。拥有杰出的战术深度和卡牌协作能力。"
+      },
+      "deepseek/deepseek-v4-flash": {
         "rank": "策略之王",
-        "description": "战略大师（~2-3秒延迟）。无可比拟的策略深度、卓越的队友沟通及主牌整合能力。"
+        "description": "战略大师。拥有极高的战略深度与出色的规则遵循能力，但在负载下可能存在延迟波动。"
       },
-      "qwen/qwen3-next-80b-a3b-instruct": {
+      "qwen/qwen3.6-flash": {
         "rank": "精英策略",
-        "description": "精英战术引擎（~3-4秒延迟）。完美的规则遵循，出色的牌组识别，以及绝佳的分数防守策略。"
-      },
-      "meta-llama/llama-3.3-70b-instruct": {
-        "rank": "性价比首选",
-        "description": "超值首选（~2-3秒延迟）。卓越的指令遵循能力以及稳定可靠的规则对齐。"
+        "description": "精英战术引擎。完美的规则遵循，出色的牌组识别，以及绝佳的分数防守策略。"
       }
     }
   }

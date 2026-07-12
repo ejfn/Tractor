@@ -278,7 +278,43 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     const { user } = buildLLMUserPrompt(state, PlayerId.Bot1, hand);
 
     expect(user).toContain(
-      "Play exactly 2 card(s). Copy cards verbatim from YOUR HAND — to repeat a card (a pair) you must hold two copies of it (shown ×2).",
+      "Led group: Diamonds — play exactly 2 card(s) from this group only. Copy cards verbatim from YOUR HAND (×2 means you hold a pair). Plays below are the full legal set.",
+    );
+    // Active Trick also names the led group so models do not follow printed color.
+    expect(user).toContain("- Led group: Diamonds");
+  });
+
+  test("trump-rank pair lead is labeled Trump Group, not the printed suit", () => {
+    // Trump rank 2 / suit Hearts: leading 2♠2♠ is a Trump Group lead (not Spades).
+    const trick = createTrick(
+      PlayerId.Human,
+      Card.createPair(Suit.Spades, Rank.Two),
+      [],
+      0,
+      PlayerId.Human,
+    );
+    let state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: trick,
+      currentPlayerIndex: 1,
+    });
+    const hand = [
+      single(Suit.Hearts, Rank.Three),
+      single(Suit.Hearts, Rank.Nine),
+      single(Suit.Spades, Rank.Three),
+      single(Suit.Spades, Rank.Four),
+    ];
+    state = givePlayerCards(state, 1, hand);
+
+    const { user, system } = buildLLMUserPrompt(state, PlayerId.Bot1, hand);
+
+    expect(user).toContain("- Led group: Trump Group");
+    expect(user).toMatch(/trump-rank 2 — printed suit is NOT the led suit/);
+    expect(user).toContain("Led group: trump — play exactly 2 card(s)");
+    // Must not imply the lead is plain Spades.
+    expect(user).not.toContain("- Led group: Spades");
+    expect(system).toMatch(
+      /printed suit is NOT the led suit|Trump Group lead/i,
     );
   });
 
