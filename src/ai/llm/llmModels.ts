@@ -1,60 +1,70 @@
-export interface ModelInfo {
+/**
+ * Sentinel stored in LLM config when the user selects the built-in Default model.
+ * Resolved to {@link DEFAULT_MODEL.id} only at call/verify time, so the default
+ * model id can change later without migrating saved configs.
+ */
+export const DEFAULT_MODEL_SENTINEL = "default";
+
+export interface DefaultModelInfo {
   id: string;
-  name: string;
-  icon: string;
-  rank: string;
-  rankColor: string;
+  displayName: string;
   inputPrice: string;
   outputPrice: string;
-  description: string;
 }
 
-export const AVAILABLE_MODELS: ModelInfo[] = [
-  {
-    id: "google/gemini-3.1-flash-lite",
-    name: "Gemini 3.1 Flash Lite",
-    icon: "✨",
-    rank: "Best Overall (Recommended)",
-    rankColor: "#06B6D4",
-    inputPrice: "$0.25",
-    outputPrice: "$1.50",
-    description:
-      "Recommended. Speed Champion (~1-2s latency). Optimized for low-latency, high-volume workloads with improved strategic reasoning and outstanding rules compliance.",
-  },
-  {
-    id: "x-ai/grok-4.5",
-    name: "Grok 4.5",
-    icon: "👁️",
-    rank: "Elite Strategy & Reasoning",
-    rankColor: "#10B981",
-    inputPrice: "$2.00",
-    outputPrice: "$6.00",
-    description:
-      "State-of-the-art strategic and reasoning model from xAI. Outstanding tactical depth and card coordination.",
-  },
-  {
-    id: "deepseek/deepseek-v4-flash",
-    name: "DeepSeek V4 Flash",
-    icon: "🌊",
-    rank: "Peak Strategic Master",
-    rankColor: "#8B5CF6",
-    inputPrice: "$0.077",
-    outputPrice: "$0.154",
-    description:
-      "Strategic master. High strategic depth and excellent rules compliance, though latency can vary under load.",
-  },
-  {
-    id: "qwen/qwen3.6-flash",
-    name: "Qwen 3.6 Flash",
-    icon: "🔷",
-    rank: "Elite Strategy",
-    rankColor: "#00BCD4",
-    inputPrice: "$0.1875",
-    outputPrice: "$1.125",
-    description:
-      "Elite tactical engine. Flawless rules compliance, superb combo recognition, and great point preservation.",
-  },
-];
+/**
+ * The built-in Default model: id + display metadata kept cohesive so a model
+ * bump is a one-spot edit.
+ */
+export const DEFAULT_MODEL: DefaultModelInfo = {
+  id: "google/gemini-3.1-flash-lite",
+  displayName: "Gemini 3.1 Flash Lite",
+  inputPrice: "$0.25",
+  outputPrice: "$1.50",
+};
 
-export const DEFAULT_MODEL_ID = AVAILABLE_MODELS[0].id;
+/** Concrete OpenRouter model id backing the built-in Default selection. */
+export const DEFAULT_MODEL_ID = DEFAULT_MODEL.id;
+
 export const DEFAULT_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+/** Trim a stored config model value (single normalization site). */
+function normalizeStoredModel(storedModel: string): string {
+  return storedModel.trim();
+}
+
+/**
+ * Map a stored config value to the concrete OpenRouter model id used in API
+ * calls. The sentinel and empty values resolve to the built-in default; any
+ * other non-empty string is treated as a user-supplied OpenRouter model id.
+ */
+export function resolveOpenRouterModelId(storedModel: string): string {
+  const trimmed = normalizeStoredModel(storedModel);
+  if (trimmed === "" || trimmed === DEFAULT_MODEL_SENTINEL) {
+    return DEFAULT_MODEL_ID;
+  }
+  return trimmed;
+}
+
+/**
+ * Whether the stored config value means "use the built-in Default model".
+ * Treats the legacy concrete default id as Default so old saves normalize to
+ * the sentinel on load.
+ */
+export function isDefaultModelSelection(storedModel: string): boolean {
+  const trimmed = normalizeStoredModel(storedModel);
+  return (
+    trimmed === "" ||
+    trimmed === DEFAULT_MODEL_SENTINEL ||
+    trimmed === DEFAULT_MODEL_ID
+  );
+}
+
+/**
+ * Whether a custom model id has the OpenRouter `provider/model` shape.
+ * Not an existence check — the connectivity test is the real validator.
+ */
+export function isValidOpenRouterModelId(modelId: string): boolean {
+  const trimmed = normalizeStoredModel(modelId);
+  return trimmed.length > 0 && trimmed.includes("/");
+}

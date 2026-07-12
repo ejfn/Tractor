@@ -11,9 +11,15 @@ import {
 } from "react-native";
 import { testOpenRouterConnection } from "../ai/llm/llmAIClient";
 import { DEFAULT_LLM_CONFIG, LLMConfig } from "../ai/llm/llmConfig";
-import { AVAILABLE_MODELS as MODELS } from "../ai/llm/llmModels";
+import {
+  DEFAULT_MODEL,
+  DEFAULT_MODEL_ID,
+  DEFAULT_MODEL_SENTINEL,
+  isDefaultModelSelection,
+  isValidOpenRouterModelId,
+  resolveOpenRouterModelId,
+} from "../ai/llm/llmModels";
 import { useModalsTranslation } from "../hooks/useTranslation";
-import { ModalsTranslationKey } from "../locales/types";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -42,19 +48,34 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
 }) => {
   const { t } = useModalsTranslation();
   const [useLLM, setUseLLM] = useState(currentConfig.enabled);
-  const [selectedModel, setSelectedModel] = useState(
-    currentConfig.model || DEFAULT_LLM_CONFIG.model,
+  const [selectionMode, setSelectionMode] = useState<"default" | "custom">(
+    isDefaultModelSelection(currentConfig.model) ? "default" : "custom",
+  );
+  const [customModel, setCustomModel] = useState(
+    isDefaultModelSelection(currentConfig.model) ? "" : currentConfig.model,
   );
   const [apiKey, setApiKey] = useState(currentConfig.apiKey || "");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     kind: "idle",
   });
 
+  // The value persisted to config: sentinel for Default, custom id otherwise.
+  const storedModel =
+    selectionMode === "default" ? DEFAULT_MODEL_SENTINEL : customModel.trim();
+  // Concrete OpenRouter id used for the connectivity test (and at play time).
+  const resolvedModel = resolveOpenRouterModelId(storedModel);
+  // Display label for the Default card + success banner, e.g. "Default (Gemini 3.1 Flash Lite)".
+  const defaultModelLabel = t("aiConfig.llm.defaultModelName", {
+    modelName: DEFAULT_MODEL.displayName,
+  });
+
   // Sync local state when the modal opens (handles mid-game reopen)
   useEffect(() => {
     if (visible) {
+      const isDefault = isDefaultModelSelection(currentConfig.model);
       setUseLLM(currentConfig.enabled);
-      setSelectedModel(currentConfig.model || DEFAULT_LLM_CONFIG.model);
+      setSelectionMode(isDefault ? "default" : "custom");
+      setCustomModel(isDefault ? "" : currentConfig.model);
       setApiKey(currentConfig.apiKey || "");
       setConnectionStatus({ kind: "idle" });
     }
@@ -76,7 +97,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
         ...DEFAULT_LLM_CONFIG,
         enabled: false,
         apiKey: apiKey.trim(),
-        model: selectedModel,
+        model: storedModel,
       });
       return;
     }
@@ -89,11 +110,20 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
       return;
     }
 
+    // Validate custom model id before hitting the network.
+    if (selectionMode === "custom" && !isValidOpenRouterModelId(customModel)) {
+      setConnectionStatus({
+        kind: "error",
+        message: t("aiConfig.llm.customModelError"),
+      });
+      return;
+    }
+
     setConnectionStatus({ kind: "testing" });
 
     const result = await testOpenRouterConnection(
       apiKey.trim(),
-      selectedModel,
+      resolvedModel,
       DEFAULT_LLM_CONFIG.apiUrl,
     );
 
@@ -102,14 +132,16 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
         kind: "success",
         message: t("aiConfig.llm.connectedMsg", {
           modelName:
-            MODELS.find((m) => m.id === selectedModel)?.name ?? selectedModel,
+            selectionMode === "default"
+              ? defaultModelLabel
+              : customModel.trim(),
         }),
       });
       onSave({
         ...DEFAULT_LLM_CONFIG,
         enabled: true,
         apiKey: apiKey.trim(),
-        model: selectedModel,
+        model: storedModel,
       });
     } else {
       setConnectionStatus({
@@ -119,7 +151,17 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
         }),
       });
     }
-  }, [useLLM, apiKey, selectedModel, onSave, t]);
+  }, [
+    useLLM,
+    apiKey,
+    selectionMode,
+    customModel,
+    storedModel,
+    resolvedModel,
+    defaultModelLabel,
+    onSave,
+    t,
+  ]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -259,85 +301,108 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                   {t("aiConfig.llm.apiKeyHint").split("openrouter.ai")[1] || ""}
                 </Text>
 
-                {/* Model cards */}
+                {/* Model selection: Default vs Custom */}
                 <Text style={styles.sectionLabel}>
                   {t("aiConfig.llm.selectModelLabel")}
                 </Text>
-                {(() => {
-                  const modelsTranslations = t(
-                    "aiConfig.models" as unknown as ModalsTranslationKey,
-                    {
-                      returnObjects: true,
-                    },
-                  ) as unknown as Record<
-                    string,
-                    { rank?: string; description?: string }
-                  >;
-                  return MODELS.map((model) => {
-                    const isSelected = selectedModel === model.id;
-                    const translatedRank =
-                      modelsTranslations?.[model.id]?.rank || model.rank;
-                    const translatedDesc =
-                      modelsTranslations?.[model.id]?.description ||
-                      model.description;
-                    return (
-                      <TouchableOpacity
-                        key={model.id}
-                        style={[
-                          styles.modelCard,
-                          isSelected && styles.modelCardSelected,
-                        ]}
-                        onPress={() => {
-                          setSelectedModel(model.id);
-                          setConnectionStatus({ kind: "idle" });
-                        }}
-                        activeOpacity={0.75}
+
+                {/* Default card */}
+                <TouchableOpacity
+                  style={[
+                    styles.modelCard,
+                    selectionMode === "default" && styles.modelCardSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectionMode("default");
+                    setConnectionStatus({ kind: "idle" });
+                  }}
+                  activeOpacity={0.75}
+                >
+                  <View style={styles.modelCardHeader}>
+                    <Text style={styles.modelIcon}>✨</Text>
+                    <View style={styles.modelNameBlock}>
+                      <Text style={styles.modelName}>{defaultModelLabel}</Text>
+                      <View
+                        style={[styles.rankBadge, { borderColor: "#06B6D4" }]}
                       >
-                        <View style={styles.modelCardHeader}>
-                          <Text style={styles.modelIcon}>{model.icon}</Text>
-                          <View style={styles.modelNameBlock}>
-                            <Text style={styles.modelName}>{model.name}</Text>
-                            <View
-                              style={[
-                                styles.rankBadge,
-                                { borderColor: model.rankColor },
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.rankBadgeText,
-                                  { color: model.rankColor },
-                                ]}
-                              >
-                                {translatedRank}
-                              </Text>
-                            </View>
-                          </View>
-                          {isSelected && (
-                            <View style={styles.selectedCheck}>
-                              <Text style={styles.selectedCheckText}>✓</Text>
-                            </View>
-                          )}
-                        </View>
-                        <Text style={styles.modelDescription}>
-                          {translatedDesc}
+                        <Text
+                          style={[styles.rankBadgeText, { color: "#06B6D4" }]}
+                        >
+                          {t("aiConfig.llm.defaultModelBadge")}
                         </Text>
-                        <View style={styles.pricingRow}>
-                          <Text style={styles.pricingLabel}>
-                            {model.inputPrice}
-                            <Text style={styles.pricingUnit}> in</Text>
-                          </Text>
-                          <Text style={styles.pricingDivider}>/</Text>
-                          <Text style={styles.pricingLabel}>
-                            {model.outputPrice}
-                            <Text style={styles.pricingUnit}> out</Text>
-                          </Text>
-                          <Text style={styles.pricingUnit}> per 1M tokens</Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  });
-                })()}
+                      </View>
+                    </View>
+                    {selectionMode === "default" && (
+                      <View style={styles.selectedCheck}>
+                        <Text style={styles.selectedCheckText}>✓</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.modelDescription}>
+                    {t("aiConfig.llm.defaultModelDesc")}
+                  </Text>
+                  <View style={styles.pricingRow}>
+                    <Text style={styles.pricingLabel}>
+                      {DEFAULT_MODEL.inputPrice}
+                      <Text style={styles.pricingUnit}> in</Text>
+                    </Text>
+                    <Text style={styles.pricingDivider}>/</Text>
+                    <Text style={styles.pricingLabel}>
+                      {DEFAULT_MODEL.outputPrice}
+                      <Text style={styles.pricingUnit}> out</Text>
+                    </Text>
+                    <Text style={styles.pricingUnit}> per 1M tokens</Text>
+                  </View>
+                  <Text style={styles.modelIdMono}>{DEFAULT_MODEL_ID}</Text>
+                </TouchableOpacity>
+
+                {/* Custom card */}
+                <TouchableOpacity
+                  style={[
+                    styles.modelCard,
+                    selectionMode === "custom" && styles.modelCardSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectionMode("custom");
+                    setConnectionStatus({ kind: "idle" });
+                  }}
+                  activeOpacity={0.75}
+                >
+                  <View style={styles.modelCardHeader}>
+                    <Text style={styles.modelIcon}>⚙️</Text>
+                    <View style={styles.modelNameBlock}>
+                      <Text style={styles.modelName}>
+                        {t("aiConfig.llm.customModelName")}
+                      </Text>
+                    </View>
+                    {selectionMode === "custom" && (
+                      <View style={styles.selectedCheck}>
+                        <Text style={styles.selectedCheckText}>✓</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.modelDescription}>
+                    {t("aiConfig.llm.customModelDesc")}
+                  </Text>
+
+                  {selectionMode === "custom" && (
+                    <TextInput
+                      style={styles.customModelInput}
+                      value={customModel}
+                      onChangeText={(v) => {
+                        setCustomModel(v);
+                        if (connectionStatus.kind !== "idle") {
+                          setConnectionStatus({ kind: "idle" });
+                        }
+                      }}
+                      placeholder={t("aiConfig.llm.customModelPlaceholder")}
+                      placeholderTextColor="#9CA3AF"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      spellCheck={false}
+                    />
+                  )}
+                </TouchableOpacity>
               </View>
             )}
           </ScrollView>
@@ -642,6 +707,24 @@ const styles = StyleSheet.create({
   pricingLabel: { fontSize: 12, fontWeight: "700", color: "#CBD5E1" },
   pricingDivider: { fontSize: 12, color: "#475569" },
   pricingUnit: { fontSize: 11, color: "#64748B", fontWeight: "400" },
+  modelIdMono: {
+    fontSize: 11,
+    color: "#64748B",
+    fontFamily: "monospace",
+    marginTop: 6,
+  },
+  customModelInput: {
+    marginTop: 10,
+    backgroundColor: "#0F0F1A",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    fontFamily: "monospace",
+  },
 
   // (test button removed — merged into footer)
 

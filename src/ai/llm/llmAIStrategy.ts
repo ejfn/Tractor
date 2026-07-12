@@ -2,6 +2,7 @@ import { Card, GameState, PlayerId } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
 import { getLLMConfig, isLLMEnabled } from "./llmConfig";
 import { callOpenRouter, ChatMessage } from "./llmAIClient";
+import { resolveOpenRouterModelId } from "./llmModels";
 import { buildLLMUserPrompt } from "./llmGamePrompt";
 import { getPlayValidationError } from "../../game/playValidation";
 
@@ -165,7 +166,7 @@ export async function callLLMForDecision(
       // Call LLM API
       const responseText = await callOpenRouter(
         config.apiKey,
-        config.model,
+        resolveOpenRouterModelId(config.model),
         config.apiUrl,
         messages,
         config.timeoutMs,
