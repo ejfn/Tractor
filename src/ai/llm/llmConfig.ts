@@ -1,8 +1,8 @@
 import { gameLogger } from "../../utils/gameLogger";
 import {
   DEFAULT_API_URL,
-  DEFAULT_MODEL_ID,
-  AVAILABLE_MODELS,
+  DEFAULT_MODEL_SENTINEL,
+  isDefaultModelSelection,
 } from "./llmModels";
 
 export interface LLMConfig {
@@ -17,7 +17,7 @@ export interface LLMConfig {
 export const DEFAULT_LLM_CONFIG: LLMConfig = {
   enabled: false,
   apiKey: "",
-  model: DEFAULT_MODEL_ID,
+  model: DEFAULT_MODEL_SENTINEL,
   apiUrl: DEFAULT_API_URL,
   timeoutMs: 15000,
   applyToPlayers: ["bot1", "bot2", "bot3"],
@@ -34,14 +34,16 @@ export function getLLMConfig(): LLMConfig {
       const stored = localStorage.getItem("tractor_llm_config");
       if (stored) {
         const savedConfig = JSON.parse(stored) as Partial<LLMConfig>;
-        const savedModel = savedConfig.model || DEFAULT_LLM_CONFIG.model;
-        const isValidModel =
-          AVAILABLE_MODELS.some((m) => m.id === savedModel) ||
-          process.env.NODE_ENV === "test";
+        const rawModel = savedConfig.model ?? "";
+        // Default sentinel + legacy concrete default id normalize to sentinel;
+        // any other non-empty id is preserved as a user-supplied OpenRouter id.
+        const model = isDefaultModelSelection(rawModel)
+          ? DEFAULT_MODEL_SENTINEL
+          : rawModel.trim();
         return {
           enabled: savedConfig.enabled ?? DEFAULT_LLM_CONFIG.enabled,
           apiKey: savedConfig.apiKey ?? DEFAULT_LLM_CONFIG.apiKey,
-          model: isValidModel ? savedModel : DEFAULT_LLM_CONFIG.model,
+          model,
           apiUrl: savedConfig.apiUrl || DEFAULT_LLM_CONFIG.apiUrl,
           timeoutMs: savedConfig.timeoutMs || DEFAULT_LLM_CONFIG.timeoutMs,
           applyToPlayers:

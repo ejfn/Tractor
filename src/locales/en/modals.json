@@ -54,30 +54,19 @@
       "selectModelLabel": "Select Model",
       "enterKeyError": "Please enter your OpenRouter API key first.",
       "connectedMsg": "✓ Connected — {{modelName}} is ready!",
-      "connectionError": "✗ {{error}}"
+      "connectionError": "✗ {{error}}",
+      "defaultModelName": "Default ({{modelName}})",
+      "defaultModelDesc": "Recommended. Speed champion (~1-2s latency) with improved strategic reasoning and outstanding rules compliance.",
+      "defaultModelBadge": "Recommended",
+      "customModelName": "Custom",
+      "customModelDesc": "Use any OpenRouter model by entering its model id (provider/model).",
+      "customModelPlaceholder": "e.g. deepseek/deepseek-chat",
+      "customModelError": "Enter a valid OpenRouter model id (e.g. deepseek/deepseek-chat)."
     },
     "buttons": {
       "cancel": "Cancel",
       "verifyAndSave": "Verify & Save",
       "save": "Save"
-    },
-    "models": {
-      "google/gemini-3.1-flash-lite": {
-        "rank": "Best Overall (Recommended)",
-        "description": "Recommended. Speed Champion (~1-2s latency). Optimized for low-latency, high-volume workloads with improved strategic reasoning and outstanding rules compliance."
-      },
-      "x-ai/grok-4.5": {
-        "rank": "Elite Strategy & Reasoning",
-        "description": "State-of-the-art strategic and reasoning model from xAI. Outstanding tactical depth and card coordination."
-      },
-      "deepseek/deepseek-v4-flash": {
-        "rank": "Peak Strategic Master",
-        "description": "Strategic master. High strategic depth and excellent rules compliance, though latency can vary under load."
-      },
-      "qwen/qwen3.6-flash": {
-        "rank": "Elite Strategy",
-        "description": "Elite tactical engine. Flawless rules compliance, superb combo recognition, and great point preservation."
-      }
     }
   }
 }
