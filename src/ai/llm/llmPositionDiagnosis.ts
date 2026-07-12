@@ -191,7 +191,7 @@ export function buildFollowingOptions(
 
   const analysis = analyzeSuitAvailability(leadCards, hand, trumpInfo);
   const lines: string[] = [
-    `Play exactly ${analysis.requiredLength} card(s). Copy cards verbatim from YOUR HAND — to repeat a card (a pair) you must hold two copies of it (shown ×2).`,
+    `Led group: ${suitName(ledSuit)} — play exactly ${analysis.requiredLength} card(s) from this group only. Copy cards verbatim from YOUR HAND (×2 means you hold a pair). Plays below are the full legal set.`,
   ];
 
   switch (analysis.scenario) {

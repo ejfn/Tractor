@@ -22,15 +22,15 @@ Evaluating models helps ensure:
 We provide a unified runner script (`run.sh`) to automatically run sequential game simulations across different models and compile a comparative evaluation report.
 
 ### A. Run Command (Default Models)
-To benchmark the standard model list (`deepseek/deepseek-chat`, `meta-llama/llama-3.3-70b-instruct`, `google/gemini-2.5-flash`), run:
+To benchmark the standard model list (`deepseek/deepseek-v4-flash`, `qwen/qwen3-next-80b-a3b-instruct`, `google/gemini-3.1-flash-lite`), run:
 ```bash
 ./.agents/skills/model-evaluation/scripts/run.sh --eval
 ```
 
 ### B. Run Command (Custom Models)
-To evaluate specific models (e.g. Gemini 2.5 Pro and Llama 3.3):
+To evaluate specific models (e.g. Gemini 3.1 Pro and Grok 4.5):
 ```bash
-./.agents/skills/model-evaluation/scripts/run.sh "google/gemini-2.5-pro" "meta-llama/llama-3.3-70b-instruct"
+./.agents/skills/model-evaluation/scripts/run.sh "google/gemini-3.1-pro-preview" "x-ai/grok-4.5"
 ```
 
 ### C. Options and Customization
@@ -116,6 +116,7 @@ Review individual game logs in `logs/` to verify:
 
 | Model | Success Rate | Rule Compliance | Latency | Strategic Verdict |
 | :--- | :--- | :--- | :--- | :--- |
-| **`deepseek/deepseek-chat` (V3)** | **~84%** (rate-limited) | **100%** | Medium-Low | **Excellent**: Demonstrates high positional awareness and flawless formatting compliance. |
-| **`meta-llama/llama-3.3-70b`** | High | High | Medium | **Very Good**: Solid reasoning, occasionally requires retry on complex card-id sorting. |
-| **`google/gemini-2.5-flash`** | Very High | High | Low | **Excellent Value**: Best speed/cost ratio; highly recommended for runtime. |
+| **`google/gemini-3.1-flash-lite`** | **100%** | **100%** | **Low (~2.1s)** | **Best Overall**: Flawless formatting, perfect compliance, and matches real-time gameplay speeds. |
+| **`deepseek/deepseek-v4-flash`** | **100%** | **100%** | High (~15.8s) | **Excellent Strategy**: Very high strategic depth, but currently too slow for real-time play. |
+| **`qwen/qwen3-next-80b-a3b-instruct`** | High | **100%** | Medium (~3s) | **Elite Tactical**: Great combo play and rules compliance, very responsive. |
+| **`x-ai/grok-4.5`** | High | High | Very High (~17s) | **State-of-the-Art**: Elite card coordination, but extremely high latency. |

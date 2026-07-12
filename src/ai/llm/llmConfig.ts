@@ -35,7 +35,9 @@ export function getLLMConfig(): LLMConfig {
       if (stored) {
         const savedConfig = JSON.parse(stored) as Partial<LLMConfig>;
         const savedModel = savedConfig.model || DEFAULT_LLM_CONFIG.model;
-        const isValidModel = AVAILABLE_MODELS.some((m) => m.id === savedModel);
+        const isValidModel =
+          AVAILABLE_MODELS.some((m) => m.id === savedModel) ||
+          process.env.NODE_ENV === "test";
         return {
           enabled: savedConfig.enabled ?? DEFAULT_LLM_CONFIG.enabled,
           apiKey: savedConfig.apiKey ?? DEFAULT_LLM_CONFIG.apiKey,

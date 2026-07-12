@@ -8,7 +8,7 @@ export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Game Reference
 
 ## 2. Card Strength (High -> Low)
 - Trump Group (one combined suit): Big Joker > Small Joker > trump-rank in trump suit > trump-rank in other suits (equal; first played wins) > trump-suit regulars (A > K > ... > 3).
-- Trump-rank cards in every suit belong to the Trump Group, not their printed suit; they beat any off-suit Ace.
+- Trump-rank cards in every suit are Trump Group, not their printed suit (2♥ with trump rank 2 is trump, not Hearts); they beat any off-suit Ace.
 - Off-Suit: the highest unplayed card of a suit (A, or K if A is trump rank) is the "boss". Cross-suit cards cannot beat each other.
 - No-Trump Round: only Jokers and the four trump-rank cards are trump; everything else is plain. Off-suit bosses cannot be ruffed.
 
@@ -19,12 +19,13 @@ export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Game Reference
 - A multi-combo is two or more combos of one non-trump suit led together; legal only when every component is unbeatable, or all three other players are void in that suit.
 
 ## 4. Following — the Absolute Laws (legality, not strategy)
+- **## Active Trick** names the led group — follow THAT group only. A lead of trump-rank cards (e.g. [2♥, 2♥] when trump rank is 2) is a Trump Group lead; do not follow the printed suit.
 - If you hold the led suit/trump group, you MUST follow it, matching the led combo structure and total length.
 - NEVER split a pair you hold while a matching combo is required, and NEVER play a card you do not hold — copy notations from YOUR HAND, repeating a notation only if you hold two copies.
-- If you cannot match the structure, follow with whatever cards of that suit you have. Only when void in the led suit may you trump (ruff) or discard another suit.
+- If you cannot match the structure, follow with whatever cards of that group you have. Only when void in the led group may you trump (ruff) or discard another suit.
 
 ## 5. Reading the Options & Strategy
-- **## Lead Options** (when leading) and **## Your Options** (when following) list EVERY legal play and what it does in points — which plays win, what they capture or concede, and what they cost you. These are facts, not advice.
+- **## Lead Options** / **## Your Options** list EVERY legal play and its point consequence. Choose only from those listed plays — freelancing cards by printed suit is how illegal follows happen.
 - Choose the play that is best for your team's point total this round. The engine has done the counting and the lookahead; the strategic judgement is yours.
 - **Resource Conservation**: High cards (Jokers, trump ranks, and off-suit bosses) are scarce winning assets. Wasting them on a trick you cannot win, or that your teammate has already secured, cedes future control. When playing a losing card, lean toward conserving your highest cards.
 `;
@@ -97,7 +98,7 @@ ${args.optionsStr.trim()}`;
 function buildTaskBlock(args: UserPromptTemplateArgs): string {
   return `## Task
 ${args.taskInstructionStr}
-Reply with JSON ONLY: {"reasoning":"<one sentence>","play":["<card>",...]}. Copy card notations from YOUR HAND (repeat notation to play a pair). Never play cards you do not hold.`;
+Reply with JSON ONLY: {"reasoning":"<one sentence, maximum 15 words; do not repeat or loop trick history>","play":["<card>",...]}. Copy card notations from YOUR HAND (repeat notation to play a pair). Never play cards you do not hold.`;
 }
 
 /**

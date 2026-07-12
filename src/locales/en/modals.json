@@ -62,21 +62,21 @@
       "save": "Save"
     },
     "models": {
-      "google/gemini-2.5-flash-lite": {
+      "google/gemini-3.1-flash-lite": {
         "rank": "Best Overall (Recommended)",
-        "description": "Recommended. Speed Champion (~1-2s latency). Flawless rules compliance and sub-second responses. Outstanding resource conservation, combo awareness and teammate feeding."
+        "description": "Recommended. Speed Champion (~1-2s latency). Optimized for low-latency, high-volume workloads with improved strategic reasoning and outstanding rules compliance."
       },
-      "deepseek/deepseek-chat": {
+      "x-ai/grok-4.5": {
+        "rank": "Elite Strategy & Reasoning",
+        "description": "State-of-the-art strategic and reasoning model from xAI. Outstanding tactical depth and card coordination."
+      },
+      "deepseek/deepseek-v4-flash": {
         "rank": "Peak Strategic Master",
-        "description": "Strategic master (~2-3s latency). Unparalleled strategic depth, superior teammate communication and trump unification."
+        "description": "Strategic master. High strategic depth and excellent rules compliance, though latency can vary under load."
       },
-      "qwen/qwen3-next-80b-a3b-instruct": {
+      "qwen/qwen3.6-flash": {
         "rank": "Elite Strategy",
-        "description": "Elite tactical engine (~3-4s latency). Flawless rules compliance, superb combo recognition, and great point preservation."
-      },
-      "meta-llama/llama-3.3-70b-instruct": {
-        "rank": "Strategic Value",
-        "description": "Value King (~2-3s latency). Excellent instructions follower and reliable rules alignment."
+        "description": "Elite tactical engine. Flawless rules compliance, superb combo recognition, and great point preservation."
       }
     }
   }

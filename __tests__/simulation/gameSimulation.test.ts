@@ -113,7 +113,7 @@ describe("Unattended Game Simulation", () => {
               model:
                 process.env.LLM_MODEL ||
                 process.env.OPENROUTER_MODEL ||
-                "meta-llama/llama-3.3-70b-instruct",
+                "google/gemini-3.1-flash-lite",
               apiUrl:
                 process.env.OPENROUTER_API_URL ||
                 "https://openrouter.ai/api/v1/chat/completions",

@@ -171,11 +171,20 @@ export async function callLLMForDecision(
         config.timeoutMs,
       );
 
-      // Clean response (LLMs sometimes wrap in ```json ... ```)
+      // Clean response (LLMs sometimes wrap in ```json ... ``` or include <think> blocks)
       let cleanedJson = responseText.trim();
-      const codeBlockMatch = cleanedJson.match(/^```json\s*([\s\S]*?)\s*```$/);
+      cleanedJson = cleanedJson
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .trim();
+
+      const codeBlockMatch = cleanedJson.match(/```json\s*([\s\S]*?)\s*```/i);
       if (codeBlockMatch) {
         cleanedJson = codeBlockMatch[1].trim();
+      } else {
+        const genericBlockMatch = cleanedJson.match(/```\s*([\s\S]*?)\s*```/);
+        if (genericBlockMatch) {
+          cleanedJson = genericBlockMatch[1].trim();
+        }
       }
 
       let parsed: { reasoning?: string; play?: string[] };
