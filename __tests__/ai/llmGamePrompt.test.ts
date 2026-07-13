@@ -217,7 +217,7 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
 
     expect(user).toContain("## Lead Options");
     expect(user).toContain(
-      "[A♠ A♠] (pair) → unbeatable in-suit → wins unless an opponent ruffs; keeps the lead (spends a boss, not trump)",
+      "[A♠ A♠] (pair) → unbeatable in-suit → wins unless ruffed; keeps the lead; spends this combo",
     );
     expect(user).not.toMatch(/Rule Score/);
     // System prompt keeps objective mechanics, drops prescriptive strategy.
@@ -248,11 +248,11 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     );
     // Low trump pair: drain framing + cost (no "wins the lead" reward-word).
     expect(user).toContain(
-      "[7♥ 7♥] (trump pair) → opponents must follow with a trump pair; repeated trump-pair leads drain their trump and force out trump point cards you capture, but a higher trump pair beats this one; spends a trump pair",
+      "[7♥ 7♥] (trump pair) → opponents must follow with a trump pair if they hold it, and a higher trump pair beats this play; spends a trump pair",
     );
     // Trump-rank pair: flagged as scarce.
     expect(user).toContain(
-      "[2♠ 2♠] (trump pair) → opponents must follow with a trump pair; repeated trump-pair leads drain their trump and force out trump point cards you capture, but a higher trump pair beats this one; spends scarce high trump (jokers/trump-rank)",
+      "[2♠ 2♠] (trump pair) → opponents must follow with a trump pair if they hold it, and a higher trump pair beats this play; spends scarce high trump (jokers/trump-rank)",
     );
   });
 
@@ -334,10 +334,10 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
 
     expect(user).toContain(
-      "BJ (trump) → no trump still out beats it, but opponents follow low so you win ≈no points",
+      "BJ (trump) → no higher trump is still out (unbeatable single trump); wins the trick; spends this trump",
     );
     expect(user).toContain(
-      "trump singles (A♥) → a higher trump is still out, so leading one likely loses — it passes the lead and gives up no points; spends a trump",
+      "trump singles (A♥) → at least one higher trump is still out (beatable single trump); passes the lead if a higher trump is played; spends this trump",
     );
   });
 
@@ -357,7 +357,7 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
 
     expect(user).toContain(
-      "K♠ (Spades, 10 pts) → a higher Spades is still out — if an opponent takes it you feed them 10 pts",
+      "K♠ (Spades, 10 pts) → a higher Spades is still out; passes the lead if a higher card is played; spends this card",
     );
   });
 
@@ -389,7 +389,7 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     const { user } = buildLLMUserPrompt(state, PlayerId.Bot3, hand);
 
     expect(user).toContain(
-      "A♠ → overtakes your teammate's already-safe win — spends A♠ for no gain",
+      "A♠ → overtakes your teammate's already-safe win; spends A♠",
     );
   });
 
@@ -418,7 +418,7 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     const { user } = buildLLMUserPrompt(state, PlayerId.Bot2, hand);
 
     expect(user).toContain(
-      "A♠ → overtakes your teammate to shield the 10 pts from bot3; costs A♠",
+      "A♠ → overtakes your teammate's win (not yet safe from bot3); costs A♠",
     );
   });
 
