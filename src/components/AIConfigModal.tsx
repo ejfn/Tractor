@@ -8,6 +8,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { testOpenRouterConnection } from "../ai/llm/llmAIClient";
 import { DEFAULT_LLM_CONFIG, LLMConfig } from "../ai/llm/llmConfig";
@@ -171,289 +173,295 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      statusBarTranslucent={true}
     >
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          {/* ── Header ── */}
-          <View style={styles.header}>
-            <Text style={styles.headerEmoji}>🤖</Text>
-            <Text style={styles.headerTitle}>{t("aiConfig.title")}</Text>
-            <Text style={styles.headerSubtitle}>{t("aiConfig.subtitle")}</Text>
-          </View>
-
-          <ScrollView
-            style={styles.body}
-            contentContainerStyle={styles.bodyContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* ── Mode Segmented Control ── */}
-            <View style={styles.segmentWrapper}>
-              <TouchableOpacity
-                style={[
-                  styles.segment,
-                  styles.segmentLeft,
-                  !useLLM && styles.segmentActive,
-                ]}
-                onPress={() => handleModeToggle(false)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.segmentIcon}>⚡</Text>
-                <Text
-                  style={[
-                    styles.segmentText,
-                    !useLLM && styles.segmentTextActive,
-                  ]}
-                >
-                  {t("aiConfig.modes.algorithmic")}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.segment,
-                  styles.segmentRight,
-                  useLLM && styles.segmentActiveLLM,
-                ]}
-                onPress={() => handleModeToggle(true)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.segmentIcon}>🧠</Text>
-                <Text
-                  style={[
-                    styles.segmentText,
-                    useLLM && styles.segmentTextActive,
-                  ]}
-                >
-                  {t("aiConfig.modes.llm")}
-                </Text>
-              </TouchableOpacity>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.sheet}>
+            {/* ── Header ── */}
+            <View style={styles.header}>
+              <Text style={styles.headerEmoji}>🤖</Text>
+              <Text style={styles.headerTitle}>{t("aiConfig.title")}</Text>
+              <Text style={styles.headerSubtitle}>
+                {t("aiConfig.subtitle")}
+              </Text>
             </View>
 
-            {/* ── Algorithmic mode description ── */}
-            {!useLLM && (
-              <View style={styles.algoCard}>
-                <View style={styles.algoHeaderRow}>
-                  <Text style={styles.algoHeaderIcon}>📐</Text>
-                  <Text style={styles.algoTitle}>
-                    {t("aiConfig.algorithmic.title")}
-                  </Text>
-                </View>
-                <Text style={styles.algoDescription}>
-                  {t("aiConfig.algorithmic.description")}
-                </Text>
-                <View style={styles.algoFeaturesList}>
-                  {[
-                    {
-                      label: t("aiConfig.algorithmic.instantTitle"),
-                      desc: t("aiConfig.algorithmic.instantDesc"),
-                    },
-                    {
-                      label: t("aiConfig.algorithmic.freeTitle"),
-                      desc: t("aiConfig.algorithmic.freeDesc"),
-                    },
-                    {
-                      label: t("aiConfig.algorithmic.offlineTitle"),
-                      desc: t("aiConfig.algorithmic.offlineDesc"),
-                    },
-                  ].map((f) => (
-                    <View key={f.label} style={styles.algoFeatureItem}>
-                      <Text style={styles.algoFeatureCheck}>✓</Text>
-                      <View style={styles.algoFeatureTextContainer}>
-                        <Text style={styles.algoFeatureTitle}>{f.label}</Text>
-                        <Text style={styles.algoFeatureDesc}>{f.desc}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {/* ── LLM panel ── */}
-            {useLLM && (
-              <View style={styles.llmPanel}>
-                {/* API Key */}
-                <Text style={styles.sectionLabel}>
-                  {t("aiConfig.llm.apiKeyLabel")}
-                </Text>
-                <View style={styles.apiKeyRow}>
-                  <TextInput
-                    style={styles.apiKeyInput}
-                    value={apiKey}
-                    onChangeText={(v) => {
-                      setApiKey(v);
-                      // Reset connection status if user edits the key
-                      if (connectionStatus.kind !== "idle") {
-                        setConnectionStatus({ kind: "idle" });
-                      }
-                    }}
-                    placeholder="sk-or-v1-…"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    spellCheck={false}
-                  />
-                </View>
-
-                <Text style={styles.apiKeyHint}>
-                  {t("aiConfig.llm.apiKeyHint").split("openrouter.ai")[0]}
-                  <Text style={styles.apiKeyHintLink}>openrouter.ai</Text>
-                  {t("aiConfig.llm.apiKeyHint").split("openrouter.ai")[1] || ""}
-                </Text>
-
-                {/* Model selection: Default vs Custom */}
-                <Text style={styles.sectionLabel}>
-                  {t("aiConfig.llm.selectModelLabel")}
-                </Text>
-
-                {/* Default card */}
+            <ScrollView
+              style={styles.body}
+              contentContainerStyle={styles.bodyContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* ── Mode Segmented Control ── */}
+              <View style={styles.segmentWrapper}>
                 <TouchableOpacity
                   style={[
-                    styles.modelCard,
-                    selectionMode === "default" && styles.modelCardSelected,
+                    styles.segment,
+                    styles.segmentLeft,
+                    !useLLM && styles.segmentActive,
                   ]}
-                  onPress={() => {
-                    setSelectionMode("default");
-                    setConnectionStatus({ kind: "idle" });
-                  }}
-                  activeOpacity={0.75}
+                  onPress={() => handleModeToggle(false)}
+                  activeOpacity={0.8}
                 >
-                  <View style={styles.modelCardHeader}>
-                    <Text style={styles.modelIcon}>✨</Text>
-                    <View style={styles.modelNameBlock}>
-                      <Text style={styles.modelName}>{defaultModelLabel}</Text>
-                      <View
-                        style={[styles.rankBadge, { borderColor: "#06B6D4" }]}
-                      >
-                        <Text
-                          style={[styles.rankBadgeText, { color: "#06B6D4" }]}
-                        >
-                          {t("aiConfig.llm.defaultModelBadge")}
-                        </Text>
-                      </View>
-                    </View>
-                    {selectionMode === "default" && (
-                      <View style={styles.selectedCheck}>
-                        <Text style={styles.selectedCheckText}>✓</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.modelDescription}>
-                    {t("aiConfig.llm.defaultModelDesc")}
+                  <Text style={styles.segmentIcon}>⚡</Text>
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      !useLLM && styles.segmentTextActive,
+                    ]}
+                  >
+                    {t("aiConfig.modes.algorithmic")}
                   </Text>
-                  <View style={styles.pricingRow}>
-                    <Text style={styles.pricingLabel}>
-                      {DEFAULT_MODEL.inputPrice}
-                      <Text style={styles.pricingUnit}> in</Text>
-                    </Text>
-                    <Text style={styles.pricingDivider}>/</Text>
-                    <Text style={styles.pricingLabel}>
-                      {DEFAULT_MODEL.outputPrice}
-                      <Text style={styles.pricingUnit}> out</Text>
-                    </Text>
-                    <Text style={styles.pricingUnit}> per 1M tokens</Text>
-                  </View>
-                  <Text style={styles.modelIdMono}>{DEFAULT_MODEL_ID}</Text>
                 </TouchableOpacity>
 
-                {/* Custom card */}
                 <TouchableOpacity
                   style={[
-                    styles.modelCard,
-                    selectionMode === "custom" && styles.modelCardSelected,
+                    styles.segment,
+                    styles.segmentRight,
+                    useLLM && styles.segmentActiveLLM,
                   ]}
-                  onPress={() => {
-                    setSelectionMode("custom");
-                    setConnectionStatus({ kind: "idle" });
-                  }}
-                  activeOpacity={0.75}
+                  onPress={() => handleModeToggle(true)}
+                  activeOpacity={0.8}
                 >
-                  <View style={styles.modelCardHeader}>
-                    <Text style={styles.modelIcon}>⚙️</Text>
-                    <View style={styles.modelNameBlock}>
-                      <Text style={styles.modelName}>
-                        {t("aiConfig.llm.customModelName")}
-                      </Text>
-                    </View>
-                    {selectionMode === "custom" && (
-                      <View style={styles.selectedCheck}>
-                        <Text style={styles.selectedCheckText}>✓</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.modelDescription}>
-                    {t("aiConfig.llm.customModelDesc")}
+                  <Text style={styles.segmentIcon}>🧠</Text>
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      useLLM && styles.segmentTextActive,
+                    ]}
+                  >
+                    {t("aiConfig.modes.llm")}
                   </Text>
+                </TouchableOpacity>
+              </View>
 
-                  {selectionMode === "custom" && (
+              {/* ── Algorithmic mode description ── */}
+              {!useLLM && (
+                <View style={styles.algoCard}>
+                  <View style={styles.algoHeaderRow}>
+                    <Text style={styles.algoHeaderIcon}>📐</Text>
+                    <Text style={styles.algoTitle}>
+                      {t("aiConfig.algorithmic.title")}
+                    </Text>
+                  </View>
+                  <Text style={styles.algoDescription}>
+                    {t("aiConfig.algorithmic.description")}
+                  </Text>
+                  <View style={styles.algoFeaturesList}>
+                    {[
+                      {
+                        label: t("aiConfig.algorithmic.instantTitle"),
+                        desc: t("aiConfig.algorithmic.instantDesc"),
+                      },
+                      {
+                        label: t("aiConfig.algorithmic.freeTitle"),
+                        desc: t("aiConfig.algorithmic.freeDesc"),
+                      },
+                      {
+                        label: t("aiConfig.algorithmic.offlineTitle"),
+                        desc: t("aiConfig.algorithmic.offlineDesc"),
+                      },
+                    ].map((f) => (
+                      <View key={f.label} style={styles.algoFeatureItem}>
+                        <Text style={styles.algoFeatureCheck}>✓</Text>
+                        <View style={styles.algoFeatureTextContainer}>
+                          <Text style={styles.algoFeatureTitle}>{f.label}</Text>
+                          <Text style={styles.algoFeatureDesc}>{f.desc}</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* ── LLM panel ── */}
+              {useLLM && (
+                <View style={styles.llmPanel}>
+                  {/* API Key */}
+                  <Text style={styles.sectionLabel}>
+                    {t("aiConfig.llm.apiKeyLabel")}
+                  </Text>
+                  <View style={styles.apiKeyRow}>
                     <TextInput
-                      style={styles.customModelInput}
-                      value={customModel}
+                      style={styles.apiKeyInput}
+                      value={apiKey}
                       onChangeText={(v) => {
-                        setCustomModel(v);
+                        setApiKey(v);
+                        // Reset connection status if user edits the key
                         if (connectionStatus.kind !== "idle") {
                           setConnectionStatus({ kind: "idle" });
                         }
                       }}
-                      placeholder={t("aiConfig.llm.customModelPlaceholder")}
+                      placeholder="sk-or-v1-…"
                       placeholderTextColor="#9CA3AF"
+                      secureTextEntry
                       autoCapitalize="none"
                       autoCorrect={false}
                       spellCheck={false}
                     />
-                  )}
-                </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.apiKeyHint}>
+                    {t("aiConfig.llm.apiKeyHint").split("openrouter.ai")[0]}
+                    <Text style={styles.apiKeyHintLink}>openrouter.ai</Text>
+                    {t("aiConfig.llm.apiKeyHint").split("openrouter.ai")[1] ||
+                      ""}
+                  </Text>
+
+                  {/* Model selection: Default vs Custom */}
+                  <Text style={styles.sectionLabel}>
+                    {t("aiConfig.llm.selectModelLabel")}
+                  </Text>
+
+                  {/* Default card */}
+                  <TouchableOpacity
+                    style={[
+                      styles.modelCard,
+                      selectionMode === "default" && styles.modelCardSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectionMode("default");
+                      setConnectionStatus({ kind: "idle" });
+                    }}
+                    activeOpacity={0.75}
+                  >
+                    <View style={styles.modelCardHeader}>
+                      <Text style={styles.modelIcon}>✨</Text>
+                      <View style={styles.modelNameBlock}>
+                        <Text style={styles.modelName}>
+                          {defaultModelLabel}
+                        </Text>
+                      </View>
+                      {selectionMode === "default" && (
+                        <View style={styles.selectedCheck}>
+                          <Text style={styles.selectedCheckText}>✓</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.modelDescription}>
+                      {t("aiConfig.llm.defaultModelDesc")}
+                    </Text>
+                    <View style={styles.pricingRow}>
+                      <Text style={styles.pricingLabel}>
+                        {DEFAULT_MODEL.inputPrice}
+                        <Text style={styles.pricingUnit}> in</Text>
+                      </Text>
+                      <Text style={styles.pricingDivider}>/</Text>
+                      <Text style={styles.pricingLabel}>
+                        {DEFAULT_MODEL.outputPrice}
+                        <Text style={styles.pricingUnit}> out</Text>
+                      </Text>
+                      <Text style={styles.pricingUnit}> per 1M tokens</Text>
+                    </View>
+                    <Text style={styles.modelIdMono}>{DEFAULT_MODEL_ID}</Text>
+                  </TouchableOpacity>
+
+                  {/* Custom card */}
+                  <TouchableOpacity
+                    style={[
+                      styles.modelCard,
+                      selectionMode === "custom" && styles.modelCardSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectionMode("custom");
+                      setConnectionStatus({ kind: "idle" });
+                    }}
+                    activeOpacity={0.75}
+                  >
+                    <View style={styles.modelCardHeader}>
+                      <Text style={styles.modelIcon}>⚙️</Text>
+                      <View style={styles.modelNameBlock}>
+                        <Text style={styles.modelName}>
+                          {t("aiConfig.llm.customModelName")}
+                        </Text>
+                      </View>
+                      {selectionMode === "custom" && (
+                        <View style={styles.selectedCheck}>
+                          <Text style={styles.selectedCheckText}>✓</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.modelDescription}>
+                      {t("aiConfig.llm.customModelDesc")}
+                    </Text>
+
+                    {selectionMode === "custom" && (
+                      <TextInput
+                        style={styles.customModelInput}
+                        value={customModel}
+                        onChangeText={(v) => {
+                          setCustomModel(v);
+                          if (connectionStatus.kind !== "idle") {
+                            setConnectionStatus({ kind: "idle" });
+                          }
+                        }}
+                        placeholder={t("aiConfig.llm.customModelPlaceholder")}
+                        placeholderTextColor="#9CA3AF"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        spellCheck={false}
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* ── Connection status banner (outside scroll) ── */}
+            {useLLM && connectionStatus.kind === "success" && (
+              <View style={styles.bannerSuccess}>
+                <Text style={styles.bannerText}>
+                  {connectionStatus.message}
+                </Text>
               </View>
             )}
-          </ScrollView>
-
-          {/* ── Connection status banner (outside scroll) ── */}
-          {useLLM && connectionStatus.kind === "success" && (
-            <View style={styles.bannerSuccess}>
-              <Text style={styles.bannerText}>{connectionStatus.message}</Text>
-            </View>
-          )}
-          {useLLM && connectionStatus.kind === "error" && (
-            <View style={styles.bannerError}>
-              <Text style={styles.bannerText}>{connectionStatus.message}</Text>
-            </View>
-          )}
-
-          {/* ── Footer buttons ── */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.footerBtn, styles.cancelBtn]}
-              onPress={onClose}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.cancelBtnText}>
-                {t("aiConfig.buttons.cancel")}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.footerBtn,
-                styles.saveBtn,
-                connectionStatus.kind === "testing" && styles.saveBtnDisabled,
-              ]}
-              onPress={handleSave}
-              disabled={connectionStatus.kind === "testing"}
-              activeOpacity={0.8}
-            >
-              {connectionStatus.kind === "testing" ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.saveBtnText}>
-                  {useLLM
-                    ? t("aiConfig.buttons.verifyAndSave")
-                    : t("aiConfig.buttons.save")}
+            {useLLM && connectionStatus.kind === "error" && (
+              <View style={styles.bannerError}>
+                <Text style={styles.bannerText}>
+                  {connectionStatus.message}
                 </Text>
-              )}
-            </TouchableOpacity>
+              </View>
+            )}
+
+            {/* ── Footer buttons ── */}
+            <View style={styles.footer}>
+              <TouchableOpacity
+                style={[styles.footerBtn, styles.cancelBtn]}
+                onPress={onClose}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cancelBtnText}>
+                  {t("aiConfig.buttons.cancel")}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.footerBtn,
+                  styles.saveBtn,
+                  connectionStatus.kind === "testing" && styles.saveBtnDisabled,
+                ]}
+                onPress={handleSave}
+                disabled={connectionStatus.kind === "testing"}
+                activeOpacity={0.8}
+              >
+                {connectionStatus.kind === "testing" ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.saveBtnText}>
+                    {useLLM
+                      ? t("aiConfig.buttons.verifyAndSave")
+                      : t("aiConfig.buttons.save")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
