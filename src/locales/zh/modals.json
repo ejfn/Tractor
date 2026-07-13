@@ -59,8 +59,8 @@
       "defaultModelDesc": "速度极快（~2-3秒延迟），战略推理更优且规则遵循出色。",
       "customModelName": "自定义",
       "customModelDesc": "输入 OpenRouter 模型 id（格式：provider/model）以使用任意模型。",
-      "customModelPlaceholder": "例如 deepseek/deepseek-chat",
-      "customModelError": "请输入有效的 OpenRouter 模型 id（例如：deepseek/deepseek-chat）。"
+      "customModelPlaceholder": "搜索或输入模型 ID…",
+      "customModelError": "请输入有效的 OpenRouter 模型 ID（格式：provider/model）。"
     },
     "buttons": {
       "cancel": "取消",

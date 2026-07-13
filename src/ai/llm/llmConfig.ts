@@ -19,7 +19,7 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
   apiKey: "",
   model: DEFAULT_MODEL_SENTINEL,
   apiUrl: DEFAULT_API_URL,
-  timeoutMs: 15000,
+  timeoutMs: 20000,
   applyToPlayers: ["bot1", "bot2", "bot3"],
 };
 
