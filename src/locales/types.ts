@@ -62,6 +62,9 @@ export interface GameTranslations {
     dealingProgress: string;
     tapToPause: string;
   };
+  llm: {
+    autoDisabledWarning: string;
+  };
 }
 
 export interface TrumpDeclarationTranslations {

@@ -25,5 +25,8 @@
     "swapKittyCards": "交换底牌",
     "dealingProgress": "发牌中... {{current}}/{{total}}",
     "tapToPause": "点击暂停并亮主"
+  },
+  "llm": {
+    "autoDisabledWarning": "❌ 自定义模型 ({{model}}) 在连续 {{count}} 次失败后已被自动停用。已恢复为算法 AI。"
   }
 }

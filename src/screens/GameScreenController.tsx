@@ -18,6 +18,11 @@ import {
   LLMConfig,
   saveLLMConfig,
 } from "../ai/llm/llmConfig";
+import { subscribeToLLMNotifications } from "../ai/llm/llmAIStrategy";
+
+// Translations
+import { useGameTranslation } from "../hooks/useTranslation";
+import { GameTranslationKey } from "../locales/types";
 
 // View component
 import GameScreenView from "./GameScreenView";
@@ -94,9 +99,36 @@ const GameScreenController: React.FC = () => {
 
   // ── AI Config Modal ────────────────────────────────────────────────────────
 
+  const { t: tGame } = useGameTranslation();
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [llmConfig, setLlmConfig] = useState<LLMConfig>(() => getLLMConfig());
   const [llmActive, setLlmActive] = useState<boolean>(() => isLLMEnabled());
+
+  const [activeAlert, setActiveAlert] = useState<{
+    message: string;
+    isPersistent: boolean;
+  } | null>(null);
+
+  // Listen for LLM auto-disable events
+  useEffect(() => {
+    const unsubscribe = subscribeToLLMNotifications((event) => {
+      if (event.kind === "auto_disabled") {
+        const message = tGame("llm.autoDisabledWarning" as GameTranslationKey, {
+          model: event.model,
+          count: event.consecutiveFailures,
+        });
+
+        setLlmActive(false);
+        setActiveAlert({
+          message,
+          isPersistent: true,
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, [tGame]);
 
   const handleOpenSettings = useCallback(() => {
     // Always re-read current config when opening (handles mid-game changes)
@@ -188,6 +220,9 @@ const GameScreenController: React.FC = () => {
       onOpenSettings={handleOpenSettings}
       onCloseSettings={handleCloseSettings}
       onSaveSettings={handleSaveSettings}
+      // Alerts
+      activeAlert={activeAlert}
+      onDismissAlert={() => setActiveAlert(null)}
       // Handlers
       onCardSelect={handleCardSelect}
       onPlayCards={handlePlay}

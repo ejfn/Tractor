@@ -25,5 +25,8 @@
     "swapKittyCards": "Swap Kitty Cards",
     "dealingProgress": "Dealing... {{current}}/{{total}}",
     "tapToPause": "Tap to pause & declare"
+  },
+  "llm": {
+    "autoDisabledWarning": "❌ Custom model ({{model}}) automatically disabled after {{count}} consecutive failures. Switched back to the algorithmic AI."
   }
 }

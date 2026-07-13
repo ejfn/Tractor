@@ -16,6 +16,27 @@ export interface OpenRouterPayload {
   response_format?: { type: "json_object" };
 }
 
+function cleanErrorMessage(
+  status: number,
+  statusText: string,
+  rawBody: string,
+): string {
+  const details = rawBody.trim();
+  if (details) {
+    try {
+      const parsed = JSON.parse(details);
+      if (parsed?.error?.message) {
+        return parsed.error.message;
+      } else if (parsed?.message) {
+        return parsed.message;
+      }
+    } catch {
+      // Keep raw details if not JSON
+    }
+  }
+  return details || statusText || "Unknown error";
+}
+
 /**
  * OpenRouter LLM HTTP client wrapper using the global fetch API.
  * Works in React Native / Expo. Jest tests should mock global fetch.
@@ -86,8 +107,13 @@ export async function callOpenRouter(
         statusText: response.statusText,
         error: errorText,
       });
+      const friendlyDetails = cleanErrorMessage(
+        response.status,
+        response.statusText,
+        errorText,
+      );
       throw new Error(
-        `OpenRouter API error (HTTP ${response.status}): ${response.statusText}. Details: ${errorText}`,
+        `OpenRouter API error (HTTP ${response.status}): ${friendlyDetails}`,
       );
     }
 
@@ -197,9 +223,14 @@ function callOpenRouterNode(
               statusText: res.statusMessage || "HTTP Error",
               error: body,
             });
+            const friendlyDetails = cleanErrorMessage(
+              statusCode,
+              res.statusMessage || "HTTP Error",
+              body,
+            );
             reject(
               new Error(
-                `OpenRouter API error (HTTP ${statusCode}): ${res.statusMessage || "HTTP Error"}. Details: ${body}`,
+                `OpenRouter API error (HTTP ${statusCode}): ${friendlyDetails}`,
               ),
             );
             return;

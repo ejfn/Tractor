@@ -1,5 +1,11 @@
 import React from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+} from "react-native";
 
 // Hooks
 import { useCommonTranslation } from "../hooks/useTranslation";
@@ -64,6 +70,10 @@ interface GameScreenViewProps {
   onCloseSettings: () => void;
   onSaveSettings: (config: LLMConfig) => void;
 
+  // Alerts
+  activeAlert: { message: string; isPersistent: boolean } | null;
+  onDismissAlert: () => void;
+
   // Handlers
   onCardSelect: (card: Card) => void;
   onPlayCards: () => void;
@@ -108,6 +118,10 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
   onOpenSettings,
   onCloseSettings,
   onSaveSettings,
+
+  // Alerts
+  activeAlert,
+  onDismissAlert,
 
   // Handlers
   onCardSelect,
@@ -341,6 +355,21 @@ const GameScreenView: React.FC<GameScreenViewProps> = ({
         onSave={onSaveSettings}
         onClose={onCloseSettings}
       />
+
+      {/* Fallback alerts and notifications */}
+      {activeAlert && (
+        <View style={styles.alertBanner}>
+          <Text style={styles.alertText}>{activeAlert.message}</Text>
+          {activeAlert.isPersistent && (
+            <TouchableOpacity
+              onPress={onDismissAlert}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </View>
   );
 };
@@ -369,6 +398,42 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#3F51B5",
+  },
+  alertBanner: {
+    position: "absolute",
+    top: 60,
+    left: 16,
+    right: 16,
+    backgroundColor: "rgba(33, 33, 33, 0.95)",
+    borderColor: "#FFB300",
+    borderWidth: 1.5,
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 6,
+    zIndex: 1000,
+  },
+  alertText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "500",
+    flex: 1,
+    lineHeight: 18,
+  },
+  closeButton: {
+    marginLeft: 12,
+    padding: 4,
+  },
+  closeButtonText: {
+    color: "#B0BEC5",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
