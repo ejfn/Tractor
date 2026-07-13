@@ -150,7 +150,6 @@ export interface ModalsTranslations {
       connectionError: string;
       defaultModelName: string;
       defaultModelDesc: string;
-      defaultModelBadge: string;
       customModelName: string;
       customModelDesc: string;
       customModelPlaceholder: string;
