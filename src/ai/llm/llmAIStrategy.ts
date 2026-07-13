@@ -1,8 +1,8 @@
 import { Card, GameState, PlayerId } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
-import { getLLMConfig, isLLMEnabled } from "./llmConfig";
+import { getLLMConfig, isLLMEnabled, saveLLMConfig } from "./llmConfig";
 import { callOpenRouter, ChatMessage } from "./llmAIClient";
-import { resolveOpenRouterModelId } from "./llmModels";
+import { resolveOpenRouterModelId, isDefaultModelSelection } from "./llmModels";
 import { buildLLMUserPrompt } from "./llmGamePrompt";
 import { getPlayValidationError } from "../../game/playValidation";
 
@@ -23,6 +23,10 @@ let llmSuccessfulPlays = 0;
 let llmAPIErrorFallbacks = 0;
 let llmInvalidCardRetries = 0;
 let llmInvalidCardFallbacks = 0;
+
+// Tracking consecutive failures for auto switch-back
+let consecutiveLLMFailures = 0;
+const CONSECUTIVE_FAILURE_THRESHOLD = 3;
 
 // Rolling window of recent LLM call durations (ms) for bypass timing
 const ROLLING_WINDOW_SIZE = 10;
@@ -106,6 +110,46 @@ export function resetLLMStats(): void {
   llmAPIErrorFallbacks = 0;
   llmInvalidCardRetries = 0;
   llmInvalidCardFallbacks = 0;
+  consecutiveLLMFailures = 0;
+}
+
+export type LLMFallbackReason = "timeout_or_error" | "invalid_plays";
+
+export interface LLMFallbackEvent {
+  kind: "single_fallback";
+  playerId: PlayerId;
+  model: string;
+  reason: LLMFallbackReason;
+}
+
+export interface LLMDisabledEvent {
+  kind: "auto_disabled";
+  model: string;
+  consecutiveFailures: number;
+}
+
+export type LLMNotificationEvent = LLMFallbackEvent | LLMDisabledEvent;
+
+type FallbackListener = (event: LLMNotificationEvent) => void;
+const fallbackListeners = new Set<FallbackListener>();
+
+export function subscribeToLLMNotifications(
+  listener: FallbackListener,
+): () => void {
+  fallbackListeners.add(listener);
+  return () => {
+    fallbackListeners.delete(listener);
+  };
+}
+
+function notifyLLMEvent(event: LLMNotificationEvent): void {
+  fallbackListeners.forEach((listener) => {
+    try {
+      listener(event);
+    } catch (e) {
+      gameLogger.error("llm_notification_listener_error", { error: String(e) });
+    }
+  });
 }
 
 /**
@@ -137,6 +181,8 @@ export async function callLLMForDecision(
     await simulateLLMLatency();
     return fallback;
   }
+
+  const isCustom = !isDefaultModelSelection(config.model);
 
   // Track start of LLM decision
   llmTotalPlaysRequested++;
@@ -264,6 +310,10 @@ export async function callLLMForDecision(
           attempts: attempt,
         });
 
+        if (isCustom) {
+          consecutiveLLMFailures = 0;
+        }
+
         llmSuccessfulPlays++;
         recordLLMDuration(Date.now() - decisionStartTime);
         return selectedCards;
@@ -305,6 +355,38 @@ export async function callLLMForDecision(
       playerId,
       message: "API error triggered fallback to rule-based AI play.",
     });
+  }
+
+  if (isCustom) {
+    consecutiveLLMFailures++;
+    const reason: LLMFallbackReason = isRetryExhaustion
+      ? "invalid_plays"
+      : "timeout_or_error";
+
+    if (consecutiveLLMFailures >= CONSECUTIVE_FAILURE_THRESHOLD) {
+      // Disable LLM in configuration
+      const currentConfig = getLLMConfig();
+      saveLLMConfig({ ...currentConfig, enabled: false });
+
+      // Reset local counter
+      const failedCount = consecutiveLLMFailures;
+      consecutiveLLMFailures = 0;
+
+      // Dispatch auto-disabled event
+      notifyLLMEvent({
+        kind: "auto_disabled",
+        model: config.model,
+        consecutiveFailures: failedCount,
+      });
+    } else {
+      // Dispatch single play fallback event
+      notifyLLMEvent({
+        kind: "single_fallback",
+        playerId,
+        model: config.model,
+        reason,
+      });
+    }
   }
 
   recordLLMDuration(Date.now() - decisionStartTime);

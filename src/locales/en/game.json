@@ -25,5 +25,13 @@
     "swapKittyCards": "Swap Kitty Cards",
     "dealingProgress": "Dealing... {{current}}/{{total}}",
     "tapToPause": "Tap to pause & declare"
+  },
+  "llm": {
+    "fallbackWarning": "⚠️ {{botName}}'s custom model ({{model}}) failed: {{reason}}. Switched to rule-based fallback.",
+    "autoDisabledWarning": "❌ Custom model ({{model}}) automatically disabled after {{count}} consecutive failures. Switched back to the algorithmic AI.",
+    "reasons": {
+      "timeout_or_error": "timeout or API connection error",
+      "invalid_plays": "exceeded retry limit for invalid plays"
+    }
   }
 }

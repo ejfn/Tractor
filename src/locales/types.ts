@@ -62,6 +62,14 @@ export interface GameTranslations {
     dealingProgress: string;
     tapToPause: string;
   };
+  llm: {
+    fallbackWarning: string;
+    autoDisabledWarning: string;
+    reasons: {
+      timeout_or_error: string;
+      invalid_plays: string;
+    };
+  };
 }
 
 export interface TrumpDeclarationTranslations {
