@@ -63,12 +63,7 @@ export interface GameTranslations {
     tapToPause: string;
   };
   llm: {
-    fallbackWarning: string;
     autoDisabledWarning: string;
-    reasons: {
-      timeout_or_error: string;
-      invalid_plays: string;
-    };
   };
 }
 

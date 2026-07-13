@@ -27,11 +27,6 @@
     "tapToPause": "点击暂停并亮主"
   },
   "llm": {
-    "fallbackWarning": "⚠️ {{botName}}的自定义模型 ({{model}}) 失败: {{reason}}。已切换为算法备用逻辑。",
-    "autoDisabledWarning": "❌ 自定义模型 ({{model}}) 在连续 {{count}} 次失败后已被自动停用。已恢复为算法 AI。",
-    "reasons": {
-      "timeout_or_error": "超时或 API 连接错误",
-      "invalid_plays": "超出无效出牌的重试限制"
-    }
+    "autoDisabledWarning": "❌ 自定义模型 ({{model}}) 在连续 {{count}} 次失败后已被自动停用。已恢复为算法 AI。"
   }
 }

@@ -113,22 +113,13 @@ export function resetLLMStats(): void {
   consecutiveLLMFailures = 0;
 }
 
-export type LLMFallbackReason = "timeout_or_error" | "invalid_plays";
-
-export interface LLMFallbackEvent {
-  kind: "single_fallback";
-  playerId: PlayerId;
-  model: string;
-  reason: LLMFallbackReason;
-}
-
 export interface LLMDisabledEvent {
   kind: "auto_disabled";
   model: string;
   consecutiveFailures: number;
 }
 
-export type LLMNotificationEvent = LLMFallbackEvent | LLMDisabledEvent;
+export type LLMNotificationEvent = LLMDisabledEvent;
 
 type FallbackListener = (event: LLMNotificationEvent) => void;
 const fallbackListeners = new Set<FallbackListener>();
@@ -359,9 +350,6 @@ export async function callLLMForDecision(
 
   if (isCustom) {
     consecutiveLLMFailures++;
-    const reason: LLMFallbackReason = isRetryExhaustion
-      ? "invalid_plays"
-      : "timeout_or_error";
 
     if (consecutiveLLMFailures >= CONSECUTIVE_FAILURE_THRESHOLD) {
       // Disable LLM in configuration
@@ -377,14 +365,6 @@ export async function callLLMForDecision(
         kind: "auto_disabled",
         model: config.model,
         consecutiveFailures: failedCount,
-      });
-    } else {
-      // Dispatch single play fallback event
-      notifyLLMEvent({
-        kind: "single_fallback",
-        playerId,
-        model: config.model,
-        reason,
       });
     }
   }

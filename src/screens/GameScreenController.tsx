@@ -21,11 +21,7 @@ import {
 import { subscribeToLLMNotifications } from "../ai/llm/llmAIStrategy";
 
 // Translations
-import {
-  useGameTranslation,
-  useCommonTranslation,
-} from "../hooks/useTranslation";
-import { getPlayerDisplayName } from "../utils/translationHelpers";
+import { useGameTranslation } from "../hooks/useTranslation";
 import { GameTranslationKey } from "../locales/types";
 
 // View component
@@ -104,7 +100,6 @@ const GameScreenController: React.FC = () => {
   // ── AI Config Modal ────────────────────────────────────────────────────────
 
   const { t: tGame } = useGameTranslation();
-  const { t: tCommon } = useCommonTranslation();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [llmConfig, setLlmConfig] = useState<LLMConfig>(() => getLLMConfig());
@@ -115,38 +110,10 @@ const GameScreenController: React.FC = () => {
     isPersistent: boolean;
   } | null>(null);
 
-  // Listen for LLM fallback and auto-disable events
+  // Listen for LLM auto-disable events
   useEffect(() => {
     const unsubscribe = subscribeToLLMNotifications((event) => {
-      if (event.kind === "single_fallback") {
-        const player = gameState?.players.find((p) => p.id === event.playerId);
-        const botName = player
-          ? getPlayerDisplayName(tCommon, player)
-          : String(event.playerId);
-        const reasonText = tGame(
-          `llm.reasons.${event.reason}` as GameTranslationKey,
-        );
-        const message = tGame("llm.fallbackWarning" as GameTranslationKey, {
-          botName,
-          model: event.model,
-          reason: reasonText,
-        });
-
-        setActiveAlert({
-          message,
-          isPersistent: false,
-        });
-
-        // Auto-dismiss temporary alerts after 5 seconds
-        setTimeout(() => {
-          setActiveAlert((prev) => {
-            if (prev && !prev.isPersistent && prev.message === message) {
-              return null;
-            }
-            return prev;
-          });
-        }, 5000);
-      } else if (event.kind === "auto_disabled") {
+      if (event.kind === "auto_disabled") {
         const message = tGame("llm.autoDisabledWarning" as GameTranslationKey, {
           model: event.model,
           count: event.consecutiveFailures,
@@ -161,7 +128,7 @@ const GameScreenController: React.FC = () => {
     });
 
     return unsubscribe;
-  }, [gameState, tGame, tCommon]);
+  }, [tGame]);
 
   const handleOpenSettings = useCallback(() => {
     // Always re-read current config when opening (handles mid-game changes)
