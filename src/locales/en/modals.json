@@ -59,8 +59,8 @@
       "defaultModelDesc": "Speed champion (~2-3s latency) with improved strategic reasoning and outstanding rules compliance.",
       "customModelName": "Custom",
       "customModelDesc": "Use any OpenRouter model by entering its model id (provider/model).",
-      "customModelPlaceholder": "e.g. deepseek/deepseek-chat",
-      "customModelError": "Enter a valid OpenRouter model id (e.g. deepseek/deepseek-chat)."
+      "customModelPlaceholder": "Search or type a model ID…",
+      "customModelError": "Enter a valid OpenRouter model ID (format: provider/model)."
     },
     "buttons": {
       "cancel": "Cancel",

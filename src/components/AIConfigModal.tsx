@@ -1,15 +1,15 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { testOpenRouterConnection } from "../ai/llm/llmAIClient";
 import { DEFAULT_LLM_CONFIG, LLMConfig } from "../ai/llm/llmConfig";
@@ -60,6 +60,74 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     kind: "idle",
   });
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Autocomplete model suggestions
+  const [modelSuggestions, setModelSuggestions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Fetch OpenRouter models once on selection of Custom mode.
+  // Delayed 1.5s so the fetch never competes with the tap transition.
+  useEffect(() => {
+    if (
+      visible &&
+      selectionMode === "custom" &&
+      modelSuggestions.length === 0
+    ) {
+      let cancelled = false;
+      const timer = setTimeout(() => {
+        const id = requestIdleCallback(() => {
+          fetch("https://openrouter.ai/api/v1/models")
+            .then((res) => res.json())
+            .then((json) => {
+              if (!cancelled && json && Array.isArray(json.data)) {
+                const list = json.data.map(
+                  (m: { id: string; name?: string }) => ({
+                    id: m.id,
+                    name: m.name || m.id,
+                  }),
+                );
+                setModelSuggestions(list);
+              }
+            })
+            .catch(() => {
+              // Silently ignore — autocomplete is best-effort
+            });
+        });
+        if (cancelled) cancelIdleCallback(id);
+      }, 1500);
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
+    }
+  }, [visible, selectionMode, modelSuggestions.length]);
+
+  // Debounced filter: only update suggestions 300ms after user stops typing.
+  // This prevents a re-render (and jerk) on every single keystroke.
+  useEffect(() => {
+    if (!customModel.trim()) {
+      setFilteredSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const query = customModel.toLowerCase();
+      const filtered = modelSuggestions
+        .filter(
+          (m) =>
+            m.id.toLowerCase().includes(query) ||
+            m.name.toLowerCase().includes(query),
+        )
+        .slice(0, 3);
+      setFilteredSuggestions(filtered);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [customModel, modelSuggestions]);
 
   // The value persisted to config: sentinel for Default, custom id otherwise.
   const storedModel =
@@ -80,6 +148,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
       setCustomModel(isDefault ? "" : currentConfig.model);
       setApiKey(currentConfig.apiKey || "");
       setConnectionStatus({ kind: "idle" });
+      setShowSuggestions(false);
     }
   }, [visible, currentConfig]);
 
@@ -175,25 +244,25 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
       onRequestClose={onClose}
       statusBarTranslucent={true}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.sheet}>
-            {/* ── Header ── */}
-            <View style={styles.header}>
-              <Text style={styles.headerEmoji}>🤖</Text>
-              <Text style={styles.headerTitle}>{t("aiConfig.title")}</Text>
-              <Text style={styles.headerSubtitle}>
-                {t("aiConfig.subtitle")}
-              </Text>
-            </View>
+      <View style={styles.overlay}>
+        <View style={styles.sheet}>
+          {/* ── Header ── */}
+          <View style={styles.header}>
+            <Text style={styles.headerEmoji}>🤖</Text>
+            <Text style={styles.headerTitle}>{t("aiConfig.title")}</Text>
+            <Text style={styles.headerSubtitle}>{t("aiConfig.subtitle")}</Text>
+          </View>
 
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
             <ScrollView
+              ref={scrollViewRef}
               style={styles.body}
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
             >
               {/* ── Mode Segmented Control ── */}
               <View style={styles.segmentWrapper}>
@@ -369,7 +438,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                       setSelectionMode("custom");
                       setConnectionStatus({ kind: "idle" });
                     }}
-                    activeOpacity={0.75}
+                    activeOpacity={selectionMode === "custom" ? 1 : 0.75}
                   >
                     <View style={styles.modelCardHeader}>
                       <Text style={styles.modelIcon}>⚙️</Text>
@@ -389,21 +458,59 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                     </Text>
 
                     {selectionMode === "custom" && (
-                      <TextInput
-                        style={styles.customModelInput}
-                        value={customModel}
-                        onChangeText={(v) => {
-                          setCustomModel(v);
-                          if (connectionStatus.kind !== "idle") {
-                            setConnectionStatus({ kind: "idle" });
-                          }
-                        }}
-                        placeholder={t("aiConfig.llm.customModelPlaceholder")}
-                        placeholderTextColor="#9CA3AF"
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        spellCheck={false}
-                      />
+                      <View style={{ width: "100%" }}>
+                        <TextInput
+                          style={styles.customModelInput}
+                          value={customModel}
+                          onChangeText={(v) => {
+                            setCustomModel(v);
+                            if (connectionStatus.kind !== "idle") {
+                              setConnectionStatus({ kind: "idle" });
+                            }
+                          }}
+                          placeholder={t("aiConfig.llm.customModelPlaceholder")}
+                          placeholderTextColor="#9CA3AF"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          spellCheck={false}
+                          onFocus={() => {
+                            setShowSuggestions(true);
+                            setTimeout(() => {
+                              scrollViewRef.current?.scrollToEnd({
+                                animated: true,
+                              });
+                            }, 100);
+                          }}
+                        />
+
+                        {showSuggestions && filteredSuggestions.length > 0 && (
+                          <View style={styles.suggestionsContainer}>
+                            {filteredSuggestions.map((item) => (
+                              <TouchableOpacity
+                                key={item.id}
+                                style={styles.suggestionItem}
+                                onPressIn={() => {
+                                  setCustomModel(item.id);
+                                  setShowSuggestions(false);
+                                }}
+                              >
+                                <Text
+                                  style={styles.suggestionName}
+                                  pointerEvents="none"
+                                >
+                                  {item.name}
+                                </Text>
+                                <Text
+                                  style={styles.suggestionId}
+                                  pointerEvents="none"
+                                >
+                                  {item.id}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        )}
+                      </View>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -459,9 +566,9 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                 )}
               </TouchableOpacity>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
@@ -479,8 +586,7 @@ const styles = StyleSheet.create({
   sheet: {
     width: "92%",
     maxWidth: 420,
-    maxHeight: "88%",
-    flexGrow: 1,
+    height: "88%",
     backgroundColor: "#0F0F1A",
     borderRadius: 20,
     overflow: "hidden",
@@ -495,30 +601,30 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    paddingVertical: 20,
-    paddingHorizontal: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     backgroundColor: "#1A1A2E",
     alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.08)",
   },
-  headerEmoji: { fontSize: 28, marginBottom: 6 },
+  headerEmoji: { fontSize: 22, marginBottom: 2 },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     color: "#F1F5F9",
     letterSpacing: 0.3,
   },
   headerSubtitle: {
     marginTop: 4,
-    fontSize: 12,
+    fontSize: 11,
     color: "#94A3B8",
     textAlign: "center",
   },
 
   // Body
   body: { flex: 1 },
-  bodyContent: { padding: 18, paddingBottom: 8 },
+  bodyContent: { padding: 14, paddingBottom: 6 },
 
   // Segmented control
   segmentWrapper: {
@@ -526,7 +632,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E1E30",
     borderRadius: 12,
     padding: 3,
-    marginBottom: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.07)",
   },
@@ -733,6 +839,33 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.1)",
     fontFamily: "monospace",
   },
+  suggestionsContainer: {
+    backgroundColor: "#1E1E30",
+    borderRadius: 8,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    overflow: "hidden",
+    zIndex: 10,
+    maxHeight: 120,
+  },
+  suggestionItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.05)",
+  },
+  suggestionName: {
+    color: "#F1F5F9",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  suggestionId: {
+    color: "#94A3B8",
+    fontSize: 11,
+    marginTop: 2,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+  },
 
   // (test button removed — merged into footer)
 
@@ -756,7 +889,7 @@ const styles = StyleSheet.create({
   // Footer
   footer: {
     flexDirection: "row",
-    padding: 16,
+    padding: 12,
     gap: 10,
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.07)",
@@ -764,8 +897,8 @@ const styles = StyleSheet.create({
   },
   footerBtn: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -774,10 +907,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
   },
-  cancelBtnText: { color: "#94A3B8", fontSize: 15, fontWeight: "600" },
+  cancelBtnText: { color: "#94A3B8", fontSize: 13, fontWeight: "600" },
   saveBtn: { backgroundColor: "#7B1FA2" },
   saveBtnDisabled: { backgroundColor: "#4A1A6A", opacity: 0.6 },
-  saveBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  saveBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
 });
 
 export default AIConfigModal;

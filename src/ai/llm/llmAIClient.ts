@@ -46,7 +46,7 @@ export async function callOpenRouter(
   model: string,
   apiUrl: string,
   messages: ChatMessage[],
-  timeoutMs = 15000,
+  timeoutMs = 20000,
   useJsonFormat = true,
 ): Promise<string> {
   const isJest =
