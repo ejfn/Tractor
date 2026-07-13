@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { testOpenRouterConnection } from "../ai/llm/llmAIClient";
+import { gameLogger } from "../utils/gameLogger";
 import { DEFAULT_LLM_CONFIG, LLMConfig } from "../ai/llm/llmConfig";
 import {
   DEFAULT_MODEL,
@@ -40,6 +41,13 @@ type ConnectionStatus =
   | { kind: "success"; message: string }
   | { kind: "error"; message: string };
 
+// ─── Model autocomplete config ──────────────────────────────────────────────
+// OpenRouter's /models endpoint has no limit/page param, so `q` returns every
+// match; we cap client-side and rely on sort=most-popular for ranking.
+const MIN_AUTOCOMPLETE_CHARS = 3;
+const MAX_AUTOCOMPLETE_SUGGESTIONS = 5;
+const AUTOCOMPLETE_DEBOUNCE_MS = 500;
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const AIConfigModal: React.FC<AIConfigModalProps> = ({
@@ -62,72 +70,104 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
   });
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Autocomplete model suggestions
-  const [modelSuggestions, setModelSuggestions] = useState<
-    { id: string; name: string }[]
-  >([]);
+  // Autocomplete model suggestions (fetched per-query from OpenRouter)
   const [filteredSuggestions, setFilteredSuggestions] = useState<
     { id: string; name: string }[]
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  // Last id the user picked from the dropdown. Used to suppress auto-show for
+  // the fetch that the selection itself retriggered (selecting sets the field
+  // to a valid ≥3-char query), so the dropdown doesn't re-pop right after pick.
+  const lastSelectedRef = useRef<string | null>(null);
 
-  // Fetch OpenRouter models once on selection of Custom mode.
-  // Delayed 1.5s so the fetch never competes with the tap transition.
+  // Server-side autocomplete: query OpenRouter's models API as the user types.
+  // - 500ms debounce (mobile typing cadence; cuts network calls per burst to ~1)
+  // - Min 3 chars before firing (avoids short-prefix noise / huge result sets)
+  // - AbortController aborts superseded in-flight requests so a slow earlier
+  //   response can't overwrite a fresh one (stale-result race)
+  // - sort=most-popular ranks canonical variants on top; input_modalities=text
+  //   keeps text-input models; supported_parameters=response_format keeps only
+  //   models that support JSON mode, which llmAIClient relies on for every move
+  // - Sends the api key (Bearer) — the /models endpoint is public but
+  //   unauthenticated requests hit a tight per-IP rate limit; after a few
+  //   queries OpenRouter starts rejecting them, which is why the dropdown
+  //   "works then suddenly stops". Authenticated requests get a higher quota.
+  // - Best-effort: failures are logged but otherwise ignored.
   useEffect(() => {
-    if (
-      visible &&
-      selectionMode === "custom" &&
-      modelSuggestions.length === 0
-    ) {
-      let cancelled = false;
-      const timer = setTimeout(() => {
-        const id = requestIdleCallback(() => {
-          fetch("https://openrouter.ai/api/v1/models")
-            .then((res) => res.json())
-            .then((json) => {
-              if (!cancelled && json && Array.isArray(json.data)) {
-                const list = json.data.map(
-                  (m: { id: string; name?: string }) => ({
-                    id: m.id,
-                    name: m.name || m.id,
-                  }),
-                );
-                setModelSuggestions(list);
-              }
-            })
-            .catch(() => {
-              // Silently ignore — autocomplete is best-effort
-            });
-        });
-        if (cancelled) cancelIdleCallback(id);
-      }, 1500);
-      return () => {
-        cancelled = true;
-        clearTimeout(timer);
-      };
-    }
-  }, [visible, selectionMode, modelSuggestions.length]);
-
-  // Debounced filter: only update suggestions 300ms after user stops typing.
-  // This prevents a re-render (and jerk) on every single keystroke.
-  useEffect(() => {
-    if (!customModel.trim()) {
+    const query = customModel.trim();
+    if (query.length < MIN_AUTOCOMPLETE_CHARS) {
       setFilteredSuggestions([]);
       return;
     }
+    const controller = new AbortController();
     const timer = setTimeout(() => {
-      const query = customModel.toLowerCase();
-      const filtered = modelSuggestions
-        .filter(
-          (m) =>
-            m.id.toLowerCase().includes(query) ||
-            m.name.toLowerCase().includes(query),
-        )
-        .slice(0, 3);
-      setFilteredSuggestions(filtered);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [customModel, modelSuggestions]);
+      const url = `https://openrouter.ai/api/v1/models?sort=most-popular&input_modalities=text&supported_parameters=response_format&q=${encodeURIComponent(
+        query,
+      )}`;
+      gameLogger.info(
+        "llm.autocomplete",
+        { query, hasApiKey: Boolean(apiKey) },
+        `Requesting OpenRouter models`,
+      );
+      fetch(url, {
+        signal: controller.signal,
+        headers: apiKey
+          ? {
+              Authorization: `Bearer ${apiKey}`,
+              "HTTP-Referer": "https://github.com/ejfn/Tractor",
+              "X-Title": "Tractor Shengji AI",
+            }
+          : undefined,
+      })
+        .then((res) => {
+          if (!res.ok) {
+            gameLogger.warn(
+              "llm.autocomplete",
+              { status: res.status, query },
+              `OpenRouter models request failed`,
+            );
+            return null;
+          }
+          return res.json();
+        })
+        .then((json) => {
+          if (!json || !Array.isArray(json.data)) {
+            return;
+          }
+          const list = json.data
+            .map((m: { id: string; name?: string }) => ({
+              id: m.id,
+              name: m.name || m.id,
+            }))
+            .slice(0, MAX_AUTOCOMPLETE_SUGGESTIONS);
+          gameLogger.info(
+            "llm.autocomplete",
+            { query, count: list.length, first: list[0]?.id },
+            `OpenRouter models response`,
+          );
+          setFilteredSuggestions(list);
+          // Auto-show on a real typing fetch. Skip the echo of a selection:
+          // picking an item sets the field to that id (a valid ≥3-char query),
+          // which retriggers this effect — we don't want the dropdown to
+          // re-pop immediately after the user just dismissed it.
+          if (query !== lastSelectedRef.current) {
+            setShowSuggestions(true);
+          }
+        })
+        .catch((err) => {
+          if (err?.name === "AbortError") return;
+          gameLogger.warn(
+            "llm.autocomplete",
+            { query, message: String(err?.message || err) },
+            `OpenRouter models request error`,
+          );
+        });
+    }, AUTOCOMPLETE_DEBOUNCE_MS);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [customModel, apiKey]);
 
   // The value persisted to config: sentinel for Default, custom id otherwise.
   const storedModel =
@@ -149,6 +189,8 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
       setApiKey(currentConfig.apiKey || "");
       setConnectionStatus({ kind: "idle" });
       setShowSuggestions(false);
+      setFilteredSuggestions([]);
+      lastSelectedRef.current = null;
     }
   }, [visible, currentConfig]);
 
@@ -489,7 +531,11 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
                               <TouchableOpacity
                                 key={item.id}
                                 style={styles.suggestionItem}
-                                onPressIn={() => {
+                                // Use onPress (not onPressIn): onPress fires only for a
+                                // genuine tap, so a finger-down that turns into a drag is
+                                // not treated as a selection.
+                                onPress={() => {
+                                  lastSelectedRef.current = item.id;
                                   setCustomModel(item.id);
                                   setShowSuggestions(false);
                                 }}
@@ -845,9 +891,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
-    overflow: "hidden",
     zIndex: 10,
-    maxHeight: 120,
+    // No maxHeight/overflow:hidden: we hard-cap at MAX_AUTOCOMPLETE_SUGGESTIONS
+    // (5) client-side, so the container is bounded by its children and all rows
+    // render fully. A fixed maxHeight was clipping the last row.
   },
   suggestionItem: {
     paddingVertical: 10,
