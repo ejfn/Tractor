@@ -449,9 +449,7 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
 
     const { user } = buildLLMUserPrompt(state, PlayerId.Bot2, hand);
 
-    expect(user).toContain(
-      "7♦ · 8♦ · 9♦ → loses; concedes nothing of yours",
-    );
+    expect(user).toContain("7♦ · 8♦ · 9♦ → loses; concedes nothing of yours");
     expect(user).toContain(
       "5♦ → loses; adds 5 pts to the attackers' total (toward their 80)",
     );
