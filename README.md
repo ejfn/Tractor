@@ -42,6 +42,19 @@ A React Native mobile implementation of the classic Chinese card game **Tractor*
 
 ---
 
+## How to Enable LLM Players
+
+The LLM-based player decision layer is completely optional and disabled by default. When enabled, it allows bot players (including your teammate) to consult a language model for trick-play decisions during ambiguous moments.
+
+To enable LLM players:
+1. **Open Settings**: Tap on any AI player's name/label on the game board screen to open the **AI Config** modal.
+2. **Switch to LLM Tab**: Select the **LLM (🧠)** tab in the segmented control at the top of the modal.
+3. **Provide OpenRouter API Key**: Paste your OpenRouter API key in the API key input field.
+4. **Choose a Model**: Keep the recommended default model (`google/gemini-3.1-flash-lite`) or select "Custom" and enter a custom OpenRouter model identifier (using the autocomplete search helper).
+5. **Verify & Save**: Tap the **Verify & Save** button. The app will first run a quick connectivity test to verify your key and model. Upon successful verification, settings will be saved/persisted and LLM mode will be activated (AI players will display a purple indicator during their turn when querying the API).
+
+---
+
 ## Technology Stack
 
 Built with a modern cross-platform mobile stack:
