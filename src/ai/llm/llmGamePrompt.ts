@@ -172,7 +172,9 @@ function localBuildActiveTrickStatus(
     `- Points in this trick: ${winnerAnalysis.trickPoints} pts`,
   ].join("\n");
 
-  const taskInstructionStr = `Select exactly ${requiredCount} card(s) from the led group (${ledGroupLabel}) using a play listed under ## Your Options.`;
+  // The led group is named in ## Active Trick ("if you hold any") and ## Your
+  // Options; repeating it here would contradict the void case (ruff/sluff).
+  const taskInstructionStr = `Select exactly ${requiredCount} card(s) using a play listed under ## Your Options.`;
 
   return { activeTrickStatusStr, taskInstructionStr };
 }

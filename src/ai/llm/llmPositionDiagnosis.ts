@@ -188,8 +188,13 @@ export function buildFollowingOptions(
     );
 
   const analysis = analyzeSuitAvailability(leadCards, hand, trumpInfo);
+  // A void player cannot "follow the group" — name the ruff/sluff choice instead.
+  const requirementLine =
+    analysis.scenario === "void"
+      ? `Led group: ${suitName(ledSuit)} (you hold none) — play exactly ${analysis.requiredLength} card(s) as a trump ruff or an off-suit sluff`
+      : `Led group: ${suitName(ledSuit)} — play exactly ${analysis.requiredLength} card(s) from this group only`;
   const lines: string[] = [
-    `Led group: ${suitName(ledSuit)} — play exactly ${analysis.requiredLength} card(s) from this group only. Copy cards verbatim from YOUR HAND (×2 means you hold a pair). Plays below are the full legal set.`,
+    `${requirementLine}. Copy cards verbatim from YOUR HAND (×2 means you hold a pair). Plays below are the full legal set.`,
   ];
 
   switch (analysis.scenario) {
@@ -367,15 +372,31 @@ function renderVoidOptions(a: VoidArgs): string[] {
       ? ` (caution: ${a.remainingOpponents.join("/")} is void in ${suitName(a.ledSuit)} and could over-ruff a low trump)`
       : "";
 
+  const ruffCostNote = (combo: Combo): string => {
+    const pts = sumPoints(combo.cards);
+    return pts > 0
+      ? `; spends a ${pts}-pt trump`
+      : `; spends trump ${playLabel(combo.cards)}`;
+  };
+
   if (ruffWinners.length > 0 && !a.isTeammateWinning) {
     for (const combo of sortCombosAsc(ruffWinners, a.trumpInfo)) {
-      const pts = sumPoints(combo.cards);
-      const costNote =
-        pts > 0
-          ? `; spends a ${pts}-pt trump`
-          : `; spends trump ${playLabel(combo.cards)}`;
       lines.push(
-        `- ruff with ${playLabel(combo.cards)} → ${winYield(a.trickPoints)}${costNote}${overRuffRisk}`,
+        `- ruff with ${playLabel(combo.cards)} → ${winYield(a.trickPoints)}${ruffCostNote(combo)}${overRuffRisk}`,
+      );
+    }
+  } else if (
+    a.isTeammateWinning &&
+    !a.teammateWinSafe &&
+    ruffWinners.length > 0
+  ) {
+    // Teammate winning but a remaining opponent can still take it: a protective
+    // over-ruff can lock the trick — mirrors the in-suit "not yet safe" framing.
+    const oppList = a.remainingOpponents.join("/");
+    const secures = a.trickPoints > 0 ? `; secures ${a.trickPoints} pts` : "";
+    for (const combo of sortCombosAsc(ruffWinners, a.trumpInfo)) {
+      lines.push(
+        `- ruff with ${playLabel(combo.cards)} → overtakes your teammate's win (not yet safe from ${oppList})${secures}${ruffCostNote(combo)}${overRuffRisk}`,
       );
     }
   } else if (!a.isTeammateWinning) {
@@ -393,7 +414,7 @@ function renderVoidOptions(a: VoidArgs): string[] {
       );
     } else if (a.isTeammateWinning) {
       lines.push(
-        `- ${a.winnerId} (teammate) leads but it isn't locked — sluffing:`,
+        `- ${a.winnerId} (teammate) is winning but not yet safe — sluffing:`,
       );
     } else {
       lines.push(`- Sluff off-suit (concedes the trick; spends no trump):`);

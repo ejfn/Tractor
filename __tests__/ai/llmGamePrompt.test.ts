@@ -129,6 +129,49 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     expect(user).toContain("5♣ → loses; banks 5 pts toward your team's 80");
   });
 
+  test("void in led suit with teammate winning but not safe: protective over-ruff is offered", () => {
+    // Human leads 3♠; bot1 (bot3's teammate) is winning with K♠, but A♠ is still
+    // out and bot2 is still to act — the win is not safe. bot3 is void in Spades
+    // and holds trump singles: a protective over-ruff must be listed (#443).
+    const trick = createTrick(
+      PlayerId.Human,
+      [single(Suit.Spades, Rank.Three)],
+      [{ playerId: PlayerId.Bot1, cards: [single(Suit.Spades, Rank.King)] }],
+      10,
+      PlayerId.Bot1,
+    );
+    let state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: trick,
+      currentPlayerIndex: 3,
+    });
+    const hand = [
+      single(Suit.Hearts, Rank.Seven), // trump-suit regular
+      single(Suit.Clubs, Rank.Two), // trump rank
+      single(Suit.Clubs, Rank.Six),
+      single(Suit.Diamonds, Rank.Nine),
+    ];
+    state = givePlayerCards(state, 3, hand);
+
+    const { user } = buildLLMUserPrompt(state, PlayerId.Bot3, hand);
+
+    // Void requirement names the ruff/sluff choice, not "from this group only".
+    expect(user).toContain(
+      "Led group: Spades (you hold none) — play exactly 1 card(s) as a trump ruff or an off-suit sluff",
+    );
+    // Protective over-ruffs, cheapest trump first, in the not-yet-safe framing.
+    expect(user).toContain(
+      "ruff with 7♥ → overtakes your teammate's win (not yet safe from bot2); secures 10 pts; spends trump 7♥",
+    );
+    expect(user).toContain(
+      "ruff with 2♣ → overtakes your teammate's win (not yet safe from bot2); secures 10 pts; spends trump 2♣",
+    );
+    // The sluff header uses the same not-yet-safe framing.
+    expect(user).toContain(
+      "bot1 (teammate) is winning but not yet safe — sluffing:",
+    );
+  });
+
   test("defender conceding to an attacker: point card is framed as feeding the attackers' 80", () => {
     // Bot1 (attacker, Team B) leads the boss A♣ and is winning. Bot2 (defender,
     // Team A) must follow clubs with K♣ or 4♣ — neither wins. The point card must
