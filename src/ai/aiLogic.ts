@@ -3,6 +3,7 @@ import { sortCards } from "../utils/cardSorting";
 import { gameLogger } from "../utils/gameLogger";
 import { makeAIPlay } from "./aiStrategy";
 import { selectAIKittySwapCards } from "./kittySwap/kittySwapStrategy";
+import { callLLMForKittySwap } from "./llm/llmAIStrategy";
 import {
   AIDeclarationDecision,
   getAITrumpDeclarationDecision,
@@ -110,6 +111,22 @@ export const getAIKittySwap = (
   }
 
   return selectedCards;
+};
+
+/**
+ * Async AI kitty swap logic - selects 8 cards to put back into kitty.
+ * Routes through LLM decision layer when enabled for this player.
+ */
+export const getAIKittySwapAsync = async (
+  gameState: GameState,
+  playerId: PlayerId,
+): Promise<Card[]> => {
+  const fallback = getAIKittySwap(gameState, playerId);
+  const player = gameState.players.find((p) => p.id === playerId);
+  if (!player) {
+    return fallback;
+  }
+  return callLLMForKittySwap(gameState, playerId, player.hand, fallback);
 };
 
 /**

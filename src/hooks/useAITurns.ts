@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getAIMoveWithErrorHandlingAsync } from "../game/playProcessing";
-import { getAIKittySwap } from "../ai/aiLogic";
+import { getAIKittySwapAsync } from "../ai/aiLogic";
 import { putbackKittyCards } from "../game/kittyManager";
 import { Card, GamePhase, GameState, PlayerId, Trick } from "../types";
 import { AI_MOVE_DELAY, AI_KITTY_SWAP_DELAY } from "../utils/gameTimings";
@@ -125,7 +125,10 @@ export function useAITurns(
     try {
       if (gameState.gamePhase === GamePhase.KittySwap) {
         // Handle AI kitty swap
-        const selectedCards = getAIKittySwap(gameState, currentPlayer.id);
+        const selectedCards = await getAIKittySwapAsync(
+          gameState,
+          currentPlayer.id,
+        );
 
         if (selectedCards.length === 8) {
           // Mark this turn as processed to prevent duplicates

@@ -26,6 +26,7 @@ import {
   CandidateLead,
   detectCandidateLeads,
 } from "../leading/candidateLeadDetection";
+import { selectAIKittySwapCards } from "../kittySwap/kittySwapStrategy";
 
 /**
  * Position Diagnosis — facts and consequences, never recommendations.
@@ -677,4 +678,40 @@ function sortCandidatesDesc(
       calculateCardStrategicValue(b.cards[0], trumpInfo, "basic") -
       calculateCardStrategicValue(a.cards[0], trumpInfo, "basic"),
   );
+}
+
+/**
+ * Builds candidate kitty swap options as neutral, factual choices.
+ */
+export function buildKittySwapOptions(
+  gameState: GameState,
+  playerId: PlayerId,
+  hand: Card[],
+): string {
+  const trumpInfo = gameState.trumpInfo;
+  const primaryCards = selectAIKittySwapCards(gameState, playerId);
+  const primaryPts = primaryCards.reduce((sum, c) => sum + c.points, 0);
+
+  const nonTrumpInHand = hand.filter((c) => !c.isTrump(trumpInfo));
+  const trumpsInHand = hand.filter((c) => c.isTrump(trumpInfo));
+
+  const suitsVoided: Suit[] = [];
+  [Suit.Spades, Suit.Hearts, Suit.Clubs, Suit.Diamonds]
+    .filter((s) => s !== trumpInfo.trumpSuit)
+    .forEach((suit) => {
+      const suitHand = nonTrumpInHand.filter((c) => c.suit === suit);
+      const suitDiscarded = primaryCards.filter((c) => c.suit === suit);
+      if (suitHand.length > 0 && suitHand.length === suitDiscarded.length) {
+        suitsVoided.push(suit);
+      }
+    });
+
+  const voidNote =
+    suitsVoided.length > 0 ? `; creates void in ${suitsVoided.join(", ")}` : "";
+  const trumpNote = `preserves ${trumpsInHand.length} trump card(s)`;
+
+  return [
+    `Candidate kitty discards (8 cards to bury):`,
+    `- Discard [${primaryCards.map((c) => c.toString()).join(", ")}] → buries ${primaryPts} pts in kitty${voidNote}; ${trumpNote}`,
+  ].join("\n");
 }
