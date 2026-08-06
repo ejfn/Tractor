@@ -256,6 +256,25 @@ function localFormatLiveOffSuitPoints(
 }
 
 /**
+ * States the points race as a plain fact from the prompted player's side — no
+ * engine urgency label: PointPressure's thresholds are static (24/56) and
+ * progress-blind, so the model derives urgency from score + round progress
+ * itself (#444).
+ */
+function localFormatScorePressure(
+  isAttackingTeam: boolean,
+  attackingPoints: number,
+): string {
+  const needed = 80 - attackingPoints;
+  if (needed <= 0) {
+    return "the attackers have already reached 80";
+  }
+  return isAttackingTeam
+    ? `you need ${needed} more pts to reach 80`
+    : `the attackers need ${needed} more pts to reach 80`;
+}
+
+/**
  * Builds the static system instructions prompt detailing rules and strategic guidelines.
  */
 export function buildLLMSystemPrompt(_gameState: GameState): string {
@@ -325,6 +344,17 @@ export function buildLLMUserPrompt(
   // Point cards still unseen in each off-suit (others' hands or hidden kitty)
   const liveSuitPointsStr = localFormatLiveOffSuitPoints(gameState, handCards);
 
+  // Round progress (#442) + card parity (#446): every trick each player plays
+  // the same number of cards (validation enforces an exact count), so all four
+  // hands always hold the same number — one figure covers the opponents too.
+  const roundProgressStr = `${gameState.tricks.length} tricks played · ${handCards.length} cards left in each of the 4 hands`;
+
+  // Points race as a plain fact (no engine urgency label — see helper note)
+  const scorePressureStr = localFormatScorePressure(
+    gameContext.isAttackingTeam,
+    gameContext.currentPoints,
+  );
+
   const currentPlayer = gameState.players.find((p) => p.id === playerId);
   const teamId = currentPlayer?.team || "A";
   const partnerId = getPartnerId(playerId);
@@ -337,6 +367,8 @@ export function buildLLMUserPrompt(
     trumpSuit: trumpInfo.trumpSuit || "None",
     isAttacking: gameContext.isAttackingTeam,
     attackingPoints: gameContext.currentPoints,
+    scorePressureStr,
+    roundProgressStr,
     historyStr,
     voidsStr,
     liveSuitPointsStr,

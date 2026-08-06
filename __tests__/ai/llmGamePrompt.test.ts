@@ -5,9 +5,11 @@ import {
   PlayerId,
   Rank,
   Suit,
+  TeamId,
   TrumpInfo,
 } from "../../src/types";
 import { createGameState, givePlayerCards } from "../helpers/gameStates";
+import { createTeam } from "../helpers/players";
 import { createTrick } from "../helpers/tricks";
 
 /**
@@ -497,6 +499,115 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     expect(user).toContain("7♦ · 8♦ · 9♦ → loses; concedes nothing of yours");
     expect(user).toContain(
       "5♦ → loses; adds 5 pts to the attackers' total (toward their 80)",
+    );
+  });
+});
+
+describe("LLM prompt — round state snapshot (#442, #444, #446)", () => {
+  test("points race is stated from the attacker's perspective (#444)", () => {
+    // Team B (Bot1's team) is attacking with only 10 pts — 70 short of 80.
+    const state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: null,
+      currentPlayerIndex: 1,
+      teams: [
+        createTeam(TeamId.A, Rank.Two, true, 0),
+        createTeam(TeamId.B, Rank.Two, false, 10),
+      ],
+    });
+    const hand = [
+      single(Suit.Spades, Rank.Ace),
+      single(Suit.Clubs, Rank.Three),
+      single(Suit.Diamonds, Rank.Four),
+    ];
+    const withHand = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
+
+    expect(user).toContain("- Attacking team points: 10 / 80");
+    expect(user).toContain(
+      "- Score pressure: you need 70 more pts to reach 80",
+    );
+    // No engine urgency label — the model derives urgency from score + progress.
+    expect(user).not.toMatch(/Score pressure: (LOW|MEDIUM|HIGH)/);
+  });
+
+  test("points race is stated from the defender's perspective (#444)", () => {
+    // Attackers at 70 pts — the defender (Bot2, Team A) reads the attackers' gap.
+    const state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: null,
+      currentPlayerIndex: 2,
+      teams: [
+        createTeam(TeamId.A, Rank.Two, true, 0),
+        createTeam(TeamId.B, Rank.Two, false, 70),
+      ],
+    });
+    const hand = [
+      single(Suit.Spades, Rank.Ace),
+      single(Suit.Clubs, Rank.Three),
+      single(Suit.Diamonds, Rank.Four),
+    ];
+    const withHand = givePlayerCards(state, 2, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot2, hand);
+
+    expect(user).toContain(
+      "- Score pressure: the attackers need 10 more pts to reach 80",
+    );
+  });
+
+  test("points race handles attackers already past 80 (#444)", () => {
+    const state = createGameState({
+      trumpInfo: TRUMP,
+      currentTrick: null,
+      currentPlayerIndex: 1,
+      teams: [
+        createTeam(TeamId.A, Rank.Two, true, 0),
+        createTeam(TeamId.B, Rank.Two, false, 85),
+      ],
+    });
+    const hand = [
+      single(Suit.Spades, Rank.Ace),
+      single(Suit.Clubs, Rank.Three),
+      single(Suit.Diamonds, Rank.Four),
+    ];
+    const withHand = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
+
+    expect(user).toContain(
+      "- Score pressure: the attackers have already reached 80",
+    );
+  });
+
+  test("round progress reports tricks played and the shared hand size (#442, #446)", () => {
+    // Every trick each player plays the same count, so all four hands always
+    // match — one shared figure IS the opponent-hand-size signal (#446).
+    const tricks = [
+      createTrick(PlayerId.Human, [single(Suit.Spades, Rank.Ace, 0)]),
+      createTrick(PlayerId.Bot1, [single(Suit.Clubs, Rank.Ace, 0)]),
+      createTrick(PlayerId.Human, [single(Suit.Diamonds, Rank.Ace, 0)]),
+    ];
+    const state = createGameState({
+      trumpInfo: TRUMP,
+      tricks,
+      currentTrick: null,
+      currentPlayerIndex: 1,
+    });
+    const hand = [
+      single(Suit.Spades, Rank.Four),
+      single(Suit.Hearts, Rank.Six),
+      single(Suit.Clubs, Rank.Nine),
+      single(Suit.Diamonds, Rank.Seven),
+      single(Suit.Spades, Rank.Nine),
+    ];
+    const withHand = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
+
+    expect(user).toContain(
+      "- Round progress: 3 tricks played · 5 cards left in each of the 4 hands",
     );
   });
 });
