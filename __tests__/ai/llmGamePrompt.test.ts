@@ -610,4 +610,40 @@ describe("LLM prompt — round state snapshot (#442, #444, #446)", () => {
       "- Round progress: 3 tricks played · 5 cards left in each of the 4 hands",
     );
   });
+
+  test("surfaces trump declarer in prompt when set on trumpInfo (#447)", () => {
+    const state = createGameState({
+      trumpInfo: {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.Spades,
+        declarerId: PlayerId.Bot1,
+      },
+      currentTrick: null,
+      currentPlayerIndex: 1,
+    });
+    const hand = [single(Suit.Spades, Rank.Ace)];
+    const withHand = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
+
+    expect(user).toContain("- Trump: rank 2, suit Spades (declared by bot1)");
+  });
+
+  test("omits declarer note when no declarer exists (#447)", () => {
+    const state = createGameState({
+      trumpInfo: {
+        trumpRank: Rank.Two,
+        trumpSuit: Suit.None,
+      },
+      currentTrick: null,
+      currentPlayerIndex: 1,
+    });
+    const hand = [single(Suit.Spades, Rank.Ace)];
+    const withHand = givePlayerCards(state, 1, hand);
+
+    const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
+
+    expect(user).toContain("- Trump: rank 2, suit None");
+    expect(user).not.toContain("(declared by");
+  });
 });

@@ -359,12 +359,17 @@ export function buildLLMUserPrompt(
   const teamId = currentPlayer?.team || "A";
   const partnerId = getPartnerId(playerId);
 
+  const declarerId =
+    trumpInfo.declarerId ??
+    gameState.trumpDeclarationState?.currentDeclaration?.playerId;
+
   const userPrompt = buildUserPromptTemplate({
     playerId,
     teamId,
     partnerId,
     trumpRank: trumpInfo.trumpRank,
     trumpSuit: trumpInfo.trumpSuit || "None",
+    declarerId,
     isAttacking: gameContext.isAttackingTeam,
     attackingPoints: gameContext.currentPoints,
     scorePressureStr,

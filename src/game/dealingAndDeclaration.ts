@@ -505,6 +505,7 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     } else {
       newState.trumpInfo.trumpSuit = finalDeclaration.suit; // Regular trump rank declarations
     }
+    newState.trumpInfo.declarerId = finalDeclaration.playerId;
   } else {
     // No one declared trump during dealing - set to Suit.None (no trump game)
     gameLogger.debug(
@@ -520,6 +521,7 @@ export function finalizeTrumpDeclaration(gameState: GameState): GameState {
     );
 
     newState.trumpInfo.trumpSuit = Suit.None;
+    newState.trumpInfo.declarerId = undefined;
   }
 
   // Close the declaration window

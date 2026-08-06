@@ -96,6 +96,7 @@ export function prepareNextRound(
   if (newDefendingTeam) {
     newState.trumpInfo.trumpRank = newDefendingTeam.currentRank;
     newState.trumpInfo.trumpSuit = undefined; // No trump declared yet
+    newState.trumpInfo.declarerId = undefined;
   }
 
   // Create and shuffle a new deck
