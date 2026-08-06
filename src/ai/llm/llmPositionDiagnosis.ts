@@ -625,7 +625,7 @@ export function buildLeadingOptions(
 
       for (const c of sortCandidatesDesc(winners, trumpInfo)) {
         lines.push(
-          `- ${c.cards[0].toString()} (trump) → no higher trump is still out (unbeatable single trump); wins the trick; spends this trump`,
+          `- ${c.cards[0].toString()} (trump) → no higher trump is still out (unbeatable single trump); wins the trick; opponents follow with their lowest trump so it captures ≈0 pts; this trump is gone for later ruffs and the final trick`,
         );
       }
       if (beaten.length > 0) {

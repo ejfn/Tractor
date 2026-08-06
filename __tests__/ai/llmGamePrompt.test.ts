@@ -381,7 +381,7 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
     const { user } = buildLLMUserPrompt(withHand, PlayerId.Bot1, hand);
 
     expect(user).toContain(
-      "BJ (trump) → no higher trump is still out (unbeatable single trump); wins the trick; spends this trump",
+      "BJ (trump) → no higher trump is still out (unbeatable single trump); wins the trick; opponents follow with their lowest trump so it captures ≈0 pts; this trump is gone for later ruffs and the final trick",
     );
     expect(user).toContain(
       "trump singles (A♥) → at least one higher trump is still out (beatable single trump); passes the lead if a higher trump is played; spends this trump",
