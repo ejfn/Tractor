@@ -263,9 +263,11 @@ describe("LLM prompt — facts & diagnosis, not rules", () => {
       "[A♠ A♠] (pair) → unbeatable in-suit → wins unless ruffed; keeps the lead; spends this combo",
     );
     expect(user).not.toMatch(/Rule Score/);
-    // System prompt keeps objective mechanics, drops prescriptive strategy.
+    // System prompt carries the static leading strategy order; per-decision
+    // options in the user prompt stay neutral (no engine recommendation).
     expect(system).toContain("## 5. Reading the Options");
-    expect(system).not.toMatch(/Leading Strategy|Seat Guidance/);
+    expect(system).toContain("## 6. Leading");
+    expect(system).not.toMatch(/Seat Guidance/);
   });
 
   test("trump leads are stated as cost facts, not as a 'bleed trump' tactic", () => {
