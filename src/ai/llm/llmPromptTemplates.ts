@@ -28,6 +28,12 @@ export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Game Reference
 - **## Lead Options** / **## Your Options** list EVERY legal play and its point consequence. Choose only from those listed plays — freelancing cards by printed suit is how illegal follows happen.
 - Choose the play that is best for your team's point total this round. The engine has done the counting and the lookahead; the strategic judgement is yours.
 - **Resource Conservation**: High cards (Jokers, trump ranks, and off-suit bosses) are scarce assets that win tricks and keep control. Playing them on a trick that you cannot win, or that your teammate has already won/secured, spends them without changing the trick winner.
+
+## 6. Leading — strategy order
+1. Off-suit boss A/K: seize control safely.
+2. Strong trump pairs (attacking): drain opponent trump.
+3. Nothing strong left: lead low, hand over the lead.
+- Jokers/trump-rank singles win only empty tricks and keep you in the lead — save them for tricks carrying points.
 `;
 
 export interface UserPromptTemplateArgs {
