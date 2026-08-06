@@ -3,7 +3,10 @@ import { gameLogger } from "../../utils/gameLogger";
 import { getLLMConfig, isLLMEnabled, saveLLMConfig } from "./llmConfig";
 import { callOpenRouter, ChatMessage } from "./llmAIClient";
 import { resolveOpenRouterModelId, isDefaultModelSelection } from "./llmModels";
-import { buildLLMUserPrompt } from "./llmGamePrompt";
+import {
+  buildLLMUserPrompt,
+  buildLLMKittySwapUserPrompt,
+} from "./llmGamePrompt";
 import { getPlayValidationError } from "../../game/playValidation";
 
 /** Log a shortcut event and simulate LLM latency. No-op when LLM is disabled. */
@@ -370,5 +373,170 @@ export async function callLLMForDecision(
   }
 
   recordLLMDuration(Date.now() - decisionStartTime);
+  return fallback;
+}
+
+/**
+ * Core LLM decision helper for Kitty Swap phase.
+ * Queries the LLM for an 8-card discard selection, validating that exactly
+ * 8 cards held in player's 33-card hand are returned. Falls back to rule AI on failure.
+ */
+export async function callLLMForKittySwap(
+  gameState: GameState,
+  playerId: PlayerId,
+  hand: Card[],
+  fallback: Card[],
+): Promise<Card[]> {
+  if (!isLLMEnabled()) {
+    return fallback;
+  }
+
+  const config = getLLMConfig();
+  if (!config.applyToPlayers.includes(playerId)) {
+    await simulateLLMLatency();
+    return fallback;
+  }
+
+  const isCustom = !isDefaultModelSelection(config.model);
+  llmTotalPlaysRequested++;
+  const decisionStartTime = Date.now();
+
+  const maxAttempts = 2;
+  let attempt = 0;
+  let errorHint = "";
+
+  while (attempt < maxAttempts) {
+    attempt++;
+    try {
+      const prompt = buildLLMKittySwapUserPrompt(gameState, playerId, hand);
+
+      let userPromptContent = prompt.user;
+      if (errorHint) {
+        userPromptContent += `\n\n=== RETRY NOTIFICATION ===\nYour previous selection was invalid because: ${errorHint}\nPlease select exactly 8 valid cards from your hand, outputting strictly the JSON format: { "reasoning": "...", "play": [...] }`;
+      }
+
+      const messages: ChatMessage[] = [
+        { role: "system", content: prompt.system },
+        { role: "user", content: userPromptContent },
+      ];
+
+      const responseText = await callOpenRouter(
+        config.apiKey,
+        resolveOpenRouterModelId(config.model),
+        config.apiUrl,
+        messages,
+        config.timeoutMs,
+      );
+
+      let cleanedJson = responseText.trim();
+      cleanedJson = cleanedJson
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .trim();
+
+      const codeBlockMatch = cleanedJson.match(/```json\s*([\s\S]*?)\s*```/i);
+      if (codeBlockMatch) {
+        cleanedJson = codeBlockMatch[1].trim();
+      } else {
+        const genericBlockMatch = cleanedJson.match(/```\s*([\s\S]*?)\s*```/);
+        if (genericBlockMatch) {
+          cleanedJson = genericBlockMatch[1].trim();
+        }
+      }
+
+      let parsed: { reasoning?: string; play?: string[] };
+      try {
+        parsed = JSON.parse(cleanedJson);
+      } catch (parseError) {
+        gameLogger.warn("llm_kitty_swap_json_parse_failed", {
+          playerId,
+          attempt,
+          rawResponse: responseText,
+          error:
+            parseError instanceof Error
+              ? parseError.message
+              : String(parseError),
+        });
+        errorHint =
+          'Failed to parse your response as JSON. Please ensure your selection strictly follows JSON formatting: { "reasoning": "explanation", "play": ["3♣", "4♣", ...] }';
+        llmInvalidCardRetries++;
+        continue;
+      }
+
+      const parsedPlay = parsed?.play;
+      if (!Array.isArray(parsedPlay) || parsedPlay.length !== 8) {
+        gameLogger.warn("llm_kitty_swap_invalid_count", { playerId, parsed });
+        errorHint = `Your 'play' array contained ${Array.isArray(parsedPlay) ? parsedPlay.length : 0} card(s), but you must select EXACTLY 8 cards from your hand.`;
+        llmInvalidCardRetries++;
+        continue;
+      }
+
+      const remainingHand = [...hand];
+      const selectedCards: Card[] = [];
+      let mappingFailed = false;
+
+      for (const token of parsedPlay) {
+        const target = token.trim();
+        const idx = remainingHand.findIndex((c) => c.toString() === target);
+        if (idx === -1) {
+          mappingFailed = true;
+          break;
+        }
+        selectedCards.push(remainingHand[idx]);
+        remainingHand.splice(idx, 1);
+      }
+
+      if (mappingFailed || selectedCards.length !== 8) {
+        gameLogger.warn("llm_kitty_swap_card_mapping_failed", {
+          playerId,
+          parsedPlay,
+          handSize: hand.length,
+        });
+        errorHint =
+          'Some cards you selected are not in your 33-card hand. Select only cards shown in YOUR HAND, using their exact notation (e.g. "3♣", "10♥", "BJ").';
+        llmInvalidCardRetries++;
+        continue;
+      }
+
+      const durationMs = Date.now() - decisionStartTime;
+      recordLLMDuration(durationMs);
+      llmSuccessfulPlays++;
+      consecutiveLLMFailures = 0;
+
+      gameLogger.info("llm_kitty_swap_decision_success", {
+        playerId,
+        reasoning: parsed.reasoning ?? "No reasoning provided.",
+        play: selectedCards.map((c) => c.toString()),
+        durationMs,
+      });
+
+      return selectedCards;
+    } catch (apiError) {
+      gameLogger.error("llm_kitty_swap_api_error", {
+        playerId,
+        attempt,
+        error: apiError instanceof Error ? apiError.message : String(apiError),
+      });
+      llmAPIErrorFallbacks++;
+      break;
+    }
+  }
+
+  if (isCustom) {
+    consecutiveLLMFailures++;
+    if (consecutiveLLMFailures >= CONSECUTIVE_FAILURE_THRESHOLD) {
+      const currentConfig = getLLMConfig();
+      saveLLMConfig({ ...currentConfig, enabled: false });
+      const failedCount = consecutiveLLMFailures;
+      consecutiveLLMFailures = 0;
+      notifyLLMEvent({
+        kind: "auto_disabled",
+        model: config.model,
+        consecutiveFailures: failedCount,
+      });
+    }
+  }
+
+  recordLLMDuration(Date.now() - decisionStartTime);
+  llmInvalidCardFallbacks++;
   return fallback;
 }

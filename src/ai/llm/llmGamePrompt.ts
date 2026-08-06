@@ -13,6 +13,7 @@ import { sortCards } from "../../utils/cardSorting";
 import { createGameContext } from "../aiGameContext";
 import {
   buildFollowingOptions,
+  buildKittySwapOptions,
   buildLeadingOptions,
 } from "./llmPositionDiagnosis";
 import {
@@ -380,6 +381,65 @@ export function buildLLMUserPrompt(
     activeTrickStatusStr,
     handChoicesStr,
     isLeading,
+    optionsStr,
+    taskInstructionStr,
+  });
+
+  const systemPrompt = buildLLMSystemPrompt(gameState);
+
+  return {
+    system: systemPrompt,
+    user: userPrompt,
+  };
+}
+
+/**
+ * Builds user prompt for Kitty Swap decision phase.
+ */
+export function buildLLMKittySwapUserPrompt(
+  gameState: GameState,
+  playerId: PlayerId,
+  handCards: Card[],
+): { system: string; user: string } {
+  const trumpInfo = gameState.trumpInfo;
+  const sortedHand = sortCards(handCards, trumpInfo);
+  const handChoicesStr = localBuildHandDisplay(sortedHand, trumpInfo);
+
+  const optionsStr = buildKittySwapOptions(gameState, playerId, handCards);
+  const taskInstructionStr =
+    'Select exactly 8 cards from your 33-card hand to put back into the hidden kitty. Output strictly JSON formatting: { "reasoning": "...", "play": ["card1", "card2", ...] } with exactly 8 card notations from YOUR HAND.';
+
+  const currentPlayer = gameState.players.find((p) => p.id === playerId);
+  const teamId = currentPlayer?.team || "A";
+  const partnerId = getPartnerId(playerId);
+
+  const gameContext = createGameContext(gameState, playerId);
+  const scorePressureStr = localFormatScorePressure(
+    gameContext.isAttackingTeam,
+    gameContext.currentPoints,
+  );
+  const declarerId =
+    trumpInfo.declarerId ??
+    gameState.trumpDeclarationState?.currentDeclaration?.playerId;
+
+  const userPrompt = buildUserPromptTemplate({
+    playerId,
+    teamId,
+    partnerId,
+    trumpRank: trumpInfo.trumpRank,
+    trumpSuit: trumpInfo.trumpSuit || "None",
+    declarerId,
+    isAttacking: gameContext.isAttackingTeam,
+    attackingPoints: gameContext.currentPoints,
+    scorePressureStr,
+    roundProgressStr: "Kitty Swap Phase — 33 cards in hand before burying 8",
+    historyStr: "No tricks played yet (Kitty Swap phase)",
+    voidsStr: "No voids confirmed yet",
+    liveSuitPointsStr: localFormatLiveOffSuitPoints(gameState, handCards),
+    activeTrickStatusStr:
+      "Kitty Swap Phase — selecting 8 cards to bury in kitty.",
+    handChoicesStr,
+    isLeading: true,
     optionsStr,
     taskInstructionStr,
   });
