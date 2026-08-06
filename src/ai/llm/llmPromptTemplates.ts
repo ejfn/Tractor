@@ -42,6 +42,7 @@ export interface UserPromptTemplateArgs {
   partnerId: string;
   trumpRank: string;
   trumpSuit: string;
+  declarerId?: string;
   isAttacking: boolean;
   attackingPoints: number;
   scorePressureStr: string;
@@ -58,13 +59,16 @@ export interface UserPromptTemplateArgs {
 
 // 1. Current State Block
 function buildCurrentStateBlock(args: UserPromptTemplateArgs): string {
+  const declarerNote = args.declarerId
+    ? ` (declared by ${args.declarerId})`
+    : "";
   return `## Current State
 - Player: ${args.playerId} (Team ${args.teamId}, partner: ${args.partnerId})
 - Role: ${args.isAttacking ? "Attacking — your team must capture 80+ pts this round; points the opponents take are lost from that total" : "Defending — you win by keeping the attackers under 80; every point the attackers capture counts against you"}
 - Attacking team points: ${args.attackingPoints} / 80
 - Score pressure: ${args.scorePressureStr}
 - Round progress: ${args.roundProgressStr}
-- Trump: rank ${args.trumpRank}, suit ${args.trumpSuit}
+- Trump: rank ${args.trumpRank}, suit ${args.trumpSuit}${declarerNote}
 - Live off-suit points (unseen): ${args.liveSuitPointsStr}`;
 }
 

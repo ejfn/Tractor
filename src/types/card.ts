@@ -60,6 +60,7 @@ export type DeckId = 0 | 1;
 export type TrumpInfo = {
   trumpRank: Rank;
   trumpSuit?: Suit; // undefined = not declared, Suit.None = joker pairs, specific suit = trump rank declarations
+  declarerId?: PlayerId; // optional: player who declared trump during dealing phase
 };
 
 /**
