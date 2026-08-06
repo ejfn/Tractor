@@ -112,7 +112,7 @@ ${args.optionsStr.trim()}`;
 function buildTaskBlock(args: UserPromptTemplateArgs): string {
   return `## Task
 ${args.taskInstructionStr}
-Reply with JSON ONLY: {"reasoning":"<one sentence, maximum 15 words; do not repeat or loop trick history>","play":["<card>",...]}. Copy card notations from YOUR HAND (repeat notation to play a pair). Never play cards you do not hold.`;
+Reply with JSON ONLY: {"reasoning":"<short rationale: win or feed? what points/cards are at stake? (~30-40 words max, do not loop trick history)>","play":["<card>",...]}. Copy card notations from YOUR HAND (repeat notation to play a pair). Never play cards you do not hold.`;
 }
 
 /**
