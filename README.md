@@ -102,3 +102,11 @@ For more details on coding standards and git workflows, see **[AGENTS.md](AGENTS
 All rights reserved. For commercial licensing, partnerships, or other inquiries, please contact the repository owner via GitHub.
 
 **Enjoy playing Tractor!** 🃏✨
+
+<br/>
+
+<p align="center">
+  <img src="assets/images/qr-code.png" alt="Project Repository QR Code" width="150"/>
+  <br/>
+  <sub><b>Scan to open this repository on mobile</b></sub>
+</p>
