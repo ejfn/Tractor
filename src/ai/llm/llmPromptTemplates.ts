@@ -30,10 +30,9 @@ export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Game Reference
 - **Resource Conservation**: High cards (Jokers, trump ranks, and off-suit bosses) are scarce assets that win tricks and keep control. Leading top cards on an empty trick yields ≈0 pts as opponents follow low; playing high cards on an un-winnable or teammate-secured trick spends them without value.
 
 ## 6. Leading — strategy order
-1. Off-suit boss A/K: seize control safely.
-2. Strong trump pairs (attacking): drain opponent trump.
-3. Nothing strong left: lead low, hand over the lead.
-- Jokers/trump-rank singles win only empty tricks and keep you in the lead — save them for tricks carrying points.
+1. Cash winners & attack with off-suit combos: Lead off-suit boss cards (Aces), unbeatable combos, or strong/sub-strong pairs and tractors (combos do not need to be guaranteed unbeatable to be worth leading; pairs are hard to beat in-suit and require trump pairs to ruff).
+2. Exit the lead: When you have no safe winners or viable off-suit combos, lead a low plain card from a weak suit to safely pass the lead.
+- Trump conservation: NEVER lead single Jokers, trump ranks, or isolated trumps into empty tricks — opponents follow low for ≈0 pts while you lose your strongest asset. Save trumps to ruff point tricks, capture late-round points, and contest the final trick multiplier. (Lead trump pairs only if you hold more strong pairs or tractors so that you can keep leading and drain opponents' trumps).
 `;
 
 export interface UserPromptTemplateArgs {
