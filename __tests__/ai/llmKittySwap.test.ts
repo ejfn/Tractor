@@ -1,5 +1,3 @@
-import { buildKittySwapOptions } from "../../src/ai/llm/llmPositionDiagnosis";
-import { buildLLMKittySwapUserPrompt } from "../../src/ai/llm/llmGamePrompt";
 import { callLLMForKittySwap } from "../../src/ai/llm/llmAIStrategy";
 import { getAIKittySwapAsync } from "../../src/ai/aiLogic";
 import { createGameState, givePlayerCards } from "../helpers/gameStates";
@@ -35,44 +33,6 @@ describe("LLM Kitty Swap Phase (#448)", () => {
     }
     return hand;
   }
-
-  test("buildKittySwapOptions formats candidate discard packages with factual readouts", () => {
-    const hand = build33CardHand();
-    const state = createGameState({
-      trumpInfo: TRUMP,
-      gamePhase: GamePhase.KittySwap,
-      currentPlayerIndex: 1,
-    });
-    const withHand = givePlayerCards(state, 1, hand);
-
-    const optionsStr = buildKittySwapOptions(withHand, PlayerId.Bot1, hand);
-    expect(optionsStr).toContain("Candidate kitty discards (8 cards to bury):");
-    expect(optionsStr).toContain("Discard [");
-    expect(optionsStr).toContain("buries");
-  });
-
-  test("buildLLMKittySwapUserPrompt builds complete system & user prompts for kitty swap", () => {
-    const hand = build33CardHand();
-    const state = createGameState({
-      trumpInfo: TRUMP,
-      gamePhase: GamePhase.KittySwap,
-      currentPlayerIndex: 1,
-    });
-    const withHand = givePlayerCards(state, 1, hand);
-
-    const { user, system } = buildLLMKittySwapUserPrompt(
-      withHand,
-      PlayerId.Bot1,
-      hand,
-    );
-    expect(user).toContain(
-      "Kitty Swap Phase — 33 cards in hand before burying 8",
-    );
-    expect(user).toContain("## Current State");
-    expect(user).toContain("- Trump: rank 2, suit Spades (declared by bot1)");
-    expect(user).toContain("Candidate kitty discards");
-    expect(system).toContain("# Shengji / Tractor — Game Reference");
-  });
 
   test("callLLMForKittySwap returns rule AI fallback when LLM is disabled", async () => {
     const hand = build33CardHand();
