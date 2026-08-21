@@ -104,14 +104,14 @@ export const calculateCardStrategicValue = (
   }
 
   if (card.points > 0 && card.rank !== trumpInfo.trumpRank) {
-    // Strategic adjustments
+    // Strategic adjustments: scaled to preserve hierarchy (regular trumps <= 130, trump ranks >= 170)
     if (mode === "strategic") {
-      value += card.points * 10; // Save points (increase value)
+      value += card.points; // Save points (increase value by +5 or +10)
     } else if (mode === "contribute") {
-      value -= card.points * 10; // Contribute points (decrease value)
-      // Extra penalty for 10s to make them less disposable than Kings: 5 > K > 10
+      // In contribute mode, feed points to partner (10s > Kings > 5s > 0pts)
+      value -= card.points * 2;
       if (card.rank === Rank.Ten) {
-        value -= 5; // extra -5 for 10
+        value -= 1; // Prioritize 10 over King
       }
     }
   }
