@@ -1,13 +1,13 @@
 import { Card, GameState, PlayerId } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
-import { createGameContext } from "../aiGameContext";
 import { getLLMConfig, isLLMEnabled, saveLLMConfig } from "./llmConfig";
 import { callOpenRouter, ChatMessage } from "./llmAIClient";
 import { resolveOpenRouterModelId, isDefaultModelSelection } from "./llmModels";
-import { formatPerceptionBlock } from "./llmPerception";
-import { generateLegalActionSpace, LegalAction } from "./llmActionSpace";
-import { buildCompactTrickPrompt } from "./llmPromptTemplates";
-import { buildLLMKittySwapUserPrompt } from "./llmKittySwapPrompt";
+import {
+  buildLLMUserPrompt,
+  buildLLMKittySwapUserPrompt,
+} from "./llmGamePrompt";
+import { getPlayValidationError } from "../../game/playValidation";
 
 /** Log a shortcut event and simulate LLM latency. No-op when LLM is disabled. */
 export async function logLLMShortcut(
@@ -49,17 +49,22 @@ function getAverageLLMDuration(): number {
 }
 
 /**
- * When LLM is bypassed, sleep for a random duration centered on the rolling average.
+ * When LLM is bypassed (disabled, wrong player, or fallback), sleep for a
+ * random duration centered on the rolling average of actual LLM call times.
+ * This prevents timing leaks — e.g. an instant response revealing that the
+ * AI had only one legal play. Only applies when LLM is enabled.
  */
 export async function simulateLLMLatency(): Promise<void> {
   if (!isLLMEnabled()) return;
 
   const avg = getAverageLLMDuration();
   if (avg === 0) {
+    // No LLM calls recorded yet — use a reasonable default centered on 500–1500ms
     await new Promise((r) => setTimeout(r, 500 + Math.random() * 1000));
     return;
   }
 
+  // Random duration: 50%–75% of the rolling average, clamped to [250ms, 3750ms]
   const jitter = 0.5 + Math.random() * 0.25;
   const delay = Math.max(250, Math.min(3750, Math.round(avg * jitter)));
 
@@ -77,6 +82,9 @@ export interface LLMTelemetryStats {
   fallbackRate: number;
 }
 
+/**
+ * Retrieve LLM telemetry statistics.
+ */
 export function getLLMFallbackStats(): LLMTelemetryStats {
   const totalRequests = llmTotalPlaysRequested;
   const successRate =
@@ -96,6 +104,9 @@ export function getLLMFallbackStats(): LLMTelemetryStats {
   };
 }
 
+/**
+ * Reset LLM telemetry statistics.
+ */
 export function resetLLMStats(): void {
   llmTotalPlaysRequested = 0;
   llmSuccessfulPlays = 0;
@@ -136,12 +147,16 @@ function notifyLLMEvent(event: LLMNotificationEvent): void {
 }
 
 /**
- * Core LLM decision helper — Executes the 4-layer pipeline.
+ * Core LLM decision helper — called directly from inside strategy functions
+ * at genuine ambiguous decision points.
  *
- * 1. Extracts pure facts & perception (Layer 1)
- * 2. Generates enumerated legal action space (Layer 2)
- * 3. Builds prompt and queries model for action index (Layer 3)
- * 4. Verifies and executes chosen legal play with safety fallback (Layer 4)
+ * Returns the LLM-chosen cards on success, or `fallback` on any failure
+ * (API error, invalid JSON, rule-invalid play after retries, or LLM disabled).
+ *
+ * @param gameState  Current game state (used for prompt building and validation)
+ * @param playerId   The player making the decision
+ * @param hand       The player's current hand
+ * @param fallback   Cards to return if LLM is skipped or fails (the rule-based pick)
  */
 export async function callLLMForDecision(
   gameState: GameState,
@@ -162,36 +177,12 @@ export async function callLLMForDecision(
   }
 
   const isCustom = !isDefaultModelSelection(config.model);
+
+  // Track start of LLM decision
   llmTotalPlaysRequested++;
   const decisionStartTime = Date.now();
 
-  // Layer 1 & 2: Build Perception & Legal Action Space
-  const gameContext = createGameContext(gameState, playerId);
-  const perceptionBlock = formatPerceptionBlock(
-    gameState,
-    playerId,
-    hand,
-    gameState.trumpInfo,
-    gameContext,
-  );
-  const legalActions: LegalAction[] = generateLegalActionSpace(
-    gameState,
-    hand,
-    playerId,
-    gameState.trumpInfo,
-    gameContext,
-  );
-
-  if (legalActions.length === 0) {
-    return fallback;
-  }
-
-  if (legalActions.length === 1) {
-    recordLLMDuration(Date.now() - decisionStartTime);
-    return legalActions[0].cards;
-  }
-
-  // Layer 3: Query Strategic Reasoner
+  // Self-Correction Retry Loop (up to 2 tries: 1 initial attempt + 1 retry)
   const maxAttempts = 2;
   let attempt = 0;
   let errorHint = "";
@@ -199,11 +190,12 @@ export async function callLLMForDecision(
   while (attempt < maxAttempts) {
     attempt++;
     try {
-      const prompt = buildCompactTrickPrompt(perceptionBlock, legalActions);
+      // Always build a fresh user prompt — no growing message chain accumulation
+      const prompt = buildLLMUserPrompt(gameState, playerId, hand);
 
       let userPromptContent = prompt.user;
       if (errorHint) {
-        userPromptContent += `\n\n=== RETRY NOTIFICATION ===\n${errorHint}\nPlease select a valid integer index [1..${legalActions.length}], outputting strictly JSON format: {"thought": "...", "actionIndex": <integer>}`;
+        userPromptContent += `\n\n=== RETRY NOTIFICATION ===\nYour previous selection was invalid because: ${errorHint}\nPlease select a valid play, outputting strictly the JSON format.`;
       }
 
       const messages: ChatMessage[] = [
@@ -211,6 +203,7 @@ export async function callLLMForDecision(
         { role: "user", content: userPromptContent },
       ];
 
+      // Call LLM API
       const responseText = await callOpenRouter(
         config.apiKey,
         resolveOpenRouterModelId(config.model),
@@ -219,6 +212,7 @@ export async function callLLMForDecision(
         config.timeoutMs,
       );
 
+      // Clean response (LLMs sometimes wrap in ```json ... ``` or include <think> blocks)
       let cleanedJson = responseText.trim();
       cleanedJson = cleanedJson
         .replace(/<think>[\s\S]*?<\/think>/gi, "")
@@ -234,7 +228,7 @@ export async function callLLMForDecision(
         }
       }
 
-      let parsed: { thought?: string; actionIndex?: number; action?: number };
+      let parsed: { reasoning?: string; play?: string[] };
       try {
         parsed = JSON.parse(cleanedJson);
       } catch (parseError) {
@@ -249,65 +243,98 @@ export async function callLLMForDecision(
         });
 
         errorHint =
-          'Failed to parse your response as JSON. Output strictly JSON: {"thought": "explanation", "actionIndex": 1}';
+          'Failed to parse your response as JSON. Please ensure your play selection strictly follows JSON formatting. Example: { "reasoning": "explanation", "play": ["3♣"] }';
         llmInvalidCardRetries++;
         continue;
       }
 
-      let chosenIndex = parsed.actionIndex ?? parsed.action;
-      if (chosenIndex === 0 && legalActions.length > 0) {
-        gameLogger.debug("llm_aliased_zero_index_to_one", { playerId });
-        chosenIndex = 1;
+      const parsedPlay = parsed?.play;
+      if (!Array.isArray(parsedPlay) || parsedPlay.length === 0) {
+        gameLogger.warn("llm_invalid_format_keys", { playerId, parsed });
+        errorHint =
+          'Your response did not contain a valid \'play\' array of cards (e.g. ["3♣","3♣"]). Please select cards from your hand using their exact notation.';
+        llmInvalidCardRetries++;
+        continue;
       }
 
-      if (
-        typeof chosenIndex !== "number" ||
-        chosenIndex < 1 ||
-        chosenIndex > legalActions.length
-      ) {
-        gameLogger.warn("llm_invalid_action_index", {
+      // Map the returned card notations (e.g. "3♣", "BJ") back to Card objects,
+      // consuming each hand card at most once so a pair like ["8♦","8♦"] maps to both copies.
+      const remainingHand = [...hand];
+      const selectedCards: Card[] = [];
+      let mappingFailed = false;
+
+      for (const token of parsedPlay) {
+        const target = token.trim();
+        const idx = remainingHand.findIndex((c) => c.toString() === target);
+        if (idx === -1) {
+          mappingFailed = true;
+          break;
+        }
+        selectedCards.push(remainingHand[idx]);
+        remainingHand.splice(idx, 1);
+      }
+
+      if (mappingFailed || selectedCards.length !== parsedPlay.length) {
+        gameLogger.warn("llm_card_mapping_failed", {
           playerId,
-          chosenIndex,
-          maxIndex: legalActions.length,
+          parsedPlay,
+          handSize: hand.length,
         });
 
-        errorHint = `Invalid action index '${chosenIndex}'. Must be an integer between 1 and ${legalActions.length}.`;
+        errorHint =
+          'Some cards you selected are not in your hand. Select only cards shown in YOUR HAND, using their exact notation (e.g. "3♣", "10♥", "BJ"). To play a pair you must hold two copies of that card (shown ×2) — do not repeat a card you hold only once.';
         llmInvalidCardRetries++;
         continue;
       }
 
-      // Layer 4: Execution Guard
-      const selectedAction = legalActions[chosenIndex - 1];
-      const durationMs = Date.now() - decisionStartTime;
-      recordLLMDuration(durationMs);
-
-      llmSuccessfulPlays++;
-      if (isCustom) {
-        consecutiveLLMFailures = 0;
-      }
-
-      gameLogger.info("llm_decision_success", {
+      // Validate the play against the Shengji rule engine
+      const errorMsg = getPlayValidationError(
+        selectedCards,
+        hand,
         playerId,
-        thought: parsed.thought ?? "No thought provided.",
-        actionIndex: chosenIndex,
-        label: selectedAction.label,
-        play: selectedAction.cards.map((c) => c.toString()),
-        durationMs,
-        attempts: attempt,
-      });
+        gameState,
+      );
 
-      return selectedAction.cards;
+      if (errorMsg === null) {
+        // Valid play! Log strategic reasoning and cards
+        gameLogger.info("llm_decision_success", {
+          playerId,
+          reasoning: parsed.reasoning ?? "No reasoning provided.",
+          play: selectedCards.map((c) => c.toString()),
+          attempts: attempt,
+        });
+
+        if (isCustom) {
+          consecutiveLLMFailures = 0;
+        }
+
+        llmSuccessfulPlays++;
+        recordLLMDuration(Date.now() - decisionStartTime);
+        return selectedCards;
+      } else {
+        // Play is invalid — trigger retry loop
+        gameLogger.warn("llm_decision_invalid_rule", {
+          playerId,
+          attempt,
+          invalidPlay: selectedCards.map((c) => c.toString()),
+          error: errorMsg,
+        });
+
+        errorHint = `Your play was invalid because: ${errorMsg}. Please select a valid combination of cards from your hand that satisfies the trick follow rules.`;
+        llmInvalidCardRetries++;
+      }
     } catch (apiError) {
       gameLogger.error("llm_api_call_exception", {
         playerId,
         attempt,
         error: apiError instanceof Error ? apiError.message : String(apiError),
       });
+      // Immediately abort loop on serious network/API error and use fallback
       break;
     }
   }
 
-  // Retry exhaustion or API error -> Fallback
+  // Either the loop exited on API error or we exhausted all retries
   const isRetryExhaustion = attempt >= maxAttempts;
   if (isRetryExhaustion) {
     llmInvalidCardFallbacks++;
@@ -326,11 +353,17 @@ export async function callLLMForDecision(
 
   if (isCustom) {
     consecutiveLLMFailures++;
+
     if (consecutiveLLMFailures >= CONSECUTIVE_FAILURE_THRESHOLD) {
+      // Disable LLM in configuration
       const currentConfig = getLLMConfig();
       saveLLMConfig({ ...currentConfig, enabled: false });
+
+      // Reset local counter
       const failedCount = consecutiveLLMFailures;
       consecutiveLLMFailures = 0;
+
+      // Dispatch auto-disabled event
       notifyLLMEvent({
         kind: "auto_disabled",
         model: config.model,
@@ -345,6 +378,8 @@ export async function callLLMForDecision(
 
 /**
  * Core LLM decision helper for Kitty Swap phase.
+ * Queries the LLM for an 8-card discard selection, validating that exactly
+ * 8 cards held in player's 33-card hand are returned. Falls back to rule AI on failure.
  */
 export async function callLLMForKittySwap(
   gameState: GameState,
