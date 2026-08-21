@@ -5,6 +5,7 @@ import {
   shuffleDeck,
 } from "../utils/gameInitialization";
 import { gameLogger } from "../utils/gameLogger";
+import { resetRoundStrategyPlans } from "../ai/llm/llmPlanState";
 
 /**
  * Prepares the game state for the next round using round result information
@@ -16,6 +17,7 @@ export function prepareNextRound(
   state: GameState,
   roundResult: RoundResult,
 ): GameState {
+  resetRoundStrategyPlans();
   const newState = { ...state };
 
   newState.roundNumber++;
