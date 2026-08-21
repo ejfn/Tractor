@@ -25,6 +25,8 @@ import { collectLeadingContext } from "../leading/leadingContext";
 import { scoreNonTrumpLead, scoreTrumpLead } from "../leading/leadingScoring";
 import { analyzeSuitAvailability } from "../following/suitAvailabilityAnalysis";
 import { selectStrategicDisposal } from "../following/strategicSelection";
+import { handleEnoughRemainingScenario } from "../following/sameSuitDecision";
+import { handleInsufficientScenario } from "../following/crossSuitDecision";
 
 export type StrategicLineId = "A" | "B" | "C" | "D";
 
@@ -436,39 +438,40 @@ export function generateFollowingLines(
       break;
     }
 
-    case "enough_remaining":
-    case "insufficient": {
-      // Cannot match combo structure
-      const availableCards = analysis.remainingCards;
-      const requiredLen = analysis.requiredLength;
-
-      // Select lowest cards preserving pairs
-      let selected: Card[];
-      if (analysis.scenario === "enough_remaining") {
-        selected = selectStrategicDisposal(
-          availableCards,
-          trumpInfo,
-          requiredLen,
-        );
-      } else {
-        // Insufficient: use all remaining + fill
-        const fillCount = requiredLen - availableCards.length;
-        const fillPool = hand.filter(
-          (c) => !availableCards.some((r) => r.id === c.id),
-        );
-        const fillCards = selectStrategicDisposal(
-          fillPool,
-          trumpInfo,
-          fillCount,
-        );
-        selected = [...availableCards, ...fillCards];
-      }
-
+    case "enough_remaining": {
+      const selected = handleEnoughRemainingScenario(
+        analysis,
+        gameContext,
+        trumpInfo,
+        gameState,
+        playerId,
+      );
       const pts = sumPoints(selected);
       lines.push({
         intent: "duck_low",
         label: `Follow Suit ${formatPlayLabel(selected)}`,
         description: `Follows suit preserving combinations (risks ${pts} pts)`,
+        cards: selected,
+        pointsAtStake: pts,
+        isGuaranteedWinner: false,
+      });
+      break;
+    }
+
+    case "insufficient": {
+      const selected = handleInsufficientScenario(
+        analysis,
+        hand,
+        gameContext,
+        trumpInfo,
+        gameState,
+        playerId,
+      );
+      const pts = sumPoints(selected);
+      lines.push({
+        intent: "duck_low",
+        label: `Follow Suit ${formatPlayLabel(selected)}`,
+        description: `Plays all remaining suit cards and fills (risks ${pts} pts)`,
         cards: selected,
         pointsAtStake: pts,
         isGuaranteedWinner: false,

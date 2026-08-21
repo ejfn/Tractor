@@ -159,9 +159,10 @@ function getRequiredPairs(
     case ComboType.Pair:
       return 1;
     case ComboType.Tractor:
-      return Math.floor(requiredLength / 2); // Tractor pairs = length / 2
+    case ComboType.Invalid:
+      return Math.floor(requiredLength / 2);
     default:
-      return 0; // Singles don't require pairs
+      return 0;
   }
 }
 
