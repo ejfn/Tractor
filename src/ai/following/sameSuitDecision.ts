@@ -159,7 +159,6 @@ function getRequiredPairs(
     case ComboType.Pair:
       return 1;
     case ComboType.Tractor:
-    case ComboType.Invalid:
       return Math.floor(requiredLength / 2);
     default:
       return 0;

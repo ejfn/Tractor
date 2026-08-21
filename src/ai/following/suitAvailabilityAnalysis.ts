@@ -235,13 +235,15 @@ function findStrictValidCombos(
     }
 
     default:
-      // Invalid or multi-combo - treat as singles
-      for (const card of availableCards) {
-        validCombos.push({
-          type: ComboType.Single,
-          cards: [card],
-          value: calculateComboValue([card], trumpInfo),
-        });
+      // Multi-combo or invalid: if requiredLength === 1, singles work; otherwise routes to enough_remaining
+      if (requiredLength === 1) {
+        for (const card of availableCards) {
+          validCombos.push({
+            type: ComboType.Single,
+            cards: [card],
+            value: calculateComboValue([card], trumpInfo),
+          });
+        }
       }
       break;
   }
