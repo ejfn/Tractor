@@ -1,4 +1,4 @@
-name: EAS Build APK
+name: Build APK
 
 on:
   release:
