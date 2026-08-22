@@ -61,12 +61,15 @@ function localBuildHandDisplay(
     categories[cat].push(card);
   });
 
+  const nonTrumpSuits = [
+    Suit.Spades,
+    Suit.Hearts,
+    Suit.Clubs,
+    Suit.Diamonds,
+  ].filter((s) => s !== trumpInfo.trumpSuit);
   const categoryOrder = [
     "Trump Group",
-    "Off-Suit Spades",
-    "Off-Suit Hearts",
-    "Off-Suit Clubs",
-    "Off-Suit Diamonds",
+    ...nonTrumpSuits.map((s) => "Off-Suit " + s),
   ];
   const extraCategories = Object.keys(categories).filter(
     (cat) => !categoryOrder.includes(cat),
@@ -255,6 +258,39 @@ function localFormatLiveOffSuitPoints(
 }
 
 /**
+ * Determines current game phase and endgame alert.
+ */
+function localFormatGamePhase(handSize: number): string {
+  if (handSize <= 2) {
+    return `Final tricks (${handSize} cards in hand — hold pair/boss for final trick kitty multiplier)`;
+  }
+  if (handSize <= 4) {
+    return `Endgame (${handSize} cards in hand — prepare pair/boss for final trick kitty multiplier)`;
+  }
+  return `Midgame (${handSize} cards in hand)`;
+}
+
+/**
+ * Summarizes teammate's historical leads and initiative across the round.
+ */
+function localFormatPartnerSignals(
+  gameState: GameState,
+  partnerId: string,
+): string {
+  const partnerLeads = gameState.tricks
+    .filter((t) => t.plays[0]?.playerId === partnerId)
+    .map((t) => {
+      const trickNum = gameState.tricks.indexOf(t) + 1;
+      const leadCards = t.plays[0].cards;
+      const isTrump = leadCards[0]?.isTrump(gameState.trumpInfo);
+      const suitLabel = isTrump ? "Trump" : `${leadCards[0]?.suit}`;
+      return `${suitLabel} (Trick ${trickNum})`;
+    });
+
+  return partnerLeads.length > 0 ? partnerLeads.join(", ") : "no leads yet";
+}
+
+/**
  * Builds the static system instructions prompt detailing rules and strategic guidelines.
  */
 export function buildLLMSystemPrompt(_gameState: GameState): string {
@@ -328,6 +364,9 @@ export function buildLLMUserPrompt(
   const teamId = currentPlayer?.team || "A";
   const partnerId = getPartnerId(playerId);
 
+  const partnerSignalsStr = localFormatPartnerSignals(gameState, partnerId);
+  const phaseStr = localFormatGamePhase(handCards.length);
+
   const userPrompt = buildUserPromptTemplate({
     playerId,
     teamId,
@@ -344,6 +383,8 @@ export function buildLLMUserPrompt(
     isLeading,
     optionsStr,
     taskInstructionStr,
+    phaseStr,
+    partnerSignalsStr,
   });
 
   const systemPrompt = buildLLMSystemPrompt(gameState);
