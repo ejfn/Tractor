@@ -26,8 +26,9 @@ export const STATIC_LLM_GAME_RULES = `# Shengji / Tractor — Game Reference
 
 ## 5. Reading the Options & Strategy
 - **## Lead Options** / **## Your Options** list legal plays and consequence classes. Pick your cards from those listed options.
-- **Point Flow**: When your teammate's win is secured, feed point cards (5, 10, K) to bank them; when opponents are winning, dump non-point cards to starve them of points.
-- **Resource Conservation**: High bosses, trump ranks, and Jokers are scarce assets. When losing a trick, conserve your highest cards for future tricks.
+- **Point Priority**: POINTS WIN THE GAME (80 threshold). When opponents are winning points on the table (5, 10, 20 pts), always contest and capture those points (e.g. ruff when void) rather than letting opponents take them.
+- **Point Flow**: When your teammate's win is secured, feed point cards (5, 10, K) to bank them; when opponents are winning a trick you cannot win, dump non-point cards to starve them of points.
+- **Resource Conservation**: Conserve scarce bosses and high trumps on tricks you cannot win or that are already secured. But never hoard trumps at the expense of surrendering live points to opponents.
 - **Position Roles (Inherent to Seat, Regardless of Lead)**:
   - **2nd & 3rd Seat (Middle)**: By position, you have a blocking and threshold role because players act behind you. Your play sets the trick threshold: playing strong blocks the next player from winning cheaply (or takes over the lead from a teammate's pass); ducking low allows the player behind to win with minimal strength.
   - **4th Seat (Last)**: You have complete information for the trick. Win as cheaply as possible against opponents, or contribute points when your teammate's win is secured.

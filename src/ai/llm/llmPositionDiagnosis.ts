@@ -141,10 +141,20 @@ export function buildFollowingOptions(
   // attackers' total (if you defend) or are lost from yours (if you attack).
   const isAttacking = gameContext.isAttackingTeam;
   const concedeNote = (points: number): string => {
+    const totalLost = trickPoints + points;
     if (points === 0) {
-      return isTeammateWinning && teammateWinSafe
-        ? `no points at stake — your team keeps the trick`
-        : `loses; concedes nothing of yours`;
+      if (isTeammateWinning && teammateWinSafe) {
+        return `no points at stake — your team keeps the trick`;
+      }
+      if (!isTeammateWinning && trickPoints > 0) {
+        return isAttacking
+          ? `surrenders the ${trickPoints} pts on the table to defenders (lost from your 80)`
+          : `surrenders the ${trickPoints} pts on the table to attackers (adds to their 80)`;
+      }
+      if (isTeammateWinning && !teammateWinSafe && trickPoints > 0) {
+        return `sluffs 0 pts, but leaves the ${trickPoints} pts on the table vulnerable to ${oppList}`;
+      }
+      return `loses; concedes nothing of yours`;
     }
     if (isTeammateWinning && teammateWinSafe) {
       return isAttacking
@@ -155,8 +165,8 @@ export function buildFollowingOptions(
       return `adds ${points} pts, but ${remainingOpponents.join("/")} can still take the trick`;
     }
     return isAttacking
-      ? `gives the defenders ${points} pts — lost from your 80`
-      : `adds ${points} pts to the attackers' total (toward their 80)`;
+      ? `gives the defenders ${totalLost} pts (${trickPoints > 0 ? `${trickPoints} on table + ` : ""}${points} played) — lost from your 80`
+      : `adds ${totalLost} pts to the attackers' total (${trickPoints > 0 ? `${trickPoints} on table + ` : ""}${points} played)`;
   };
 
   // What "beating the current winner" yields. Against an opponent it captures
@@ -410,7 +420,11 @@ function renderVoidOptions(a: VoidArgs): string[] {
         `- ${a.winnerId} (teammate) leads but it isn't locked — sluffing:`,
       );
     } else {
-      lines.push(`- Sluff ${discardLabel} (concedes the trick):`);
+      const sluffNote =
+        a.trickPoints > 0
+          ? `concedes the trick — surrenders ${a.trickPoints} pts on table to opponent`
+          : "concedes the trick; spends no trump";
+      lines.push(`- Sluff ${discardLabel} (${sluffNote}):`);
     }
     lines.push(
       ...renderDisposalClasses(
