@@ -61,12 +61,15 @@ function localBuildHandDisplay(
     categories[cat].push(card);
   });
 
+  const nonTrumpSuits = [
+    Suit.Spades,
+    Suit.Hearts,
+    Suit.Clubs,
+    Suit.Diamonds,
+  ].filter((s) => s !== trumpInfo.trumpSuit);
   const categoryOrder = [
     "Trump Group",
-    "Off-Suit Spades",
-    "Off-Suit Hearts",
-    "Off-Suit Clubs",
-    "Off-Suit Diamonds",
+    ...nonTrumpSuits.map((s) => "Off-Suit " + s),
   ];
   const extraCategories = Object.keys(categories).filter(
     (cat) => !categoryOrder.includes(cat),
@@ -173,9 +176,7 @@ function localBuildActiveTrickStatus(
     `- Points in this trick: ${winnerAnalysis.trickPoints} pts`,
   ].join("\n");
 
-  // The led group is named in ## Active Trick ("if you hold any") and ## Your
-  // Options; repeating it here would contradict the void case (ruff/sluff).
-  const taskInstructionStr = `Select exactly ${requiredCount} card(s) using a play listed under ## Your Options.`;
+  const taskInstructionStr = `Select exactly ${requiredCount} card(s) from the led group (${ledGroupLabel}) using a play listed under ## Your Options.`;
 
   return { activeTrickStatusStr, taskInstructionStr };
 }
@@ -257,22 +258,36 @@ function localFormatLiveOffSuitPoints(
 }
 
 /**
- * States the points race as a plain fact from the prompted player's side — no
- * engine urgency label: PointPressure's thresholds are static (24/56) and
- * progress-blind, so the model derives urgency from score + round progress
- * itself (#444).
+ * Determines current game phase and endgame alert.
  */
-function localFormatScorePressure(
-  isAttackingTeam: boolean,
-  attackingPoints: number,
-): string {
-  const needed = 80 - attackingPoints;
-  if (needed <= 0) {
-    return "the attackers have already reached 80";
+function localFormatGamePhase(handSize: number): string {
+  if (handSize <= 2) {
+    return `Final tricks (${handSize} cards in hand — hold pair/boss for final trick kitty multiplier)`;
   }
-  return isAttackingTeam
-    ? `you need ${needed} more pts to reach 80`
-    : `the attackers need ${needed} more pts to reach 80`;
+  if (handSize <= 4) {
+    return `Endgame (${handSize} cards in hand — prepare pair/boss for final trick kitty multiplier)`;
+  }
+  return `Midgame (${handSize} cards in hand)`;
+}
+
+/**
+ * Summarizes teammate's historical leads and initiative across the round.
+ */
+function localFormatPartnerSignals(
+  gameState: GameState,
+  partnerId: string,
+): string {
+  const partnerLeads = gameState.tricks
+    .filter((t) => t.plays[0]?.playerId === partnerId)
+    .map((t) => {
+      const trickNum = gameState.tricks.indexOf(t) + 1;
+      const leadCards = t.plays[0].cards;
+      const isTrump = leadCards[0]?.isTrump(gameState.trumpInfo);
+      const suitLabel = isTrump ? "Trump" : `${leadCards[0]?.suit}`;
+      return `${suitLabel} (Trick ${trickNum})`;
+    });
+
+  return partnerLeads.length > 0 ? partnerLeads.join(", ") : "no leads yet";
 }
 
 /**
@@ -345,24 +360,12 @@ export function buildLLMUserPrompt(
   // Point cards still unseen in each off-suit (others' hands or hidden kitty)
   const liveSuitPointsStr = localFormatLiveOffSuitPoints(gameState, handCards);
 
-  // Round progress (#442) + card parity (#446): every trick each player plays
-  // the same number of cards (validation enforces an exact count), so all four
-  // hands always hold the same number — one figure covers the opponents too.
-  const roundProgressStr = `${gameState.tricks.length} tricks played · ${handCards.length} cards left in each of the 4 hands`;
-
-  // Points race as a plain fact (no engine urgency label — see helper note)
-  const scorePressureStr = localFormatScorePressure(
-    gameContext.isAttackingTeam,
-    gameContext.currentPoints,
-  );
-
   const currentPlayer = gameState.players.find((p) => p.id === playerId);
   const teamId = currentPlayer?.team || "A";
   const partnerId = getPartnerId(playerId);
 
-  const declarerId =
-    trumpInfo.declarerId ??
-    gameState.trumpDeclarationState?.currentDeclaration?.playerId;
+  const partnerSignalsStr = localFormatPartnerSignals(gameState, partnerId);
+  const phaseStr = localFormatGamePhase(handCards.length);
 
   const userPrompt = buildUserPromptTemplate({
     playerId,
@@ -370,11 +373,8 @@ export function buildLLMUserPrompt(
     partnerId,
     trumpRank: trumpInfo.trumpRank,
     trumpSuit: trumpInfo.trumpSuit || "None",
-    declarerId,
     isAttacking: gameContext.isAttackingTeam,
     attackingPoints: gameContext.currentPoints,
-    scorePressureStr,
-    roundProgressStr,
     historyStr,
     voidsStr,
     liveSuitPointsStr,
@@ -383,6 +383,8 @@ export function buildLLMUserPrompt(
     isLeading,
     optionsStr,
     taskInstructionStr,
+    phaseStr,
+    partnerSignalsStr,
   });
 
   const systemPrompt = buildLLMSystemPrompt(gameState);
@@ -414,13 +416,6 @@ export function buildLLMKittySwapUserPrompt(
   const partnerId = getPartnerId(playerId);
 
   const gameContext = createGameContext(gameState, playerId);
-  const scorePressureStr = localFormatScorePressure(
-    gameContext.isAttackingTeam,
-    gameContext.currentPoints,
-  );
-  const declarerId =
-    trumpInfo.declarerId ??
-    gameState.trumpDeclarationState?.currentDeclaration?.playerId;
 
   const userPrompt = buildUserPromptTemplate({
     playerId,
@@ -428,11 +423,8 @@ export function buildLLMKittySwapUserPrompt(
     partnerId,
     trumpRank: trumpInfo.trumpRank,
     trumpSuit: trumpInfo.trumpSuit || "None",
-    declarerId,
     isAttacking: gameContext.isAttackingTeam,
     attackingPoints: gameContext.currentPoints,
-    scorePressureStr,
-    roundProgressStr: "Kitty Swap Phase — 33 cards in hand before burying 8",
     historyStr: "No tricks played yet (Kitty Swap phase)",
     voidsStr: "No voids confirmed yet",
     liveSuitPointsStr: localFormatLiveOffSuitPoints(gameState, handCards),

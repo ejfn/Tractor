@@ -59,7 +59,7 @@ export async function simulateLLMLatency(): Promise<void> {
 
   const avg = getAverageLLMDuration();
   if (avg === 0) {
-    // No LLM calls recorded yet — use a reasonable default centered on the 50%–75% of standard 1–2s (500–1500ms)
+    // No LLM calls recorded yet — use a reasonable default centered on 500–1500ms
     await new Promise((r) => setTimeout(r, 500 + Math.random() * 1000));
     return;
   }

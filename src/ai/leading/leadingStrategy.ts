@@ -1,4 +1,4 @@
-import { Card, GameState, Rank } from "../../types";
+import { Card, GameState } from "../../types";
 import { gameLogger } from "../../utils/gameLogger";
 import { detectCandidateLeads } from "./candidateLeadDetection";
 import { collectLeadingContext } from "./leadingContext";
@@ -192,38 +192,7 @@ export async function selectLeadingPlayAsync(
 
   // 4. Clear decision shortcuts — skip the LLM
   if (rulesBasedPick) {
-    const isRoundStart = gameState.tricks.length < 3;
-    const isHighAce = rulesBasedPick.candidate.cards.some(
-      (card) =>
-        (card.rank === Rank.Ace && trumpInfo.trumpRank !== Rank.Ace) ||
-        (card.rank === Rank.King && trumpInfo.trumpRank === Rank.Ace),
-    );
-
-    // Shortcut 1: Ace/King lead at round start — obvious play
-    if (
-      isRoundStart &&
-      isHighAce &&
-      !rulesBasedPick.candidate.metadata.isTrump
-    ) {
-      await logLLMShortcut(
-        "llm_adaptive_shortcut_lead_ace",
-        playerId,
-        fallbackCards,
-      );
-      return fallbackCards;
-    }
-
-    // Shortcut 2: Unbeatable combo — no value in asking LLM
-    if (rulesBasedPick.candidate.metadata.isUnbeatable) {
-      await logLLMShortcut(
-        "llm_adaptive_shortcut_lead_unbeatable",
-        playerId,
-        fallbackCards,
-      );
-      return fallbackCards;
-    }
-
-    // Shortcut 3: Only one candidate — nothing to choose
+    // Shortcut: Only one candidate — nothing to choose
     if (candidates.length === 1) {
       await logLLMShortcut(
         "llm_adaptive_shortcut_lead_single_candidate",

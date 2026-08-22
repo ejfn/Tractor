@@ -141,10 +141,20 @@ export function buildFollowingOptions(
   // attackers' total (if you defend) or are lost from yours (if you attack).
   const isAttacking = gameContext.isAttackingTeam;
   const concedeNote = (points: number): string => {
+    const totalLost = trickPoints + points;
     if (points === 0) {
-      return isTeammateWinning && teammateWinSafe
-        ? `no points at stake — your team keeps the trick`
-        : `loses; concedes nothing of yours`;
+      if (isTeammateWinning && teammateWinSafe) {
+        return `no points at stake — your team keeps the trick`;
+      }
+      if (!isTeammateWinning && trickPoints > 0) {
+        return isAttacking
+          ? `surrenders the ${trickPoints} pts on the table to defenders (lost from your 80)`
+          : `surrenders the ${trickPoints} pts on the table to attackers (adds to their 80)`;
+      }
+      if (isTeammateWinning && !teammateWinSafe && trickPoints > 0) {
+        return `sluffs 0 pts, but leaves the ${trickPoints} pts on the table vulnerable to ${oppList}`;
+      }
+      return `loses; concedes nothing of yours`;
     }
     if (isTeammateWinning && teammateWinSafe) {
       return isAttacking
@@ -155,8 +165,8 @@ export function buildFollowingOptions(
       return `adds ${points} pts, but ${remainingOpponents.join("/")} can still take the trick`;
     }
     return isAttacking
-      ? `gives the defenders ${points} pts — lost from your 80`
-      : `adds ${points} pts to the attackers' total (toward their 80)`;
+      ? `gives the defenders ${totalLost} pts (${trickPoints > 0 ? `${trickPoints} on table + ` : ""}${points} played) — lost from your 80`
+      : `adds ${totalLost} pts to the attackers' total (${trickPoints > 0 ? `${trickPoints} on table + ` : ""}${points} played)`;
   };
 
   // What "beating the current winner" yields. Against an opponent it captures
@@ -165,11 +175,17 @@ export function buildFollowingOptions(
   // framed as a capture.
   const oppList = remainingOpponents.join("/");
   const beatYield = (cards: Card[]): string => {
-    if (!isTeammateWinning)
+    if (!isTeammateWinning) {
+      if (remainingOpponents.length > 0 && trickPoints === 0) {
+        return `takes the lead ahead of ${oppList} (sets threshold for ${oppList})${pointCost(cards)}`;
+      }
       return `${winYield(trickPoints)}${pointCost(cards)}`;
+    }
     if (teammateWinSafe)
-      return `overtakes your teammate's already-safe win; spends ${playLabel(cards)}`;
-    return `overtakes your teammate's win (not yet safe from ${oppList}); costs ${playLabel(cards)}`;
+      return `overtakes your teammate's already-safe win — spends ${playLabel(cards)} for no gain`;
+    return trickPoints > 0
+      ? `overtakes your teammate to shield the ${trickPoints} pts from ${oppList}; costs ${playLabel(cards)}`
+      : `overtakes your teammate to raise the threshold against ${oppList}; costs ${playLabel(cards)}`;
   };
 
   // A non-winning card is not "trash" if it is the highest live card of its
@@ -189,13 +205,8 @@ export function buildFollowingOptions(
     );
 
   const analysis = analyzeSuitAvailability(leadCards, hand, trumpInfo);
-  // A void player cannot "follow the group" — name the ruff/sluff choice instead.
-  const requirementLine =
-    analysis.scenario === "void"
-      ? `Led group: ${suitName(ledSuit)} (you hold none) — play exactly ${analysis.requiredLength} card(s) as a trump ruff or an off-suit sluff`
-      : `Led group: ${suitName(ledSuit)} — play exactly ${analysis.requiredLength} card(s) from this group only`;
   const lines: string[] = [
-    `${requirementLine}. Copy cards verbatim from YOUR HAND (×2 means you hold a pair). Plays below are the full legal set.`,
+    `Led group: ${suitName(ledSuit)} — play exactly ${analysis.requiredLength} card(s) from this group only. Copy cards verbatim from YOUR HAND (×2 means you hold a pair). Plays below are the full legal set.`,
   ];
 
   switch (analysis.scenario) {
@@ -373,56 +384,51 @@ function renderVoidOptions(a: VoidArgs): string[] {
       ? ` (caution: ${a.remainingOpponents.join("/")} is void in ${suitName(a.ledSuit)} and could over-ruff a low trump)`
       : "";
 
-  const ruffCostNote = (combo: Combo): string => {
-    const pts = sumPoints(combo.cards);
-    return pts > 0
-      ? `; spends a ${pts}-pt trump`
-      : `; spends trump ${playLabel(combo.cards)}`;
-  };
-
   if (ruffWinners.length > 0 && !a.isTeammateWinning) {
     for (const combo of sortCombosAsc(ruffWinners, a.trumpInfo)) {
+      const pts = sumPoints(combo.cards);
+      const costNote =
+        pts > 0
+          ? `; spends a ${pts}-pt trump`
+          : `; spends trump ${playLabel(combo.cards)}`;
+      const ruffYield =
+        a.remainingOpponents.length > 0 && a.trickPoints === 0
+          ? `takes the lead ahead of ${a.remainingOpponents.join("/")} (sets trump threshold)`
+          : winYield(a.trickPoints);
       lines.push(
-        `- ruff with ${playLabel(combo.cards)} → ${winYield(a.trickPoints)}${ruffCostNote(combo)}${overRuffRisk}`,
-      );
-    }
-  } else if (
-    a.isTeammateWinning &&
-    !a.teammateWinSafe &&
-    ruffWinners.length > 0
-  ) {
-    // Teammate winning but a remaining opponent can still take it: a protective
-    // over-ruff can lock the trick — mirrors the in-suit "not yet safe" framing.
-    const oppList = a.remainingOpponents.join("/");
-    const secures = a.trickPoints > 0 ? `; secures ${a.trickPoints} pts` : "";
-    for (const combo of sortCombosAsc(ruffWinners, a.trumpInfo)) {
-      lines.push(
-        `- ruff with ${playLabel(combo.cards)} → overtakes your teammate's win (not yet safe from ${oppList})${secures}${ruffCostNote(combo)}${overRuffRisk}`,
+        `- ruff with ${playLabel(combo.cards)} → ${ruffYield}${costNote}${overRuffRisk}`,
       );
     }
   } else if (!a.isTeammateWinning) {
     lines.push(
-      `- No trump you hold beats ${a.winnerId}; playing a trump card here will not win the trick.`,
+      `- No trump you hold beats ${a.winnerId} — ruffing only spends trump for nothing.`,
     );
   }
 
-  // Sluff: discard off-suit (non-trump) cards, conceding the trick.
+  // Sluff: discard non-winning cards (off-suit, or trumps if no off-suit remains).
   const offSuit = a.hand.filter((c) => !c.isTrump(a.trumpInfo));
-  if (offSuit.length > 0) {
+  const discardPool = offSuit.length > 0 ? offSuit : a.hand;
+  const discardLabel =
+    offSuit.length > 0 ? "off-suit" : "trump (only trumps remain)";
+  if (discardPool.length > 0) {
     if (a.isTeammateWinning && a.teammateWinSafe) {
       lines.push(
         `- ${a.winnerId} (teammate) is winning safely — points you sluff are banked for your team:`,
       );
     } else if (a.isTeammateWinning) {
       lines.push(
-        `- ${a.winnerId} (teammate) is winning but not yet safe — sluffing:`,
+        `- ${a.winnerId} (teammate) leads but it isn't locked — sluffing:`,
       );
     } else {
-      lines.push(`- Sluff off-suit (concedes the trick; spends no trump):`);
+      const sluffNote =
+        a.trickPoints > 0
+          ? `concedes the trick — surrenders ${a.trickPoints} pts on table to opponent`
+          : "concedes the trick; spends no trump";
+      lines.push(`- Sluff ${discardLabel} (${sluffNote}):`);
     }
     lines.push(
       ...renderDisposalClasses(
-        offSuit,
+        discardPool,
         a.concedeNote,
         a.trumpInfo,
         a.isFutureBoss,
@@ -548,19 +554,24 @@ export function buildLeadingOptions(
     });
   };
 
-  // Off-suit, structured (multi-combo / tractor / pair)
+  // Off-suit, structured (multi-combo / tractor / pair) — highest leverage.
   const offStructured = offSuit.filter((c) => c.cards.length > 1);
   for (const c of offStructured) {
     const kind =
       c.type === ComboType.Invalid ? "multi-combo" : c.type.toLowerCase();
     const pts = c.metadata.points > 0 ? `, ${c.metadata.points} pts` : "";
+    const endgameNote =
+      hand.length <= 4 && c.type === ComboType.Pair
+        ? " (Endgame: spends your pair before final trick)"
+        : "";
     const fate = c.metadata.isUnbeatable
-      ? `unbeatable in-suit → wins unless ruffed; keeps the lead; spends this combo`
-      : `beatable by a higher ${c.metadata.suit} combo or a ruff; spends this combo`;
+      ? `unbeatable in-suit → wins unless an opponent ruffs; keeps the lead (spends a boss, not trump)${c.metadata.points > 0 ? ` — banks ${c.metadata.points} pts` : ""}${endgameNote}`
+      : `a higher ${c.metadata.suit} combo or a ruff can beat it${c.metadata.points > 0 ? ` — if taken you feed ${c.metadata.points} pts` : ""}${endgameNote}`;
     lines.push(`- ${playLabel(c.cards)} (${kind}${pts}) → ${fate}`);
   }
 
-  // Off-suit singles
+  // Off-suit singles: bosses (likely win) and point cards stand alone; collapse
+  // the low rubbish per suit into one class.
   const offSingles = dedupeSingles(offSuit.filter((c) => c.cards.length === 1));
   const notableSingles = offSingles.filter(
     (c) =>
@@ -571,22 +582,42 @@ export function buildLeadingOptions(
   for (const c of sortCandidatesDesc(notableSingles, trumpInfo)) {
     const card = c.cards[0];
     const pts = card.points > 0 ? `, ${card.points} pts` : "";
-    const fate = c.metadata.isUnbeatable
-      ? `unbeatable in-suit → wins unless ruffed; keeps the lead; spends this card`
-      : isBiggestInSuit(card, trumpInfo)
-        ? `suit boss → wins unless ruffed; spends this card`
-        : `a higher ${suitName(card.suit)} is still out; passes the lead if a higher card is played; spends this card`;
+    const unseenSuitCards = getRemainingUnseenCards(
+      card.suit,
+      gameContext,
+      gameState,
+    );
+    const higherUnseen = unseenSuitCards.filter(
+      (u) => !u.isTrump(trumpInfo) && compareCards(u, card, trumpInfo) > 0,
+    );
+    let fate: string;
+    if (c.metadata.isUnbeatable) {
+      fate = `unbeatable in-suit → wins unless an opponent ruffs; keeps the lead (spends a boss, not trump)${card.points > 0 ? ` — banks ${card.points} pts` : ""}`;
+    } else if (isBiggestInSuit(card, trumpInfo)) {
+      fate = `suit boss → wins unless ruffed${card.points > 0 ? `; if ruffed you feed ${card.points} pts` : ""}`;
+    } else if (higherUnseen.length > 0) {
+      const distinctRanks = Array.from(
+        new Set(higherUnseen.map((h) => h.toString())),
+      ).join("/");
+      fate = `${higherUnseen.length} higher card(s) unplayed (${distinctRanks}) — if an opponent takes it you feed ${card.points} pts`;
+    } else {
+      fate = `a higher ${suitName(card.suit)} is still out — if an opponent takes it you feed them ${card.points} pts`;
+    }
     lines.push(`- ${card.toString()} (${suitName(card.suit)}${pts}) → ${fate}`);
   }
   const rubbishSingles = offSingles.filter((c) => !notableSingles.includes(c));
   if (rubbishSingles.length > 0) {
     const cards = rubbishSingles.map((c) => c.cards[0]);
     lines.push(
-      `- low singles (${listLabel(cards)}) → beatable cards; pass the lead if a higher card is played; spend these cards`,
+      `- low singles (${listLabel(cards)}) → low cards; give up the lead, carry no points`,
     );
   }
 
-  // Trump leads stated as point facts.
+  // Trump leads stated as point facts. A trump lead never wins points from
+  // opponents by force (they follow with their lowest), so: a high trump SINGLE
+  // wastes your scarcest card; strong trump PAIRS, led when you hold several,
+  // drain opponents' trump and force out their trump point cards; a low trump
+  // simply hands on the lead. The dominance line lets the LLM judge draining.
   if (trump.length > 0) {
     const heldTrumpPairs = countHeldPairs(
       hand.filter((c) => c.isTrump(trumpInfo)),
@@ -607,11 +638,15 @@ export function buildLeadingOptions(
         c.type === ComboType.Invalid ? "multi-combo" : c.type.toLowerCase();
       const scarce =
         calculateCardStrategicValue(c.cards[0], trumpInfo, "basic") >= 170;
+      const endgameNote =
+        hand.length <= 4
+          ? " (Endgame: spends your trump pair before final trick)"
+          : "";
       const cost = scarce
         ? "spends scarce high trump (jokers/trump-rank)"
         : "spends a trump pair";
       lines.push(
-        `- ${playLabel(c.cards)} (trump ${kind}) → opponents must follow with a trump ${kind} if they hold it, and a higher trump ${kind} beats this play; ${cost}`,
+        `- ${playLabel(c.cards)} (trump ${kind}) → opponents must follow with a trump ${kind}; repeated trump-pair leads drain their trump and force out trump point cards you capture, but a higher trump ${kind} beats this one; ${cost}${endgameNote}`,
       );
     }
 
@@ -619,6 +654,9 @@ export function buildLeadingOptions(
       trump.filter((c) => c.cards.length === 1),
     );
     if (trumpSingles.length > 0) {
+      // A trump single wins only if no higher trump is unseen in another hand —
+      // the engine does that accounting so the model does not mistake a high but
+      // beatable trump (e.g. SJ while a BJ is out) for "the strongest".
       const isBeaten = (card: Card): boolean =>
         unseenTrump.some((u) => compareCards(u, card, trumpInfo) > 0);
       const winners = trumpSingles.filter((c) => !isBeaten(c.cards[0]));
@@ -626,7 +664,7 @@ export function buildLeadingOptions(
 
       for (const c of sortCandidatesDesc(winners, trumpInfo)) {
         lines.push(
-          `- ${c.cards[0].toString()} (trump single) → highest remaining trump; captures ≈0 pts as opponents follow low; burns your top trump (lost for ruffing points and final-trick multiplier)`,
+          `- ${c.cards[0].toString()} (trump) → no trump still out beats it, but opponents follow low so you win ≈no points; spends your top trump (gone for ruffing or the final trick)`,
         );
       }
       if (beaten.length > 0) {
@@ -638,7 +676,7 @@ export function buildLeadingOptions(
               calculateCardStrategicValue(y, trumpInfo, "basic"),
           );
         lines.push(
-          `- trump singles (${listLabel(cards)}) → at least one higher trump is still out (beatable single trump); passes the lead if a higher trump is played; spends this trump`,
+          `- trump singles (${listLabel(cards)}) → a higher trump is still out, so leading one likely loses — it passes the lead and gives up no points; spends a trump`,
         );
       }
     }
