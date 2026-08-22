@@ -59,7 +59,7 @@ Tractor uses a triple-version system with explicit runtime version control for p
 To prevent development builds from overwriting your stable production build on your mobile device, Tractor dynamically overrides the package configuration on the GitHub Actions runner before compiling the Development Client APK:
 
 * **Standard / Production builds**: Compiles with the static production details (`name: "Tractor"`, `package: "com.cardgame.tractor"`).
-* **Development Client builds**: The [**`eas-build-dev.yml`**](../.github/workflows/eas-build-dev.yml) workflow rewrites `app.json` on the runner before building — distinct app name, a `.dev` Android package / iOS bundle id, and the build's EAS update channel — so the Dev Client installs alongside production. (See the workflow for the exact `jq` mutations.)
+* **Development Client builds**: The [**`build-dev-client.yml`**](../.github/workflows/build-dev-client.yml) workflow rewrites `app.json` on the runner before building — distinct app name, a `.dev` Android package / iOS bundle id, and the build's EAS update channel — so the Dev Client installs alongside production. (See the workflow for the exact `jq` mutations.)
 
 This allows developers to keep the official production app installed while concurrently running and testing with the custom Development Client shell.
 
