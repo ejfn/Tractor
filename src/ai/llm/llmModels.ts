@@ -17,10 +17,10 @@ export interface DefaultModelInfo {
  * bump is a one-spot edit.
  */
 export const DEFAULT_MODEL: DefaultModelInfo = {
-  id: "google/gemini-3.1-flash-lite",
-  displayName: "Gemini 3.1 Flash Lite",
-  inputPrice: "$0.25",
-  outputPrice: "$1.50",
+  id: "google/gemini-3.5-flash-lite",
+  displayName: "Gemini 3.5 Flash Lite",
+  inputPrice: "$0.30",
+  outputPrice: "$2.50",
 };
 
 /** Concrete OpenRouter model id backing the built-in Default selection. */
