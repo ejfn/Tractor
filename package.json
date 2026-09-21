@@ -1,7 +1,7 @@
 {
   "name": "tractor",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "scripts": {
     "start:dev": "node scripts/inject-dev-version.js && expo start --dev-client",
     "start": "node scripts/inject-dev-version.js && expo start",

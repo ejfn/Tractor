@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tractor",
     "slug": "Tractor",
-    "version": "v1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "tractor",
@@ -55,13 +55,14 @@
       "**/*"
     ],
     "extra": {
+      "version": "v0.1.0",
       "router": {},
       "eas": {
         "projectId": "3256dcee-103a-467b-96c4-97a9f634df51"
       }
     },
     "owner": "ejfn",
-    "runtimeVersion": "v1.0.0",
+    "runtimeVersion": "v0.1.0",
     "platforms": [
       "ios",
       "android"
