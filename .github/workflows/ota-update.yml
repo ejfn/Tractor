@@ -3,6 +3,8 @@ name: OTA Update
 on:
   push:
     branches: [ main ]
+  release:
+    types: [prereleased, released]
   workflow_dispatch:
     inputs:
       branch_name:
@@ -12,7 +14,7 @@ on:
 
 # Prevent concurrent deployments due to rate limits
 concurrency:
-  group: ota-update-${{ github.ref }}
+  group: ota-update-${{ github.event.release.tag_name || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -23,19 +25,30 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        ref: ${{ inputs.branch_name || github.ref }}
+        ref: ${{ github.event.release.tag_name || inputs.branch_name || github.ref }}
         fetch-depth: 0
 
+    - name: Detect version and inject into app.json
+      id: version
+      uses: ./.github/actions/git-version
+
+    - name: Skip OTA update for Latest release
+      if: steps.version.outputs.is-latest-release == 'true'
+      run: echo "Release is marked as Latest. Skipping OTA update (new APK will be built instead)."
+
     - name: Setup Node.js
+      if: steps.version.outputs.is-latest-release != 'true'
       uses: actions/setup-node@v6
       with:
         node-version: '24'
         cache: 'npm'
 
     - name: Install dependencies
+      if: steps.version.outputs.is-latest-release != 'true'
       run: npm ci
 
     - name: Run quality checks and extract test count
+      if: steps.version.outputs.is-latest-release != 'true'
       id: tests
       run: |
         # Run quality checks and capture output
@@ -47,11 +60,12 @@ jobs:
         echo "Extracted test count: $TEST_COUNT"
 
     - name: Run simulation tests
+      if: steps.version.outputs.is-latest-release != 'true'
       run: TARGET_GAMES=3 npm run test:simulation
 
     - name: Archive simulation logs
       uses: actions/upload-artifact@v7
-      if: failure() # Only upload logs when tests fail
+      if: failure() && steps.version.outputs.is-latest-release != 'true' # Only upload logs when tests fail
       with:
         name: simulation-logs-${{ github.run_number }}
         path: logs/
@@ -59,7 +73,7 @@ jobs:
 
     - name: Update test count badge
       uses: schneegans/dynamic-badges-action@v1.7.0
-      if: github.ref == 'refs/heads/main'
+      if: steps.version.outputs.is-latest-release != 'true' && github.ref == 'refs/heads/main'
       with:
         auth: ${{ secrets.GIST_SECRET }}
         gistID: ${{ secrets.GIST_ID }}
@@ -70,17 +84,15 @@ jobs:
         namedLogo: jest
 
     - name: Setup Expo
+      if: steps.version.outputs.is-latest-release != 'true'
       uses: expo/expo-github-action@v8
       with:
         eas-version: latest
         packager: npm
         token: ${{ secrets.EXPO_TOKEN }}
 
-    - name: Detect version and inject into app.json
-      id: version
-      uses: ./.github/actions/git-version
-
     - name: Publish OTA Update
+      if: steps.version.outputs.is-latest-release != 'true'
       run: eas update --branch ${{ steps.version.outputs.eas-branch }} --environment ${{ steps.version.outputs.eas-branch }} --message "Update ${{ steps.version.outputs.full-version }}"
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

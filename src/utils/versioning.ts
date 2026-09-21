@@ -16,7 +16,7 @@ export const getAppVersion = (): string => {
     if (devVersionInfo?.version && devVersionInfo?.gitCommit) {
       return `${devVersionInfo.version}+${devVersionInfo.gitCommit.substring(0, 7)}`;
     }
-    return "v1.0.0-dev"; // Fallback for dev if dev-version.json is missing
+    return "v0.1.0-dev"; // Fallback for dev if dev-version.json is missing
   }
 
   // For published builds, use version injected by build pipeline
@@ -24,12 +24,12 @@ export const getAppVersion = (): string => {
     const version =
       Constants.expoConfig?.extra?.version || Constants.expoConfig?.version;
     if (version) {
-      return version;
+      return version.startsWith("v") ? version : `v${version}`;
     }
   } catch {
     // Fallback if Constants access fails
   }
 
   // Final fallback for production builds
-  return "v1.0.0";
+  return "v0.1.0";
 };

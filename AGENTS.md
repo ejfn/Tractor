@@ -97,6 +97,8 @@ GITHUB_TOKEN= gh pr create --title "Title" --body "Description"
 - Main branch is protected - requires PR approval
 - Use descriptive branch names: `ejfn/fix-scoring`, `ejfn/add-tests`
 - Always use `npx eas` for EAS CLI commands
+- **Release Automation**: Releases marked as `Latest` automatically trigger `build-apk.yml` to compile an Android APK binary. Non-latest releases (e.g., patch releases within the same runtime version) and pre-releases trigger `ota-update.yml` to publish EAS updates without building APKs.
+- **Baseline Versioning**: Always start with `0.1.0` (runtime `v0.1.0`) as the initial baseline across `app.json`, `package.json`, and CI fallback calculations.
 
 ## Testing
 

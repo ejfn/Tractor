@@ -9,10 +9,10 @@ Tractor uses a triple-version system with explicit runtime version control for p
 ## Version Types
 
 ### App Version (`expo.version`)
-**Purpose**: User-visible version displayed in app
-- **Production**: `v{major}.{minor}.{patch}` (actual release version)
-- **Beta**: `v{major}.{next-minor}.0-beta.{count}` (clean version without hash)
-- **Alpha**: `v{major}.{next-minor}.0-alpha.{count}` (clean version without hash)
+**Purpose**: User-visible version configured in `app.json` (without leading `v` per standard app store requirements)
+- **Production**: `{major}.{minor}.{patch}` (actual release version, e.g. `1.0.3`)
+- **Beta**: `{major}.{next-minor}.0-beta.{count}` (clean version without hash)
+- **Alpha**: `{major}.{next-minor}.0-alpha.{count}` (clean version without hash)
 
 ### Runtime Version (`expo.runtimeVersion`)
 **Purpose**: Controls OTA compatibility and update isolation
@@ -29,19 +29,19 @@ Tractor uses a triple-version system with explicit runtime version control for p
 ## Versioning by Build Type
 
 ### Production Releases (Tags)
-- **App Version**: `v1.0.3` (actual release version)
+- **App Version**: `1.0.3` (actual release version without leading 'v')
 - **Runtime Version**: `v1.0.0` (normalized for OTA)
 - **Full Version**: `v1.0.3+abc1234` (with git hash)
 - **OTA**: Compatible between patch releases
 
 ### Beta Builds (Main Branch)
-- **App Version**: `v1.1.0-beta.5` (clean version)
+- **App Version**: `1.1.0-beta.5` (clean version without leading 'v')
 - **Runtime Version**: `v1.1.0-beta` (stable across all beta commits)
 - **Full Version**: `v1.1.0-beta.5+def5678` (complete tracking)
 - **OTA**: Compatible across all beta updates for that version lineage
 
 ### Alpha Builds (Feature Branches)
-- **App Version**: `v1.1.0-alpha.3` (clean version)
+- **App Version**: `1.1.0-alpha.3` (clean version without leading 'v')
 - **Runtime Version**: `v1.1.0-alpha.3+ghi9012` (isolated per feature branch commit)
 - **Full Version**: `v1.1.0-alpha.3+ghi9012` (complete tracking)
 - **OTA**: Isolated per build to protect experimental branches
@@ -53,6 +53,17 @@ Tractor uses a triple-version system with explicit runtime version control for p
 | **Production** | `v1.0.0` | ✅ Between patch releases |
 | **Beta** | `v1.1.0-beta` | ✅ Across all beta commits in lineage |
 | **Alpha** | `v1.1.0-alpha.X+hash` | ❌ Isolated per build (feature safety) |
+
+## Release & Build Pipeline Automation
+
+Tractor optimizes CI/CD resource usage and deployment speed by dynamically splitting release workflows:
+- **Latest Release**: When a release is published and marked as **Latest** on GitHub:
+  - The [**`build-apk.yml`**](../.github/workflows/build-apk.yml) workflow builds the Android APK binary and attaches it to the release assets.
+  - The [**`ota-update.yml`**](../.github/workflows/ota-update.yml) workflow skips publishing (deferring to the newly built APK).
+- **Non-Latest Releases & Pre-Releases**: When a release is published but is *not* marked as Latest (e.g. patch updates within the same runtime version, or pre-releases):
+  - The [**`ota-update.yml`**](../.github/workflows/ota-update.yml) workflow deploys an OTA update via EAS.
+  - The [**`build-apk.yml`**](../.github/workflows/build-apk.yml) workflow skips binary compilation.
+- **Main Branch Pushes**: Pushes to `main` continue to run tests, update badges, and publish OTA updates to the `preview` branch.
 
 ## Dev Client Side-by-Side Installation
 
@@ -72,3 +83,4 @@ This allows developers to keep the official production app installed while concu
 - **Side-by-Side Testing**: Develop and test Dev Clients without overwriting the production build
 - **Precise Debugging**: Git hash enables exact commit tracking
 - **Automated Calculation**: Version logic derived from git tags
+- **Pre-Release Baseline**: Projects always start with `0.1.0` (runtime `v0.1.0`) as their initial baseline across `app.json`, `package.json`, and CI fallback version calculations

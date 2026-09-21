@@ -6,7 +6,7 @@ outputs:
     description: 'The full version with git hash (e.g., v1.0.3+abc1234)'
     value: ${{ steps.detect.outputs.full-version }}
   version:
-    description: 'The app version for expo.version (e.g., v1.0.3)'
+    description: 'The app version for expo.version (e.g., 1.0.3)'
     value: ${{ steps.detect.outputs.version }}
   runtime-version:
     description: 'The runtime version for OTA compatibility (e.g., v1.0.0)'
@@ -14,6 +14,9 @@ outputs:
   eas-branch:
     description: 'EAS Update branch'
     value: ${{ steps.detect.outputs.eas-branch }}
+  is-latest-release:
+    description: 'Whether this release is marked as the latest release on GitHub'
+    value: ${{ steps.detect.outputs.is-latest-release }}
 
 runs:
   using: 'composite'
@@ -21,6 +24,8 @@ runs:
     - name: Detect version and context
       id: detect
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         # Get git info
         GIT_COMMIT=$(git rev-parse HEAD)
@@ -35,17 +40,25 @@ runs:
           PATCH=$(echo $LAST_VERSION | cut -d. -f3)
           COMMIT_COUNT=$(git rev-list --count ${LAST_TAG}..HEAD)
         else
-          MAJOR="1"
+          MAJOR="0"
           MINOR="0"
           PATCH="0"
           COMMIT_COUNT=$(git rev-list --count HEAD)
         fi
         
+        IS_LATEST="false"
         if [ "${{ github.event_name }}" = "release" ]; then
           # Release event - use actual version for expo.version, normalized for runtime
           RAW_VERSION="${{ github.event.release.tag_name }}"
-          VERSION="$RAW_VERSION"
+          VERSION="${RAW_VERSION#v}"
           FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
+
+          # Check if this release is marked as Latest on GitHub
+          LATEST_TAG=$(gh api "repos/${{ github.repository }}/releases/latest" --jq '.tag_name' 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ] && [ "$RAW_VERSION" = "$LATEST_TAG" ]; then
+            IS_LATEST="true"
+          fi
+
           if [[ $RAW_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
@@ -57,9 +70,9 @@ runs:
           fi
 
         elif [[ ${{ github.ref }} == refs/tags/v* ]]; then
-          # Tag push - use actual version for expo.version, normalized for runtime
+          # Tag push or manual dispatch on a tag - use actual version for expo.version, normalized for runtime
           RAW_VERSION="${{ github.ref_name }}"
-          VERSION="$RAW_VERSION"
+          VERSION="${RAW_VERSION#v}"
           FULL_VERSION="${RAW_VERSION}+${GIT_HASH_SHORT}"
           if [[ $RAW_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             MAJOR="${BASH_REMATCH[1]}"
@@ -75,7 +88,7 @@ runs:
           # Main branch push - isolate with stable beta runtime version
           # Increment minor version by 1 and reset patch to 0
           BASE_VERSION="${MAJOR}.$((MINOR + 1)).0"
-          VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}"
+          VERSION="${BASE_VERSION}-beta.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-beta.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           RUNTIME_VERSION="v${BASE_VERSION}-beta"
           EAS_BRANCH="preview"
@@ -84,7 +97,7 @@ runs:
           # Other branch (manual trigger) - isolate with git hash in runtime version
           # Increment minor version by 1 and reset patch to 0
           BASE_VERSION="${MAJOR}.$((MINOR + 1)).0"
-          VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}"
+          VERSION="${BASE_VERSION}-alpha.${COMMIT_COUNT}"
           FULL_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           RUNTIME_VERSION="v${BASE_VERSION}-alpha.${COMMIT_COUNT}+${GIT_HASH_SHORT}"
           EAS_BRANCH="development"
@@ -95,6 +108,7 @@ runs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "runtime-version=$RUNTIME_VERSION" >> $GITHUB_OUTPUT
         echo "eas-branch=$EAS_BRANCH" >> $GITHUB_OUTPUT
+        echo "is-latest-release=$IS_LATEST" >> $GITHUB_OUTPUT
         
         # Verbose output for debugging
         echo "Final outputs:"
@@ -102,6 +116,7 @@ runs:
         echo "  version: $VERSION"
         echo "  runtime-version: $RUNTIME_VERSION"
         echo "  eas-branch: $EAS_BRANCH"
+        echo "  is-latest-release: $IS_LATEST"
 
     - name: Inject version into app.json
       shell: bash
